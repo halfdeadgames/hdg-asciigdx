@@ -4,4 +4,5 @@ dependencies {
   api project(':core')
   api project(':ktx-ext')
   api "com.github.tommyettinger:sjInGameConsole:$inGameConsoleVersion"
+  api "com.github.tommyettinger:anim8-gdx:$anim8Version"
 }

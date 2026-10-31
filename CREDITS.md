@@ -18,3 +18,12 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 |---|---|---|---|
 | [libGDX](https://libgdx.com/) | libGDX contributors | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Rendering, textures, platform backends |
 | [colorful](https://github.com/tommyettinger/colorful-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Color conversion |
+
+## Development tools
+
+Used only by the `sandbox` demo modules. Not part of any release artifact.
+
+| Library | Author | License | Used for |
+|---|---|---|---|
+| [anim8-gdx](https://github.com/tommyettinger/anim8-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Recording GIF captures of the demo |
+| [sjInGameConsole](https://github.com/tommyettinger/sjInGameConsole) | StrongJoshua, Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | In-game debug console |
