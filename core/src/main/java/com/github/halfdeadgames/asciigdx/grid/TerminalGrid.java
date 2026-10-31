@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.grid;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Objects;
 
 public final class TerminalGrid {
 
@@ -67,8 +68,11 @@ public final class TerminalGrid {
         return !dirtyCells.isEmpty();
     }
 
-    public int nextDirtyIndex(int fromIndex) {
-        return dirtyCells.nextSetBit(fromIndex);
+    public void forEachDirtyCell(DirtyCellVisitor visitor) {
+        Objects.requireNonNull(visitor, "visitor");
+        for (int index = dirtyCells.nextSetBit(0); index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
+            visitor.visit(index % width, index / width);
+        }
     }
 
     public void clearDirty() {

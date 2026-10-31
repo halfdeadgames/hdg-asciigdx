@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class TerminalGridTest {
@@ -130,9 +132,11 @@ class TerminalGridTest {
 
         grid.set(1, 1, '@', RED, BLUE);
 
+        List<String> visited = new ArrayList<>();
+        grid.forEachDirtyCell((x, y) -> visited.add(x + "," + y));
+
         assertTrue(grid.isDirty(1, 1));
-        assertEquals(4, grid.nextDirtyIndex(0));
-        assertEquals(-1, grid.nextDirtyIndex(5));
+        assertEquals(List.of("1,1"), visited);
     }
 
     @Test
@@ -260,19 +264,68 @@ class TerminalGridTest {
     }
 
     @Test
-    void nextDirtyIndexWalksDirtyCellsInOrder() {
+    void forEachDirtyCellVisitsEveryCellOfFreshGridInRowMajorOrder() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        List<String> visited = new ArrayList<>();
+
+        grid.forEachDirtyCell((x, y) -> visited.add(x + "," + y));
+
+        assertEquals(List.of("0,0", "1,0", "2,0", "0,1", "1,1", "2,1"), visited);
+    }
+
+    @Test
+    void forEachDirtyCellVisitsOnlyChangedCellsWithCorrectCoordinates() {
+        TerminalGrid grid = new TerminalGrid(4, 2);
+        grid.clearDirty();
+        grid.set(3, 0, '@', RED, BLUE);
+        grid.set(1, 1, '#', RED, BLUE);
+        List<String> visited = new ArrayList<>();
+
+        grid.forEachDirtyCell((x, y) -> visited.add(x + "," + y));
+
+        assertEquals(List.of("3,0", "1,1"), visited);
+    }
+
+    @Test
+    void forEachDirtyCellVisitsNothingAfterClearDirty() {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.clearDirty();
-        grid.set(2, 1, '@', RED, BLUE);
-        grid.set(1, 0, '#', RED, BLUE);
+        List<String> visited = new ArrayList<>();
 
-        int first = grid.nextDirtyIndex(0);
-        int second = grid.nextDirtyIndex(first + 1);
-        int third = grid.nextDirtyIndex(second + 1);
+        grid.forEachDirtyCell((x, y) -> visited.add(x + "," + y));
 
-        assertEquals(1, first);
-        assertEquals(5, second);
-        assertEquals(-1, third);
+        assertTrue(visited.isEmpty());
+    }
+
+    @Test
+    void forEachDirtyCellDoesNotClearDirtyFlags() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+
+        grid.forEachDirtyCell((x, y) -> { });
+
+        assertTrue(grid.isDirty(0, 0));
+        assertTrue(grid.isDirty(2, 1));
+    }
+
+    @Test
+    void forEachDirtyCellAfterClearVisitsOnlyCellsThatHadContent() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(2, 0, '@', RED, BLUE);
+        grid.clearDirty();
+        grid.clear();
+        List<String> visited = new ArrayList<>();
+
+        grid.forEachDirtyCell((x, y) -> visited.add(x + "," + y));
+
+        assertEquals(List.of("2,0"), visited);
+    }
+
+    @Test
+    void forEachDirtyCellRejectsNullVisitor() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.clearDirty();
+
+        assertThrows(NullPointerException.class, () -> grid.forEachDirtyCell(null));
     }
 
     @Test
