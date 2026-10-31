@@ -1,8 +1,13 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.HdpiUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.github.halfdeadgames.asciigdx.render.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -26,7 +31,7 @@ public class SandboxApp extends ApplicationAdapter {
     private GlyphSource glyphs;
     private TerminalGrid grid;
     private GridRenderer renderer;
-    private float viewHeight;
+    private ScalingViewport viewport;
 
     @Override
     public void create() {
@@ -34,6 +39,8 @@ public class SandboxApp extends ApplicationAdapter {
         glyphs = TextureGlyphSource.loadDungeonMode();
         grid = new TerminalGrid(GRID_COLUMNS, GRID_ROWS);
         renderer = new GridRenderer(grid, glyphs);
+        viewport = new ScalingViewport(IntegerScaling.INSTANCE,
+            GRID_COLUMNS * glyphs.getCellWidth(), GRID_ROWS * glyphs.getCellHeight());
         fillDemoGrid();
     }
 
@@ -79,23 +86,39 @@ public class SandboxApp extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        int scale = integerScale(width, height);
-        viewHeight = (float) height / scale;
-        batch.getProjectionMatrix().setToOrtho2D(0, 0, (float) width / scale, viewHeight);
+        viewport.update(width, height, true);
+        showScaleIndicator();
     }
 
-    private int integerScale(int width, int height) {
-        int columnScale = width / (GRID_COLUMNS * glyphs.getCellWidth());
-        int rowScale = height / (GRID_ROWS * glyphs.getCellHeight());
-        return Math.max(1, Math.min(columnScale, rowScale));
+    private void showScaleIndicator() {
+        float scale = viewport.getScreenWidth() / viewport.getWorldWidth();
+        String label = scale >= 1f
+            ? String.format(" %dx ", Math.round(scale))
+            : String.format(" %.2fx fit ", scale);
+        int row = GRID_ROWS - 1;
+        for (int column = 1; column < GRID_COLUMNS - 1; column++) {
+            grid.set(column, row, '─', WHITE, TerminalGrid.TRANSPARENT_RGBA);
+        }
+        writeText(GRID_COLUMNS - 1 - label.length(), row, label, CYAN, TerminalGrid.TRANSPARENT_RGBA);
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        ScreenUtils.clear(0f, 0f, 0f, 1f);
+        clearGridArea();
+        viewport.apply();
+        batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
-        renderer.draw(batch, 0, viewHeight);
+        renderer.draw(batch, 0, viewport.getWorldHeight());
         batch.end();
+    }
+
+    private void clearGridArea() {
+        Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
+        HdpiUtils.glScissor(viewport.getScreenX(), viewport.getScreenY(),
+            viewport.getScreenWidth(), viewport.getScreenHeight());
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
     }
 
     @Override
