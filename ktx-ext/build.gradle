@@ -1,0 +1,10 @@
+apply plugin: 'org.jetbrains.kotlin.jvm'
+
+eclipse.project.name = appName + '-ktx-ext'
+
+kotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+
+dependencies {
+  api project(':core')
+  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+}

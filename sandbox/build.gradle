@@ -1,0 +1,7 @@
+eclipse.project.name = appName + '-sandbox'
+
+dependencies {
+  api project(':core')
+  api project(':ktx-ext')
+  api "com.github.tommyettinger:sjInGameConsole:$inGameConsoleVersion"
+}
