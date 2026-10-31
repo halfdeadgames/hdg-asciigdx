@@ -19,8 +19,8 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
         assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 1));
-        assertEquals(TerminalGrid.TRANSPARENT, grid.getForeground(2, 1));
-        assertEquals(TerminalGrid.TRANSPARENT, grid.getBackground(2, 1));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getForeground(2, 1));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(2, 1));
     }
 
     @Test
@@ -99,7 +99,7 @@ class TerminalGridTest {
         grid.clear();
 
         assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
-        assertEquals(TerminalGrid.TRANSPARENT, grid.getBackground(1, 1));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(1, 1));
     }
 
     @Test
@@ -188,7 +188,7 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.clearDirty();
 
-        grid.set(1, 1, TerminalGrid.EMPTY_GLYPH, TerminalGrid.TRANSPARENT, TerminalGrid.TRANSPARENT);
+        grid.set(1, 1, TerminalGrid.EMPTY_GLYPH, TerminalGrid.TRANSPARENT_RGBA, TerminalGrid.TRANSPARENT_RGBA);
 
         assertFalse(grid.hasDirtyCells());
     }
