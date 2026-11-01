@@ -45,6 +45,15 @@ interface SandboxScene {
     default void setDirtyPercent(int percent) {
     }
 
+    /** Whether {@link #setLayerCount(int)} does anything, so the capture script can sweep it. */
+    default boolean supportsLayerCount() {
+        return false;
+    }
+
+    /** Number of stacked layers (1 or more); only called when {@link #supportsLayerCount()} is true. */
+    default void setLayerCount(int count) {
+    }
+
     /** Whether the capture script records a GIF named after {@link #id()} for this scene. */
     default boolean recordsAnimation() {
         return false;

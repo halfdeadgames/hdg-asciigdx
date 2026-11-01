@@ -9,7 +9,8 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 ## Current features
 
 - Terminal grid: a grid of cells, each holding a glyph plus foreground and background colors. The grid tracks changed cells, and each renderer keeps its own record of what it still has to redraw.
-- Grid renderer: draws a grid in two passes, backgrounds first and then glyphs. Cell data lives in GPU vertex buffers, and only changed cells are rewritten, so a mostly static screen costs almost nothing to redraw.
+- Grid renderer: draws a grid in two passes, backgrounds first and then glyphs. Cell data lives in GPU vertex buffers, and only changed cells are rewritten, so a mostly static screen costs almost nothing to redraw. Background and glyph passes are skipped when they have nothing to draw, and fully opaque backgrounds are drawn without blending, which saves GPU work on phones.
+- Layers: stack several grids and draw them bottom to top in one call. Layers can differ in size and font, and each one has its own offset in pixels or cells, visibility, tint, and alpha. Moving, tinting, or fading a layer is cheap because none of it rewrites the layer's cells. Every visible layer is drawn every frame in stack order, whether or not its cells changed. A layer can be clipped to a rectangle or to the stack's area, and by default it may extend past the edges, which suits shakes and floating effects.
 - Integer scaling: a libGDX `Scaling` that scales the view by whole numbers only, so pixel fonts stay crisp. Leftover space becomes letterbox bars.
 - Glyph sheets: load a bitmap font sheet, describe its layout (cell size, margin, and spacing) and map its slots to Unicode characters. Code Page 437 order is built in.
 - Character lists: a UTF-8 text file next to a sheet can list the character in each slot, one line per sheet row. Characters that are hard to type can be written as escapes such as `\u{E000}`.
@@ -21,7 +22,7 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 
 ## Planned features
 
-- Stacked layers with transparency, and sub-terminals with their own coordinates
+- Sub-terminals with their own coordinates
 - Smooth camera pan and zoom, and parallax layers
 - Glyphs that move freely off the grid, with rotation, scaling, fading, and screen shake
 - Light and tint maps, palette swaps, and color grading
@@ -47,10 +48,11 @@ The sandbox is a demo app for checking features by eye. It opens to a menu of te
 | Scene | What it shows |
 | --- | --- |
 | Renderer basics | Grid orientation, colors, transparent backgrounds, and box drawing |
+| Layers | A pacing boss shakes the map under a frame, rain fades in and out, a popup slides in, and a character hops. R changes the layer order, V hides the rain, and P toggles pixel snapping. On Android, tap the left, middle, or right third. |
 | Stress: full rewrite | A 240x135 grid rewritten every frame |
-| Large grid: sparse updates | The same grid with a small share of cells changing each frame |
+| Large grid: sparse updates | The same grid with a small share of cells changing each frame. L switches between 1, 2, and 4 layers. |
 | Font comparison: PNG vs TTF | The bundled sheet and the baked TTF, swapped back and forth |
-| Glyph sheet showcase | The whole extended sheet, plus cards, chess, dice, shades, and animated meters |
+| Glyph sheet showcase | The whole extended sheet, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers |
 
 ```
 ./gradlew :sandbox-desktop:run                                 # desktop
@@ -89,6 +91,7 @@ It saves `menu.png`, one PNG per scene, GIFs of the animated scenes, and `perf.t
 | `-Psamples=n` | Number of timing samples per scene (default 5) |
 | `-PsampleSeconds=s` | Length of each sample in seconds (default 0.5) |
 | `-Pdirty=0,25,50` | Sweep the sparse-update scene through these changed-cell percentages |
+| `-Players=1,2,4` | Sweep the sparse-update scene through these layer counts |
 
 In PowerShell, quote comma lists: `"-Pscenes=renderer-basics,glyph-showcase"`.
 

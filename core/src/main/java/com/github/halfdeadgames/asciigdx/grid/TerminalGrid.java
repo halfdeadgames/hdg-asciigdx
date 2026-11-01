@@ -27,7 +27,7 @@ import java.util.List;
  *
  * <p>Not thread-safe. Use from the render thread.
  */
-public final class TerminalGrid {
+public final class TerminalGrid implements TerminalView {
 
     /** Glyph of a cleared cell. Nothing is drawn for it. It is the NUL code point, so NUL cannot be drawn. */
     public static final int EMPTY_GLYPH = 0;
@@ -63,23 +63,17 @@ public final class TerminalGrid {
         backgrounds = new int[cellCount];
     }
 
-    /** Returns the number of columns. */
+    @Override
     public int getWidth() {
         return width;
     }
 
-    /** Returns the number of rows. */
+    @Override
     public int getHeight() {
         return height;
     }
 
-    /**
-     * Returns whether {@code (x, y)} is inside the grid.
-     *
-     * @param x column
-     * @param y row
-     * @return {@code true} if the cell exists
-     */
+    @Override
     public boolean contains(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
@@ -114,13 +108,7 @@ public final class TerminalGrid {
         markTrackers(index);
     }
 
-    /**
-     * Creates a tracker that starts with every cell dirty and then records each
-     * content change. The tracker stays registered, and keeps receiving marks,
-     * until {@link DirtyTracker#release()} is called.
-     *
-     * @return a new tracker for this grid
-     */
+    @Override
     public DirtyTracker createDirtyTracker() {
         var tracker = new DirtyTracker(this);
         trackers.add(tracker);
@@ -137,38 +125,17 @@ public final class TerminalGrid {
         }
     }
 
-    /**
-     * Returns the glyph of a cell.
-     *
-     * @param x column
-     * @param y row
-     * @return the Unicode code point stored in the cell
-     * @throws IndexOutOfBoundsException if {@code (x, y)} is outside the grid
-     */
+    @Override
     public int getGlyph(int x, int y) {
         return glyphs[checkedIndexOf(x, y)];
     }
 
-    /**
-     * Returns the foreground color of a cell.
-     *
-     * @param x column
-     * @param y row
-     * @return the color as RGBA8888
-     * @throws IndexOutOfBoundsException if {@code (x, y)} is outside the grid
-     */
+    @Override
     public int getForeground(int x, int y) {
         return foregrounds[checkedIndexOf(x, y)];
     }
 
-    /**
-     * Returns the background color of a cell.
-     *
-     * @param x column
-     * @param y row
-     * @return the color as RGBA8888
-     * @throws IndexOutOfBoundsException if {@code (x, y)} is outside the grid
-     */
+    @Override
     public int getBackground(int x, int y) {
         return backgrounds[checkedIndexOf(x, y)];
     }

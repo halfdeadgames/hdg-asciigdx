@@ -40,6 +40,96 @@ class GridVertexCacheTest {
     }
 
     @Test
+    void translucentCountTracksWritesAndOverwrites() {
+        GridVertexCache cache = newCache();
+        assertEquals(0, cache.getTranslucentBackgroundCount());
+        cache.writeBackground(0, 0, 0xFF000080, 0f, 0f, 1f, 1f);
+        cache.writeBackground(1, 0, 0x00FF0001, 0f, 0f, 1f, 1f);
+        assertEquals(2, cache.getTranslucentBackgroundCount());
+        cache.writeBackground(0, 0, 0xFF000080, 0f, 0f, 1f, 1f);
+        assertEquals(2, cache.getTranslucentBackgroundCount());
+        cache.writeBackground(0, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
+        assertEquals(1, cache.getTranslucentBackgroundCount());
+        cache.writeBackground(1, 0, 0, 0f, 0f, 1f, 1f);
+        assertEquals(0, cache.getTranslucentBackgroundCount());
+    }
+
+    @Test
+    void translucentCountIgnoresZeroAlphaWithColor() {
+        GridVertexCache cache = newCache();
+        cache.writeBackground(2, 2, 0xFF000000, 0f, 0f, 1f, 1f);
+        assertEquals(0, cache.getTranslucentBackgroundCount());
+    }
+
+    @Test
+    void translucentCountSurvivesFullRewrite() {
+        GridVertexCache cache = newCache();
+        for (int pass = 0; pass < 2; pass++) {
+            for (int row = 0; row < ROWS; row++) {
+                for (int column = 0; column < COLUMNS; column++) {
+                    cache.writeBackground(column, row, 0x10203040, 0f, 0f, 1f, 1f);
+                }
+            }
+            assertEquals(COLUMNS * ROWS, cache.getTranslucentBackgroundCount());
+        }
+        for (int row = 0; row < ROWS; row++) {
+            for (int column = 0; column < COLUMNS; column++) {
+                cache.writeBackground(column, row, OPAQUE_RED, 0f, 0f, 1f, 1f);
+            }
+        }
+        assertEquals(0, cache.getTranslucentBackgroundCount());
+    }
+
+    @Test
+    void visibleCountsTrackWritesOverwritesAndClears() {
+        GridVertexCache cache = newCache();
+        assertEquals(0, cache.getVisibleBackgroundCount());
+        assertEquals(0, cache.getVisibleGlyphCount());
+
+        cache.writeBackground(0, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
+        cache.writeBackground(1, 0, 0x10203040, 0f, 0f, 1f, 1f);
+        cache.writeBackground(2, 0, 0xFF000000, 0f, 0f, 1f, 1f);
+        cache.writeGlyph(0, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
+        cache.writeGlyph(1, 0, 0xFF00FF00, 0f, 0f, 1f, 1f);
+        assertEquals(2, cache.getVisibleBackgroundCount());
+        assertEquals(1, cache.getVisibleGlyphCount());
+
+        cache.writeBackground(0, 0, 0x11223344, 0f, 0f, 1f, 1f);
+        cache.writeGlyph(0, 0, 0x11223344, 0f, 0f, 1f, 1f);
+        assertEquals(2, cache.getVisibleBackgroundCount());
+        assertEquals(1, cache.getVisibleGlyphCount());
+
+        cache.writeBackground(0, 0, 0, 0f, 0f, 1f, 1f);
+        cache.writeBackground(1, 0, 0, 0f, 0f, 1f, 1f);
+        cache.writeGlyph(0, 0, 0, 0f, 0f, 1f, 1f);
+        assertEquals(0, cache.getVisibleBackgroundCount());
+        assertEquals(0, cache.getVisibleGlyphCount());
+    }
+
+    @Test
+    void visibleCountsSurviveFullRewrite() {
+        GridVertexCache cache = newCache();
+        for (int pass = 0; pass < 2; pass++) {
+            for (int row = 0; row < ROWS; row++) {
+                for (int column = 0; column < COLUMNS; column++) {
+                    cache.writeBackground(column, row, OPAQUE_RED, 0f, 0f, 1f, 1f);
+                    cache.writeGlyph(column, row, OPAQUE_RED, 0f, 0f, 1f, 1f);
+                }
+            }
+            assertEquals(COLUMNS * ROWS, cache.getVisibleBackgroundCount());
+            assertEquals(COLUMNS * ROWS, cache.getVisibleGlyphCount());
+        }
+        for (int row = 0; row < ROWS; row++) {
+            for (int column = 0; column < COLUMNS; column++) {
+                cache.writeBackground(column, row, 0, 0f, 0f, 1f, 1f);
+                cache.writeGlyph(column, row, 0, 0f, 0f, 1f, 1f);
+            }
+        }
+        assertEquals(0, cache.getVisibleBackgroundCount());
+        assertEquals(0, cache.getVisibleGlyphCount());
+    }
+
+    @Test
     void constructorRejectsNonPositiveColumns() {
         assertThrows(IllegalArgumentException.class, () -> new GridVertexCache(0, 4, 8f, 12f));
         assertThrows(IllegalArgumentException.class, () -> new GridVertexCache(-1, 4, 8f, 12f));
@@ -100,16 +190,15 @@ class GridVertexCacheTest {
     }
 
     @Test
-    void screenPositionsFollowOriginAndVertexOrder() {
+    void positionsFollowVertexOrder() {
         GridVertexCache cache = newCache();
-        cache.setOrigin(10f, 100f);
         cache.writeBackground(2, 1, OPAQUE_RED, 0f, 0f, 1f, 1f);
 
         float[] slot = slotOf(cache.getBackgroundVertices(), 2, 1);
-        assertVertex(slot, 0, 26f, 76f, 0f, 1f);
-        assertVertex(slot, 1, 26f, 88f, 0f, 0f);
-        assertVertex(slot, 2, 34f, 88f, 1f, 0f);
-        assertVertex(slot, 3, 34f, 76f, 1f, 1f);
+        assertVertex(slot, 0, 16f, -24f, 0f, 1f);
+        assertVertex(slot, 1, 16f, -12f, 0f, 0f);
+        assertVertex(slot, 2, 24f, -12f, 1f, 0f);
+        assertVertex(slot, 3, 24f, -24f, 1f, 1f);
     }
 
     @Test
@@ -144,19 +233,17 @@ class GridVertexCacheTest {
     @Test
     void zeroRgbaWritesZeroAreaQuadAtBottomLeft() {
         GridVertexCache cache = newCache();
-        cache.setOrigin(10f, 100f);
         cache.writeBackground(2, 1, 0, 0.1f, 0.2f, 0.3f, 0.4f);
 
-        assertDegenerateAt(slotOf(cache.getBackgroundVertices(), 2, 1), 26f, 76f);
+        assertDegenerateAt(slotOf(cache.getBackgroundVertices(), 2, 1), 16f, -24f);
     }
 
     @Test
     void zeroAlphaWithRgbWritesZeroAreaQuadWithZeroColor() {
         GridVertexCache cache = newCache();
-        cache.setOrigin(10f, 100f);
         cache.writeGlyph(2, 1, 0xFF00FF00, 0.1f, 0.2f, 0.3f, 0.4f);
 
-        assertDegenerateAt(slotOf(cache.getGlyphVertices(), 2, 1), 26f, 76f);
+        assertDegenerateAt(slotOf(cache.getGlyphVertices(), 2, 1), 16f, -24f);
     }
 
     private static void assertDegenerateAt(float[] slot, float x, float y) {
@@ -182,7 +269,6 @@ class GridVertexCacheTest {
     @Test
     void rewritingOneCellLeavesNeighborsUntouched() {
         GridVertexCache cache = newCache();
-        cache.setOrigin(0f, 50f);
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 cache.writeGlyph(column, row, OPAQUE_RED, 0f, 0f, 1f, 1f);
@@ -225,9 +311,6 @@ class GridVertexCacheTest {
 
         cache.markRebuilt();
         assertFalse(cache.isFullRebuildNeeded());
-
-        cache.setOrigin(1f, 2f);
-        assertTrue(cache.isFullRebuildNeeded());
     }
 
     @Test
@@ -236,23 +319,6 @@ class GridVertexCacheTest {
         cache.markRebuilt();
         cache.writeGlyph(0, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
         assertFalse(cache.isFullRebuildNeeded());
-    }
-
-    @Test
-    void changingOriginAndRewritingMovesPositions() {
-        GridVertexCache cache = newCache();
-        cache.setOrigin(0f, 100f);
-        cache.writeGlyph(1, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
-        float[] slot = slotOf(cache.getGlyphVertices(), 1, 0);
-        assertVertex(slot, 0, 8f, 88f, 0f, 1f);
-
-        cache.setOrigin(20f, 200f);
-        cache.writeGlyph(1, 0, OPAQUE_RED, 0f, 0f, 1f, 1f);
-        slot = slotOf(cache.getGlyphVertices(), 1, 0);
-        assertVertex(slot, 0, 28f, 188f, 0f, 1f);
-        assertVertex(slot, 1, 28f, 200f, 0f, 0f);
-        assertVertex(slot, 2, 36f, 200f, 1f, 0f);
-        assertVertex(slot, 3, 36f, 188f, 1f, 1f);
     }
 
     @Test

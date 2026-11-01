@@ -153,6 +153,57 @@ class CaptureConfigTest {
     }
 
     @Test
+    void layersDefaultToNoSweep() {
+        assertTrue(parse(CaptureConfig.KEY_CAPTURE, "out").getLayerCounts().isEmpty());
+    }
+
+    @Test
+    void layerCountsAreTrimmedAndKeepOrder() {
+        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, " 4, 1,8 ,2");
+
+        assertEquals(List.of(4, 1, 8, 2), config.getLayerCounts());
+    }
+
+    @Test
+    void nonNumericLayersThrow() {
+        assertThrows(IllegalArgumentException.class,
+            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,abc"));
+    }
+
+    @Test
+    void emptyLayersEntryThrows() {
+        assertThrows(IllegalArgumentException.class,
+            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,,2"));
+    }
+
+    @Test
+    void zeroLayersThrow() {
+        assertThrows(IllegalArgumentException.class,
+            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "0"));
+    }
+
+    @Test
+    void negativeLayersThrow() {
+        assertThrows(IllegalArgumentException.class,
+            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "-1"));
+    }
+
+    @Test
+    void layersAboveMaximumThrowWithClearMessage() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "9"));
+
+        assertTrue(error.getMessage().contains("'layers'") && error.getMessage().contains("between 1 and 8"));
+    }
+
+    @Test
+    void layerListIsUnmodifiable() {
+        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "2");
+
+        assertThrows(UnsupportedOperationException.class, () -> config.getLayerCounts().add(4));
+    }
+
+    @Test
     void dirtyListIsUnmodifiable() {
         CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10");
 

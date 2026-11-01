@@ -19,11 +19,13 @@ final class GridMesh implements Disposable {
     private final int quadCount;
     private final Mesh[] backgroundChunks;
     private final Mesh[] glyphChunks;
-    private final ShaderProgram shader = SpriteBatch.createDefaultShader();
+    private final ShaderProgram shader;
     private final Matrix4 combinedMatrix = new Matrix4();
 
-    GridMesh(int quadCount) {
+    /** The shader is shared and not owned; it is not disposed with the mesh. */
+    GridMesh(int quadCount, ShaderProgram shader) {
         this.quadCount = quadCount;
+        this.shader = shader;
         int chunkCount = GridVertexLayout.chunkCountFor(quadCount);
         short[] indices = createQuadIndices(Math.min(quadCount, GridVertexLayout.MAX_QUADS_PER_MESH));
         backgroundChunks = createChunks(chunkCount, indices);
@@ -71,24 +73,45 @@ final class GridMesh implements Disposable {
 
     /**
      * Draws all backgrounds, then all glyphs, using the batch's projection,
-     * transform, and blending. The batch must be begun. Leaves the batch's shader bound.
+     * transform, and blending, translated by the given offset and multiplied by the
+     * tint. The batch must be begun. Leaves the batch's shader bound.
      */
-    void draw(SpriteBatch batch, Texture backgroundTexture, Texture glyphTexture) {
+    void draw(SpriteBatch batch, Texture backgroundTexture, Texture glyphTexture, float offsetX, float offsetY,
+            float tintR, float tintG, float tintB, float tintA, boolean backgroundsOpaque,
+            boolean drawBackgrounds, boolean drawGlyphs) {
+        if (!drawBackgrounds && !drawGlyphs) {
+            return;
+        }
         batch.flush();
-        if (batch.isBlendingEnabled()) {
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFuncSeparate(batch.getBlendSrcFunc(), batch.getBlendDstFunc(),
-                    batch.getBlendSrcFuncAlpha(), batch.getBlendDstFuncAlpha());
+        boolean blending = batch.isBlendingEnabled();
+        boolean skipBackgroundBlend = blending && backgroundsOpaque && tintA == 1f;
+        if (blending && !skipBackgroundBlend) {
+            applyBatchBlend(batch);
         } else {
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
-        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix());
+        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix())
+                .translate(offsetX, offsetY, 0f);
         shader.bind();
         shader.setUniformMatrix("u_projTrans", combinedMatrix);
         shader.setUniformi("u_texture", 0);
-        renderChunks(backgroundChunks, backgroundTexture);
-        renderChunks(glyphChunks, glyphTexture);
+        shader.setUniformf("u_tint", tintR, tintG, tintB, tintA);
+        if (drawBackgrounds) {
+            renderChunks(backgroundChunks, backgroundTexture);
+        }
+        if (skipBackgroundBlend) {
+            applyBatchBlend(batch);
+        }
+        if (drawGlyphs) {
+            renderChunks(glyphChunks, glyphTexture);
+        }
         batch.getShader().bind();
+    }
+
+    private static void applyBatchBlend(SpriteBatch batch) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFuncSeparate(batch.getBlendSrcFunc(), batch.getBlendDstFunc(),
+                batch.getBlendSrcFuncAlpha(), batch.getBlendDstFuncAlpha());
     }
 
     private void renderChunks(Mesh[] chunks, Texture texture) {
@@ -105,6 +128,5 @@ final class GridMesh implements Disposable {
             backgroundChunks[chunk].dispose();
             glyphChunks[chunk].dispose();
         }
-        shader.dispose();
     }
 }

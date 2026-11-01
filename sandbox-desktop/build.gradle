@@ -70,6 +70,7 @@ run {
       if (project.hasProperty('samples')) systemProperty 'asciigdx.samples', project.property('samples')
       if (project.hasProperty('sampleSeconds')) systemProperty 'asciigdx.sampleSeconds', project.property('sampleSeconds')
       if (project.hasProperty('dirty')) systemProperty 'asciigdx.dirty', project.property('dirty')
+      if (project.hasProperty('layers')) systemProperty 'asciigdx.layers', project.property('layers')
       println "Capture output: ${captureDirectory.absolutePath}"
     }
   }

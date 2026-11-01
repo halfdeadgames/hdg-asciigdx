@@ -1,7 +1,5 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -10,15 +8,18 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
 import com.github.halfdeadgames.asciigdx.grid.DirtyTracker;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * Draws a {@link TerminalGrid} with a {@link GlyphSource} into a caller-managed
+ * Draws a {@link TerminalView} with a {@link GlyphSource} into a caller-managed
  * {@link SpriteBatch}: all cell backgrounds first, then all glyphs.
  *
  * <p>Vertices are kept in a {@link GridVertexCache} and mirrored in GPU meshes.
  * Each frame only the cells changed since the last draw are rewritten in the
- * cache; if any changed, the meshes are re-uploaded. Moving the draw position
- * rewrites every cell. Drawing flushes the batch and renders the meshes with
+ * cache; if any changed, the meshes are re-uploaded. Vertices are built around
+ * a fixed origin and the draw position is applied as a translation on the GPU
+ * matrix, so moving the draw position is free (no vertex rewrite or upload).
+ * Position values are used as given, without rounding. Drawing flushes the batch and renders the meshes with
  * their own shader, then rebinds the batch's shader. The renderer owns a
  * {@link DirtyTracker} on the grid and releases it on {@link #dispose()}.
  *
@@ -28,36 +29,43 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
  *
  * <p>The grid and glyph source are not owned and are not disposed.
  */
-public final class GridRenderer implements Disposable {
+public final class GridRenderer implements Disposable, LayerRenderer {
 
-    private final TerminalGrid grid;
+    private final TerminalView grid;
     private final GlyphSource glyphSource;
+    private final GridRenderResources resources;
+    private final boolean ownsResources;
     private final Texture whitePixel;
     private final Texture glyphTexture;
     private final DirtyTracker tracker;
     private final GridVertexCache cache;
     private final GridMesh mesh;
     private final DirtyCellVisitor cellWriter = this::writeCell;
-    private float lastX;
-    private float lastY;
 
     /**
      * @param grid the grid to draw
      * @param glyphSource supplies glyph regions and the cell size
      */
-    public GridRenderer(TerminalGrid grid, GlyphSource glyphSource) {
+    public GridRenderer(TerminalView grid, GlyphSource glyphSource) {
+        this(grid, glyphSource, new GridRenderResources(), true);
+    }
+
+    GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources) {
+        this(grid, glyphSource, resources, false);
+    }
+
+    private GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources,
+            boolean ownsResources) {
         this.grid = grid;
         this.glyphSource = glyphSource;
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        whitePixel = new Texture(pixmap);
-        pixmap.dispose();
+        this.resources = resources;
+        this.ownsResources = ownsResources;
+        whitePixel = resources.getWhitePixel();
         glyphTexture = glyphSource.glyph(' ').getTexture();
         tracker = grid.createDirtyTracker();
         cache = new GridVertexCache(grid.getWidth(), grid.getHeight(),
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
-        mesh = new GridMesh(grid.getWidth() * grid.getHeight());
+        mesh = new GridMesh(grid.getWidth() * grid.getHeight(), resources.getShader());
     }
 
     /**
@@ -69,10 +77,17 @@ public final class GridRenderer implements Disposable {
      * @param y screen y of the grid's top-left corner (y grows upward)
      */
     public void draw(SpriteBatch batch, float x, float y) {
-        if (cache.isFullRebuildNeeded() || x != lastX || y != lastY) {
-            lastX = x;
-            lastY = y;
-            cache.setOrigin(x, y);
+        draw(batch, x, y, 1f, 1f, 1f, 1f);
+    }
+
+    /**
+     * Draws the grid like {@link #draw(SpriteBatch, float, float)}, multiplying
+     * every cell color by the tint on the GPU. Changing the tint costs no vertex
+     * rewrite or upload.
+     */
+    @Override
+    public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
+        if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getHeight(); row++) {
                 for (int column = 0; column < grid.getWidth(); column++) {
                     writeCell(column, row);
@@ -86,7 +101,9 @@ public final class GridRenderer implements Disposable {
             tracker.clear();
             mesh.upload(cache.getBackgroundVertices(), cache.getGlyphVertices());
         }
-        mesh.draw(batch, whitePixel, glyphTexture);
+        mesh.draw(batch, whitePixel, glyphTexture, x, y, tintR, tintG, tintB, tintA,
+                cache.getTranslucentBackgroundCount() == 0,
+                cache.getVisibleBackgroundCount() > 0, cache.getVisibleGlyphCount() > 0);
     }
 
     private static boolean isBlankGlyph(int codePoint, int foreground) {
@@ -105,11 +122,16 @@ public final class GridRenderer implements Disposable {
         cache.writeGlyph(column, row, foreground, region.getU(), region.getV(), region.getU2(), region.getV2());
     }
 
-    /** Releases the dirty tracker and frees the meshes, shader, and background texture. */
+    /**
+     * Releases the dirty tracker and frees the meshes. The shader and background
+     * texture are freed only if this renderer created them.
+     */
     @Override
     public void dispose() {
         tracker.release();
         mesh.dispose();
-        whitePixel.dispose();
+        if (ownsResources) {
+            resources.dispose();
+        }
     }
 }

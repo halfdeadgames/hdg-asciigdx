@@ -8,8 +8,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.GridRenderer;
 import com.github.halfdeadgames.asciigdx.render.IntegerScaling;
+import com.github.halfdeadgames.asciigdx.render.LayerStack;
 
 /** A scene made of one integer-scaled grid. Subclasses fill the grid and may change it in {@link #update(float)}. */
 abstract class GridScene implements SandboxScene {
@@ -21,11 +21,11 @@ abstract class GridScene implements SandboxScene {
 
     protected final TerminalGrid grid;
     protected final ScalingViewport viewport;
-    private final GridRenderer renderer;
+    protected final LayerStack layers = new LayerStack();
 
     GridScene(GlyphSource glyphs, int columns, int rows) {
         grid = new TerminalGrid(columns, rows);
-        renderer = new GridRenderer(grid, glyphs);
+        layers.add(grid, glyphs);
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
             columns * glyphs.getCellWidth(), rows * glyphs.getCellHeight());
     }
@@ -62,7 +62,7 @@ abstract class GridScene implements SandboxScene {
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
-        renderer.draw(batch, 0, viewport.getWorldHeight());
+        layers.draw(batch, 0, viewport.getWorldHeight());
         batch.end();
     }
 
@@ -80,7 +80,7 @@ abstract class GridScene implements SandboxScene {
 
     @Override
     public void dispose() {
-        renderer.dispose();
+        layers.dispose();
     }
 
     @Override

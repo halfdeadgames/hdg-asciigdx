@@ -34,7 +34,10 @@ class CaptureScript {
     private final int[] sceneOrder;
     private int visitPosition;
     private final List<Integer> dirtyPercents;
+    private final List<Integer> layerCounts;
     private int sweepIndex = NOT_SWEEPING;
+    private List<Integer> sceneLayerCounts;
+    private List<Integer> sceneDirtyPercents;
 
     /** @throws IllegalArgumentException when the config names a scene id that is not registered */
     CaptureScript(SandboxApp app, ScreenCapture capture, CaptureConfig config) {
@@ -43,6 +46,7 @@ class CaptureScript {
         this.sampleSeconds = config.getSampleSeconds();
         this.sampleMeansMs = new float[config.getSamples()];
         this.dirtyPercents = config.getDirtyPercents();
+        this.layerCounts = config.getLayerCounts();
         this.sceneOrder = resolveSceneOrder(app, config);
     }
 
@@ -108,7 +112,7 @@ class CaptureScript {
                 }
             }
             case SAVING -> {
-                if (isSweeping() && sweepIndex + 1 < dirtyPercents.size()) {
+                if (isSweeping() && sweepIndex + 1 < sweepStepCount()) {
                     startSweepStep(sweepIndex + 1);
                 } else {
                     openNextScene();
@@ -145,9 +149,8 @@ class CaptureScript {
     private void finishMeasuring() {
         SandboxScene scene = app.getScene(sceneIndex);
         if (isSweeping()) {
-            int percent = dirtyPercents.get(sweepIndex);
-            capture.requestScreenshot(scene.id() + "@" + percent + ".png");
-            appendPerf(scene, scene.id() + "@" + percent + "%");
+            capture.requestScreenshot(scene.id() + sweepSuffix("") + ".png");
+            appendPerf(scene, scene.id() + sweepSuffix("%"));
             phase = Phase.SAVING;
             return;
         }
@@ -177,11 +180,35 @@ class CaptureScript {
         sceneIndex = sceneOrder[position];
         app.openScene(sceneIndex);
         sweepIndex = NOT_SWEEPING;
-        if (!dirtyPercents.isEmpty() && app.getScene(sceneIndex).supportsDirtyPercent()) {
+        SandboxScene scene = app.getScene(sceneIndex);
+        sceneLayerCounts = !layerCounts.isEmpty() && scene.supportsLayerCount() ? layerCounts : null;
+        sceneDirtyPercents = !dirtyPercents.isEmpty() && scene.supportsDirtyPercent() ? dirtyPercents : null;
+        if (sceneLayerCounts != null || sceneDirtyPercents != null) {
             startSweepStep(0);
             return;
         }
         beginWarmUp();
+    }
+
+    private int sweepStepCount() {
+        return (sceneLayerCounts == null ? 1 : sceneLayerCounts.size())
+            * (sceneDirtyPercents == null ? 1 : sceneDirtyPercents.size());
+    }
+
+    /** Label tail such as "@L2", "@10" or "@L2@10"; dirtyUnit is appended after the dirty number. */
+    private String sweepSuffix(String dirtyUnit) {
+        StringBuilder suffix = new StringBuilder();
+        if (sceneLayerCounts != null) {
+            suffix.append("@L").append(sceneLayerCounts.get(sweepIndex / dirtyStepCount()));
+        }
+        if (sceneDirtyPercents != null) {
+            suffix.append('@').append(sceneDirtyPercents.get(sweepIndex % dirtyStepCount())).append(dirtyUnit);
+        }
+        return suffix.toString();
+    }
+
+    private int dirtyStepCount() {
+        return sceneDirtyPercents == null ? 1 : sceneDirtyPercents.size();
     }
 
     private boolean isSweeping() {
@@ -190,7 +217,13 @@ class CaptureScript {
 
     private void startSweepStep(int index) {
         sweepIndex = index;
-        app.getScene(sceneIndex).setDirtyPercent(dirtyPercents.get(index));
+        SandboxScene scene = app.getScene(sceneIndex);
+        if (sceneLayerCounts != null) {
+            scene.setLayerCount(sceneLayerCounts.get(index / dirtyStepCount()));
+        }
+        if (sceneDirtyPercents != null) {
+            scene.setDirtyPercent(sceneDirtyPercents.get(index % dirtyStepCount()));
+        }
         app.refreshStatus();
         beginWarmUp();
     }

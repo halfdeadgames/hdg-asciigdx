@@ -12,6 +12,8 @@ public final class CaptureConfig {
     public static final String KEY_SAMPLES = "samples";
     public static final String KEY_SAMPLE_SECONDS = "sampleSeconds";
     public static final String KEY_DIRTY = "dirty";
+    public static final String KEY_LAYERS = "layers";
+    public static final int MAX_LAYER_COUNT = 8;
     public static final int DEFAULT_SAMPLES = 5;
     public static final float DEFAULT_SAMPLE_SECONDS = 0.5f;
     private static final int MAX_DIRTY_PERCENT = 100;
@@ -21,9 +23,11 @@ public final class CaptureConfig {
     private final int samples;
     private final float sampleSeconds;
     private final List<Integer> dirtyPercents;
+    private final List<Integer> layerCounts;
 
     public CaptureConfig(String outputDirectory, List<String> sceneIds, int samples, float sampleSeconds,
-                         List<Integer> dirtyPercents) {
+                         List<Integer> dirtyPercents, List<Integer> layerCounts) {
+        this.layerCounts = Collections.unmodifiableList(new ArrayList<>(layerCounts));
         this.outputDirectory = outputDirectory;
         this.sceneIds = Collections.unmodifiableList(new ArrayList<>(sceneIds));
         this.samples = samples;
@@ -35,7 +39,7 @@ public final class CaptureConfig {
      * Returns null when capture mode is off (no "capture" value).
      *
      * @param lookup returns the value for a key, or null when missing
-     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds" or "dirty" holds an invalid value
+     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds", "dirty" or "layers" holds an invalid value
      */
     public static CaptureConfig fromSettings(Function<String, String> lookup) {
         String outputDirectory = lookup.apply(KEY_CAPTURE);
@@ -44,7 +48,28 @@ public final class CaptureConfig {
         }
         return new CaptureConfig(outputDirectory, parseSceneIds(lookup.apply(KEY_SCENES)),
             parseSamples(lookup.apply(KEY_SAMPLES)), parseSampleSeconds(lookup.apply(KEY_SAMPLE_SECONDS)),
-            parseDirtyPercents(lookup.apply(KEY_DIRTY)));
+            parseDirtyPercents(lookup.apply(KEY_DIRTY)), parseLayerCounts(lookup.apply(KEY_LAYERS)));
+    }
+
+    private static List<Integer> parseLayerCounts(String value) {
+        List<Integer> counts = new ArrayList<>();
+        if (value == null || value.trim().isEmpty()) {
+            return counts;
+        }
+        for (String part : value.split(",", -1)) {
+            String text = part.trim();
+            int count;
+            try {
+                count = Integer.parseInt(text);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid value for '" + KEY_LAYERS + "': '" + text + "' is not a whole number", e);
+            }
+            if (count < 1 || count > MAX_LAYER_COUNT) {
+                throw new IllegalArgumentException("Invalid value for '" + KEY_LAYERS + "': " + count + " must be between 1 and " + MAX_LAYER_COUNT);
+            }
+            counts.add(count);
+        }
+        return counts;
     }
 
     private static List<Integer> parseDirtyPercents(String value) {
@@ -127,6 +152,11 @@ public final class CaptureConfig {
     /** Dirty percentages to sweep in order; empty means no sweep. */
     public List<Integer> getDirtyPercents() {
         return dirtyPercents;
+    }
+
+    /** Layer counts to sweep in order; empty means no sweep. */
+    public List<Integer> getLayerCounts() {
+        return layerCounts;
     }
 
     /** Number of timing windows collected per scene after warm-up. */
