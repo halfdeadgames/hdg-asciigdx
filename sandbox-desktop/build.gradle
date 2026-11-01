@@ -82,11 +82,13 @@ tasks.register('exportSheet', JavaExec) {
   mainClass = 'com.github.halfdeadgames.asciigdx.sandbox.desktop.SheetExporter'
   jvmArgs += "--enable-native-access=ALL-UNNAMED"
   def exportDirectory = rootProject.layout.buildDirectory.dir('exports').get().asFile
+  def commandLineProperties = gradle.startParameter.projectProperties
   doFirst {
     exportDirectory.mkdirs()
     systemProperty 'asciigdx.export.output', exportDirectory.absolutePath
+    // Only -P values: project.hasProperty also sees tasks such as 'assemble'.
     ['font', 'cellHeight', 'chars', 'columns', 'sheetName', 'generated', 'assemble'].each { key ->
-      if (project.hasProperty(key)) systemProperty "asciigdx.export.$key", project.property(key)
+      if (commandLineProperties.containsKey(key)) systemProperty "asciigdx.export.$key", commandLineProperties[key]
     }
   }
 }
