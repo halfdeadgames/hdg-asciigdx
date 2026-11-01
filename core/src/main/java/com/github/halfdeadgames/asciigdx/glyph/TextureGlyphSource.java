@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import java.util.Objects;
+import java.util.function.IntPredicate;
 
 /**
  * A {@link GlyphSource} backed by a single sheet image uploaded as one {@link Texture}.
@@ -27,21 +28,27 @@ public final class TextureGlyphSource implements GlyphSource {
     private final GlyphOrder order;
     private final TextureRegion[] regionsBySlot;
     private final TextureRegion fallbackRegion;
+    private final IntPredicate presentInSheet;
     private final int cellWidth;
     private final int cellHeight;
     private boolean disposed;
 
-    private TextureGlyphSource(Texture texture, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot) {
+    private TextureGlyphSource(
+        Texture texture, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot, IntPredicate presentInSheet) {
         this.texture = texture;
         this.order = order;
+        this.presentInSheet = presentInSheet;
         cellWidth = layout.getCellWidth();
         cellHeight = layout.getCellHeight();
         regionsBySlot = new TextureRegion[order.size()];
+        TextureRegion fallback = new TextureRegion(
+            texture, layout.slotX(fallbackSlot), layout.slotY(fallbackSlot), cellWidth, cellHeight);
         for (int slot = 0; slot < regionsBySlot.length; slot++) {
-            regionsBySlot[slot] = new TextureRegion(
-                texture, layout.slotX(slot), layout.slotY(slot), cellWidth, cellHeight);
+            regionsBySlot[slot] = presentInSheet.test(order.codePointAt(slot))
+                ? new TextureRegion(texture, layout.slotX(slot), layout.slotY(slot), cellWidth, cellHeight)
+                : fallback;
         }
-        fallbackRegion = regionsBySlot[fallbackSlot];
+        fallbackRegion = fallback;
     }
 
     /**
@@ -120,17 +127,70 @@ public final class TextureGlyphSource implements GlyphSource {
                 convertToWhiteWithAlpha(pixmap, key);
             }
 
-            Texture texture = new Texture(pixmap, false);
-            try {
-                texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-                texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
-                return new TextureGlyphSource(texture, layout, order, fallbackSlot);
-            } catch (RuntimeException e) {
-                texture.dispose();
-                throw e;
-            }
+            return upload(pixmap, layout, order, fallbackSlot, codePoint -> true);
         } finally {
             pixmap.dispose();
+        }
+    }
+
+    /**
+     * Uploads a sheet that is already in memory, such as one baked from a TTF, and cuts it into
+     * glyph regions. No color conversion is done: glyphs should already be white with alpha.
+     *
+     * <p>Takes ownership of {@code sheet} and disposes it, also when this method throws.
+     *
+     * @param sheet the sheet image
+     * @param layout where the glyph cells are in the image
+     * @param order which code point each slot holds
+     * @param presentInSheet tells which code points of the order really have a glyph in the
+     *        sheet; the others draw the fallback and {@link #hasGlyph(int)} reports them as missing
+     * @param fallbackCodePoint code point whose glyph stands in for missing ones; must be in the
+     *        order and present in the sheet
+     * @return the loaded source
+     * @throws IllegalArgumentException if the image is smaller than the layout needs, the order has
+     *         more glyphs than the layout has slots, or the fallback is missing
+     */
+    public static TextureGlyphSource fromPixmap(
+        Pixmap sheet, GlyphSheetLayout layout, GlyphOrder order, IntPredicate presentInSheet, int fallbackCodePoint) {
+        try {
+            Objects.requireNonNull(sheet, "sheet must not be null");
+            Objects.requireNonNull(layout, "layout must not be null");
+            Objects.requireNonNull(order, "order must not be null");
+            Objects.requireNonNull(presentInSheet, "presentInSheet must not be null");
+            if (order.size() > layout.slotCount()) {
+                throw new IllegalArgumentException(
+                    "Order has " + order.size() + " glyphs but the layout has only "
+                        + layout.slotCount() + " slots");
+            }
+            int fallbackSlot = order.slotOf(fallbackCodePoint);
+            if (fallbackSlot < 0 || !presentInSheet.test(fallbackCodePoint)) {
+                throw new IllegalArgumentException(
+                    "Sheet has no glyph for fallback code point " + fallbackCodePoint);
+            }
+            if (sheet.getWidth() < layout.requiredImageWidth() || sheet.getHeight() < layout.requiredImageHeight()) {
+                throw new IllegalArgumentException(
+                    "Sheet is " + sheet.getWidth() + "x" + sheet.getHeight()
+                        + " but the layout needs at least " + layout.requiredImageWidth()
+                        + "x" + layout.requiredImageHeight());
+            }
+            return upload(sheet, layout, order, fallbackSlot, presentInSheet);
+        } finally {
+            if (sheet != null) {
+                sheet.dispose();
+            }
+        }
+    }
+
+    private static TextureGlyphSource upload(
+        Pixmap pixmap, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot, IntPredicate presentInSheet) {
+        Texture texture = new Texture(pixmap, false);
+        try {
+            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
+            return new TextureGlyphSource(texture, layout, order, fallbackSlot, presentInSheet);
+        } catch (RuntimeException e) {
+            texture.dispose();
+            throw e;
         }
     }
 
@@ -180,7 +240,7 @@ public final class TextureGlyphSource implements GlyphSource {
 
     @Override
     public boolean hasGlyph(int codePoint) {
-        return order.contains(codePoint);
+        return order.contains(codePoint) && presentInSheet.test(codePoint);
     }
 
     /**
