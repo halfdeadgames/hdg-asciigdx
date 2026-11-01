@@ -38,6 +38,29 @@ final class GlyphShowcaseScene extends GridScene {
     private static final float SECONDS_PER_METER_STAGE = 0.4f;
     private static final int ANIMATED_METER_COLUMN = PANEL + 20;
 
+    private static final int HOURGLASS_START = 0xE0E0;
+    private static final int HOURGLASS_STAGE_COUNT = 5;
+    private static final int SAND = 0xD2B48CFF;
+    private static final float SECONDS_PER_DRAIN_STAGE = 0.8f;
+    private static final float SECONDS_PER_FLIP_FRAME = 0.09f;
+
+    private record TimelineFrame(int codePoint, float seconds) {
+    }
+
+    // Drains stage by stage, holds when empty on top, flips quickly, then starts over.
+    private static final TimelineFrame[] HOURGLASS_TIMELINE = {
+        new TimelineFrame(HOURGLASS_START, SECONDS_PER_DRAIN_STAGE),
+        new TimelineFrame(HOURGLASS_START + 1, SECONDS_PER_DRAIN_STAGE),
+        new TimelineFrame(HOURGLASS_START + 2, SECONDS_PER_DRAIN_STAGE),
+        new TimelineFrame(HOURGLASS_START + 3, SECONDS_PER_DRAIN_STAGE),
+        new TimelineFrame(HOURGLASS_START + 4, 1.2f),
+        new TimelineFrame(HOURGLASS_START + 5, SECONDS_PER_FLIP_FRAME),
+        new TimelineFrame(HOURGLASS_START + 6, SECONDS_PER_FLIP_FRAME),
+        new TimelineFrame(HOURGLASS_START + 7, SECONDS_PER_FLIP_FRAME),
+    };
+
+    private int hourglassRow;
+    private int hourglassShownCodePoint;
     private int[][] meterStages = new int[0][];
     private int[] meterColors = new int[0];
     private int[] meterRows = new int[0];
@@ -69,9 +92,9 @@ final class GlyphShowcaseScene extends GridScene {
         writeCards(1);
         writeChess(5);
         writeMeters(15);
-        writeDice(21);
-        writeShadeStrips(24);
-        writeSphere(31);
+        writeDice(22);
+        writeShadeStrips(25);
+        writeSphere(32);
         super.show();
     }
 
@@ -122,6 +145,26 @@ final class GlyphShowcaseScene extends GridScene {
                 grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage], meterColors[meter], CLEAR);
             }
         }
+        int hourglass = hourglassCodePointAt(meterClock);
+        if (hourglass != hourglassShownCodePoint) {
+            hourglassShownCodePoint = hourglass;
+            grid.set(ANIMATED_METER_COLUMN, hourglassRow, hourglass, SAND, CLEAR);
+        }
+    }
+
+    private static int hourglassCodePointAt(float seconds) {
+        float loopSeconds = 0f;
+        for (TimelineFrame frame : HOURGLASS_TIMELINE) {
+            loopSeconds += frame.seconds();
+        }
+        float remaining = seconds % loopSeconds;
+        for (TimelineFrame frame : HOURGLASS_TIMELINE) {
+            if (remaining < frame.seconds()) {
+                return frame.codePoint();
+            }
+            remaining -= frame.seconds();
+        }
+        return HOURGLASS_TIMELINE[0].codePoint();
     }
 
     // Counts 0..n-1 then n-1..0, so each end shows for two steps as a short rest.
@@ -152,6 +195,12 @@ final class GlyphShowcaseScene extends GridScene {
             }
             grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0], meterColors[meter], CLEAR);
         }
+        hourglassRow = top + 1 + meterStages.length;
+        for (int stage = 0; stage < HOURGLASS_STAGE_COUNT; stage++) {
+            grid.set(PANEL + stage * 2, hourglassRow, HOURGLASS_START + stage, SAND, CLEAR);
+        }
+        hourglassShownCodePoint = HOURGLASS_START;
+        grid.set(ANIMATED_METER_COLUMN, hourglassRow, HOURGLASS_START, SAND, CLEAR);
     }
 
     private void writeDice(int top) {
