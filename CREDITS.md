@@ -8,7 +8,7 @@ Third-party assets bundled with HDG-AsciiGDX.
 |---|---|---|---|
 | [dungeon.mode](https://datagoblin.itch.io/dungeonmode) | datagoblin | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` |
 
-The folder holds the CP437 PNG sheet and both TTFs (regular and inverted). dungeon.mode is the default and fallback font. CC0 does not require credit, but it is given here with thanks.
+The folder holds the CP437 PNG sheet, both TTFs (regular and inverted), and the extended default sheet. The extended sheet adds glyphs drawn for this project (quadrant shades, bars, card and chess glyphs, and more), which are also released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), so the whole sheet can be reused freely. dungeon.mode is the default and fallback font. CC0 does not require credit, but it is given here with thanks.
 
 ## Libraries
 

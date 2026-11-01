@@ -81,6 +81,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
         scenes.add(new FontComparisonScene(glyphs));
+        scenes.add(new GlyphShowcaseScene(glyphs));
     }
 
     private boolean handleKey(int keycode) {

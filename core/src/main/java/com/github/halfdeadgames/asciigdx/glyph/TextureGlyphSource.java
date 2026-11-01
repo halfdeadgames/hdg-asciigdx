@@ -21,8 +21,7 @@ public final class TextureGlyphSource implements GlyphSource {
     /** Fallback code point used by the short {@code load} overload. */
     public static final int DEFAULT_FALLBACK_CODE_POINT = '?';
 
-    private static final String DUNGEON_MODE_PATH =
-        "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/dungeon-437.png";
+    private static final String DUNGEON_MODE_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
 
     private final Texture texture;
     private final GlyphOrder order;
@@ -101,12 +100,72 @@ public final class TextureGlyphSource implements GlyphSource {
                 "Order has no glyph for fallback code point " + fallbackCodePoint);
         }
 
-        Pixmap pixmap = new Pixmap(file);
+        return convertAndUpload(new Pixmap(file), file.path(), layout, order, mode, keyRgba8888OrNull, fallbackSlot);
+    }
+
+    /**
+     * Loads a sheet image together with its character list, the {@code .txt} file that names
+     * the glyph in each cell (see {@link GlyphOrderText}). The number of columns is the image
+     * width divided by the cell width; the last row may be partly empty. Missing glyphs draw
+     * {@code '?'}, which the character list must contain.
+     *
+     * @param image the sheet image
+     * @param characterList the character list, UTF-8
+     * @param cellWidth width of one cell in pixels, must be positive
+     * @param cellHeight height of one cell in pixels, must be positive
+     * @param mode whether to convert the image to white glyphs with alpha
+     * @return the loaded source
+     * @throws IllegalArgumentException if a cell size is not positive, the image is narrower than
+     *         one cell, the character list is malformed or does not fit the image, or it lacks
+     *         {@code '?'}
+     */
+    public static TextureGlyphSource loadSheet(
+        FileHandle image, FileHandle characterList, int cellWidth, int cellHeight, TransparencyMode mode) {
+        Objects.requireNonNull(image, "image must not be null");
+        Objects.requireNonNull(characterList, "characterList must not be null");
+        Objects.requireNonNull(mode, "mode must not be null");
+        if (cellWidth <= 0 || cellHeight <= 0) {
+            throw new IllegalArgumentException("Cell size must be positive, was " + cellWidth + "x" + cellHeight);
+        }
+        String text = characterList.readString("UTF-8");
+        Pixmap pixmap = new Pixmap(image);
+        GlyphSheetLayout layout;
+        GlyphOrder order;
+        int fallbackSlot;
+        try {
+            int columns = pixmap.getWidth() / cellWidth;
+            if (columns == 0) {
+                throw new IllegalArgumentException(
+                    "Image " + image.path() + " is narrower than one " + cellWidth + " pixel cell");
+            }
+            order = GlyphOrderText.read(text, columns);
+            layout = GlyphSheetLayout.grid(cellWidth, cellHeight, columns, (order.size() + columns - 1) / columns);
+            fallbackSlot = order.slotOf(DEFAULT_FALLBACK_CODE_POINT);
+            if (fallbackSlot < 0) {
+                throw new IllegalArgumentException(
+                    "Character list " + characterList.path() + " has no '?' to use as the fallback glyph");
+            }
+        } catch (RuntimeException e) {
+            pixmap.dispose();
+            throw e;
+        }
+        return convertAndUpload(pixmap, image.path(), layout, order, mode, null, fallbackSlot);
+    }
+
+    // Takes ownership of the pixmap and disposes it, also when this method throws.
+    private static TextureGlyphSource convertAndUpload(
+        Pixmap pixmap,
+        String path,
+        GlyphSheetLayout layout,
+        GlyphOrder order,
+        TransparencyMode mode,
+        Integer keyRgba8888OrNull,
+        int fallbackSlot) {
         try {
             if (pixmap.getWidth() < layout.requiredImageWidth()
                 || pixmap.getHeight() < layout.requiredImageHeight()) {
                 throw new IllegalArgumentException(
-                    "Image " + file.path() + " is " + pixmap.getWidth() + "x" + pixmap.getHeight()
+                    "Image " + path + " is " + pixmap.getWidth() + "x" + pixmap.getHeight()
                         + " but the layout needs at least " + layout.requiredImageWidth()
                         + "x" + layout.requiredImageHeight());
             }
@@ -194,10 +253,29 @@ public final class TextureGlyphSource implements GlyphSource {
         }
     }
 
-    /** Loads the bundled Dungeon Mode font: 8x8 cells, 16x16 grid, Code Page 437. */
+    /**
+     * Loads the bundled default font, dungeon.mode extended: 8x8 cells holding Code Page 437
+     * plus quadrant blocks in every {@link QuadrantGlyphs.Shade}, box-drawing and bar glyphs,
+     * arrows, card and chess glyphs, dice, and durability meters. Its character list lists every
+     * code point.
+     */
     public static TextureGlyphSource loadDungeonMode() {
+        return loadSheet(
+            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended.png"),
+            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended.txt"),
+            8,
+            8,
+            TransparencyMode.AUTO);
+    }
+
+    /**
+     * Loads the bundled dungeon.mode Code Page 437 sheet: 8x8 cells, 16x16 grid, black
+     * background. It is the minimal example of a hand-made sheet: a plain image in a fixed
+     * order, with no character list and no alpha channel, loaded with a color key.
+     */
+    public static TextureGlyphSource loadDungeonMode437() {
         return load(
-            Gdx.files.classpath(DUNGEON_MODE_PATH),
+            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-437.png"),
             GlyphSheetLayout.grid(8, 8, 16, 16),
             GlyphOrder.CP437,
             TransparencyMode.AUTO);

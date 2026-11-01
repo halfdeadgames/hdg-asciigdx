@@ -75,6 +75,21 @@ run {
   }
 }
 
+tasks.register('exportSheet', JavaExec) {
+  description = 'Bakes a TTF into a glyph sheet PNG and character list. See SheetExporter.'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'com.github.halfdeadgames.asciigdx.sandbox.desktop.SheetExporter'
+  jvmArgs += "--enable-native-access=ALL-UNNAMED"
+  def exportDirectory = rootProject.layout.buildDirectory.dir('exports').get().asFile
+  doFirst {
+    exportDirectory.mkdirs()
+    systemProperty 'asciigdx.export.output', exportDirectory.absolutePath
+    ['font', 'cellHeight', 'chars', 'columns', 'sheetName', 'generated', 'assemble'].each { key ->
+      if (project.hasProperty(key)) systemProperty "asciigdx.export.$key", project.property(key)
+    }
+  }
+}
+
 jar {
 // sets the name of the .jar file this produces to the name of the game or app, with the version after.
   archiveFileName.set("${appName}-${projectVersion}.jar")
