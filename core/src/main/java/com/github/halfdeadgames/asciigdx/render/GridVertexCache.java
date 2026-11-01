@@ -3,18 +3,15 @@ package com.github.halfdeadgames.asciigdx.render;
 import com.github.tommyettinger.colorful.rgb.ColorTools;
 
 /**
- * CPU-side vertex cache for a grid, in SpriteBatch vertex format
- * (x, y, packedColor, u, v per vertex, four vertices per cell).
+ * CPU-side vertex cache for a grid, in the format of {@link GridVertexLayout}
+ * (four vertices per cell).
  *
- * <p>Each cell owns a fixed 20-float slot in both the background and glyph arrays,
+ * <p>Each cell owns a fixed quad-sized slot in both the background and glyph arrays,
  * so a single cell can be rewritten without moving any other. Empty cells are
  * written as zero-area quads. Row 0 is the top row. This class has no GL or
  * texture dependency.
  */
 public final class GridVertexCache {
-
-    /** Floats per cell: 4 vertices of x, y, color, u, v. */
-    public static final int FLOATS_PER_CELL = 20;
 
     private final int columns;
     private final int rows;
@@ -43,8 +40,8 @@ public final class GridVertexCache {
         this.rows = rows;
         this.cellWidth = cellWidth;
         this.cellHeight = cellHeight;
-        backgrounds = new float[columns * rows * FLOATS_PER_CELL];
-        glyphs = new float[columns * rows * FLOATS_PER_CELL];
+        backgrounds = new float[columns * rows * GridVertexLayout.FLOATS_PER_QUAD];
+        glyphs = new float[columns * rows * GridVertexLayout.FLOATS_PER_QUAD];
     }
 
     /**
@@ -60,11 +57,6 @@ public final class GridVertexCache {
     /** True until {@link #markRebuilt()} is called; set on construction and by {@link #setOrigin}. */
     public boolean isFullRebuildNeeded() {
         return fullRebuildNeeded;
-    }
-
-    /** Flags a full rebuild, for when cells changed without being written here. */
-    public void markStale() {
-        fullRebuildNeeded = true;
     }
 
     /** Call after every cell has been rewritten for the current origin. */
@@ -104,46 +96,32 @@ public final class GridVertexCache {
         if (column < 0 || column >= columns || row < 0 || row >= rows) {
             throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside " + columns + "x" + rows);
         }
-        int i = (row * columns + column) * FLOATS_PER_CELL;
+        int i = (row * columns + column) * GridVertexLayout.FLOATS_PER_QUAD;
         float left = originX + column * cellWidth;
         float bottom = originY - (row + 1) * cellHeight;
         if (isEmpty(rgba)) {
-            for (int vertex = 0; vertex < 4; vertex++) {
-                target[i++] = left;
-                target[i++] = bottom;
-                target[i++] = 0f;
-                target[i++] = 0f;
-                target[i++] = 0f;
+            for (int vertex = 0; vertex < GridVertexLayout.VERTICES_PER_QUAD; vertex++) {
+                putVertex(target, i + vertex * GridVertexLayout.FLOATS_PER_VERTEX, left, bottom, 0f, 0f, 0f);
             }
             return;
         }
         float color = ColorTools.fromRGBA8888(rgba);
         float right = left + cellWidth;
         float top = bottom + cellHeight;
+        int stride = GridVertexLayout.FLOATS_PER_VERTEX;
 
-        target[i] = left;
-        target[i + 1] = bottom;
-        target[i + 2] = color;
-        target[i + 3] = u;
-        target[i + 4] = v2;
+        putVertex(target, i, left, bottom, color, u, v2);
+        putVertex(target, i + stride, left, top, color, u, v);
+        putVertex(target, i + 2 * stride, right, top, color, u2, v);
+        putVertex(target, i + 3 * stride, right, bottom, color, u2, v2);
+    }
 
-        target[i + 5] = left;
-        target[i + 6] = top;
-        target[i + 7] = color;
-        target[i + 8] = u;
-        target[i + 9] = v;
-
-        target[i + 10] = right;
-        target[i + 11] = top;
-        target[i + 12] = color;
-        target[i + 13] = u2;
-        target[i + 14] = v;
-
-        target[i + 15] = right;
-        target[i + 16] = bottom;
-        target[i + 17] = color;
-        target[i + 18] = u2;
-        target[i + 19] = v2;
+    private static void putVertex(float[] target, int start, float x, float y, float color, float u, float v) {
+        target[start + GridVertexLayout.POSITION_OFFSET] = x;
+        target[start + GridVertexLayout.POSITION_OFFSET + 1] = y;
+        target[start + GridVertexLayout.COLOR_OFFSET] = color;
+        target[start + GridVertexLayout.UV_OFFSET] = u;
+        target[start + GridVertexLayout.UV_OFFSET + 1] = v;
     }
 
     /** Background vertices; the live array, not a copy. */
@@ -154,11 +132,6 @@ public final class GridVertexCache {
     /** Glyph vertices; the live array, not a copy. */
     public float[] getGlyphVertices() {
         return glyphs;
-    }
-
-    /** Length of each vertex array: columns * rows * {@link #FLOATS_PER_CELL}. */
-    public int getVertexFloatCount() {
-        return backgrounds.length;
     }
 
     public int getColumns() {

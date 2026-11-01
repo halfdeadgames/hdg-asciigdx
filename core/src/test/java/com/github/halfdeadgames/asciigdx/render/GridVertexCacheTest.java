@@ -16,7 +16,7 @@ class GridVertexCacheTest {
     private static final int COLUMNS = 5;
     private static final int ROWS = 4;
     private static final int OPAQUE_RED = 0xFF0000FF;
-    private static final int PER_CELL = GridVertexCache.FLOATS_PER_CELL;
+    private static final int PER_CELL = GridVertexLayout.FLOATS_PER_QUAD;
 
     private static GridVertexCache newCache() {
         return new GridVertexCache(COLUMNS, ROWS, 8f, 12f);
@@ -64,7 +64,6 @@ class GridVertexCacheTest {
         int expected = COLUMNS * ROWS * 20;
         assertEquals(expected, cache.getBackgroundVertices().length);
         assertEquals(expected, cache.getGlyphVertices().length);
-        assertEquals(expected, cache.getVertexFloatCount());
         assertEquals(COLUMNS, cache.getColumns());
         assertEquals(ROWS, cache.getRows());
     }
@@ -228,17 +227,6 @@ class GridVertexCacheTest {
         assertFalse(cache.isFullRebuildNeeded());
 
         cache.setOrigin(1f, 2f);
-        assertTrue(cache.isFullRebuildNeeded());
-    }
-
-    @Test
-    void markStaleFlagsFullRebuildAfterMarkRebuilt() {
-        GridVertexCache cache = newCache();
-        cache.markRebuilt();
-        assertFalse(cache.isFullRebuildNeeded());
-
-        cache.markStale();
-
         assertTrue(cache.isFullRebuildNeeded());
     }
 

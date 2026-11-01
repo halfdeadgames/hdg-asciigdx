@@ -10,18 +10,17 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
 import com.github.halfdeadgames.asciigdx.grid.DirtyTracker;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.tommyettinger.colorful.rgb.ColorTools;
 
 /**
  * Draws a {@link TerminalGrid} with a {@link GlyphSource} into a caller-managed
  * {@link SpriteBatch}: all cell backgrounds first, then all glyphs.
  *
- * <p>Vertices are kept in a {@link GridVertexCache}. Each frame only the cells
- * changed since the last draw are rewritten; moving the draw position rewrites
- * every cell. When more than half the cells changed, the cache is skipped and
- * cells are drawn straight into the batch, and the next cached frame rebuilds
- * the cache. The renderer owns a {@link DirtyTracker} on the grid and releases
- * it on {@link #dispose()}.
+ * <p>Vertices are kept in a {@link GridVertexCache} and mirrored in GPU meshes.
+ * Each frame only the cells changed since the last draw are rewritten in the
+ * cache; if any changed, the meshes are re-uploaded. Moving the draw position
+ * rewrites every cell. Drawing flushes the batch and renders the meshes with
+ * their own shader, then rebinds the batch's shader. The renderer owns a
+ * {@link DirtyTracker} on the grid and releases it on {@link #dispose()}.
  *
  * <p>All glyph regions of the source must share one texture, as is true for
  * sheet-based sources. The cell size of the glyph source is read once at
@@ -31,18 +30,14 @@ import com.github.tommyettinger.colorful.rgb.ColorTools;
  */
 public final class GridRenderer implements Disposable {
 
-    private static final float DIRECT_DRAW_DIRTY_FRACTION = 0.5f;
-
     private final TerminalGrid grid;
     private final GlyphSource glyphSource;
     private final Texture whitePixel;
     private final Texture glyphTexture;
     private final DirtyTracker tracker;
     private final GridVertexCache cache;
+    private final GridMesh mesh;
     private final DirtyCellVisitor cellWriter = this::writeCell;
-    private final float cellWidth;
-    private final float cellHeight;
-    private final int cellCount;
     private float lastX;
     private float lastY;
 
@@ -60,10 +55,9 @@ public final class GridRenderer implements Disposable {
         pixmap.dispose();
         glyphTexture = glyphSource.glyph(' ').getTexture();
         tracker = grid.createDirtyTracker();
-        cellWidth = glyphSource.getCellWidth();
-        cellHeight = glyphSource.getCellHeight();
-        cellCount = grid.getWidth() * grid.getHeight();
-        cache = new GridVertexCache(grid.getWidth(), grid.getHeight(), cellWidth, cellHeight);
+        cache = new GridVertexCache(grid.getWidth(), grid.getHeight(),
+                glyphSource.getCellWidth(), glyphSource.getCellHeight());
+        mesh = new GridMesh(grid.getWidth() * grid.getHeight());
     }
 
     /**
@@ -75,12 +69,6 @@ public final class GridRenderer implements Disposable {
      * @param y screen y of the grid's top-left corner (y grows upward)
      */
     public void draw(SpriteBatch batch, float x, float y) {
-        if (tracker.getDirtyCellCount() > DIRECT_DRAW_DIRTY_FRACTION * cellCount) {
-            drawDirect(batch, x, y);
-            tracker.clear();
-            cache.markStale();
-            return;
-        }
         if (cache.isFullRebuildNeeded() || x != lastX || y != lastY) {
             lastX = x;
             lastY = y;
@@ -92,43 +80,13 @@ public final class GridRenderer implements Disposable {
             }
             cache.markRebuilt();
             tracker.clear();
+            mesh.upload(cache.getBackgroundVertices(), cache.getGlyphVertices());
         } else if (tracker.hasDirtyCells()) {
             tracker.forEachDirtyCell(cellWriter);
             tracker.clear();
+            mesh.upload(cache.getBackgroundVertices(), cache.getGlyphVertices());
         }
-        int floatCount = cache.getVertexFloatCount();
-        batch.draw(whitePixel, cache.getBackgroundVertices(), 0, floatCount);
-        batch.draw(glyphTexture, cache.getGlyphVertices(), 0, floatCount);
-    }
-
-    private void drawDirect(SpriteBatch batch, float x, float y) {
-        float savedColor = batch.getPackedColor();
-        int columns = grid.getWidth();
-        int rows = grid.getHeight();
-        for (int row = 0; row < rows; row++) {
-            float bottom = y - (row + 1) * cellHeight;
-            for (int column = 0; column < columns; column++) {
-                int background = grid.getBackground(column, row);
-                if (GridVertexCache.isEmpty(background)) {
-                    continue;
-                }
-                batch.setPackedColor(ColorTools.fromRGBA8888(background));
-                batch.draw(whitePixel, x + column * cellWidth, bottom, cellWidth, cellHeight);
-            }
-        }
-        for (int row = 0; row < rows; row++) {
-            float bottom = y - (row + 1) * cellHeight;
-            for (int column = 0; column < columns; column++) {
-                int codePoint = grid.getGlyph(column, row);
-                int foreground = grid.getForeground(column, row);
-                if (isBlankGlyph(codePoint, foreground)) {
-                    continue;
-                }
-                batch.setPackedColor(ColorTools.fromRGBA8888(foreground));
-                batch.draw(glyphSource.glyph(codePoint), x + column * cellWidth, bottom, cellWidth, cellHeight);
-            }
-        }
-        batch.setPackedColor(savedColor);
+        mesh.draw(batch, whitePixel, glyphTexture);
     }
 
     private static boolean isBlankGlyph(int codePoint, int foreground) {
@@ -147,10 +105,11 @@ public final class GridRenderer implements Disposable {
         cache.writeGlyph(column, row, foreground, region.getU(), region.getV(), region.getU2(), region.getV2());
     }
 
-    /** Releases the dirty tracker and frees the background texture. */
+    /** Releases the dirty tracker and frees the meshes, shader, and background texture. */
     @Override
     public void dispose() {
         tracker.release();
+        mesh.dispose();
         whitePixel.dispose();
     }
 }
