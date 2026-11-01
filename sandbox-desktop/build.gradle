@@ -100,7 +100,7 @@ tasks.register('exportSheet', JavaExec) {
     exportDirectory.mkdirs()
     systemProperty 'asciigdx.export.output', exportDirectory.absolutePath
     // Only -P values: project.hasProperty also sees tasks such as 'assemble'.
-    ['font', 'cellHeight', 'chars', 'columns', 'sheetName', 'generated', 'assemble'].each { key ->
+    ['font', 'cellHeight', 'chars', 'columns', 'sheetName', 'generated', 'assemble', 'scale', 'upscale'].each { key ->
       if (commandLineProperties.containsKey(key)) systemProperty "asciigdx.export.$key", commandLineProperties[key]
     }
   }

@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.SharedLibraryLoader;
 import com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
+import com.github.halfdeadgames.asciigdx.sandbox.PixelScaler;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -25,7 +26,19 @@ public final class SheetExporter {
 
     private static final String BUNDLED_FONT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
 
+    /** Empty pixels in the exported sheet: RGBA8888 with alpha 0. */
+    private static final IntPredicate EXPORT_BACKGROUND = pixel -> (pixel & 0xFF) == 0;
+
     private SheetExporter() {
+    }
+
+    private interface SheetScaler {
+        int[] scale(int[] pixels, int width, int height, int cellSize, int[] codePoints);
+    }
+
+    private static SheetScaler scale2xScaler(PixelScaler.Scale2xMode scale2xMode) {
+        return (pixels, width, height, cellSize, codePoints) ->
+            PixelScaler.scale2xGlyphSheet(pixels, width, height, cellSize, codePoints, scale2xMode, EXPORT_BACKGROUND);
     }
 
     public static void main(String[] args) {
@@ -37,36 +50,107 @@ public final class SheetExporter {
         int cellHeight = Integer.parseInt(System.getProperty("asciigdx.export.cellHeight", "8"));
         int columns = Integer.parseInt(System.getProperty("asciigdx.export.columns", "16"));
         String charsSetting = System.getProperty("asciigdx.export.chars", "cp437");
+        String upscale = System.getProperty("asciigdx.export.upscale", "nearest");
+        SheetScaler mode = null;
+        String suffix = null;
+        if (upscale.equalsIgnoreCase("scale2x")) {
+            mode = scale2xScaler(PixelScaler.Scale2xMode.FULL);
+            suffix = "scale2x";
+        } else if (upscale.equalsIgnoreCase("scale2x-fill")) {
+            mode = scale2xScaler(PixelScaler.Scale2xMode.FILL_ONLY);
+            suffix = "scale2x-fill";
+        } else if (upscale.equalsIgnoreCase("scale2x-trim")) {
+            mode = scale2xScaler(PixelScaler.Scale2xMode.TRIM_ONLY);
+            suffix = "scale2x-trim";
+        } else if (upscale.equalsIgnoreCase("mmpx")) {
+            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.mmpx(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), PixelScaler::lumaRgba8888);
+            suffix = "mmpx";
+        } else if (upscale.equalsIgnoreCase("scale2x-sfx")) {
+            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.scale2xSfx(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints));
+            suffix = "scale2x-sfx";
+        } else if (upscale.equalsIgnoreCase("light")) {
+            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.light(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), EXPORT_BACKGROUND);
+            suffix = "light";
+        } else if (!upscale.equalsIgnoreCase("nearest")) {
+            throw new IllegalArgumentException(
+                "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, or light: " + upscale);
+        }
+        boolean scale2x = mode != null;
+        int scale = Integer.parseInt(System.getProperty("asciigdx.export.scale", scale2x ? "2" : "1"));
+        if (scale < 1) {
+            throw new IllegalArgumentException("scale must be at least 1: " + scale);
+        }
+        if (scale2x && scale != 2) {
+            throw new IllegalArgumentException("upscale=scale2x needs scale 2: " + scale);
+        }
         FileHandle outputFolder = Gdx.files.absolute(System.getProperty("asciigdx.export.output"));
         if (System.getProperty("asciigdx.export.generated") != null) {
-            exportGenerated(outputFolder, columns);
+            exportGenerated(outputFolder, columns, scale, mode, suffix);
             return;
         }
         if (System.getProperty("asciigdx.export.assemble") != null) {
-            assembleDefaultSheet(outputFolder, columns);
+            assembleDefaultSheet(outputFolder, columns, scale, mode, suffix);
             return;
+        }
+        if (scale2x) {
+            throw new IllegalArgumentException("upscale=scale2x only applies to -Passemble or -Pgenerated sheets");
         }
 
         FileHandle font = fontFile(fontSetting);
         GlyphOrder order = charsSetting.equalsIgnoreCase("cp437")
             ? GlyphOrder.CP437
             : GlyphOrderText.read(Gdx.files.absolute(charsSetting).readString("UTF-8"), columns);
-        String name = System.getProperty("asciigdx.export.sheetName", font.nameWithoutExtension()) + "-" + cellHeight;
+        String name = System.getProperty("asciigdx.export.sheetName", font.nameWithoutExtension()) + "-" + cellHeight * scale;
 
         FreeTypeGlyphBaker.Result baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
+        Pixmap output = scaled(baked.getPixmap(), scale, null, null);
         try {
             FileHandle png = outputFolder.child(name + ".png");
             FileHandle txt = outputFolder.child(name + ".txt");
-            PixmapIO.writePNG(png, baked.getPixmap());
+            PixmapIO.writePNG(png, output);
             txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
-            verifyRoundTrip(baked, order, columns, png, txt);
-            System.out.println("Exported " + order.size() + " glyphs, " + baked.getCellWidth() + "x"
-                + baked.getCellHeight() + " cells, " + missingCount(baked, order) + " missing from the font");
+            verifyRoundTrip(output, order, columns, png, txt);
+            System.out.println("Exported " + order.size() + " glyphs, " + baked.getCellWidth() * scale + "x"
+                + baked.getCellHeight() * scale + " cells, " + missingCount(baked, order) + " missing from the font");
             System.out.println("  " + png.file().getAbsolutePath());
             System.out.println("  " + txt.file().getAbsolutePath());
         } finally {
+            if (output != baked.getPixmap()) {
+                output.dispose();
+            }
             baked.getPixmap().dispose();
         }
+    }
+
+    // Returns the source itself when scale is 1; the caller disposes the result only if it differs.
+    // Non-null scale2xCodePoints (one per cell slot, scale must be 2) selects Scale2x instead of nearest.
+    private static Pixmap scaled(Pixmap source, int scale, int[] scale2xCodePoints, SheetScaler mode) {
+        if (scale == 1) {
+            return source;
+        }
+        int width = source.getWidth();
+        int height = source.getHeight();
+        int[] pixels = new int[width * height];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[y * width + x] = source.getPixel(x, y);
+            }
+        }
+        int[] scaledPixels = scale2xCodePoints == null
+            ? PixelScaler.scale(pixels, width, height, scale)
+            : mode.scale(pixels, width, height, GeneratedGlyphs.SIZE, scale2xCodePoints);
+        int scaledWidth = width * scale;
+        Pixmap result = new Pixmap(scaledWidth, height * scale, Pixmap.Format.RGBA8888);
+        result.setBlending(Pixmap.Blending.None);
+        for (int y = 0; y < height * scale; y++) {
+            for (int x = 0; x < scaledWidth; x++) {
+                result.drawPixel(x, y, scaledPixels[y * scaledWidth + x]);
+            }
+        }
+        return result;
     }
 
     /** Glyphs taken from the dungeon.mode TTF that the CP437 sheet lacks. */
@@ -75,7 +159,8 @@ public final class SheetExporter {
     // The default sheet: the CP437 sheet's cells first (unchanged), then glyphs baked from the
     // TTF, then the generated glyphs. Code points already placed are skipped. Every cell is
     // stored as white with alpha 0 or 255.
-    private static void assembleDefaultSheet(FileHandle outputFolder, int columns) {
+    private static void assembleDefaultSheet(FileHandle outputFolder, int columns, int scale,
+        SheetScaler mode, String suffix) {
         int size = GeneratedGlyphs.SIZE;
         Map<Integer, boolean[][]> glyphs = new LinkedHashMap<>();
 
@@ -105,7 +190,8 @@ public final class SheetExporter {
         }
 
         GeneratedGlyphs.all().forEach(glyphs::putIfAbsent);
-        writeSheet(outputFolder, "dungeon-extended", glyphs, columns);
+        String name = scale > 1 ? "dungeon-extended-" + size * scale : "dungeon-extended";
+        writeSheet(outputFolder, name, glyphs, columns, scale, mode, suffix);
     }
 
     private static boolean[][] cell(Pixmap sheet, int slot, int columns, int size, IntPredicate isLit) {
@@ -120,11 +206,15 @@ public final class SheetExporter {
         return pixels;
     }
 
-    private static void exportGenerated(FileHandle outputFolder, int columns) {
-        writeSheet(outputFolder, "generated-" + GeneratedGlyphs.SIZE, GeneratedGlyphs.all(), columns);
+    private static void exportGenerated(FileHandle outputFolder, int columns, int scale,
+        SheetScaler mode, String suffix) {
+        writeSheet(outputFolder, "generated-" + GeneratedGlyphs.SIZE * scale, GeneratedGlyphs.all(), columns, scale,
+            mode, suffix);
     }
 
-    private static void writeSheet(FileHandle outputFolder, String name, Map<Integer, boolean[][]> glyphs, int columns) {
+    private static void writeSheet(FileHandle outputFolder, String baseName, Map<Integer, boolean[][]> glyphs,
+        int columns, int scale, SheetScaler mode, String suffix) {
+        String name = mode != null ? baseName + "-" + suffix : baseName;
         int size = GeneratedGlyphs.SIZE;
         int rows = (glyphs.size() + columns - 1) / columns;
         Pixmap sheet = new Pixmap(columns * size, rows * size, Pixmap.Format.RGBA8888);
@@ -145,13 +235,20 @@ public final class SheetExporter {
                 }
                 slot++;
             }
-            FileHandle png = outputFolder.child(name + ".png");
-            FileHandle txt = outputFolder.child(name + ".txt");
-            PixmapIO.writePNG(png, sheet);
-            txt.writeString(GlyphOrderText.write(GlyphOrder.ofCodePoints(codePoints), columns), false, "UTF-8");
-            System.out.println("Exported " + glyphs.size() + " glyphs, " + columns + "x" + rows + " cells");
-            System.out.println("  " + png.file().getAbsolutePath());
-            System.out.println("  " + txt.file().getAbsolutePath());
+            Pixmap output = scaled(sheet, scale, mode != null ? codePoints : null, mode);
+            try {
+                FileHandle png = outputFolder.child(name + ".png");
+                FileHandle txt = outputFolder.child(name + ".txt");
+                PixmapIO.writePNG(png, output);
+                txt.writeString(GlyphOrderText.write(GlyphOrder.ofCodePoints(codePoints), columns), false, "UTF-8");
+                System.out.println("Exported " + glyphs.size() + " glyphs, " + columns + "x" + rows + " cells");
+                System.out.println("  " + png.file().getAbsolutePath());
+                System.out.println("  " + txt.file().getAbsolutePath());
+            } finally {
+                if (output != sheet) {
+                    output.dispose();
+                }
+            }
         } finally {
             sheet.dispose();
         }
@@ -179,7 +276,7 @@ public final class SheetExporter {
     }
 
     private static void verifyRoundTrip(
-        FreeTypeGlyphBaker.Result baked, GlyphOrder order, int columns, FileHandle png, FileHandle txt) {
+        Pixmap original, GlyphOrder order, int columns, FileHandle png, FileHandle txt) {
         GlyphOrder reread = GlyphOrderText.read(new String(txt.readBytes(), StandardCharsets.UTF_8), columns);
         if (reread.size() != order.size()) {
             throw new IllegalStateException("Character list did not round-trip: size " + reread.size());
@@ -191,7 +288,6 @@ public final class SheetExporter {
         }
         Pixmap written = new Pixmap(png);
         try {
-            Pixmap original = baked.getPixmap();
             for (int y = 0; y < original.getHeight(); y++) {
                 for (int x = 0; x < original.getWidth(); x++) {
                     if (written.getPixel(x, y) != original.getPixel(x, y)) {

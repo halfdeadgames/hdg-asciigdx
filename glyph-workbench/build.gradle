@@ -1,0 +1,48 @@
+plugins {
+  id "application"
+}
+
+sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+application.mainClass = 'com.github.halfdeadgames.asciigdx.workbench.WorkbenchLauncher'
+eclipse.project.name = appName + '-glyph-workbench'
+java.sourceCompatibility = 17
+java.targetCompatibility = 17
+if (JavaVersion.current().isJava9Compatible()) {
+  compileJava.options.release.set(17)
+}
+
+dependencies {
+  implementation project(':sandbox')
+  implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+  implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  constraints {
+    implementation("org.lwjgl:lwjgl:$lwjgl3Version")
+    implementation("org.lwjgl:lwjgl-glfw:$lwjgl3Version")
+    implementation("org.lwjgl:lwjgl-jemalloc:$lwjgl3Version")
+    implementation("org.lwjgl:lwjgl-openal:$lwjgl3Version")
+    implementation("org.lwjgl:lwjgl-opengl:$lwjgl3Version")
+    implementation("org.lwjgl:lwjgl-stb:$lwjgl3Version")
+  }
+  testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+  useJUnitPlatform()
+}
+
+run {
+  workingDir = rootProject.file('assets').path
+  jvmArgs += "--enable-native-access=ALL-UNNAMED"
+  jvmArgs += "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  if (System.properties['os.name'].toLowerCase(Locale.ROOT).contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  environment("__GL_THREADED_OPTIMIZATIONS", 0)
+  def commandLineProperties = gradle.startParameter.projectProperties
+  if (commandLineProperties.containsKey('select')) systemProperty 'workbench.select', commandLineProperties['select']
+  if (commandLineProperties.containsKey('capture')) {
+    def captureFile = rootProject.layout.buildDirectory.file('captures/workbench.png').get().asFile
+    doFirst { captureFile.parentFile.mkdirs() }
+    systemProperty 'workbench.capture', captureFile.absolutePath
+  }
+}
