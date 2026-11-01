@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.grid;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Objects;
+import java.util.List;
 
 /**
  * Fixed-size grid of cells. Each cell holds a glyph (a Unicode code point) and
@@ -19,10 +19,11 @@ import java.util.Objects;
  * Use {@link #contains(int, int)} to check first.
  *
  * <p>Dirty tracking: a cell becomes dirty when its content actually changes.
- * Writing identical content does not mark it. All cells start dirty. A renderer
- * draws the dirty cells with {@link #forEachDirtyCell(DirtyCellVisitor)}, then
- * calls {@link #clearDirty()}. If {@code clearDirty()} is never called, every
- * changed cell keeps being reported.
+ * Writing identical content does not mark it. Each consumer (for example a
+ * renderer) creates its own {@link DirtyTracker} with {@link #createDirtyTracker()},
+ * which starts with all cells dirty. The consumer visits the dirty cells, clears
+ * its tracker, and releases it when done. A forgotten tracker stays registered
+ * and keeps receiving marks.
  *
  * <p>Not thread-safe. Use from the render thread.
  */
@@ -39,10 +40,10 @@ public final class TerminalGrid {
     private final int[] glyphs;
     private final int[] foregrounds;
     private final int[] backgrounds;
-    private final BitSet dirtyCells;
+    private final List<DirtyTracker> trackers = new ArrayList<>(2);
 
     /**
-     * Creates a grid with all cells empty and dirty.
+     * Creates a grid with all cells empty.
      *
      * @param width number of columns, must be positive
      * @param height number of rows, must be positive
@@ -60,8 +61,6 @@ public final class TerminalGrid {
         glyphs = new int[cellCount];
         foregrounds = new int[cellCount];
         backgrounds = new int[cellCount];
-        dirtyCells = new BitSet(cellCount);
-        dirtyCells.set(0, cellCount);
     }
 
     /** Returns the number of columns. */
@@ -112,56 +111,30 @@ public final class TerminalGrid {
         glyphs[index] = codePoint;
         foregrounds[index] = foregroundRgba;
         backgrounds[index] = backgroundRgba;
-        dirtyCells.set(index);
+        markTrackers(index);
     }
 
     /**
-     * Returns whether a cell is dirty.
+     * Creates a tracker that starts with every cell dirty and then records each
+     * content change. The tracker stays registered, and keeps receiving marks,
+     * until {@link DirtyTracker#release()} is called.
      *
-     * @param x column
-     * @param y row
-     * @return {@code true} if the cell is dirty
-     * @throws IndexOutOfBoundsException if {@code (x, y)} is outside the grid
+     * @return a new tracker for this grid
      */
-    public boolean isDirty(int x, int y) {
-        return dirtyCells.get(checkedIndexOf(x, y));
+    public DirtyTracker createDirtyTracker() {
+        var tracker = new DirtyTracker(this);
+        trackers.add(tracker);
+        return tracker;
     }
 
-    /** Returns {@code true} if any cell is dirty. */
-    public boolean hasDirtyCells() {
-        return !dirtyCells.isEmpty();
+    void unregister(DirtyTracker tracker) {
+        trackers.remove(tracker);
     }
 
-    /**
-     * Calls the visitor once per dirty cell in row-major order (left to right,
-     * top to bottom). Does not clear the dirty flags.
-     *
-     * <p>The visitor must not call any method that changes the grid, including
-     * {@link #clearDirty()} and {@link #markAllDirty()}. Results are unspecified
-     * if it does. Call {@link #clearDirty()} after this method returns.
-     * Exceptions thrown by the visitor propagate.
-     *
-     * <p>A lambda that captures local variables allocates on each call, so
-     * per-frame callers should reuse a visitor.
-     *
-     * @param visitor receives the coordinates of each dirty cell
-     * @throws NullPointerException if {@code visitor} is null
-     */
-    public void forEachDirtyCell(DirtyCellVisitor visitor) {
-        Objects.requireNonNull(visitor, "visitor");
-        for (int index = dirtyCells.nextSetBit(0); index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
-            visitor.visit(index % width, index / width);
+    private void markTrackers(int index) {
+        for (int i = 0, count = trackers.size(); i < count; i++) {
+            trackers.get(i).mark(index);
         }
-    }
-
-    /** Marks every cell clean without changing cell content. */
-    public void clearDirty() {
-        dirtyCells.clear();
-    }
-
-    /** Marks every cell dirty, for example to force a full redraw. */
-    public void markAllDirty() {
-        dirtyCells.set(0, glyphs.length);
     }
 
     /**
@@ -203,14 +176,14 @@ public final class TerminalGrid {
     /**
      * Resets every cell to {@link #EMPTY_GLYPH} with {@link #TRANSPARENT_RGBA}
      * colors. Only cells whose content changed become dirty. Unlike
-     * {@link #clearDirty()}, this changes cell content.
+     * {@link DirtyTracker#clear()}, this changes cell content.
      */
     public void clear() {
         for (int index = 0; index < glyphs.length; index++) {
             if (glyphs[index] != EMPTY_GLYPH
                 || foregrounds[index] != TRANSPARENT_RGBA
                 || backgrounds[index] != TRANSPARENT_RGBA) {
-                dirtyCells.set(index);
+                markTrackers(index);
             }
         }
         Arrays.fill(glyphs, EMPTY_GLYPH);

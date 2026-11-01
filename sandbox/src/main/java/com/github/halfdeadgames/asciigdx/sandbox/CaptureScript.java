@@ -6,9 +6,11 @@ import com.badlogic.gdx.Gdx;
 class CaptureScript {
     private static final int MEASURED_FRAMES = 600;
     private static final int GIF_FRAMES = 30;
+    /** Frames skipped after opening a scene, so setup and the previous scene's file writes stay out of the timing. */
+    private static final int WARM_UP_FRAMES = 30;
     private static final String PERF_TAG = "CaptureScript";
 
-    private enum Phase { MENU_REQUEST, MENU_SAVING, MEASURING, SAVING, RECORDING, DONE }
+    private enum Phase { MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE }
 
     private final SandboxApp app;
     private final ScreenCapture capture;
@@ -32,6 +34,14 @@ class CaptureScript {
                 phase = Phase.MENU_SAVING;
             }
             case MENU_SAVING -> openScene(0);
+            case WARMING_UP -> {
+                framesInPhase++;
+                if (framesInPhase >= WARM_UP_FRAMES) {
+                    framesInPhase = 0;
+                    secondsInPhase = 0f;
+                    phase = Phase.MEASURING;
+                }
+            }
             case MEASURING -> {
                 framesInPhase++;
                 secondsInPhase += Gdx.graphics.getDeltaTime();
@@ -78,7 +88,7 @@ class CaptureScript {
         app.openScene(index);
         framesInPhase = 0;
         secondsInPhase = 0f;
-        phase = Phase.MEASURING;
+        phase = Phase.WARMING_UP;
     }
 
     private void appendPerf(SandboxScene scene) {

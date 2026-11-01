@@ -65,6 +65,7 @@ public class SandboxApp extends ApplicationAdapter {
     private void registerScenes() {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
+        scenes.add(new SparseUpdateScene(glyphs));
     }
 
     private boolean handleKey(int keycode) {

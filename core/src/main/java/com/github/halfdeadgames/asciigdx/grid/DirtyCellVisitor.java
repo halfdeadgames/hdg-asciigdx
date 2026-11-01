@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.grid;
 
 /**
- * Callback for {@link TerminalGrid#forEachDirtyCell(DirtyCellVisitor)}.
+ * Callback for {@link DirtyTracker#forEachDirtyCell(DirtyCellVisitor)}.
  */
 @FunctionalInterface
 public interface DirtyCellVisitor {
