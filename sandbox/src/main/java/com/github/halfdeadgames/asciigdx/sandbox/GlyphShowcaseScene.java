@@ -15,7 +15,7 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int SHEET_COLUMNS = 16;
     private static final int PANEL = 18;
     private static final int COLUMNS = PANEL + 24;
-    private static final int ROWS = 35;
+    private static final int ROWS = 39;
 
     private static final int LABEL = 0x9090C0FF;
     private static final int CARD = 0xF0EEE0FF;
@@ -30,6 +30,19 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int SHIELD_STAGES_START = 0xE0A0;
     private static final int SWORD_STAGES_START = 0xE0A4;
     private static final int OUTLINED_DICE_START = 0xE0B0;
+    private static final int HEART_FULL = 0x2764;
+    private static final int HEART_HOLLOW = 0xE0D0;
+    private static final int HEART_FILL_START = 0xE0D1;
+    private static final int HEART_SWEEP_START = 0xE0D8;
+
+    private static final float SECONDS_PER_METER_STAGE = 0.4f;
+    private static final int ANIMATED_METER_COLUMN = PANEL + 20;
+
+    private int[][] meterStages = new int[0][];
+    private int[] meterColors = new int[0];
+    private int[] meterRows = new int[0];
+    private int[] meterShownStage = new int[0];
+    private float meterClock;
 
     GlyphShowcaseScene(GlyphSource glyphs) {
         super(glyphs, COLUMNS, ROWS);
@@ -56,9 +69,9 @@ final class GlyphShowcaseScene extends GridScene {
         writeCards(1);
         writeChess(5);
         writeMeters(15);
-        writeDice(19);
-        writeShadeStrips(22);
-        writeSphere(29);
+        writeDice(21);
+        writeShadeStrips(24);
+        writeSphere(31);
         super.show();
     }
 
@@ -97,12 +110,47 @@ final class GlyphShowcaseScene extends GridScene {
         }
     }
 
+    @Override
+    protected void update(float delta) {
+        meterClock += delta;
+        int step = (int) (meterClock / SECONDS_PER_METER_STAGE);
+        for (int meter = 0; meter < meterStages.length; meter++) {
+            int[] stages = meterStages[meter];
+            int stage = bouncingStage(step, stages.length);
+            if (stage != meterShownStage[meter]) {
+                meterShownStage[meter] = stage;
+                grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage], meterColors[meter], CLEAR);
+            }
+        }
+    }
+
+    // Counts 0..n-1 then n-1..0, so each end shows for two steps as a short rest.
+    private static int bouncingStage(int step, int stageCount) {
+        int position = step % (2 * stageCount);
+        return position < stageCount ? position : 2 * stageCount - 1 - position;
+    }
+
+    // Each row lists its stages from empty to full, then one cell that fills and empties again.
     private void writeMeters(int top) {
-        writeText(PANEL, top, "Durability", LABEL, CLEAR);
-        int[] shield = {0x26C9, SHIELD_STAGES_START, SHIELD_STAGES_START + 1, SHIELD_STAGES_START + 2, 0x26CA};
-        for (int stage = 0; stage < shield.length; stage++) {
-            grid.set(PANEL + stage * 2, top + 1, shield[stage], CYAN, CLEAR);
-            grid.set(PANEL + stage * 2, top + 2, SWORD_STAGES_START + stage, GOLD, CLEAR);
+        writeText(PANEL, top, "Meters", LABEL, CLEAR);
+        meterStages = new int[][] {
+            {0x26C9, SHIELD_STAGES_START, SHIELD_STAGES_START + 1, SHIELD_STAGES_START + 2, 0x26CA},
+            {SWORD_STAGES_START, SWORD_STAGES_START + 1, SWORD_STAGES_START + 2, SWORD_STAGES_START + 3,
+                SWORD_STAGES_START + 4},
+            {HEART_HOLLOW, HEART_FILL_START, HEART_FILL_START + 1, HEART_FILL_START + 2, HEART_FULL},
+            {HEART_HOLLOW, HEART_SWEEP_START, HEART_SWEEP_START + 1, HEART_SWEEP_START + 2, HEART_SWEEP_START + 3,
+                HEART_SWEEP_START + 4, HEART_SWEEP_START + 5, HEART_SWEEP_START + 6, HEART_FULL},
+        };
+        meterColors = new int[] {CYAN, GOLD, RED, RED};
+        meterRows = new int[meterStages.length];
+        meterShownStage = new int[meterStages.length];
+        meterClock = 0f;
+        for (int meter = 0; meter < meterStages.length; meter++) {
+            meterRows[meter] = top + 1 + meter;
+            for (int stage = 0; stage < meterStages[meter].length; stage++) {
+                grid.set(PANEL + stage * 2, meterRows[meter], meterStages[meter][stage], meterColors[meter], CLEAR);
+            }
+            grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0], meterColors[meter], CLEAR);
         }
     }
 

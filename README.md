@@ -12,7 +12,8 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 - Glyph sheets: load a bitmap font sheet, describe its layout (cell size, margin, and spacing) and map its slots to Unicode characters. Code Page 437 order is built in.
 - Transparency conversion: sheets without an alpha channel are converted on load. The background color (by default the top-left pixel) becomes transparent and the glyphs become white so they can be tinted any color. Anti-aliased edges stay smooth.
 - Fallback glyph: characters missing from the sheet draw as `?`, or another glyph you choose.
-- Bundled font: [dungeon.mode](https://datagoblin.itch.io/dungeonmode) by datagoblin (CC0) ships as the default font.
+- Bundled font: [dungeon.mode](https://datagoblin.itch.io/dungeonmode) by datagoblin (CC0) is the default font. It is extended with about 250 extra glyphs: quadrant blocks in several shade patterns, box-drawing pieces, arrows, cards, chess pieces, dice, and durability meters. A UTF-8 text file next to the image lists the character in each slot, and you can write the same kind of file for your own sheets.
+- Minimal example sheet: the original Code Page 437 sheet is also bundled (`TextureGlyphSource.loadDungeonMode437()`). It is a plain 16×16 image on a black background with no character list and no alpha channel. Use it as a reference for the least a hand-made sheet needs.
 
 ## Planned features
 
