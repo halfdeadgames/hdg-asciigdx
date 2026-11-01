@@ -157,6 +157,12 @@ public class SandboxApp extends ApplicationAdapter {
         perfOverlay.setStatus(activeScene.statusText());
     }
 
+    void refreshStatus() {
+        if (activeScene != null) {
+            perfOverlay.setStatus(activeScene.statusText());
+        }
+    }
+
     private void returnToMenu() {
         if (activeScene == null) {
             return;

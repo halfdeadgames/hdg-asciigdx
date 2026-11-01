@@ -191,6 +191,7 @@ class CaptureScript {
     private void startSweepStep(int index) {
         sweepIndex = index;
         app.getScene(sceneIndex).setDirtyPercent(dirtyPercents.get(index));
+        app.refreshStatus();
         beginWarmUp();
     }
 
