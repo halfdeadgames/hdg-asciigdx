@@ -62,6 +62,11 @@ public final class GridVertexCache {
         return fullRebuildNeeded;
     }
 
+    /** Flags a full rebuild, for when cells changed without being written here. */
+    public void markStale() {
+        fullRebuildNeeded = true;
+    }
+
     /** Call after every cell has been rewritten for the current origin. */
     public void markRebuilt() {
         fullRebuildNeeded = false;

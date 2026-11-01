@@ -21,15 +21,15 @@ public final class DirtyTracker {
     private final int width;
     private final int height;
     private final BitSet dirtyCells;
+    private int dirtyCellCount;
     private boolean released;
 
     DirtyTracker(TerminalGrid grid) {
         this.grid = grid;
         width = grid.getWidth();
         height = grid.getHeight();
-        int cellCount = width * height;
-        dirtyCells = new BitSet(cellCount);
-        dirtyCells.set(0, cellCount);
+        dirtyCells = new BitSet(width * height);
+        markAll();
     }
 
     /**
@@ -51,6 +51,15 @@ public final class DirtyTracker {
     /** Returns {@code true} if any cell is dirty. */
     public boolean hasDirtyCells() {
         return !dirtyCells.isEmpty();
+    }
+
+    /**
+     * Returns the number of dirty cells.
+     *
+     * @return the number of dirty cells, from 0 to the grid's cell count
+     */
+    public int getDirtyCellCount() {
+        return dirtyCellCount;
     }
 
     /**
@@ -78,11 +87,13 @@ public final class DirtyTracker {
     /** Marks every cell clean without changing cell content. */
     public void clear() {
         dirtyCells.clear();
+        dirtyCellCount = 0;
     }
 
     /** Marks every cell dirty, for example to force a full redraw. */
     public void markAll() {
-        dirtyCells.set(0, width * height);
+        dirtyCellCount = width * height;
+        dirtyCells.set(0, dirtyCellCount);
     }
 
     /**
@@ -102,6 +113,9 @@ public final class DirtyTracker {
     }
 
     void mark(int index) {
-        dirtyCells.set(index);
+        if (!dirtyCells.get(index)) {
+            dirtyCells.set(index);
+            dirtyCellCount++;
+        }
     }
 }

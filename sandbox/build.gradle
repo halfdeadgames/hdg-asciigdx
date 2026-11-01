@@ -5,4 +5,10 @@ dependencies {
   api project(':ktx-ext')
   api "com.github.tommyettinger:sjInGameConsole:$inGameConsoleVersion"
   api "com.github.tommyettinger:anim8-gdx:$anim8Version"
+  testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+  useJUnitPlatform()
 }

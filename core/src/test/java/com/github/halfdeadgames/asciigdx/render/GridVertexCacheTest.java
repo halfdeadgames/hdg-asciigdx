@@ -232,6 +232,17 @@ class GridVertexCacheTest {
     }
 
     @Test
+    void markStaleFlagsFullRebuildAfterMarkRebuilt() {
+        GridVertexCache cache = newCache();
+        cache.markRebuilt();
+        assertFalse(cache.isFullRebuildNeeded());
+
+        cache.markStale();
+
+        assertTrue(cache.isFullRebuildNeeded());
+    }
+
+    @Test
     void writingDoesNotChangeRebuildFlag() {
         GridVertexCache cache = newCache();
         cache.markRebuilt();

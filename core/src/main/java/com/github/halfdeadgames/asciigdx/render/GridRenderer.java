@@ -10,6 +10,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
 import com.github.halfdeadgames.asciigdx.grid.DirtyTracker;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.tommyettinger.colorful.rgb.ColorTools;
 
 /**
  * Draws a {@link TerminalGrid} with a {@link GlyphSource} into a caller-managed
@@ -17,7 +18,9 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
  *
  * <p>Vertices are kept in a {@link GridVertexCache}. Each frame only the cells
  * changed since the last draw are rewritten; moving the draw position rewrites
- * every cell. The renderer owns a {@link DirtyTracker} on the grid and releases
+ * every cell. When more than half the cells changed, the cache is skipped and
+ * cells are drawn straight into the batch, and the next cached frame rebuilds
+ * the cache. The renderer owns a {@link DirtyTracker} on the grid and releases
  * it on {@link #dispose()}.
  *
  * <p>All glyph regions of the source must share one texture, as is true for
@@ -28,6 +31,8 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
  */
 public final class GridRenderer implements Disposable {
 
+    private static final float DIRECT_DRAW_DIRTY_FRACTION = 0.5f;
+
     private final TerminalGrid grid;
     private final GlyphSource glyphSource;
     private final Texture whitePixel;
@@ -35,6 +40,9 @@ public final class GridRenderer implements Disposable {
     private final DirtyTracker tracker;
     private final GridVertexCache cache;
     private final DirtyCellVisitor cellWriter = this::writeCell;
+    private final float cellWidth;
+    private final float cellHeight;
+    private final int cellCount;
     private float lastX;
     private float lastY;
 
@@ -52,20 +60,27 @@ public final class GridRenderer implements Disposable {
         pixmap.dispose();
         glyphTexture = glyphSource.glyph(' ').getTexture();
         tracker = grid.createDirtyTracker();
-        cache = new GridVertexCache(grid.getWidth(), grid.getHeight(),
-            glyphSource.getCellWidth(), glyphSource.getCellHeight());
+        cellWidth = glyphSource.getCellWidth();
+        cellHeight = glyphSource.getCellHeight();
+        cellCount = grid.getWidth() * grid.getHeight();
+        cache = new GridVertexCache(grid.getWidth(), grid.getHeight(), cellWidth, cellHeight);
     }
 
     /**
      * Draws the grid. The batch must already be begun; this method never begins
-     * or ends it. Colors travel in the vertices, so the batch color is ignored
-     * and left unchanged.
+     * or ends it. The batch color is ignored and left unchanged.
      *
      * @param batch the active batch
      * @param x screen x of the grid's top-left corner
      * @param y screen y of the grid's top-left corner (y grows upward)
      */
     public void draw(SpriteBatch batch, float x, float y) {
+        if (tracker.getDirtyCellCount() > DIRECT_DRAW_DIRTY_FRACTION * cellCount) {
+            drawDirect(batch, x, y);
+            tracker.clear();
+            cache.markStale();
+            return;
+        }
         if (cache.isFullRebuildNeeded() || x != lastX || y != lastY) {
             lastX = x;
             lastY = y;
@@ -86,11 +101,45 @@ public final class GridRenderer implements Disposable {
         batch.draw(glyphTexture, cache.getGlyphVertices(), 0, floatCount);
     }
 
+    private void drawDirect(SpriteBatch batch, float x, float y) {
+        float savedColor = batch.getPackedColor();
+        int columns = grid.getWidth();
+        int rows = grid.getHeight();
+        for (int row = 0; row < rows; row++) {
+            float bottom = y - (row + 1) * cellHeight;
+            for (int column = 0; column < columns; column++) {
+                int background = grid.getBackground(column, row);
+                if (GridVertexCache.isEmpty(background)) {
+                    continue;
+                }
+                batch.setPackedColor(ColorTools.fromRGBA8888(background));
+                batch.draw(whitePixel, x + column * cellWidth, bottom, cellWidth, cellHeight);
+            }
+        }
+        for (int row = 0; row < rows; row++) {
+            float bottom = y - (row + 1) * cellHeight;
+            for (int column = 0; column < columns; column++) {
+                int codePoint = grid.getGlyph(column, row);
+                int foreground = grid.getForeground(column, row);
+                if (isBlankGlyph(codePoint, foreground)) {
+                    continue;
+                }
+                batch.setPackedColor(ColorTools.fromRGBA8888(foreground));
+                batch.draw(glyphSource.glyph(codePoint), x + column * cellWidth, bottom, cellWidth, cellHeight);
+            }
+        }
+        batch.setPackedColor(savedColor);
+    }
+
+    private static boolean isBlankGlyph(int codePoint, int foreground) {
+        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || GridVertexCache.isEmpty(foreground);
+    }
+
     private void writeCell(int column, int row) {
         cache.writeBackground(column, row, grid.getBackground(column, row), 0f, 0f, 1f, 1f);
         int codePoint = grid.getGlyph(column, row);
         int foreground = grid.getForeground(column, row);
-        if (codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || GridVertexCache.isEmpty(foreground)) {
+        if (isBlankGlyph(codePoint, foreground)) {
             cache.writeGlyph(column, row, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
             return;
         }

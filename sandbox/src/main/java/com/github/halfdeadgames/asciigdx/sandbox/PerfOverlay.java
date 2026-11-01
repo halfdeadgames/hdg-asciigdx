@@ -10,9 +10,9 @@ import com.github.halfdeadgames.asciigdx.render.GridRenderer;
 /** fps / frame time / cell count line drawn over whichever scene is open, at the top-left of the screen. */
 class PerfOverlay {
     private static final float SAMPLE_WINDOW_SECONDS = 0.5f;
-    private static final int WIDTH = 28;
+    private static final int WIDTH = 32;
 
-    private final TerminalGrid grid = new TerminalGrid(WIDTH, 1);
+    private final TerminalGrid grid = new TerminalGrid(WIDTH, 2);
     private final GridRenderer renderer;
     private final ScreenViewport viewport = new ScreenViewport();
     private final StringBuilder readout = new StringBuilder(WIDTH);
@@ -31,6 +31,14 @@ class PerfOverlay {
         sampleSeconds = 0f;
         sampleFrames = 0;
         rebuildReadout();
+    }
+
+    void setStatus(String text) {
+        int background = text.isEmpty() ? GridScene.CLEAR : GridScene.BLACK;
+        for (int column = 0; column < WIDTH; column++) {
+            char character = column < text.length() ? text.charAt(column) : ' ';
+            grid.set(column, 1, character, GridScene.WHITE, background);
+        }
     }
 
     void resize(int width, int height) {

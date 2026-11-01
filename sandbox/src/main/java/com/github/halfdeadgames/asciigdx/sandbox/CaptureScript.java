@@ -2,12 +2,17 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 
-/** Unattended run: menu screenshot, then per scene a screenshot, perf line and optional GIF, then exit. Driven by {@link #onFrameRendered()}. */
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+/** Unattended run: menu screenshot, then per scene a screenshot, perf line and optional GIF, then exit. Driven by {@link #onFrameRendered(long)}. */
 class CaptureScript {
-    private static final int MEASURED_FRAMES = 600;
     private static final int GIF_FRAMES = 30;
     /** Frames skipped after opening a scene, so setup and the previous scene's file writes stay out of the timing. */
     private static final int WARM_UP_FRAMES = 30;
+    private static final float NANOS_PER_MILLISECOND = 1_000_000f;
+    private static final int NOT_SWEEPING = -1;
     private static final String PERF_TAG = "CaptureScript";
 
     private enum Phase { MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE }
@@ -17,17 +22,67 @@ class CaptureScript {
     private Phase phase = Phase.MENU_REQUEST;
     private int sceneIndex;
     private int framesInPhase;
-    private float secondsInPhase;
 
     private final StringBuilder report = new StringBuilder();
+    private final float sampleSeconds;
+    private final float[] sampleMeansMs;
+    private int sampleCount;
+    private int windowFrames;
+    private float windowSeconds;
+    private long windowRenderNanos;
+    private int totalMeasuredFrames;
+    private final int[] sceneOrder;
+    private int visitPosition;
+    private final List<Integer> dirtyPercents;
+    private int sweepIndex = NOT_SWEEPING;
 
-    CaptureScript(SandboxApp app, ScreenCapture capture) {
+    /** @throws IllegalArgumentException when the config names a scene id that is not registered */
+    CaptureScript(SandboxApp app, ScreenCapture capture, CaptureConfig config) {
         this.app = app;
         this.capture = capture;
+        this.sampleSeconds = config.getSampleSeconds();
+        this.sampleMeansMs = new float[config.getSamples()];
+        this.dirtyPercents = config.getDirtyPercents();
+        this.sceneOrder = resolveSceneOrder(app, config);
     }
 
-    /** Call at the end of render, after {@link ScreenCapture#onFrameRendered()}. */
-    void onFrameRendered() {
+    private static int[] resolveSceneOrder(SandboxApp app, CaptureConfig config) {
+        List<String> requestedIds = config.getSceneIds();
+        if (requestedIds.isEmpty()) {
+            int[] all = new int[app.getSceneCount()];
+            for (int i = 0; i < all.length; i++) {
+                all[i] = i;
+            }
+            return all;
+        }
+        int[] order = new int[requestedIds.size()];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = indexOfScene(app, requestedIds.get(i));
+        }
+        return order;
+    }
+
+    private static int indexOfScene(SandboxApp app, String id) {
+        StringBuilder validIds = new StringBuilder();
+        for (int i = 0; i < app.getSceneCount(); i++) {
+            String validId = app.getScene(i).id();
+            if (validId.equals(id)) {
+                return i;
+            }
+            if (i > 0) {
+                validIds.append(", ");
+            }
+            validIds.append(validId);
+        }
+        throw new IllegalArgumentException("Unknown scene id '" + id + "'; valid ids: " + validIds);
+    }
+
+    /**
+     * Call at the end of render, after {@link ScreenCapture#onFrameRendered()}.
+     *
+     * @param renderNanos nanoseconds the scene's render work took this frame, GPU work included; 0 when no scene was drawn
+     */
+    void onFrameRendered(long renderNanos) {
         switch (phase) {
             case MENU_REQUEST -> {
                 capture.requestScreenshot("menu.png");
@@ -37,19 +92,28 @@ class CaptureScript {
             case WARMING_UP -> {
                 framesInPhase++;
                 if (framesInPhase >= WARM_UP_FRAMES) {
-                    framesInPhase = 0;
-                    secondsInPhase = 0f;
-                    phase = Phase.MEASURING;
+                    beginMeasuring();
                 }
             }
             case MEASURING -> {
-                framesInPhase++;
-                secondsInPhase += Gdx.graphics.getDeltaTime();
-                if (framesInPhase >= MEASURED_FRAMES) {
+                totalMeasuredFrames++;
+                windowFrames++;
+                windowRenderNanos += renderNanos;
+                windowSeconds += Gdx.graphics.getDeltaTime();
+                if (windowSeconds >= sampleSeconds) {
+                    closeWindow();
+                }
+                if (sampleCount >= sampleMeansMs.length) {
                     finishMeasuring();
                 }
             }
-            case SAVING -> openNextScene();
+            case SAVING -> {
+                if (isSweeping() && sweepIndex + 1 < dirtyPercents.size()) {
+                    startSweepStep(sweepIndex + 1);
+                } else {
+                    openNextScene();
+                }
+            }
             case RECORDING -> {
                 if (capture.getRecordedFrameCount() >= GIF_FRAMES) {
                     capture.stopRecording(app.getScene(sceneIndex).id() + ".gif");
@@ -60,10 +124,35 @@ class CaptureScript {
         }
     }
 
+    private void beginMeasuring() {
+        sampleCount = 0;
+        totalMeasuredFrames = 0;
+        resetWindow();
+        phase = Phase.MEASURING;
+    }
+
+    private void resetWindow() {
+        windowFrames = 0;
+        windowSeconds = 0f;
+        windowRenderNanos = 0L;
+    }
+
+    private void closeWindow() {
+        sampleMeansMs[sampleCount++] = windowRenderNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        resetWindow();
+    }
+
     private void finishMeasuring() {
         SandboxScene scene = app.getScene(sceneIndex);
+        if (isSweeping()) {
+            int percent = dirtyPercents.get(sweepIndex);
+            capture.requestScreenshot(scene.id() + "@" + percent + ".png");
+            appendPerf(scene, scene.id() + "@" + percent + "%");
+            phase = Phase.SAVING;
+            return;
+        }
         capture.requestScreenshot(scene.id() + ".png");
-        appendPerf(scene);
+        appendPerf(scene, scene.id());
         if (scene.recordsAnimation()) {
             capture.startRecording();
             phase = Phase.RECORDING;
@@ -73,31 +162,69 @@ class CaptureScript {
     }
 
     private void openNextScene() {
-        openScene(sceneIndex + 1);
+        openScene(visitPosition + 1);
     }
 
-    private void openScene(int index) {
-        if (index >= app.getSceneCount()) {
+    private void openScene(int position) {
+        if (position >= sceneOrder.length) {
             capture.getOutputDirectory().child("perf.txt").writeString(report.toString(), false);
             Gdx.app.log(PERF_TAG, "Capture written to " + capture.getOutputDirectory().path());
             phase = Phase.DONE;
             Gdx.app.exit();
             return;
         }
-        sceneIndex = index;
-        app.openScene(index);
+        visitPosition = position;
+        sceneIndex = sceneOrder[position];
+        app.openScene(sceneIndex);
+        sweepIndex = NOT_SWEEPING;
+        if (!dirtyPercents.isEmpty() && app.getScene(sceneIndex).supportsDirtyPercent()) {
+            startSweepStep(0);
+            return;
+        }
+        beginWarmUp();
+    }
+
+    private boolean isSweeping() {
+        return sweepIndex != NOT_SWEEPING;
+    }
+
+    private void startSweepStep(int index) {
+        sweepIndex = index;
+        app.getScene(sceneIndex).setDirtyPercent(dirtyPercents.get(index));
+        beginWarmUp();
+    }
+
+    private void beginWarmUp() {
         framesInPhase = 0;
-        secondsInPhase = 0f;
         phase = Phase.WARMING_UP;
     }
 
-    private void appendPerf(SandboxScene scene) {
-        float averageMilliseconds = secondsInPhase / framesInPhase * 1000f;
-        report.append(scene.id())
-            .append(": fps=").append(String.format("%.1f", framesInPhase / secondsInPhase))
-            .append(" avgFrameMs=").append(String.format("%.2f", averageMilliseconds))
+    private void appendPerf(SandboxScene scene, String label) {
+        float[] sorted = sampleMeansMs.clone();
+        Arrays.sort(sorted);
+        float min = sorted[0];
+        float max = sorted[sorted.length - 1];
+        int middle = sorted.length / 2;
+        float median = sorted.length % 2 == 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2f;
+        long spreadPercent = median > 0f ? Math.round((max - min) / median * 100f) : 0L;
+        report.append(label)
+            .append(": medianMs=").append(formatMilliseconds(median))
+            .append(" minMs=").append(formatMilliseconds(min))
+            .append(" maxMs=").append(formatMilliseconds(max))
+            .append(" spreadPct=").append(spreadPercent)
+            .append(" samples=[");
+        for (int i = 0; i < sampleMeansMs.length; i++) {
+            if (i > 0) {
+                report.append(',');
+            }
+            report.append(formatMilliseconds(sampleMeansMs[i]));
+        }
+        report.append("] frames=").append(totalMeasuredFrames)
             .append(" cells=").append(scene.cellCount())
-            .append(" frames=").append(framesInPhase)
             .append('\n');
+    }
+
+    private static String formatMilliseconds(float milliseconds) {
+        return String.format(Locale.ROOT, "%.2f", milliseconds);
     }
 }

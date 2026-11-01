@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.desktop;
 
+import com.github.halfdeadgames.asciigdx.sandbox.CaptureConfig;
 import com.github.halfdeadgames.asciigdx.sandbox.SandboxApp;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
@@ -12,8 +13,12 @@ public class Lwjgl3Launcher {
         createApplication();
     }
 
+    private static String systemSetting(String key) {
+        return System.getProperty("asciigdx." + key);
+    }
+
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new SandboxApp(), getDefaultConfiguration());
+        return new Lwjgl3Application(new SandboxApp(Lwjgl3Launcher::systemSetting),getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
@@ -29,7 +34,7 @@ public class Lwjgl3Launcher {
         //// useful for testing performance, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
-        boolean measuringPerformance = System.getProperty("asciigdx.capture") != null;
+        boolean measuringPerformance = systemSetting(CaptureConfig.KEY_CAPTURE) != null;
         if (measuringPerformance) {
             configuration.useVsync(false);
             configuration.setForegroundFPS(0);

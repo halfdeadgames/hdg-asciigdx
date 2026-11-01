@@ -270,6 +270,46 @@ class DirtyTrackerTest {
     }
 
     @Test
+    void dirtyCellCountOfNewTrackerIsAllCells() {
+        DirtyTracker tracker = new TerminalGrid(3, 2).createDirtyTracker();
+
+        assertEquals(6, tracker.getDirtyCellCount());
+    }
+
+    @Test
+    void dirtyCellCountIsZeroAfterClear() {
+        DirtyTracker tracker = new TerminalGrid(3, 2).createDirtyTracker();
+
+        tracker.clear();
+
+        assertEquals(0, tracker.getDirtyCellCount());
+    }
+
+    @Test
+    void dirtyCellCountMatchesNumberOfDistinctChangedCells() {
+        TerminalGrid grid = new TerminalGrid(4, 2);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.set(3, 0, '@', RED, BLUE);
+        grid.set(1, 1, '#', RED, BLUE);
+
+        assertEquals(2, tracker.getDirtyCellCount());
+    }
+
+    @Test
+    void dirtyCellCountCountsRepeatedlyChangedCellOnce() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.set(1, 1, '@', RED, BLUE);
+        grid.set(1, 1, '#', BLUE, RED);
+
+        assertEquals(1, tracker.getDirtyCellCount());
+    }
+
+    @Test
     void releaseStopsMarking() {
         TerminalGrid grid = new TerminalGrid(3, 2);
         DirtyTracker released = grid.createDirtyTracker();

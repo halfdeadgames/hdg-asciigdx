@@ -12,12 +12,14 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 
+import java.util.function.Function;
+
 /** Sandbox application: a menu of test scenes for visually checking rendering features. */
 public class SandboxApp extends ApplicationAdapter {
-    private static final String CAPTURE_PROPERTY = "asciigdx.capture";
     private static final long CAPTURE_RANDOM_SEED = 1234L;
 
     private final Array<SandboxScene> scenes = new Array<>();
+    private final Function<String, String> settings;
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
@@ -27,6 +29,16 @@ public class SandboxApp extends ApplicationAdapter {
 
     private ScreenCapture screenCapture;
     private CaptureScript captureScript;
+
+    /** No settings: capture mode stays off. */
+    public SandboxApp() {
+        this(key -> null);
+    }
+
+    /** @param settings key to value lookup returning null when missing; see {@link CaptureConfig} */
+    public SandboxApp(Function<String, String> settings) {
+        this.settings = settings;
+    }
 
     @Override
     public void create() {
@@ -49,7 +61,9 @@ public class SandboxApp extends ApplicationAdapter {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 if (activeScene != null) {
-                    return false;
+                    boolean handled = activeScene.touchDown(screenX, screenY);
+                    perfOverlay.setStatus(activeScene.statusText());
+                    return handled;
                 }
                 int index = menu.indexAt(screenX, screenY);
                 if (index < 0) {
@@ -98,6 +112,10 @@ public class SandboxApp extends ApplicationAdapter {
                 return true;
             }
         }
+        if (activeScene != null && activeScene.keyDown(keycode)) {
+            perfOverlay.setStatus(activeScene.statusText());
+            return true;
+        }
         if (screenCapture != null && keycode == Input.Keys.F12) {
             screenCapture.requestTimestampedScreenshot();
             return true;
@@ -110,17 +128,17 @@ public class SandboxApp extends ApplicationAdapter {
     }
 
     private void createScreenCapture() {
-        if (Gdx.app.getType() != Application.ApplicationType.Desktop) {
-            return;
-        }
-        String captureDirectory = System.getProperty(CAPTURE_PROPERTY);
-        if (captureDirectory == null || captureDirectory.isEmpty()) {
+        CaptureConfig captureConfig = CaptureConfig.fromSettings(settings);
+        if (captureConfig == null) {
+            if (Gdx.app.getType() != Application.ApplicationType.Desktop) {
+                return;
+            }
             screenCapture = new ScreenCapture(Gdx.files.local("captures"));
             return;
         }
         MathUtils.random.setSeed(CAPTURE_RANDOM_SEED);
-        screenCapture = new ScreenCapture(Gdx.files.absolute(captureDirectory));
-        captureScript = new CaptureScript(this, screenCapture);
+        screenCapture = new ScreenCapture(Gdx.files.absolute(captureConfig.getOutputDirectory()));
+        captureScript = new CaptureScript(this, screenCapture, captureConfig);
     }
 
     int getSceneCount() {
@@ -136,6 +154,7 @@ public class SandboxApp extends ApplicationAdapter {
         activeScene = scenes.get(index);
         activeScene.show();
         perfOverlay.begin(activeScene.cellCount());
+        perfOverlay.setStatus(activeScene.statusText());
     }
 
     private void returnToMenu() {
@@ -160,10 +179,16 @@ public class SandboxApp extends ApplicationAdapter {
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
         ScreenUtils.clear(0f, 0f, 0f, 1f);
+        long renderNanos = 0L;
         if (activeScene == null) {
             menu.render(batch, delta);
         } else {
+            long renderStartNanos = System.nanoTime();
             activeScene.render(batch, delta);
+            if (captureScript != null) {
+                Gdx.gl.glFinish();
+                renderNanos = System.nanoTime() - renderStartNanos;
+            }
             perfOverlay.update(delta);
             perfOverlay.render(batch);
         }
@@ -171,7 +196,7 @@ public class SandboxApp extends ApplicationAdapter {
             screenCapture.onFrameRendered();
         }
         if (captureScript != null) {
-            captureScript.onFrameRendered();
+            captureScript.onFrameRendered(renderNanos);
         }
     }
 
