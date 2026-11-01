@@ -107,6 +107,15 @@ class DungeonExtendedSheetTest {
     }
 
     @Test
+    void gamePieceGlyphsAreAllPresent() {
+        int[] codePoints = {0x26C0, 0x26C1, 0x26C2, 0x26C3, 0x2616, 0x2617, 0xE100, 0xE101};
+        assertEquals(8, codePoints.length);
+        for (int codePoint : codePoints) {
+            assertTrue(order.contains(codePoint), "missing U+" + Integer.toHexString(codePoint));
+        }
+    }
+
+    @Test
     void cp437CellsMatchTheMinimalSheetPixelForPixel() throws URISyntaxException {
         Pixmap minimal = new Pixmap(resource("dungeon-437.png"));
         try {

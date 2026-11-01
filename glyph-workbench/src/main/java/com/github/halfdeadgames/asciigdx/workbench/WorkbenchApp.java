@@ -206,6 +206,24 @@ public final class WorkbenchApp extends ApplicationAdapter {
         addCandidate("E", "MMPX", "mmpx", "dungeon-extended-16-mmpx", slots);
         addCandidate("F", "SFX", "scale2x-sfx", "dungeon-extended-16-scale2x-sfx", slots);
         addCandidate("G", "LIGHT", "light", "dungeon-extended-16-light", slots);
+        addHandCandidate(slots);
+    }
+
+    private void addHandCandidate(int slots) {
+        FileHandle present = Gdx.files.local("../build/exports/dungeon-extended-16-hand.present.txt");
+        if (!present.exists()) {
+            return;
+        }
+        SheetCandidate candidate = SheetCandidate.load("H", "HAND", "hand", "dungeon-extended-16-hand", slots);
+        if (candidate == null) {
+            return;
+        }
+        try {
+            candidates.add(candidate.withAvailability(GlyphAvailability.listedIn(present.readString("UTF-8"))));
+        } catch (IllegalArgumentException | GdxRuntimeException e) {
+            candidate.dispose();
+            Gdx.app.error(TAG, "Cannot read " + present.name() + ": " + e.getMessage());
+        }
     }
 
     private void addCandidate(String letter, String name, String id, String baseName, int slots) {
@@ -254,14 +272,21 @@ public final class WorkbenchApp extends ApplicationAdapter {
             columnPanel.setColumns(columns);
             return;
         }
-        int[][] cells = new int[candidates.size][];
+        int selectedCodePoint = codePoints[selected];
+        Array<SheetCandidate> offered = new Array<>();
+        for (SheetCandidate candidate : candidates) {
+            if (candidate.hasGlyph(selectedCodePoint)) {
+                offered.add(candidate);
+            }
+        }
+        int[][] cells = new int[offered.size][];
         for (int i = 0; i < cells.length; i++) {
-            cells[i] = candidates.get(i).cellPixels(selected);
+            cells[i] = offered.get(i).cellPixels(selected);
         }
         int[] shown = CandidateMerge.firstOfEach(cells);
         groupPicks = new String[shown.length];
         for (int g = 0; g < shown.length; g++) {
-            SheetCandidate candidate = candidates.get(shown[g]);
+            SheetCandidate candidate = offered.get(shown[g]);
             groupPicks[g] = candidate.id;
             columns.add(new GlyphColumn((g + 1) + " " + candidate.letter, candidate.name, candidate.regions));
         }

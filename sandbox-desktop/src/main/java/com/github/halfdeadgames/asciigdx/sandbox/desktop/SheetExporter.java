@@ -12,6 +12,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.sandbox.PixelScaler;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -51,6 +52,10 @@ public final class SheetExporter {
         int columns = Integer.parseInt(System.getProperty("asciigdx.export.columns", "16"));
         String charsSetting = System.getProperty("asciigdx.export.chars", "cp437");
         String upscale = System.getProperty("asciigdx.export.upscale", "nearest");
+        if (upscale.equalsIgnoreCase("hand")) {
+            exportHandDrawn(Gdx.files.absolute(System.getProperty("asciigdx.export.output")), columns);
+            return;
+        }
         SheetScaler mode = null;
         String suffix = null;
         if (upscale.equalsIgnoreCase("scale2x")) {
@@ -249,6 +254,58 @@ public final class SheetExporter {
                     output.dispose();
                 }
             }
+        } finally {
+            sheet.dispose();
+        }
+    }
+
+    // Same slots as the default sheet. Cells without a hand-drawn glyph stay empty; the sidecar
+    // lists the code points that do have one, so readers can ignore the empty cells.
+    private static void exportHandDrawn(FileHandle outputFolder, int columns) {
+        String listing = Gdx.files.classpath(BUNDLED_FONT_FOLDER + "dungeon-extended.txt").readString("UTF-8");
+        GlyphOrder order = GlyphOrderText.read(listing, columns);
+        Map<Integer, boolean[][]> handGlyphs = HandDrawnGlyphs.all();
+        for (int codePoint : handGlyphs.keySet()) {
+            if (!order.contains(codePoint)) {
+                throw new IllegalStateException("Default sheet lacks hand-drawn U+" + Integer.toHexString(codePoint));
+            }
+        }
+        int size = HandDrawnGlyphs.SIZE;
+        int rows = (order.size() + columns - 1) / columns;
+        int[] presentCodePoints = new int[handGlyphs.size()];
+        int presentCount = 0;
+        Pixmap sheet = new Pixmap(columns * size, rows * size, Pixmap.Format.RGBA8888);
+        try {
+            sheet.setBlending(Pixmap.Blending.None);
+            for (int slot = 0; slot < order.size(); slot++) {
+                boolean[][] glyph = handGlyphs.get(order.codePointAt(slot));
+                if (glyph == null) {
+                    continue;
+                }
+                presentCodePoints[presentCount++] = order.codePointAt(slot);
+                int left = (slot % columns) * size;
+                int top = (slot / columns) * size;
+                for (int y = 0; y < size; y++) {
+                    for (int x = 0; x < size; x++) {
+                        if (glyph[y][x]) {
+                            sheet.drawPixel(left + x, top + y, 0xFFFFFFFF);
+                        }
+                    }
+                }
+            }
+            String name = "dungeon-extended-" + size + "-hand";
+            FileHandle png = outputFolder.child(name + ".png");
+            FileHandle txt = outputFolder.child(name + ".txt");
+            FileHandle present = outputFolder.child(name + ".present.txt");
+            PixmapIO.writePNG(png, sheet);
+            txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
+            present.writeString(GlyphOrderText.write(
+                GlyphOrder.ofCodePoints(Arrays.copyOf(presentCodePoints, presentCount)), columns),
+                false, "UTF-8");
+            System.out.println("Exported " + presentCount + " hand-drawn glyphs, " + columns + "x" + rows + " cells");
+            System.out.println("  " + png.file().getAbsolutePath());
+            System.out.println("  " + txt.file().getAbsolutePath());
+            System.out.println("  " + present.file().getAbsolutePath());
         } finally {
             sheet.dispose();
         }

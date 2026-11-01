@@ -23,6 +23,8 @@ final class GeneratedGlyphs {
     static final int TEN = 0xE0C0;
     static final int CARD_BACK = 0xE0C1;
     static final int CARD_BACK_SELECTED = 0xE0C2;
+    static final int COIN_FACE = 0xE100;
+    static final int COIN_EDGE = 0xE101;
 
     private static final int[][] BAYER = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
 
@@ -41,6 +43,21 @@ final class GeneratedGlyphs {
         glyphs.putAll(pictorial());
         glyphs.putAll(symbols());
         glyphs.putAll(hourglassAndTurnArrows());
+        glyphs.putAll(gamePieces());
+        return glyphs;
+    }
+
+    /** Checkers, shogi pieces, and coins. Kept last so earlier sheet positions never move. */
+    private static Map<Integer, boolean[][]> gamePieces() {
+        Map<Integer, boolean[][]> glyphs = new LinkedHashMap<>();
+        glyphs.put(0x26C0, art("........", "........", "........", ".######.", "#......#", "########", ".######.", "........"));
+        glyphs.put(0x26C1, art("........", ".######.", "#......#", "########", "#......#", "########", ".######.", "........"));
+        glyphs.put(0x26C2, art("........", "........", "........", ".######.", "########", "#......#", ".######.", "........"));
+        glyphs.put(0x26C3, art("........", ".######.", "########", "#......#", "########", "#......#", ".######.", "........"));
+        glyphs.put(0x2616, art("...##...", "..#..#..", ".#....#.", ".#....#.", ".#....#.", ".#....#.", ".######.", "........"));
+        glyphs.put(0x2617, art("...##...", "..####..", ".######.", ".######.", ".######.", ".######.", ".######.", "........"));
+        glyphs.put(COIN_FACE, art("........", "..####..", ".#....#.", ".#.##.#.", ".#.##.#.", ".#....#.", "..####..", "........"));
+        glyphs.put(COIN_EDGE, art("........", "...##...", "..#.##..", "..#.##..", "..#.##..", "..#.##..", "...##...", "........"));
         return glyphs;
     }
 
@@ -118,8 +135,8 @@ final class GeneratedGlyphs {
         glyphs.put(0x2738, art("...##...", ".#.##.#.", "..####..", "########", "########", "..####..", ".#.##.#.", "...##..."));
         glyphs.put(0x2739, art("#..##..#", ".#.##.#.", "..####..", "########", "########", "..####..", ".#.##.#.", "#..##..#"));
         // Pointers and mail
-        glyphs.put(0x2794, art("........", "....#...", ".....#..", "######..", ".....#..", "....#...", "........", "........"));
-        glyphs.put(0x279C, art("........", "...##...", "....##..", "######..", "....##..", "...##...", "........", "........"));
+        glyphs.put(0x2794, art("........", "...##...", "...###..", "#######.", "#######.", "...###..", "...##...", "........"));
+        glyphs.put(0x279C, art("........", "....##..", "....###.", "#######.", "#######.", "....###.", "....##..", "........"));
         glyphs.put(0x27A4, art("........", ".##.....", "..###...", "..####..", "..###...", ".##.....", "........", "........"));
         glyphs.put(0x2709, art("........", "########", "##....##", "#.#..#.#", "#..##..#", "#......#", "########", "........"));
         // Big heart: full, hollow, filled from the bottom, and filled by a clockwise sweep

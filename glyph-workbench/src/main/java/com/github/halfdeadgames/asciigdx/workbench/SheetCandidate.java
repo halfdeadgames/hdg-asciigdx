@@ -20,6 +20,7 @@ final class SheetCandidate implements Disposable {
     final String id;
     final TextureRegion[] regions;
 
+    private GlyphAvailability availability = GlyphAvailability.everyGlyph();
     private final TextureGlyphSource source;
     private final int[] pixels;
     private final int width;
@@ -88,6 +89,16 @@ final class SheetCandidate implements Disposable {
             }
         }
         return result;
+    }
+
+    /** Limits the glyphs this candidate offers; returns this candidate. */
+    SheetCandidate withAvailability(GlyphAvailability limit) {
+        availability = limit;
+        return this;
+    }
+
+    boolean hasGlyph(int codePoint) {
+        return availability.includes(codePoint);
     }
 
     int[] cellPixels(int slot) {
