@@ -73,6 +73,25 @@ public class SandboxApp extends ApplicationAdapter {
                 return true;
             }
         });
+        openReviewSceneIfRequested();
+    }
+
+    private void openReviewSceneIfRequested() {
+        if (captureScript != null || !isSet(GlyphReviewScene.KEY_REVIEW_CHARS)
+                && !isSet(GlyphReviewScene.KEY_REVIEW_SHEET)) {
+            return;
+        }
+        for (int i = 0; i < scenes.size; i++) {
+            if (scenes.get(i) instanceof GlyphReviewScene) {
+                openScene(i);
+                return;
+            }
+        }
+    }
+
+    private boolean isSet(String key) {
+        String value = settings.apply(key);
+        return value != null && !value.isEmpty();
     }
 
     /** Add one line per scene; the menu and the capture script pick them up. */
@@ -83,6 +102,10 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new FontComparisonScene(glyphs));
         scenes.add(new GlyphShowcaseScene(glyphs));
         scenes.add(new LayersScene(glyphs));
+        scenes.add(new GlyphReviewScene(glyphs,
+            settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),
+            settings.apply(GlyphReviewScene.KEY_REVIEW_SHEET),
+            settings.apply(GlyphReviewScene.KEY_REVIEW_CELL)));
     }
 
     private boolean handleKey(int keycode) {
@@ -97,6 +120,10 @@ public class SandboxApp extends ApplicationAdapter {
         if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.BACKSPACE) {
             if (activeScene == null) {
                 return false;
+            }
+            if (activeScene.keyDown(keycode)) {
+                perfOverlay.setStatus(activeScene.statusText());
+                return true;
             }
             returnToMenu();
             return true;

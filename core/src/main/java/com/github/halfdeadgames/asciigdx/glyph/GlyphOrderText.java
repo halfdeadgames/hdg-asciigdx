@@ -55,6 +55,23 @@ public final class GlyphOrderText {
     }
 
     /**
+     * Writes one code point the way {@link #write} would, escaping it when it is hard to see or
+     * keep in a text file.
+     *
+     * @param codePoint the code point to write
+     * @return the code point as text, or its escape
+     */
+    public static String escapeCodePoint(int codePoint) {
+        StringBuilder text = new StringBuilder();
+        if (needsEscape(codePoint)) {
+            appendEscape(text, codePoint);
+        } else {
+            text.appendCodePoint(codePoint);
+        }
+        return text.toString();
+    }
+
+    /**
      * Reads an order from text.
      *
      * @param text the text to read
@@ -67,16 +84,33 @@ public final class GlyphOrderText {
     public static GlyphOrder read(String text, int columns) {
         Objects.requireNonNull(text, "text must not be null");
         requirePositiveColumns(columns);
+        return readRows(text, columns);
+    }
+
+    /**
+     * Reads an order from text, taking every row in order whatever its length.
+     *
+     * @param text the text to read
+     * @return the order
+     * @throws IllegalArgumentException if an escape is malformed or the text holds no slots
+     */
+    public static GlyphOrder readAnyRowLength(String text) {
+        Objects.requireNonNull(text, "text must not be null");
+        return readRows(text, Integer.MAX_VALUE);
+    }
+
+    private static GlyphOrder readRows(String text, int columns) {
         String[] lines = stripByteOrderMark(text).split("\r?\n", -1);
         int lastLine = lines.length - 1;
         while (lastLine >= 0 && lines[lastLine].isEmpty()) {
             lastLine--;
         }
+        boolean anyLength = columns == Integer.MAX_VALUE;
         IntStream.Builder slots = IntStream.builder();
         for (int line = 0; line <= lastLine; line++) {
             int[] row = parseLine(lines[line], line + 1);
             boolean tooShort = row.length < columns && line != lastLine;
-            if (tooShort || row.length > columns) {
+            if (!anyLength && (tooShort || row.length > columns)) {
                 throw new IllegalArgumentException(
                     "Line " + (line + 1) + " has " + row.length + " glyphs but every row needs "
                         + columns + (line == lastLine ? " or fewer" : ""));

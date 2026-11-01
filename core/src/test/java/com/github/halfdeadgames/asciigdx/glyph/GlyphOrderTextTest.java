@@ -8,6 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 class GlyphOrderTextTest {
+    @Test
+    void escapeCodePointLeavesPlainCharactersAlone() {
+        assertEquals("A", GlyphOrderText.escapeCodePoint('A'));
+        assertEquals(" ", GlyphOrderText.escapeCodePoint(' '));
+    }
+
+    @Test
+    void escapeCodePointEscapesHardToSeeCharacters() {
+        assertEquals("\\u{E01F}", GlyphOrderText.escapeCodePoint(0xE01F));
+        assertEquals("\\\\", GlyphOrderText.escapeCodePoint('\\'));
+        assertEquals("\\u{9}", GlyphOrderText.escapeCodePoint('\t'));
+    }
+
 
     private static int[] codePoints(GlyphOrder order) {
         int[] result = new int[order.size()];
@@ -83,6 +96,18 @@ class GlyphOrderTextTest {
     @Test
     void emptyTextIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read("\n\n", 4));
+    }
+
+    @Test
+    void readAnyRowLengthKeepsEveryRowInOrder() {
+        GlyphOrder order = GlyphOrderText.readAnyRowLength("AB\nCDEF\n\\u{E0D0}\n");
+        assertArrayEquals(new int[] {'A', 'B', 'C', 'D', 'E', 'F', 0xE0D0}, codePoints(order));
+    }
+
+    @Test
+    void readAnyRowLengthRejectsBadEscapesAndEmptyText() {
+        assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.readAnyRowLength("\\x"));
+        assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.readAnyRowLength("\n"));
     }
 
     @Test

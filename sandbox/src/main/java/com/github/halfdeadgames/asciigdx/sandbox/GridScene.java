@@ -63,7 +63,12 @@ abstract class GridScene implements SandboxScene {
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         layers.draw(batch, 0, viewport.getWorldHeight());
+        drawOverGrid(batch);
         batch.end();
+    }
+
+    /** Draws extra sprites in grid pixels after the layers, inside the open batch. */
+    protected void drawOverGrid(SpriteBatch batch) {
     }
 
     private void clearGridArea() {

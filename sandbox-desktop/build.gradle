@@ -74,6 +74,19 @@ run {
       println "Capture output: ${captureDirectory.absolutePath}"
     }
   }
+  if (project.hasProperty('reviewChars')) {
+    def reviewCharsFile = rootProject.file(project.property('reviewChars'))
+    doFirst {
+      systemProperty 'asciigdx.reviewChars', reviewCharsFile.absolutePath
+    }
+  }
+  if (project.hasProperty('reviewSheet')) {
+    def reviewSheetFile = rootProject.file(project.property('reviewSheet'))
+    doFirst {
+      systemProperty 'asciigdx.reviewSheet', reviewSheetFile.absolutePath
+      if (project.hasProperty('reviewCell')) systemProperty 'asciigdx.reviewCell', project.property('reviewCell')
+    }
+  }
 }
 
 tasks.register('exportSheet', JavaExec) {
