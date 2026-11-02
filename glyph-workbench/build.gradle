@@ -57,6 +57,7 @@ run {
   def commandLineProperties = gradle.startParameter.projectProperties
   if (commandLineProperties.containsKey('select')) systemProperty 'workbench.select', commandLineProperties['select']
   if (commandLineProperties.containsKey('mode')) systemProperty 'workbench.mode', commandLineProperties['mode']
+  systemProperty 'workbench.fontsRoot', rootProject.file('fonts').absolutePath
   systemProperty 'workbench.fontSize', commandLineProperties.getOrDefault('fontSize', '8')
   if (commandLineProperties.containsKey('rulesOpen')) systemProperty 'workbench.rulesOpen', 'true'
   def rulesFontDir = commandLineProperties.containsKey('fontDir') ? commandLineProperties['fontDir'] : 'fonts/saiksistt'

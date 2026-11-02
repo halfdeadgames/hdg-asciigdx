@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -24,7 +23,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 
 /** Shows the default glyph sheet as a grid and lets the user pick one glyph. */
-public final class WorkbenchApp extends ApplicationAdapter {
+public final class WorkbenchApp implements WorkbenchScreen {
 
     private static final String SHEET_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
     private static final int COLUMNS = 16;
@@ -139,8 +138,15 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private boolean rulesOpen;
     private float rulesSlide;
 
+    private final Runnable onExit;
+
+    /** @param onExit called when the user presses Esc (outside the note editor and the rules overlay) */
+    public WorkbenchApp(Runnable onExit) {
+        this.onExit = onExit;
+    }
+
     @Override
-    public void create() {
+    public void show() {
         source = TextureGlyphSource.loadDungeonMode();
         String characterList = Gdx.files.classpath(SHEET_FOLDER + "dungeon-extended.txt").readString("UTF-8");
         order = GlyphOrderText.read(characterList, COLUMNS);
@@ -456,7 +462,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
         }
         int cursorBefore = cursor;
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit();
+            onExit.run();
             return;
         }
         float delta = Gdx.graphics.getDeltaTime();
@@ -896,7 +902,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
     }
 
     @Override
-    public void dispose() {
+    public void hide() {
         for (SheetCandidate candidate : candidates) {
             candidate.dispose();
         }

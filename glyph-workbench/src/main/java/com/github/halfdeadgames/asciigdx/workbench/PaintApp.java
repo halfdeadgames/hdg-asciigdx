@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -17,7 +16,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
-public final class PaintApp extends ApplicationAdapter {
+public final class PaintApp implements WorkbenchScreen {
 
     private static final String TAG = "Paint";
     private static final int MARGIN = 12;
@@ -63,13 +62,26 @@ public final class PaintApp extends ApplicationAdapter {
     private int pointerX;
     private int pointerY;
 
+    private final Runnable onExit;
+    private final String fontDir;
+    private final String fontSize;
+
+    /**
+     * @param onExit called when the user leaves the screen with Esc (after the unsaved prompt)
+     * @param fontDir absolute path of the font folder
+     * @param fontSize size name, which is also the data file name without {@code .txt}
+     */
+    public PaintApp(Runnable onExit, String fontDir, String fontSize) {
+        this.onExit = onExit;
+        this.fontDir = fontDir;
+        this.fontSize = fontSize;
+    }
+
     @Override
-    public void create() {
-        String fontDir = System.getProperty("workbench.fontDir");
+    public void show() {
         if (fontDir == null) {
             throw new GdxRuntimeException("workbench.fontDir is not set; start with -Pmode=paint through Gradle");
         }
-        String fontSize = System.getProperty("workbench.fontSize", "8");
         FileHandle directory = Gdx.files.absolute(fontDir);
         dataFile = directory.child(fontSize + ".txt");
         title = "PAINT " + directory.name().toUpperCase() + " " + fontSize;
@@ -99,7 +111,7 @@ public final class PaintApp extends ApplicationAdapter {
         sheet = new PaintSheetView(painter, editor, MARGIN, MARGIN + 2 * TEXT_LINE);
         grid = new PaintGridView(painter, editor, PaintGuides.saiksistt(editor.cellWidth()));
         preview = new PaintPreview(painter, editor);
-        rules = new RulesOverlay(painter);
+        rules = new RulesOverlay(painter, fontDir);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
@@ -152,7 +164,7 @@ public final class PaintApp extends ApplicationAdapter {
                 confirmingQuit = true;
                 stroke.end();
             } else {
-                Gdx.app.exit();
+                onExit.run();
             }
             return;
         }
@@ -245,11 +257,11 @@ public final class PaintApp extends ApplicationAdapter {
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
             if (!editor.isModified()) {
-                Gdx.app.exit();
+                onExit.run();
             }
             confirmingQuit = false;
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            Gdx.app.exit();
+            onExit.run();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             confirmingQuit = false;
         }
@@ -333,7 +345,7 @@ public final class PaintApp extends ApplicationAdapter {
         int chars = Math.max(1, width / TEXT_LINE);
         painter.text(text.length() > chars ? text.substring(0, chars) : text, x, top, color);
         painter.text("ARROWS MOVE  CLICK TOGGLES  DRAG PAINTS", x, top + TEXT_LINE, TEXT_COLOR);
-        painter.text("CTRL+S SAVES  F1 RULES  ESC QUITS", x, top + 2 * TEXT_LINE, TEXT_COLOR);
+        painter.text("CTRL+S SAVES  F1 RULES  ESC LEAVES", x, top + 2 * TEXT_LINE, TEXT_COLOR);
     }
 
     private static void appendHex(StringBuilder out, int value) {
@@ -347,7 +359,7 @@ public final class PaintApp extends ApplicationAdapter {
     }
 
     @Override
-    public void dispose() {
+    public void hide() {
         batch.dispose();
         whitePixel.dispose();
         source.dispose();

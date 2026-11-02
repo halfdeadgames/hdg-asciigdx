@@ -32,18 +32,18 @@ final class RulesOverlay {
     private boolean open;
     private float slide;
 
-    RulesOverlay(Painter painter) {
+    /** @param fontDir absolute path of the font folder holding rules.md, or null for none */
+    RulesOverlay(Painter painter, String fontDir) {
         this.painter = painter;
         panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR);
-        loadRules();
+        loadRules(fontDir);
         if (Boolean.getBoolean("workbench.rulesOpen")) {
             open = true;
             slide = 1f;
         }
     }
 
-    private void loadRules() {
-        String fontDir = System.getProperty("workbench.fontDir");
+    private void loadRules(String fontDir) {
         if (fontDir == null) {
             panel.setMissing("NO RULES FILE: NO FONT DIRECTORY SET");
             return;
