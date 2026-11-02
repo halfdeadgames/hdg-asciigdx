@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 
 /** Draws rectangles, glyphs, and text using window pixels with the origin at the top-left. */
 final class Painter {
@@ -27,6 +28,17 @@ final class Painter {
     void fill(Color color, int x, int top, int width, int height) {
         batch.setColor(color);
         batch.draw(whitePixel, x, flipY(top, height), width, height);
+    }
+
+    /** Draws the lit pixels of a grid as filled squares of {@code scale} pixels. */
+    void pixels(PixelGrid grid, int x, int top, int scale, Color color) {
+        for (int py = 0; py < grid.getHeight(); py++) {
+            for (int px = 0; px < grid.getWidth(); px++) {
+                if (grid.isLit(px, py)) {
+                    fill(color, x + px * scale, top + py * scale, scale, scale);
+                }
+            }
+        }
     }
 
     void region(TextureRegion region, int x, int top, int size, Color tint) {

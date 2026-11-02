@@ -130,7 +130,29 @@ final class ColumnPanel {
         if (scale > single) {
             return new Plan(perRow, 2, scale);
         }
-        return new Plan(count, 1, single);
+        if (totalWidth(labelWidths, gap, 1) <= usableWidth) {
+            return new Plan(count, 1, single);
+        }
+        return wrapToWidth(labelWidths, gap, usableWidth, maxOuterHeight);
+    }
+
+    // Even at scale 1 one row is too wide, so use the fewest rows whose widest row fits.
+    private static Plan wrapToWidth(int[] labelWidths, int gap, int usableWidth, int maxOuterHeight) {
+        int count = labelWidths.length;
+        for (int rows = 3; rows <= count; rows++) {
+            int perRow = (count + rows - 1) / rows;
+            boolean fits = true;
+            for (int first = 0; first < count && fits; first += perRow) {
+                int[] rowWidths = Arrays.copyOfRange(labelWidths, first, Math.min(count, first + perRow));
+                fits = totalWidth(rowWidths, gap, 1) <= usableWidth;
+            }
+            if (fits || rows == count) {
+                int actualRows = (count + perRow - 1) / perRow;
+                int scale = fitScaleForHeight((maxOuterHeight - ROW_GAP * (actualRows - 1)) / actualRows);
+                return new Plan(perRow, actualRows, scale);
+            }
+        }
+        return new Plan(count, 1, 1);
     }
 
     /** Outer width of a row of framed columns that share their neighbouring borders. */

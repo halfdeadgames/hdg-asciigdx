@@ -21,6 +21,7 @@ import com.github.halfdeadgames.asciigdx.glyph.ColorKeyConversion;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 
 /** Shows the default glyph sheet as a grid and lets the user pick one glyph. */
 public final class WorkbenchApp extends ApplicationAdapter {
@@ -51,6 +52,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final int HINT_LINES = 3;
 
     private static final String TAG = "Workbench";
+    private static final String RULES_FILE_NAME = "rules.md";
     private static final String RESULTS_PATH = "../glyph-workbench/picks/dungeon-extended-16.txt";
     private static final int MARK_SIZE = 6;
     private static final int NONE_CELLS_WIDE = 20;
@@ -69,6 +71,10 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final int NOTE_LINES = 7;
     private static final int NOTE_MAX_CELLS = 44;
     private static final int NOTE_TITLE_CELLS = 31;
+    private static final float RULES_SLIDE_SECONDS = 0.15f;
+    private static final float RULES_DIM_ALPHA = 0.7f;
+    private static final int RULES_WHEEL_ROWS = 3;
+    private static final Color RULES_FILL = new Color(0.08f, 0.09f, 0.13f, 1f);
     private static final String NOTE_TITLE = "NOTE (ENTER SAVES, ESC SKIPS)";
     private static final int CURSOR_THICKNESS = 3;
 
@@ -129,6 +135,9 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private int sheetFrameCellsHigh;
     private int barLeft;
     private int barCells;
+    private RulesPanel rulesPanel;
+    private boolean rulesOpen;
+    private float rulesSlide;
 
     @Override
     public void create() {
@@ -189,6 +198,67 @@ public final class WorkbenchApp extends ApplicationAdapter {
         columnPanel = new ColumnPanel(painter, CELL_FILL, TEXT_COLOR, CURSOR_COLOR, FRAME_COLOR);
         samplePanel = new SamplePanel(painter, order, CELL_FILL, FRAME_COLOR);
         loadCandidates(order.size());
+        rulesPanel = new RulesPanel(painter, FRAME_COLOR, RULES_FILL, TEXT_COLOR, LABEL_COLOR);
+        loadRules();
+        if (Boolean.getBoolean("workbench.rulesOpen")) {
+            rulesOpen = true;
+            rulesSlide = 1f;
+        }
+    }
+
+    private void loadRules() {
+        String fontDir = System.getProperty("workbench.fontDir");
+        if (fontDir == null) {
+            rulesPanel.setMissing("NO RULES FILE: NO FONT DIRECTORY SET");
+            return;
+        }
+        FileHandle file = Gdx.files.absolute(fontDir).child(RULES_FILE_NAME);
+        if (!file.exists()) {
+            rulesPanel.setMissing("NO RULES FILE: " + file.path());
+            return;
+        }
+        try {
+            rulesPanel.setRules(FontRules.parse(file.readString("UTF-8")));
+        } catch (GdxRuntimeException e) {
+            rulesPanel.setMissing("NO RULES FILE: " + file.path());
+            Gdx.app.error(TAG, "Cannot read " + file.path() + ": " + e.getMessage());
+        }
+    }
+
+    private void advanceRulesSlide(float delta) {
+        float step = delta / RULES_SLIDE_SECONDS;
+        rulesSlide = MathUtils.clamp(rulesSlide + (rulesOpen ? step : -step), 0f, 1f);
+    }
+
+    // While the rules are open they own the keyboard and wheel; only F1 or Esc leave.
+    private void handleRulesKeys(float delta) {
+        repeatLeft.update(false, delta);
+        repeatRight.update(false, delta);
+        hoveredColumn = -1;
+        noneHovered = false;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F1) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            rulesOpen = false;
+            wheelTicks = 0;
+            repeatUp.update(false, delta);
+            repeatDown.update(false, delta);
+            return;
+        }
+        int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
+        for (int i = 0; i < ups; i++) {
+            rulesPanel.scrollBy(-1);
+        }
+        int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
+        for (int i = 0; i < downs; i++) {
+            rulesPanel.scrollBy(1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_UP)) {
+            rulesPanel.pageUp();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
+            rulesPanel.pageDown();
+        }
+        rulesPanel.scrollBy(wheelTicks * RULES_WHEEL_ROWS);
+        wheelTicks = 0;
     }
 
     private void loadCandidates(int slots) {
@@ -368,8 +438,20 @@ public final class WorkbenchApp extends ApplicationAdapter {
 
     private void handleInput() {
         updateSheetLayout();
+        float frameDelta = Gdx.graphics.getDeltaTime();
+        advanceRulesSlide(frameDelta);
+        if (rulesOpen) {
+            handleRulesKeys(frameDelta);
+            return;
+        }
         if (noteEditor.isActive()) {
             handleNoteKeys();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F1)) {
+            rulesOpen = true;
+            rulesPanel.resetScroll();
+            wheelTicks = 0;
             return;
         }
         int cursorBefore = cursor;
@@ -605,7 +687,25 @@ public final class WorkbenchApp extends ApplicationAdapter {
         batch.begin();
         drawSheetPanel();
         drawDetailPanel();
+        drawRulesOverlay();
         batch.end();
+    }
+
+    // Slides in from the right edge over a dimmed screen; the page is full window height.
+    private void drawRulesOverlay() {
+        if (rulesSlide <= 0f) {
+            return;
+        }
+        int worldWidth = Math.round(viewport.getWorldWidth());
+        int worldHeight = Math.round(viewport.getWorldHeight());
+        pulseTint.set(0f, 0f, 0f, RULES_DIM_ALPHA * rulesSlide);
+        fillTop(pulseTint, 0, 0, worldWidth, worldHeight);
+        int cellsWide = RulesPanel.cellsWideFor(worldWidth);
+        int pageWidth = cellsWide * TEXT_LINE;
+        float eased = 1f - (1f - rulesSlide) * (1f - rulesSlide);
+        int left = worldWidth - Math.round(pageWidth * eased);
+        int codePoint = selected >= 0 ? codePoints[selected] : -1;
+        rulesPanel.draw(left, 0, cellsWide, Math.max(3, worldHeight / TEXT_LINE), worldHeight, codePoint);
     }
 
     private void drawSheetPanel() {
@@ -676,7 +776,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
         int top = MARGIN;
 
         noneVisible = false;
-        text("SELECTED GLYPH", x, top);
+        text("SELECTED GLYPH   F1 RULES", x, top);
         top += TEXT_LINE;
         if (selected < 0) {
             text("NONE YET", x, top);

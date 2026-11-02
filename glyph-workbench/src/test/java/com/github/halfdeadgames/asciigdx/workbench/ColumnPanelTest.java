@@ -105,9 +105,8 @@ class ColumnPanelTest {
         assertEquals(2, roomy.rows());
         assertEquals(4, roomy.perRow());
         assertEquals(6, roomy.scale());
-        ColumnPanel.Plan flat = ColumnPanel.plan(labels, ColumnPanel.GAP, 700, 364);
-        assertEquals(1, flat.rows());
-        assertEquals(8, flat.perRow());
+        ColumnPanel.Plan tooNarrowForOneRow = ColumnPanel.plan(labels, ColumnPanel.GAP, 700, 364);
+        assertEquals(3, tooNarrowForOneRow.rows());
     }
 
     @Test
