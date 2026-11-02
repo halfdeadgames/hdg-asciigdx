@@ -35,10 +35,38 @@ class IntegerScalingTest {
     }
 
     @Test
-    void belowOneTimesFallsBackToFractionalFit() {
+    void belowOneTimesStaysAtOneTimes() {
         Vector2 result = apply(200, 100, 100, 100);
+        assertEquals(200f, result.x, EPSILON);
+        assertEquals(100f, result.y, EPSILON);
+    }
+
+    @Test
+    void oneAxisTooSmallStaysAtOneTimes() {
+        Vector2 result = apply(100, 100, 1000, 50);
+        assertEquals(100f, result.x, EPSILON);
+        assertEquals(100f, result.y, EPSILON);
+    }
+
+    @Test
+    void shrinkBelowOneFallsBackToFractionalFit() {
+        Vector2 result = IntegerScaling.SHRINK_BELOW_ONE.apply(200, 100, 100, 100);
         assertEquals(100f, result.x, EPSILON);
         assertEquals(50f, result.y, EPSILON);
+    }
+
+    @Test
+    void shrinkBelowOneFloorsAboveOneTimes() {
+        Vector2 result = IntegerScaling.SHRINK_BELOW_ONE.apply(100, 50, 350, 180);
+        assertEquals(300f, result.x, EPSILON);
+        assertEquals(150f, result.y, EPSILON);
+    }
+
+    @Test
+    void shrinkBelowOneZeroTargetGivesZero() {
+        Vector2 result = IntegerScaling.SHRINK_BELOW_ONE.apply(160, 100, 0, 0);
+        assertEquals(0f, result.x, EPSILON);
+        assertEquals(0f, result.y, EPSILON);
     }
 
     @Test
