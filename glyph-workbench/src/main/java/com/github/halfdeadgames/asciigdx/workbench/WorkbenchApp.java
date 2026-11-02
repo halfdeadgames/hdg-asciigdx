@@ -40,7 +40,6 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final Color BLANK_FILL = new Color(0.09f, 0.09f, 0.11f, 1f);
     private static final Color GLYPH_TINT = Color.WHITE;
     private static final Color CURSOR_COLOR = Color.YELLOW;
-    private static final Color SELECTION_COLOR = Color.CYAN;
     private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
     private static final Color PULSE_HIGHLIGHT = Color.ORANGE;
     private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
@@ -56,15 +55,16 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final int MARK_SIZE = 6;
     private static final int NONE_CELLS_WIDE = 20;
     private static final int NONE_CELLS_HIGH = 3;
-    private static final int MENU_CELLS_WIDE = 24;
     private static final Color HOVER_COLOR = Color.YELLOW;
     private static final Color PICKED_COLOR = new Color(0.25f, 0.9f, 0.35f, 1f);
     private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
-    private static final Color ROW_FOCUS_FILL = new Color(0.2f, 0.25f, 0.4f, 1f);
     private static final Color MARK_PERFECT = new Color(0.25f, 0.9f, 0.35f, 1f);
     private static final Color MARK_NEEDS_WORK = Color.ORANGE;
     private static final Color MARK_NONE = new Color(0.95f, 0.25f, 0.25f, 1f);
 
+    private static final String HAND_PICK_ID = "hand";
+    private static final String NEAREST_PICK_ID = "nearest";
+    private static final Color HAND_TITLE_COLOR = new Color(0xFFB020FF);
     private static final Color VIEW_COLOR = new Color(0.4f, 0.75f, 1f, 1f);
     private static final int NOTE_LINES = 7;
     private static final int NOTE_MAX_CELLS = 44;
@@ -72,7 +72,6 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final String NOTE_TITLE = "NOTE (ENTER SAVES, ESC SKIPS)";
     private static final int CURSOR_THICKNESS = 3;
 
-    private final VerdictMenu menu = new VerdictMenu();
     private final ViewedColumn viewedColumn = new ViewedColumn();
     private final NoteEditor noteEditor = new NoteEditor();
     private GlyphAnswer pendingAnswer;
@@ -80,18 +79,16 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private final KeyRepeat repeatRight = new KeyRepeat();
     private final KeyRepeat repeatUp = new KeyRepeat();
     private final KeyRepeat repeatDown = new KeyRepeat();
-    private final StringBuilder rowText = new StringBuilder();
+    private final KeyRepeat repeatBackspace = new KeyRepeat();
+    private final KeyRepeat repeatDelete = new KeyRepeat();
     private AnswerStore answers = new AnswerStore();
     private boolean savingEnabled = true;
     private String warning = "";
     private String[] groupPicks = new String[0];
-    private String pendingPick;
     private boolean noneVisible;
     private boolean noneHovered;
     private int noneLeft;
     private int noneTop;
-    private int menuLeft;
-    private int menuRowsTop;
     private int pointerX;
     private int pointerY;
 
@@ -157,8 +154,8 @@ public final class WorkbenchApp extends ApplicationAdapter {
         int preselected = DevCapture.slotToSelect(codePoints, blank);
         if (preselected >= 0) {
             cursor = preselected;
-            selected = preselected;
         }
+        selected = cursor;
 
         sheetFrameTop = MARGIN + TEXT_LINE;
         layout = new SheetGridLayout(
@@ -176,11 +173,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
                 if (!noteEditor.isActive()) {
                     return false;
                 }
-                if (character == '\b') {
-                    noteEditor.backspace();
-                } else {
-                    noteEditor.type(character);
-                }
+                noteEditor.type(character);
                 return true;
             }
         });
@@ -262,8 +255,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
     // Merging depends on the glyph, so columns, cloud, and words are rebuilt when the selection changes.
     private void rebuildForSelection() {
         builtFor = selected;
-        menu.close();
-        pendingPick = null;
+        pendingAnswer = null;
         groupPicks = new String[0];
         viewedColumn.reset();
         Array<GlyphColumn> columns = new Array<>();
@@ -288,9 +280,14 @@ public final class WorkbenchApp extends ApplicationAdapter {
         for (int g = 0; g < shown.length; g++) {
             SheetCandidate candidate = offered.get(shown[g]);
             groupPicks[g] = candidate.id;
-            columns.add(new GlyphColumn((g + 1) + " " + candidate.letter, candidate.name, candidate.regions));
+            Color titleColor = HAND_PICK_ID.equals(candidate.id) ? HAND_TITLE_COLOR : null;
+            columns.add(new GlyphColumn(
+                (g + 1) + " " + candidate.letter, candidate.name, candidate.regions, titleColor));
         }
         columnPanel.setColumns(columns);
+        GlyphAnswer saved = answers.get(selectedCodePoint);
+        viewedColumn.setDefault(ViewedColumn.defaultColumn(
+            groupPicks, saved == null ? null : saved.pick(), HAND_PICK_ID, NEAREST_PICK_ID));
         int codePoint = codePoints[selected];
         cloud = GlyphCloud.build(
             blank, SamplePanel.CLOUD_COLUMNS, SamplePanel.CLOUD_ROWS, selected, codePoint);
@@ -377,12 +374,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
         }
         int cursorBefore = cursor;
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (menu.isOpen()) {
-                menu.close();
-                pendingPick = null;
-            } else {
-                Gdx.app.exit();
-            }
+            Gdx.app.exit();
             return;
         }
         float delta = Gdx.graphics.getDeltaTime();
@@ -394,52 +386,35 @@ public final class WorkbenchApp extends ApplicationAdapter {
         for (int i = 0; i < rights; i++) {
             cursor = CursorNavigator.move(blank, COLUMNS, rows, cursor, 1, 0);
         }
-        if (menu.isOpen()) {
-            repeatUp.update(false, delta);
-            repeatDown.update(false, delta);
-            if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-                menu.moveFocus(-1);
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-                menu.moveFocus(1);
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-                || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-                chooseRow(menu.focus());
-            }
-        } else {
-            int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
-            for (int i = 0; i < ups; i++) {
-                cursor = CursorNavigator.move(blank, COLUMNS, rows, cursor, 0, -1);
-            }
-            int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
-            for (int i = 0; i < downs; i++) {
-                cursor = CursorNavigator.move(blank, COLUMNS, rows, cursor, 0, 1);
-            }
+        int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
+        for (int i = 0; i < ups; i++) {
+            cursor = CursorNavigator.move(blank, COLUMNS, rows, cursor, 0, -1);
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            selected = cursor;
+        int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
+        for (int i = 0; i < downs; i++) {
+            cursor = CursorNavigator.move(blank, COLUMNS, rows, cursor, 0, 1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.N)) {
             int next = answers.nextUnanswered(codePoints, blank, cursor);
             if (next >= 0) {
                 cursor = next;
-                selected = next;
             }
         }
+        selected = cursor;
         if ((Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL) || Gdx.input.isKeyJustPressed(Input.Keys.DEL))
             && selected >= 0 && answers.has(codePoints[selected])) {
             answers.remove(codePoints[selected]);
             saveAnswers();
-            menu.close();
-            pendingPick = null;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.T) && !menu.isOpen() && selected >= 0
+        if (Gdx.input.isKeyJustPressed(Input.Keys.T) && selected >= 0
             && builtFor == selected && answers.has(codePoints[selected])) {
             pendingAnswer = answers.get(codePoints[selected]);
             noteEditor.begin(pendingAnswer.note(), true);
         }
         handleDigits();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            acceptViewedColumn();
+        }
         if (cursor != cursorBefore) {
             scroll.keepVisible(cursor / COLUMNS);
         }
@@ -478,11 +453,9 @@ public final class WorkbenchApp extends ApplicationAdapter {
             lastMouseX = mouseX;
             lastMouseY = mouseY;
             int hovered = layout.cellAt(pointerX, pointerY, scroll.offset(), scroll.visibleRows());
-            if (hovered >= 0 && !blank[hovered]) {
+            if (clicked && hovered >= 0 && !blank[hovered]) {
                 cursor = hovered;
-                if (clicked) {
-                    selected = hovered;
-                }
+                selected = hovered;
             }
         }
 
@@ -490,17 +463,8 @@ public final class WorkbenchApp extends ApplicationAdapter {
         int noneWidth = NONE_CELLS_WIDE * TEXT_LINE;
         noneHovered = noneVisible && pointerX >= noneLeft && pointerX < noneLeft + noneWidth
             && pointerY >= noneTop && pointerY < noneTop + NONE_CELLS_HIGH * TEXT_LINE;
-        int hoveredRow = menu.isOpen()
-            ? VerdictMenu.rowAt(
-                pointerX, pointerY, menuLeft, menuRowsTop, MENU_CELLS_WIDE * TEXT_LINE, TEXT_LINE, menu.rowCount())
-            : -1;
-        if (hoveredRow >= 0 && moved) {
-            menu.setFocus(hoveredRow);
-        }
         if (clicked) {
-            if (hoveredRow >= 0) {
-                chooseRow(hoveredRow);
-            } else if (noneHovered && builtFor == selected) {
+            if (noneHovered && builtFor == selected) {
                 startPick(GlyphAnswer.NONE_PICK);
             } else if (builtFor == selected && selected >= 0 && hoveredColumn == 0) {
                 viewedColumn.choose(0);
@@ -511,16 +475,36 @@ public final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    // While typing, only Enter and Escape act; everything else is text or ignored.
+    // While typing, the sheet and menu keys are off; arrows, Home, End, and the delete keys edit the note.
     private void handleNoteKeys() {
         float delta = Gdx.graphics.getDeltaTime();
-        repeatLeft.update(false, delta);
-        repeatRight.update(false, delta);
         repeatUp.update(false, delta);
         repeatDown.update(false, delta);
         wheelTicks = 0;
         hoveredColumn = -1;
         noneHovered = false;
+        int lefts = repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta);
+        for (int i = 0; i < lefts; i++) {
+            noteEditor.caretLeft();
+        }
+        int rights = repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta);
+        for (int i = 0; i < rights; i++) {
+            noteEditor.caretRight();
+        }
+        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            noteEditor.backspace();
+        }
+        int deletes = repeatDelete.update(Gdx.input.isKeyPressed(Input.Keys.FORWARD_DEL), delta);
+        for (int i = 0; i < deletes; i++) {
+            noteEditor.deleteForward();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.HOME)) {
+            noteEditor.caretToStart();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
+            noteEditor.caretToEnd();
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
             finishNote(true);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -528,13 +512,21 @@ public final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    // Skipping keeps the verdict; for a saved answer it also keeps the old note.
+    // Editing a saved answer keeps its verdict and, when skipped, its old note; a fresh pick gets its verdict from the note.
     private void finishNote(boolean keepText) {
         if (pendingAnswer != null) {
-            if (keepText) {
-                answers.put(pendingAnswer.withNote(noteEditor.value().trim()));
-            } else if (!noteEditor.isEditingExisting()) {
-                answers.put(pendingAnswer.withNote(""));
+            if (noteEditor.isEditingExisting()) {
+                if (keepText) {
+                    answers.put(pendingAnswer.withNote(noteEditor.value().trim()));
+                }
+            } else {
+                String note = keepText ? noteEditor.value().trim() : "";
+                answers.put(new GlyphAnswer(
+                    pendingAnswer.codePoint(),
+                    pendingAnswer.pick(),
+                    GlyphAnswer.verdictFor(pendingAnswer.pick(), note),
+                    "",
+                    note));
             }
             saveAnswers();
         }
@@ -564,9 +556,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
                 && !Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0 + digit)) {
                 continue;
             }
-            if (menu.isOpen()) {
-                chooseRow(digit - 1);
-            } else if (selected >= 0 && builtFor == selected) {
+            if (selected >= 0 && builtFor == selected) {
                 if (digit == 0) {
                     startPick(GlyphAnswer.NONE_PICK);
                 } else if (digit <= groupPicks.length) {
@@ -578,25 +568,25 @@ public final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    private void startPick(String pick) {
-        pendingPick = pick;
-        menu.open(GlyphAnswer.NONE_PICK.equals(pick));
+    private void acceptViewedColumn() {
+        if (selected < 0 || builtFor != selected) {
+            return;
+        }
+        int viewed = viewedColumn.resolve(hoveredColumn, columnPanel.count());
+        if (viewed >= 1 && viewed <= groupPicks.length) {
+            startPick(groupPicks[viewed - 1]);
+        }
     }
 
-    private void chooseRow(int index) {
-        if (menu.choose(index) && selected >= 0 && pendingPick != null) {
-            int codePoint = codePoints[selected];
-            pendingAnswer = new GlyphAnswer(codePoint, pendingPick, menu.verdict(), menu.reason());
-            GlyphAnswer previous = answers.get(codePoint);
-            pendingPick = null;
-            noteEditor.begin(previous == null ? "" : previous.note(), false);
-        }
+    // The verdict is decided when the note is saved, so a pick goes straight to the note editor.
+    private void startPick(String pick) {
+        int codePoint = codePoints[selected];
+        pendingAnswer = new GlyphAnswer(codePoint, pick, "", "");
+        GlyphAnswer previous = answers.get(codePoint);
+        noteEditor.begin(previous == null ? "" : previous.note(), false);
     }
 
     private String shownPick() {
-        if (menu.isOpen()) {
-            return pendingPick;
-        }
         if (pendingAnswer != null) {
             return pendingAnswer.pick();
         }
@@ -637,10 +627,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
                 }
             }
         }
-        if (selected >= 0) {
-            outline(SELECTION_COLOR, selected, 0, OUTLINE);
-        }
-        outline(CURSOR_COLOR, cursor, selected == cursor ? OUTLINE : 0, selected == cursor ? 1 : OUTLINE);
+        outline(CURSOR_COLOR, cursor, 0, OUTLINE);
     }
 
     private void drawScrollBar() {
@@ -668,9 +655,6 @@ public final class WorkbenchApp extends ApplicationAdapter {
     }
 
     private Color tintFor(int slot) {
-        if (slot == selected) {
-            return SELECTION_COLOR;
-        }
         return slot == cursor ? CURSOR_COLOR : GLYPH_TINT;
     }
 
@@ -702,6 +686,9 @@ public final class WorkbenchApp extends ApplicationAdapter {
             appendHex(line, codePoints[selected]);
             line.append("  INDEX ").append(selected);
             text(line, x, top);
+            top += TEXT_LINE;
+            int nameChars = (Math.round(viewport.getWorldWidth()) - MARGIN - x) / TEXT_LINE;
+            text(GlyphName.describe(codePoints[selected], nameChars), x, top);
             top += TEXT_LINE + MARGIN;
             String shown = shownPick();
             int pickedColumn = -1;
@@ -732,11 +719,11 @@ public final class WorkbenchApp extends ApplicationAdapter {
             painter.text(warning, x, hintTop - TEXT_LINE, WARNING_COLOR);
         }
         if (noteEditor.isActive()) {
-            text("TYPING A NOTE: ALL OTHER KEYS ARE OFF", x, hintTop);
-            text("ENTER SAVES  ESC SKIPS  BACKSPACE DELETES", x, hintTop + TEXT_LINE);
+            text("TYPING A NOTE: ARROWS HOME END MOVE THE CARET", x, hintTop);
+            text("ENTER SAVES  ESC SKIPS  BACKSPACE DEL DELETE", x, hintTop + TEXT_LINE);
         } else {
-            text("ARROWS MOVE  SPACE SELECTS  N NEXT NEW  T NOTE", x, hintTop);
-            text("1-9 PICK  0 HAND DRAWN  DEL CLEARS  ESC BACK", x, hintTop + TEXT_LINE);
+            text("ARROWS MOVE  N NEXT NEW  T NOTE  ENTER ACCEPTS", x, hintTop);
+            text("1-9 PICK  0 HAND DRAWN  DEL CLEARS  ESC QUITS", x, hintTop + TEXT_LINE);
         }
     }
 
@@ -747,17 +734,16 @@ public final class WorkbenchApp extends ApplicationAdapter {
         if (noteEditor.isActive()) {
             painter.frame(CURSOR_COLOR, left, top, cells, NOTE_LINES + 3);
             text(NOTE_TITLE, left + TEXT_LINE, top + TEXT_LINE);
-            List<String> lines = NoteText.wrap(noteEditor.value(), innerChars);
             int textTop = top + 2 * TEXT_LINE;
-            for (int i = 0; i < lines.size() && i < NOTE_LINES; i++) {
-                text(lines.get(i), left + TEXT_LINE, textTop + i * TEXT_LINE);
+            int firstRow = noteEditor.firstVisibleRow(innerChars, NOTE_LINES);
+            int lastRow = Math.min(noteEditor.rowCount(innerChars), firstRow + NOTE_LINES);
+            for (int i = firstRow; i < lastRow; i++) {
+                text(noteEditor.row(i, innerChars), left + TEXT_LINE, textTop + (i - firstRow) * TEXT_LINE);
             }
-            int row = NoteText.cursorRow(lines, innerChars);
-            if (row < NOTE_LINES && (int) (elapsed * 2f) % 2 == 0) {
-                int column = NoteText.cursorColumn(lines, innerChars);
-                fillTop(CURSOR_COLOR, left + TEXT_LINE + column * TEXT_LINE,
-                    textTop + (row + 1) * TEXT_LINE - CURSOR_THICKNESS, TEXT_LINE, CURSOR_THICKNESS);
-            }
+            int row = noteEditor.caretRow(innerChars) - firstRow;
+            int column = noteEditor.caretColumn(innerChars);
+            fillTop(CURSOR_COLOR, left + TEXT_LINE + column * TEXT_LINE,
+                textTop + (row + 1) * TEXT_LINE - CURSOR_THICKNESS, TEXT_LINE, CURSOR_THICKNESS);
             return;
         }
         GlyphAnswer answer = selected >= 0 ? answers.get(codePoints[selected]) : null;
@@ -778,26 +764,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
         Color noneFrame = noneHovered ? HOVER_COLOR : nonePicked ? PICKED_COLOR : FRAME_COLOR;
         painter.frame(noneFrame, left, top, NONE_CELLS_WIDE, NONE_CELLS_HIGH);
         text("0 NEEDS HAND DRAWN", left + TEXT_LINE, top + TEXT_LINE);
-        int menuTop = top + NONE_CELLS_HIGH * TEXT_LINE + MARGIN;
-        if (!menu.isOpen()) {
-            drawNoteArea(left, menuTop);
-            return;
-        }
-        int rowCount = menu.rowCount();
-        painter.frame(FRAME_COLOR, left, menuTop, MENU_CELLS_WIDE, rowCount + 3);
-        text(menu.title(), left + TEXT_LINE, menuTop + TEXT_LINE);
-        menuLeft = left;
-        menuRowsTop = menuTop + 2 * TEXT_LINE;
-        for (int i = 0; i < rowCount; i++) {
-            int rowTop = menuRowsTop + i * TEXT_LINE;
-            boolean focused = i == menu.focus();
-            rowText.setLength(0);
-            rowText.append(focused ? "> " : "  ").append(i + 1).append(' ').append(menu.rowLabel(i));
-            if (focused) {
-                fillTop(ROW_FOCUS_FILL, left + TEXT_LINE, rowTop, (MENU_CELLS_WIDE - 2) * TEXT_LINE, TEXT_LINE);
-            }
-            painter.text(rowText, left + TEXT_LINE, rowTop, focused ? CURSOR_COLOR : TEXT_COLOR);
-        }
+        drawNoteArea(left, top + NONE_CELLS_HIGH * TEXT_LINE + MARGIN);
     }
 
     // Only the target uses the viewed column; the surroundings stay in the original 8x8 font.

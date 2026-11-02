@@ -49,6 +49,28 @@ class ViewedColumnTest {
     }
 
     @Test
+    void preselectedColumnReplacesTheFirstCandidateUntilChosen() {
+        ViewedColumn view = new ViewedColumn();
+        view.setDefault(3);
+        assertEquals(3, view.resolve(-1, 4));
+        assertEquals(1, view.resolve(1, 4));
+        view.choose(2);
+        assertEquals(2, view.resolve(-1, 4));
+        view.reset();
+        assertEquals(1, view.resolve(-1, 4));
+    }
+
+    @Test
+    void defaultColumnPrefersSavedThenHandThenNearest() {
+        String[] picks = {"nearest", "scale2x", "hand"};
+        assertEquals(2, ViewedColumn.defaultColumn(picks, "scale2x", "hand", "nearest"));
+        assertEquals(3, ViewedColumn.defaultColumn(picks, null, "hand", "nearest"));
+        assertEquals(3, ViewedColumn.defaultColumn(picks, "none", "hand", "nearest"));
+        assertEquals(1, ViewedColumn.defaultColumn(new String[] {"nearest", "mmpx"}, null, "hand", "nearest"));
+        assertEquals(-1, ViewedColumn.defaultColumn(new String[] {"mmpx"}, null, "hand", "nearest"));
+    }
+
+    @Test
     void indexesAreClampedToTheColumnCount() {
         ViewedColumn view = new ViewedColumn();
         view.choose(5);

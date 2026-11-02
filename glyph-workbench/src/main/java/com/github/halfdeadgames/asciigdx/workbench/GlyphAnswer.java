@@ -18,6 +18,14 @@ record GlyphAnswer(int codePoint, String pick, String verdict, String reason, St
         return new GlyphAnswer(codePoint, pick, verdict, reason, newNote);
     }
 
+    /** No candidate fits: needs hand drawn. Otherwise a note means there is something to fix. */
+    static String verdictFor(String pick, String note) {
+        if (NONE_PICK.equals(pick)) {
+            return NEEDS_HAND_DRAWN;
+        }
+        return note.isEmpty() ? PERFECT : NEEDS_WORK;
+    }
+
     static boolean isKnownVerdict(String verdict) {
         return PERFECT.equals(verdict) || NEEDS_WORK.equals(verdict) || NEEDS_HAND_DRAWN.equals(verdict)
             || LEGACY_NONE_VERDICT.equals(verdict);

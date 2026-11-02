@@ -9,6 +9,7 @@ final class ViewedColumn {
     private static final int NONE = -1;
 
     private int chosen = NONE;
+    private int preselected = NONE;
 
     void choose(int column) {
         chosen = column;
@@ -16,6 +17,28 @@ final class ViewedColumn {
 
     void reset() {
         chosen = NONE;
+        preselected = NONE;
+    }
+
+    /** The column shown until the user hovers or chooses one; a negative value means the first candidate. */
+    void setDefault(int column) {
+        preselected = column;
+    }
+
+    /**
+     * Column (1-based, after the original) of the saved pick if it is offered, else the hand version,
+     * else the nearest version; -1 when none of them is offered.
+     */
+    static int defaultColumn(String[] picks, String savedPick, String handId, String nearestId) {
+        String[] preference = {savedPick, handId, nearestId};
+        for (String wanted : preference) {
+            for (int i = 0; wanted != null && i < picks.length; i++) {
+                if (picks[i].equals(wanted)) {
+                    return i + 1;
+                }
+            }
+        }
+        return NONE;
     }
 
     /** Always a valid column index for {@code count} columns, or 0 when there are none. */
@@ -27,6 +50,7 @@ final class ViewedColumn {
         if (hovered >= 0) {
             return Math.min(hovered, last);
         }
-        return Math.min(chosen >= 0 ? chosen : 1, last);
+        int fallback = preselected >= 0 ? preselected : 1;
+        return Math.min(chosen >= 0 ? chosen : fallback, last);
     }
 }

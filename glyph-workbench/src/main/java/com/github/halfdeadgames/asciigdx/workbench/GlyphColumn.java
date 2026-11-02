@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 /**
@@ -14,10 +15,18 @@ final class GlyphColumn {
     final String label;
     final TextureRegion[] regions;
 
+    /** Overrides the panel's label color for this column; null keeps the panel default. */
+    final Color labelColor;
+
     GlyphColumn(String number, String label, TextureRegion[] regions) {
+        this(number, label, regions, null);
+    }
+
+    GlyphColumn(String number, String label, TextureRegion[] regions, Color labelColor) {
         this.number = number;
         this.label = label;
         this.regions = regions;
+        this.labelColor = labelColor;
     }
 
     int labelWidth() {

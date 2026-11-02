@@ -222,7 +222,7 @@ final class ColumnPanel {
         int rowTop = startTop;
         painter.text(column.number, x, rowTop, numberColor);
         rowTop += Painter.TEXT_SIZE;
-        painter.text(column.label, x, rowTop, labelColor);
+        painter.text(column.label, x, rowTop, column.labelColor != null ? column.labelColor : labelColor);
         rowTop += Painter.TEXT_SIZE + SECTION_GAP;
         if (viewBarWidth > 0) {
             painter.fill(viewedColor, x, rowTop - SECTION_GAP + 2, viewBarWidth, 4);
