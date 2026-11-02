@@ -9,7 +9,7 @@ final class GlyphName {
     private GlyphName() {
     }
 
-    /** Names longer than {@code maxChars} are cut at the last word that fits. */
+    /** Names longer than {@code maxChars} keep their last words, since Unicode names end in the part that identifies the glyph. */
     static String describe(int codePoint, int maxChars) {
         String name = Character.getName(codePoint);
         if (name == null || name.startsWith(PRIVATE_USE_PREFIX)) {
@@ -19,8 +19,9 @@ final class GlyphName {
         if (clean.length() <= maxChars) {
             return clean;
         }
-        int cut = clean.lastIndexOf(' ', maxChars);
-        return cut > 0 ? clean.substring(0, cut) : clean.substring(0, Math.max(0, maxChars));
+        int earliestStart = clean.length() - Math.max(0, maxChars);
+        int spaceBeforeFirstWord = clean.indexOf(' ', earliestStart - 1);
+        return spaceBeforeFirstWord >= 0 ? clean.substring(spaceBeforeFirstWord + 1) : clean.substring(earliestStart);
     }
 
     private static String sanitize(String name) {

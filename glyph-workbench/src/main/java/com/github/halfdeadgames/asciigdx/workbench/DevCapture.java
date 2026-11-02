@@ -7,11 +7,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and
- * {@code workbench.capture} saves a screenshot after a few frames, then exits.
+ * {@code workbench.capture} saves a screenshot after a few frames, then exits, and
+ * {@code workbench.derive} opens the derive menu or a source pick.
  */
 final class DevCapture {
 
     static final String SELECT_PROPERTY = "workbench.select";
+    static final String DERIVE_PROPERTY = "workbench.derive";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -30,6 +32,11 @@ final class DevCapture {
             }
         }
         return -1;
+    }
+
+    /** The raw {@code workbench.derive} value, or null when unset. */
+    static String deriveRequest() {
+        return System.getProperty(DERIVE_PROPERTY);
     }
 
     static int parseCodePoint(String text) {

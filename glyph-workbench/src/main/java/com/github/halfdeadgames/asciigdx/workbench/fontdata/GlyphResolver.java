@@ -83,17 +83,22 @@ public final class GlyphResolver {
         PixelGrid pixels = source.pixels();
         return switch (op.kind()) {
             case INVERT -> new PixelGlyph(codePoint, true, source.toCell(data.cellWidth()).inverted());
-            case ROTATE90 -> new PixelGlyph(codePoint, source.full(), rotate(source, 1));
+            case ROTATE90 -> new PixelGlyph(codePoint, source.full() || hasSquareCell(), rotate(source, 1));
             case ROTATE180 -> new PixelGlyph(codePoint, source.full(), pixels.rotated180());
-            case ROTATE270 -> new PixelGlyph(codePoint, source.full(), rotate(source, 3));
+            case ROTATE270 -> new PixelGlyph(codePoint, source.full() || hasSquareCell(), rotate(source, 3));
             case MIRROR -> new PixelGlyph(codePoint, source.full(), pixels.mirrored());
             case FLIP -> new PixelGlyph(codePoint, source.full(), pixels.flipped());
             case OVERLAY -> overlay(codePoint, op, line);
         };
     }
 
+    private boolean hasSquareCell() {
+        return data.cellWidth() == data.cellHeight();
+    }
+
+    // In a square cell the gap column turns into a row, so the whole cell is rotated.
     private PixelGrid rotate(PixelGlyph source, int clockwiseQuarterTurns) {
-        PixelGrid pixels = source.pixels();
+        PixelGrid pixels = hasSquareCell() ? source.toCell(data.cellWidth()) : source.pixels();
         if (pixels.getWidth() != pixels.getHeight()) {
             throw new IllegalArgumentException("rotate90 and rotate270 need a square glyph, but "
                 + name(source.codePoint()) + " is " + pixels.getWidth() + "x" + pixels.getHeight()

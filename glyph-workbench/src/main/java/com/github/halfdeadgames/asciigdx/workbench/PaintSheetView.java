@@ -18,8 +18,9 @@ final class PaintSheetView {
     private static final Color CELL_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
     private static final Color EMPTY_OUTLINE = new Color(0.4f, 0.42f, 0.55f, 1f);
     private static final Color GLYPH_COLOR = Color.WHITE;
-    private static final Color DERIVED_COLOR = new Color(0.75f, 0.6f, 1f, 1f);
+    private static final Color DERIVED_COLOR = UiPalette.DERIVED;
     private static final Color CURSOR_COLOR = Color.YELLOW;
+    private static final Color SOURCE_CURSOR_COLOR = UiPalette.ORANGE;
     private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
     private static final Color LABEL_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
     private static final Color BAR_COLOR = new Color(0.75f, 0.8f, 0.95f, 1f);
@@ -108,6 +109,11 @@ final class PaintSheetView {
     }
 
     void draw(int cursorSlot) {
+        draw(cursorSlot, -1);
+    }
+
+    /** @param sourceSlot slot of the derive source cursor, or -1 for none */
+    void draw(int cursorSlot, int sourceSlot) {
         Panel.draw(painter, frameLeft / TEXT, frameTop / TEXT, frameCellsWide, frameCellsHigh, "SHEET", false);
         drawBar();
         int size = layout.cellSize();
@@ -133,6 +139,11 @@ final class PaintSheetView {
         }
         if (scroll.isVisible(cursorSlot / COLUMNS)) {
             outline(CURSOR_COLOR, layout.cellLeft(cursorSlot), layout.cellTop(cursorSlot, scroll.offset()), size, OUTLINE);
+        }
+        if (sourceSlot >= 0 && scroll.isVisible(sourceSlot / COLUMNS)) {
+            int inset = OUTLINE + 1;
+            outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot) + inset,
+                layout.cellTop(sourceSlot, scroll.offset()) + inset, size - 2 * inset, OUTLINE);
         }
     }
 

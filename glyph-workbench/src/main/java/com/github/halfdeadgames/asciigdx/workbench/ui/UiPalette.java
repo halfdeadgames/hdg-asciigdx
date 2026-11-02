@@ -18,6 +18,8 @@ public final class UiPalette {
     public static final Color KEYBG = new Color(0x3C466EFF);
     public static final Color SHADOW = new Color(0x282C40FF);
     public static final Color ORANGE = new Color(0xFF9A30FF);
+    /** Glyphs made from other glyphs. */
+    public static final Color DERIVED = new Color(0x30E0D0FF);
 
     private UiPalette() {
     }

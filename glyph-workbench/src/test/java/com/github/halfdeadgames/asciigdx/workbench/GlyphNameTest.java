@@ -18,9 +18,20 @@ class GlyphNameTest {
     }
 
     @Test
-    void longNamesAreCutAtAWordBoundary() {
-        String shown = GlyphName.describe(0x263A, 10);
-        assertEquals("WHITE", shown);
+    void longNamesKeepTheirLastWholeWords() {
+        assertEquals("FACE", GlyphName.describe(0x263A, 10));
+        assertEquals("CAPITAL LETTER A", GlyphName.describe('A', 20));
+    }
+
+    @Test
+    void wordThatFitsExactlyIsKept() {
+        assertEquals("SMILING FACE", GlyphName.describe(0x263A, 12));
+    }
+
+    @Test
+    void lastWordLongerThanTheLimitIsCut() {
+        assertEquals("FACE", GlyphName.describe(0x263A, 4));
+        assertEquals("ACE", GlyphName.describe(0x263A, 3));
     }
 
     @Test

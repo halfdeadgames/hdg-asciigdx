@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,10 @@ class FontDataParserTest {
 
     private static PixelGlyph pixelGlyph(FontData data, int codePoint) {
         return (PixelGlyph) data.entries().get(codePoint);
+    }
+
+    private static PixelGlyph resolvedGlyph(String text, int codePoint) {
+        return GlyphResolver.resolveAll(FontDataParser.parse(text)).get(codePoint);
     }
 
     private static List<String> resolvedRows(String text, int codePoint) {
@@ -148,11 +153,37 @@ class FontDataParserTest {
     }
 
     @Test
-    void reportsRotateOfNonSquareBody() {
-        FontDataException error = parseError(file(P, "U+0051 Q = rotate90 U+0050"));
+    void reportsRotateOfNonSquareBodyInNonSquareCell() {
+        String tallCell = "cell 8x9\n\nU+0050 P\n" + String.join("\n", Collections.nCopies(9, ".......")) + "\n\n"
+            + "U+0051 Q = rotate90 U+0050\n";
 
-        assertEquals(13, error.getLine());
+        FontDataException error = parseError(tallCell);
+
+        assertEquals(14, error.getLine());
         assertTrue(error.getMessage().contains("square"));
+    }
+
+    @Test
+    void rotatesBodyGlyphOfSquareCellAsFullGlyph() {
+        PixelGlyph rotated90 = resolvedGlyph(file(P, "U+0052 R = rotate90 U+0050"), 'R');
+        PixelGlyph rotated270 = resolvedGlyph(file(P, "U+0052 R = rotate270 U+0050"), 'R');
+
+        assertTrue(rotated90.full());
+        assertEquals(List.of("......##", "......#.", "........", "........", "........", "........", "........",
+            "........"), rotated90.pixels().toRows());
+        assertTrue(rotated270.full());
+        assertEquals(List.of("........", "........", "........", "........", "........", "........", ".#......",
+            "##......"), rotated270.pixels().toRows());
+    }
+
+    @Test
+    void rotating90Then270RestoresTheExpandedOriginal() {
+        String text = file(P, "U+0052 R = rotate90 U+0050", "U+0053 S = rotate270 U+0052");
+
+        PixelGlyph restored = resolvedGlyph(text, 'S');
+
+        assertTrue(restored.full());
+        assertEquals(pixelGlyph(FontDataParser.parse(text), 'P').toCell(8), restored.pixels());
     }
 
     @Test

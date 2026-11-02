@@ -100,6 +100,11 @@ public final class PixelGrid {
         return new PixelGrid(width, height, copy);
     }
 
+    /** Returns whether at least one pixel is lit. */
+    public boolean hasLitPixel() {
+        return !lit.isEmpty();
+    }
+
     /** Returns the rows as {@code #} and {@code .} text. */
     public List<String> toRows() {
         List<String> rows = new ArrayList<>(height);

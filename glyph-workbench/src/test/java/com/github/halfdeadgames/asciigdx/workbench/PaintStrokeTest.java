@@ -83,6 +83,132 @@ class PaintStrokeTest {
         assertFalse(editor.isLit(0x41, 3, 0));
     }
 
+    private static void paintStroke(FontEditor editor, int codePoint, int fromX, int toX, int y) {
+        PaintStroke stroke = new PaintStroke(editor);
+        stroke.begin(codePoint, fromX, y);
+        stroke.drag(toX, y);
+        stroke.end();
+    }
+
+    @Test
+    void dragIsUndoneInOneStepAndRedone() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 0, 3, 0);
+        assertEquals(0x41, editor.undo());
+        for (int x = 0; x <= 3; x++) {
+            assertFalse(editor.isLit(0x41, x, 0));
+        }
+        assertFalse(editor.canUndo());
+        assertEquals(0x41, editor.redo());
+        for (int x = 0; x <= 3; x++) {
+            assertTrue(editor.isLit(0x41, x, 0));
+        }
+        assertFalse(editor.canRedo());
+    }
+
+    @Test
+    void strokeThatChangesNothingAddsNoStep() {
+        FontEditor editor = editor();
+        PaintStroke stroke = new PaintStroke(editor);
+        assertFalse(stroke.begin(0x41, 7, 0));
+        stroke.end();
+        editor.beginEdit();
+        editor.setPixel(0x41, 2, 2, true);
+        editor.setPixel(0x41, 2, 2, false);
+        editor.commitEdit();
+        assertFalse(editor.canUndo());
+        assertFalse(editor.isModified());
+    }
+
+    private static int undoCount(FontEditor editor) {
+        int count = 0;
+        while (editor.canUndo()) {
+            editor.undo();
+            count++;
+        }
+        return count;
+    }
+
+    @Test
+    void newStrokeClearsRedo() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 0, 1, 0);
+        editor.undo();
+        assertTrue(editor.canRedo());
+        paintStroke(editor, 0x41, 0, 1, 2);
+        assertFalse(editor.canRedo());
+    }
+
+    @Test
+    void glyphCreatedByAStrokeIsUndoneToEmpty() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x44, 1, 1, 1);
+        assertTrue(editor.hasGlyph(0x44));
+        assertEquals(0x44, editor.undo());
+        assertFalse(editor.hasGlyph(0x44));
+        assertNull(editor.glyph(0x44));
+        assertEquals(0x44, editor.redo());
+        assertTrue(editor.isLit(0x44, 1, 1));
+    }
+
+    @Test
+    void undoWithNothingToUndoReturnsNoGlyph() {
+        FontEditor editor = editor();
+        assertEquals(FontEditor.NO_GLYPH, editor.undo());
+        assertEquals(FontEditor.NO_GLYPH, editor.redo());
+    }
+
+    @Test
+    void historyKeepsOnlyTheNewest200Steps() {
+        FontEditor editor = editor();
+        for (int i = 0; i < FontEditor.MAX_UNDO_STEPS + 5; i++) {
+            paintStroke(editor, 0x41, i % 7, i % 7, i / 7 % 8);
+        }
+        assertEquals(FontEditor.MAX_UNDO_STEPS, undoCount(editor));
+    }
+
+    @Test
+    void modifiedFollowsTheSavedState() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 0, 0, 0);
+        assertTrue(editor.isModified());
+        editor.markSaved();
+        assertFalse(editor.isModified());
+        paintStroke(editor, 0x41, 1, 1, 0);
+        assertTrue(editor.isModified());
+        editor.undo();
+        assertFalse(editor.isModified());
+        editor.redo();
+        assertTrue(editor.isModified());
+        editor.undo();
+        editor.undo();
+        assertTrue(editor.isModified());
+        editor.redo();
+        assertFalse(editor.isModified());
+    }
+
+    @Test
+    void savedPixelMarkersSurviveUndo() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 0, 0, 0);
+        editor.markSaved();
+        paintStroke(editor, 0x41, 0, 0, 0);
+        editor.undo();
+        assertTrue(editor.wasLitWhenSaved(0x41, 0, 0));
+        assertTrue(editor.isLit(0x41, 0, 0));
+    }
+
+    @Test
+    void derivedGlyphFollowsItsSourceThroughUndo() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 1, 1, 2);
+        assertTrue(editor.isLit(0x43, 5, 2));
+        editor.undo();
+        assertFalse(editor.isLit(0x43, 5, 2));
+        editor.redo();
+        assertTrue(editor.isLit(0x43, 5, 2));
+    }
+
     @Test
     void widthGuidesFollowTheRulesGroup() {
         assertEquals(List.of(1, 6, 7),

@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
 /** The big pixel grid of the selected glyph, with shaded gap columns and labelled guide lines. */
@@ -15,7 +17,7 @@ final class PaintGridView {
 
     private static final Color UNLIT_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
     private static final Color LIT_FILL = Color.WHITE;
-    private static final Color DERIVED_LIT_FILL = new Color(0.75f, 0.6f, 1f, 1f);
+    private static final Color DERIVED_LIT_FILL = UiPalette.DERIVED;
     private static final Color GAP_FILL = new Color(0.05f, 0.05f, 0.06f, 1f);
     private static final Color LINE_COLOR = new Color(0.22f, 0.24f, 0.3f, 1f);
     private static final Color GUIDE_COLOR = new Color(0.3f, 0.85f, 0.9f, 1f);
@@ -68,11 +70,18 @@ final class PaintGridView {
     }
 
     void draw(int codePoint) {
-        int drawnWidth = editor.drawnWidth(codePoint);
-        Color lit = editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
+        draw(codePoint, null);
+    }
+
+    /** @param shown glyph to show instead of the slot's own (a derive preview), or null */
+    void draw(int codePoint, PixelGlyph shown) {
+        int drawnWidth = shown == null ? editor.drawnWidth(codePoint)
+            : shown.full() ? editor.cellWidth() : editor.bodyWidth();
+        Color lit = shown != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
-                Color fill = x >= drawnWidth ? GAP_FILL : editor.isLit(codePoint, x, y) ? lit : UNLIT_FILL;
+                boolean on = shown == null ? editor.isLit(codePoint, x, y) : isLit(shown, x, y);
+                Color fill = x >= drawnWidth ? GAP_FILL : on ? lit : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
         }
@@ -86,6 +95,10 @@ final class PaintGridView {
         drawGuides();
         drawWidthGuides(FontRules.groupNameFor(codePoint));
         drawBarGuide(FontRules.groupNameFor(codePoint));
+    }
+
+    private static boolean isLit(PixelGlyph glyph, int x, int y) {
+        return x < glyph.pixels().getWidth() && y < glyph.pixels().getHeight() && glyph.pixels().isLit(x, y);
     }
 
     // Orange with a dark outline reads on both white and dark pixels.

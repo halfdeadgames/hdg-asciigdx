@@ -21,12 +21,17 @@ final class PaintPreview {
     }
 
     void draw(ReviewLayout.Rect rect, int codePoint) {
+        draw(rect, codePoint, null);
+    }
+
+    /** @param shown glyph to show instead of the slot's own, or null */
+    void draw(ReviewLayout.Rect rect, int codePoint, PixelGlyph shown) {
         Panel.draw(painter, rect.x(), rect.y(), rect.width(), rect.height(), "PREVIEW", false);
         int left = (rect.x() + 2) * TEXT;
         int rowTop = (rect.y() + 1) * TEXT;
         int cellWidth = editor.cellWidth();
         int cellHeight = editor.cellHeight();
-        PixelGlyph glyph = editor.glyph(codePoint);
+        PixelGlyph glyph = shown != null ? shown : editor.glyph(codePoint);
         for (int scale = 1; scale <= 2; scale++) {
             painter.text(scale + "X", left, rowTop, UiPalette.DIM);
             rowTop += TEXT;

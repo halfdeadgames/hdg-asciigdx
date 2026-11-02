@@ -10,7 +10,11 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.DerivedGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import java.io.IOException;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -151,6 +155,152 @@ class FontEditorTest {
         editor.markSaved();
         assertTrue(editor.hasSavedGlyph(0x44));
         assertTrue(editor.wasLitWhenSaved(0x44, 1, 1));
+    }
+
+    private static GlyphOp op(GlyphOp.Kind kind, int sourceCodePoint) {
+        return new GlyphOp(kind, List.of(new GlyphOp.Source(sourceCodePoint, 0)));
+    }
+
+    @Test
+    void previewShowsTheResultWithoutChangingAnything() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.markSaved();
+
+        PixelGlyph preview = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+
+        assertNotNull(preview);
+        assertTrue(preview.full());
+        assertTrue(preview.pixels().isLit(7, 0));
+        assertFalse(editor.hasGlyph(0x44));
+        assertNull(editor.glyph(0x44));
+        assertFalse(editor.isModified());
+        assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void deriveIntoAnEmptySlotIsOneUndoStepBackToEmpty() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.markSaved();
+
+        assertTrue(editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41)));
+        assertTrue(editor.isDerived(0x44));
+        assertTrue(editor.isLit(0x44, 7, 0));
+        assertTrue(editor.isModified());
+
+        assertEquals(0x44, editor.undo());
+        assertFalse(editor.hasGlyph(0x44));
+        assertNull(editor.glyph(0x44));
+        assertFalse(editor.isModified());
+        assertTrue(editor.canRedo());
+        assertEquals(0x44, editor.redo());
+        assertTrue(editor.isDerived(0x44));
+        assertTrue(editor.isModified());
+    }
+
+    @Test
+    void deriveReplacesADrawnGlyphAndUndoRestoresTheDrawing() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.setPixel(0x44, 3, 3, true);
+        assertTrue(editor.wouldReplaceDrawing(0x44));
+
+        assertTrue(editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x41)));
+        assertFalse(editor.wouldReplaceDrawing(0x44));
+        editor.undo();
+
+        assertFalse(editor.isDerived(0x44));
+        assertTrue(editor.isLit(0x44, 3, 3));
+    }
+
+    @Test
+    void wouldReplaceDrawingIsFalseForEmptyBlankAndDerivedGlyphs() {
+        FontEditor editor = editor();
+        assertFalse(editor.wouldReplaceDrawing(0x44));
+        assertFalse(editor.wouldReplaceDrawing(0x41));
+        assertFalse(editor.wouldReplaceDrawing(0x43));
+    }
+
+    @Test
+    void refusedDerivationsChangeNothingAndExplainWhy() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.markSaved();
+
+        assertNull(editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45)));
+        assertTrue(editor.problem().contains("U+0045"));
+        assertTrue(editor.problem().contains("empty"));
+        assertFalse(editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x45)));
+
+        assertFalse(editor.derive(0x41, op(GlyphOp.Kind.MIRROR, 0x43)));
+        assertTrue(editor.problem().contains("cycle"));
+
+        assertFalse(editor.derive(0x1234, op(GlyphOp.Kind.MIRROR, 0x41)));
+        assertFalse(editor.problem().isEmpty());
+
+        assertFalse(editor.isDerived(0x41));
+        assertFalse(editor.hasGlyph(0x44));
+        assertFalse(editor.isModified());
+        assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void unlockTurnsADerivedGlyphIntoItsPixelsAndKeepsDependentsResolving() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        editor.derive(0x100, op(GlyphOp.Kind.FLIP, 0x44));
+        PixelGlyph before = editor.glyph(0x44);
+        PixelGlyph dependentBefore = editor.glyph(0x100);
+
+        assertTrue(editor.unlock(0x44));
+
+        assertFalse(editor.isDerived(0x44));
+        assertEquals(before.pixels(), editor.glyph(0x44).pixels());
+        assertTrue(editor.glyph(0x44).full());
+        assertTrue(editor.isDerived(0x100));
+        assertEquals(dependentBefore.pixels(), editor.glyph(0x100).pixels());
+        assertTrue(editor.isPaintable(0x44, 7, 0));
+
+        editor.undo();
+        assertTrue(editor.isDerived(0x44));
+    }
+
+    @Test
+    void unlockRefusesGlyphsThatAreNotDerived() {
+        FontEditor editor = editor();
+        assertFalse(editor.unlock(0x41));
+        assertFalse(editor.unlock(0x44));
+        assertFalse(editor.canUndo());
+        assertFalse(editor.isModified());
+    }
+
+    @Test
+    void rotatedDerivedGlyphRoundTripsThroughWriterAndParser() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 1, 2, true);
+        editor.setPixel(0x41, 6, 5, true);
+        editor.derive(0x44, op(GlyphOp.Kind.ROTATE270, 0x41));
+
+        FontData reparsed = FontDataParser.parse(editor.toText());
+
+        assertEquals(editor.data(), reparsed);
+        assertEquals(editor.glyph(0x44), GlyphResolver.resolveAll(reparsed).get(0x44));
+    }
+
+    @Test
+    void unlockedFullGlyphRoundTripsWithItsFullFlag() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 1, 2, true);
+        editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        editor.unlock(0x44);
+
+        FontData reparsed = FontDataParser.parse(editor.toText());
+
+        PixelGlyph reloaded = (PixelGlyph) reparsed.entries().get(0x44);
+        assertTrue(reloaded.full());
+        assertEquals(editor.glyph(0x44).pixels(), reloaded.pixels());
     }
 
     @Test

@@ -6,10 +6,13 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataWriter;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphEntry;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -22,6 +25,8 @@ final class FontEditor {
     /** Slot content for padding slots that hold no glyph and cannot be selected. */
     static final int NO_GLYPH = -1;
 
+    static final int MAX_UNDO_STEPS = 200;
+
     private final int cellWidth;
     private final int cellHeight;
     private final Map<Integer, GlyphEntry> entries = new TreeMap<>();
@@ -29,8 +34,18 @@ final class FontEditor {
     private Map<Integer, PixelGlyph> resolved;
     // Each edit builds a new resolved map, so keeping the old reference is a free snapshot.
     private Map<Integer, PixelGlyph> savedGlyphs;
-    private boolean modified;
     private String problem = "";
+
+    // Every distinct state has its own revision id, so "modified" is simply "not the saved revision".
+    private int revision;
+    private int savedRevision;
+    private int nextRevision = 1;
+    private final Deque<State> undoSteps = new ArrayDeque<>();
+    private final Deque<State> redoSteps = new ArrayDeque<>();
+    private State openEdit;
+
+    private record State(Map<Integer, GlyphEntry> entries, int revision) {
+    }
 
     FontEditor(FontData data) {
         cellWidth = data.cellWidth();
@@ -153,8 +168,178 @@ final class FontEditor {
             return false;
         }
         problem = "";
-        modified = true;
+        revision = nextRevision++;
         return true;
+    }
+
+    /**
+     * Shows what {@link #derive} would produce without changing anything.
+     *
+     * @return the resolved glyph, or null when the derivation is refused; {@link #problem()} says why
+     */
+    PixelGlyph previewDerived(int targetCodePoint, GlyphOp op) {
+        Map<Integer, PixelGlyph> outcome = resolveWithDerived(targetCodePoint, op);
+        return outcome == null ? null : outcome.get(targetCodePoint);
+    }
+
+    /**
+     * Replaces the glyph in a slot with a derived one, as one undo step. Whatever was drawn there is lost
+     * (see {@link #wouldReplaceDrawing}).
+     *
+     * @return whether the glyph was replaced; when false nothing changed and {@link #problem()} says why
+     */
+    boolean derive(int targetCodePoint, GlyphOp op) {
+        Map<Integer, PixelGlyph> outcome = resolveWithDerived(targetCodePoint, op);
+        if (outcome == null) {
+            return false;
+        }
+        changeAsOneStep(() -> {
+            entries.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
+            resolved = outcome;
+        });
+        return true;
+    }
+
+    /**
+     * Turns a derived glyph into a drawn one holding its current pixels, as one undo step.
+     *
+     * @return false when the glyph is not derived
+     */
+    boolean unlock(int codePoint) {
+        if (!isDerived(codePoint)) {
+            return false;
+        }
+        PixelGlyph current = resolved.get(codePoint);
+        changeAsOneStep(() -> entries.put(codePoint, new PixelGlyph(codePoint, current.full(), current.pixels())));
+        return true;
+    }
+
+    /** Whether deriving into this slot would discard a drawing, meaning it holds a drawn glyph with a lit pixel. */
+    boolean wouldReplaceDrawing(int codePoint) {
+        return entries.get(codePoint) instanceof PixelGlyph drawn && drawn.pixels().hasLitPixel();
+    }
+
+    // Resolves the font as if the target were derived; null (with a problem) when that is refused.
+    private Map<Integer, PixelGlyph> resolveWithDerived(int targetCodePoint, GlyphOp op) {
+        if (!isSlotCodePoint(targetCodePoint)) {
+            problem = String.format("U+%04X is not a glyph slot", targetCodePoint);
+            return null;
+        }
+        for (GlyphOp.Source source : op.sources()) {
+            if (!entries.containsKey(source.codePoint())) {
+                problem = String.format("source U+%04X is empty; draw it first", source.codePoint());
+                return null;
+            }
+        }
+        Map<Integer, GlyphEntry> trial = new TreeMap<>(entries);
+        trial.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
+        try {
+            Map<Integer, PixelGlyph> outcome = GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial));
+            problem = "";
+            return outcome;
+        } catch (FontDataException e) {
+            problem = e.getMessage();
+            return null;
+        }
+    }
+
+    private boolean isSlotCodePoint(int codePoint) {
+        for (int slotCodePoint : slots) {
+            if (slotCodePoint == codePoint && codePoint != NO_GLYPH) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Joins an already open edit instead of ending it early.
+    private void changeAsOneStep(Runnable change) {
+        boolean ownsEdit = openEdit == null;
+        beginEdit();
+        change.run();
+        revision = nextRevision++;
+        if (ownsEdit) {
+            commitEdit();
+        }
+    }
+
+    /**
+     * Starts one undoable edit; every change until {@link #commitEdit()} becomes a single step.
+     * Changes made outside an edit are not undoable.
+     */
+    void beginEdit() {
+        if (openEdit == null) {
+            openEdit = capture();
+        }
+    }
+
+    /** Ends the open edit. It becomes an undo step and clears redo, unless it left the glyphs as they were. */
+    void commitEdit() {
+        if (openEdit == null) {
+            return;
+        }
+        State before = openEdit;
+        openEdit = null;
+        if (before.entries().equals(entries)) {
+            revision = before.revision();
+            return;
+        }
+        undoSteps.push(before);
+        if (undoSteps.size() > MAX_UNDO_STEPS) {
+            undoSteps.pollLast();
+        }
+        redoSteps.clear();
+    }
+
+    boolean canUndo() {
+        return !undoSteps.isEmpty();
+    }
+
+    boolean canRedo() {
+        return !redoSteps.isEmpty();
+    }
+
+    /** Undoes the latest step; returns the code point of the glyph that changed, or {@link #NO_GLYPH} if there was nothing to undo. */
+    int undo() {
+        return travel(undoSteps, redoSteps);
+    }
+
+    /** Redoes the latest undone step; returns the code point of the glyph that changed, or {@link #NO_GLYPH}. */
+    int redo() {
+        return travel(redoSteps, undoSteps);
+    }
+
+    private int travel(Deque<State> from, Deque<State> to) {
+        if (openEdit != null || from.isEmpty()) {
+            return NO_GLYPH;
+        }
+        State target = from.pop();
+        to.push(capture());
+        int changed = firstDifference(entries, target.entries());
+        entries.clear();
+        entries.putAll(target.entries());
+        resolved = GlyphResolver.resolveAll(data());
+        revision = target.revision();
+        problem = "";
+        return changed;
+    }
+
+    private State capture() {
+        return new State(new TreeMap<>(entries), revision);
+    }
+
+    private static int firstDifference(Map<Integer, GlyphEntry> first, Map<Integer, GlyphEntry> second) {
+        for (Map.Entry<Integer, GlyphEntry> entry : first.entrySet()) {
+            if (!entry.getValue().equals(second.get(entry.getKey()))) {
+                return entry.getKey();
+            }
+        }
+        for (Integer codePoint : second.keySet()) {
+            if (!first.containsKey(codePoint)) {
+                return codePoint;
+            }
+        }
+        return NO_GLYPH;
     }
 
     private void restore(int codePoint, GlyphEntry before) {
@@ -175,11 +360,11 @@ final class FontEditor {
     }
 
     boolean isModified() {
-        return modified;
+        return revision != savedRevision;
     }
 
     void markSaved() {
-        modified = false;
+        savedRevision = revision;
         savedGlyphs = resolved;
     }
 

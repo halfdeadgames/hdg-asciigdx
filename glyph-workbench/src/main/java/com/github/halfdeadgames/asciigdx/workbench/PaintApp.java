@@ -14,12 +14,18 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
@@ -32,12 +38,30 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int WHEEL_ROWS = 3;
 
     private static final List<StatusBar.Key> KEYS = List.of(
-        new StatusBar.Key("ARROWS", "MOVE"), new StatusBar.Key("CLICK", "PAINT"),
-        new StatusBar.Key("CTRL+S", "SAVE"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
+        new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
+        new StatusBar.Key("CTRL+Z/Y", "UNDO"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
+    private static final List<StatusBar.Key> PICK_KEYS = List.of(
+        new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
+        new StatusBar.Key("ESC", "CANCEL"));
     private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
+    private static final String MENU_TITLE = "DERIVE";
+    private static final int MENU_WIDTH = 26;
+    private static final List<Dialog.Button> MENU_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "SELECT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
+        new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    // Blank dialog lines reserve the room the select list is drawn into, two cells per operation.
+    private static final List<String> MENU_LINES = Collections.nCopies(
+        DeriveFlow.OPERATIONS.size() * SelectList.PITCH - 1, " ".repeat(MENU_WIDTH));
+    private static final List<SelectList.Row> MENU_ROWS = menuRows();
+
+    private final DeriveFlow flow = new DeriveFlow();
+    private PixelGlyph pickShown;
+    private PixelGlyph blankPick;
+    private boolean pickValid;
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
     private final StringBuilder line = new StringBuilder();
@@ -46,6 +70,8 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatRight = new KeyRepeat();
     private final KeyRepeat repeatUp = new KeyRepeat();
     private final KeyRepeat repeatDown = new KeyRepeat();
+    private final KeyRepeat repeatUndo = new KeyRepeat();
+    private final KeyRepeat repeatRedo = new KeyRepeat();
 
     private SpriteBatch batch;
     private Texture whitePixel;
@@ -134,6 +160,25 @@ public final class PaintApp implements WorkbenchScreen {
                 return true;
             }
         });
+        openDeriveForCapture();
+    }
+
+    private void openDeriveForCapture() {
+        String request = DevCapture.deriveRequest();
+        if (request == null) {
+            return;
+        }
+        flow.openMenu(cursor);
+        if ("menu".equals(request.trim())) {
+            return;
+        }
+        int sourceSlot = slotOf(DevCapture.parseCodePoint(request));
+        if (sourceSlot < 0 || unselectable[sourceSlot]) {
+            return;
+        }
+        beginPick();
+        flow.moveSource(sourceSlot);
+        refreshPick();
     }
 
     // A review file of this size is read once; its notes are shown read-only next to the grid.
@@ -194,14 +239,38 @@ public final class PaintApp implements WorkbenchScreen {
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
         }
+        if (flow.mode() == DeriveFlow.Mode.MENU) {
+            wheelTicks = 0;
+            handleDeriveMenu();
+            return;
+        }
+        if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            wheelTicks = 0;
+            handleReplacePrompt();
+            return;
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (editor.isModified()) {
+            if (flow.isPicking()) {
+                cancelPick();
+            } else if (editor.isModified()) {
                 confirmingQuit = true;
                 stroke.end();
             } else {
                 onExit.run();
             }
             return;
+        }
+        handleUndoKeys(control, delta);
+        if (flow.isPicking()) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+                confirmSource();
+                return;
+            }
+        } else if (!control) {
+            handleDeriveKeys();
+            if (flow.isActive()) {
+                return;
+            }
         }
         moveCursor(delta);
         handleScrollKeys();
@@ -241,29 +310,245 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
+    // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active.
+    private void handleUndoKeys(boolean control, float delta) {
+        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        boolean zDown = control && Gdx.input.isKeyPressed(Input.Keys.Z);
+        boolean undoDown = zDown && !shift;
+        boolean redoDown = control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (zDown && shift));
+        int undos = repeatUndo.update(undoDown, delta);
+        int redos = repeatRedo.update(redoDown, delta);
+        if (stroke.isActive() || flow.isActive()) {
+            return;
+        }
+        for (int i = 0; i < undos; i++) {
+            showChangedGlyph(editor.undo());
+        }
+        for (int i = 0; i < redos; i++) {
+            showChangedGlyph(editor.redo());
+        }
+    }
+
+    private void showChangedGlyph(int codePoint) {
+        for (int slot = 0; slot < codePoints.length; slot++) {
+            if (codePoints[slot] == codePoint && !unselectable[slot]) {
+                cursor = slot;
+                sheet.scroll().keepVisible(cursor / COLUMNS);
+                return;
+            }
+        }
+    }
+
+    // While picking a derive source, the arrows move the source cursor and the target cursor stays put.
     private void moveCursor(float delta) {
-        int before = cursor;
+        boolean picking = flow.isPicking();
+        int before = picking ? flow.sourceSlot() : cursor;
+        int position = before;
         int rows = codePoints.length / COLUMNS;
         int lefts = repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta);
         for (int i = 0; i < lefts; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, -1, 0);
+            position = CursorNavigator.move(unselectable, COLUMNS, rows, position, -1, 0);
         }
         int rights = repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta);
         for (int i = 0; i < rights; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 1, 0);
+            position = CursorNavigator.move(unselectable, COLUMNS, rows, position, 1, 0);
         }
         int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
         for (int i = 0; i < ups; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 0, -1);
+            position = CursorNavigator.move(unselectable, COLUMNS, rows, position, 0, -1);
         }
         int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
         for (int i = 0; i < downs; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 0, 1);
+            position = CursorNavigator.move(unselectable, COLUMNS, rows, position, 0, 1);
         }
-        if (cursor != before) {
+        if (position != before) {
+            if (picking) {
+                flow.moveSource(position);
+                refreshPick();
+            } else {
+                cursor = position;
+                stroke.end();
+            }
+            sheet.scroll().keepVisible(position / COLUMNS);
+        }
+    }
+
+    private boolean leftClicked() {
+        return Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
+    }
+
+    // D opens the derive menu, U unlocks a derived glyph, G jumps to the source of a derived glyph.
+    private void handleDeriveKeys() {
+        int codePoint = codePoints[cursor];
+        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             stroke.end();
-            sheet.scroll().keepVisible(cursor / COLUMNS);
+            flow.openMenu(cursor);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
+            stroke.end();
+            if (editor.unlock(codePoint)) {
+                describeGlyph(codePoint).append(" unlocked: now editable");
+                messages.ok(line.toString());
+            } else {
+                messages.warn("Only a derived glyph can be unlocked");
+            }
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
+            stroke.end();
+            int sourceSlot = slotOf(editor.derivedFrom(codePoint));
+            if (sourceSlot >= 0) {
+                cursor = sourceSlot;
+                sheet.scroll().keepVisible(cursor / COLUMNS);
+            } else {
+                messages.warn("Only a derived glyph has a source to go to");
+            }
         }
+    }
+
+    private int slotOf(int codePoint) {
+        if (codePoint == FontEditor.NO_GLYPH) {
+            return -1;
+        }
+        for (int slot = 0; slot < codePoints.length; slot++) {
+            if (codePoints[slot] == codePoint) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private StringBuilder describeGlyph(int codePoint) {
+        line.setLength(0);
+        line.append("U+");
+        appendHex(line, codePoint);
+        return line;
+    }
+
+    private void handleDeriveMenu() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            flow.cancel();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            flow.moveMenu(-1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            flow.moveMenu(1);
+        }
+        boolean choose = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
+        trackPointer();
+        if (leftClicked()) {
+            Dialog.Layout layout = menuLayout();
+            int column = pointerX / TEXT_LINE;
+            int row = SelectList.rowAt(pointerY / TEXT_LINE, layout.textY(), DeriveFlow.OPERATIONS.size());
+            if (row >= 0 && column >= layout.x() && column < layout.x() + layout.width()) {
+                flow.highlightMenuRow(row);
+                choose = true;
+            }
+        }
+        if (choose) {
+            beginPick();
+        }
+    }
+
+    private void beginPick() {
+        flow.chooseOperation();
+        stroke.end();
+        blankPick = new PixelGlyph(codePoints[cursor], false, PixelGrid.blank(editor.bodyWidth(), editor.cellHeight()));
+        pickShown = null;
+        pickValid = false;
+        messages.ok(pickPrompt(false));
+    }
+
+    private String pickPrompt(boolean withSource) {
+        describeGlyph(codePoints[cursor]);
+        line.insert(0, "PICK SOURCE FOR ");
+        line.append(" (").append(DeriveFlow.label(flow.operation())).append(')');
+        if (withSource) {
+            line.append(" FROM U+");
+            appendHex(line, codePoints[flow.sourceSlot()]);
+        }
+        return line.toString();
+    }
+
+    private GlyphOp currentOp() {
+        return new GlyphOp(flow.operation(), List.of(new GlyphOp.Source(codePoints[flow.sourceSlot()], 0)));
+    }
+
+    // Runs only when the source changes. With the source on the target there is nothing to preview yet.
+    private void refreshPick() {
+        if (flow.sourceSlot() == cursor) {
+            pickShown = null;
+            pickValid = false;
+            messages.ok(pickPrompt(false));
+            return;
+        }
+        PixelGlyph result = editor.previewDerived(codePoints[cursor], currentOp());
+        lastProblem = editor.problem();
+        pickValid = result != null;
+        if (pickValid) {
+            pickShown = result;
+            messages.ok(pickPrompt(true));
+        } else {
+            pickShown = blankPick;
+            messages.warn(editor.problem());
+        }
+    }
+
+    private void confirmSource() {
+        if (!pickValid) {
+            messages.warn(flow.sourceSlot() == cursor ? "Pick a different glyph as the source" : editor.problem());
+            return;
+        }
+        if (editor.wouldReplaceDrawing(codePoints[cursor])) {
+            flow.askReplace();
+        } else {
+            applyDerive();
+        }
+    }
+
+    private void applyDerive() {
+        int target = codePoints[cursor];
+        String summary = pickPrompt(true);
+        if (editor.derive(target, currentOp())) {
+            lastProblem = "";
+            flow.finish();
+            pickShown = null;
+            sheet.scroll().keepVisible(cursor / COLUMNS);
+            messages.ok("Derived: " + summary.substring("PICK SOURCE FOR ".length()));
+        } else {
+            lastProblem = editor.problem();
+            messages.warn(editor.problem());
+            if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+                flow.cancel();
+            }
+        }
+    }
+
+    private void cancelPick() {
+        flow.cancel();
+        pickShown = null;
+        sheet.scroll().keepVisible(cursor / COLUMNS);
+        messages.ok("Derive cancelled");
+    }
+
+    private void handleReplacePrompt() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            applyDerive();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            flow.cancel();
+        }
+    }
+
+    private Dialog.Layout menuLayout() {
+        return Dialog.layout(MENU_TITLE, MENU_LINES, MENU_BUTTONS, worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE);
+    }
+
+    private static List<SelectList.Row> menuRows() {
+        List<SelectList.Row> rows = new ArrayList<>();
+        for (GlyphOp.Kind kind : DeriveFlow.OPERATIONS) {
+            rows.add(new SelectList.Row(DeriveFlow.label(kind), true, false, 0));
+        }
+        return List.copyOf(rows);
     }
 
     private void handleScrollKeys() {
@@ -304,14 +589,20 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void handleMouse() {
         boolean pressed = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
-        boolean clicked = Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
+        boolean clicked = leftClicked();
         int codePoint = codePoints[cursor];
         if (clicked) {
             sheet.clickBar(pointerX, pointerY);
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
-                cursor = slot;
-            } else {
+                if (!flow.isPicking()) {
+                    cursor = slot;
+                } else if (flow.clickSource(slot)) {
+                    confirmSource();
+                } else {
+                    refreshPick();
+                }
+            } else if (!flow.isPicking()) {
                 int column = grid.columnAt(pointerX);
                 int row = grid.rowAt(pointerY);
                 if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
@@ -363,7 +654,8 @@ public final class PaintApp implements WorkbenchScreen {
         TopBar.draw(painter, columns, 0,
             List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
             editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
-        sheet.draw(cursor);
+        boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
+        sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
         ReviewLayout.Rect panel = rects.grid();
         line.setLength(0);
         line.append("U+");
@@ -372,15 +664,24 @@ public final class PaintApp implements WorkbenchScreen {
         int nameChars = Math.max(1, panel.width() - 6 - line.length());
         line.append(GlyphName.describe(codePoint, nameChars));
         Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
-        grid.draw(codePoint);
-        preview.draw(rects.preview(), codePoint);
+        grid.draw(codePoint, pickShown);
+        preview.draw(rects.preview(), codePoint, pickShown);
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
         messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
-        StatusBar.draw(painter, columns, rows - 1, KEYS);
+        StatusBar.draw(painter, columns, rows - 1, choosingSource ? PICK_KEYS : KEYS);
         if (confirmingQuit) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
+        }
+        if (flow.mode() == DeriveFlow.Mode.MENU) {
+            Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS);
+            Dialog.Layout menu = menuLayout();
+            SelectList.draw(painter, menu.textX(), menu.textY(), MENU_WIDTH, MENU_ROWS, flow.menuIndex());
+        } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            describeGlyph(codePoint);
+            Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
+                List.of(line + " holds a drawing.", "Deriving replaces it (undo restores it)."), REPLACE_BUTTONS);
         }
         rules.draw(worldWidth(), worldHeight(), codePoint);
         batch.end();
