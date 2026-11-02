@@ -50,7 +50,6 @@ final class MenuModel {
                 folders.add(font.folderName());
             }
         }
-        model.lines.add(new Line("FONTS", -1, 0, false));
         if (folders.isEmpty()) {
             model.lines.add(new Line("NO FONTS FOUND", -1, 1, true));
         }

@@ -11,30 +11,39 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
+import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
+import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-/** The launch menu: pick the review tool or a font to paint. */
+/** A menu in the UI kit style: a focused list on the left, details of the selected entry on the right. */
 final class MenuScreen implements WorkbenchScreen {
 
-    private static final int MARGIN = 12;
-    private static final int TEXT_LINE = Painter.TEXT_SIZE;
-    private static final int LINE_PITCH = TEXT_LINE + 12;
-    private static final int INDENT_CELLS = 2;
-    private static final int TOP_LINES = 3;
+    /** The right panel: its title, a short description in dim text, and extra lines such as the actions. */
+    record Detail(String title, String motto, List<String> lines) {
+    }
 
-    private static final Color BACKGROUND = new Color(0.06f, 0.06f, 0.08f, 1f);
-    private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
-    private static final Color TITLE_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
-    private static final Color SELECTED_COLOR = Color.YELLOW;
-    private static final Color DIMMED_COLOR = new Color(0.4f, 0.4f, 0.45f, 1f);
-    private static final Color SELECTED_FILL = new Color(0.2f, 0.22f, 0.32f, 1f);
-    private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
+    private static final int CELL = Painter.TEXT_SIZE;
+    private static final int PANEL_TOP = 3;
+    private static final int LIST_X = 2;
+    private static final int LIST_WIDTH = 30;
+    private static final int DETAIL_X = 34;
+    private static final int DETAIL_MAX_WIDTH = 42;
+    private static final int LIST_TOP = PANEL_TOP + 2;
+    private static final int MIN_PANEL_HEIGHT = 14;
 
     private final MenuModel model;
-    private final String title;
-    private final String hint;
+    private final String listTitle;
+    private final List<String> crumbs;
+    private final List<StatusBar.Key> keys;
     private final String notice;
+    private final Function<MenuModel.Item, Detail> detailFor;
     private final Consumer<MenuModel.Item> onChoose;
     private final Runnable onBack;
     private final ScreenViewport viewport = new ScreenViewport();
@@ -49,18 +58,24 @@ final class MenuScreen implements WorkbenchScreen {
     private int lastMouseY = -1;
 
     /**
-     * @param title the heading at the top
-     * @param escapeAction what Esc does, in words for the hint line, such as {@code QUITS}
-     * @param notice shown under the menu in a warning colour, or empty
+     * @param listTitle title of the left panel
+     * @param crumbs the breadcrumb in the top bar
+     * @param escapeLabel what Esc does, one word for the status bar, such as {@code QUIT}
+     * @param notice shown under the panels in the warning colour, or empty
+     * @param detailFor the right panel for the selected item (null when the menu has no items)
      * @param onChoose called with the chosen item
      * @param onBack called when the user presses Esc
      */
-    MenuScreen(MenuModel model, String title, String escapeAction, String notice,
-        Consumer<MenuModel.Item> onChoose, Runnable onBack) {
+    MenuScreen(MenuModel model, String listTitle, List<String> crumbs, String escapeLabel, String notice,
+        Function<MenuModel.Item, Detail> detailFor, Consumer<MenuModel.Item> onChoose, Runnable onBack) {
         this.model = model;
-        this.title = title;
-        this.hint = "ARROWS AND ENTER, NUMBER KEYS, OR CLICK.  ESC " + escapeAction;
+        this.listTitle = listTitle;
+        this.crumbs = crumbs;
+        this.keys = List.of(
+            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", "OPEN"),
+            new StatusBar.Key("1-9", "QUICK PICK"), new StatusBar.Key("ESC", escapeLabel));
         this.notice = notice;
+        this.detailFor = detailFor;
         this.onChoose = onChoose;
         this.onBack = onBack;
     }
@@ -88,10 +103,6 @@ final class MenuScreen implements WorkbenchScreen {
         handleInput();
         draw();
         devCapture.afterRender();
-    }
-
-    private int lineTop(int lineIndex) {
-        return MARGIN + TOP_LINES * TEXT_LINE + lineIndex * LINE_PITCH;
     }
 
     private void handleInput() {
@@ -136,9 +147,16 @@ final class MenuScreen implements WorkbenchScreen {
         }
         pointer.set(mouseX, mouseY);
         viewport.unproject(pointer);
-        int pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-        int pointerX = (int) Math.floor(pointer.x);
-        int index = itemAt(pointerX, pointerY);
+        int cellX = Math.floorDiv((int) Math.floor(pointer.x), CELL);
+        int cellY = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), CELL);
+        if (cellX < LIST_X || cellX >= LIST_X + LIST_WIDTH) {
+            return;
+        }
+        int row = SelectList.rowAt(cellY, LIST_TOP, model.lines().size());
+        if (row < 0) {
+            return;
+        }
+        int index = model.lines().get(row).itemIndex();
         if (index < 0) {
             return;
         }
@@ -148,47 +166,71 @@ final class MenuScreen implements WorkbenchScreen {
         }
     }
 
-    // A line is hit across its whole row, from the left margin to the right edge.
-    private int itemAt(int pixelX, int pixelY) {
-        if (pixelX < MARGIN) {
-            return -1;
+    private List<SelectList.Row> rows() {
+        List<SelectList.Row> rows = new ArrayList<>();
+        for (MenuModel.Line line : model.lines()) {
+            rows.add(new SelectList.Row(line.text().strip(), line.itemIndex() >= 0, line.dimmed(), line.indent()));
         }
+        return rows;
+    }
+
+    private int selectedRow() {
         List<MenuModel.Line> lines = model.lines();
         for (int i = 0; i < lines.size(); i++) {
-            int top = lineTop(i) - (LINE_PITCH - TEXT_LINE) / 2;
-            if (pixelY >= top && pixelY < top + LINE_PITCH) {
-                return lines.get(i).itemIndex();
+            if (lines.get(i).itemIndex() >= 0 && lines.get(i).itemIndex() == model.selectedIndex()) {
+                return i;
             }
         }
         return -1;
     }
 
     private void draw() {
-        ScreenUtils.clear(BACKGROUND);
+        ScreenUtils.clear(UiPalette.BG);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
-        painter.text(title, MARGIN, MARGIN, TITLE_COLOR);
-        List<MenuModel.Line> lines = model.lines();
-        for (int i = 0; i < lines.size(); i++) {
-            MenuModel.Line line = lines.get(i);
-            int x = MARGIN + line.indent() * INDENT_CELLS * TEXT_LINE;
-            boolean isSelected = line.itemIndex() >= 0 && line.itemIndex() == model.selectedIndex();
-            if (isSelected) {
-                int width = (line.text().length() + 1) * TEXT_LINE;
-                painter.fill(SELECTED_FILL, x - MARGIN / 2, lineTop(i) - (LINE_PITCH - TEXT_LINE) / 2, width, LINE_PITCH);
-            }
-            Color color = isSelected ? SELECTED_COLOR
-                : line.dimmed() ? DIMMED_COLOR
-                : line.itemIndex() >= 0 ? TEXT_COLOR : TITLE_COLOR;
-            painter.text(line.text(), x, lineTop(i), color);
+        int columns = Math.round(viewport.getWorldWidth()) / CELL;
+        int rowCount = Math.round(viewport.getWorldHeight()) / CELL;
+        TopBar.draw(painter, columns, 0, crumbs, "", UiPalette.TEXT);
+
+        int panelHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
+        Panel.draw(painter, LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight, listTitle, true);
+        SelectList.draw(painter, LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, rows(), selectedRow());
+
+        Detail detail = detailFor.apply(model.selectedItem());
+        int detailWidth = Math.max(10, Math.min(DETAIL_MAX_WIDTH, columns - DETAIL_X - 2));
+        if (detail != null) {
+            drawDetail(detail, detailWidth, panelHeight);
         }
-        int bottom = Math.round(viewport.getWorldHeight()) - MARGIN - TEXT_LINE;
         if (!notice.isEmpty()) {
-            painter.text(notice, MARGIN, bottom - TEXT_LINE, WARNING_COLOR);
+            painter.text(notice, LIST_X * CELL, (rowCount - 3) * CELL, UiPalette.WARN);
         }
-        painter.text(hint, MARGIN, bottom, TEXT_COLOR);
+        StatusBar.draw(painter, columns, rowCount - 1, keys);
         batch.end();
+    }
+
+    private void drawDetail(Detail detail, int width, int height) {
+        Panel.draw(painter, DETAIL_X, PANEL_TOP, width, height, detail.title(), false);
+        int y = LIST_TOP;
+        int bottom = PANEL_TOP + height - 1;
+        if (!detail.motto().isEmpty()) {
+            for (String line : ScrollText.wrap(detail.motto(), width - 4)) {
+                if (y >= bottom) {
+                    break;
+                }
+                painter.text(line, (DETAIL_X + 2) * CELL, y * CELL, UiPalette.DIM);
+                y++;
+            }
+            y++;
+        }
+        for (String line : detail.lines()) {
+            if (y >= bottom) {
+                break;
+            }
+            painter.text(line.length() > width - 4 ? line.substring(0, width - 4) : line,
+                (DETAIL_X + 2) * CELL, y * CELL, UiPalette.TEXT);
+            y += SelectList.PITCH;
+        }
     }
 
     @Override

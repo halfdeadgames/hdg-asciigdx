@@ -119,11 +119,4 @@ class UpscaleTargetTest {
         assertEquals("note\twith tab", reread.get('A').note());
     }
 
-    @Test
-    void noteBoxWidthsLeaveRoomForTheScrollArrow() {
-        assertEquals(10, NoteBox.textChars(13));
-        assertEquals(NoteBox.MAX_CELLS_WIDE, NoteBox.cellsWideFor(100_000));
-        assertEquals(16, NoteBox.cellsWideFor(10));
-        assertEquals(1, NoteBox.textChars(2));
-    }
 }

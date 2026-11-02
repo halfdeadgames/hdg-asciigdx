@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 
 /** The scrollable sheet of all slots on the left of the paint screen. */
 final class PaintSheetView {
@@ -106,8 +108,7 @@ final class PaintSheetView {
     }
 
     void draw(int cursorSlot) {
-        painter.text("GLYPH SHEET", frameLeft, frameTop - TEXT, LABEL_COLOR);
-        painter.frame(FRAME_COLOR, frameLeft, frameTop, frameCellsWide, frameCellsHigh);
+        Panel.draw(painter, frameLeft / TEXT, frameTop / TEXT, frameCellsWide, frameCellsHigh, "SHEET", false);
         drawBar();
         int size = layout.cellSize();
         int firstSlot = scroll.offset() * COLUMNS;
@@ -144,7 +145,7 @@ final class PaintSheetView {
 
     private void drawBar() {
         boolean active = scroll.needed();
-        Color color = active ? BAR_COLOR : BAR_DIM_COLOR;
+        Color color = UiPalette.FRAME;
         int barTop = layout.top();
         painter.text("▲", barLeft, barTop, color);
         painter.text("▼", barLeft, barTop + (barCells - 1) * TEXT, color);
@@ -153,8 +154,9 @@ final class PaintSheetView {
         int thumbEnd = thumbStart + scroll.thumbSize(trackCells);
         for (int i = 0; i < trackCells; i++) {
             barGlyph.setLength(0);
-            barGlyph.append(active && i >= thumbStart && i < thumbEnd ? '█' : '░');
-            painter.text(barGlyph, barLeft, barTop + (i + 1) * TEXT, color);
+            boolean thumb = active && i >= thumbStart && i < thumbEnd;
+            barGlyph.append(thumb ? '█' : '░');
+            painter.text(barGlyph, barLeft, barTop + (i + 1) * TEXT, thumb ? UiPalette.FOCUS : color);
         }
     }
 }

@@ -9,9 +9,9 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 
 /** Draws rectangles, glyphs, and text using window pixels with the origin at the top-left. */
-final class Painter {
+public final class Painter {
 
-    static final int TEXT_SIZE = 24;
+    public static final int TEXT_SIZE = 24;
 
     private final SpriteBatch batch;
     private final Texture whitePixel;
@@ -25,7 +25,7 @@ final class Painter {
         this.viewport = viewport;
     }
 
-    void fill(Color color, int x, int top, int width, int height) {
+    public void fill(Color color, int x, int top, int width, int height) {
         batch.setColor(color);
         batch.draw(whitePixel, x, flipY(top, height), width, height);
     }
@@ -46,7 +46,7 @@ final class Painter {
         batch.draw(region, x, flipY(top, size), size, size);
     }
 
-    void text(CharSequence value, int x, int top, Color color) {
+    public void text(CharSequence value, int x, int top, Color color) {
         batch.setColor(color);
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);

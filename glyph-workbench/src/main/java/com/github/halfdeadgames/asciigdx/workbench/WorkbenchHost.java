@@ -5,10 +5,19 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Hosts one {@link WorkbenchScreen} at a time. The flow is font list, then the actions of one font,
@@ -52,15 +61,46 @@ public final class WorkbenchHost extends ApplicationAdapter {
         return root == null ? List.of() : FontDiscovery.discover(Path.of(root));
     }
 
+    // First paragraph of the font's rules.md, or empty. Cached per folder by the caller.
+    private String mottoOf(String folderName) {
+        Path file = Path.of(fontsRoot(), folderName, "rules.md");
+        try {
+            return Files.exists(file) ? FontRules.parse(Files.readString(file, StandardCharsets.UTF_8)).motto() : "";
+        } catch (IOException | RuntimeException e) {
+            return "";
+        }
+    }
+
     private WorkbenchScreen fontListScreen(String notice) {
-        return new MenuScreen(MenuModel.fontList(fonts()), "GLYPH WORKBENCH", "QUITS", notice,
-            item -> pending = () -> fontMenuScreen(item.folderName()), Gdx.app::exit);
+        List<FontChoice> all = fonts();
+        Map<String, MenuScreen.Detail> cache = new HashMap<>();
+        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
+            : cache.computeIfAbsent(item.folderName(), folder -> {
+                List<String> actions = new ArrayList<>();
+                for (MenuModel.Line line : MenuModel.fontActions(folder, all).lines()) {
+                    actions.add(line.text().strip());
+                }
+                return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), mottoOf(folder), actions);
+            });
+        return new MenuScreen(MenuModel.fontList(all), "FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice,
+            detail, item -> pending = () -> fontMenuScreen(item.folderName()), Gdx.app::exit);
     }
 
     private WorkbenchScreen fontMenuScreen(String folderName) {
-        return new MenuScreen(MenuModel.fontActions(folderName, fonts()),
-            folderName.toUpperCase(Locale.ROOT), "GOES BACK", "",
-            item -> chooseAction(folderName, item), () -> pending = () -> fontListScreen(""));
+        String name = folderName.toUpperCase(Locale.ROOT);
+        String motto = mottoOf(folderName);
+        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> {
+            List<String> lines = new ArrayList<>();
+            if (item != null && item.upscale() != null) {
+                lines.add(item.upscale().target() + " FROM " + item.upscale().sources().stream()
+                    .map(size -> size + " AT " + item.upscale().factorFrom(size) + "X")
+                    .collect(Collectors.joining(", ")));
+            }
+            return new MenuScreen.Detail(name, motto, lines);
+        };
+        return new MenuScreen(MenuModel.fontActions(folderName, fonts()), "ACTIONS",
+            List.of("GLYPH WORKBENCH", name), "BACK", "",
+            detail, item -> chooseAction(folderName, item), () -> pending = () -> fontListScreen(""));
     }
 
     private void chooseAction(String folderName, MenuModel.Item item) {

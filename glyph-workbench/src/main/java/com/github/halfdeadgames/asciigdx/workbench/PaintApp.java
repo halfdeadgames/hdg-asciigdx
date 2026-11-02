@@ -14,6 +14,13 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.util.List;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
 public final class PaintApp implements WorkbenchScreen {
@@ -23,14 +30,13 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int TEXT_LINE = Painter.TEXT_SIZE;
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int WHEEL_ROWS = 3;
-    private static final String PROMPT = "UNSAVED: S SAVE, D DISCARD, ESC CANCEL";
 
-    private static final Color BACKGROUND = new Color(0.06f, 0.06f, 0.08f, 1f);
-    private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
-    private static final Color LABEL_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
-    private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
-    private static final Color MODIFIED_COLOR = Color.ORANGE;
-    private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
+    private static final List<StatusBar.Key> KEYS = List.of(
+        new StatusBar.Key("ARROWS", "MOVE"), new StatusBar.Key("CLICK", "PAINT"),
+        new StatusBar.Key("CTRL+S", "SAVE"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
+    private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
+        new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
+        new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
@@ -46,14 +52,18 @@ public final class PaintApp implements WorkbenchScreen {
     private TextureGlyphSource source;
     private Painter painter;
     private FileHandle dataFile;
-    private String title;
+    private String folderName;
     private FontEditor editor;
     private PaintStroke stroke;
     private PaintSheetView sheet;
     private PaintGridView grid;
     private PaintPreview preview;
     private RulesOverlay rules;
-    private NoteBox noteBox;
+    private NotePanel notePanel;
+    private final MessageStrip messages = new MessageStrip();
+    private PaintLayout.Result rects;
+    private String lastProblem = "";
+    private int announcedFor = -1;
     private ReviewFile review = new ReviewFile();
     private int shownNoteFor = -1;
     private boolean[] unselectable;
@@ -61,7 +71,6 @@ public final class PaintApp implements WorkbenchScreen {
     private int cursor;
     private boolean revealCursor = true;
     private boolean confirmingQuit;
-    private String message = "";
     private int wheelTicks;
     private int pointerX;
     private int pointerY;
@@ -88,7 +97,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         FileHandle directory = Gdx.files.absolute(fontDir);
         dataFile = directory.child(fontSize + ".txt");
-        title = "PAINT " + directory.name().toUpperCase() + " " + fontSize;
+        folderName = directory.name().toUpperCase(java.util.Locale.ROOT);
         editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
 
@@ -112,11 +121,11 @@ public final class PaintApp implements WorkbenchScreen {
         source = TextureGlyphSource.loadDungeonMode();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
-        sheet = new PaintSheetView(painter, editor, MARGIN, MARGIN + 2 * TEXT_LINE);
+        sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
         grid = new PaintGridView(painter, editor, PaintGuides.saiksistt(editor.cellWidth()));
         preview = new PaintPreview(painter, editor);
         rules = new RulesOverlay(painter, fontDir);
-        noteBox = new NoteBox(painter, FRAME_COLOR, TEXT_COLOR, LABEL_COLOR, MODIFIED_COLOR);
+        notePanel = new NotePanel(painter);
         loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
@@ -136,7 +145,7 @@ public final class PaintApp implements WorkbenchScreen {
         try {
             review = ReviewFile.parse(reviewFile.readString("UTF-8"));
         } catch (IllegalArgumentException e) {
-            message = "REVIEW FILE BAD: NOTES OFF";
+            messages.warn("Review file is bad: notes are off");
             Gdx.app.error(TAG, "Cannot read " + reviewFile.path() + ": " + e.getMessage());
         }
     }
@@ -162,8 +171,14 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleInput(float delta) {
-        sheet.fitToHeight(worldHeight(), MARGIN, cursor, revealCursor);
+        sheet.fitToHeight(worldHeight(), TEXT_LINE, cursor, revealCursor);
         revealCursor = false;
+        rects = PaintLayout.compute(worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE,
+            sheet.frameRight() / TEXT_LINE, editor.cellHeight());
+        fitGrid();
+        if (announcedFor != cursor) {
+            announceGlyph();
+        }
         if (rules.handleInput(delta, wheelTicks)) {
             wheelTicks = 0;
             stroke.end();
@@ -192,6 +207,38 @@ public final class PaintApp implements WorkbenchScreen {
         handleScrollKeys();
         trackPointer();
         handleMouse();
+        String problem = editor.problem();
+        if (!problem.equals(lastProblem)) {
+            lastProblem = problem;
+            if (!problem.isEmpty()) {
+                messages.warn("Edit rejected: " + problem);
+            }
+        }
+    }
+
+    // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
+    private void fitGrid() {
+        ReviewLayout.Rect panel = rects.grid();
+        int left = (panel.x() + 2) * TEXT_LINE;
+        int top = (panel.y() + 1 + PaintGridView.LABEL_ROWS_ABOVE) * TEXT_LINE;
+        grid.fitTo(left, top, (panel.width() - 3) * TEXT_LINE, (panel.bottom() - 1) * TEXT_LINE - top - TEXT_LINE / 2);
+    }
+
+    // Derived and empty slots are explained once, when the cursor lands on them.
+    private void announceGlyph() {
+        announcedFor = cursor;
+        int codePoint = codePoints[cursor];
+        if (editor.isDerived(codePoint)) {
+            line.setLength(0);
+            line.append("U+");
+            appendHex(line, codePoint);
+            line.append(" is derived from U+");
+            appendHex(line, editor.derivedFrom(codePoint));
+            line.append(": not editable");
+            messages.warn(line.toString());
+        } else if (!editor.hasGlyph(codePoint)) {
+            messages.ok("Empty slot: click the grid to create it");
+        }
     }
 
     private void moveCursor(float delta) {
@@ -215,7 +262,6 @@ public final class PaintApp implements WorkbenchScreen {
         }
         if (cursor != before) {
             stroke.end();
-            message = "";
             sheet.scroll().keepVisible(cursor / COLUMNS);
         }
     }
@@ -234,10 +280,10 @@ public final class PaintApp implements WorkbenchScreen {
             sheet.scroll().toBottom();
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            noteBox.scrollDisplay(-1);
+            notePanel.scrollDisplay(-1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            noteBox.scrollDisplay(1);
+            notePanel.scrollDisplay(1);
         }
     }
 
@@ -247,8 +293,8 @@ public final class PaintApp implements WorkbenchScreen {
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (wheelTicks != 0) {
-            if (noteBox.contains(pointerX, pointerY)) {
-                noteBox.scrollDisplay(wheelTicks * WHEEL_ROWS);
+            if (notePanel.contains(pointerX, pointerY)) {
+                notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
                 sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
             }
@@ -265,12 +311,10 @@ public final class PaintApp implements WorkbenchScreen {
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
                 cursor = slot;
-                message = "";
             } else {
                 int column = grid.columnAt(pointerX);
                 int row = grid.rowAt(pointerY);
                 if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
-                    message = "";
                     stroke.begin(codePoint, column, row);
                 }
             }
@@ -301,94 +345,59 @@ public final class PaintApp implements WorkbenchScreen {
         try {
             AtomicFiles.write(dataFile.file().toPath(), editor.toText());
             editor.markSaved();
-            message = "SAVED";
+            messages.ok("Saved " + dataFile.name());
         } catch (java.io.IOException e) {
-            message = "SAVE FAILED: SEE LOG";
+            messages.warn("Save failed: see log");
             Gdx.app.error(TAG, "Cannot write " + dataFile.path() + ": " + e.getMessage());
         }
     }
 
     private void draw() {
-        ScreenUtils.clear(BACKGROUND);
+        ScreenUtils.clear(UiPalette.BG);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         int codePoint = codePoints[cursor];
-        drawTitle();
+        int columns = worldWidth() / TEXT_LINE;
+        int rows = worldHeight() / TEXT_LINE;
+        TopBar.draw(painter, columns, 0,
+            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
+            editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
         sheet.draw(cursor);
-        int middleLeft = sheet.frameRight() + MARGIN;
-        int previewLeft = worldWidth() - MARGIN - PaintPreview.CELLS_WIDE * TEXT_LINE;
-        int headerTop = MARGIN + TEXT_LINE;
-        drawGlyphInfo(middleLeft, headerTop, codePoint, previewLeft - MARGIN - middleLeft);
-        int gridTop = headerTop + 2 * TEXT_LINE + MARGIN + PaintGridView.LABEL_ROWS_ABOVE * TEXT_LINE;
-        int statusTop = worldHeight() - MARGIN - 3 * TEXT_LINE;
-        int boxTop = statusTop - MARGIN - NoteBox.heightPixels();
-        int gridBottom = review.isEmpty() ? statusTop - MARGIN : boxTop - MARGIN;
-        grid.fitTo(middleLeft + MARGIN, gridTop, previewLeft - MARGIN - middleLeft - MARGIN, gridBottom - gridTop);
+        ReviewLayout.Rect panel = rects.grid();
+        line.setLength(0);
+        line.append("U+");
+        appendHex(line, codePoint);
+        line.append("  ");
+        int nameChars = Math.max(1, panel.width() - 6 - line.length());
+        line.append(GlyphName.describe(codePoint, nameChars));
+        Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
         grid.draw(codePoint);
-        preview.draw(previewLeft, headerTop, codePoint);
-        drawReviewNote(middleLeft, boxTop, previewLeft - MARGIN - middleLeft, codePoint);
-        drawStatus(middleLeft, statusTop, codePoint, worldWidth() - MARGIN - middleLeft);
+        preview.draw(rects.preview(), codePoint);
+        drawReviewNote(codePoint);
+        ReviewLayout.Rect strip = rects.messages();
+        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
+        StatusBar.draw(painter, columns, rows - 1, KEYS);
+        if (confirmingQuit) {
+            Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
+                List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
+        }
         rules.draw(worldWidth(), worldHeight(), codePoint);
         batch.end();
     }
 
     // Read-only: the note and pick the upscale review recorded for this glyph, if it has a note.
-    private void drawReviewNote(int x, int top, int available, int codePoint) {
+    private void drawReviewNote(int codePoint) {
         if (shownNoteFor != codePoint) {
             shownNoteFor = codePoint;
-            noteBox.resetDisplayScroll();
+            notePanel.resetDisplayScroll();
         }
         ReviewFile.Answer answer = review.get(codePoint);
         if (answer != null && !answer.note().isEmpty()) {
-            noteBox.drawReadOnly(x, top, NoteBox.cellsWideFor(available), answer.pick(), answer.note());
+            notePanel.drawReadOnly(rects.note(), answer.pick(), answer.note());
         } else {
-            noteBox.markHidden();
+            notePanel.markHidden();
         }
-    }
-
-    private void drawTitle() {
-        line.setLength(0);
-        line.append(title).append("   F1 RULES");
-        painter.text(line, MARGIN, MARGIN, LABEL_COLOR);
-        if (editor.isModified()) {
-            painter.text("MODIFIED", MARGIN + (line.length() + 3) * TEXT_LINE, MARGIN, MODIFIED_COLOR);
-        }
-    }
-
-    private void drawGlyphInfo(int x, int top, int codePoint, int width) {
-        line.setLength(0);
-        line.append("U+");
-        appendHex(line, codePoint);
-        painter.text(line, x, top, TEXT_COLOR);
-        painter.text(GlyphName.describe(codePoint, Math.max(1, width / TEXT_LINE)), x, top + TEXT_LINE, TEXT_COLOR);
-    }
-
-    private void drawStatus(int x, int top, int codePoint, int width) {
-        String text;
-        Color color = TEXT_COLOR;
-        if (confirmingQuit) {
-            text = PROMPT;
-            color = WARNING_COLOR;
-        } else if (!message.isEmpty()) {
-            text = message;
-        } else if (!editor.problem().isEmpty()) {
-            text = editor.problem();
-            color = WARNING_COLOR;
-        } else if (editor.isDerived(codePoint)) {
-            line.setLength(0);
-            line.append("DERIVED FROM U+");
-            appendHex(line, editor.derivedFrom(codePoint));
-            text = line.toString();
-        } else if (!editor.hasGlyph(codePoint)) {
-            text = "EMPTY SLOT: CLICK THE GRID TO CREATE IT";
-        } else {
-            text = "";
-        }
-        int chars = Math.max(1, width / TEXT_LINE);
-        painter.text(text.length() > chars ? text.substring(0, chars) : text, x, top, color);
-        painter.text("ARROWS MOVE  CLICK TOGGLES  DRAG PAINTS", x, top + TEXT_LINE, TEXT_COLOR);
-        painter.text("CTRL+S SAVES  [ ] SCROLL NOTE  F1 RULES  ESC LEAVES", x, top + 2 * TEXT_LINE, TEXT_COLOR);
     }
 
     private static void appendHex(StringBuilder out, int value) {

@@ -24,15 +24,13 @@ class MenuModelTest {
         assertEquals("1 ALPHA", model.item(0).label());
         assertEquals("saiksistt", model.item(1).folderName());
         assertEquals("2 SAIKSISTT", model.item(1).label());
-        assertEquals("FONTS", model.lines().get(0).text());
-        assertEquals(-1, model.lines().get(0).itemIndex());
     }
 
     @Test
     void fontListWithoutFontsShowsANote() {
         MenuModel model = MenuModel.fontList(List.of());
         assertEquals(0, model.itemCount());
-        assertEquals("NO FONTS FOUND", model.lines().get(1).text());
+        assertEquals("NO FONTS FOUND", model.lines().get(0).text());
         assertNull(model.selectedItem());
         model.move(1);
         model.select(0);

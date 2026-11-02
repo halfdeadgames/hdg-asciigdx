@@ -19,10 +19,18 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -33,21 +41,23 @@ import java.util.Map;
 final class UpscaleReviewScreen implements WorkbenchScreen {
 
     private static final String TAG = "UpscaleReview";
-    private static final int MARGIN = 12;
-    private static final int TEXT_LINE = Painter.TEXT_SIZE;
-    private static final int COLUMNS = PaintSheetView.COLUMNS;
+    private static final int CELL = Painter.TEXT_SIZE;
     private static final int WHEEL_ROWS = 3;
-    private static final int STATUS_LINES = 3;
 
-    private static final Color BACKGROUND = new Color(0.06f, 0.06f, 0.08f, 1f);
-    private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
-    private static final Color LABEL_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
     private static final Color CELL_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
-    private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
     private static final Color CURSOR_COLOR = Color.YELLOW;
-    private static final Color PICKED_COLOR = new Color(0.25f, 0.9f, 0.35f, 1f);
+    private static final Color PICKED_COLOR = UiPalette.OK;
     private static final Color NONE_MARK_COLOR = Color.ORANGE;
-    private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
+
+    private static final List<StatusBar.Key> BROWSE_KEYS = List.of(
+        new StatusBar.Key("1-9", "PICK"), new StatusBar.Key("0", "NONE GOOD"),
+        new StatusBar.Key("N", "NEXT NEW"), new StatusBar.Key("T", "NOTE"),
+        new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
+    private static final List<StatusBar.Key> NOTE_KEYS = List.of(
+        new StatusBar.Key("ENTER", "SAVE NOTE"), new StatusBar.Key("ESC", "KEEP OLD"),
+        new StatusBar.Key("ARROWS", "MOVE CARET"), new StatusBar.Key("PGUP PGDN", "JUMP"));
+    private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
+        new Dialog.Button("Y", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("N", "KEEP", Dialog.Tone.DIM));
 
     /** One method applied to one source size; {@code fullBySlot} tells which glyphs are full-cell glyphs. */
     private record Candidate(String label, String pickId, UpscaledSheet sheet, boolean[] fullBySlot) {
@@ -67,6 +77,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private final KeyRepeat repeatBackspace = new KeyRepeat();
     private final KeyRepeat repeatDelete = new KeyRepeat();
     private final NoteEditor noteEditor = new NoteEditor();
+    private final MessageStrip messages = new MessageStrip();
     private final List<Candidate> candidates = new ArrayList<>();
     private final List<Candidate> offered = new ArrayList<>();
     private final List<Candidate> shown = new ArrayList<>();
@@ -78,13 +89,14 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private FontEditor sheetFont;
     private PaintSheetView sheet;
     private ColumnPanel columnPanel;
-    private NoteBox noteBox;
+    private NotePanel notePanel;
     private RulesOverlay rules;
     private UpscaledSheet original;
     private UpscaleTarget target;
     private Path targetPath;
     private Path reviewPath;
     private ReviewFile answers = new ReviewFile();
+    private ReviewLayout.Result rects;
     private boolean[] unselectable;
     private boolean[] noGlyph;
     private int[] codePoints;
@@ -94,8 +106,6 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private int hoveredColumn = -1;
     private int pickedColumn = -1;
     private int replaceColumn = -1;
-    private int noteCells = NoteBox.EDITOR_CELLS_WIDE;
-    private String message = "";
     private int wheelTicks;
     private int pointerX;
     private int pointerY;
@@ -146,9 +156,9 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         source = TextureGlyphSource.loadDungeonMode();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
-        sheet = new PaintSheetView(painter, sheetFont, MARGIN, MARGIN + 2 * TEXT_LINE);
-        columnPanel = new ColumnPanel(painter, CELL_FILL, TEXT_COLOR, CURSOR_COLOR, FRAME_COLOR);
-        noteBox = new NoteBox(painter, FRAME_COLOR, TEXT_COLOR, LABEL_COLOR, CURSOR_COLOR);
+        sheet = new PaintSheetView(painter, sheetFont, 0, 2 * CELL);
+        columnPanel = new ColumnPanel(painter, CELL_FILL, UiPalette.TEXT, UiPalette.ACCENT, UiPalette.FRAME);
+        notePanel = new NotePanel(painter);
         rules = new RulesOverlay(painter, fontDir);
         refreshMarks();
         Gdx.input.setInputProcessor(new InputAdapter() {
@@ -239,17 +249,18 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         devCapture.afterRender();
     }
 
-    private int worldWidth() {
-        return Math.round(viewport.getWorldWidth());
+    private int columns() {
+        return Math.round(viewport.getWorldWidth()) / CELL;
     }
 
-    private int worldHeight() {
-        return Math.round(viewport.getWorldHeight());
+    private int rows() {
+        return Math.round(viewport.getWorldHeight()) / CELL;
     }
 
     private void handleInput(float delta) {
-        sheet.fitToHeight(worldHeight(), MARGIN, cursor, revealCursor);
+        sheet.fitToHeight(Math.round(viewport.getWorldHeight()), CELL, cursor, revealCursor);
         revealCursor = false;
+        rects = ReviewLayout.compute(columns(), rows(), sheet.frameRight() / CELL);
         if (rules.handleInput(delta, wheelTicks)) {
             wheelTicks = 0;
             return;
@@ -275,7 +286,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
 
     // While typing, the other keys are off; the arrows, Home, End, and the delete keys edit the note.
     private void handleNoteKeys(float delta) {
-        int chars = NoteBox.textChars(noteCells);
+        int chars = NotePanel.textChars(rects.note().width());
+        int rowsShown = NotePanel.editorRows(rects.note().height());
         if (wheelTicks != 0) {
             noteEditor.scrollView(wheelTicks * WHEEL_ROWS);
             wheelTicks = 0;
@@ -297,10 +309,10 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             noteEditor.caretRows(1, chars);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_UP)) {
-            noteEditor.caretRows(-NoteBox.TEXT_ROWS, chars);
+            noteEditor.caretRows(-rowsShown, chars);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
-            noteEditor.caretRows(NoteBox.TEXT_ROWS, chars);
+            noteEditor.caretRows(rowsShown, chars);
         }
         int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
         for (int i = 0; i < backspaces; i++) {
@@ -328,7 +340,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         if (answer != null) {
             answers.put(answer.withNote(noteEditor.value().strip()));
             saveReviewFile();
-            noteBox.resetDisplayScroll();
+            notePanel.resetDisplayScroll();
         }
         noteEditor.end();
     }
@@ -340,28 +352,28 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             commitPick(column);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.N) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             replaceColumn = -1;
-            message = "KEPT THE EXISTING GLYPH";
+            messages.ok("Kept the existing glyph");
         }
     }
 
     private void moveCursor(float delta) {
         int before = cursor;
-        int rows = codePoints.length / COLUMNS;
+        int rowCount = codePoints.length / PaintSheetView.COLUMNS;
         int lefts = repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta);
         for (int i = 0; i < lefts; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, -1, 0);
+            cursor = CursorNavigator.move(unselectable, PaintSheetView.COLUMNS, rowCount, cursor, -1, 0);
         }
         int rights = repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta);
         for (int i = 0; i < rights; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 1, 0);
+            cursor = CursorNavigator.move(unselectable, PaintSheetView.COLUMNS, rowCount, cursor, 1, 0);
         }
         int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
         for (int i = 0; i < ups; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 0, -1);
+            cursor = CursorNavigator.move(unselectable, PaintSheetView.COLUMNS, rowCount, cursor, 0, -1);
         }
         int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
         for (int i = 0; i < downs; i++) {
-            cursor = CursorNavigator.move(unselectable, COLUMNS, rows, cursor, 0, 1);
+            cursor = CursorNavigator.move(unselectable, PaintSheetView.COLUMNS, rowCount, cursor, 0, 1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.N)) {
             int next = answers.nextUnanswered(codePoints, noGlyph, cursor);
@@ -370,7 +382,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             }
         }
         if (cursor != before) {
-            sheet.scroll().keepVisible(cursor / COLUMNS);
+            sheet.scroll().keepVisible(cursor / PaintSheetView.COLUMNS);
         }
     }
 
@@ -389,10 +401,10 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             sheet.scroll().toBottom();
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            noteBox.scrollDisplay(-1);
+            notePanel.scrollDisplay(-1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            noteBox.scrollDisplay(1);
+            notePanel.scrollDisplay(1);
         }
     }
 
@@ -402,8 +414,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (wheelTicks != 0) {
-            if (noteBox.contains(pointerX, pointerY)) {
-                noteBox.scrollDisplay(wheelTicks * WHEEL_ROWS);
+            if (notePanel.contains(pointerX, pointerY)) {
+                notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
                 sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
             }
@@ -431,7 +443,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         if ((Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0))
             && !noGlyph[cursor]) {
             recordAnswer(ReviewFile.NONE, -1);
-            message = "NONE GOOD: NOTHING WRITTEN TO " + choice.target() + ".TXT";
+            messages.ok("None good: nothing written to " + choice.target() + ".txt");
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.T) && answers.has(codePoints[cursor])) {
             noteEditor.begin(answers.get(codePoints[cursor]).note(), true);
@@ -451,9 +463,12 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     }
 
     // Writes the target file first, so an answer is only recorded for a glyph that really was written.
+    // A failed write puts the in-memory target back, so it never holds a glyph that is not on disk.
     private void commitPick(int column) {
         Candidate candidate = shown.get(column - 1);
         PixelGrid cell = candidate.sheet.cell(cursor);
+        UpscaleTarget before = target;
+        UpscaleTarget.Snapshot snapshot = target == null ? null : target.snapshot();
         try {
             if (target == null) {
                 target = UpscaleTarget.empty(cell.getWidth(), cell.getHeight());
@@ -461,11 +476,16 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             target.put(codePoints[cursor], candidate.fullBySlot[cursor], cell);
             AtomicFiles.write(targetPath, target.toText());
         } catch (IOException | IllegalArgumentException e) {
-            message = "WRITE FAILED: " + e.getMessage();
+            if (snapshot != null) {
+                target.restore(snapshot);
+            } else {
+                target = before;
+            }
+            messages.warn("Write failed: " + e.getMessage());
             Gdx.app.error(TAG, "Cannot write " + targetPath + ": " + e.getMessage());
             return;
         }
-        message = "WRITTEN TO " + choice.target() + ".TXT";
+        messages.ok("Wrote " + candidate.label + " to " + choice.target() + ".txt");
         recordAnswer(candidate.pickId, column);
     }
 
@@ -476,7 +496,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         saveReviewFile();
         pickedColumn = column;
         refreshMarks();
-        noteBox.resetDisplayScroll();
+        notePanel.resetDisplayScroll();
         noteEditor.begin(previous == null ? "" : previous.note(), previous != null);
     }
 
@@ -484,7 +504,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         try {
             AtomicFiles.write(reviewPath, answers.format());
         } catch (IOException e) {
-            message = "REVIEW FILE NOT SAVED: SEE LOG";
+            messages.warn("Review file not saved: see log");
             Gdx.app.error(TAG, "Cannot write " + reviewPath + ": " + e.getMessage());
         }
     }
@@ -504,8 +524,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private void rebuildColumns() {
         builtFor = cursor;
         pickedColumn = -1;
-        message = "";
-        noteBox.resetDisplayScroll();
+        notePanel.resetDisplayScroll();
         Array<GlyphColumn> columns = new Array<>();
         columns.add(new GlyphColumn("", "ORIGINAL " + choice.primarySource(), original.regions));
         offered.clear();
@@ -538,7 +557,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         for (int i = 0; i < offered.size(); i++) {
             if (offered.get(i).pickId.equals(answer.pick())) {
                 for (int g = 0; g < keptIndexes.length; g++) {
-                    if (java.util.Arrays.equals(cells[keptIndexes[g]], cells[i])) {
+                    if (Arrays.equals(cells[keptIndexes[g]], cells[i])) {
                         return g + 1;
                     }
                 }
@@ -551,70 +570,64 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         if (builtFor != cursor) {
             rebuildColumns();
         }
-        ScreenUtils.clear(BACKGROUND);
+        ScreenUtils.clear(UiPalette.BG);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         int codePoint = codePoints[cursor];
-        line.setLength(0);
-        line.append("REVIEW ").append(choice.label());
-        line.append(answers.isEmpty() ? "" : "   " + answers.all().size() + " ANSWERED");
-        line.append("   F1 RULES");
-        painter.text(line, MARGIN, MARGIN, LABEL_COLOR);
+        drawTopBar();
         sheet.draw(cursor);
-
-        int x = sheet.frameRight() + MARGIN;
-        int top = MARGIN + TEXT_LINE;
-        line.setLength(0);
-        line.append("U+");
-        appendHex(line, codePoint);
-        painter.text(line, x, top, TEXT_COLOR);
-        top += TEXT_LINE;
-        int nameChars = Math.max(1, (worldWidth() - MARGIN - x) / TEXT_LINE);
-        painter.text(GlyphName.describe(codePoint, nameChars), x, top, TEXT_COLOR);
-        top += TEXT_LINE + MARGIN;
-        painter.text("CANDIDATES", x, top, LABEL_COLOR);
-        top += TEXT_LINE;
-        int statusTop = worldHeight() - MARGIN - STATUS_LINES * TEXT_LINE;
-        int boxTop = statusTop - MARGIN - NoteBox.heightPixels();
-        columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
-        columnPanel.setViewed(-1, CURSOR_COLOR);
-        columnPanel.setMaxOuterHeight(boxTop - MARGIN - top);
-        columnPanel.draw(x, top, worldWidth() - MARGIN - x, cursor);
-        drawNoteArea(x, boxTop, codePoint);
-        drawStatus(x, statusTop);
-        rules.draw(worldWidth(), worldHeight(), codePoint);
+        drawCandidates(codePoint);
+        drawNote(codePoint);
+        ReviewLayout.Rect strip = rects.messages();
+        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
+        StatusBar.draw(painter, columns(), rows() - 1, noteEditor.isActive() ? NOTE_KEYS : BROWSE_KEYS);
+        if (replaceColumn >= 0) {
+            Dialog.draw(painter, columns(), rows(), "REPLACE GLYPH",
+                List.of("REPLACE EXISTING " + target.cellWidth() + "X" + target.cellHeight() + " GLYPH?"),
+                REPLACE_BUTTONS);
+        }
+        rules.draw(Math.round(viewport.getWorldWidth()), Math.round(viewport.getWorldHeight()), codePoint);
         batch.end();
     }
 
-    private void drawNoteArea(int x, int boxTop, int codePoint) {
-        int available = worldWidth() - MARGIN - x;
-        if (noteEditor.isActive()) {
-            noteCells = Math.max(NoteBox.EDITOR_CELLS_WIDE, NoteBox.cellsWideFor(available));
-            noteBox.drawEditor(x, boxTop, noteCells, noteEditor);
-            return;
-        }
-        noteCells = NoteBox.cellsWideFor(available);
-        ReviewFile.Answer answer = answers.get(codePoint);
-        if (answer != null) {
-            noteBox.drawReadOnly(x, boxTop, noteCells, answer.pick(), answer.note());
-        } else {
-            noteBox.markHidden();
-        }
+    private void drawTopBar() {
+        String status = noGlyph[cursor] ? "NO GLYPH IN SOURCE"
+            : answers.isEmpty() ? "" : answers.all().size() + " ANSWERED";
+        TopBar.draw(painter, columns(), 0,
+            List.of("GLYPH WORKBENCH", choice.folderName().toUpperCase(Locale.ROOT),
+                "UPSCALE " + choice.largest() + " -> " + choice.target()),
+            status, noGlyph[cursor] ? UiPalette.WARN : UiPalette.TEXT);
     }
 
-    private void drawStatus(int x, int top) {
-        String text = message;
-        Color color = PICKED_COLOR;
-        if (replaceColumn >= 0) {
-            text = "REPLACE EXISTING " + target.cellWidth() + "X" + target.cellHeight() + " GLYPH? Y / N";
-            color = WARNING_COLOR;
-        } else if (text.isEmpty() && noGlyph[cursor]) {
-            text = "NO GLYPH IN THE SOURCE FONT";
+    private void drawCandidates(int codePoint) {
+        ReviewLayout.Rect area = rects.candidates();
+        line.setLength(0);
+        line.append("U+");
+        appendHex(line, codePoint);
+        line.append("  ");
+        int nameChars = Math.max(1, area.width() - 6 - line.length());
+        line.append(GlyphName.describe(codePoint, nameChars));
+        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), line.toString(), true);
+        columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
+        columnPanel.setViewed(-1, CURSOR_COLOR);
+        columnPanel.setMaxOuterHeight((area.height() - 2) * CELL);
+        columnPanel.draw((area.x() + 1) * CELL, (area.y() + 1) * CELL, (area.width() - 2) * CELL, cursor);
+    }
+
+    private void drawNote(int codePoint) {
+        if (noteEditor.isActive()) {
+            notePanel.drawEditor(rects.note(), noteEditor);
+            return;
         }
-        painter.text(text, x, top, color);
-        painter.text("ARROWS MOVE  CLICK OR 1-9 PICKS  0 NONE GOOD  N NEXT NEW", x, top + TEXT_LINE, TEXT_COLOR);
-        painter.text("T NOTE  [ ] SCROLL NOTE  F1 RULES  ESC LEAVES", x, top + 2 * TEXT_LINE, TEXT_COLOR);
+        ReviewFile.Answer answer = answers.get(codePoint);
+        if (answer != null) {
+            notePanel.drawReadOnly(rects.note(), answer.pick(), answer.note());
+        } else {
+            notePanel.markHidden();
+            Panel.draw(painter, rects.note().x(), rects.note().y(), rects.note().width(), rects.note().height(),
+                "REVIEW NOTE   [ ] SCROLLS", false);
+        }
     }
 
     private static void appendHex(StringBuilder out, int value) {

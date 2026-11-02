@@ -9,7 +9,7 @@ final class PaintGridView {
 
     static final int LABEL_CELLS = 5;
     private static final int MIN_PIXEL = 8;
-    private static final int MAX_PIXEL = 48;
+    private static final int MAX_PIXEL = 96;
     private static final int GUIDE_THICKNESS = 2;
     private static final int GUIDE_OVERHANG = 12;
 

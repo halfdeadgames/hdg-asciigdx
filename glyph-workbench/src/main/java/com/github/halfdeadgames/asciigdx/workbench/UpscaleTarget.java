@@ -33,6 +33,19 @@ final class UpscaleTarget {
         return new UpscaleTarget(FontDataParser.parse(text));
     }
 
+    /** A saved state of the target, for undoing a {@link #put} whose file write failed. */
+    record Snapshot(FontData data, Map<Integer, PixelGlyph> resolved) {
+    }
+
+    Snapshot snapshot() {
+        return new Snapshot(data, resolved);
+    }
+
+    void restore(Snapshot snapshot) {
+        data = snapshot.data();
+        resolved = snapshot.resolved();
+    }
+
     int cellWidth() {
         return data.cellWidth();
     }

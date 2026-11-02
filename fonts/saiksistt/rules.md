@@ -22,6 +22,7 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - Capitals with a center stroke or point (A T V X Y I) use an odd width, 5 or 7, so the center stays true.
 - Wide capitals (M W) use the full 7 pixels.
 - Crossbars sit on row 3 (A E F H and similar), slightly above center.
+- Bowls of B, P, and R close on row 4, so the bowl has room.
 - I has slabs at top and bottom.
 
 ## Lowercase
