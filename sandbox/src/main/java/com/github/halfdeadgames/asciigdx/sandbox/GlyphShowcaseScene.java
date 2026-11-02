@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
-import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -30,6 +29,8 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int CARD_BACK_SELECTED = 0xE0C2;
     private static final int SHIELD_STAGES_START = 0xE0A0;
     private static final int SWORD_STAGES_START = 0xE0A4;
+    private static final int SHIELD_EMPTY = 0xE0A9;
+    private static final int SHIELD_FULL = 0xE0AA;
     private static final int OUTLINED_DICE_START = 0xE0B0;
     private static final int HEART_FULL = 0x2764;
     private static final int HEART_HOLLOW = 0xE0D0;
@@ -60,15 +61,6 @@ final class GlyphShowcaseScene extends GridScene {
         new TimelineFrame(HOURGLASS_START + 7, SECONDS_PER_FLIP_FRAME),
     };
 
-    private static final int TWO_TONE_COLUMN = ANIMATED_METER_COLUMN + 2;
-    private static final int HOURGLASS_FRAME_START = 0xE0E8;
-    private static final int HOURGLASS_SAND_START = 0xE0F0;
-    private static final int HOURGLASS_SAND = 0xD8DCE4FF;
-    private static final int HOURGLASS_FRAME = 0x1E2E78FF;
-    private static final int HEART_OUTLINE = 0xFFC8D8FF;
-
-    private final TerminalGrid overlay = new TerminalGrid(COLUMNS, ROWS);
-
     private int hourglassRow;
     private int hourglassShownCodePoint;
     private int[][] meterStages = new int[0][];
@@ -79,7 +71,6 @@ final class GlyphShowcaseScene extends GridScene {
 
     GlyphShowcaseScene(GlyphSource glyphs) {
         super(glyphs, COLUMNS, ROWS);
-        layers.add(overlay, glyphs);
     }
 
     @Override
@@ -95,7 +86,6 @@ final class GlyphShowcaseScene extends GridScene {
     @Override
     public void show() {
         grid.clear();
-        overlay.clear();
         GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(CHARACTER_LIST).readString("UTF-8"), SHEET_COLUMNS);
         writeText(0, 0, "dungeon.mode extended, " + order.size() + " glyphs", LABEL, CLEAR);
         for (int slot = 0; slot < order.size(); slot++) {
@@ -155,29 +145,13 @@ final class GlyphShowcaseScene extends GridScene {
             if (stage != meterShownStage[meter]) {
                 meterShownStage[meter] = stage;
                 grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage], meterColors[meter], CLEAR);
-                if (isHeartMeter(stages)) {
-                    grid.set(TWO_TONE_COLUMN, meterRows[meter], stages[stage], RED, CLEAR);
-                }
             }
         }
         int hourglass = hourglassCodePointAt(meterClock);
         if (hourglass != hourglassShownCodePoint) {
             hourglassShownCodePoint = hourglass;
             grid.set(ANIMATED_METER_COLUMN, hourglassRow, hourglass, SAND, CLEAR);
-            setTwoToneHourglass(hourglass);
         }
-    }
-
-    private static boolean isHeartMeter(int[] stages) {
-        return stages[stages.length - 1] == HEART_FULL;
-    }
-
-    // Merged frames E0E0-E4 share the upright frame; E5-E7 each have their own frame piece.
-    private void setTwoToneHourglass(int mergedCodePoint) {
-        int offset = mergedCodePoint - HOURGLASS_START;
-        int frame = HOURGLASS_FRAME_START + Math.max(0, offset - (HOURGLASS_STAGE_COUNT - 1));
-        grid.set(TWO_TONE_COLUMN, hourglassRow, HOURGLASS_SAND_START + offset, HOURGLASS_SAND, CLEAR);
-        overlay.set(TWO_TONE_COLUMN, hourglassRow, frame, HOURGLASS_FRAME, CLEAR);
     }
 
     private static int hourglassCodePointAt(float seconds) {
@@ -205,7 +179,7 @@ final class GlyphShowcaseScene extends GridScene {
     private void writeMeters(int top) {
         writeText(PANEL, top, "Meters", LABEL, CLEAR);
         meterStages = new int[][] {
-            {0x26C9, SHIELD_STAGES_START, SHIELD_STAGES_START + 1, SHIELD_STAGES_START + 2, 0x26CA},
+            {SHIELD_EMPTY, SHIELD_STAGES_START, SHIELD_STAGES_START + 1, SHIELD_STAGES_START + 2, SHIELD_FULL},
             {SWORD_STAGES_START, SWORD_STAGES_START + 1, SWORD_STAGES_START + 2, SWORD_STAGES_START + 3,
                 SWORD_STAGES_START + 4},
             {HEART_HOLLOW, HEART_FILL_START, HEART_FILL_START + 1, HEART_FILL_START + 2, HEART_FULL},
@@ -222,10 +196,6 @@ final class GlyphShowcaseScene extends GridScene {
                 grid.set(PANEL + stage * 2, meterRows[meter], meterStages[meter][stage], meterColors[meter], CLEAR);
             }
             grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0], meterColors[meter], CLEAR);
-            if (isHeartMeter(meterStages[meter])) {
-                grid.set(TWO_TONE_COLUMN, meterRows[meter], meterStages[meter][0], RED, CLEAR);
-                overlay.set(TWO_TONE_COLUMN, meterRows[meter], HEART_HOLLOW, HEART_OUTLINE, CLEAR);
-            }
         }
         hourglassRow = top + 1 + meterStages.length;
         for (int stage = 0; stage < HOURGLASS_STAGE_COUNT; stage++) {
@@ -233,8 +203,6 @@ final class GlyphShowcaseScene extends GridScene {
         }
         hourglassShownCodePoint = HOURGLASS_START;
         grid.set(ANIMATED_METER_COLUMN, hourglassRow, HOURGLASS_START, SAND, CLEAR);
-        setTwoToneHourglass(HOURGLASS_START);
-        writeText(TWO_TONE_COLUMN - 6, top, "two-tone", LABEL, CLEAR);
     }
 
     private void writeDice(int top) {

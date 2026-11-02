@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.glyph;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.files.FileHandle;
@@ -96,23 +97,73 @@ class DungeonExtendedSheetTest {
         int[] codePoints = {
             0x2B8C, 0x2B8D, 0x2B8E, 0x2B8F,
             0xE0E0, 0xE0E1, 0xE0E2, 0xE0E3, 0xE0E4, 0xE0E5, 0xE0E6, 0xE0E7,
-            0xE0E8, 0xE0E9, 0xE0EA, 0xE0EB,
-            0xE0F0, 0xE0F1, 0xE0F2, 0xE0F3, 0xE0F4, 0xE0F5, 0xE0F6, 0xE0F7,
             0x231B, 0x23F3,
         };
-        assertEquals(26, codePoints.length);
+        assertEquals(14, codePoints.length);
         for (int codePoint : codePoints) {
             assertTrue(order.contains(codePoint), "missing U+" + Integer.toHexString(codePoint));
         }
     }
 
     @Test
+    void separateHourglassFrameAndSandGlyphsAreAbsent() {
+        int[] codePoints = {
+            0xE0E8, 0xE0E9, 0xE0EA, 0xE0EB,
+            0xE0F0, 0xE0F1, 0xE0F2, 0xE0F3, 0xE0F4, 0xE0F5, 0xE0F6, 0xE0F7,
+        };
+        for (int codePoint : codePoints) {
+            assertFalse(order.contains(codePoint), "unexpected U+" + Integer.toHexString(codePoint));
+        }
+    }
+
+    @Test
     void gamePieceGlyphsAreAllPresent() {
-        int[] codePoints = {0x26C0, 0x26C1, 0x26C2, 0x26C3, 0x2616, 0x2617, 0xE100, 0xE101};
-        assertEquals(8, codePoints.length);
+        int[] codePoints = {0x26C0, 0x26C1, 0x26C2, 0x26C3, 0x2616, 0x2617, 0x26C9, 0x26CA, 0xE100, 0xE101};
+        assertEquals(10, codePoints.length);
         for (int codePoint : codePoints) {
             assertTrue(order.contains(codePoint), "missing U+" + Integer.toHexString(codePoint));
         }
+    }
+
+    @Test
+    void shieldMeterEndsMovedToPrivateUse() {
+        assertTrue(order.contains(0xE0A9), "missing empty shield");
+        assertTrue(order.contains(0xE0AA), "missing full shield");
+    }
+
+    @Test
+    void turnedShogiPiecesAreTheShogiPiecesRotated() {
+        assertRotatedCell(0x2616, 0x26C9);
+        assertRotatedCell(0x2617, 0x26CA);
+    }
+
+    private static void assertRotatedCell(int upright, int turned) {
+        int uprightSlot = slotOf(upright);
+        int turnedSlot = slotOf(turned);
+        for (int y = 0; y < CELL; y++) {
+            for (int x = 0; x < CELL; x++) {
+                int expected = sheet.getPixel(cellLeft(uprightSlot) + CELL - 1 - x, cellTop(uprightSlot) + CELL - 1 - y);
+                int actual = sheet.getPixel(cellLeft(turnedSlot) + x, cellTop(turnedSlot) + y);
+                assertEquals(expected, actual, "U+" + Integer.toHexString(turned) + " at " + x + "," + y);
+            }
+        }
+    }
+
+    private static int slotOf(int codePoint) {
+        for (int slot = 0; slot < order.size(); slot++) {
+            if (order.codePointAt(slot) == codePoint) {
+                return slot;
+            }
+        }
+        throw new AssertionError("missing U+" + Integer.toHexString(codePoint));
+    }
+
+    private static int cellLeft(int slot) {
+        return (slot % columns) * CELL;
+    }
+
+    private static int cellTop(int slot) {
+        return (slot / columns) * CELL;
     }
 
     @Test

@@ -19,6 +19,8 @@ final class GeneratedGlyphs {
 
     static final int SHIELD_STAGES_START = 0xE0A0;
     static final int SWORD_STAGES_START = 0xE0A4;
+    static final int SHIELD_EMPTY = 0xE0A9;
+    static final int SHIELD_FULL = 0xE0AA;
     static final int OUTLINED_DICE_START = 0xE0B0;
     static final int TEN = 0xE0C0;
     static final int CARD_BACK = 0xE0C1;
@@ -56,6 +58,8 @@ final class GeneratedGlyphs {
         glyphs.put(0x26C3, art("........", ".######.", "########", "#......#", "########", "#......#", ".######.", "........"));
         glyphs.put(0x2616, art("...##...", "..#..#..", ".#....#.", ".#....#.", ".#....#.", ".#....#.", ".######.", "........"));
         glyphs.put(0x2617, art("...##...", "..####..", ".######.", ".######.", ".######.", ".######.", ".######.", "........"));
+        glyphs.put(0x26C9, rotated180(glyphs.get(0x2616)));
+        glyphs.put(0x26CA, rotated180(glyphs.get(0x2617)));
         glyphs.put(COIN_FACE, art("........", "..####..", ".#....#.", ".#.##.#.", ".#.##.#.", ".#....#.", "..####..", "........"));
         glyphs.put(COIN_EDGE, art("........", "...##...", "..#.##..", "..#.##..", "..#.##..", "..#.##..", "...##...", "........"));
         return glyphs;
@@ -156,8 +160,7 @@ final class GeneratedGlyphs {
     }
 
     /**
-     * U-turn arrows and hourglasses. Each hourglass pose comes merged (frame with sand), as frame only,
-     * and as sand only, so a layered renderer can color them separately.
+     * U-turn arrows and hourglasses, each hourglass pose merged (frame with sand).
      */
     private static Map<Integer, boolean[][]> hourglassAndTurnArrows() {
         Map<Integer, boolean[][]> glyphs = new LinkedHashMap<>();
@@ -175,20 +178,6 @@ final class GeneratedGlyphs {
         glyphs.put(0xE0E5, art(".....##.", "....#..#", "...#...#", "...#..#.", ".####...", "#####...", "####....", ".##....."));
         glyphs.put(0xE0E6, art("#......#", "###..###", "#####..#", "###....#", "###....#", "#####..#", "###..###", "#......#"));
         glyphs.put(0xE0E7, art(".##.....", "####....", "#####...", ".####...", "...#..#.", "...#...#", "....#..#", ".....##."));
-        // Hourglass frame only: upright, tilted 45, sideways, tilted 135
-        glyphs.put(0xE0E8, art("########", ".#....#.", ".#....#.", "..#..#..", "..#..#..", ".#....#.", ".#....#.", "########"));
-        glyphs.put(0xE0E9, art(".....##.", "....#..#", "...#...#", "...#..#.", ".#..#...", "#...#...", "#..#....", ".##....."));
-        glyphs.put(0xE0EA, art("#......#", "###..###", "#..##..#", "#......#", "#......#", "#..##..#", "###..###", "#......#"));
-        glyphs.put(0xE0EB, art(".##.....", "#..#....", "#...#...", ".#..#...", "...#..#.", "...#...#", "....#..#", ".....##."));
-        // Hourglass sand only, same order as the merged poses
-        glyphs.put(0xE0F0, art("........", "..####..", "..####..", "........", "........", "........", "........", "........"));
-        glyphs.put(0xE0F1, art("........", "...##...", "..####..", "...#....", "...#....", "........", "...##...", "........"));
-        glyphs.put(0xE0F2, art("........", "........", "..####..", "....#...", "....#...", "........", "..####..", "........"));
-        glyphs.put(0xE0F3, art("........", "........", "...##...", "...#....", "...#....", "...##...", "..####..", "........"));
-        glyphs.put(0xE0F4, art("........", "........", "........", "........", "........", "..####..", "..####..", "........"));
-        glyphs.put(0xE0F5, art("........", "........", "........", "........", "..##....", ".###....", ".##.....", "........"));
-        glyphs.put(0xE0F6, art("........", "........", ".##.....", ".##.....", ".##.....", ".##.....", "........", "........"));
-        glyphs.put(0xE0F7, art("........", ".##.....", ".###....", "..##....", "........", "........", "........", "........"));
         // Standard hourglass characters share the art of merged stages 4 and 2
         glyphs.put(0x231B, art("########", ".#....#.", ".#....#.", "..#..#..", "..#..#..", ".######.", ".######.", "########"));
         glyphs.put(0x23F3, art("########", ".#....#.", ".######.", "..#.##..", "..#.##..", ".#....#.", ".######.", "########"));
@@ -208,15 +197,14 @@ final class GeneratedGlyphs {
         // Items
         glyphs.put(0x2615, art("..#.#...", ".#.#....", "........", "######..", "#######.", "######.#", "#######.", ".####..."));
         glyphs.put(0x2697, art("..####..", "...##...", "...##...", "..####..", ".######.", "########", "########", ".######."));
-        // Durability meters: an outline that fills from the bottom. Empty and full shields have
-        // Unicode code points; the stages between them and every sword stage are private use.
+        // Durability meters: an outline that fills from the bottom, all in the private use area.
         boolean[][] shieldOutline = art("........", ".######.", ".#....#.", ".#....#.", ".#....#.", "..#..#..", "...##...", "........");
         boolean[][] shieldFilled = art("........", ".######.", ".######.", ".######.", ".######.", "..####..", "...##...", "........");
-        glyphs.put(0x26C9, shieldOutline);
+        glyphs.put(SHIELD_EMPTY, shieldOutline);
         for (int stage = 1; stage <= 3; stage++) {
             glyphs.put(SHIELD_STAGES_START + stage - 1, fillFromBottom(shieldOutline, shieldFilled, 2, 5, stage));
         }
-        glyphs.put(0x26CA, shieldFilled);
+        glyphs.put(SHIELD_FULL, shieldFilled);
         boolean[][] swordOutline = art("...##...", "..#..#..", "..#..#..", "..#..#..", "..#..#..", ".######.", "...##...", "...##...");
         boolean[][] swordFilled = art("...##...", "..####..", "..####..", "..####..", "..####..", ".######.", "...##...", "...##...");
         for (int stage = 0; stage <= 4; stage++) {
@@ -577,6 +565,17 @@ final class GeneratedGlyphs {
         boolean[][] result = new boolean[SIZE][SIZE];
         for (int y = 0; y < SIZE; y++) {
             result[y] = pixels[SIZE - 1 - y].clone();
+        }
+        return result;
+    }
+
+    static boolean[][] rotated180(boolean[][] pixels) {
+        int size = pixels.length;
+        boolean[][] result = new boolean[size][size];
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                result[y][x] = pixels[size - 1 - y][size - 1 - x];
+            }
         }
         return result;
     }
