@@ -69,6 +69,7 @@ run {
       captureDirectory.mkdirs()
       systemProperty 'asciigdx.capture', captureDirectory.absolutePath
       if (project.hasProperty('scenes')) systemProperty 'asciigdx.scenes', project.property('scenes')
+      if (project.hasProperty('showcaseFont')) systemProperty 'asciigdx.showcaseFont', project.property('showcaseFont')
       if (project.hasProperty('samples')) systemProperty 'asciigdx.samples', project.property('samples')
       if (project.hasProperty('sampleSeconds')) systemProperty 'asciigdx.sampleSeconds', project.property('sampleSeconds')
       if (project.hasProperty('dirty')) systemProperty 'asciigdx.dirty', project.property('dirty')
@@ -105,6 +106,8 @@ tasks.register('exportSheet', JavaExec) {
     ['font', 'cellHeight', 'chars', 'columns', 'sheetName', 'generated', 'assemble', 'scale', 'upscale'].each { key ->
       if (commandLineProperties.containsKey(key)) systemProperty "asciigdx.export.$key", commandLineProperties[key]
     }
+    def picksPath = commandLineProperties.containsKey('picks') ? commandLineProperties['picks'] : 'glyph-workbench/picks/dungeon-extended-16.txt'
+    systemProperty 'asciigdx.export.picks', rootProject.file(picksPath).absolutePath
   }
 }
 

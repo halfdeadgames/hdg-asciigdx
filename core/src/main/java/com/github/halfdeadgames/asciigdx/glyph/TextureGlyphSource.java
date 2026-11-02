@@ -269,6 +269,19 @@ public final class TextureGlyphSource implements GlyphSource {
     }
 
     /**
+     * Loads the 16x16 version of the bundled default font: the same glyphs in the same order as
+     * {@link #loadDungeonMode()}, redrawn on 16x16 cells with a 16 column sheet.
+     */
+    public static TextureGlyphSource loadDungeonMode16() {
+        return loadSheet(
+            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended-16.png"),
+            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended-16.txt"),
+            16,
+            16,
+            TransparencyMode.AUTO);
+    }
+
+    /**
      * Loads the bundled dungeon.mode Code Page 437 sheet: 8x8 cells, 16x16 grid, black
      * background. It is the minimal example of a hand-made sheet: a plain image in a fixed
      * order, with no character list and no alpha channel, loaded with a color key.

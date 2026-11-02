@@ -12,3 +12,5 @@ Files in this folder:
 - dungeon-extended.png, dungeon-extended.txt: the default sheet and its character list. It holds
   the dungeon.mode glyphs (CC0, above) plus glyphs added by HDG-AsciiGDX, which are also
   released under CC0 1.0 Universal.
+- dungeon-extended-16.png, dungeon-extended-16.txt: the same glyphs as the default sheet on 16x16
+  cells, upscaled and redrawn for HDG-AsciiGDX, released under CC0 1.0 Universal.

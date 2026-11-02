@@ -51,7 +51,7 @@ public final class WorkbenchApp extends ApplicationAdapter {
     private static final int HINT_LINES = 3;
 
     private static final String TAG = "Workbench";
-    private static final String RESULTS_PATH = "../build/glyph-workbench/results.txt";
+    private static final String RESULTS_PATH = "../glyph-workbench/picks/dungeon-extended-16.txt";
     private static final int MARK_SIZE = 6;
     private static final int NONE_CELLS_WIDE = 20;
     private static final int NONE_CELLS_HIGH = 3;

@@ -1,6 +1,10 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.math.Vector2;
+import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -10,8 +14,13 @@ import com.github.halfdeadgames.asciigdx.glyph.QuadrantGlyphs.Shade;
 /** The whole default sheet next to examples that use its added glyphs. */
 final class GlyphShowcaseScene extends GridScene {
 
+    /** Launch setting choosing the starting font, "8" or "16"; read like the capture settings. */
+    static final String KEY_SHOWCASE_FONT = "showcaseFont";
+
     private static final String CHARACTER_LIST =
         "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/dungeon-extended.txt";
+    private static final String CHARACTER_LIST_16 =
+        "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/dungeon-extended-16.txt";
     private static final int SHEET_COLUMNS = 16;
     private static final int PANEL = 18;
     private static final int COLUMNS = PANEL + 24;
@@ -69,8 +78,52 @@ final class GlyphShowcaseScene extends GridScene {
     private int[] meterShownStage = new int[0];
     private float meterClock;
 
-    GlyphShowcaseScene(GlyphSource glyphs) {
+    private static final int OVERLAY_ROWS = 2;
+    private static final int WHEEL_ROWS_PER_NOTCH = 3;
+    private static final int PAGE_ROWS_FALLBACK = 1;
+    private static final int TAP_SLOP_PIXELS = 24;
+
+    private final GlyphSource smallGlyphs;
+    private final Vector2 touchPoint = new Vector2();
+    private TextureGlyphSource largeGlyphs;
+    private Layer contentLayer;
+    private boolean largeFontActive;
+    private boolean largeFontPending;
+
+    private int windowWidth;
+    private int windowHeight;
+    private int scale = 1;
+    private int visibleColumns = COLUMNS;
+    private int visibleContentRows = ROWS;
+    private int overlayRows;
+    private int scrollColumn;
+    private int scrollRow;
+
+    private boolean touching;
+    private boolean dragging;
+    private int touchStartX;
+    private int touchStartY;
+    private int touchLastX;
+    private int touchLastY;
+    private int pendingDragX;
+    private int pendingDragY;
+
+    /** @param showcaseFontSetting launch setting {@link #KEY_SHOWCASE_FONT}: "8", "16", or null for the default */
+    GlyphShowcaseScene(GlyphSource glyphs, String showcaseFontSetting) {
         super(glyphs, COLUMNS, ROWS);
+        smallGlyphs = glyphs;
+        largeFontPending = parseLargeFont(showcaseFontSetting);
+    }
+
+    private static boolean parseLargeFont(String setting) {
+        if (setting == null || setting.trim().isEmpty() || setting.trim().equals("8")) {
+            return false;
+        }
+        if (setting.trim().equals("16")) {
+            return true;
+        }
+        throw new IllegalArgumentException(
+            "Invalid value for '" + KEY_SHOWCASE_FONT + "': '" + setting + "' must be 8 or 16");
     }
 
     @Override
@@ -85,9 +138,193 @@ final class GlyphShowcaseScene extends GridScene {
 
     @Override
     public void show() {
+        if (largeFontPending) {
+            largeFontPending = false;
+            useFont(true);
+        }
+        fillGrid();
+        super.show();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        windowWidth = width;
+        windowHeight = height;
+        if (largeFontActive) {
+            layoutLargeView();
+        }
+        super.resize(width, height);
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.F) {
+            toggleFont();
+            return true;
+        }
+        if (!largeFontActive) {
+            return false;
+        }
+        switch (keycode) {
+            case Input.Keys.UP -> scrollBy(0, -1);
+            case Input.Keys.DOWN -> scrollBy(0, 1);
+            case Input.Keys.LEFT -> scrollBy(-1, 0);
+            case Input.Keys.RIGHT -> scrollBy(1, 0);
+            case Input.Keys.PAGE_UP -> scrollBy(0, -Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
+            case Input.Keys.PAGE_DOWN -> scrollBy(0, Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
+            case Input.Keys.HOME -> scrollBy(-scrollColumn, -scrollRow);
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean scrolled(float amountY) {
+        if (!largeFontActive) {
+            return false;
+        }
+        scrollBy(0, Math.round(amountY) * WHEEL_ROWS_PER_NOTCH);
+        return true;
+    }
+
+    // Touch devices have no F key, so a tap on the title row switches fonts; a drag scrolls instead.
+    @Override
+    public boolean touchDown(int screenX, int screenY) {
+        touching = true;
+        dragging = false;
+        touchStartX = screenX;
+        touchStartY = screenY;
+        touchLastX = screenX;
+        touchLastY = screenY;
+        pendingDragX = 0;
+        pendingDragY = 0;
+        return true;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY) {
+        if (!touching) {
+            return false;
+        }
+        if (Math.abs(screenX - touchStartX) + Math.abs(screenY - touchStartY) > TAP_SLOP_PIXELS) {
+            dragging = true;
+        }
+        if (largeFontActive) {
+            int stepPixels = largeGlyphs.getCellWidth() * scale;
+            pendingDragX += touchLastX - screenX;
+            pendingDragY += touchLastY - screenY;
+            int columns = ScrollView.wholeSteps(pendingDragX, stepPixels);
+            int rows = ScrollView.wholeSteps(pendingDragY, stepPixels);
+            pendingDragX -= columns * stepPixels;
+            pendingDragY -= rows * stepPixels;
+            scrollBy(columns, rows);
+        }
+        touchLastX = screenX;
+        touchLastY = screenY;
+        return true;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY) {
+        if (!touching) {
+            return false;
+        }
+        touching = false;
+        if (dragging || !isOnTitleRow(touchStartX, touchStartY)) {
+            return dragging;
+        }
+        toggleFont();
+        return true;
+    }
+
+    private boolean isOnTitleRow(int screenX, int screenY) {
+        viewport.unproject(touchPoint.set(screenX, screenY));
+        float cellWidth = activeGlyphs().getCellWidth();
+        float cellHeight = activeGlyphs().getCellHeight();
+        float pixelsBelowTop = viewport.getWorldHeight() - touchPoint.y - overlayRows * cellHeight;
+        if (touchPoint.x < 0f || touchPoint.y > viewport.getWorldHeight() || pixelsBelowTop < 0f) {
+            return false;
+        }
+        int column = (int) (touchPoint.x / cellWidth) + scrollColumn;
+        int row = (int) (pixelsBelowTop / cellHeight) + scrollRow;
+        return row == 0 && column < COLUMNS;
+    }
+
+    @Override
+    public String statusText() {
+        return largeFontActive ? "Font 16x16 (F/arrows/drag)" : "Font 8x8 (F)";
+    }
+
+    private GlyphSource activeGlyphs() {
+        return largeFontActive ? largeGlyphs : smallGlyphs;
+    }
+
+    private void toggleFont() {
+        useFont(!largeFontActive);
+        scrollColumn = 0;
+        scrollRow = 0;
+        fillGrid();
+        resize(windowWidth, windowHeight);
+    }
+
+    // The 16x16 view shows whole cells at a whole-number scale; the content scrolls when it does not fit.
+    private void layoutLargeView() {
+        int cellWidth = largeGlyphs.getCellWidth();
+        int cellHeight = largeGlyphs.getCellHeight();
+        scale = ScrollView.chooseScale(windowWidth, windowHeight, cellWidth);
+        visibleColumns = ScrollView.visibleCells(windowWidth, cellWidth, scale);
+        int visibleRows = ScrollView.visibleCells(windowHeight, cellHeight, scale);
+        int overlayPixels = OVERLAY_ROWS * smallGlyphs.getCellHeight() * Math.max(1, Math.round(Gdx.graphics.getDensity()));
+        overlayRows = Math.min(ScrollView.coveredCells(overlayPixels, cellHeight, scale), visibleRows - 1);
+        visibleContentRows = visibleRows - overlayRows;
+        float worldWidth = visibleColumns * cellWidth;
+        float worldHeight = visibleRows * cellHeight;
+        viewport.setWorldSize(worldWidth, worldHeight);
+        layers.setSize(worldWidth, worldHeight);
+        contentLayer.setClip(0f, overlayRows * cellHeight, worldWidth, visibleContentRows * cellHeight);
+        scrollBy(0, 0);
+    }
+
+    private void scrollBy(int columns, int rows) {
+        scrollColumn = ScrollView.clampScroll(scrollColumn + columns, COLUMNS, visibleColumns);
+        scrollRow = ScrollView.clampScroll(scrollRow + rows, ROWS, visibleContentRows);
+        contentLayer.setCellOffset(-scrollColumn, overlayRows - scrollRow);
+    }
+
+    // The large source is loaded once on first use and kept until dispose, so toggling never leaks textures.
+    private void useFont(boolean large) {
+        if (large && largeGlyphs == null) {
+            largeGlyphs = TextureGlyphSource.loadDungeonMode16();
+        }
+        largeFontActive = large;
+        GlyphSource glyphs = activeGlyphs();
+        layers.remove(layers.get(0));
+        contentLayer = layers.add(grid, glyphs);
+        if (!large) {
+            overlayRows = 0;
+            scrollColumn = 0;
+            scrollRow = 0;
+        }
+        viewport.setWorldSize(COLUMNS * glyphs.getCellWidth(), ROWS * glyphs.getCellHeight());
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (largeGlyphs != null) {
+            largeGlyphs.dispose();
+            largeGlyphs = null;
+        }
+    }
+
+    private void fillGrid() {
         grid.clear();
-        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(CHARACTER_LIST).readString("UTF-8"), SHEET_COLUMNS);
-        writeText(0, 0, "dungeon.mode extended, " + order.size() + " glyphs", LABEL, CLEAR);
+        String characterList = largeFontActive ? CHARACTER_LIST_16 : CHARACTER_LIST;
+        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(characterList).readString("UTF-8"), SHEET_COLUMNS);
+        String fontName = largeFontActive ? "16x16" : "8x8";
+        writeText(0, 0, "dungeon.mode extended " + fontName + ", " + order.size() + " glyphs", LABEL, CLEAR);
         for (int slot = 0; slot < order.size(); slot++) {
             grid.set(slot % SHEET_COLUMNS, 1 + slot / SHEET_COLUMNS, order.codePointAt(slot), WHITE, CLEAR);
         }
@@ -97,7 +334,6 @@ final class GlyphShowcaseScene extends GridScene {
         writeDice(22);
         writeShadeStrips(25);
         writeSphere(32);
-        super.show();
     }
 
     private void writeCards(int top) {

@@ -72,6 +72,26 @@ public class SandboxApp extends ApplicationAdapter {
                 openScene(index);
                 return true;
             }
+
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) {
+                return activeScene != null && activeScene.touchDragged(screenX, screenY);
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (activeScene == null) {
+                    return false;
+                }
+                boolean handled = activeScene.touchUp(screenX, screenY);
+                perfOverlay.setStatus(activeScene.statusText());
+                return handled;
+            }
+
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                return activeScene != null && activeScene.scrolled(amountY);
+            }
         });
         openReviewSceneIfRequested();
     }
@@ -100,7 +120,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
         scenes.add(new FontComparisonScene(glyphs));
-        scenes.add(new GlyphShowcaseScene(glyphs));
+        scenes.add(new GlyphShowcaseScene(glyphs, settings.apply(GlyphShowcaseScene.KEY_SHOWCASE_FONT)));
         scenes.add(new LayersScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),

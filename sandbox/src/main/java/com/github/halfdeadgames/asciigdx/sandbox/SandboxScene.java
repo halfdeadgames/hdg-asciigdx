@@ -36,6 +36,21 @@ interface SandboxScene {
         return false;
     }
 
+    /** Finger or button moved while down, in screen pixels; return true if handled. */
+    default boolean touchDragged(int screenX, int screenY) {
+        return false;
+    }
+
+    /** Finger or button released, in screen pixels; return true if handled. */
+    default boolean touchUp(int screenX, int screenY) {
+        return false;
+    }
+
+    /** Mouse wheel turned; positive is down. Return true if handled. */
+    default boolean scrolled(float amountY) {
+        return false;
+    }
+
     /** Whether {@link #setDirtyPercent(int)} does anything, so the capture script can sweep it. */
     default boolean supportsDirtyPercent() {
         return false;
