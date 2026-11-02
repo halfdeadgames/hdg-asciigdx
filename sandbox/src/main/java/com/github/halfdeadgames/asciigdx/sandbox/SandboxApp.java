@@ -122,6 +122,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new FontComparisonScene(glyphs));
         scenes.add(new GlyphShowcaseScene(glyphs, settings.apply(GlyphShowcaseScene.KEY_SHOWCASE_FONT)));
         scenes.add(new LayersScene(glyphs));
+        scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),
             settings.apply(GlyphReviewScene.KEY_REVIEW_SHEET),
@@ -228,6 +229,7 @@ public class SandboxApp extends ApplicationAdapter {
         perfOverlay.resize(width, height);
         if (activeScene != null) {
             activeScene.resize(width, height);
+            perfOverlay.setCellCount(activeScene.cellCount());
         }
     }
 

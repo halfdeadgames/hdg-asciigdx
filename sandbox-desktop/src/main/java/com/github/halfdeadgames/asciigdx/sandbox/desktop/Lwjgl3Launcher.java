@@ -17,6 +17,28 @@ public class Lwjgl3Launcher {
         return System.getProperty("asciigdx." + key);
     }
 
+    /** Window size from -Pwindow=WxH, or 640x480 when not set. */
+    private static int[] windowSize() {
+        String value = systemSetting("window");
+        if (value == null || value.isEmpty()) {
+            return new int[] {640, 480};
+        }
+        String[] parts = value.trim().toLowerCase(java.util.Locale.ROOT).split("x");
+        try {
+            if (parts.length == 2) {
+                int width = Integer.parseInt(parts[0].trim());
+                int height = Integer.parseInt(parts[1].trim());
+                if (width > 0 && height > 0) {
+                    return new int[] {width, height};
+                }
+            }
+        } catch (NumberFormatException ignored) {
+            // falls through to the error below
+        }
+        throw new IllegalArgumentException("Invalid -Pwindow value '" + value
+            + "': expected WIDTHxHEIGHT with positive whole numbers, for example 800x600");
+    }
+
     private static Lwjgl3Application createApplication() {
         return new Lwjgl3Application(new SandboxApp(Lwjgl3Launcher::systemSetting),getDefaultConfiguration());
     }
@@ -40,7 +62,8 @@ public class Lwjgl3Launcher {
             configuration.setForegroundFPS(0);
         }
 
-        configuration.setWindowedMode(640, 480);
+        int[] windowSize = windowSize();
+        configuration.setWindowedMode(windowSize[0], windowSize[1]);
         //// You can change these files; they are in lwjgl3/src/main/resources/ .
         //// They can also be loaded from the root of assets/ .
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");

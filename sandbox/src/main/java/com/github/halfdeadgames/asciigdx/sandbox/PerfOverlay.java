@@ -33,6 +33,12 @@ class PerfOverlay {
         rebuildReadout();
     }
 
+    /** Updates the shown cell count without restarting the fps measurement. */
+    void setCellCount(int cellCount) {
+        this.cellCount = cellCount;
+        rebuildReadout();
+    }
+
     void setStatus(String text) {
         int background = text.isEmpty() ? GridScene.CLEAR : GridScene.BLACK;
         for (int column = 0; column < WIDTH; column++) {

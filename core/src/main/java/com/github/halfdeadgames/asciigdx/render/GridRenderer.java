@@ -25,7 +25,8 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  *
  * <p>All glyph regions of the source must share one texture, as is true for
  * sheet-based sources. The cell size of the glyph source is read once at
- * construction. The grid size is fixed, so no resize handling is needed.
+ * construction. If the grid is resized, the next draw rebuilds
+ * the cache and meshes for the new size (this allocates, once per resize).
  *
  * <p>The grid and glyph source are not owned and are not disposed.
  */
@@ -38,8 +39,10 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     private final Texture whitePixel;
     private final Texture glyphTexture;
     private final DirtyTracker tracker;
-    private final GridVertexCache cache;
-    private final GridMesh mesh;
+    private GridVertexCache cache;
+    private GridMesh mesh;
+    private int cachedColumns;
+    private int cachedRows;
     private final DirtyCellVisitor cellWriter = this::writeCell;
 
     /**
@@ -63,9 +66,15 @@ public final class GridRenderer implements Disposable, LayerRenderer {
         whitePixel = resources.getWhitePixel();
         glyphTexture = glyphSource.glyph(' ').getTexture();
         tracker = grid.createDirtyTracker();
-        cache = new GridVertexCache(grid.getWidth(), grid.getHeight(),
+        createCacheAndMesh();
+    }
+
+    private void createCacheAndMesh() {
+        cachedColumns = grid.getWidth();
+        cachedRows = grid.getHeight();
+        cache = new GridVertexCache(cachedColumns, cachedRows,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
-        mesh = new GridMesh(grid.getWidth() * grid.getHeight(), resources.getShader());
+        mesh = new GridMesh(cachedColumns * cachedRows, resources.getShader());
     }
 
     /**
@@ -87,6 +96,10 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      */
     @Override
     public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
+        if (grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
+            mesh.dispose();
+            createCacheAndMesh();
+        }
         if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getHeight(); row++) {
                 for (int column = 0; column < grid.getWidth(); column++) {

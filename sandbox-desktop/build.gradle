@@ -63,6 +63,11 @@ run {
   jvmArgs += "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
 // On macOS, we need to set this for the run task to allow debugging in IDEA or AS to work.
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  if (project.hasProperty('window')) {
+    doFirst {
+      systemProperty 'asciigdx.window', project.property('window')
+    }
+  }
   if (project.hasProperty('capture')) {
     def captureDirectory = rootProject.layout.buildDirectory.dir('captures').get().asFile
     doFirst {

@@ -341,6 +341,81 @@ class DirtyTrackerTest {
     }
 
     @Test
+    void resizeMarksEveryNewCellDirty() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.resize(4, 5);
+
+        assertEquals(20, tracker.getDirtyCellCount());
+        assertTrue(tracker.isDirty(3, 4));
+        assertEquals(20, visitedCells(tracker).size());
+    }
+
+    @Test
+    void shrinkingResizeReducesDirtyCountAndBounds() {
+        TerminalGrid grid = new TerminalGrid(4, 4);
+        DirtyTracker tracker = grid.createDirtyTracker();
+
+        grid.resize(2, 3);
+
+        assertEquals(6, tracker.getDirtyCellCount());
+        assertThrows(IndexOutOfBoundsException.class, () -> tracker.isDirty(2, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> tracker.isDirty(0, 3));
+    }
+
+    @Test
+    void resizeResetsSeveralTrackers() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        DirtyTracker first = grid.createDirtyTracker();
+        DirtyTracker second = grid.createDirtyTracker();
+        first.clear();
+        second.clear();
+
+        grid.resize(2, 2, 1, 0);
+
+        assertEquals(4, first.getDirtyCellCount());
+        assertEquals(4, second.getDirtyCellCount());
+    }
+
+    @Test
+    void resizeDoesNotAffectReleasedTracker() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        DirtyTracker released = grid.createDirtyTracker();
+        released.clear();
+        released.release();
+
+        grid.resize(5, 5);
+
+        assertEquals(0, released.getDirtyCellCount());
+        assertFalse(released.hasDirtyCells());
+    }
+
+    @Test
+    void setAfterResizeMarksTheRightCell() {
+        TerminalGrid grid = new TerminalGrid(2, 2);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        grid.resize(5, 3);
+        tracker.clear();
+
+        grid.set(4, 2, '@', RED, BLUE);
+
+        assertEquals(1, tracker.getDirtyCellCount());
+        assertEquals(List.of("4,2"), visitedCells(tracker));
+    }
+
+    @Test
+    void forEachDirtyCellUsesNewWidthAfterResize() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        DirtyTracker tracker = grid.createDirtyTracker();
+
+        grid.resize(2, 3);
+
+        assertEquals(List.of("0,0", "1,0", "0,1", "1,1", "0,2", "1,2"), visitedCells(tracker));
+    }
+
+    @Test
     void releasedTrackerStillAnswersQueries() {
         DirtyTracker tracker = new TerminalGrid(3, 2).createDirtyTracker();
 

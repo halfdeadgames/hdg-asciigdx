@@ -18,8 +18,8 @@ import java.util.Objects;
 public final class DirtyTracker {
 
     private final TerminalGrid grid;
-    private final int width;
-    private final int height;
+    private int width;
+    private int height;
     private final BitSet dirtyCells;
     private int dirtyCellCount;
     private boolean released;
@@ -110,6 +110,13 @@ public final class DirtyTracker {
     /** Returns {@code true} once {@link #release()} has been called. */
     public boolean isReleased() {
         return released;
+    }
+
+    void resetToSize(int newWidth, int newHeight) {
+        width = newWidth;
+        height = newHeight;
+        dirtyCells.clear();
+        markAll();
     }
 
     void mark(int index) {
