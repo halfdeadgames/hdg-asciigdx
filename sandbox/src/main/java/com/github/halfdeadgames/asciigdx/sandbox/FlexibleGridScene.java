@@ -4,7 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.render.FontFit;
 import com.github.halfdeadgames.asciigdx.render.GridFit;
+import com.github.halfdeadgames.asciigdx.render.Layer;
 
 import java.util.Locale;
 
@@ -17,16 +20,17 @@ class FlexibleGridScene extends GridScene {
 
     private static final int MARKER_WIDTH = 12;
     private static final int MARKER_HEIGHT = 5;
-    private static final int STATUS_ROWS = 4;
+    private static final int STATUS_ROWS = 5;
     private static final int STATUS_WIDTH = 30;
-    private static final int MS_ROW = 4;
+    private static final int FONT_ROW = 4;
+    private static final int MS_ROW = 5;
     private static final int[] MARKER_COLORS = {
         0xC03030FF, 0xC07030FF, 0xB0B030FF, 0x30A030FF, 0x3070C0FF, 0x7040B0FF
     };
     private static final double NANOS_PER_MILLISECOND = 1_000_000.0;
 
-    private final int cellWidth;
-    private final int cellHeight;
+    private final GlyphSource font16;
+    private final GlyphSource font8;
 
     private boolean fitIsEmpty;
     private boolean timingResize;
@@ -36,10 +40,16 @@ class FlexibleGridScene extends GridScene {
 
     FlexibleGridScene(GlyphSource glyphs) {
         super(glyphs, INITIAL_COLUMNS, INITIAL_ROWS);
-        cellWidth = glyphs.getCellWidth();
-        cellHeight = glyphs.getCellHeight();
+        font8 = glyphs;
+        font16 = TextureGlyphSource.loadDungeonMode16();
         drawMarker();
         drawBorder();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        font16.dispose();
     }
 
     @Override
@@ -55,11 +65,17 @@ class FlexibleGridScene extends GridScene {
     @Override
     public void resize(int width, int height) {
         resizeStartNanos = System.nanoTime();
-        GridFit fit = GridFit.calculate(width, height, cellWidth, cellHeight, MIN_COLUMNS, MIN_ROWS);
+        FontFit fontFit = FontFit.choose(width, height, MIN_COLUMNS, MIN_ROWS, font16, font8);
+        GridFit fit = fontFit.getGridFit();
         fitIsEmpty = fit.isEmpty();
         if (fitIsEmpty) {
             timingResize = false;
             return;
+        }
+        GlyphSource font = fontFit.getFont();
+        Layer baseLayer = layers.get(0);
+        if (baseLayer.getGlyphSource() != font) {
+            baseLayer.setGlyphSource(font);
         }
         eraseBorderAndStatus();
         int columns = fit.getColumns();
@@ -71,7 +87,7 @@ class FlexibleGridScene extends GridScene {
         markerTop += shiftY;
         fit.applyTo(viewport, true);
         drawBorder();
-        drawStatus(fit);
+        drawStatus(fit, font);
         timingResize = true;
     }
 
@@ -155,12 +171,14 @@ class FlexibleGridScene extends GridScene {
         }
     }
 
-    private void drawStatus(GridFit fit) {
+    private void drawStatus(GridFit fit, GlyphSource font) {
         writeText(1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
             fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
         writeText(1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
             fit.getLeftoverX(), fit.getLeftoverY()), CYAN, CLEAR);
         writeText(1, 3, fit.meetsMinimum() ? "minimum ok" : "below minimum", GOLD, CLEAR);
+        writeText(1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
+            font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
         writeText(1, MS_ROW, "resize -- ms", WHITE, CLEAR);
     }
 }

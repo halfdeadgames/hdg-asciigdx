@@ -57,6 +57,7 @@ class LayerStackTest {
         final List<String> drawLog;
         final List<float[]> positions = new ArrayList<>();
         final List<float[]> tints = new ArrayList<>();
+        final List<GlyphSource> glyphSources = new ArrayList<>();
         int disposeCount;
 
         FakeRenderer(String name, List<String> drawLog) {
@@ -69,6 +70,11 @@ class LayerStackTest {
             drawLog.add(name);
             positions.add(new float[] {x, y});
             tints.add(new float[] {tintR, tintG, tintB, tintA});
+        }
+
+        @Override
+        public void setGlyphSource(GlyphSource glyphSource) {
+            glyphSources.add(glyphSource);
         }
 
         @Override
@@ -376,6 +382,45 @@ class LayerStackTest {
         assertThrows(IllegalArgumentException.class, () -> stack.moveTo(foreign, 0));
         assertEquals(1, stack.size());
         assertEquals(1, other.size());
+    }
+
+    @Test
+    void setGlyphSourceReachesRendererAndGetterReturnsIt() {
+        Layer layer = addLayer();
+        assertSame(font, layer.getGlyphSource());
+        FakeSource bigger = new FakeSource(16, 24);
+
+        layer.setGlyphSource(bigger);
+
+        assertSame(bigger, layer.getGlyphSource());
+        assertEquals(List.of(bigger), renderers.get(0).glyphSources);
+        layer.setCellOffset(1, 1);
+        assertEquals(16f, layer.getOffsetX());
+        assertEquals(24f, layer.getOffsetY());
+    }
+
+    @Test
+    void setGlyphSourceWithSameSourceIsNoOp() {
+        Layer layer = addLayer();
+        layer.setGlyphSource(font);
+        assertEquals(0, renderers.get(0).glyphSources.size());
+    }
+
+    @Test
+    void setGlyphSourceRejectsNull() {
+        Layer layer = addLayer();
+        assertThrows(IllegalArgumentException.class, () -> layer.setGlyphSource(null));
+        assertSame(font, layer.getGlyphSource());
+        assertEquals(0, renderers.get(0).glyphSources.size());
+    }
+
+    @Test
+    void removedLayerCannotChangeGlyphSource() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setGlyphSource(new FakeSource(16, 24)));
+        assertSame(font, layer.getGlyphSource());
+        assertEquals(0, renderers.get(0).glyphSources.size());
     }
 
     @Test

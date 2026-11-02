@@ -89,6 +89,10 @@ class LayerStackClipTest {
             }
 
             @Override
+            public void setGlyphSource(GlyphSource glyphSource) {
+            }
+
+            @Override
             public void dispose() {
             }
         };

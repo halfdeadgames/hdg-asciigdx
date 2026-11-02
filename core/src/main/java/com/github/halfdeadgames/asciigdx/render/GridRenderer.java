@@ -24,20 +24,22 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  * {@link DirtyTracker} on the grid and releases it on {@link #dispose()}.
  *
  * <p>All glyph regions of the source must share one texture, as is true for
- * sheet-based sources. The cell size of the glyph source is read once at
- * construction. If the grid is resized, the next draw rebuilds
- * the cache and meshes for the new size (this allocates, once per resize).
+ * sheet-based sources. The cell size of the glyph source is read at
+ * construction and again after {@link #setGlyphSource}. If the grid is resized or the glyph
+ * source is switched, the next draw rebuilds the cache and meshes (this allocates, once per
+ * change).
  *
  * <p>The grid and glyph source are not owned and are not disposed.
  */
 public final class GridRenderer implements Disposable, LayerRenderer {
 
     private final TerminalView grid;
-    private final GlyphSource glyphSource;
+    private GlyphSource glyphSource;
     private final GridRenderResources resources;
     private final boolean ownsResources;
     private final Texture whitePixel;
-    private final Texture glyphTexture;
+    private Texture glyphTexture;
+    private boolean glyphSourceChanged;
     private final DirtyTracker tracker;
     private GridVertexCache cache;
     private GridMesh mesh;
@@ -96,7 +98,8 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      */
     @Override
     public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
-        if (grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
+        if (glyphSourceChanged || grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
+            glyphSourceChanged = false;
             mesh.dispose();
             createCacheAndMesh();
         }
@@ -117,6 +120,19 @@ public final class GridRenderer implements Disposable, LayerRenderer {
         mesh.draw(batch, whitePixel, glyphTexture, x, y, tintR, tintG, tintB, tintA,
                 cache.getTranslucentBackgroundCount() == 0,
                 cache.getVisibleBackgroundCount() > 0, cache.getVisibleGlyphCount() > 0);
+    }
+
+    /**
+     * Switches to another glyph source. The glyph texture and cell size are taken from it now;
+     * the next draw rebuilds the cache and meshes and rewrites every cell (this allocates, once
+     * per switch). The grid keeps its contents and its cell count. Glyphs missing from the new
+     * source draw as its fallback. The source is not owned.
+     */
+    @Override
+    public void setGlyphSource(GlyphSource glyphSource) {
+        this.glyphSource = glyphSource;
+        glyphTexture = glyphSource.glyph(' ').getTexture();
+        glyphSourceChanged = true;
     }
 
     private static boolean isBlankGlyph(int codePoint, int foreground) {

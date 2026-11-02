@@ -16,7 +16,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 public final class Layer {
 
     private final TerminalView grid;
-    private final GlyphSource glyphSource;
+    private GlyphSource glyphSource;
     private final LayerRenderer renderer;
     private LayerStack owner;
     private float offsetX;
@@ -44,6 +44,35 @@ public final class Layer {
     /** Returns the grid this layer draws. */
     public TerminalView getGrid() {
         return grid;
+    }
+
+    /** Returns the glyph source this layer draws with. */
+    public GlyphSource getGlyphSource() {
+        return glyphSource;
+    }
+
+    /**
+     * Switches the layer to another glyph source, for example a different font size. Setting
+     * the current source does nothing.
+     *
+     * <p>The grid keeps its contents. Its cell count is not changed; resizing the grid to the
+     * new cell size (for example from a {@link FontFit}) is up to the caller. Glyphs missing
+     * from the new source draw as its fallback glyph. The layer does not own the source and
+     * never disposes it. The offset is not changed.
+     *
+     * @throws IllegalArgumentException if the source is null
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setGlyphSource(GlyphSource glyphSource) {
+        requireAttached();
+        if (glyphSource == null) {
+            throw new IllegalArgumentException("glyphSource must not be null");
+        }
+        if (glyphSource == this.glyphSource) {
+            return;
+        }
+        renderer.setGlyphSource(glyphSource);
+        this.glyphSource = glyphSource;
     }
 
     /** Returns the horizontal offset in virtual pixels, growing to the right. */
