@@ -22,20 +22,21 @@ final class MenuScreen implements WorkbenchScreen {
     private static final int LINE_PITCH = TEXT_LINE + 12;
     private static final int INDENT_CELLS = 2;
     private static final int TOP_LINES = 3;
-    private static final String TITLE = "GLYPH WORKBENCH";
-    private static final String HINT = "ARROWS AND ENTER, NUMBER KEYS, OR CLICK.  ESC QUITS";
 
     private static final Color BACKGROUND = new Color(0.06f, 0.06f, 0.08f, 1f);
     private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
     private static final Color TITLE_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
     private static final Color SELECTED_COLOR = Color.YELLOW;
+    private static final Color DIMMED_COLOR = new Color(0.4f, 0.4f, 0.45f, 1f);
     private static final Color SELECTED_FILL = new Color(0.2f, 0.22f, 0.32f, 1f);
     private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
 
     private final MenuModel model;
+    private final String title;
+    private final String hint;
     private final String notice;
     private final Consumer<MenuModel.Item> onChoose;
-    private final Runnable onQuit;
+    private final Runnable onBack;
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
     private final DevCapture devCapture = new DevCapture();
@@ -48,15 +49,20 @@ final class MenuScreen implements WorkbenchScreen {
     private int lastMouseY = -1;
 
     /**
+     * @param title the heading at the top
+     * @param escapeAction what Esc does, in words for the hint line, such as {@code QUITS}
      * @param notice shown under the menu in a warning colour, or empty
      * @param onChoose called with the chosen item
-     * @param onQuit called when the user presses Esc
+     * @param onBack called when the user presses Esc
      */
-    MenuScreen(MenuModel model, String notice, Consumer<MenuModel.Item> onChoose, Runnable onQuit) {
+    MenuScreen(MenuModel model, String title, String escapeAction, String notice,
+        Consumer<MenuModel.Item> onChoose, Runnable onBack) {
         this.model = model;
+        this.title = title;
+        this.hint = "ARROWS AND ENTER, NUMBER KEYS, OR CLICK.  ESC " + escapeAction;
         this.notice = notice;
         this.onChoose = onChoose;
-        this.onQuit = onQuit;
+        this.onBack = onBack;
     }
 
     @Override
@@ -90,7 +96,7 @@ final class MenuScreen implements WorkbenchScreen {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            onQuit.run();
+            onBack.run();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
@@ -99,7 +105,8 @@ final class MenuScreen implements WorkbenchScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             model.move(1);
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if ((Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER))
+            && model.selectedItem() != null) {
             onChoose.accept(model.selectedItem());
             return;
         }
@@ -161,7 +168,7 @@ final class MenuScreen implements WorkbenchScreen {
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
-        painter.text(TITLE, MARGIN, MARGIN, TITLE_COLOR);
+        painter.text(title, MARGIN, MARGIN, TITLE_COLOR);
         List<MenuModel.Line> lines = model.lines();
         for (int i = 0; i < lines.size(); i++) {
             MenuModel.Line line = lines.get(i);
@@ -171,14 +178,16 @@ final class MenuScreen implements WorkbenchScreen {
                 int width = (line.text().length() + 1) * TEXT_LINE;
                 painter.fill(SELECTED_FILL, x - MARGIN / 2, lineTop(i) - (LINE_PITCH - TEXT_LINE) / 2, width, LINE_PITCH);
             }
-            Color color = isSelected ? SELECTED_COLOR : line.itemIndex() >= 0 ? TEXT_COLOR : TITLE_COLOR;
+            Color color = isSelected ? SELECTED_COLOR
+                : line.dimmed() ? DIMMED_COLOR
+                : line.itemIndex() >= 0 ? TEXT_COLOR : TITLE_COLOR;
             painter.text(line.text(), x, lineTop(i), color);
         }
         int bottom = Math.round(viewport.getWorldHeight()) - MARGIN - TEXT_LINE;
         if (!notice.isEmpty()) {
             painter.text(notice, MARGIN, bottom - TEXT_LINE, WARNING_COLOR);
         }
-        painter.text(HINT, MARGIN, bottom, TEXT_COLOR);
+        painter.text(hint, MARGIN, bottom, TEXT_COLOR);
         batch.end();
     }
 

@@ -30,6 +30,7 @@ public final class PaintApp implements WorkbenchScreen {
     private static final Color LABEL_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
     private static final Color WARNING_COLOR = new Color(1f, 0.35f, 0.3f, 1f);
     private static final Color MODIFIED_COLOR = Color.ORANGE;
+    private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
 
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
@@ -52,6 +53,9 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintGridView grid;
     private PaintPreview preview;
     private RulesOverlay rules;
+    private NoteBox noteBox;
+    private ReviewFile review = new ReviewFile();
+    private int shownNoteFor = -1;
     private boolean[] unselectable;
     private int[] codePoints;
     private int cursor;
@@ -112,6 +116,8 @@ public final class PaintApp implements WorkbenchScreen {
         grid = new PaintGridView(painter, editor, PaintGuides.saiksistt(editor.cellWidth()));
         preview = new PaintPreview(painter, editor);
         rules = new RulesOverlay(painter, fontDir);
+        noteBox = new NoteBox(painter, FRAME_COLOR, TEXT_COLOR, LABEL_COLOR, MODIFIED_COLOR);
+        loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
@@ -119,6 +125,20 @@ public final class PaintApp implements WorkbenchScreen {
                 return true;
             }
         });
+    }
+
+    // A review file of this size is read once; its notes are shown read-only next to the grid.
+    private void loadReviewNotes(FileHandle directory) {
+        FileHandle reviewFile = directory.child(fontSize + ".review.txt");
+        if (!reviewFile.exists()) {
+            return;
+        }
+        try {
+            review = ReviewFile.parse(reviewFile.readString("UTF-8"));
+        } catch (IllegalArgumentException e) {
+            message = "REVIEW FILE BAD: NOTES OFF";
+            Gdx.app.error(TAG, "Cannot read " + reviewFile.path() + ": " + e.getMessage());
+        }
     }
 
     @Override
@@ -213,6 +233,12 @@ public final class PaintApp implements WorkbenchScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
             sheet.scroll().toBottom();
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
+            noteBox.scrollDisplay(-1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
+            noteBox.scrollDisplay(1);
+        }
     }
 
     private void trackPointer() {
@@ -220,8 +246,12 @@ public final class PaintApp implements WorkbenchScreen {
         viewport.unproject(pointer);
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-        if (wheelTicks != 0 && sheet.contains(pointerX, pointerY)) {
-            sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
+        if (wheelTicks != 0) {
+            if (noteBox.contains(pointerX, pointerY)) {
+                noteBox.scrollDisplay(wheelTicks * WHEEL_ROWS);
+            } else if (sheet.contains(pointerX, pointerY)) {
+                sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
+            }
         }
         wheelTicks = 0;
     }
@@ -268,12 +298,8 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void save() {
-        // Write beside the font first, so a failed write never leaves a truncated font file.
-        java.nio.file.Path target = dataFile.file().toPath();
-        java.nio.file.Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
         try {
-            java.nio.file.Files.writeString(temporary, editor.toText(), java.nio.charset.StandardCharsets.UTF_8);
-            java.nio.file.Files.move(temporary, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            AtomicFiles.write(dataFile.file().toPath(), editor.toText());
             editor.markSaved();
             message = "SAVED";
         } catch (java.io.IOException e) {
@@ -296,12 +322,29 @@ public final class PaintApp implements WorkbenchScreen {
         drawGlyphInfo(middleLeft, headerTop, codePoint, previewLeft - MARGIN - middleLeft);
         int gridTop = headerTop + 2 * TEXT_LINE + MARGIN + PaintGridView.LABEL_ROWS_ABOVE * TEXT_LINE;
         int statusTop = worldHeight() - MARGIN - 3 * TEXT_LINE;
-        grid.fitTo(middleLeft + MARGIN, gridTop, previewLeft - MARGIN - middleLeft - MARGIN, statusTop - MARGIN - gridTop);
+        int boxTop = statusTop - MARGIN - NoteBox.heightPixels();
+        int gridBottom = review.isEmpty() ? statusTop - MARGIN : boxTop - MARGIN;
+        grid.fitTo(middleLeft + MARGIN, gridTop, previewLeft - MARGIN - middleLeft - MARGIN, gridBottom - gridTop);
         grid.draw(codePoint);
         preview.draw(previewLeft, headerTop, codePoint);
+        drawReviewNote(middleLeft, boxTop, previewLeft - MARGIN - middleLeft, codePoint);
         drawStatus(middleLeft, statusTop, codePoint, worldWidth() - MARGIN - middleLeft);
         rules.draw(worldWidth(), worldHeight(), codePoint);
         batch.end();
+    }
+
+    // Read-only: the note and pick the upscale review recorded for this glyph, if it has a note.
+    private void drawReviewNote(int x, int top, int available, int codePoint) {
+        if (shownNoteFor != codePoint) {
+            shownNoteFor = codePoint;
+            noteBox.resetDisplayScroll();
+        }
+        ReviewFile.Answer answer = review.get(codePoint);
+        if (answer != null && !answer.note().isEmpty()) {
+            noteBox.drawReadOnly(x, top, NoteBox.cellsWideFor(available), answer.pick(), answer.note());
+        } else {
+            noteBox.markHidden();
+        }
     }
 
     private void drawTitle() {
@@ -345,7 +388,7 @@ public final class PaintApp implements WorkbenchScreen {
         int chars = Math.max(1, width / TEXT_LINE);
         painter.text(text.length() > chars ? text.substring(0, chars) : text, x, top, color);
         painter.text("ARROWS MOVE  CLICK TOGGLES  DRAG PAINTS", x, top + TEXT_LINE, TEXT_COLOR);
-        painter.text("CTRL+S SAVES  F1 RULES  ESC LEAVES", x, top + 2 * TEXT_LINE, TEXT_COLOR);
+        painter.text("CTRL+S SAVES  [ ] SCROLL NOTE  F1 RULES  ESC LEAVES", x, top + 2 * TEXT_LINE, TEXT_COLOR);
     }
 
     private static void appendHex(StringBuilder out, int value) {

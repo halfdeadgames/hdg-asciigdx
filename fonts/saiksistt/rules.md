@@ -21,12 +21,14 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - 6 pixels wide by default (columns 0-5). Round capitals look wider than square ones, so 7 is too wide.
 - Capitals with a center stroke or point (A T V X Y I) use an odd width, 5 or 7, so the center stays true.
 - Wide capitals (M W) use the full 7 pixels.
+- Crossbars sit on row 3 (A E F H and similar), slightly above center.
 - I has slabs at top and bottom.
 
 ## Lowercase
 - Must differ clearly from capitals in height AND width.
 - Round and symmetric letters (c o s u v x z, and similar) are 5 pixels wide, centered in the body.
 - Wide letters (m w) use the full 7 pixels.
+- Bars sit on row 4, the middle of the x-height (e f t).
 - a: one-story, with a small tail at the bottom right so it never reads as o.
 - g: one-story.
 - l has a tail curving right.

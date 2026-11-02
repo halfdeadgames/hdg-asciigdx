@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
@@ -93,6 +94,34 @@ class PaintStrokeTest {
         assertTrue(PaintGuides.saiksisttWidths("Punctuation", 8).isEmpty());
         assertEquals(List.of(2, 12, 14),
             PaintGuides.saiksisttWidths("Uppercase", 16).stream().map(PaintGuides.WidthGuide::boundaryColumn).toList());
+    }
+
+    @Test
+    void barGuideIsThroughTheMiddleOfTheGroupsBarRow() {
+        PaintGuides.BarGuide upper = PaintGuides.saiksisttBar("Uppercase", 8);
+        assertEquals("BAR", upper.label());
+        assertEquals(3.5f, upper.centerRow());
+        assertEquals(4.5f, PaintGuides.saiksisttBar("Lowercase", 8).centerRow());
+        assertEquals(7f, PaintGuides.saiksisttBar("Uppercase", 16).centerRow());
+        assertEquals(9f, PaintGuides.saiksisttBar("Lowercase", 16).centerRow());
+    }
+
+    @Test
+    void barGuideIsMissingForOtherGroups() {
+        assertNull(PaintGuides.saiksisttBar("Digits", 8));
+        assertNull(PaintGuides.saiksisttBar("Punctuation", 8));
+    }
+
+    @Test
+    void barLabelDoesNotShareARowLineWithTheHeightLabels() {
+        float bar = PaintGuides.saiksisttBar("Uppercase", 8).centerRow();
+        for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
+            assertTrue(Math.abs(guide.boundaryRow() - bar) >= 1f, guide.label());
+        }
+        float lowerBar = PaintGuides.saiksisttBar("Lowercase", 8).centerRow();
+        for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
+            assertTrue(Math.abs(guide.boundaryRow() - lowerBar) >= 1f, guide.label());
+        }
     }
 
     @Test

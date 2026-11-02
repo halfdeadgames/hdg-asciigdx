@@ -31,6 +31,12 @@ final class ScrollState {
         return totalRows > visibleRows;
     }
 
+    /** Changes the number of rows; the offset is pulled back into range. */
+    void setTotalRows(int rows) {
+        totalRows = Math.max(0, rows);
+        offset = clamp(offset);
+    }
+
     void setVisibleRows(int rows) {
         visibleRows = Math.max(1, rows);
         offset = clamp(offset);

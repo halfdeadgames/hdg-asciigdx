@@ -23,6 +23,9 @@ final class PaintGridView {
     /** Room above the grid for the two tiers of width labels. */
     static final int LABEL_ROWS_ABOVE = 3;
     private static final int WIDTH_GUIDE_THICKNESS = 2;
+    private static final int BAR_THICKNESS = 2;
+    private static final int BAR_DASH = 8;
+    private static final Color BAR_GUIDE_COLOR = new Color(1f, 0.3f, 0.85f, 1f);
     private static final Color MARKER_FILL = new Color(0xFF9A30FF);
     private static final Color MARKER_OUTLINE = new Color(0x3A2000FF);
     private static final Color WIDTH_GUIDE_COLOR = new Color(0.55f, 0.95f, 0.4f, 1f);
@@ -82,6 +85,7 @@ final class PaintGridView {
         drawMarkers(codePoint);
         drawGuides();
         drawWidthGuides(FontRules.groupNameFor(codePoint));
+        drawBarGuide(FontRules.groupNameFor(codePoint));
     }
 
     // Orange with a dark outline reads on both white and dark pixels.
@@ -114,6 +118,22 @@ final class PaintGridView {
             painter.text(guide.label(), lineX - labelWidth / 2,
                 top - GUIDE_OVERHANG - (guide.tier() + 1) * Painter.TEXT_SIZE, WIDTH_GUIDE_COLOR);
         }
+    }
+
+    // Dashed so the lit pixels under it stay visible.
+    private void drawBarGuide(String groupName) {
+        PaintGuides.BarGuide bar = PaintGuides.saiksisttBar(groupName, editor.cellWidth());
+        if (bar == null) {
+            return;
+        }
+        int lineY = top + Math.round(bar.centerRow() * pixelSize);
+        int width = editor.cellWidth() * pixelSize;
+        int end = left + width + GUIDE_OVERHANG;
+        for (int x = left - GUIDE_OVERHANG; x < end; x += 2 * BAR_DASH) {
+            painter.fill(BAR_GUIDE_COLOR, x, lineY - BAR_THICKNESS / 2, Math.min(BAR_DASH, end - x), BAR_THICKNESS);
+        }
+        painter.text(bar.label(), left + width + GUIDE_OVERHANG + Painter.TEXT_SIZE / 2,
+            lineY - Painter.TEXT_SIZE / 2, BAR_GUIDE_COLOR);
     }
 
     private void drawGuides() {

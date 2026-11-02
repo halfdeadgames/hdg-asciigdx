@@ -11,6 +11,7 @@ final class PaintSheetView {
     private static final int BAR_WIDTH = TEXT;
     private static final int TARGET_CELL_PIXELS = 24;
     private static final int OUTLINE = 2;
+    private static final int MARK_SIZE = 6;
 
     private static final Color CELL_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
     private static final Color EMPTY_OUTLINE = new Color(0.4f, 0.42f, 0.55f, 1f);
@@ -31,6 +32,7 @@ final class PaintSheetView {
     private final SheetGridLayout layout;
     private final ScrollState scroll;
     private final StringBuilder barGlyph = new StringBuilder(1);
+    private Color[] marks;
     private int frameCellsWide;
     private int frameCellsHigh;
     private int barLeft;
@@ -98,6 +100,11 @@ final class PaintSheetView {
         }
     }
 
+    /** Small corner squares drawn on slots; one color (or null for none) per slot, or null for no marks. */
+    void setMarks(Color[] marks) {
+        this.marks = marks;
+    }
+
     void draw(int cursorSlot) {
         painter.text("GLYPH SHEET", frameLeft, frameTop - TEXT, LABEL_COLOR);
         painter.frame(FRAME_COLOR, frameLeft, frameTop, frameCellsWide, frameCellsHigh);
@@ -118,6 +125,9 @@ final class PaintSheetView {
                 outline(EMPTY_OUTLINE, x, top, size, 1);
             } else {
                 painter.pixels(glyph.pixels(), x, top, pixelScale, editor.isDerived(codePoint) ? DERIVED_COLOR : GLYPH_COLOR);
+            }
+            if (marks != null && marks[slot] != null) {
+                painter.fill(marks[slot], x + size - MARK_SIZE - 1, top + 1, MARK_SIZE, MARK_SIZE);
             }
         }
         if (scroll.isVisible(cursorSlot / COLUMNS)) {

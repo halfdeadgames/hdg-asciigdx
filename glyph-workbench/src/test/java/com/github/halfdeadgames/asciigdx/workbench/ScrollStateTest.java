@@ -15,6 +15,17 @@ class ScrollStateTest {
     }
 
     @Test
+    void shrinkingTheTotalPullsTheOffsetBack() {
+        ScrollState scroll = state(40, 10);
+        scroll.scrollBy(100);
+        scroll.setTotalRows(15);
+        assertEquals(5, scroll.offset());
+        scroll.setTotalRows(4);
+        assertEquals(0, scroll.offset());
+        assertFalse(scroll.needed());
+    }
+
+    @Test
     void scrollingClampsAtBothEnds() {
         ScrollState scroll = state(40, 10);
         scroll.scrollBy(-5);

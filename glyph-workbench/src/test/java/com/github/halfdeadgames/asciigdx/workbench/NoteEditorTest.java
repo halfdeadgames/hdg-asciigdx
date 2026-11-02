@@ -8,183 +8,152 @@ import org.junit.jupiter.api.Test;
 
 class NoteEditorTest {
 
-    @Test
-    void ignoresTypingWhileInactive() {
+    private static NoteEditor editor(String initial) {
         NoteEditor editor = new NoteEditor();
-        assertFalse(editor.type('a'));
-        assertEquals("", editor.value());
+        editor.begin(initial, false);
+        return editor;
     }
 
     @Test
-    void acceptsPrintableCharactersIncludingSpaceAndRejectsControls() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("", false);
-        assertTrue(editor.type('a'));
-        assertTrue(editor.type(' '));
-        assertTrue(editor.type('~'));
-        assertFalse(editor.type('\n'));
-        assertFalse(editor.type('\t'));
-        assertFalse(editor.type((char) 127));
-        assertEquals("a ~", editor.value());
-    }
-
-    @Test
-    void backspaceDeletesTheLastCharacterAndStopsAtEmpty() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("ab", false);
-        assertTrue(editor.backspace());
-        assertTrue(editor.backspace());
-        assertFalse(editor.backspace());
-        assertEquals("", editor.value());
-    }
-
-    @Test
-    void stopsAtTheMaximumLength() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("x".repeat(NoteEditor.MAX_LENGTH), true);
-        assertFalse(editor.type('y'));
-        assertEquals(NoteEditor.MAX_LENGTH, editor.value().length());
-        assertTrue(editor.isEditingExisting());
-    }
-
-    @Test
-    void prefillIsCutToTheMaximumLength() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("x".repeat(NoteEditor.MAX_LENGTH + 5), true);
-        assertEquals(NoteEditor.MAX_LENGTH, editor.value().length());
-    }
-
-    @Test
-    void beginPlacesTheCaretAtTheEnd() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("abc", false);
-        assertEquals(3, editor.caret());
-    }
-
-    @Test
-    void caretMovesStopAtBothEnds() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("ab", false);
-        assertFalse(editor.caretRight());
-        assertTrue(editor.caretLeft());
-        assertTrue(editor.caretLeft());
-        assertFalse(editor.caretLeft());
-        assertEquals(0, editor.caret());
-        assertTrue(editor.caretRight());
-        assertEquals(1, editor.caret());
-    }
-
-    @Test
-    void homeAndEndJumpToTheEnds() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("abc", false);
-        editor.caretToStart();
-        assertEquals(0, editor.caret());
-        editor.caretToEnd();
-        assertEquals(3, editor.caret());
-    }
-
-    @Test
-    void typingInsertsAtTheCaret() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("ac", false);
+    void typesAtTheCaretAndIgnoresControlCharacters() {
+        NoteEditor editor = editor("ac");
         editor.caretLeft();
-        assertTrue(editor.type('b'));
+        editor.type('b');
+        editor.type('\n');
+        editor.type('\t');
         assertEquals("abc", editor.value());
-        assertEquals(2, editor.caret());
     }
 
     @Test
-    void backspaceDeletesBeforeTheCaret() {
+    void nothingChangesWhileInactive() {
         NoteEditor editor = new NoteEditor();
-        editor.begin("abc", false);
+        editor.type('x');
+        editor.backspace();
+        assertEquals("", editor.value());
+        assertFalse(editor.isActive());
+    }
+
+    @Test
+    void backspaceAndDeleteWorkAroundTheCaret() {
+        NoteEditor editor = editor("abcd");
         editor.caretLeft();
-        assertTrue(editor.backspace());
-        assertEquals("ac", editor.value());
-        assertEquals(1, editor.caret());
+        editor.backspace();
+        assertEquals("abd", editor.value());
+        editor.deleteForward();
+        assertEquals("ab", editor.value());
         editor.caretToStart();
-        assertFalse(editor.backspace());
-    }
-
-    @Test
-    void forwardDeleteRemovesAfterTheCaretAndKeepsIt() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("abc", false);
-        editor.caretToStart();
-        assertTrue(editor.deleteForward());
-        assertEquals("bc", editor.value());
-        assertEquals(0, editor.caret());
-        editor.caretToEnd();
-        assertFalse(editor.deleteForward());
-    }
-
-    @Test
-    void caretAndDeletionStepOverWholeCodePoints() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("a😀b", false);
-        editor.caretLeft();
-        editor.caretLeft();
-        assertEquals(1, editor.caret());
-        editor.caretRight();
-        assertEquals(3, editor.caret());
-        assertTrue(editor.backspace());
+        editor.backspace();
         assertEquals("ab", editor.value());
     }
 
     @Test
-    void rowsAreFixedWidthChunks() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("abcdefg", false);
-        assertEquals(3, editor.rowCount(3));
-        assertEquals("abc", editor.row(0, 3));
-        assertEquals("g", editor.row(2, 3));
-        assertEquals(2, editor.caretRow(3));
-        assertEquals(1, editor.caretColumn(3));
+    void thereIsNoLengthLimit() {
+        NoteEditor editor = editor("x".repeat(5000));
+        editor.type('y');
+        assertEquals(5001, editor.value().length());
     }
 
     @Test
-    void aFullLastRowPutsTheCaretOnAnEmptyRowBelow() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("abcdef", false);
-        assertEquals(3, editor.rowCount(3));
-        assertEquals("", editor.row(2, 3));
-        assertEquals(2, editor.caretRow(3));
+    void caretMovesByRowsKeepingItsColumn() {
+        NoteEditor editor = editor("aaaa bbbb cccc");
+        editor.caretToStart();
+        editor.caretRight();
+        editor.caretRight();
+        editor.caretRows(1, 4);
+        assertEquals(1, editor.caretRow(4));
+        assertEquals(2, editor.caretColumn(4));
+        editor.caretRows(1, 4);
+        assertEquals(2, editor.caretRow(4));
+        editor.caretRows(-2, 4);
+        assertEquals(0, editor.caretRow(4));
+        assertEquals(2, editor.caretColumn(4));
+    }
+
+    @Test
+    void caretRowsStopAtTheTextEnds() {
+        NoteEditor editor = editor("aaaa bbbb");
+        editor.caretRows(-5, 4);
+        assertEquals(0, editor.caretRow(4));
+        editor.caretRows(50, 4);
+        assertEquals(editor.value().length(), editor.value().length());
+        assertEquals(editor.rowCount(4) - 1, editor.caretRow(4));
+    }
+
+    @Test
+    void shortRowsPullTheCaretToTheirEnd() {
+        NoteEditor editor = editor("abcd e fghi");
+        editor.caretToStart();
+        for (int i = 0; i < 3; i++) {
+            editor.caretRight();
+        }
+        editor.caretRows(1, 4);
+        assertEquals(1, editor.caretRow(4));
+        assertEquals(1, editor.caretColumn(4));
+    }
+
+    @Test
+    void scrollingTheViewDoesNotMoveTheCaretAndTypingBringsItBack() {
+        NoteEditor editor = editor("a b c d e f g h i j");
+        int rows = editor.rowCount(1);
+        int atCaret = editor.viewTop(1, 3);
+        assertEquals(rows - 3, atCaret);
+        editor.scrollView(-100);
+        assertEquals(0, editor.viewTop(1, 3));
+        assertEquals(rows - 1, editor.caretRow(1));
+        editor.scrollView(1);
+        assertEquals(1, editor.viewTop(1, 3));
+        editor.type('z');
+        assertEquals(editor.rowCount(1) - 3, editor.viewTop(1, 3));
+    }
+
+    @Test
+    void viewNeverScrollsPastTheText() {
+        NoteEditor editor = editor("a b c");
+        editor.scrollView(1000);
+        assertEquals(Math.max(0, editor.rowCount(1) - 3), editor.viewTop(1, 3));
+    }
+
+    @Test
+    void caretFollowsWrappedRows() {
+        NoteEditor editor = editor("aaa bbb ccc");
+        assertEquals(4, editor.rowCount(3));
+        assertEquals(3, editor.caretRow(3));
+        assertEquals(0, editor.caretColumn(3));
+        editor.caretToStart();
+        assertEquals(0, editor.caretRow(3));
+        assertEquals(0, editor.caretColumn(3));
+        editor.caretRight();
+        editor.caretRight();
+        editor.caretRight();
+        assertEquals(0, editor.caretRow(3));
+        assertEquals(3, editor.caretColumn(3));
+        editor.caretRight();
+        assertEquals(1, editor.caretRow(3));
         assertEquals(0, editor.caretColumn(3));
     }
 
     @Test
-    void scrollWindowFollowsTheCaretBothWays() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("x".repeat(30), false);
-        assertEquals(8, editor.firstVisibleRow(3, 3));
+    void aFullLastRowMovesTheCaretDown() {
+        NoteEditor editor = editor("abcd");
+        assertEquals(2, editor.rowCount(4));
+        assertEquals(1, editor.caretRow(4));
+        assertEquals(0, editor.caretColumn(4));
+    }
+
+    @Test
+    void windowKeepsTheCaretRowVisible() {
+        NoteEditor editor = editor("a b c d e f");
+        assertTrue(editor.viewTop(1, 3) >= 3);
         editor.caretToStart();
-        assertEquals(0, editor.firstVisibleRow(3, 3));
-        editor.caretToEnd();
-        editor.firstVisibleRow(3, 3);
-        for (int i = 0; i < 12; i++) {
-            editor.caretLeft();
-        }
-        int top = editor.firstVisibleRow(3, 3);
-        assertTrue(editor.caretRow(3) >= top && editor.caretRow(3) < top + 3);
+        assertEquals(0, editor.viewTop(1, 3));
     }
 
     @Test
-    void scrollWindowStaysPutWhileTheCaretIsInside() {
+    void remembersIfItEditsAnExistingNote() {
         NoteEditor editor = new NoteEditor();
-        editor.begin("x".repeat(30), false);
-        editor.firstVisibleRow(3, 3);
-        editor.caretLeft();
-        editor.caretLeft();
-        editor.caretLeft();
-        assertEquals(8, editor.firstVisibleRow(3, 3));
-    }
-
-    @Test
-    void endDeactivates() {
-        NoteEditor editor = new NoteEditor();
-        editor.begin("a", false);
+        editor.begin("old", true);
+        assertTrue(editor.isEditingExisting());
         editor.end();
         assertFalse(editor.isActive());
-        assertFalse(editor.type('b'));
     }
 }

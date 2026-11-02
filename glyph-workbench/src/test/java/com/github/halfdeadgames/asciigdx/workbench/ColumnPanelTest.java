@@ -63,9 +63,11 @@ class ColumnPanelTest {
     private static final int WINDOW_HEIGHT = 1000;
     private static final int MARGIN = 12;
     private static final int DETAIL_LEFT = 504;
-    // MARGIN + two header lines + MARGIN + the selected-glyph line, as WorkbenchApp lays them out
+    // MARGIN + two header lines + MARGIN + the selected-glyph line
     private static final int COLUMNS_TOP = 96;
-    private static final int BELOW_COLUMNS = MARGIN + Painter.TEXT_SIZE + SamplePanel.outerHeight(4)
+    // A 5-row cloud plus 4 sample words in a frame, the busiest thing a screen puts under the columns
+    private static final int CONTEXT_PANEL_HEIGHT = 384;
+    private static final int BELOW_COLUMNS = MARGIN + Painter.TEXT_SIZE + CONTEXT_PANEL_HEIGHT
         + MARGIN + 3 * Painter.TEXT_SIZE + MARGIN;
 
     private static ColumnPanel.Plan planAtWindow(int[] labels) {

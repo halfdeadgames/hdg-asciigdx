@@ -13,6 +13,7 @@ Rules shared by every font in this project. Each font adds its own rules in `fon
 ## Family consistency
 - Design the smallest size first, with later upscales in mind.
 - A larger size starts from the smaller one scaled up, then adds detail: smoother curves, tapered ends, ink traps, and finer punctuation.
+- Upscale candidates come only from a smaller size that divides the target evenly (16 from 8, 24 from 8, 32 from 16 or 8). Never scale by a fraction.
 - A larger size never adds new features. If it isn't in the small size, it doesn't belong in the large one.
 - All glyphs are 1-bit: each pixel is on or off.
 

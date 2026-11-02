@@ -13,7 +13,29 @@ final class PaintGuides {
     record WidthGuide(String label, int boundaryColumn, int tier) {
     }
 
+    /**
+     * A bar marked through the middle of a band of rows: it shows a row to fill, not an edge.
+     * The band is {@code rowCount} rows starting at {@code firstRow}.
+     */
+    record BarGuide(String label, int firstRow, int rowCount) {
+
+        /** Middle of the band in rows from the top of the grid. */
+        float centerRow() {
+            return firstRow + rowCount / 2f;
+        }
+    }
+
     private static final int SAIKSISTT_CELL = 8;
+
+    /** Crossbars of capitals sit on row 3 and bars of lowercase letters on row 4, scaled by width / 8; other groups have none. */
+    static BarGuide saiksisttBar(String groupName, int cellWidth) {
+        int scale = Math.max(1, cellWidth / SAIKSISTT_CELL);
+        return switch (groupName) {
+            case "Uppercase" -> new BarGuide("BAR", 3 * scale, scale);
+            case "Lowercase" -> new BarGuide("BAR", 4 * scale, scale);
+            default -> null;
+        };
+    }
     private static final String FIVE_WIDE = "5";
     private static final String SEVEN_WIDE = "7";
 
