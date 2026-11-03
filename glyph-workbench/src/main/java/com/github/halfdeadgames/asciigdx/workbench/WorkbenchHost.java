@@ -63,7 +63,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
 
     // First paragraph of the font's rules.md, or empty. Cached per folder by the caller.
     private String mottoOf(String folderName) {
-        Path file = Path.of(fontsRoot(), folderName, "rules.md");
+        Path file = Path.of(fontsRoot(), folderName, FontRules.FILE_NAME);
         try {
             return Files.exists(file) ? FontRules.parse(Files.readString(file, StandardCharsets.UTF_8)).motto() : "";
         } catch (IOException | RuntimeException e) {

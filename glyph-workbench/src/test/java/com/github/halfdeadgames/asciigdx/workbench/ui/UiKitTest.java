@@ -169,4 +169,17 @@ class UiKitTest {
         assertEquals("one", shown.get(1).text());
         assertTrue(strip.visible(0).isEmpty());
     }
+
+    @Test
+    void messageStripReplacesTheLastSlotWithTheNewestResultWhenItWouldBeCutOff() {
+        MessageStrip strip = new MessageStrip();
+        strip.setCondition("a", false, "first");
+        strip.setCondition("b", false, "second");
+        strip.setCondition("c", false, "third");
+        strip.ok("Undid move");
+        List<MessageStrip.Message> shown = strip.visible(2);
+        assertEquals(2, shown.size());
+        assertEquals("first", shown.get(0).text());
+        assertEquals("Undid move", shown.get(1).text());
+    }
 }

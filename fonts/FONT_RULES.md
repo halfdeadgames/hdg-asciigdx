@@ -13,12 +13,14 @@ Rules shared by every font in this project. Each font adds its own rules in `fon
 ## Family consistency
 - Design the smallest size first, with later upscales in mind.
 - A larger size starts from the smaller one scaled up, then adds detail: smoother curves, tapered ends, ink traps, and finer punctuation.
-- Upscale candidates come only from a smaller size that divides the target evenly (16 from 8, 24 from 8, 32 from 16 or 8). Never scale by a fraction.
+- Upscale only from a smaller size that divides the target evenly (16 from 8, 24 from 8, 32 from 16 or 8). Never scale by a fraction.
 - A larger size never adds new features. If it isn't in the small size, it doesn't belong in the large one.
 - All glyphs are 1-bit: each pixel is on or off.
 
 ## Drawing
 - Fix the metrics first: baseline, cap height, x-height, ascender, descender, and gap. Every glyph follows them.
+- Draw glyphs in groups. Each group starts from key glyphs: n and o for lowercase, H and O for capitals. The rest of the group reuses their stems, bowls, and bars.
+- Base h m r u on n, b d p q c e on o, E F L T I on H, and C G Q D on O.
 - Diagonals step evenly (1:1 or 2:1). Never mix step lengths in one line.
 - Curves step in runs that shrink steadily, such as 3, 2, 1, 1.
 - No doubled pixels on a stroke, and no orphan pixels touching only at a corner.
@@ -34,6 +36,9 @@ Rules shared by every font in this project. Each font adds its own rules in `fon
 ## Tiling glyphs
 - Box drawing, blocks, and shades fill the whole cell with no gap.
 - Lines and edges must join across neighboring cells at every size.
+- Single lines sit on the same row and column in every box-drawing glyph. Double lines sit symmetrically around that line.
+- Half blocks split the cell exactly in half.
+- Judge tiling glyphs in repeated rows and columns, never alone.
 
 ## Sheet order
 1. CP437 first, in its standard 16 x 16 layout.

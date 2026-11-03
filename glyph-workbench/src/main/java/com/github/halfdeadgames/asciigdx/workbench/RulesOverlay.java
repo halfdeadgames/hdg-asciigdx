@@ -15,7 +15,6 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 final class RulesOverlay {
 
     private static final String TAG = "RulesOverlay";
-    private static final String RULES_FILE_NAME = "rules.md";
     private static final float SLIDE_SECONDS = 0.15f;
     private static final float DIM_ALPHA = 0.7f;
     private static final int WHEEL_ROWS = 3;
@@ -48,7 +47,7 @@ final class RulesOverlay {
             panel.setMissing("NO RULES FILE: NO FONT DIRECTORY SET");
             return;
         }
-        FileHandle file = Gdx.files.absolute(fontDir).child(RULES_FILE_NAME);
+        FileHandle file = Gdx.files.absolute(fontDir).child(FontRules.FILE_NAME);
         if (!file.exists()) {
             panel.setMissing("NO RULES FILE: " + file.path());
             return;

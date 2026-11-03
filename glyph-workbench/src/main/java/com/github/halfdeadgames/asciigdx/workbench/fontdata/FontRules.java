@@ -7,6 +7,7 @@ import java.util.List;
 /** Design rules of one font, read from a rules markdown file: a title, a motto, and bullet groups. */
 public final class FontRules {
 
+    public static final String FILE_NAME = "rules.md";
     public static final String CORE = "Core";
     public static final String UPPERCASE = "Uppercase";
     public static final String LOWERCASE = "Lowercase";

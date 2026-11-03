@@ -63,7 +63,23 @@ public final class MessageStrip {
             }
         }
         int shown = Math.min(ordered.size(), Math.max(0, count));
-        return new ArrayList<>(ordered.subList(0, shown));
+        List<Message> visible = new ArrayList<>(ordered.subList(0, shown));
+        if (shown > 0 && !results.isEmpty()) {
+            Message newestResult = results.get(results.size() - 1);
+            if (indexOfInstance(ordered, newestResult) >= shown) {
+                visible.set(shown - 1, newestResult);
+            }
+        }
+        return visible;
+    }
+
+    private static int indexOfInstance(List<Message> messages, Message target) {
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i) == target) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void draw(Painter painter, int x, int y, int width, int height) {
