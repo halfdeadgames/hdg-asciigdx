@@ -6,7 +6,7 @@ final class PaintLayout {
     record Result(ReviewLayout.Rect grid, ReviewLayout.Rect preview, ReviewLayout.Rect note, ReviewLayout.Rect messages) {
     }
 
-    static final int MESSAGES_HEIGHT = 4;
+    static final int MESSAGES_HEIGHT = 6;
     private static final int TOP_ROWS = 2;
     private static final int MAX_PREVIEW_SHARE_PERCENT = 40;
     private static final int MIN_NOTE_HEIGHT = 6;

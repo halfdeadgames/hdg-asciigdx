@@ -58,11 +58,11 @@ class PaintLayoutTest {
 
     @Test
     void minimumHeightHoldsTheEditorAndTheRightColumn() {
-        assertEquals(18 * 24, PaintLayout.minimumHeight(8, 24));
-        assertEquals(24 * 24, PaintLayout.minimumHeight(32, 24));
-        PaintLayout.Result result = PaintLayout.compute(60, 18, 10, 16, 8, 8, 24);
+        assertEquals(20 * 24, PaintLayout.minimumHeight(8, 24));
+        assertEquals(26 * 24, PaintLayout.minimumHeight(32, 24));
+        PaintLayout.Result result = PaintLayout.compute(60, 20, 10, 16, 8, 8, 24);
         assertTrue(result.note().bottom() <= result.messages().y());
-        assertEquals(18 - 1, result.messages().bottom());
+        assertEquals(20 - 1, result.messages().bottom());
     }
 
     @Test
