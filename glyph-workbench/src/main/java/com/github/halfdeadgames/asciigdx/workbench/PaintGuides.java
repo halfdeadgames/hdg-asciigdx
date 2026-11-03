@@ -1,8 +1,26 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.Set;
 
-/** Horizontal guide lines for the paint grid. Step 1 hardcodes the Saiksistt metrics. */
+/**
+ * The guide lines of one font size, read from {@code <size>.guides.txt}. One guide per line, whitespace separated;
+ * blank lines and lines starting with {@code #} are skipped:
+ * <pre>
+ * row    label boundaryRow groups
+ * column label boundaryColumn groups
+ * bar    label firstRow rowCount groups
+ * warn   accent-rows count
+ * warn   descender-from row
+ * </pre>
+ * The two {@code warn} lines are optional, each at most once; a check without its line is off.
+ * {@code groups} is {@code all} or a comma list of rules group names (case-insensitive). Labels contain no spaces.
+ */
 final class PaintGuides {
 
     /** A line across the grid at the top edge of {@code boundaryRow}. */
@@ -25,56 +43,190 @@ final class PaintGuides {
         }
     }
 
-    private static final int SAIKSISTT_CELL = 8;
+    /** The guides to draw for one rules group in one cell size. */
+    record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
+    }
+
+    private record Scoped<T>(T guide, Set<String> groups) {
+
+        boolean appliesTo(String groupName) {
+            return groups.contains(groupName);
+        }
+    }
+
+    private static final List<String> ALL_GROUPS = List.of(
+        FontRules.UPPERCASE, FontRules.LOWERCASE, FontRules.DIGITS, FontRules.PUNCTUATION);
+
+    /** The optional {@code warn} settings; an empty value means the file leaves that check off. */
+    private static final class WarnSettings {
+        OptionalInt accentRows = OptionalInt.empty();
+        OptionalInt descenderFirstRow = OptionalInt.empty();
+    }
+
+    static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), new WarnSettings());
+
+    private final List<Scoped<Guide>> rows;
+    private final List<Scoped<WidthGuide>> columns;
+    private final List<Scoped<BarGuide>> bars;
+    private final OptionalInt accentRows;
+    private final OptionalInt descenderFirstRow;
+
+    private PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
+                        WarnSettings warnSettings) {
+        this.rows = rows;
+        this.columns = columns;
+        this.bars = bars;
+        this.accentRows = warnSettings.accentRows;
+        this.descenderFirstRow = warnSettings.descenderFirstRow;
+    }
+
+    /** Reads the file text. Throws {@link IllegalArgumentException} naming the line on a bad line. */
+    static PaintGuides parse(String text) {
+        List<Scoped<Guide>> rows = new ArrayList<>();
+        List<Scoped<WidthGuide>> columns = new ArrayList<>();
+        List<Scoped<BarGuide>> bars = new ArrayList<>();
+        WarnSettings warnSettings = new WarnSettings();
+        String[] lines = text.split("\r?\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].strip();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            try {
+                parseLine(line.split("\\s+"), rows, columns, bars, warnSettings);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Line " + (i + 1) + ": " + e.getMessage(), e);
+            }
+        }
+        return new PaintGuides(rows, columns, bars, warnSettings);
+    }
+
+    private static void parseWarn(String[] words, WarnSettings settings) {
+        expectWords(words, 3, "warn <accent-rows|descender-from> <number>");
+        switch (words[1]) {
+            case "accent-rows" -> {
+                rejectRepeat(settings.accentRows, words[1]);
+                settings.accentRows = OptionalInt.of(number(words[2], 0));
+            }
+            case "descender-from" -> {
+                rejectRepeat(settings.descenderFirstRow, words[1]);
+                settings.descenderFirstRow = OptionalInt.of(number(words[2], 0));
+            }
+            default -> throw new IllegalArgumentException(
+                "expected 'accent-rows' or 'descender-from' but found '" + words[1] + "'");
+        }
+    }
+
+    private static void rejectRepeat(OptionalInt setting, String name) {
+        if (setting.isPresent()) {
+            throw new IllegalArgumentException("'warn " + name + "' is set twice");
+        }
+    }
+
+    private static void parseLine(String[] words, List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns,
+                                  List<Scoped<BarGuide>> bars, WarnSettings warnSettings) {
+        switch (words[0]) {
+            case "warn" -> parseWarn(words, warnSettings);
+            case "row" -> {
+                expectWords(words, 4, "row <label> <boundaryRow> <groups>");
+                rows.add(new Scoped<>(new Guide(words[1], number(words[2], 0)), groups(words[3])));
+            }
+            case "column" -> {
+                expectWords(words, 4, "column <label> <boundaryColumn> <groups>");
+                columns.add(new Scoped<>(new WidthGuide(words[1], number(words[2], 0), 0), groups(words[3])));
+            }
+            case "bar" -> {
+                expectWords(words, 5, "bar <label> <firstRow> <rowCount> <groups>");
+                bars.add(new Scoped<>(new BarGuide(words[1], number(words[2], 0), number(words[3], 1)),
+                    groups(words[4])));
+            }
+            default -> throw new IllegalArgumentException(
+                "expected 'row', 'column', 'bar', or 'warn' but found '" + words[0] + "'");
+        }
+    }
+
+    private static void expectWords(String[] words, int count, String usage) {
+        if (words.length != count) {
+            throw new IllegalArgumentException("expected '" + usage + "'");
+        }
+    }
+
+    private static int number(String word, int minimum) {
+        try {
+            int value = Integer.parseInt(word);
+            if (value < minimum) {
+                throw new IllegalArgumentException("'" + word + "' must be at least " + minimum);
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("bad number '" + word + "'", e);
+        }
+    }
+
+    private static Set<String> groups(String word) {
+        if (word.equalsIgnoreCase("all")) {
+            return Set.copyOf(ALL_GROUPS);
+        }
+        Set<String> found = new LinkedHashSet<>();
+        for (String name : word.split(",", -1)) {
+            found.add(canonicalGroup(name));
+        }
+        return found;
+    }
+
+    private static String canonicalGroup(String name) {
+        for (String group : ALL_GROUPS) {
+            if (group.equalsIgnoreCase(name)) {
+                return group;
+            }
+        }
+        throw new IllegalArgumentException("unknown group '" + name + "'");
+    }
+
+    /** Rows at the top reserved for accents, or empty when the file leaves the accent check off. */
+    OptionalInt accentRows() {
+        return accentRows;
+    }
+
+    /** First row of the descender band, or empty when the file leaves the descender check off. */
+    OptionalInt descenderFirstRow() {
+        return descenderFirstRow;
+    }
+
+    /** Whether there are no drawing guides; the warn settings are not guides. */
+    boolean isEmpty() {
+        return rows.isEmpty() && columns.isEmpty() && bars.isEmpty();
+    }
 
     /**
-     * Bars of capitals and digits sit on row 3 (the 4 on row 5) and bars of lowercase letters on row 4 (f and t on row 2),
-     * scaled by width / 8; other groups have none.
+     * The guides of a rules group (see {@code FontRules.groupNameFor}) that fit the cell. Width guides are sorted
+     * by column and alternate label tiers 0, 1, 0, ... so neighbouring labels never overlap.
      */
-    static BarGuide saiksisttBar(int codePoint, String groupName, int cellWidth) {
-        int scale = Math.max(1, cellWidth / SAIKSISTT_CELL);
-        return switch (groupName) {
-            case "Uppercase" -> new BarGuide("BAR", 3 * scale, scale);
-            case "Digits" -> new BarGuide("BAR", (codePoint == '4' ? 5 : 3) * scale, scale);
-            case "Lowercase" -> new BarGuide("BAR", (codePoint == 'f' || codePoint == 't' ? 2 : 4) * scale, scale);
-            default -> null;
-        };
-    }
-    private static final String FIVE_WIDE = "5";
-    private static final String SEVEN_WIDE = "7";
-
-    /**
-     * Width guides for a rules group (see {@code FontRules.groupNameFor}), Saiksistt at 8 scaled by width / 8.
-     * A 5-wide glyph sits in columns 1-5 (edges 1 and 6), a 6-wide capital in columns 0-5 (right edge 6),
-     * and a 7-wide glyph in columns 0-6 (right edge 7). Neighbouring labels alternate tiers so they never overlap.
-     */
-    static List<WidthGuide> saiksisttWidths(String groupName, int cellWidth) {
-        int scale = Math.max(1, cellWidth / SAIKSISTT_CELL);
-        return switch (groupName) {
-            case "Uppercase" -> List.of(
-                new WidthGuide(FIVE_WIDE, 1 * scale, 0),
-                new WidthGuide("5/6", 6 * scale, 1),
-                new WidthGuide(SEVEN_WIDE, 7 * scale, 0));
-            case "Lowercase" -> List.of(
-                new WidthGuide(FIVE_WIDE, 1 * scale, 0),
-                new WidthGuide(FIVE_WIDE, 6 * scale, 1),
-                new WidthGuide(SEVEN_WIDE, 7 * scale, 0));
-            case "Digits" -> List.of(
-                new WidthGuide(FIVE_WIDE, 1 * scale, 0),
-                new WidthGuide(FIVE_WIDE, 6 * scale, 1));
-            default -> List.of();
-        };
-    }
-
-    private PaintGuides() {
-    }
-
-    /** Capitals start in row 1, the x-height in row 2, and the baseline is the bottom of row 6; scaled by width / 8. */
-    static List<Guide> saiksistt(int cellWidth) {
-        int scale = Math.max(1, cellWidth / SAIKSISTT_CELL);
-        return List.of(
-            new Guide("CAP", 1 * scale),
-            new Guide("X-HT", 2 * scale),
-            new Guide("BASE", 7 * scale));
+    Shown forGroup(String groupName, int cellWidth, int cellHeight) {
+        List<Guide> shownRows = new ArrayList<>();
+        for (Scoped<Guide> row : rows) {
+            if (row.appliesTo(groupName) && row.guide().boundaryRow() <= cellHeight) {
+                shownRows.add(row.guide());
+            }
+        }
+        List<WidthGuide> fitting = new ArrayList<>();
+        for (Scoped<WidthGuide> column : columns) {
+            if (column.appliesTo(groupName) && column.guide().boundaryColumn() <= cellWidth) {
+                fitting.add(column.guide());
+            }
+        }
+        fitting.sort(Comparator.comparingInt(WidthGuide::boundaryColumn));
+        List<WidthGuide> shownWidths = new ArrayList<>();
+        for (int i = 0; i < fitting.size(); i++) {
+            WidthGuide guide = fitting.get(i);
+            shownWidths.add(new WidthGuide(guide.label(), guide.boundaryColumn(), i % 2));
+        }
+        List<BarGuide> shownBars = new ArrayList<>();
+        for (Scoped<BarGuide> bar : bars) {
+            if (bar.appliesTo(groupName) && bar.guide().firstRow() + bar.guide().rowCount() <= cellHeight) {
+                shownBars.add(bar.guide());
+            }
+        }
+        return new Shown(List.copyOf(shownRows), List.copyOf(shownWidths), List.copyOf(shownBars));
     }
 }

@@ -6,13 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.List;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
 class GlyphRulesTest {
 
     private static final int BODY_WIDTH = 7;
-    private static final int ACCENT_ROWS = 1;
-    private static final int DESCENDER_FIRST_ROW = 7;
+    private static final OptionalInt ACCENT_ROWS = OptionalInt.of(1);
+    private static final OptionalInt DESCENDER_FIRST_ROW = OptionalInt.of(7);
 
     private static List<RuleWarning> check(boolean full, List<String> rows) {
         PixelGlyph glyph = new PixelGlyph(0x41, full, PixelGrid.ofRows(rows));
@@ -92,9 +93,36 @@ class GlyphRulesTest {
         PixelGrid grid = PixelGrid.ofRows(List.of(
             "....", "#...", "....", "....", "....", "....", "....", "...."));
         PixelGlyph glyph = new PixelGlyph(0x41, false, grid);
-        assertTrue(GlyphRules.check(0x41, glyph, 4, 1, 7).isEmpty());
+        assertTrue(GlyphRules.check(0x41, glyph, 4, OptionalInt.of(1), OptionalInt.of(7)).isEmpty());
         assertEquals(List.of(GlyphRules.KEY_ACCENT_INK),
-            keys(GlyphRules.check(0x41, glyph, 4, 2, 7)));
+            keys(GlyphRules.check(0x41, glyph, 4, OptionalInt.of(2), OptionalInt.of(7))));
+    }
+
+    @Test
+    void absentAccentSettingSkipsOnlyTheAccentCheck() {
+        List<String> rows = List.of(
+            ".#.....", ".......", ".......", ".......", ".......", ".......", ".......", "..#....");
+        PixelGlyph glyph = new PixelGlyph(0x41, false, PixelGrid.ofRows(rows));
+        assertEquals(List.of(GlyphRules.KEY_DESCENDER_INK),
+            keys(GlyphRules.check(0x41, glyph, BODY_WIDTH, OptionalInt.empty(), DESCENDER_FIRST_ROW)));
+    }
+
+    @Test
+    void absentDescenderSettingSkipsOnlyTheDescenderCheck() {
+        List<String> rows = List.of(
+            ".#.....", ".......", ".......", ".......", ".......", ".......", ".......", "..#....");
+        PixelGlyph glyph = new PixelGlyph(0x41, false, PixelGrid.ofRows(rows));
+        assertEquals(List.of(GlyphRules.KEY_ACCENT_INK),
+            keys(GlyphRules.check(0x41, glyph, BODY_WIDTH, ACCENT_ROWS, OptionalInt.empty())));
+    }
+
+    @Test
+    void gapCheckStillRunsWithBothSettingsAbsent() {
+        List<String> rows = List.of(
+            ".#......", ".......#", "........", "........", "........", "........", "........", "..#.....");
+        PixelGlyph glyph = new PixelGlyph(0x41, true, PixelGrid.ofRows(rows));
+        assertEquals(List.of(GlyphRules.KEY_GAP),
+            keys(GlyphRules.check(0x41, glyph, BODY_WIDTH, OptionalInt.empty(), OptionalInt.empty())));
     }
 
     @Test

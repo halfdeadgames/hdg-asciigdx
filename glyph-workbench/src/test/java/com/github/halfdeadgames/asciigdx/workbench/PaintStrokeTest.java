@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import java.util.Collections;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PaintStrokeTest {
@@ -233,70 +232,5 @@ class PaintStrokeTest {
         assertFalse(editor.isLit(0x43, 5, 2));
         editor.redo();
         assertTrue(editor.isLit(0x43, 5, 2));
-    }
-
-    @Test
-    void widthGuidesFollowTheRulesGroup() {
-        assertEquals(List.of(1, 6, 7),
-            PaintGuides.saiksisttWidths("Uppercase", 8).stream().map(PaintGuides.WidthGuide::boundaryColumn).toList());
-        assertEquals(List.of("5", "5", "7"),
-            PaintGuides.saiksisttWidths("Lowercase", 8).stream().map(PaintGuides.WidthGuide::label).toList());
-        assertEquals(List.of(1, 6),
-            PaintGuides.saiksisttWidths("Digits", 8).stream().map(PaintGuides.WidthGuide::boundaryColumn).toList());
-        assertTrue(PaintGuides.saiksisttWidths("Punctuation", 8).isEmpty());
-        assertEquals(List.of(2, 12, 14),
-            PaintGuides.saiksisttWidths("Uppercase", 16).stream().map(PaintGuides.WidthGuide::boundaryColumn).toList());
-    }
-
-    @Test
-    void barGuideIsThroughTheMiddleOfTheGroupsBarRow() {
-        PaintGuides.BarGuide upper = PaintGuides.saiksisttBar('A', "Uppercase", 8);
-        assertEquals("BAR", upper.label());
-        assertEquals(3.5f, upper.centerRow());
-        assertEquals(4.5f, PaintGuides.saiksisttBar('a', "Lowercase", 8).centerRow());
-        assertEquals(2.5f, PaintGuides.saiksisttBar('f', "Lowercase", 8).centerRow());
-        assertEquals(2.5f, PaintGuides.saiksisttBar('t', "Lowercase", 8).centerRow());
-        assertEquals(7f, PaintGuides.saiksisttBar('A', "Uppercase", 16).centerRow());
-        assertEquals(9f, PaintGuides.saiksisttBar('a', "Lowercase", 16).centerRow());
-    }
-
-    @Test
-    void digitBarsSitOnRowThreeExceptTheFourOnRowFive() {
-        assertEquals(3.5f, PaintGuides.saiksisttBar('3', "Digits", 8).centerRow());
-        assertEquals(5.5f, PaintGuides.saiksisttBar('4', "Digits", 8).centerRow());
-        assertEquals(7f, PaintGuides.saiksisttBar('3', "Digits", 16).centerRow());
-    }
-
-    @Test
-    void barGuideIsMissingForOtherGroups() {
-        assertNull(PaintGuides.saiksisttBar('!', "Punctuation", 8));
-    }
-
-    @Test
-    void barLabelDoesNotShareARowLineWithTheHeightLabels() {
-        float bar = PaintGuides.saiksisttBar('A', "Uppercase", 8).centerRow();
-        for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
-            assertTrue(Math.abs(guide.boundaryRow() - bar) >= 1f, guide.label());
-        }
-        float lowerBar = PaintGuides.saiksisttBar('a', "Lowercase", 8).centerRow();
-        for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
-            assertTrue(Math.abs(guide.boundaryRow() - lowerBar) >= 1f, guide.label());
-        }
-    }
-
-    @Test
-    void neighbouringWidthLabelsUseDifferentTiers() {
-        List<PaintGuides.WidthGuide> guides = PaintGuides.saiksisttWidths("Uppercase", 8);
-        for (int i = 1; i < guides.size(); i++) {
-            assertFalse(guides.get(i).tier() == guides.get(i - 1).tier());
-        }
-    }
-
-    @Test
-    void saiksisttGuidesScaleWithTheCellWidth() {
-        List<PaintGuides.Guide> at8 = PaintGuides.saiksistt(8);
-        assertEquals(List.of(1, 2, 7), at8.stream().map(PaintGuides.Guide::boundaryRow).toList());
-        List<PaintGuides.Guide> at16 = PaintGuides.saiksistt(16);
-        assertEquals(List.of(2, 4, 14), at16.stream().map(PaintGuides.Guide::boundaryRow).toList());
     }
 }

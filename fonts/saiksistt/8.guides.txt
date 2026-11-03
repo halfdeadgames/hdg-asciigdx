@@ -1,0 +1,15 @@
+warn accent-rows 1
+warn descender-from 7
+row CAP 1 all
+row X-HT 2 all
+row BASE 7 all
+column 5 1 uppercase
+column 5/6 6 uppercase
+column 7 7 uppercase
+column 5 1 lowercase
+column 5 6 lowercase
+column 7 7 lowercase
+column 5 1 digits
+column 5 6 digits
+bar BAR 3 1 uppercase,digits
+bar BAR 4 1 lowercase

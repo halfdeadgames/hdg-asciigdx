@@ -20,31 +20,24 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 
 ## Uppercase
 - 6 pixels wide by default (columns 0-5). Round capitals look wider than square ones, so 7 is too wide.
-- Capitals with a center stroke or point (A T V X Y I) use an odd width, 3, 5, or 7, so the center stays true.
-- Wide capitals (M W) use the full 7 pixels.
-- Capital bars sit on row 3, slightly above center (A E F H, and any capital with a middle bar).
-- Bowls of B, P, and R close on row 3, on the capital bar.
-- I has slabs at top and bottom.
-- Capitals use row 7 only for details they need, such as the tail of Q.
+- Capitals with a center stroke or point use an odd width, 3, 5, or 7, so the center stays true.
+- Wide capitals use the full 7 pixels.
+- Capital bars sit on row 3, slightly above center.
+- Bowls close on the capital bar.
+- Capitals use row 7 only for details they need.
 
 ## Lowercase
 - Must differ clearly from capitals in height AND width.
-- Round and symmetric letters (c o s u v x z, and similar) are 5 pixels wide, centered in the body.
-- Wide letters (m w) use the full 7 pixels.
-- Lowercase ascenders (b d h k l) start on row 0, so they stand taller than capitals. f is shorter and starts on row 1.
-- Lowercase letters put at most one pixel on row 0. The slab on l is an accepted exception. Row 0 ink can touch descenders on the line above; games that want space between lines add line spacing.
-- Accented ascender letters (such as ĥ) are drawn by hand: ascender, a blank row, then the accent.
-- The bars of e and t follow the x-height: e on row 4, its middle, and t on row 2, its top. f is an exception: its bar sits on row 3, leaving a blank row under its hook.
-- a: one-story, with a small tail at the bottom right so it never reads as o.
-- g: one-story.
-- l has a tail curving right.
+- Round and symmetric lowercase letters are 5 pixels wide, centered in the body.
+- Wide lowercase letters use the full 7 pixels.
+- Lowercase ascenders start on row 0, so they stand taller than capitals.
+- Lowercase letters put at most one pixel on row 0. Row 0 ink can touch descenders on the line above; games that want space between lines add line spacing.
+- Lowercase bars sit on row 4, the middle of the x-height.
+- a and g are one-story.
 
 ## Digits
 - 5 pixels wide, centered in the body.
-- 0 has a center dot.
-- 1 has a flag at the top and a base slab.
-- Middles of 3, 5, 6, 8, and 9 sit on row 3, on the capital bar.
-- 4 keeps its bar low, on row 5.
+- Digit middles sit on row 3, on the capital bar.
 
 ## Punctuation
 - Must stay readable at 1x. Comma and period must differ.

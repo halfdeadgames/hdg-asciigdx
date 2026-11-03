@@ -39,6 +39,7 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
     private static final String KEY_REVIEW = "review";
+    private static final String KEY_GUIDES = "guides";
     private static final int MARGIN = 12;
     private static final int TEXT_LINE = Painter.TEXT_SIZE;
     private static final int COLUMNS = PaintSheetView.COLUMNS;
@@ -113,6 +114,7 @@ public final class PaintApp implements WorkbenchScreen {
     private int gapWatchGlyph = -1;
     private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
+    private PaintGuides guides = PaintGuides.NONE;
     private int shownNoteFor = -1;
     private PaintHelp.State helpShownState;
     private int helpShownChars;
@@ -177,7 +179,8 @@ public final class PaintApp implements WorkbenchScreen {
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
         sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
-        grid = new PaintGridView(painter, editor, PaintGuides.saiksistt(editor.cellWidth()));
+        loadGuides(directory);
+        grid = new PaintGridView(painter, editor, guides);
         preview = new PaintPreview(painter, editor);
         PreviewTabs.Tab requestedTab = DevCapture.requestedTab();
         if (requestedTab != null) {
@@ -235,9 +238,23 @@ public final class PaintApp implements WorkbenchScreen {
         }
         try {
             review = ReviewFile.parse(reviewFile.readString("UTF-8"));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | GdxRuntimeException e) {
             messages.setCondition(KEY_REVIEW, true, "Review file is bad: notes are off");
             Gdx.app.error(TAG, "Cannot read " + reviewFile.path() + ": " + e.getMessage());
+        }
+    }
+
+    // A missing guides file means no guides; a bad one warns and also means no guides.
+    private void loadGuides(FileHandle directory) {
+        FileHandle guidesFile = directory.child(fontSize + ".guides.txt");
+        if (!guidesFile.exists()) {
+            return;
+        }
+        try {
+            guides = PaintGuides.parse(guidesFile.readString("UTF-8"));
+        } catch (IllegalArgumentException | GdxRuntimeException e) {
+            messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
+            Gdx.app.error(TAG, "Cannot read " + guidesFile.path() + ": " + e.getMessage());
         }
     }
 
@@ -385,10 +402,9 @@ public final class PaintApp implements WorkbenchScreen {
         }
         ruleGlyph = codePoint;
         ruleRevision = editor.revision();
-        List<PaintGuides.Guide> guides = PaintGuides.saiksistt(editor.cellWidth());
         PixelGlyph glyph = editor.isDerived(codePoint) ? null : editor.glyph(codePoint);
         ruleWarnings = GlyphRules.check(codePoint, glyph, editor.bodyWidth(),
-            guides.get(0).boundaryRow(), guides.get(2).boundaryRow());
+            guides.accentRows(), guides.descenderFirstRow());
         boolean ink = false;
         for (String key : RULE_KEYS) {
             messages.clearCondition(key);

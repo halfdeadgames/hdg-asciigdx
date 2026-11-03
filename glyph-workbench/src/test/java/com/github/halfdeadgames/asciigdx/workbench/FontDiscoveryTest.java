@@ -34,6 +34,8 @@ class FontDiscoveryTest {
         touch(root, "saiksistt/rules.md");
         touch(root, "saiksistt/8-old.txt");
         touch(root, "saiksistt/8.txt.tmp");
+        touch(root, "saiksistt/8.guides.txt");
+        touch(root, "saiksistt/8.review.txt");
         touch(root, "FONT_RULES.md");
         touch(root, "empty/notes.txt");
         assertTrue(FontDiscovery.discover(root).isEmpty());

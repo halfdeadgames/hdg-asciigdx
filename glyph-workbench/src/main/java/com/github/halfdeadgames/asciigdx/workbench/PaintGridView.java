@@ -34,15 +34,15 @@ final class PaintGridView {
     private static final Color WIDTH_GUIDE_COLOR = new Color(0.55f, 0.95f, 0.4f, 1f);
 
     private final Painter painter;
-    private String widthGuideGroup = "";
-    private List<PaintGuides.WidthGuide> widthGuides = List.of();
+    private String shownGroup = "";
+    private PaintGuides.Shown shown = new PaintGuides.Shown(List.of(), List.of(), List.of());
     private final FontEditor editor;
-    private final List<PaintGuides.Guide> guides;
+    private final PaintGuides guides;
     private int left;
     private int top;
     private int pixelSize = MAX_PIXEL;
 
-    PaintGridView(Painter painter, FontEditor editor, List<PaintGuides.Guide> guides) {
+    PaintGridView(Painter painter, FontEditor editor, PaintGuides guides) {
         this.painter = painter;
         this.editor = editor;
         this.guides = guides;
@@ -78,16 +78,16 @@ final class PaintGridView {
     }
 
     /**
-     * @param shown glyph to show instead of the slot's own (a derive preview), or null
+     * @param previewGlyph glyph to show instead of the slot's own (a derive preview), or null
      * @param ghost pending overlay part to show faded on top, or null
      * @param seconds running clock that drives the off-grid arrow blink
      */
-    void draw(int codePoint, PixelGlyph shown, Ghost ghost, float seconds) {
+    void draw(int codePoint, PixelGlyph previewGlyph, Ghost ghost, float seconds) {
         int bodyWidth = editor.bodyWidth();
-        Color lit = shown != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
+        Color lit = previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
-                boolean on = shown == null ? editor.isLit(codePoint, x, y) : isLit(shown, x, y);
+                boolean on = previewGlyph == null ? editor.isLit(codePoint, x, y) : isLit(previewGlyph, x, y);
                 Color fill = on ? lit : x >= bodyWidth ? GAP_FILL : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
@@ -102,9 +102,20 @@ final class PaintGridView {
             painter.fill(LINE_COLOR, left, top + y * pixelSize, editor.cellWidth() * pixelSize, 1);
         }
         drawMarkers(codePoint);
+        selectGuides(FontRules.groupNameFor(codePoint));
         drawGuides();
-        drawWidthGuides(FontRules.groupNameFor(codePoint));
-        drawBarGuide(codePoint, FontRules.groupNameFor(codePoint));
+        drawWidthGuides();
+        for (PaintGuides.BarGuide bar : shown.bars()) {
+            drawBarGuide(bar);
+        }
+    }
+
+    // Guides are filtered once per group change, not per frame.
+    private void selectGuides(String groupName) {
+        if (!groupName.equals(shownGroup)) {
+            shownGroup = groupName;
+            shown = guides.forGroup(groupName, editor.cellWidth(), editor.cellHeight());
+        }
     }
 
     // Only pixels inside the visible grid are drawn; ink wholly beyond one side gets a blinking arrow on that edge.
@@ -167,13 +178,9 @@ final class PaintGridView {
         }
     }
 
-    private void drawWidthGuides(String groupName) {
-        if (!groupName.equals(widthGuideGroup)) {
-            widthGuideGroup = groupName;
-            widthGuides = PaintGuides.saiksisttWidths(groupName, editor.cellWidth());
-        }
+    private void drawWidthGuides() {
         int height = editor.cellHeight() * pixelSize;
-        for (PaintGuides.WidthGuide guide : widthGuides) {
+        for (PaintGuides.WidthGuide guide : shown.widths()) {
             int lineX = left + guide.boundaryColumn() * pixelSize;
             painter.fill(WIDTH_GUIDE_COLOR, lineX - WIDTH_GUIDE_THICKNESS / 2, top - GUIDE_OVERHANG,
                 WIDTH_GUIDE_THICKNESS, height + 2 * GUIDE_OVERHANG);
@@ -184,11 +191,7 @@ final class PaintGridView {
     }
 
     // Dashed so the lit pixels under it stay visible.
-    private void drawBarGuide(int codePoint, String groupName) {
-        PaintGuides.BarGuide bar = PaintGuides.saiksisttBar(codePoint, groupName, editor.cellWidth());
-        if (bar == null) {
-            return;
-        }
+    private void drawBarGuide(PaintGuides.BarGuide bar) {
         int lineY = top + Math.round(bar.centerRow() * pixelSize);
         int width = editor.cellWidth() * pixelSize;
         int end = left + width + GUIDE_OVERHANG;
@@ -201,10 +204,7 @@ final class PaintGridView {
 
     private void drawGuides() {
         int width = editor.cellWidth() * pixelSize;
-        for (PaintGuides.Guide guide : guides) {
-            if (guide.boundaryRow() > editor.cellHeight()) {
-                continue;
-            }
+        for (PaintGuides.Guide guide : shown.rows()) {
             int lineY = top + guide.boundaryRow() * pixelSize;
             painter.fill(GUIDE_COLOR, left - GUIDE_OVERHANG, lineY - GUIDE_THICKNESS / 2,
                 width + 2 * GUIDE_OVERHANG, GUIDE_THICKNESS);

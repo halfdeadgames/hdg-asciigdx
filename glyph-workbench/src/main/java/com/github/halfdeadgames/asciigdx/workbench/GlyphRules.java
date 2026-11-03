@@ -5,6 +5,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.OptionalInt;
 
 /** Checks one glyph's pixels against the font's design rules; no drawing, no libGDX. */
 final class GlyphRules {
@@ -22,12 +23,12 @@ final class GlyphRules {
      * @param codePoint the glyph's code point, used in the gap message
      * @param glyph the glyph, or null for an empty slot
      * @param bodyWidth columns before the gap columns
-     * @param accentRowCount rows at the top reserved for accents
-     * @param descenderFirstRow first row of the descender band
+     * @param accentRowCount rows at the top reserved for accents; empty skips the accent check
+     * @param descenderFirstRow first row of the descender band; empty skips the descender check
      * @return the warnings, empty when the glyph is fine
      */
     static List<RuleWarning> check(int codePoint, PixelGlyph glyph, int bodyWidth,
-                                   int accentRowCount, int descenderFirstRow) {
+                                   OptionalInt accentRowCount, OptionalInt descenderFirstRow) {
         List<RuleWarning> warnings = new ArrayList<>();
         if (glyph == null) {
             return warnings;
@@ -37,10 +38,11 @@ final class GlyphRules {
             warnings.add(new RuleWarning(KEY_GAP,
                 String.format(Locale.ROOT, "U+%04X %s has ink in the gap column", codePoint, GlyphName.fullName(codePoint))));
         }
-        if (breaksAccentRowRule(codePoint, pixels, accentRowCount)) {
+        if (accentRowCount.isPresent() && breaksAccentRowRule(codePoint, pixels, accentRowCount.getAsInt())) {
             warnings.add(new RuleWarning(KEY_ACCENT_INK, "INK IN ACCENT ROW"));
         }
-        if (countInkInRows(pixels, descenderFirstRow, pixels.getHeight()) > 0) {
+        if (descenderFirstRow.isPresent()
+            && countInkInRows(pixels, descenderFirstRow.getAsInt(), pixels.getHeight()) > 0) {
             warnings.add(new RuleWarning(KEY_DESCENDER_INK, "INK IN DESCENDER ROW"));
         }
         return warnings;
