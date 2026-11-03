@@ -20,7 +20,7 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 
 ## Uppercase
 - 6 pixels wide by default (columns 0-5). Round capitals look wider than square ones, so 7 is too wide.
-- Capitals with a center stroke or point (A T V X Y I) use an odd width, 5 or 7, so the center stays true.
+- Capitals with a center stroke or point (A T V X Y I) use an odd width, 3, 5, or 7, so the center stays true.
 - Wide capitals (M W) use the full 7 pixels.
 - Capital bars sit on row 3, slightly above center (A E F H, and any capital with a middle bar).
 - Bowls of B, P, and R close on row 3, on the capital bar.
