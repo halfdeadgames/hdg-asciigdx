@@ -34,7 +34,8 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String TAG = "Paint";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
-    private static final String KEY_GAP = "gap";
+    private static final List<String> RULE_KEYS = List.of(
+        GlyphRules.KEY_GAP, GlyphRules.KEY_ACCENT_INK, GlyphRules.KEY_DESCENDER_INK);
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
     private static final String KEY_REVIEW = "review";
@@ -110,8 +111,9 @@ public final class PaintApp implements WorkbenchScreen {
     private int derivedTextGlyph = -1;
     private int derivedTextSource = -1;
     private String derivedText = "";
-    private int gapTextGlyph = -1;
-    private String gapText = "";
+    private List<RuleWarning> ruleWarnings = List.of();
+    private int ruleGlyph = -1;
+    private int ruleRevision = -1;
     private int gapWatchGlyph = -1;
     private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
@@ -362,21 +364,7 @@ public final class PaintApp implements WorkbenchScreen {
         } else {
             messages.clearCondition(KEY_EMPTY);
         }
-        boolean ink = editor.hasGapInk(codePoint);
-        if (ink) {
-            if (gapTextGlyph != codePoint) {
-                gapTextGlyph = codePoint;
-                gapText = describeGlyph(codePoint).append(" has ink in the gap column").toString();
-            }
-            messages.setCondition(KEY_GAP, true, gapText);
-        } else {
-            messages.clearCondition(KEY_GAP);
-        }
-        if (gapWatchGlyph == codePoint && gapWatchInk && !ink) {
-            messages.ok(describeGlyph(codePoint).append(" gap column is empty: back to normal width").toString());
-        }
-        gapWatchGlyph = codePoint;
-        gapWatchInk = ink;
+        refreshRuleWarnings(codePoint);
         if (flow.isPicking()) {
             if (!pickPromptText.equals(pickPromptClockText)) {
                 pickPromptClockText = pickPromptText;
@@ -394,6 +382,32 @@ public final class PaintApp implements WorkbenchScreen {
             messages.clearCondition(KEY_PICK);
             messages.clearCondition(KEY_PICK_PROBLEM);
         }
+    }
+
+    // Rules run again only when the glyph or the editor state changed, and never while a stroke is still being drawn.
+    private void refreshRuleWarnings(int codePoint) {
+        if (stroke.isActive() || (codePoint == ruleGlyph && editor.revision() == ruleRevision)) {
+            return;
+        }
+        ruleGlyph = codePoint;
+        ruleRevision = editor.revision();
+        List<PaintGuides.Guide> guides = PaintGuides.saiksistt(editor.cellWidth());
+        PixelGlyph glyph = editor.isDerived(codePoint) ? null : editor.glyph(codePoint);
+        ruleWarnings = GlyphRules.check(codePoint, glyph, editor.bodyWidth(),
+            guides.get(0).boundaryRow(), guides.get(2).boundaryRow());
+        boolean ink = false;
+        for (String key : RULE_KEYS) {
+            messages.clearCondition(key);
+        }
+        for (RuleWarning warning : ruleWarnings) {
+            messages.setCondition(warning.key(), true, warning.message());
+            ink |= warning.key().equals(GlyphRules.KEY_GAP);
+        }
+        if (gapWatchGlyph == codePoint && gapWatchInk && !ink) {
+            messages.ok(describeGlyph(codePoint).append(" gap column is empty: back to normal width").toString());
+        }
+        gapWatchGlyph = codePoint;
+        gapWatchInk = ink;
     }
 
     // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active.

@@ -148,14 +148,12 @@ final class FontEditor {
     }
 
     private boolean gapHasInk(PixelGrid grid) {
-        for (int y = 0; y < grid.getHeight(); y++) {
-            for (int x = bodyWidth(); x < grid.getWidth(); x++) {
-                if (grid.isLit(x, y)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return GlyphRules.hasGapInk(grid, bodyWidth());
+    }
+
+    /** Identifies the current state; it changes with every edit, undo, redo, and derive. */
+    int revision() {
+        return revision;
     }
 
     private PixelGrid croppedToBody(PixelGrid grid) {
