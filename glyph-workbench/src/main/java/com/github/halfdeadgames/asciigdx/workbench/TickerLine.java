@@ -19,6 +19,7 @@ final class TickerLine {
     private final Supplier<int[]> wordSource;
     private final int glyphAdvance;
     private final float pixelsPerSecond;
+    private final int gapCells;
     private final List<int[]> words = new ArrayList<>();
     private float firstWordX;
     private int visibleWidth;
@@ -29,9 +30,15 @@ final class TickerLine {
      * @param pixelsPerSecond scroll speed to the left
      */
     TickerLine(Supplier<int[]> wordSource, int glyphAdvance, float pixelsPerSecond) {
+        this(wordSource, glyphAdvance, pixelsPerSecond, 1);
+    }
+
+    /** @param gapCells blank cells after each word; 0 runs the words together into one continuous string */
+    TickerLine(Supplier<int[]> wordSource, int glyphAdvance, float pixelsPerSecond, int gapCells) {
         this.wordSource = wordSource;
         this.glyphAdvance = glyphAdvance;
         this.pixelsPerSecond = pixelsPerSecond;
+        this.gapCells = gapCells;
     }
 
     /** Sets how wide the visible area is and fills the queue to cover it. */
@@ -96,6 +103,6 @@ final class TickerLine {
     }
 
     private int slotWidth(int[] word) {
-        return (word.length + 1) * glyphAdvance;
+        return (word.length + gapCells) * glyphAdvance;
     }
 }

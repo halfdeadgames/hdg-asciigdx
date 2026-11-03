@@ -23,7 +23,8 @@ final class PaintPreview {
     private static final int TICKER_SCALE = 2;
     private static final float TICKER_PIXELS_PER_SECOND = 40f;
     private static final long TICKER_SEED = 7L;
-    private static final float BLINK_HALF_PERIOD_SECONDS = 0.2f;
+    private static final float WHITE_SECONDS = 1f;
+    private static final float FLASH_SECONDS = 0.2f;
     private static final float MAX_FRAME_SECONDS = 0.1f;
 
     private final Painter painter;
@@ -113,7 +114,7 @@ final class PaintPreview {
         tickerDrawer.clipLeft = left;
         tickerDrawer.clipRight = clipRight;
         tickerDrawer.featured = selected;
-        tickerDrawer.featuredColor = ((int) (tickerSeconds / BLINK_HALF_PERIOD_SECONDS)) % 2 == 0
+        tickerDrawer.featuredColor = tickerSeconds % (WHITE_SECONDS + FLASH_SECONDS) < WHITE_SECONDS
             ? Color.WHITE : UiPalette.ACCENT;
         for (int i = 0; i < TICKER_LINES; i++) {
             int bandTop = top + i * bandHeight;
@@ -171,7 +172,9 @@ final class PaintPreview {
                 tickerMessageColors[i] = UiPalette.WARN;
                 continue;
             }
-            tickerLines[i] = new TickerLine(() -> words.nextWord(selected), glyphAdvance, TICKER_PIXELS_PER_SECOND);
+            int gapCells = classes[i] == GlyphClass.ANY ? 0 : 1;
+            tickerLines[i] = new TickerLine(() -> words.nextWord(selected), glyphAdvance, TICKER_PIXELS_PER_SECOND,
+                gapCells);
         }
     }
 
