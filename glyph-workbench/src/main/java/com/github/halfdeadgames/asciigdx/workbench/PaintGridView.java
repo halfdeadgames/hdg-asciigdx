@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
@@ -69,12 +70,19 @@ final class PaintGridView {
         return Math.floorDiv(pixelY - top, pixelSize);
     }
 
+    /** A pending overlay part drawn faded at its shifted position; pixels past the part's own width are outside the body. */
+    record Ghost(PixelGrid pixels, int shift) { }
+
     void draw(int codePoint) {
-        draw(codePoint, null);
+        draw(codePoint, null, null, 0f);
     }
 
-    /** @param shown glyph to show instead of the slot's own (a derive preview), or null */
-    void draw(int codePoint, PixelGlyph shown) {
+    /**
+     * @param shown glyph to show instead of the slot's own (a derive preview), or null
+     * @param ghost pending overlay part to show faded on top, or null
+     * @param seconds running clock that drives the off-grid arrow blink
+     */
+    void draw(int codePoint, PixelGlyph shown, Ghost ghost, float seconds) {
         int bodyWidth = editor.bodyWidth();
         Color lit = shown != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
@@ -83,6 +91,9 @@ final class PaintGridView {
                 Color fill = on ? lit : x >= bodyWidth ? GAP_FILL : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
+        }
+        if (ghost != null) {
+            drawGhost(ghost, seconds);
         }
         for (int x = 0; x <= editor.cellWidth(); x++) {
             painter.fill(LINE_COLOR, left + x * pixelSize, top, 1, height());
@@ -94,6 +105,46 @@ final class PaintGridView {
         drawGuides();
         drawWidthGuides(FontRules.groupNameFor(codePoint));
         drawBarGuide(FontRules.groupNameFor(codePoint));
+    }
+
+    // Only pixels inside the visible grid are drawn; ink wholly beyond one side gets a blinking arrow on that edge.
+    private void drawGhost(Ghost ghost, float seconds) {
+        PixelGrid pixels = ghost.pixels();
+        int firstInk = Integer.MAX_VALUE;
+        int lastInk = -1;
+        int firstRow = Integer.MAX_VALUE;
+        int lastRow = -1;
+        for (int y = 0; y < pixels.getHeight(); y++) {
+            for (int x = 0; x < pixels.getWidth(); x++) {
+                if (!pixels.isLit(x, y)) {
+                    continue;
+                }
+                firstInk = Math.min(firstInk, x);
+                lastInk = Math.max(lastInk, x);
+                firstRow = Math.min(firstRow, y);
+                lastRow = Math.max(lastRow, y);
+                int column = x + ghost.shift();
+                if (column >= 0 && column < editor.cellWidth() && y < editor.cellHeight()) {
+                    boolean inside = column < pixels.getWidth();
+                    painter.fill(inside ? UiPalette.GHOST : UiPalette.GHOST_OUTSIDE,
+                        left + column * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        }
+        if (lastInk < 0 || !OverlayCheck.blinkOn(seconds)) {
+            return;
+        }
+        OverlayCheck.OffGrid side = OverlayCheck.offGrid(firstInk, lastInk, ghost.shift(), editor.cellWidth());
+        if (side == OverlayCheck.OffGrid.NONE) {
+            return;
+        }
+        int arrowTop = top + (firstRow + lastRow + 1) * pixelSize / 2 - Painter.TEXT_SIZE / 2;
+        int gridRight = left + editor.cellWidth() * pixelSize;
+        if (side == OverlayCheck.OffGrid.RIGHT) {
+            painter.text(">", gridRight - Painter.TEXT_SIZE, arrowTop, UiPalette.WARN);
+        } else {
+            painter.text("<", left, arrowTop, UiPalette.WARN);
+        }
     }
 
     private static boolean isLit(PixelGlyph glyph, int x, int y) {

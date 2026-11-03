@@ -76,6 +76,39 @@ final class OverlayCheck {
         return new Result(Problem.NONE, "", hasRange, min, max);
     }
 
+    enum OffGrid { NONE, LEFT, RIGHT }
+
+    static final float BLINK_ON_SECONDS = 0.25f;
+    static final float BLINK_OFF_SECONDS = 0.25f;
+
+    /**
+     * Which side of the grid all shifted ink lies beyond, or NONE when some ink is still inside it.
+     *
+     * @param firstInkColumn leftmost column holding ink
+     * @param lastInkColumn rightmost column holding ink
+     * @param shift columns the ink moves right (negative moves left)
+     * @param gridWidth width of the visible grid
+     */
+    static OffGrid offGrid(int firstInkColumn, int lastInkColumn, int shift, int gridWidth) {
+        if (lastInkColumn + shift < 0) {
+            return OffGrid.LEFT;
+        }
+        if (firstInkColumn + shift >= gridWidth) {
+            return OffGrid.RIGHT;
+        }
+        return OffGrid.NONE;
+    }
+
+    /** Whether a blinking marker is lit at the given time. */
+    static boolean blinkOn(float seconds) {
+        float cycle = BLINK_ON_SECONDS + BLINK_OFF_SECONDS;
+        float phase = seconds % cycle;
+        if (phase < 0) {
+            phase += cycle;
+        }
+        return phase < BLINK_ON_SECONDS;
+    }
+
     static String signed(int value) {
         return value > 0 ? "+" + value : String.valueOf(value);
     }

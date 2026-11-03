@@ -84,6 +84,27 @@ class OverlayCheckTest {
     }
 
     @Test
+    void offGridNamesTheSideWhenAllInkIsBeyondTheGrid() {
+        assertEquals(OverlayCheck.OffGrid.RIGHT, OverlayCheck.offGrid(1, 3, 7, 8));
+        assertEquals(OverlayCheck.OffGrid.LEFT, OverlayCheck.offGrid(1, 3, -4, 8));
+    }
+
+    @Test
+    void offGridIsNoneWhileAnyInkIsStillInsideTheGrid() {
+        assertEquals(OverlayCheck.OffGrid.NONE, OverlayCheck.offGrid(1, 3, 0, 8));
+        assertEquals(OverlayCheck.OffGrid.NONE, OverlayCheck.offGrid(1, 3, 5, 8));
+        assertEquals(OverlayCheck.OffGrid.NONE, OverlayCheck.offGrid(1, 3, -3, 8));
+    }
+
+    @Test
+    void blinkIsOnForTheFirstQuarterSecondOfEachHalfSecond() {
+        assertTrue(OverlayCheck.blinkOn(0f));
+        assertTrue(OverlayCheck.blinkOn(0.2f));
+        assertFalse(OverlayCheck.blinkOn(0.3f));
+        assertTrue(OverlayCheck.blinkOn(0.55f));
+    }
+
+    @Test
     void warningsUseOnlyUppercaseAsciiAndPunctuationTheFontDraws() {
         for (OverlayCheck.Result result : List.of(
             OverlayCheck.check(false, BODY, null, 9), OverlayCheck.check(false, FULL, BODY, 0),

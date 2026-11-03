@@ -21,6 +21,11 @@ public final class UiPalette {
     /** Glyphs made from other glyphs. */
     public static final Color DERIVED = new Color(0x30E0D0FF);
 
+    /** A pending overlay part that fits the body, drawn faded. */
+    public static final Color GHOST = new Color(0x30E0D073);
+    /** A pending overlay part pixel that falls outside the body, drawn faded. */
+    public static final Color GHOST_OUTSIDE = new Color(0xFF6B6B99);
+
     private UiPalette() {
     }
 }

@@ -43,6 +43,8 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int WHEEL_ROWS = 3;
     private static final int HELP_PADDING = 1;
+    // Cells the message strip spends on its frame, marker, and gaps (MessageStrip.draw uses width - 6).
+    private static final int STRIP_TEXT_MARGIN = 6;
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
@@ -102,6 +104,9 @@ public final class PaintApp implements WorkbenchScreen {
     private String lastProblem = "";
     private String pickPromptText = "";
     private String pickProblemText = "";
+    private String pickPromptClockText = "";
+    private float pickPromptSeconds;
+    private float ghostSeconds;
     private int derivedTextGlyph = -1;
     private int derivedTextSource = -1;
     private String derivedText = "";
@@ -352,7 +357,7 @@ public final class PaintApp implements WorkbenchScreen {
         } else {
             messages.clearCondition(KEY_DERIVED);
         }
-        if (!derived && !editor.hasGlyph(codePoint)) {
+        if (!derived && !editor.hasGlyph(codePoint) && !flow.isActive()) {
             messages.setCondition(KEY_EMPTY, false, "Empty slot: click the grid to create it");
         } else {
             messages.clearCondition(KEY_EMPTY);
@@ -373,7 +378,13 @@ public final class PaintApp implements WorkbenchScreen {
         gapWatchGlyph = codePoint;
         gapWatchInk = ink;
         if (flow.isPicking()) {
-            messages.setCondition(KEY_PICK, false, pickPromptText);
+            if (!pickPromptText.equals(pickPromptClockText)) {
+                pickPromptClockText = pickPromptText;
+                pickPromptSeconds = 0f;
+            }
+            pickPromptSeconds += Gdx.graphics.getDeltaTime();
+            messages.setCondition(KEY_PICK, false,
+                BounceScroll.window(pickPromptText, rects.messages().width() - STRIP_TEXT_MARGIN, pickPromptSeconds));
             if (pickProblemText.isEmpty()) {
                 messages.clearCondition(KEY_PICK_PROBLEM);
             } else {
@@ -552,17 +563,32 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private String pickPrompt(boolean withSource) {
-        describeGlyph(codePoints[cursor]);
-        line.insert(0, "PICK SOURCE FOR ");
-        line.append(" (").append(DeriveFlow.label(flow.operation())).append(')');
+        boolean overlay = flow.operation() == GlyphOp.Kind.OVERLAY;
+        line.setLength(0);
+        line.append(DeriveFlow.label(flow.operation())).append(" U+");
+        appendHex(line, codePoints[cursor]);
+        line.append(':');
         if (withSource) {
-            line.append(" FROM U+");
+            line.append(overlay ? " PART FROM U+" : " FROM U+");
             appendHex(line, codePoints[flow.sourceSlot()]);
+        } else {
+            line.append(overlay ? " PICK A PART" : " PICK SOURCE");
         }
-        if (flow.operation() == GlyphOp.Kind.OVERLAY) {
+        if (overlay) {
             int shift = flow.pendingShift();
-            line.append("  PARTS ").append(flow.parts().size()).append("  SHIFT ").append(shift > 0 ? "+" : "").append(shift);
+            line.append("  SHIFT ").append(shift > 0 ? "+" : "").append(shift)
+                .append("  PARTS ").append(flow.parts().size());
         }
+        return line.toString();
+    }
+
+    private String deriveSummary(int target) {
+        describeGlyph(target).append(" (").append(DeriveFlow.label(flow.operation())).append(')');
+        if (flow.operation() == GlyphOp.Kind.OVERLAY) {
+            return line.append(" FROM ").append(flow.parts().size()).append(" PARTS").toString();
+        }
+        line.append(" FROM U+");
+        appendHex(line, codePoints[flow.sourceSlot()]);
         return line.toString();
     }
 
@@ -700,9 +726,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void applyDerive() {
         int target = codePoints[cursor];
-        String summary = flow.operation() == GlyphOp.Kind.OVERLAY
-            ? describeGlyph(target).append(" (OVERLAY) FROM ").append(flow.parts().size()).append(" PARTS").toString()
-            : pickPrompt(true).substring("PICK SOURCE FOR ".length());
+        String summary = deriveSummary(target);
         messages.nextAction();
         if (editor.derive(target, currentOp())) {
             lastProblem = "";
@@ -875,7 +899,8 @@ public final class PaintApp implements WorkbenchScreen {
         titleSeconds += Gdx.graphics.getDeltaTime();
         line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
         Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
-        grid.draw(codePoint, pickShown);
+        ghostSeconds += Gdx.graphics.getDeltaTime();
+        grid.draw(codePoint, pickShown, pendingGhost(), ghostSeconds);
         preview.draw(rects.preview(), codePoint, pickShown);
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
@@ -972,6 +997,15 @@ public final class PaintApp implements WorkbenchScreen {
         PaintHelp.PartView pending = flow.sourceIsTarget()
             ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
         return new PaintHelp.State(mode, operation, committed, pending, currentOverlayCheck());
+    }
+
+    // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
+    private PaintGridView.Ghost pendingGhost() {
+        if (!flow.isOverlay() || !flow.isPicking() || flow.sourceIsTarget()
+            || currentOverlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
+            return null;
+        }
+        return new PaintGridView.Ghost(editor.glyph(codePoints[flow.sourceSlot()]).pixels(), flow.pendingShift());
     }
 
     private OverlayCheck.Result currentOverlayCheck() {
