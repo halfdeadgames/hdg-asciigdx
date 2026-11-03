@@ -90,6 +90,7 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintLayout.Result rects;
     private String lastProblem = "";
     private int announcedFor = -1;
+    private boolean gapInkShown;
     private ReviewFile review = new ReviewFile();
     private int shownNoteFor = -1;
     private boolean[] unselectable;
@@ -276,6 +277,7 @@ public final class PaintApp implements WorkbenchScreen {
         handleScrollKeys();
         trackPointer();
         handleMouse();
+        watchGapInk(codePoints[cursor]);
         String problem = editor.problem();
         if (!problem.equals(lastProblem)) {
             lastProblem = problem;
@@ -307,6 +309,30 @@ public final class PaintApp implements WorkbenchScreen {
             messages.warn(line.toString());
         } else if (!editor.hasGlyph(codePoint)) {
             messages.ok("Empty slot: click the grid to create it");
+        }
+        gapInkShown = editor.hasGapInk(codePoint);
+        if (gapInkShown) {
+            warnGapInk(codePoint);
+        }
+    }
+
+    private void warnGapInk(int codePoint) {
+        describeGlyph(codePoint).append(" has ink in the gap column");
+        messages.warn(line.toString());
+    }
+
+    // Messages only on a change, so the strip is not rewritten every frame.
+    private void watchGapInk(int codePoint) {
+        boolean ink = editor.hasGapInk(codePoint);
+        if (ink == gapInkShown || announcedFor != cursor) {
+            return;
+        }
+        gapInkShown = ink;
+        if (ink) {
+            warnGapInk(codePoint);
+        } else {
+            describeGlyph(codePoint).append(" gap column is empty: back to normal width");
+            messages.ok(line.toString());
         }
     }
 

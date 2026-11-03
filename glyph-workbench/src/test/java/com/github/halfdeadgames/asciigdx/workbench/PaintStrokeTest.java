@@ -52,21 +52,47 @@ class PaintStrokeTest {
     }
 
     @Test
-    void dragNeverPaintsTheGapColumn() {
+    void dragFromTheBodyIntoTheGapIsOneUndoStepAndMakesTheGlyphFull() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
         stroke.begin(0x41, 5, 0);
         stroke.drag(9, 0);
+        stroke.end();
         assertTrue(editor.isLit(0x41, 6, 0));
-        assertFalse(editor.isLit(0x41, 7, 0));
+        assertTrue(editor.isLit(0x41, 7, 0));
+        assertTrue(editor.glyph(0x41).full());
+        assertEquals(8, editor.glyph(0x41).pixels().getWidth());
+        editor.undo();
+        assertFalse(editor.canUndo());
+        assertFalse(editor.glyph(0x41).full());
+        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
+        assertFalse(editor.isLit(0x41, 5, 0));
+    }
+
+    @Test
+    void strokeStartingInTheGapWorksOnNormalGlyphs() {
+        FontEditor editor = editor();
+        PaintStroke stroke = new PaintStroke(editor);
+        assertTrue(stroke.begin(0x41, 7, 0));
+        stroke.drag(7, 2);
+        stroke.end();
+        assertTrue(editor.isLit(0x41, 7, 2));
+        assertTrue(editor.glyph(0x41).full());
+    }
+
+    @Test
+    void eraseStrokeOverTheGapInkReturnsToANormalGlyph() {
+        FontEditor editor = editor();
+        paintStroke(editor, 0x41, 7, 7, 0);
+        paintStroke(editor, 0x41, 7, 7, 0);
+        assertFalse(editor.glyph(0x41).full());
         assertEquals(7, editor.glyph(0x41).pixels().getWidth());
     }
 
     @Test
-    void beginOnTheGapOrADerivedGlyphDoesNothing() {
+    void beginOnADerivedGlyphDoesNothing() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertFalse(stroke.begin(0x41, 7, 0));
         assertFalse(stroke.begin(0x43, 0, 0));
         assertFalse(stroke.isActive());
         stroke.drag(1, 1);
@@ -110,7 +136,7 @@ class PaintStrokeTest {
     void strokeThatChangesNothingAddsNoStep() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertFalse(stroke.begin(0x41, 7, 0));
+        assertFalse(stroke.begin(0x43, 7, 0));
         stroke.end();
         editor.beginEdit();
         editor.setPixel(0x41, 2, 2, true);

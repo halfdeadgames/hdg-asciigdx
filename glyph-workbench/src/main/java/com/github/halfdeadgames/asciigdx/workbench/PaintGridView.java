@@ -6,7 +6,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
-/** The big pixel grid of the selected glyph, with shaded gap columns and labelled guide lines. */
+/** The big pixel grid of the selected glyph, with shaded gap columns (lit gap ink shows as lit) and labelled guide lines. */
 final class PaintGridView {
 
     static final int LABEL_CELLS = 5;
@@ -75,13 +75,12 @@ final class PaintGridView {
 
     /** @param shown glyph to show instead of the slot's own (a derive preview), or null */
     void draw(int codePoint, PixelGlyph shown) {
-        int drawnWidth = shown == null ? editor.drawnWidth(codePoint)
-            : shown.full() ? editor.cellWidth() : editor.bodyWidth();
+        int bodyWidth = editor.bodyWidth();
         Color lit = shown != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
                 boolean on = shown == null ? editor.isLit(codePoint, x, y) : isLit(shown, x, y);
-                Color fill = x >= drawnWidth ? GAP_FILL : on ? lit : UNLIT_FILL;
+                Color fill = on ? lit : x >= bodyWidth ? GAP_FILL : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
         }

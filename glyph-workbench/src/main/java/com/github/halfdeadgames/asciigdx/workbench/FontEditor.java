@@ -18,7 +18,8 @@ import java.util.TreeMap;
 
 /**
  * The editable state of one font: its glyphs, the sheet slots, and the unsaved flag. Derived
- * glyphs are shown but cannot be painted, and gap columns of normal glyphs cannot be painted.
+ * glyphs are shown but cannot be painted. Painting a gap column of a normal glyph turns it into a full
+ * glyph; erasing the last gap ink of a full glyph turns it back into a normal one.
  */
 final class FontEditor {
 
@@ -138,11 +139,36 @@ final class FontEditor {
 
     boolean isPaintable(int codePoint, int x, int y) {
         return codePoint != NO_GLYPH && !isDerived(codePoint)
-            && x >= 0 && y >= 0 && x < drawnWidth(codePoint) && y < cellHeight;
+            && x >= 0 && y >= 0 && x < cellWidth && y < cellHeight;
+    }
+
+    /** Whether a full glyph has a lit pixel in the gap columns. */
+    boolean hasGapInk(int codePoint) {
+        return entries.get(codePoint) instanceof PixelGlyph glyph && glyph.full() && gapHasInk(glyph.pixels());
+    }
+
+    private boolean gapHasInk(PixelGrid grid) {
+        for (int y = 0; y < grid.getHeight(); y++) {
+            for (int x = bodyWidth(); x < grid.getWidth(); x++) {
+                if (grid.isLit(x, y)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private PixelGrid croppedToBody(PixelGrid grid) {
+        java.util.List<String> bodyRows = new java.util.ArrayList<>();
+        for (String row : grid.toRows()) {
+            bodyRows.add(row.substring(0, bodyWidth()));
+        }
+        return PixelGrid.ofRows(bodyRows);
     }
 
     /**
-     * Sets a pixel, creating the glyph first if the slot is empty. Returns whether anything changed;
+     * Sets a pixel, creating the glyph first if the slot is empty. Lighting a gap column makes the glyph
+     * full; erasing the last gap ink of a full glyph makes it normal again. Returns whether anything changed;
      * an edit that would break a derived glyph is undone and explained by {@link #problem()}.
      */
     boolean setPixel(int codePoint, int x, int y, boolean on) {
@@ -154,12 +180,22 @@ final class FontEditor {
         if (current == null && !on) {
             return false;
         }
-        PixelGrid base = current == null ? PixelGrid.blank(bodyWidth(), cellHeight) : current.pixels();
-        if (current != null && base.isLit(x, y) == on) {
+        if (current != null && isLit(codePoint, x, y) == on) {
             return false;
         }
+        PixelGrid base = current == null ? PixelGrid.blank(bodyWidth(), cellHeight) : current.pixels();
         boolean full = current != null && current.full();
-        entries.put(codePoint, new PixelGlyph(codePoint, full, base.withPixel(x, y, on)));
+        boolean inGap = x >= bodyWidth();
+        if (inGap && !full) {
+            base = base.paddedRight(cellWidth);
+            full = true;
+        }
+        base = base.withPixel(x, y, on);
+        if (full && inGap && !on && !gapHasInk(base)) {
+            base = croppedToBody(base);
+            full = false;
+        }
+        entries.put(codePoint, new PixelGlyph(codePoint, full, base));
         try {
             resolved = GlyphResolver.resolveAll(data());
         } catch (FontDataException e) {

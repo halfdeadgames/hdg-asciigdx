@@ -42,12 +42,91 @@ class FontEditorTest {
     }
 
     @Test
-    void gapColumnIsNotPaintableOnNormalGlyphs() {
+    void gapColumnIsPaintableOnNormalGlyphs() {
         FontEditor editor = editor();
         assertTrue(editor.isPaintable(0x41, 6, 0));
-        assertFalse(editor.isPaintable(0x41, 7, 0));
-        assertFalse(editor.setPixel(0x41, 7, 0, true));
+        assertTrue(editor.isPaintable(0x41, 7, 0));
+        assertFalse(editor.isPaintable(0x41, 8, 0));
+        assertFalse(editor.isLit(0x41, 7, 0));
+    }
+
+    @Test
+    void paintingTheGapTurnsAGlyphFullAndKeepsItsInk() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 2, 3, true);
+        assertTrue(editor.setPixel(0x41, 7, 0, true));
+        assertTrue(editor.glyph(0x41).full());
+        assertEquals(8, editor.glyph(0x41).pixels().getWidth());
+        assertTrue(editor.isLit(0x41, 2, 3));
+        assertTrue(editor.isLit(0x41, 7, 0));
+        assertTrue(editor.hasGapInk(0x41));
+    }
+
+    @Test
+    void paintingTheGapOfAnEmptySlotCreatesAFullGlyph() {
+        FontEditor editor = editor();
+        assertTrue(editor.setPixel(0x44, 7, 4, true));
+        assertTrue(editor.glyph(0x44).full());
+        assertEquals(8, editor.glyph(0x44).pixels().getWidth());
+        assertTrue(editor.isLit(0x44, 7, 4));
+    }
+
+    @Test
+    void erasingTheLastGapInkReturnsToANormalGlyph() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 2, 3, true);
+        editor.setPixel(0x41, 7, 0, true);
+        editor.setPixel(0x41, 7, 1, true);
+        assertTrue(editor.setPixel(0x41, 7, 0, false));
+        assertTrue(editor.glyph(0x41).full());
+        assertTrue(editor.setPixel(0x41, 7, 1, false));
+        assertFalse(editor.glyph(0x41).full());
+        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
+        assertTrue(editor.isLit(0x41, 2, 3));
+        assertFalse(editor.hasGapInk(0x41));
+    }
+
+    @Test
+    void loadedFullGlyphWithEmptyGapStaysFullWhenPaintingTheBody() {
+        FontEditor editor = editor();
+        assertTrue(editor.glyph(0x42).full());
+        editor.setPixel(0x42, 3, 3, true);
+        assertTrue(editor.glyph(0x42).full());
+        assertFalse(editor.setPixel(0x42, 7, 3, false));
+        assertTrue(editor.glyph(0x42).full());
+        assertEquals(8, editor.glyph(0x42).pixels().getWidth());
+    }
+
+    @Test
+    void undoAndRedoRestoreTheFullFlagAndWidth() {
+        FontEditor editor = editor();
+        editor.beginEdit();
+        editor.setPixel(0x41, 7, 0, true);
+        editor.commitEdit();
+        editor.undo();
+        assertFalse(editor.glyph(0x41).full());
+        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
+        editor.redo();
+        assertTrue(editor.glyph(0x41).full());
+        assertEquals(8, editor.glyph(0x41).pixels().getWidth());
+        assertTrue(editor.isLit(0x41, 7, 0));
+    }
+
+    @Test
+    void derivedGlyphGapIsStillRejected() {
+        FontEditor editor = editor();
+        assertFalse(editor.isPaintable(0x43, 7, 0));
+        assertFalse(editor.setPixel(0x43, 7, 0, true));
         assertFalse(editor.isModified());
+    }
+
+    @Test
+    void fullGlyphWithGapInkRoundTripsThroughWriterAndParser() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 7, 2, true);
+        FontData reparsed = FontDataParser.parse(editor.toText());
+        assertEquals(editor.data(), reparsed);
+        assertTrue(((PixelGlyph) reparsed.entries().get(0x41)).full());
     }
 
     @Test
