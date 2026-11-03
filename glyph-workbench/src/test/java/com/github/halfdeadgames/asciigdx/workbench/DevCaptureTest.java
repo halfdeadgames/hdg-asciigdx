@@ -24,6 +24,16 @@ class DevCaptureTest {
     }
 
     @Test
+    void guidesRequestIsARowIndexOrMinusOne() {
+        assertEquals(0, DevCapture.parseRowIndex("0"));
+        assertEquals(7, DevCapture.parseRowIndex(" 7 "));
+        assertEquals(-1, DevCapture.parseRowIndex("-4"));
+        assertEquals(-1, DevCapture.parseRowIndex("x"));
+        assertEquals(-1, DevCapture.parseRowIndex(""));
+        assertEquals(-1, DevCapture.parseRowIndex(null));
+    }
+
+    @Test
     void otherRequestsAreNotOverlayRequests() {
         assertNull(DevCapture.parseOverlayRequest(null));
         assertNull(DevCapture.parseOverlayRequest("menu"));

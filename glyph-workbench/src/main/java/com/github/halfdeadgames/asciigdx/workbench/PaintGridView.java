@@ -33,11 +33,15 @@ final class PaintGridView {
     private static final Color MARKER_OUTLINE = new Color(0x3A2000FF);
     private static final Color WIDTH_GUIDE_COLOR = new Color(0.55f, 0.95f, 0.4f, 1f);
 
+    private static final int HIGHLIGHT_THICKNESS = 6;
+    private static final Color HIGHLIGHT_COLOR = new Color(1f, 0.95f, 0.15f, 1f);
+
     private final Painter painter;
+    private PaintGuides.Listed highlighted;
     private String shownGroup = "";
     private PaintGuides.Shown shown = new PaintGuides.Shown(List.of(), List.of(), List.of());
     private final FontEditor editor;
-    private final PaintGuides guides;
+    private PaintGuides guides;
     private int left;
     private int top;
     private int pixelSize = MAX_PIXEL;
@@ -46,6 +50,12 @@ final class PaintGridView {
         this.painter = painter;
         this.editor = editor;
         this.guides = guides;
+    }
+
+    /** Switches to other guides; the next draw filters them again. */
+    void setGuides(PaintGuides newGuides) {
+        guides = newGuides;
+        shownGroup = "";
     }
 
     /** Picks the largest pixel size that fits the area, leaving room on the right for guide labels. */
@@ -108,6 +118,7 @@ final class PaintGridView {
         for (PaintGuides.BarGuide bar : shown.bars()) {
             drawBarGuide(bar);
         }
+        drawHighlight();
     }
 
     // Guides are filtered once per group change, not per frame.
@@ -200,6 +211,50 @@ final class PaintGridView {
         }
         painter.text(bar.label(), left + width + GUIDE_OVERHANG + Painter.TEXT_SIZE / 2,
             lineY - Painter.TEXT_SIZE / 2, BAR_GUIDE_COLOR);
+    }
+
+    /** Guide to draw thick and bright whatever its groups; null for none. Guides beyond the cell are not drawn. */
+    void setHighlight(PaintGuides.Listed guide) {
+        highlighted = guide;
+    }
+
+    private void drawHighlight() {
+        PaintGuides.Listed guide = highlighted;
+        if (guide == null) {
+            return;
+        }
+        int width = editor.cellWidth() * pixelSize;
+        int labelX = left + width + GUIDE_OVERHANG + Painter.TEXT_SIZE / 2;
+        switch (guide.kind()) {
+            case ROW -> {
+                if (guide.position() <= editor.cellHeight()) {
+                    int lineY = top + guide.position() * pixelSize;
+                    painter.fill(HIGHLIGHT_COLOR, left - GUIDE_OVERHANG, lineY - HIGHLIGHT_THICKNESS / 2,
+                        width + 2 * GUIDE_OVERHANG, HIGHLIGHT_THICKNESS);
+                    painter.text(guide.label(), labelX, lineY - Painter.TEXT_SIZE / 2, HIGHLIGHT_COLOR);
+                }
+            }
+            case COLUMN -> {
+                if (guide.position() <= editor.cellWidth()) {
+                    int lineX = left + guide.position() * pixelSize;
+                    painter.fill(HIGHLIGHT_COLOR, lineX - HIGHLIGHT_THICKNESS / 2, top - GUIDE_OVERHANG,
+                        HIGHLIGHT_THICKNESS, height() + 2 * GUIDE_OVERHANG);
+                    painter.text(guide.label(), lineX - guide.label().length() * Painter.TEXT_SIZE / 2,
+                        top - GUIDE_OVERHANG - Painter.TEXT_SIZE, HIGHLIGHT_COLOR);
+                }
+            }
+            case BAR -> {
+                if (guide.position() + guide.rowCount() <= editor.cellHeight()) {
+                    int lineY = top + Math.round(guide.centerRow() * pixelSize);
+                    int end = left + width + GUIDE_OVERHANG;
+                    for (int x = left - GUIDE_OVERHANG; x < end; x += 2 * BAR_DASH) {
+                        painter.fill(HIGHLIGHT_COLOR, x, lineY - HIGHLIGHT_THICKNESS / 2,
+                            Math.min(BAR_DASH, end - x), HIGHLIGHT_THICKNESS);
+                    }
+                    painter.text(guide.label(), labelX, lineY - Painter.TEXT_SIZE / 2, HIGHLIGHT_COLOR);
+                }
+            }
+        }
     }
 
     private void drawGuides() {

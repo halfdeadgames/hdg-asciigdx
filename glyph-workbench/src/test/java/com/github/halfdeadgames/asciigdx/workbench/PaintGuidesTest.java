@@ -160,6 +160,73 @@ class PaintGuidesTest {
         assertTrue(guides.forGroup(FontRules.PUNCTUATION, 8, 8).bars().isEmpty());
     }
 
+    private static final List<String> EVERY_GROUP =
+        List.of(FontRules.UPPERCASE, FontRules.LOWERCASE, FontRules.DIGITS, FontRules.PUNCTUATION);
+
+    private static void assertRoundTrips(String text) {
+        PaintGuides original = PaintGuides.parse(text);
+        String written = original.toText();
+        PaintGuides reread = PaintGuides.parse(written);
+        assertEquals(written, reread.toText());
+        assertEquals(original.accentRows(), reread.accentRows());
+        assertEquals(original.descenderFirstRow(), reread.descenderFirstRow());
+        assertEquals(original.isEmpty(), reread.isEmpty());
+        for (String group : EVERY_GROUP) {
+            assertEquals(original.forGroup(group, 8, 8), reread.forGroup(group, 8, 8));
+            assertEquals(original.forGroup(group, 4, 3), reread.forGroup(group, 4, 3));
+        }
+    }
+
+    @Test
+    void realSaiksisttGuidesWriteBackIdentically() throws IOException {
+        String repoRoot = System.getProperty("workbench.repoRoot");
+        assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
+        String fileText = Files.readString(Path.of(repoRoot, "fonts/saiksistt/8.guides.txt"), StandardCharsets.UTF_8)
+            .replace("\r\n", "\n");
+        assertEquals(fileText, PaintGuides.parse(fileText).toText());
+        assertRoundTrips(fileText);
+    }
+
+    @Test
+    void allKindsSampleRoundTrips() {
+        assertRoundTrips(SAMPLE);
+        assertRoundTrips("warn descender-from 6\nwarn accent-rows 2\n" + SAMPLE);
+    }
+
+    @Test
+    void emptyAndWarnOnlyTextRoundTrip() {
+        assertEquals("", PaintGuides.parse("").toText());
+        assertEquals("", PaintGuides.parse("# only a comment\n\n").toText());
+        assertEquals("", PaintGuides.NONE.toText());
+        assertRoundTrips("");
+        assertEquals("warn accent-rows 2\nwarn descender-from 7\n",
+            PaintGuides.parse("warn descender-from 7\nwarn accent-rows 2\n").toText());
+        assertEquals("warn descender-from 0\n", PaintGuides.parse("warn descender-from 0").toText());
+        assertRoundTrips("warn accent-rows 2\nwarn descender-from 7\n");
+        assertRoundTrips("warn descender-from 0\n");
+    }
+
+    @Test
+    void guideListingEveryGroupIsWrittenAsAll() {
+        assertEquals("row CAP 1 all\n",
+            PaintGuides.parse("row CAP 1 digits,Punctuation,LOWERCASE,uppercase").toText());
+        assertEquals("row CAP 1 all\n", PaintGuides.parse("row CAP 1 all").toText());
+    }
+
+    @Test
+    void groupOrderIsNormalized() {
+        assertEquals("row A 1 uppercase,lowercase,punctuation\n",
+            PaintGuides.parse("row A 1 punctuation,lowercase,uppercase").toText());
+        assertEquals("column B 2 uppercase,digits\n", PaintGuides.parse("column B 2 DIGITS,Uppercase").toText());
+        assertEquals("bar C 3 1 lowercase,punctuation\n", PaintGuides.parse("bar C 3 1 punctuation,lowercase").toText());
+    }
+
+    @Test
+    void guidesKeepTheirStoredOrderWithinAKind() {
+        assertEquals("row B 5 all\nrow A 2 digits\ncolumn Z 6 uppercase\ncolumn Y 1 lowercase\n",
+            PaintGuides.parse("column Z 6 uppercase\nrow B 5 all\ncolumn Y 1 lowercase\nrow A 2 digits\n").toText());
+    }
+
     @Test
     void barsDoNotSitOnARowLine() {
         PaintGuides guides = PaintGuides.parse(SAMPLE);

@@ -8,13 +8,15 @@ import com.badlogic.gdx.utils.ScreenUtils;
 /**
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and
  * {@code workbench.capture} saves a screenshot after a few frames, then exits, and
- * {@code workbench.derive} opens the derive menu or a source pick, and {@code workbench.tab} picks the preview tab.
+ * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
+ * and {@code workbench.guides} opens the guide list with that row selected.
  */
 final class DevCapture {
 
     static final String SELECT_PROPERTY = "workbench.select";
     static final String DERIVE_PROPERTY = "workbench.derive";
     static final String TAB_PROPERTY = "workbench.tab";
+    static final String GUIDES_PROPERTY = "workbench.guides";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -50,6 +52,22 @@ final class DevCapture {
             }
         }
         return null;
+    }
+
+    /** The row to select in the opened guide list named by {@code workbench.guides}, or -1 to leave the list closed. */
+    static int guidesRequest() {
+        return parseRowIndex(System.getProperty(GUIDES_PROPERTY));
+    }
+
+    static int parseRowIndex(String text) {
+        if (text == null) {
+            return -1;
+        }
+        try {
+            return Math.max(-1, Integer.parseInt(text.trim()));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /** The raw {@code workbench.derive} value, or null when unset. */

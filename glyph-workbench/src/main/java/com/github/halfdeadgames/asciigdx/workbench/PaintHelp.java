@@ -63,7 +63,7 @@ final class PaintHelp {
         {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
         {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL NOTE"}, {"D", "DERIVE"}, {"U", "UNLOCK DERIVED"},
         {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
-        {"F1", "RULES"}, {"ESC", "BACK"}};
+        {"F1", "RULES"}, {"F2", "GUIDES"}, {"ESC", "BACK"}};
     private static final String[][] MENU_CONTROLS = {
         {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
     private static final String[][] PICK_CONTROLS = {

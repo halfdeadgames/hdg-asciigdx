@@ -48,7 +48,23 @@ public final class PaintApp implements WorkbenchScreen {
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
-        new StatusBar.Key("CTRL+Z/Y", "UNDO"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
+        new StatusBar.Key("CTRL+Z", "UNDO"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("F2", "GUIDES"),
+        new StatusBar.Key("ESC", "BACK"));
+    private static final List<StatusBar.Key> GUIDE_LIST_KEYS = List.of(
+        new StatusBar.Key("ENTER", "SAVE"), new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<String[]> GUIDE_EDIT_LEGEND = List.of(
+        new String[] {"ARROWS", "PICK"}, new String[] {"[ ]", "MOVE"},
+        new String[] {"A C B", "ADD"}, new String[] {"DEL", "REMOVE"},
+        new String[] {"1-4", "GROUPS"}, new String[] {"L", "RENAME"});
+    private static final int GUIDE_LEGEND_ACTION_COLUMN = 8;
+    private static final int GUIDE_LEGEND_MIN_LIST_ROWS = 8;
+    private static final List<StatusBar.Key> GUIDE_RENAME_KEYS = List.of(
+        new StatusBar.Key("ENTER", "OK"), new StatusBar.Key("ESC", "CANCEL"));
+    private static final int[] GROUP_KEYS = {Input.Keys.NUM_1, Input.Keys.NUM_2, Input.Keys.NUM_3, Input.Keys.NUM_4};
+    private static final int[] GROUP_NUMPAD_KEYS = {
+        Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
+    // The L that starts a rename can also arrive as a typed character a frame later; it must not enter the text.
+    private static final int RENAME_KEY_SWALLOW_FRAMES = 2;
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
         new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
         new StatusBar.Key("ESC", "CANCEL"));
@@ -85,6 +101,8 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatDown = new KeyRepeat();
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
+    private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
+    private int renameKeySwallowFrames;
 
     private SpriteBatch batch;
     private Texture whitePixel;
@@ -115,6 +133,12 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
     private PaintGuides guides = PaintGuides.NONE;
+    private FileHandle guidesFile;
+    private boolean guidesFileUnreadable;
+    private GuideListModel guideList;
+    private boolean guideListOpen;
+    private float guideListSeconds;
+    private String guideListTitle = "GUIDES";
     private int shownNoteFor = -1;
     private PaintHelp.State helpShownState;
     private int helpShownChars;
@@ -181,6 +205,7 @@ public final class PaintApp implements WorkbenchScreen {
         sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
+        guideList = new GuideListModel(guides, editor.cellWidth(), editor.cellHeight());
         preview = new PaintPreview(painter, editor);
         PreviewTabs.Tab requestedTab = DevCapture.requestedTab();
         if (requestedTab != null) {
@@ -195,8 +220,193 @@ public final class PaintApp implements WorkbenchScreen {
                 wheelTicks += amountY > 0 ? 1 : amountY < 0 ? -1 : 0;
                 return true;
             }
+
+            @Override
+            public boolean keyTyped(char character) {
+                if (!guideListOpen || !guideList.isRenaming() || rules.isOpen()) {
+                    return false;
+                }
+                boolean startingKey = character == 'l' || character == 'L';
+                if (!(renameKeySwallowFrames > 0 && startingKey)) {
+                    guideList.typeChar(character);
+                }
+                return true;
+            }
         });
         openDeriveForCapture();
+        int guideRequest = DevCapture.guidesRequest();
+        if (guideRequest >= 0 && flow.mode() == DeriveFlow.Mode.IDLE) {
+            guideList.select(guideRequest);
+            openGuideList();
+        }
+    }
+
+    private void openGuideList() {
+        messages.nextAction();
+        stroke.end();
+        guideListOpen = true;
+        guideListSeconds = 0f;
+        refreshGuideListTitle();
+    }
+
+    private void refreshGuideListTitle() {
+        guideListTitle = "GUIDES " + (guideList.selectedIndex() + 1) + "/" + guideList.size();
+        guideListSeconds = 0f;
+    }
+
+    private void closeGuideList() {
+        guideListOpen = false;
+        wheelTicks = 0;
+        guideList = new GuideListModel(guides, editor.cellWidth(), editor.cellHeight());
+    }
+
+    // Guide edits are live; the grid and the rule warnings are told so they drop what they cached.
+    private void showGuides(PaintGuides shownGuides) {
+        guides = shownGuides;
+        grid.setGuides(shownGuides);
+        ruleRevision = -1;
+    }
+
+    // Writes nothing when the list is unchanged, so comments in the file survive a look at the list.
+    private void saveGuides() {
+        messages.nextAction();
+        if (!guideList.isChanged()) {
+            messages.ok("Guides unchanged");
+            closeGuideList();
+            return;
+        }
+        if (guidesFileUnreadable) {
+            messages.warn("Not saved: " + guidesFile.name() + " could not be read and would be overwritten");
+            return;
+        }
+        try {
+            AtomicFiles.write(guidesFile.file().toPath(), guideList.guides().toText());
+            guidesFileUnreadable = false;
+            messages.ok("Saved " + guidesFile.name());
+            closeGuideList();
+        } catch (java.io.IOException e) {
+            messages.warn("Save failed: see log");
+            Gdx.app.error(TAG, "Cannot write " + guidesFile.path() + ": " + e.getMessage());
+        }
+    }
+
+    // Returns whether a key changed the guides.
+    private boolean handleGuideEditKeys() {
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+            return false;
+        }
+        boolean edited = true;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
+            guideList.adjust(-1);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
+            guideList.adjust(1);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+            guideList.addRow();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
+            guideList.addColumn();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.B)) {
+            guideList.addBar();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)) {
+            guideList.deleteSelected();
+        } else if (pressedGroupKey() >= 0) {
+            edited = toggleGroup(pressedGroupKey());
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            if (guideList.beginRename()) {
+                messages.nextAction();
+                renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;
+            }
+            edited = false;
+        } else {
+            edited = false;
+        }
+        return edited;
+    }
+
+    // Index of the group whose key (top row or numpad) was just pressed, or -1.
+    private static int pressedGroupKey() {
+        for (int i = 0; i < GROUP_KEYS.length; i++) {
+            if (Gdx.input.isKeyJustPressed(GROUP_KEYS[i]) || Gdx.input.isKeyJustPressed(GROUP_NUMPAD_KEYS[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Returns whether the groups changed; a refusal shows a warning and changes nothing.
+    private boolean toggleGroup(int groupIndex) {
+        GuideListModel.GroupToggle result = guideList.toggleGroup(groupIndex);
+        if (result == GuideListModel.GroupToggle.LAST_GROUP) {
+            messages.warn("A guide needs at least one group");
+        }
+        return result == GuideListModel.GroupToggle.TOGGLED;
+    }
+
+    // Only Enter, Esc, and Backspace act here; typed characters arrive through keyTyped. Returning right after
+    // Enter or Esc keeps that key from also saving or closing the list in the same frame.
+    private void handleRename(float delta) {
+        wheelTicks = 0;
+        renameKeySwallowFrames = Math.max(0, renameKeySwallowFrames - 1);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            guideList.cancelRename();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            if (guideList.acceptRename()) {
+                messages.nextAction();
+                showGuides(guideList.guides());
+                refreshGuideListTitle();
+            } else {
+                messages.warn("A label needs at least one character");
+            }
+            return;
+        }
+        int backspaces = repeatLabelBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            guideList.backspace();
+        }
+    }
+
+    // Esc and F2 cancel the edits here, so Esc never reaches the unsaved-changes prompt.
+    private void handleGuideList(float delta) {
+        if (guideList.isRenaming()) {
+            handleRename(delta);
+            return;
+        }
+        repeatLabelBackspace.update(false, 0f);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
+            showGuides(guideList.original());
+            closeGuideList();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            saveGuides();
+            return;
+        }
+        int step = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta)
+            - repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
+        if (wheelTicks != 0) {
+            pointer.set(Gdx.input.getX(), Gdx.input.getY());
+            viewport.unproject(pointer);
+            int column = Math.floorDiv((int) Math.floor(pointer.x), TEXT_LINE);
+            int row = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), TEXT_LINE);
+            ReviewLayout.Rect area = rects.note();
+            if (column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom()) {
+                step += wheelTicks;
+            }
+            wheelTicks = 0;
+        }
+        if (step != 0) {
+            int before = guideList.selectedIndex();
+            guideList.move(step);
+            if (guideList.selectedIndex() != before) {
+                refreshGuideListTitle();
+            }
+        }
+        if (handleGuideEditKeys()) {
+            messages.nextAction();
+            showGuides(guideList.guides());
+            refreshGuideListTitle();
+        }
     }
 
     private void openDeriveForCapture() {
@@ -246,13 +456,14 @@ public final class PaintApp implements WorkbenchScreen {
 
     // A missing guides file means no guides; a bad one warns and also means no guides.
     private void loadGuides(FileHandle directory) {
-        FileHandle guidesFile = directory.child(fontSize + ".guides.txt");
+        guidesFile = directory.child(fontSize + ".guides.txt");
         if (!guidesFile.exists()) {
             return;
         }
         try {
             guides = PaintGuides.parse(guidesFile.readString("UTF-8"));
         } catch (IllegalArgumentException | GdxRuntimeException e) {
+            guidesFileUnreadable = true;
             messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
             Gdx.app.error(TAG, "Cannot read " + guidesFile.path() + ": " + e.getMessage());
         }
@@ -293,6 +504,14 @@ public final class PaintApp implements WorkbenchScreen {
         if (confirmingQuit) {
             handleQuitPrompt();
             wheelTicks = 0;
+            return;
+        }
+        if (guideListOpen) {
+            handleGuideList(delta);
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F2) && flow.mode() == DeriveFlow.Mode.IDLE) {
+            openGuideList();
             return;
         }
         boolean control = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
@@ -933,13 +1152,14 @@ public final class PaintApp implements WorkbenchScreen {
         line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
         Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
         ghostSeconds += Gdx.graphics.getDeltaTime();
+        grid.setHighlight(guideListOpen ? guideList.selectedGuide() : null);
         grid.draw(codePoint, pickShown, pendingGhost(), ghostSeconds);
         preview.draw(rects.preview(), codePoint, pickShown);
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
         messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns, rows - 1,
-            !choosingSource ? KEYS : flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS);
+            guideListOpen ? (guideList.isRenaming() ? GUIDE_RENAME_KEYS : GUIDE_LIST_KEYS) : !choosingSource ? KEYS : flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS);
         if (confirmingQuit) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
@@ -973,6 +1193,11 @@ public final class PaintApp implements WorkbenchScreen {
             shownNoteFor = codePoint;
             notePanel.resetDisplayScroll();
         }
+        if (guideListOpen) {
+            drawGuideList(rects.note());
+            notePanel.markHidden();
+            return;
+        }
         ReviewFile.Answer answer = review.get(codePoint);
         boolean hasNote = answer != null && !answer.note().isEmpty();
         helpRect = PaintLayout.helpArea(rects, hasNote);
@@ -981,6 +1206,45 @@ public final class PaintApp implements WorkbenchScreen {
             notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
         } else {
             notePanel.markHidden();
+        }
+    }
+
+    // One row per text line; only the selected row bounces when it is too long, the others are cut.
+    private void drawGuideList(ReviewLayout.Rect area) {
+        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), guideListTitle, true);
+        guideListSeconds += Gdx.graphics.getDeltaTime();
+        int visible = area.height() - 2;
+        int chars = Math.max(1, area.width() - 2 - 2 * HELP_PADDING);
+        if (visible - GUIDE_EDIT_LEGEND.size() >= GUIDE_LEGEND_MIN_LIST_ROWS) {
+            visible -= GUIDE_EDIT_LEGEND.size();
+            if (!guideList.isRenaming()) {
+                drawGuideLegend(area, visible);
+            }
+        }
+        int first = guideList.firstVisible(visible);
+        int shown = Math.min(visible, guideList.size() - first);
+        for (int i = 0; i < shown; i++) {
+            int index = first + i;
+            String text = guideList.row(index).text();
+            int top = (area.y() + 1 + i) * TEXT_LINE;
+            int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+            if (index == guideList.selectedIndex()) {
+                painter.fill(UiPalette.KEYBG, (area.x() + 1) * TEXT_LINE, top, (area.width() - 2) * TEXT_LINE, TEXT_LINE);
+                painter.text("►", (area.x() + 1) * TEXT_LINE, top, UiPalette.ACCENT);
+                painter.text(BounceScroll.window(text, chars, guideListSeconds), textX, top, UiPalette.ACCENT);
+            } else {
+                painter.text(text.length() > chars ? text.substring(0, chars) : text, textX, top, UiPalette.TEXT);
+            }
+        }
+    }
+
+    private void drawGuideLegend(ReviewLayout.Rect area, int rowsAbove) {
+        int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+        for (int i = 0; i < GUIDE_EDIT_LEGEND.size(); i++) {
+            String[] entry = GUIDE_EDIT_LEGEND.get(i);
+            int top = (area.y() + 1 + rowsAbove + i) * TEXT_LINE;
+            painter.text(entry[0], textX, top, UiPalette.TITLE);
+            painter.text(entry[1], textX + GUIDE_LEGEND_ACTION_COLUMN * TEXT_LINE, top, UiPalette.TEXT);
         }
     }
 

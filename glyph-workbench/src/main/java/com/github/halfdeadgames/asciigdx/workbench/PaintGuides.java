@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -73,11 +74,197 @@ final class PaintGuides {
 
     private PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
                         WarnSettings warnSettings) {
-        this.rows = rows;
-        this.columns = columns;
-        this.bars = bars;
-        this.accentRows = warnSettings.accentRows;
-        this.descenderFirstRow = warnSettings.descenderFirstRow;
+        this(rows, columns, bars, warnSettings.accentRows, warnSettings.descenderFirstRow);
+    }
+
+    private PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
+                        OptionalInt accentRows, OptionalInt descenderFirstRow) {
+        this.rows = List.copyOf(rows);
+        this.columns = List.copyOf(columns);
+        this.bars = List.copyOf(bars);
+        this.accentRows = accentRows;
+        this.descenderFirstRow = descenderFirstRow;
+    }
+
+    private static final String NEW_LABEL = "NEW";
+
+    /** A copy with a row guide labelled NEW at position 0 for every group, last among the rows. */
+    PaintGuides withRowAdded() {
+        List<Scoped<Guide>> edited = new ArrayList<>(rows);
+        edited.add(new Scoped<>(new Guide(NEW_LABEL, 0), Set.copyOf(ALL_GROUPS)));
+        return new PaintGuides(edited, columns, bars, accentRows, descenderFirstRow);
+    }
+
+    /** A copy with a column guide labelled NEW at position 0 for every group, last among the columns. */
+    PaintGuides withColumnAdded() {
+        List<Scoped<WidthGuide>> edited = new ArrayList<>(columns);
+        edited.add(new Scoped<>(new WidthGuide(NEW_LABEL, 0, 0), Set.copyOf(ALL_GROUPS)));
+        return new PaintGuides(rows, edited, bars, accentRows, descenderFirstRow);
+    }
+
+    /** A copy with a one-row bar labelled NEW at row 0 for every group, last among the bars. */
+    PaintGuides withBarAdded() {
+        List<Scoped<BarGuide>> edited = new ArrayList<>(bars);
+        edited.add(new Scoped<>(new BarGuide(NEW_LABEL, 0, 1), Set.copyOf(ALL_GROUPS)));
+        return new PaintGuides(rows, columns, edited, accentRows, descenderFirstRow);
+    }
+
+    /** A copy without the guide at {@code index} of {@link #allGuides()}; an index out of range changes nothing. */
+    PaintGuides withoutGuide(int index) {
+        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+            return this;
+        }
+        List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
+        List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
+        List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        if (index < rows.size()) {
+            editedRows.remove(index);
+        } else if (index < rows.size() + columns.size()) {
+            editedColumns.remove(index - rows.size());
+        } else {
+            editedBars.remove(index - rows.size() - columns.size());
+        }
+        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+    }
+
+    /**
+     * A copy with the position of the guide at {@code index} of {@link #allGuides()} moved by {@code delta}, kept
+     * inside the cell: rows and bars to 0..cellHeight (a bar so it still ends within the cell), columns to
+     * 0..cellWidth.
+     */
+    PaintGuides withGuideMoved(int index, int delta, int cellWidth, int cellHeight) {
+        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+            return this;
+        }
+        List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
+        List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
+        List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        if (index < rows.size()) {
+            Scoped<Guide> row = rows.get(index);
+            editedRows.set(index, new Scoped<>(new Guide(row.guide().label(),
+                clamp(row.guide().boundaryRow() + delta, cellHeight)), row.groups()));
+        } else if (index < rows.size() + columns.size()) {
+            int at = index - rows.size();
+            Scoped<WidthGuide> column = columns.get(at);
+            editedColumns.set(at, new Scoped<>(new WidthGuide(column.guide().label(),
+                clamp(column.guide().boundaryColumn() + delta, cellWidth), column.guide().tier()), column.groups()));
+        } else {
+            int at = index - rows.size() - columns.size();
+            Scoped<BarGuide> bar = bars.get(at);
+            int rowCount = bar.guide().rowCount();
+            editedBars.set(at, new Scoped<>(new BarGuide(bar.guide().label(),
+                clamp(bar.guide().firstRow() + delta, cellHeight - rowCount), rowCount), bar.groups()));
+        }
+        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+    }
+
+    /** How many rules groups a guide can be set for. */
+    static int groupCount() {
+        return ALL_GROUPS.size();
+    }
+
+    /**
+     * A copy with one rules group switched on or off for the guide at {@code index} of {@link #allGuides()};
+     * {@code groupIndex} counts uppercase, lowercase, digits, punctuation from 0. Returns this same object when
+     * nothing changes: an index out of range, or switching off the last remaining group.
+     */
+    PaintGuides withGroupToggled(int index, int groupIndex) {
+        if (index < 0 || index >= rows.size() + columns.size() + bars.size()
+            || groupIndex < 0 || groupIndex >= ALL_GROUPS.size()) {
+            return this;
+        }
+        Set<String> toggled = new LinkedHashSet<>(groupsAt(index));
+        String group = ALL_GROUPS.get(groupIndex);
+        if (!toggled.remove(group)) {
+            toggled.add(group);
+        } else if (toggled.isEmpty()) {
+            return this;
+        }
+        return withGuideEdited(index, null, toggled);
+    }
+
+    /** A copy with the label of the guide at {@code index} of {@link #allGuides()} replaced. */
+    PaintGuides withGuideRelabeled(int index, String label) {
+        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+            return this;
+        }
+        return withGuideEdited(index, label, groupsAt(index));
+    }
+
+    private Set<String> groupsAt(int index) {
+        if (index < rows.size()) {
+            return rows.get(index).groups();
+        }
+        if (index < rows.size() + columns.size()) {
+            return columns.get(index - rows.size()).groups();
+        }
+        return bars.get(index - rows.size() - columns.size()).groups();
+    }
+
+    // A null label keeps the current one.
+    private PaintGuides withGuideEdited(int index, String label, Set<String> groups) {
+        List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
+        List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
+        List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        if (index < rows.size()) {
+            Guide row = rows.get(index).guide();
+            editedRows.set(index, new Scoped<>(
+                new Guide(label != null ? label : row.label(), row.boundaryRow()), groups));
+        } else if (index < rows.size() + columns.size()) {
+            int at = index - rows.size();
+            WidthGuide column = columns.get(at).guide();
+            editedColumns.set(at, new Scoped<>(
+                new WidthGuide(label != null ? label : column.label(), column.boundaryColumn(), column.tier()), groups));
+        } else {
+            int at = index - rows.size() - columns.size();
+            BarGuide bar = bars.get(at).guide();
+            editedBars.set(at, new Scoped<>(
+                new BarGuide(label != null ? label : bar.label(), bar.firstRow(), bar.rowCount()), groups));
+        }
+        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+    }
+
+    private static int clamp(int value, int maximum) {
+        return Math.max(0, Math.min(Math.max(0, maximum), value));
+    }
+
+    int rowCount() {
+        return rows.size();
+    }
+
+    int columnCount() {
+        return columns.size();
+    }
+
+    int barCount() {
+        return bars.size();
+    }
+
+    /** A copy with the accent-rows setting changed by {@code delta} within 0..cellHeight; an unset one becomes 0 on a rise and stays unset on a fall. */
+    PaintGuides withAccentRowsMoved(int delta, int cellHeight) {
+        return new PaintGuides(rows, columns, bars, movedSetting(accentRows, delta, cellHeight), descenderFirstRow);
+    }
+
+    /** A copy with the descender first row changed by {@code delta}, with the same rules as the accent rows. */
+    PaintGuides withDescenderFirstRowMoved(int delta, int cellHeight) {
+        return new PaintGuides(rows, columns, bars, accentRows, movedSetting(descenderFirstRow, delta, cellHeight));
+    }
+
+    private static OptionalInt movedSetting(OptionalInt setting, int delta, int cellHeight) {
+        if (setting.isEmpty()) {
+            return delta > 0 ? OptionalInt.of(0) : setting;
+        }
+        return OptionalInt.of(clamp(setting.getAsInt() + delta, cellHeight));
+    }
+
+    /** A copy with the accent-rows warn setting off. */
+    PaintGuides withoutAccentRows() {
+        return new PaintGuides(rows, columns, bars, OptionalInt.empty(), descenderFirstRow);
+    }
+
+    /** A copy with the descender warn setting off. */
+    PaintGuides withoutDescenderFirstRow() {
+        return new PaintGuides(rows, columns, bars, accentRows, OptionalInt.empty());
     }
 
     /** Reads the file text. Throws {@link IllegalArgumentException} naming the line on a bad line. */
@@ -181,6 +368,84 @@ final class PaintGuides {
             }
         }
         throw new IllegalArgumentException("unknown group '" + name + "'");
+    }
+
+    /**
+     * The file text that {@link #parse} reads back as the same guides and warn settings: warn lines, then rows,
+     * columns, and bars, each kind in its stored order. Comments and blank lines are not kept.
+     */
+    String toText() {
+        StringBuilder text = new StringBuilder();
+        if (accentRows.isPresent()) {
+            text.append("warn accent-rows ").append(accentRows.getAsInt()).append('\n');
+        }
+        if (descenderFirstRow.isPresent()) {
+            text.append("warn descender-from ").append(descenderFirstRow.getAsInt()).append('\n');
+        }
+        for (Scoped<Guide> row : rows) {
+            text.append("row ").append(row.guide().label()).append(' ').append(row.guide().boundaryRow())
+                .append(' ').append(groupsText(row.groups())).append('\n');
+        }
+        for (Scoped<WidthGuide> column : columns) {
+            text.append("column ").append(column.guide().label()).append(' ').append(column.guide().boundaryColumn())
+                .append(' ').append(groupsText(column.groups())).append('\n');
+        }
+        for (Scoped<BarGuide> bar : bars) {
+            text.append("bar ").append(bar.guide().label()).append(' ').append(bar.guide().firstRow())
+                .append(' ').append(bar.guide().rowCount()).append(' ').append(groupsText(bar.groups())).append('\n');
+        }
+        return text.toString();
+    }
+
+    private static String groupsText(Set<String> groups) {
+        if (groups.size() == ALL_GROUPS.size()) {
+            return "all";
+        }
+        StringBuilder names = new StringBuilder();
+        for (String group : ALL_GROUPS) {
+            if (groups.contains(group)) {
+                if (names.length() > 0) {
+                    names.append(',');
+                }
+                names.append(group.toLowerCase(Locale.ROOT));
+            }
+        }
+        return names.toString();
+    }
+
+    enum ListedKind { ROW, COLUMN, BAR }
+
+    /**
+     * One guide as the guide list shows it, whatever its kind.
+     *
+     * @param position boundary row, boundary column, or first row of a bar
+     * @param rowCount rows in a bar, 0 for the other kinds
+     * @param groups the groups text as {@link #toText} writes it, such as {@code all} or {@code lowercase,digits}
+     */
+    record Listed(ListedKind kind, String label, int position, int rowCount, String groups) {
+
+        /** Middle of a bar's band in rows from the top of the grid. */
+        float centerRow() {
+            return position + rowCount / 2f;
+        }
+    }
+
+    /** Every guide, group-filtered or not, in the order {@link #toText} writes them: rows, columns, then bars. */
+    List<Listed> allGuides() {
+        List<Listed> all = new ArrayList<>();
+        for (Scoped<Guide> row : rows) {
+            all.add(new Listed(ListedKind.ROW, row.guide().label(), row.guide().boundaryRow(), 0,
+                groupsText(row.groups())));
+        }
+        for (Scoped<WidthGuide> column : columns) {
+            all.add(new Listed(ListedKind.COLUMN, column.guide().label(), column.guide().boundaryColumn(), 0,
+                groupsText(column.groups())));
+        }
+        for (Scoped<BarGuide> bar : bars) {
+            all.add(new Listed(ListedKind.BAR, bar.guide().label(), bar.guide().firstRow(), bar.guide().rowCount(),
+                groupsText(bar.groups())));
+        }
+        return List.copyOf(all);
     }
 
     /** Rows at the top reserved for accents, or empty when the file leaves the accent check off. */
