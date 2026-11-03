@@ -28,7 +28,7 @@ final class PaintGuides {
     private static final int SAIKSISTT_CELL = 8;
 
     /**
-     * Bars of capitals and digits sit on row 3 (the 4 on row 5) and bars of lowercase letters on row 4,
+     * Bars of capitals and digits sit on row 3 (the 4 on row 5) and bars of lowercase letters on row 4 (f and t on row 2),
      * scaled by width / 8; other groups have none.
      */
     static BarGuide saiksisttBar(int codePoint, String groupName, int cellWidth) {
@@ -36,7 +36,7 @@ final class PaintGuides {
         return switch (groupName) {
             case "Uppercase" -> new BarGuide("BAR", 3 * scale, scale);
             case "Digits" -> new BarGuide("BAR", (codePoint == '4' ? 5 : 3) * scale, scale);
-            case "Lowercase" -> new BarGuide("BAR", 4 * scale, scale);
+            case "Lowercase" -> new BarGuide("BAR", (codePoint == 'f' || codePoint == 't' ? 2 : 4) * scale, scale);
             default -> null;
         };
     }

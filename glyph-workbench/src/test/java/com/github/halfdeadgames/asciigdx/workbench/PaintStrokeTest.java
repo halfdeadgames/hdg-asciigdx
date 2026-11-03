@@ -254,6 +254,8 @@ class PaintStrokeTest {
         assertEquals("BAR", upper.label());
         assertEquals(3.5f, upper.centerRow());
         assertEquals(4.5f, PaintGuides.saiksisttBar('a', "Lowercase", 8).centerRow());
+        assertEquals(2.5f, PaintGuides.saiksisttBar('f', "Lowercase", 8).centerRow());
+        assertEquals(2.5f, PaintGuides.saiksisttBar('t', "Lowercase", 8).centerRow());
         assertEquals(7f, PaintGuides.saiksisttBar('A', "Uppercase", 16).centerRow());
         assertEquals(9f, PaintGuides.saiksisttBar('a', "Lowercase", 16).centerRow());
     }

@@ -34,7 +34,7 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - Lowercase ascenders (b d h k l) start on row 0, so they stand taller than capitals. f is shorter and starts on row 1.
 - Lowercase letters put at most one pixel on row 0. The slab on l is an accepted exception. Row 0 ink can touch descenders on the line above; games that want space between lines add line spacing.
 - Accented ascender letters (such as ĥ) are drawn by hand: ascender, a blank row, then the accent.
-- Lowercase bars sit on row 4, the middle of the x-height (e f t).
+- The bars of e and t follow the x-height: e on row 4, its middle, and t on row 2, its top. f is an exception: its bar sits on row 3, leaving a blank row under its hook.
 - a: one-story, with a small tail at the bottom right so it never reads as o.
 - g: one-story.
 - l has a tail curving right.
