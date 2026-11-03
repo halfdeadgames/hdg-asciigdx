@@ -30,6 +30,7 @@ Rules shared by every font in this project. Each font adds its own rules in `fon
 
 ## Matching glyphs
 - A glyph that is an inverse, rotation, mirror, or repeat of another glyph is derived from it, never redrawn.
+- Letters are the exception: draw every letter by hand, even when it mirrors another (b d p q), so each one can be tuned.
 - Rotations and mirrors turn the glyph body only. The letter gap stays on the right.
 - Edit the source glyph. Derived glyphs update on export.
 
