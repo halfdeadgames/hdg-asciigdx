@@ -66,6 +66,20 @@ class PreviewTabsTest {
     }
 
     @Test
+    void nextMovesForwardAndWrapsToTheFirstTab() {
+        assertEquals(PreviewTabs.Tab.TILE, PreviewTabs.next(PreviewTabs.Tab.SCALES));
+        assertEquals(PreviewTabs.Tab.TEXT, PreviewTabs.next(PreviewTabs.Tab.TILE));
+        assertEquals(PreviewTabs.Tab.SCALES, PreviewTabs.next(PreviewTabs.Tab.TEXT));
+    }
+
+    @Test
+    void previousMovesBackwardAndWrapsToTheLastTab() {
+        assertEquals(PreviewTabs.Tab.TILE, PreviewTabs.previous(PreviewTabs.Tab.TEXT));
+        assertEquals(PreviewTabs.Tab.SCALES, PreviewTabs.previous(PreviewTabs.Tab.TILE));
+        assertEquals(PreviewTabs.Tab.TEXT, PreviewTabs.previous(PreviewTabs.Tab.SCALES));
+    }
+
+    @Test
     void midWidthKeepsFullNamesWithATighterGap() {
         ReviewLayout.Rect mid = new ReviewLayout.Rect(0, 0, 19, 7);
         assertEquals("SCALES", PreviewTabs.label(mid, PreviewTabs.Tab.SCALES));

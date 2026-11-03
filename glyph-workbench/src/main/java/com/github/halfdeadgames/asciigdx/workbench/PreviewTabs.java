@@ -51,6 +51,14 @@ final class PreviewTabs {
         return null;
     }
 
+    static Tab next(Tab tab) {
+        return TABS[(tab.ordinal() + 1) % TABS.length];
+    }
+
+    static Tab previous(Tab tab) {
+        return TABS[(tab.ordinal() + TABS.length - 1) % TABS.length];
+    }
+
     private static String[] labelsFor(int panelWidth) {
         return fits(LABELS, 1, panelWidth) ? LABELS : SHORT_LABELS;
     }

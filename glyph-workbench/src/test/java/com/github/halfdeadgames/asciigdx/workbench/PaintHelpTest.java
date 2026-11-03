@@ -79,7 +79,7 @@ class PaintHelpTest {
         assertNotNull(unlock);
         assertEquals("UNLOCK DERIVED", unlock.action());
         assertTrue(unlock.action().length() > WIDTH - unlock.actionColumn());
-        assertEquals(21, rows.size());
+        assertEquals(22, rows.size());
         assertNotNull(find(rows, "F2"));
         assertEquals("GUIDES", find(rows, "F2").action());
         assertTrue(plain(rows).stream().noneMatch(line -> line.startsWith("  ")));

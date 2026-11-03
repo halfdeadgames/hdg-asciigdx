@@ -676,6 +676,7 @@ public final class PaintApp implements WorkbenchScreen {
                 return;
             }
         }
+        handlePreviewTabKey();
         moveCursor(delta);
         handleScrollKeys();
         trackPointer();
@@ -757,6 +758,13 @@ public final class PaintApp implements WorkbenchScreen {
         }
         gapWatchGlyph = codePoint;
         gapWatchInk = ink;
+    }
+
+    private void handlePreviewTabKey() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+            boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+            preview.cycleTab(shift);
+        }
     }
 
     // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active.

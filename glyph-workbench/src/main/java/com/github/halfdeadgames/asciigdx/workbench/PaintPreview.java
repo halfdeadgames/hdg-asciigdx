@@ -64,6 +64,10 @@ final class PaintPreview {
         activeTab = tab;
     }
 
+    void cycleTab(boolean backward) {
+        activeTab = backward ? PreviewTabs.previous(activeTab) : PreviewTabs.next(activeTab);
+    }
+
     /** Switches tab when the clicked text cell is on a tab label; returns whether it was. */
     boolean click(ReviewLayout.Rect rect, int column, int row) {
         PreviewTabs.Tab tab = PreviewTabs.tabAt(rect, column, row);

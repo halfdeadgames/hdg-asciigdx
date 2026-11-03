@@ -60,7 +60,7 @@ final class PaintHelp {
 
     // Each control is {key, action}; a block lines its actions up in one column.
     private static final String[][] PAINT_CONTROLS = {
-        {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
+        {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
         {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}, {"D", "DERIVE"}, {"U", "UNLOCK DERIVED"},
         {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
         {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
@@ -68,10 +68,10 @@ final class PaintHelp {
     private static final String[][] MENU_CONTROLS = {
         {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
     private static final String[][] PICK_CONTROLS = {
-        {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"}, {"ESC", "CANCEL"}};
+        {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] OVERLAY_CONTROLS = {
         {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"ENTER", "ADD PART"},
-        {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"ESC", "CANCEL"}};
+        {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] REPLACE_CONTROLS = {{"R", "REPLACE"}, {"ESC", "BACK"}};
 
     private PaintHelp() {
