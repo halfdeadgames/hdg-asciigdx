@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 final class PaintSheetView {
 
     static final int COLUMNS = 16;
+    static final int GAP = 1;
     private static final int TEXT = Painter.TEXT_SIZE;
     private static final int BAR_WIDTH = TEXT;
     private static final int TARGET_CELL_PIXELS = 24;
@@ -32,10 +33,16 @@ final class PaintSheetView {
     private final int frameTop;
     private final int pixelScale;
     private final int rows;
-    private final SheetGridLayout layout;
+    private SheetGridLayout layout;
     private final ScrollState scroll;
+    // Reuses the row scroller with glyph columns as its rows.
+    private final ScrollState columnScroll = new ScrollState(COLUMNS);
+    private boolean columnsChanged;
+    private boolean draggingColumnBar;
+    private int columnGrabOffset;
     private final StringBuilder barGlyph = new StringBuilder(1);
     private Color[] marks;
+    private int visibleColumns;
     private int frameCellsWide;
     private int frameCellsHigh;
     private int barLeft;
@@ -46,33 +53,77 @@ final class PaintSheetView {
         this.editor = editor;
         this.frameLeft = frameLeft;
         this.frameTop = frameTop;
-        pixelScale = Math.max(1, (TARGET_CELL_PIXELS + editor.cellWidth() - 1) / editor.cellWidth());
+        pixelScale = Math.max(1, Math.min(
+            ceilDiv(TARGET_CELL_PIXELS, editor.cellWidth()), ceilDiv(TARGET_CELL_PIXELS, editor.cellHeight())));
         rows = editor.slotCount() / COLUMNS;
-        int cellSize = Math.max(editor.cellWidth(), editor.cellHeight()) * pixelScale;
-        layout = new SheetGridLayout(frameLeft + TEXT, frameTop + TEXT, cellSize, 1, COLUMNS, rows);
         scroll = new ScrollState(rows);
-        int innerWidth = Painter.roundUpToCells(layout.panelWidth() + BAR_WIDTH);
-        frameCellsWide = innerWidth / TEXT + 2;
-        barLeft = layout.left() + innerWidth - BAR_WIDTH;
+        setVisibleColumns(COLUMNS);
+    }
+
+    private static int ceilDiv(int value, int divisor) {
+        return (value + divisor - 1) / divisor;
+    }
+
+    /** Pixel width of one slot on the sheet. */
+    int slotWidth() {
+        return editor.cellWidth() * pixelScale;
+    }
+
+    /** Shows a window of glyph columns; the frame shrinks to fit them. Slot numbers do not change. */
+    void setVisibleColumns(int columns) {
+        int clamped = Math.max(1, Math.min(COLUMNS, columns));
+        if (clamped == visibleColumns) {
+            return;
+        }
+        visibleColumns = clamped;
+        columnScroll.setVisibleRows(visibleColumns);
+        columnsChanged = true;
+        frameCellsWide = PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP);
+        int inset = PaintColumns.panelInset(frameCellsWide, visibleColumns * (slotWidth() + GAP) + GAP);
+        layout = new SheetGridLayout(frameLeft + TEXT + inset, frameTop + TEXT,
+            slotWidth(), editor.cellHeight() * pixelScale, GAP, COLUMNS, visibleColumns, rows);
+        barLeft = frameLeft + (frameCellsWide - 2) * TEXT;
     }
 
     ScrollState scroll() {
         return scroll;
     }
 
+    /** First visible glyph column. */
+    int firstColumn() {
+        return columnScroll.offset();
+    }
+
+    ScrollState columnScroll() {
+        return columnScroll;
+    }
+
     int frameRight() {
         return frameLeft + frameCellsWide * TEXT;
     }
 
-    /** Fits the frame to the window height; keeps the cursor row visible when asked or when the size changed. */
+    /** Scrolls both ways, the least amount that shows the slot. */
+    void keepVisible(int slot) {
+        scroll.keepVisible(slot / COLUMNS);
+        columnScroll.keepVisible(slot % COLUMNS);
+    }
+
+    private boolean columnBarShown() {
+        return columnScroll.needed();
+    }
+
+    /** Fits the frame to the window height; keeps the cursor visible when asked or when the size changed. */
     void fitToHeight(int worldHeight, int margin, int cursorSlot, boolean revealCursor) {
         frameCellsHigh = Math.max(3, (worldHeight - frameTop - margin) / TEXT);
-        int innerHeight = (frameCellsHigh - 2) * TEXT;
-        barCells = innerHeight / TEXT;
+        barCells = Math.max(1, frameCellsHigh - 2 - (columnBarShown() ? 1 : 0));
         int before = scroll.visibleRows();
-        scroll.setVisibleRows(layout.rowsThatFit(innerHeight));
+        scroll.setVisibleRows(layout.rowsThatFit(barCells * TEXT));
         if (revealCursor || before != scroll.visibleRows()) {
             scroll.keepVisible(cursorSlot / COLUMNS);
+        }
+        if (revealCursor || columnsChanged) {
+            columnScroll.keepVisible(cursorSlot % COLUMNS);
+            columnsChanged = false;
         }
     }
 
@@ -83,7 +134,7 @@ final class PaintSheetView {
 
     /** Slot under a pixel, or -1. */
     int slotAt(int pixelX, int pixelY) {
-        return layout.cellAt(pixelX, pixelY, scroll.offset(), scroll.visibleRows());
+        return layout.cellAt(pixelX, pixelY, scroll.offset(), scroll.visibleRows(), columnScroll.offset());
     }
 
     /** Handles a click on the scroll bar arrows or track. */
@@ -103,6 +154,53 @@ final class PaintSheetView {
         }
     }
 
+    private int columnBarTop() {
+        return frameTop + (frameCellsHigh - 2) * TEXT;
+    }
+
+    private int columnBarCells() {
+        return frameCellsWide - 3;
+    }
+
+    private int columnBarCellAt(int pixelX, int pixelY) {
+        int barTop = columnBarTop();
+        if (!columnBarShown() || pixelY < barTop || pixelY >= barTop + TEXT
+            || pixelX < frameLeft + TEXT || pixelX >= frameLeft + TEXT + columnBarCells() * TEXT) {
+            return -1;
+        }
+        return (pixelX - frameLeft - TEXT) / TEXT;
+    }
+
+    /** Handles a press on the glyph column bar; true when the press landed on it. A press on the thumb starts a drag. */
+    boolean pressColumnBar(int pixelX, int pixelY) {
+        int cell = columnBarCellAt(pixelX, pixelY);
+        if (cell < 0) {
+            return false;
+        }
+        ScrollBarHit.Part part = ScrollBarHit.part(columnScroll, cell, columnBarCells());
+        if (part == ScrollBarHit.Part.THUMB) {
+            draggingColumnBar = true;
+            columnGrabOffset = ScrollBarHit.grabOffset(columnScroll, cell, columnBarCells());
+        } else {
+            ScrollBarHit.click(columnScroll, part);
+        }
+        return true;
+    }
+
+    boolean isDraggingColumnBar() {
+        return draggingColumnBar;
+    }
+
+    /** Moves the thumb with the pointer; the pointer may leave the bar sideways. */
+    void dragColumnBar(int pixelX) {
+        int cell = Math.floorDiv(pixelX - frameLeft - TEXT, TEXT);
+        columnScroll.scrollTo(ScrollBarHit.offsetForDrag(columnScroll, cell, columnBarCells(), columnGrabOffset));
+    }
+
+    void endColumnBarDrag() {
+        draggingColumnBar = false;
+    }
+
     /** Small corner squares drawn on slots; one color (or null for none) per slot, or null for no marks. */
     void setMarks(Color[] marks) {
         this.marks = marks;
@@ -114,44 +212,69 @@ final class PaintSheetView {
 
     /** @param sourceSlot slot of the derive source cursor, or -1 for none */
     void draw(int cursorSlot, int sourceSlot) {
-        Panel.draw(painter, frameLeft / TEXT, frameTop / TEXT, frameCellsWide, frameCellsHigh, "SHEET", false);
+        Panel.draw(painter, frameLeft / TEXT, frameTop / TEXT, frameCellsWide, frameCellsHigh,
+            PaintColumns.sheetTitle(frameCellsWide), false);
         drawBar();
-        int size = layout.cellSize();
+        if (columnBarShown()) {
+            drawColumnBar();
+        }
+        int width = layout.cellWidth();
+        int height = layout.cellHeight();
+        int firstColumn = columnScroll.offset();
         int firstSlot = scroll.offset() * COLUMNS;
         int endSlot = Math.min(editor.slotCount(), (scroll.offset() + scroll.visibleRows()) * COLUMNS);
         for (int slot = firstSlot; slot < endSlot; slot++) {
             int codePoint = editor.codePointAtSlot(slot);
-            if (codePoint == FontEditor.NO_GLYPH) {
+            if (!columnScroll.isVisible(slot % COLUMNS) || codePoint == FontEditor.NO_GLYPH) {
                 continue;
             }
-            int x = layout.cellLeft(slot);
+            int x = layout.cellLeft(slot, firstColumn);
             int top = layout.cellTop(slot, scroll.offset());
-            painter.fill(CELL_FILL, x, top, size, size);
+            painter.fill(CELL_FILL, x, top, width, height);
             PixelGlyph glyph = editor.glyph(codePoint);
             if (glyph == null) {
-                outline(EMPTY_OUTLINE, x, top, size, 1);
+                outline(EMPTY_OUTLINE, x, top, width, height, 1);
             } else {
                 painter.pixels(glyph.pixels(), x, top, pixelScale, editor.isDerived(codePoint) ? DERIVED_COLOR : GLYPH_COLOR);
             }
             if (marks != null && marks[slot] != null) {
-                painter.fill(marks[slot], x + size - MARK_SIZE - 1, top + 1, MARK_SIZE, MARK_SIZE);
+                painter.fill(marks[slot], x + width - MARK_SIZE - 1, top + 1, MARK_SIZE, MARK_SIZE);
             }
         }
-        if (scroll.isVisible(cursorSlot / COLUMNS)) {
-            outline(CURSOR_COLOR, layout.cellLeft(cursorSlot), layout.cellTop(cursorSlot, scroll.offset()), size, OUTLINE);
+        if (scroll.isVisible(cursorSlot / COLUMNS) && columnScroll.isVisible(cursorSlot % COLUMNS)) {
+            outline(CURSOR_COLOR, layout.cellLeft(cursorSlot, firstColumn),
+                layout.cellTop(cursorSlot, scroll.offset()), width, height, OUTLINE);
         }
-        if (sourceSlot >= 0 && scroll.isVisible(sourceSlot / COLUMNS)) {
+        if (sourceSlot >= 0 && scroll.isVisible(sourceSlot / COLUMNS) && columnScroll.isVisible(sourceSlot % COLUMNS)) {
             int inset = OUTLINE + 1;
-            outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot) + inset,
-                layout.cellTop(sourceSlot, scroll.offset()) + inset, size - 2 * inset, OUTLINE);
+            outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot, firstColumn) + inset,
+                layout.cellTop(sourceSlot, scroll.offset()) + inset, width - 2 * inset, height - 2 * inset, OUTLINE);
         }
     }
 
-    private void outline(Color color, int x, int top, int size, int thickness) {
-        painter.fill(color, x, top, size, thickness);
-        painter.fill(color, x, top + size - thickness, size, thickness);
-        painter.fill(color, x, top, thickness, size);
-        painter.fill(color, x + size - thickness, top, thickness, size);
+    private void outline(Color color, int x, int top, int width, int height, int thickness) {
+        painter.fill(color, x, top, width, thickness);
+        painter.fill(color, x, top + height - thickness, width, thickness);
+        painter.fill(color, x, top, thickness, height);
+        painter.fill(color, x + width - thickness, top, thickness, height);
+    }
+
+    private void drawColumnBar() {
+        Color color = UiPalette.FRAME;
+        int cells = columnBarCells();
+        int barTop = columnBarTop();
+        int barLeftEdge = frameLeft + TEXT;
+        int trackCells = cells - 2;
+        painter.text("◄", barLeftEdge, barTop, color);
+        painter.text("►", barLeftEdge + (cells - 1) * TEXT, barTop, color);
+        int thumbStart = columnScroll.thumbStart(trackCells);
+        int thumbEnd = thumbStart + columnScroll.thumbSize(trackCells);
+        for (int i = 0; i < trackCells; i++) {
+            barGlyph.setLength(0);
+            boolean thumb = i >= thumbStart && i < thumbEnd;
+            barGlyph.append(thumb ? '█' : '░');
+            painter.text(barGlyph, barLeftEdge + (i + 1) * TEXT, barTop, thumb ? UiPalette.FOCUS : color);
+        }
     }
 
     private void drawBar() {

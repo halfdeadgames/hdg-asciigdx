@@ -7,21 +7,26 @@ final class PreviewTabs {
 
     static final int LABEL_GAP = 2;
     private static final int LEFT_PADDING = 2;
+    private static final int RIGHT_PADDING = 1;
     private static final Tab[] TABS = Tab.values();
     private static final String[] LABELS = {"SCALES", "TILE", "TEXT"};
+    private static final String[] SHORT_LABELS = {"SCL", "TILE", "TXT"};
 
     private PreviewTabs() {
     }
 
-    static String label(Tab tab) {
-        return LABELS[tab.ordinal()];
+    /** The label for a tab in a panel of this rectangle: the full name, or the short form when the panel is narrow. */
+    static String label(ReviewLayout.Rect rect, Tab tab) {
+        return labelsFor(rect.width())[tab.ordinal()];
     }
 
-    /** The text column where a tab's label starts, for a panel whose left edge is at {@code rectX}. */
-    static int labelColumn(int rectX, Tab tab) {
-        int column = rectX + LEFT_PADDING;
+    /** The text column where a tab's label starts. */
+    static int labelColumn(ReviewLayout.Rect rect, Tab tab) {
+        String[] labels = labelsFor(rect.width());
+        int gap = gapFor(rect.width(), labels);
+        int column = rect.x() + LEFT_PADDING;
         for (int i = 0; i < tab.ordinal(); i++) {
-            column += LABELS[i].length() + LABEL_GAP;
+            column += labels[i].length() + gap;
         }
         return column;
     }
@@ -36,12 +41,29 @@ final class PreviewTabs {
         if (row != labelRow(rect)) {
             return null;
         }
+        String[] labels = labelsFor(rect.width());
         for (Tab tab : TABS) {
-            int start = labelColumn(rect.x(), tab);
-            if (column >= start && column < start + LABELS[tab.ordinal()].length()) {
+            int start = labelColumn(rect, tab);
+            if (column >= start && column < start + labels[tab.ordinal()].length()) {
                 return tab;
             }
         }
         return null;
+    }
+
+    private static String[] labelsFor(int panelWidth) {
+        return fits(LABELS, 1, panelWidth) ? LABELS : SHORT_LABELS;
+    }
+
+    private static int gapFor(int panelWidth, String[] labels) {
+        return fits(labels, LABEL_GAP, panelWidth) ? LABEL_GAP : 1;
+    }
+
+    private static boolean fits(String[] labels, int gap, int panelWidth) {
+        int total = gap * (labels.length - 1);
+        for (String label : labels) {
+            total += label.length();
+        }
+        return total <= panelWidth - LEFT_PADDING - RIGHT_PADDING;
     }
 }

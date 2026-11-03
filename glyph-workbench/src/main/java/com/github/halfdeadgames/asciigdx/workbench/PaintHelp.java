@@ -61,7 +61,7 @@ final class PaintHelp {
     // Each control is {key, action}; a block lines its actions up in one column.
     private static final String[][] PAINT_CONTROLS = {
         {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
-        {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL NOTE"}, {"D", "DERIVE"}, {"U", "UNLOCK DERIVED"},
+        {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}, {"D", "DERIVE"}, {"U", "UNLOCK DERIVED"},
         {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
         {"F1", "RULES"}, {"F2", "GUIDES"}, {"ESC", "BACK"}};
     private static final String[][] MENU_CONTROLS = {

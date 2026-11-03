@@ -48,6 +48,11 @@ final class NotePanel {
         width = 0;
     }
 
+    /** Whether the note is on screen and has more lines than fit. */
+    boolean canScroll() {
+        return width > 0 && display.overflows();
+    }
+
     boolean contains(int pixelX, int pixelY) {
         return pixelX >= left * CELL && pixelX < (left + width) * CELL
             && pixelY >= top * CELL && pixelY < (top + height) * CELL;

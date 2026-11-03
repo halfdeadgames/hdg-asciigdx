@@ -46,6 +46,10 @@ final class ScrollState {
         offset = clamp(offset + rows);
     }
 
+    void scrollTo(int newOffset) {
+        offset = clamp(newOffset);
+    }
+
     void pageUp() {
         scrollBy(-visibleRows);
     }

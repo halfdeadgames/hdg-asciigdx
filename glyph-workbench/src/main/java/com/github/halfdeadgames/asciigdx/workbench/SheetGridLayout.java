@@ -1,36 +1,52 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 /**
- * Pixel layout of a grid of square cells separated by gaps, in window pixels with the origin at
- * the top-left and y pointing down. The panel starts with a gap, so it is
- * {@code columns * (cellSize + gap) + gap} pixels wide.
+ * Pixel layout of a grid of equal rectangular cells separated by gaps, in window pixels with the
+ * origin at the top-left and y pointing down. The panel starts with a gap, so it is
+ * {@code columns * (cellWidth + gap) + gap} pixels wide and {@code rows * (cellHeight + gap) + gap}
+ * pixels high.
  */
 public final class SheetGridLayout {
 
     private final int left;
     private final int top;
-    private final int cellSize;
-    private final int pitch;
+    private final int cellWidth;
+    private final int cellHeight;
+    private final int pitchX;
+    private final int pitchY;
     private final int gap;
     private final int columns;
+    private final int visibleColumns;
     private final int rows;
 
-    public SheetGridLayout(int left, int top, int cellSize, int gap, int columns, int rows) {
+    public SheetGridLayout(int left, int top, int cellWidth, int cellHeight, int gap, int columns, int rows) {
+        this(left, top, cellWidth, cellHeight, gap, columns, columns, rows);
+    }
+
+    /**
+     * Cells are numbered across all {@code columns}, but only the first {@code visibleColumns} take
+     * room in the panel and answer {@link #cellAt}.
+     */
+    public SheetGridLayout(int left, int top, int cellWidth, int cellHeight, int gap, int columns,
+                           int visibleColumns, int rows) {
+        this.visibleColumns = Math.max(1, Math.min(columns, visibleColumns));
         this.left = left;
         this.top = top;
-        this.cellSize = cellSize;
+        this.cellWidth = cellWidth;
+        this.cellHeight = cellHeight;
         this.gap = gap;
-        this.pitch = cellSize + gap;
+        this.pitchX = cellWidth + gap;
+        this.pitchY = cellHeight + gap;
         this.columns = columns;
         this.rows = rows;
     }
 
     public int panelWidth() {
-        return columns * pitch + gap;
+        return visibleColumns * pitchX + gap;
     }
 
     public int panelHeight() {
-        return rows * pitch + gap;
+        return rows * pitchY + gap;
     }
 
     public int left() {
@@ -41,31 +57,35 @@ public final class SheetGridLayout {
         return top;
     }
 
-    public int cellSize() {
-        return cellSize;
+    public int cellWidth() {
+        return cellWidth;
+    }
+
+    public int cellHeight() {
+        return cellHeight;
     }
 
     public int cellLeft(int index) {
-        return left + gap + (index % columns) * pitch;
+        return left + gap + (index % columns) * pitchX;
     }
 
     public int cellTop(int index) {
-        return top + gap + (index / columns) * pitch;
+        return top + gap + (index / columns) * pitchY;
     }
 
     /** Top of a cell when the panel is scrolled so that {@code firstRow} is the first visible row. */
     public int cellTop(int index, int firstRow) {
-        return top + gap + (index / columns - firstRow) * pitch;
+        return top + gap + (index / columns - firstRow) * pitchY;
     }
 
     /** Height of a panel that shows the given number of rows. */
     public int heightForRows(int visibleRows) {
-        return visibleRows * pitch + gap;
+        return visibleRows * pitchY + gap;
     }
 
     /** Number of whole rows that fit in a height, at least 1. */
     public int rowsThatFit(int height) {
-        return Math.max(1, (height - gap) / pitch);
+        return Math.max(1, (height - gap) / pitchY);
     }
 
     /** Returns the cell under a pixel, or -1 if the pixel is in a gap or outside the panel. */
@@ -78,18 +98,29 @@ public final class SheetGridLayout {
      * {@code visibleRows} rows, or -1 for gaps, hidden rows, and pixels outside the panel.
      */
     public int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows) {
+        return cellAt(pixelX, pixelY, firstRow, visibleRows, 0);
+    }
+
+    /** Like the row-scrolled lookup, with {@code firstColumn} as the leftmost shown column. */
+    public int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows, int firstColumn) {
         int x = pixelX - left - gap;
         int y = pixelY - top - gap;
         if (x < 0 || y < 0) {
             return -1;
         }
-        int column = x / pitch;
-        int visibleRow = y / pitch;
+        int visibleColumn = x / pitchX;
+        int column = visibleColumn + firstColumn;
+        int visibleRow = y / pitchY;
         int row = visibleRow + firstRow;
-        if (column >= columns || visibleRow >= visibleRows || row >= rows
-            || x % pitch >= cellSize || y % pitch >= cellSize) {
+        if (visibleColumn >= visibleColumns || column >= columns || visibleRow >= visibleRows || row >= rows
+            || x % pitchX >= cellWidth || y % pitchY >= cellHeight) {
             return -1;
         }
         return row * columns + column;
+    }
+
+    /** Left of a cell when {@code firstColumn} is the leftmost shown column. */
+    public int cellLeft(int index, int firstColumn) {
+        return left + gap + (index % columns - firstColumn) * pitchX;
     }
 }

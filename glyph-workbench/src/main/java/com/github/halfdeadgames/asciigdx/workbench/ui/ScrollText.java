@@ -68,6 +68,11 @@ public final class ScrollText {
         return lines.size();
     }
 
+    /** Whether more lines exist than the last {@link #draw} showed. */
+    public boolean overflows() {
+        return lines.size() > visible;
+    }
+
     public int offset() {
         return offset;
     }

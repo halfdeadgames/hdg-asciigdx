@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -20,6 +21,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -142,9 +144,11 @@ public final class PaintApp implements WorkbenchScreen {
     private int shownNoteFor = -1;
     private PaintHelp.State helpShownState;
     private int helpShownChars;
-    private List<PaintHelp.Row> helpRows = List.of();
-    private float helpSeconds;
+    private int helpShownVisible;
+    private List<HelpWrap.Line> helpLines = List.of();
+    private final ScrollState helpScroll = new ScrollState(0);
     private ReviewLayout.Rect helpRect;
+    private boolean helpShown;
     private boolean[] unselectable;
     private int[] codePoints;
     private int cursor;
@@ -153,6 +157,7 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean revealCursor = true;
     private boolean confirmingQuit;
     private int wheelTicks;
+    private int sidewaysTicks;
     private int pointerX;
     private int pointerY;
 
@@ -203,6 +208,7 @@ public final class PaintApp implements WorkbenchScreen {
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
         sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
+        applyMinimumWindowSize();
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
         guideList = new GuideListModel(guides, editor.cellWidth(), editor.cellHeight());
@@ -217,7 +223,13 @@ public final class PaintApp implements WorkbenchScreen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
-                wheelTicks += amountY > 0 ? 1 : amountY < 0 ? -1 : 0;
+                boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                    || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+                float sideways = amountX != 0 ? amountX : shift ? amountY : 0;
+                sidewaysTicks += sideways > 0 ? 1 : sideways < 0 ? -1 : 0;
+                if (!shift || amountX != 0) {
+                    wheelTicks += amountY > 0 ? 1 : amountY < 0 ? -1 : 0;
+                }
                 return true;
             }
 
@@ -238,6 +250,21 @@ public final class PaintApp implements WorkbenchScreen {
         if (guideRequest >= 0 && flow.mode() == DeriveFlow.Mode.IDLE) {
             guideList.select(guideRequest);
             openGuideList();
+        }
+    }
+
+    // Only the lwjgl3 desktop window has size limits; GLFW enforces them, also on a window that is already smaller.
+    private void applyMinimumWindowSize() {
+        if (Gdx.graphics instanceof Lwjgl3Graphics graphics) {
+            graphics.getWindow().setSizeLimits(
+                PaintColumns.minimumWidth(sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth()),
+                PaintLayout.minimumHeight(editor.cellHeight()), -1, -1);
+        }
+    }
+
+    private void clearWindowSizeLimits() {
+        if (Gdx.graphics instanceof Lwjgl3Graphics graphics) {
+            graphics.getWindow().setSizeLimits(-1, -1, -1, -1);
         }
     }
 
@@ -425,7 +452,7 @@ public final class PaintApp implements WorkbenchScreen {
             int overlaySlot = slotOf(overlay.codePoint());
             if (overlaySlot >= 0 && !unselectable[overlaySlot]) {
                 flow.moveSource(overlaySlot);
-                sheet.scroll().keepVisible(overlaySlot / COLUMNS);
+                sheet.keepVisible(overlaySlot);
             }
             flow.shiftSource(overlay.shift());
             refreshPick();
@@ -490,11 +517,15 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleInput(float delta) {
+        PaintColumns.Split split = PaintColumns.split(
+            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth());
+        sheet.setVisibleColumns(split.sheetColumns());
         sheet.fitToHeight(worldHeight(), TEXT_LINE, cursor, revealCursor);
         revealCursor = false;
         rects = PaintLayout.compute(worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE,
-            sheet.frameRight() / TEXT_LINE, editor.cellHeight());
+            sheet.frameRight() / TEXT_LINE, split.rightCells(), editor.cellWidth(), editor.cellHeight());
         fitGrid();
+        scrollSheetSideways();
         updateConditions();
         if (rules.handleInput(delta, wheelTicks)) {
             wheelTicks = 0;
@@ -670,7 +701,7 @@ public final class PaintApp implements WorkbenchScreen {
         for (int slot = 0; slot < codePoints.length; slot++) {
             if (codePoints[slot] == codePoint && !unselectable[slot]) {
                 cursor = slot;
-                sheet.scroll().keepVisible(cursor / COLUMNS);
+                sheet.keepVisible(cursor);
                 return;
             }
         }
@@ -707,7 +738,7 @@ public final class PaintApp implements WorkbenchScreen {
                 cursor = position;
                 stroke.end();
             }
-            sheet.scroll().keepVisible(position / COLUMNS);
+            sheet.keepVisible(position);
         }
     }
 
@@ -737,7 +768,7 @@ public final class PaintApp implements WorkbenchScreen {
             int sourceSlot = slotOf(editor.derivedFrom(codePoint));
             if (sourceSlot >= 0) {
                 cursor = sourceSlot;
-                sheet.scroll().keepVisible(cursor / COLUMNS);
+                sheet.keepVisible(cursor);
             } else {
                 messages.warn("Only a derived glyph has a source to go to");
             }
@@ -980,7 +1011,7 @@ public final class PaintApp implements WorkbenchScreen {
             lastProblem = "";
             flow.finish();
             pickShown = null;
-            sheet.scroll().keepVisible(cursor / COLUMNS);
+            sheet.keepVisible(cursor);
             messages.ok("Derived: " + summary);
         } else {
             lastProblem = editor.problem();
@@ -995,7 +1026,7 @@ public final class PaintApp implements WorkbenchScreen {
         messages.nextAction();
         flow.cancel();
         pickShown = null;
-        sheet.scroll().keepVisible(cursor / COLUMNS);
+        sheet.keepVisible(cursor);
         messages.ok("Derive cancelled");
     }
 
@@ -1038,11 +1069,35 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            notePanel.scrollDisplay(-1);
+            scrollNoteOrHelp(-1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            notePanel.scrollDisplay(1);
+            scrollNoteOrHelp(1);
         }
+    }
+
+    // The keys follow the note while it overflows; otherwise they scroll the help.
+    private void scrollNoteOrHelp(int rows) {
+        if (notePanel.canScroll()) {
+            notePanel.scrollDisplay(rows);
+        } else if (helpShown) {
+            helpScroll.scrollBy(rows);
+        }
+    }
+
+    // Applied before the modal checks so ticks never pile up; the view scroll never moves the cursor.
+    private void scrollSheetSideways() {
+        if (sidewaysTicks == 0) {
+            return;
+        }
+        pointer.set(Gdx.input.getX(), Gdx.input.getY());
+        viewport.unproject(pointer);
+        int x = (int) Math.floor(pointer.x);
+        int y = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
+        if (sheet.contains(x, y)) {
+            sheet.columnScroll().scrollBy(sidewaysTicks);
+        }
+        sidewaysTicks = 0;
     }
 
     private void trackPointer() {
@@ -1055,6 +1110,8 @@ public final class PaintApp implements WorkbenchScreen {
                 messages.scrollBy(wheelTicks);
             } else if (notePanel.contains(pointerX, pointerY)) {
                 notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
+            } else if (helpContains(pointerX, pointerY)) {
+                helpScroll.scrollBy(wheelTicks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
                 sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
             }
@@ -1069,6 +1126,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (clicked) {
             preview.click(rects.preview(), Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
             sheet.clickBar(pointerX, pointerY);
+            sheet.pressColumnBar(pointerX, pointerY);
             messages.click(Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
@@ -1088,6 +1146,12 @@ public final class PaintApp implements WorkbenchScreen {
                     lastProblem = "";
                     stroke.begin(codePoint, column, row);
                 }
+            }
+        } else if (sheet.isDraggingColumnBar()) {
+            if (pressed) {
+                sheet.dragColumnBar(pointerX);
+            } else {
+                sheet.endColumnBarDrag();
             }
         } else if (stroke.isActive()) {
             if (pressed) {
@@ -1181,7 +1245,7 @@ public final class PaintApp implements WorkbenchScreen {
                 area.x(), area.y(), area.width(), area.height());
         }
         if (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
-            drawHelp(helpRect, false);
+            drawHelp(helpRect);
         }
         rules.draw(worldWidth(), worldHeight(), codePoint);
         batch.end();
@@ -1196,12 +1260,13 @@ public final class PaintApp implements WorkbenchScreen {
         if (guideListOpen) {
             drawGuideList(rects.note());
             notePanel.markHidden();
+            helpShown = false;
             return;
         }
         ReviewFile.Answer answer = review.get(codePoint);
         boolean hasNote = answer != null && !answer.note().isEmpty();
         helpRect = PaintLayout.helpArea(rects, hasNote);
-        drawHelp(helpRect, true);
+        drawHelp(helpRect);
         if (hasNote) {
             notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
         } else {
@@ -1248,39 +1313,49 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    // The help text is rebuilt only when the state it depends on changes; lines past the panel bottom are clipped.
-    // Table rows keep their key column and bounce a too-long action; the clock restarts when the state changes.
-    private void drawHelp(ReviewLayout.Rect area, boolean advanceClock) {
+    // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
+    private void drawHelp(ReviewLayout.Rect area) {
         Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), "HELP", false);
         PaintHelp.State state = helpState();
         int chars = Math.max(1, area.width() - 2 * HELP_PADDING - 2);
-        if (!state.equals(helpShownState) || chars != helpShownChars) {
+        int visible = Math.max(1, area.height() - 2);
+        if (!state.equals(helpShownState)) {
+            helpScroll.toTop();
+        }
+        if (!state.equals(helpShownState) || chars != helpShownChars || visible != helpShownVisible) {
             helpShownState = state;
             helpShownChars = chars;
-            helpRows = PaintHelp.rows(state, chars);
-            helpSeconds = 0f;
+            helpShownVisible = visible;
+            helpLines = HelpWrap.lines(state, chars, visible);
         }
-        if (advanceClock) {
-            helpSeconds += Gdx.graphics.getDeltaTime();
-        }
-        int rowsShown = Math.min(helpRows.size(), area.height() - 2);
+        helpScroll.setVisibleRows(visible);
+        helpScroll.setTotalRows(helpLines.size());
+        helpRect = area;
+        helpShown = true;
+        int first = helpScroll.offset();
+        int last = Math.min(helpLines.size(), first + visible);
         int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
-        for (int i = 0; i < rowsShown; i++) {
-            PaintHelp.Row row = helpRows.get(i);
-            Color color = row.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
-                : row.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
-                : row.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
-            int top = (area.y() + 1 + i) * TEXT_LINE;
-            if (!row.isTable()) {
-                painter.text(row.action().length() > chars ? row.action().substring(0, chars) : row.action(),
-                    textX, top, color);
-                continue;
+        for (int i = first; i < last; i++) {
+            HelpWrap.Line line = helpLines.get(i);
+            Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
+                : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
+                : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
+            int top = (area.y() + 1 + i - first) * TEXT_LINE;
+            if (!line.key().isEmpty()) {
+                painter.text(line.key(), textX, top, color == UiPalette.TEXT ? UiPalette.FOCUS : color);
             }
-            painter.text(row.key(), textX, top, color);
-            int room = Math.max(0, chars - row.actionColumn());
-            painter.text(BounceScroll.window(row.action(), room, helpSeconds),
-                textX + row.actionColumn() * TEXT_LINE, top, color);
+            painter.text(line.action(), textX + line.actionColumn() * TEXT_LINE, top, color);
         }
+        if (helpScroll.needed() && visible >= 2) {
+            ScrollText.drawBar(painter, area.x() + area.width() - 2, area.y() + 1, visible,
+                helpLines.size(), visible, first);
+        }
+    }
+
+    private boolean helpContains(int pixelX, int pixelY) {
+        return helpShown && helpRect != null
+            && pixelX >= helpRect.x() * TEXT_LINE && pixelX < (helpRect.x() + helpRect.width()) * TEXT_LINE
+            && pixelY >= helpRect.y() * TEXT_LINE && pixelY < (helpRect.y() + helpRect.height()) * TEXT_LINE;
     }
 
     private PaintHelp.State helpState() {
@@ -1326,6 +1401,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     @Override
     public void hide() {
+        clearWindowSizeLimits();
         batch.dispose();
         whitePixel.dispose();
         source.dispose();
