@@ -250,27 +250,33 @@ class PaintStrokeTest {
 
     @Test
     void barGuideIsThroughTheMiddleOfTheGroupsBarRow() {
-        PaintGuides.BarGuide upper = PaintGuides.saiksisttBar("Uppercase", 8);
+        PaintGuides.BarGuide upper = PaintGuides.saiksisttBar('A', "Uppercase", 8);
         assertEquals("BAR", upper.label());
         assertEquals(3.5f, upper.centerRow());
-        assertEquals(4.5f, PaintGuides.saiksisttBar("Lowercase", 8).centerRow());
-        assertEquals(7f, PaintGuides.saiksisttBar("Uppercase", 16).centerRow());
-        assertEquals(9f, PaintGuides.saiksisttBar("Lowercase", 16).centerRow());
+        assertEquals(4.5f, PaintGuides.saiksisttBar('a', "Lowercase", 8).centerRow());
+        assertEquals(7f, PaintGuides.saiksisttBar('A', "Uppercase", 16).centerRow());
+        assertEquals(9f, PaintGuides.saiksisttBar('a', "Lowercase", 16).centerRow());
+    }
+
+    @Test
+    void digitBarsSitOnRowThreeExceptTheFourOnRowFive() {
+        assertEquals(3.5f, PaintGuides.saiksisttBar('3', "Digits", 8).centerRow());
+        assertEquals(5.5f, PaintGuides.saiksisttBar('4', "Digits", 8).centerRow());
+        assertEquals(7f, PaintGuides.saiksisttBar('3', "Digits", 16).centerRow());
     }
 
     @Test
     void barGuideIsMissingForOtherGroups() {
-        assertNull(PaintGuides.saiksisttBar("Digits", 8));
-        assertNull(PaintGuides.saiksisttBar("Punctuation", 8));
+        assertNull(PaintGuides.saiksisttBar('!', "Punctuation", 8));
     }
 
     @Test
     void barLabelDoesNotShareARowLineWithTheHeightLabels() {
-        float bar = PaintGuides.saiksisttBar("Uppercase", 8).centerRow();
+        float bar = PaintGuides.saiksisttBar('A', "Uppercase", 8).centerRow();
         for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
             assertTrue(Math.abs(guide.boundaryRow() - bar) >= 1f, guide.label());
         }
-        float lowerBar = PaintGuides.saiksisttBar("Lowercase", 8).centerRow();
+        float lowerBar = PaintGuides.saiksisttBar('a', "Lowercase", 8).centerRow();
         for (PaintGuides.Guide guide : PaintGuides.saiksistt(8)) {
             assertTrue(Math.abs(guide.boundaryRow() - lowerBar) >= 1f, guide.label());
         }

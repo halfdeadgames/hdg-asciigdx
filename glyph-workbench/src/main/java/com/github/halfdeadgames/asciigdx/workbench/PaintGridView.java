@@ -104,7 +104,7 @@ final class PaintGridView {
         drawMarkers(codePoint);
         drawGuides();
         drawWidthGuides(FontRules.groupNameFor(codePoint));
-        drawBarGuide(FontRules.groupNameFor(codePoint));
+        drawBarGuide(codePoint, FontRules.groupNameFor(codePoint));
     }
 
     // Only pixels inside the visible grid are drawn; ink wholly beyond one side gets a blinking arrow on that edge.
@@ -184,8 +184,8 @@ final class PaintGridView {
     }
 
     // Dashed so the lit pixels under it stay visible.
-    private void drawBarGuide(String groupName) {
-        PaintGuides.BarGuide bar = PaintGuides.saiksisttBar(groupName, editor.cellWidth());
+    private void drawBarGuide(int codePoint, String groupName) {
+        PaintGuides.BarGuide bar = PaintGuides.saiksisttBar(codePoint, groupName, editor.cellWidth());
         if (bar == null) {
             return;
         }

@@ -25,6 +25,7 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - Capital bars sit on row 3, slightly above center (A E F H, and any capital with a middle bar).
 - Bowls of B, P, and R close on row 3, on the capital bar.
 - I has slabs at top and bottom.
+- Capitals use row 7 only for details they need, such as the tail of Q.
 
 ## Lowercase
 - Must differ clearly from capitals in height AND width.
@@ -42,6 +43,8 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - 5 pixels wide, centered in the body.
 - 0 has a center dot.
 - 1 has a flag at the top and a base slab.
+- Middles of 3, 5, 6, 8, and 9 sit on row 3, on the capital bar.
+- 4 keeps its bar low, on row 5.
 
 ## Punctuation
 - Must stay readable at 1x. Comma and period must differ.
