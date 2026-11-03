@@ -37,10 +37,10 @@ final class GlyphRules {
             warnings.add(new RuleWarning(KEY_GAP,
                 String.format(Locale.ROOT, "U+%04X %s has ink in the gap column", codePoint, GlyphName.fullName(codePoint))));
         }
-        if (hasInkInRows(pixels, 0, accentRowCount)) {
+        if (breaksAccentRowRule(codePoint, pixels, accentRowCount)) {
             warnings.add(new RuleWarning(KEY_ACCENT_INK, "INK IN ACCENT ROW"));
         }
-        if (hasInkInRows(pixels, descenderFirstRow, pixels.getHeight())) {
+        if (countInkInRows(pixels, descenderFirstRow, pixels.getHeight()) > 0) {
             warnings.add(new RuleWarning(KEY_DESCENDER_INK, "INK IN DESCENDER ROW"));
         }
         return warnings;
@@ -58,14 +58,24 @@ final class GlyphRules {
         return false;
     }
 
-    private static boolean hasInkInRows(PixelGrid grid, int firstRow, int endRow) {
+    /** A lowercase glyph may put a single pixel in the accent rows (ascender tip or dot); anything else is a violation. */
+    private static boolean breaksAccentRowRule(int codePoint, PixelGrid grid, int accentRowCount) {
+        int inkedPixels = countInkInRows(grid, 0, accentRowCount);
+        if (Character.isLowerCase(codePoint)) {
+            return inkedPixels > 1;
+        }
+        return inkedPixels > 0;
+    }
+
+    private static int countInkInRows(PixelGrid grid, int firstRow, int endRow) {
+        int inkedPixels = 0;
         for (int y = Math.max(0, firstRow); y < Math.min(endRow, grid.getHeight()); y++) {
             for (int x = 0; x < grid.getWidth(); x++) {
                 if (grid.isLit(x, y)) {
-                    return true;
+                    inkedPixels++;
                 }
             }
         }
-        return false;
+        return inkedPixels;
     }
 }

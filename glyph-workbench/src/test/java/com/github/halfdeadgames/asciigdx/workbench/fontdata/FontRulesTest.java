@@ -107,7 +107,7 @@ class FontRulesTest {
         assertEquals(6, core.bullets().stream().filter(FontRules.Bullet::sub).count());
         assertFalse(core.bullets().get(0).sub());
         assertTrue(core.bullets().get(2).sub());
-        assertEquals("Row 0: accents and the dots of i and j.", core.bullets().get(2).text());
+        assertEquals("Row 0: accents, the dots of i and j, and lowercase ascenders.", core.bullets().get(2).text());
         assertEquals("Lowercase", rules.groupFor('g').name());
     }
 }

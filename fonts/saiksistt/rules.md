@@ -7,8 +7,8 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 ## Core
 - Sizes: 8 first, then 16. Later 24, 32, 40.
 - Metrics at 8 (rows 0-7 top to bottom, columns 0-7 left to right):
-  - Row 0: accents and the dots of i and j.
-  - Capitals and ascenders: rows 1-6 (rows 2-6 when accented).
+  - Row 0: accents, the dots of i and j, and lowercase ascenders.
+  - Capitals: rows 1-6 (rows 2-6 when accented).
   - Lowercase x-height: rows 2-6.
   - Baseline: bottom of row 6.
   - Descenders: row 7.
@@ -23,13 +23,16 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 - Capitals with a center stroke or point (A T V X Y I) use an odd width, 5 or 7, so the center stays true.
 - Wide capitals (M W) use the full 7 pixels.
 - Capital bars sit on row 3, slightly above center (A E F H, and any capital with a middle bar).
-- Bowls of B, P, and R close on row 4, one row below the capital bar, so the bowl is taller than the space above the bar.
+- Bowls of B, P, and R close on row 3, on the capital bar.
 - I has slabs at top and bottom.
 
 ## Lowercase
 - Must differ clearly from capitals in height AND width.
 - Round and symmetric letters (c o s u v x z, and similar) are 5 pixels wide, centered in the body.
 - Wide letters (m w) use the full 7 pixels.
+- Lowercase ascenders (b d h k l) start on row 0, so they stand taller than capitals. f is shorter and starts on row 1.
+- Lowercase letters put at most one pixel on row 0. The slab on l is an accepted exception. Row 0 ink can touch descenders on the line above; games that want space between lines add line spacing.
+- Accented ascender letters (such as ĥ) are drawn by hand: ascender, a blank row, then the accent.
 - Lowercase bars sit on row 4, the middle of the x-height (e f t).
 - a: one-story, with a small tail at the bottom right so it never reads as o.
 - g: one-story.

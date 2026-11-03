@@ -39,6 +39,40 @@ class GlyphRulesTest {
     }
 
     @Test
+    void lowercaseWithSinglePixelInTheAccentRowHasNoWarning() {
+        List<String> rows = List.of(
+            ".#.....", ".#.....", ".###...", ".#.#...", ".#.#...", ".#.#...", ".......", ".......");
+        PixelGlyph glyph = new PixelGlyph('h', false, PixelGrid.ofRows(rows));
+        assertTrue(GlyphRules.check('h', glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW).isEmpty());
+    }
+
+    @Test
+    void lowercaseWithTwoPixelsInTheAccentRowWarns() {
+        List<String> rows = List.of(
+            ".##....", ".#.....", ".#.....", ".#.....", ".#.....", ".#.....", ".......", ".......");
+        PixelGlyph glyph = new PixelGlyph('l', false, PixelGrid.ofRows(rows));
+        assertEquals(List.of(GlyphRules.KEY_ACCENT_INK),
+            keys(GlyphRules.check('l', glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW)));
+    }
+
+    @Test
+    void lowercaseIWithSingleDotPixelHasNoWarning() {
+        List<String> rows = List.of(
+            ".#.....", ".......", ".#.....", ".#.....", ".#.....", ".#.....", ".......", ".......");
+        PixelGlyph glyph = new PixelGlyph('i', false, PixelGrid.ofRows(rows));
+        assertTrue(GlyphRules.check('i', glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW).isEmpty());
+    }
+
+    @Test
+    void capitalWithInkInTheAccentRowStillWarns() {
+        List<String> rows = List.of(
+            ".#.#...", ".#.#...", ".###...", ".#.#...", ".#.#...", ".#.#...", ".......", ".......");
+        PixelGlyph glyph = new PixelGlyph('H', false, PixelGrid.ofRows(rows));
+        assertEquals(List.of(GlyphRules.KEY_ACCENT_INK),
+            keys(GlyphRules.check('H', glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW)));
+    }
+
+    @Test
     void inkInTheDescenderRowWarns() {
         List<String> rows = List.of(
             ".......", ".......", ".......", ".......", ".......", ".......", ".......", "..#....");
