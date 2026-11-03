@@ -42,12 +42,17 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int TEXT_LINE = Painter.TEXT_SIZE;
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int WHEEL_ROWS = 3;
+    private static final int HELP_PADDING = 1;
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
         new StatusBar.Key("CTRL+Z/Y", "UNDO"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("ESC", "BACK"));
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
         new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
+        new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<StatusBar.Key> OVERLAY_PICK_KEYS = List.of(
+        new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("ENTER", "ADD"),
+        new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
         new StatusBar.Key("ESC", "CANCEL"));
     private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
@@ -106,9 +111,16 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
     private int shownNoteFor = -1;
+    private PaintHelp.State helpShownState;
+    private int helpShownChars;
+    private List<PaintHelp.Row> helpRows = List.of();
+    private float helpSeconds;
+    private ReviewLayout.Rect helpRect;
     private boolean[] unselectable;
     private int[] codePoints;
     private int cursor;
+    private int titleCodePoint = -1;
+    private float titleSeconds;
     private boolean revealCursor = true;
     private boolean confirmingQuit;
     private int wheelTicks;
@@ -184,6 +196,19 @@ public final class PaintApp implements WorkbenchScreen {
         }
         flow.openMenu(cursor);
         if ("menu".equals(request.trim())) {
+            return;
+        }
+        DevCapture.OverlayRequest overlay = DevCapture.parseOverlayRequest(request);
+        if (overlay != null) {
+            flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(GlyphOp.Kind.OVERLAY));
+            beginPick();
+            int overlaySlot = slotOf(overlay.codePoint());
+            if (overlaySlot >= 0 && !unselectable[overlaySlot]) {
+                flow.moveSource(overlaySlot);
+                sheet.scroll().keepVisible(overlaySlot / COLUMNS);
+            }
+            flow.shiftSource(overlay.shift());
+            refreshPick();
             return;
         }
         int sourceSlot = slotOf(DevCapture.parseCodePoint(request));
@@ -275,6 +300,9 @@ public final class PaintApp implements WorkbenchScreen {
         }
         handleUndoKeys(control, delta);
         if (flow.isPicking()) {
+            if (flow.isOverlay()) {
+                handleOverlayKeys();
+            }
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
                 confirmSource();
                 return;
@@ -531,15 +559,105 @@ public final class PaintApp implements WorkbenchScreen {
             line.append(" FROM U+");
             appendHex(line, codePoints[flow.sourceSlot()]);
         }
+        if (flow.operation() == GlyphOp.Kind.OVERLAY) {
+            int shift = flow.pendingShift();
+            line.append("  PARTS ").append(flow.parts().size()).append("  SHIFT ").append(shift > 0 ? "+" : "").append(shift);
+        }
         return line.toString();
     }
 
     private GlyphOp currentOp() {
+        if (flow.operation() == GlyphOp.Kind.OVERLAY) {
+            return DeriveFlow.overlayOp(flow.parts(), codePoints);
+        }
         return new GlyphOp(flow.operation(), List.of(new GlyphOp.Source(codePoints[flow.sourceSlot()], 0)));
+    }
+
+    // Overlay keys: [ and ] shift the pending part, Backspace removes the last part, F finishes.
+    private void handleOverlayKeys() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
+            messages.nextAction();
+            flow.shiftSource(-1);
+            refreshPick();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
+            messages.nextAction();
+            flow.shiftSource(1);
+            refreshPick();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
+            messages.nextAction();
+            if (flow.removeLastPart()) {
+                refreshPick();
+            } else {
+                messages.warn("No part to remove");
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            finishOverlay();
+        }
+    }
+
+    private void addOverlayPart() {
+        OverlayCheck.Result check = currentOverlayCheck();
+        if (check.blocksAdd()) {
+            messages.warn(check.message());
+        } else if (!pickValid) {
+            messages.warn(pickProblemText.isEmpty() ? "This part cannot be added" : pickProblemText);
+        } else {
+            flow.addPart();
+            refreshPick();
+        }
+    }
+
+    private void finishOverlay() {
+        messages.nextAction();
+        if (flow.parts().isEmpty()) {
+            messages.warn("Add at least one part first");
+        } else if (currentOverlayCheck().blocksFinish()) {
+            messages.warn(currentOverlayCheck().message());
+        } else if (editor.wouldReplaceDrawing(codePoints[cursor])) {
+            flow.askReplace();
+        } else {
+            applyDerive();
+        }
+    }
+
+    // Previews the committed parts plus the pending one; if the pending one is refused, the valid parts still show.
+    private void refreshOverlayPick() {
+        int target = codePoints[cursor];
+        List<DeriveFlow.Part> all = flow.partsWithPending();
+        pickShown = null;
+        pickValid = false;
+        pickProblemText = "";
+        if (!all.isEmpty()) {
+            PixelGlyph result = editor.previewDerived(target, DeriveFlow.overlayOp(all, codePoints));
+            pickProblemText = editor.problem();
+            if (result != null) {
+                pickValid = true;
+                pickShown = result;
+            } else if (!flow.parts().isEmpty()) {
+                pickShown = editor.previewDerived(target, DeriveFlow.overlayOp(flow.parts(), codePoints));
+            }
+            OverlayCheck.Result check = currentOverlayCheck();
+            if (check.hasWarning() && check.problem() != OverlayCheck.Problem.SAME_AS_TARGET) {
+                pickProblemText = check.message();
+                pickValid = false;
+            }
+            if (pickShown == null) {
+                pickShown = blankPick;
+            }
+            lastProblem = editor.problem();
+        }
+        pickPromptText = pickPrompt(!flow.sourceIsTarget());
     }
 
     // Runs only when the source changes. With the source on the target there is nothing to preview yet.
     private void refreshPick() {
+        if (flow.operation() == GlyphOp.Kind.OVERLAY) {
+            refreshOverlayPick();
+            return;
+        }
         if (flow.sourceSlot() == cursor) {
             pickShown = null;
             pickValid = false;
@@ -563,9 +681,13 @@ public final class PaintApp implements WorkbenchScreen {
     // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
     private void confirmSource() {
         messages.nextAction();
+        if (flow.isOverlay()) {
+            addOverlayPart();
+            return;
+        }
         if (!pickValid) {
             if (flow.sourceSlot() == cursor) {
-                messages.warn("Pick a different glyph as the source");
+                messages.warn(OverlayCheck.SAME_AS_TARGET_MESSAGE);
             }
             return;
         }
@@ -578,14 +700,16 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void applyDerive() {
         int target = codePoints[cursor];
-        String summary = pickPrompt(true);
+        String summary = flow.operation() == GlyphOp.Kind.OVERLAY
+            ? describeGlyph(target).append(" (OVERLAY) FROM ").append(flow.parts().size()).append(" PARTS").toString()
+            : pickPrompt(true).substring("PICK SOURCE FOR ".length());
         messages.nextAction();
         if (editor.derive(target, currentOp())) {
             lastProblem = "";
             flow.finish();
             pickShown = null;
             sheet.scroll().keepVisible(cursor / COLUMNS);
-            messages.ok("Derived: " + summary.substring("PICK SOURCE FOR ".length()));
+            messages.ok("Derived: " + summary);
         } else {
             lastProblem = editor.problem();
             messages.warn(editor.problem());
@@ -613,7 +737,8 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private Dialog.Layout menuLayout() {
-        return Dialog.layout(MENU_TITLE, MENU_LINES, MENU_BUTTONS, worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE);
+        ReviewLayout.Rect area = rects.grid();
+        return Dialog.layout(MENU_TITLE, MENU_LINES, MENU_BUTTONS, area.x(), area.y(), area.width(), area.height());
     }
 
     private static List<SelectList.Row> menuRows() {
@@ -636,6 +761,9 @@ public final class PaintApp implements WorkbenchScreen {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
             sheet.scroll().toBottom();
+        }
+        if (flow.isOverlay()) {
+            return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
             notePanel.scrollDisplay(-1);
@@ -740,26 +868,40 @@ public final class PaintApp implements WorkbenchScreen {
         appendHex(line, codePoint);
         line.append("  ");
         int nameChars = Math.max(1, panel.width() - 6 - line.length());
-        line.append(GlyphName.describe(codePoint, nameChars));
+        if (codePoint != titleCodePoint) {
+            titleCodePoint = codePoint;
+            titleSeconds = 0f;
+        }
+        titleSeconds += Gdx.graphics.getDeltaTime();
+        line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
         Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
         grid.draw(codePoint, pickShown);
         preview.draw(rects.preview(), codePoint, pickShown);
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
         messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
-        StatusBar.draw(painter, columns, rows - 1, choosingSource ? PICK_KEYS : KEYS);
+        StatusBar.draw(painter, columns, rows - 1,
+            !choosingSource ? KEYS : flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS);
         if (confirmingQuit) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
         }
         if (flow.mode() == DeriveFlow.Mode.MENU) {
-            Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS);
+            ReviewLayout.Rect area = rects.grid();
+            Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS,
+                area.x(), area.y(), area.width(), area.height());
             Dialog.Layout menu = menuLayout();
-            SelectList.draw(painter, menu.textX(), menu.textY(), MENU_WIDTH, MENU_ROWS, flow.menuIndex());
+            SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
+                MENU_ROWS, flow.menuIndex());
         } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
             describeGlyph(codePoint);
+            ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
-                List.of(line + " holds a drawing.", "Deriving replaces it (undo restores it)."), REPLACE_BUTTONS);
+                List.of(line + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
+                area.x(), area.y(), area.width(), area.height());
+        }
+        if (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            drawHelp(helpRect, false);
         }
         rules.draw(worldWidth(), worldHeight(), codePoint);
         batch.end();
@@ -772,11 +914,71 @@ public final class PaintApp implements WorkbenchScreen {
             notePanel.resetDisplayScroll();
         }
         ReviewFile.Answer answer = review.get(codePoint);
-        if (answer != null && !answer.note().isEmpty()) {
-            notePanel.drawReadOnly(rects.note(), answer.pick(), answer.note());
+        boolean hasNote = answer != null && !answer.note().isEmpty();
+        helpRect = PaintLayout.helpArea(rects, hasNote);
+        drawHelp(helpRect, true);
+        if (hasNote) {
+            notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
         } else {
             notePanel.markHidden();
         }
+    }
+
+    // The help text is rebuilt only when the state it depends on changes; lines past the panel bottom are clipped.
+    // Table rows keep their key column and bounce a too-long action; the clock restarts when the state changes.
+    private void drawHelp(ReviewLayout.Rect area, boolean advanceClock) {
+        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), "HELP", false);
+        PaintHelp.State state = helpState();
+        int chars = Math.max(1, area.width() - 2 * HELP_PADDING - 2);
+        if (!state.equals(helpShownState) || chars != helpShownChars) {
+            helpShownState = state;
+            helpShownChars = chars;
+            helpRows = PaintHelp.rows(state, chars);
+            helpSeconds = 0f;
+        }
+        if (advanceClock) {
+            helpSeconds += Gdx.graphics.getDeltaTime();
+        }
+        int rowsShown = Math.min(helpRows.size(), area.height() - 2);
+        int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+        for (int i = 0; i < rowsShown; i++) {
+            PaintHelp.Row row = helpRows.get(i);
+            Color color = row.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
+                : row.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
+                : row.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
+            int top = (area.y() + 1 + i) * TEXT_LINE;
+            if (!row.isTable()) {
+                painter.text(row.action().length() > chars ? row.action().substring(0, chars) : row.action(),
+                    textX, top, color);
+                continue;
+            }
+            painter.text(row.key(), textX, top, color);
+            int room = Math.max(0, chars - row.actionColumn());
+            painter.text(BounceScroll.window(row.action(), room, helpSeconds),
+                textX + row.actionColumn() * TEXT_LINE, top, color);
+        }
+    }
+
+    private PaintHelp.State helpState() {
+        DeriveFlow.Mode mode = flow.mode();
+        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? DeriveFlow.OPERATIONS.get(flow.menuIndex()) : flow.operation();
+        if (!flow.isOverlay() || mode != DeriveFlow.Mode.PICK_SOURCE) {
+            return new PaintHelp.State(mode, operation, List.of(), null);
+        }
+        List<PaintHelp.PartView> committed = new ArrayList<>();
+        for (DeriveFlow.Part part : flow.parts()) {
+            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift()));
+        }
+        PaintHelp.PartView pending = flow.sourceIsTarget()
+            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
+        return new PaintHelp.State(mode, operation, committed, pending, currentOverlayCheck());
+    }
+
+    private OverlayCheck.Result currentOverlayCheck() {
+        PixelGlyph pendingSource = editor.glyph(codePoints[flow.sourceSlot()]);
+        List<DeriveFlow.Part> committed = flow.parts();
+        PixelGlyph firstPart = committed.isEmpty() ? null : editor.glyph(codePoints[committed.get(0).slot()]);
+        return OverlayCheck.check(flow.sourceIsTarget(), pendingSource, firstPart, flow.pendingShift());
     }
 
     private static void appendHex(StringBuilder out, int value) {

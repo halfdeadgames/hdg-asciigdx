@@ -39,6 +39,33 @@ final class DevCapture {
         return System.getProperty(DERIVE_PROPERTY);
     }
 
+    /** A parsed {@code overlay:<code point>[:<shift>]} request. */
+    record OverlayRequest(int codePoint, int shift) { }
+
+    /** Parses a derive request such as {@code overlay:U+0021} or {@code overlay:U+0021:5}; null for anything else. */
+    static OverlayRequest parseOverlayRequest(String request) {
+        if (request == null) {
+            return null;
+        }
+        String[] fields = request.trim().split(":", -1);
+        if (fields.length < 2 || fields.length > 3 || !"overlay".equalsIgnoreCase(fields[0].trim())) {
+            return null;
+        }
+        int codePoint = parseCodePoint(fields[1]);
+        if (codePoint < 0) {
+            return null;
+        }
+        int shift = 0;
+        if (fields.length == 3) {
+            try {
+                shift = Integer.parseInt(fields[2].trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return new OverlayRequest(codePoint, shift);
+    }
+
     static int parseCodePoint(String text) {
         if (text == null) {
             return -1;

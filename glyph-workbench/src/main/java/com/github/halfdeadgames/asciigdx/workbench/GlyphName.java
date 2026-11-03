@@ -9,19 +9,13 @@ final class GlyphName {
     private GlyphName() {
     }
 
-    /** Names longer than {@code maxChars} keep their last words, since Unicode names end in the part that identifies the glyph. */
-    static String describe(int codePoint, int maxChars) {
+    /** The complete sanitized name, or {@link #CUSTOM} for private use and unnamed code points. */
+    static String fullName(int codePoint) {
         String name = Character.getName(codePoint);
         if (name == null || name.startsWith(PRIVATE_USE_PREFIX)) {
             return CUSTOM;
         }
-        String clean = sanitize(name);
-        if (clean.length() <= maxChars) {
-            return clean;
-        }
-        int earliestStart = clean.length() - Math.max(0, maxChars);
-        int spaceBeforeFirstWord = clean.indexOf(' ', earliestStart - 1);
-        return spaceBeforeFirstWord >= 0 ? clean.substring(spaceBeforeFirstWord + 1) : clean.substring(earliestStart);
+        return sanitize(name);
     }
 
     private static String sanitize(String name) {

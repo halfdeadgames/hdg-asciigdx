@@ -9,34 +9,22 @@ class GlyphNameTest {
 
     @Test
     void namesAreUppercase() {
-        assertEquals("WHITE SMILING FACE", GlyphName.describe(0x263A, 40));
+        assertEquals("WHITE SMILING FACE", GlyphName.fullName(0x263A));
     }
 
     @Test
     void privateUseIsCustom() {
-        assertEquals(GlyphName.CUSTOM, GlyphName.describe(0xE000, 40));
+        assertEquals(GlyphName.CUSTOM, GlyphName.fullName(0xE000));
     }
 
     @Test
-    void longNamesKeepTheirLastWholeWords() {
-        assertEquals("FACE", GlyphName.describe(0x263A, 10));
-        assertEquals("CAPITAL LETTER A", GlyphName.describe('A', 20));
-    }
-
-    @Test
-    void wordThatFitsExactlyIsKept() {
-        assertEquals("SMILING FACE", GlyphName.describe(0x263A, 12));
-    }
-
-    @Test
-    void lastWordLongerThanTheLimitIsCut() {
-        assertEquals("FACE", GlyphName.describe(0x263A, 4));
-        assertEquals("ACE", GlyphName.describe(0x263A, 3));
+    void longNamesKeepAllWords() {
+        assertEquals("DOUBLE EXCLAMATION MARK", GlyphName.fullName(0x203C));
     }
 
     @Test
     void onlyFontCharactersRemain() {
-        String shown = GlyphName.describe(0x2500, 60);
+        String shown = GlyphName.fullName(0x2500);
         assertTrue(shown.matches("[A-Z0-9 \\-]+"));
     }
 }

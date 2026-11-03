@@ -1,6 +1,8 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -14,8 +16,13 @@ final class DeriveFlow {
     /** The operations offered by the menu, in menu order. */
     static final List<GlyphOp.Kind> OPERATIONS = List.of(
         GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE90,
-        GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT);
+        GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT, GlyphOp.Kind.OVERLAY);
 
+    /** One committed overlay source: the slot it comes from and how far it is shifted. */
+    record Part(int slot, int shift) { }
+
+    private final List<Part> parts = new ArrayList<>();
+    private int pendingShift;
     private Mode mode = Mode.IDLE;
     private int menuIndex;
     private int targetSlot;
@@ -63,7 +70,78 @@ final class DeriveFlow {
         this.targetSlot = targetSlot;
         sourceSlot = targetSlot;
         menuIndex = 0;
+        clearOverlayState();
         mode = Mode.MENU;
+    }
+
+    boolean isOverlay() {
+        return operation == GlyphOp.Kind.OVERLAY
+            && (mode == Mode.PICK_SOURCE || mode == Mode.CONFIRM_REPLACE);
+    }
+
+    boolean sourceIsTarget() {
+        return sourceSlot == targetSlot;
+    }
+
+    int pendingShift() {
+        return pendingShift;
+    }
+
+    /** Adds to the shift of the source being picked; only overlay source picking uses it. */
+    void shiftSource(int delta) {
+        if (isOverlayPicking()) {
+            pendingShift += delta;
+        }
+    }
+
+    /** @return false when not picking an overlay or when the source is the target slot */
+    boolean addPart() {
+        if (!isOverlayPicking() || sourceIsTarget()) {
+            return false;
+        }
+        parts.add(new Part(sourceSlot, pendingShift));
+        pendingShift = 0;
+        return true;
+    }
+
+    /** @return whether a part was removed */
+    boolean removeLastPart() {
+        if (!isOverlayPicking() || parts.isEmpty()) {
+            return false;
+        }
+        parts.remove(parts.size() - 1);
+        return true;
+    }
+
+    List<Part> parts() {
+        return Collections.unmodifiableList(new ArrayList<>(parts));
+    }
+
+    /** The committed parts followed by the part being picked, which counts only while the source is not the target. */
+    List<Part> partsWithPending() {
+        List<Part> all = new ArrayList<>(parts);
+        if (isOverlayPicking() && !sourceIsTarget()) {
+            all.add(new Part(sourceSlot, pendingShift));
+        }
+        return all;
+    }
+
+    /** Builds the overlay operation for parts, looking each slot up in {@code codePoints}. */
+    static GlyphOp overlayOp(List<Part> parts, int[] codePoints) {
+        List<GlyphOp.Source> sources = new ArrayList<>(parts.size());
+        for (Part part : parts) {
+            sources.add(new GlyphOp.Source(codePoints[part.slot()], part.shift()));
+        }
+        return new GlyphOp(GlyphOp.Kind.OVERLAY, sources);
+    }
+
+    private boolean isOverlayPicking() {
+        return mode == Mode.PICK_SOURCE && operation == GlyphOp.Kind.OVERLAY;
+    }
+
+    private void clearOverlayState() {
+        parts.clear();
+        pendingShift = 0;
     }
 
     /** Moves the highlighted menu row, wrapping at both ends. */
@@ -88,6 +166,7 @@ final class DeriveFlow {
         }
         operation = OPERATIONS.get(menuIndex);
         sourceSlot = targetSlot;
+        clearOverlayState();
         mode = Mode.PICK_SOURCE;
     }
 
@@ -124,11 +203,13 @@ final class DeriveFlow {
         if (mode == Mode.CONFIRM_REPLACE) {
             mode = Mode.PICK_SOURCE;
         } else {
+            clearOverlayState();
             mode = Mode.IDLE;
         }
     }
 
     void finish() {
+        clearOverlayState();
         mode = Mode.IDLE;
     }
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class DeriveFlowTest {
@@ -101,6 +102,149 @@ class DeriveFlowTest {
         flow.askReplace();
         flow.finish();
         assertFalse(flow.isActive());
+    }
+
+    private static DeriveFlow overlayPicking(int targetSlot) {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(targetSlot);
+        flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(GlyphOp.Kind.OVERLAY));
+        flow.chooseOperation();
+        return flow;
+    }
+
+    @Test
+    void overlayIsTheLastOperation() {
+        int last = DeriveFlow.OPERATIONS.size() - 1;
+        assertEquals(GlyphOp.Kind.OVERLAY, DeriveFlow.OPERATIONS.get(last));
+        assertEquals("OVERLAY", DeriveFlow.label(GlyphOp.Kind.OVERLAY));
+    }
+
+    @Test
+    void menuWrapsForwardFromOverlayToFirstRow() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(0);
+        flow.highlightMenuRow(DeriveFlow.OPERATIONS.size() - 1);
+        flow.moveMenu(1);
+        assertEquals(0, flow.menuIndex());
+    }
+
+    @Test
+    void overlayFlagFollowsOperationAndMode() {
+        DeriveFlow flow = overlayPicking(2);
+        assertTrue(flow.isOverlay());
+        flow.askReplace();
+        assertTrue(flow.isOverlay());
+        flow.finish();
+        assertFalse(flow.isOverlay());
+    }
+
+    @Test
+    void addsAndRemovesParts() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        assertTrue(flow.addPart());
+        flow.moveSource(6);
+        assertTrue(flow.addPart());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0), new DeriveFlow.Part(6, 0)), flow.parts());
+        assertTrue(flow.removeLastPart());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
+        assertTrue(flow.removeLastPart());
+        assertFalse(flow.removeLastPart());
+    }
+
+    @Test
+    void shiftAccumulatesAndResetsAfterAdd() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.shiftSource(2);
+        flow.shiftSource(-3);
+        flow.shiftSource(4);
+        assertEquals(3, flow.pendingShift());
+        assertTrue(flow.addPart());
+        assertEquals(0, flow.pendingShift());
+        assertEquals(new DeriveFlow.Part(5, 3), flow.parts().get(0));
+    }
+
+    @Test
+    void refusesThePartOnTheTargetSlot() {
+        DeriveFlow flow = overlayPicking(2);
+        assertTrue(flow.sourceIsTarget());
+        assertFalse(flow.addPart());
+        assertTrue(flow.parts().isEmpty());
+    }
+
+    @Test
+    void shiftAndPartsAreIgnoredForOtherOperations() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(2);
+        flow.chooseOperation();
+        flow.moveSource(5);
+        flow.shiftSource(3);
+        assertEquals(0, flow.pendingShift());
+        assertFalse(flow.addPart());
+        assertFalse(flow.removeLastPart());
+        assertFalse(flow.isOverlay());
+    }
+
+    @Test
+    void reopeningAndChoosingClearParts() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.shiftSource(1);
+        flow.addPart();
+        flow.shiftSource(2);
+        flow.openMenu(2);
+        assertTrue(flow.parts().isEmpty());
+        assertEquals(0, flow.pendingShift());
+    }
+
+    @Test
+    void cancelToIdleAndFinishClearParts() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.addPart();
+        flow.cancel();
+        assertTrue(flow.parts().isEmpty());
+
+        flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.addPart();
+        flow.finish();
+        assertTrue(flow.parts().isEmpty());
+    }
+
+    @Test
+    void cancellingTheReplaceQuestionKeepsParts() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.addPart();
+        flow.shiftSource(2);
+        flow.askReplace();
+        flow.cancel();
+        assertTrue(flow.isPicking());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
+        assertEquals(2, flow.pendingShift());
+    }
+
+    @Test
+    void pendingPartCountsOnlyOffTheTarget() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.shiftSource(1);
+        assertTrue(flow.partsWithPending().isEmpty());
+        flow.moveSource(5);
+        assertEquals(List.of(new DeriveFlow.Part(5, 1)), flow.partsWithPending());
+        flow.addPart();
+        flow.shiftSource(-2);
+        assertEquals(List.of(new DeriveFlow.Part(5, 1), new DeriveFlow.Part(5, -2)), flow.partsWithPending());
+    }
+
+    @Test
+    void overlayOpMapsSlotsToCodePointsWithShifts() {
+        int[] codePoints = {10, 20, 30};
+        GlyphOp op = DeriveFlow.overlayOp(
+            List.of(new DeriveFlow.Part(2, 0), new DeriveFlow.Part(1, -1)), codePoints);
+        assertEquals(GlyphOp.Kind.OVERLAY, op.kind());
+        assertEquals(List.of(new GlyphOp.Source(30, 0), new GlyphOp.Source(20, -1)), op.sources());
     }
 
     @Test

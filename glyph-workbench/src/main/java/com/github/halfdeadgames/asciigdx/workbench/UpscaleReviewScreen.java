@@ -101,6 +101,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private boolean[] noGlyph;
     private int[] codePoints;
     private int cursor;
+    private int titleCodePoint = -1;
+    private float titleSeconds;
     private int builtFor = -1;
     private boolean revealCursor = true;
     private int hoveredColumn = -1;
@@ -617,7 +619,12 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         appendHex(line, codePoint);
         line.append("  ");
         int nameChars = Math.max(1, area.width() - 6 - line.length());
-        line.append(GlyphName.describe(codePoint, nameChars));
+        if (codePoint != titleCodePoint) {
+            titleCodePoint = codePoint;
+            titleSeconds = 0f;
+        }
+        titleSeconds += Gdx.graphics.getDeltaTime();
+        line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
         Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), line.toString(), true);
         columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
         columnPanel.setViewed(-1, CURSOR_COLOR);
