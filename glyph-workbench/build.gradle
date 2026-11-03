@@ -56,6 +56,7 @@ run {
   environment("__GL_THREADED_OPTIMIZATIONS", 0)
   def commandLineProperties = gradle.startParameter.projectProperties
   if (commandLineProperties.containsKey('select')) systemProperty 'workbench.select', commandLineProperties['select']
+  if (commandLineProperties.containsKey('tab')) systemProperty 'workbench.tab', commandLineProperties['tab']
   if (commandLineProperties.containsKey('mode')) systemProperty 'workbench.mode', commandLineProperties['mode']
   systemProperty 'workbench.fontsRoot', rootProject.file('fonts').absolutePath
   systemProperty 'workbench.fontSize', commandLineProperties.getOrDefault('fontSize', '8')

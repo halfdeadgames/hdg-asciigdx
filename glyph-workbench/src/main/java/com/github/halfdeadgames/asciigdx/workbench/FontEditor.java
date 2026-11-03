@@ -13,7 +13,9 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -109,6 +111,17 @@ final class FontEditor {
     /** The drawn pixels of a glyph with derived ones resolved, or null when the slot is empty. */
     PixelGlyph glyph(int codePoint) {
         return resolved.get(codePoint);
+    }
+
+    /** The code points of every glyph that has at least one lit pixel, derived ones included. */
+    Set<Integer> codePointsWithInk() {
+        Set<Integer> withInk = new HashSet<>();
+        for (Map.Entry<Integer, PixelGlyph> entry : resolved.entrySet()) {
+            if (entry.getValue().pixels().hasLitPixel()) {
+                withInk.add(entry.getKey());
+            }
+        }
+        return withInk;
     }
 
     /** Columns that hold drawn pixels: the whole cell for full glyphs, otherwise the body. */

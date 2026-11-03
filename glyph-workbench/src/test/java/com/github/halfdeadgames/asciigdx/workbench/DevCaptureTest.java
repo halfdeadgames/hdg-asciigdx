@@ -15,6 +15,15 @@ class DevCaptureTest {
     }
 
     @Test
+    void previewTabIsFoundByNameIgnoringCase() {
+        assertEquals(PreviewTabs.Tab.TEXT, DevCapture.parseTab("text"));
+        assertEquals(PreviewTabs.Tab.TILE, DevCapture.parseTab(" Tile "));
+        assertEquals(PreviewTabs.Tab.SCALES, DevCapture.parseTab("SCALES"));
+        assertNull(DevCapture.parseTab("nope"));
+        assertNull(DevCapture.parseTab(null));
+    }
+
+    @Test
     void otherRequestsAreNotOverlayRequests() {
         assertNull(DevCapture.parseOverlayRequest(null));
         assertNull(DevCapture.parseOverlayRequest("menu"));

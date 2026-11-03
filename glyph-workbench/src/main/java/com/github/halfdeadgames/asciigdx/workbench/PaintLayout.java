@@ -18,9 +18,9 @@ final class PaintLayout {
     private PaintLayout() {
     }
 
-    /** Preview panel height in cells: borders plus the 1x and 2x blocks, each under a label row. */
+    /** Preview panel height in cells: borders, the tab row, a gap, a label row, and the tallest scale block. */
     static int previewHeight(int glyphHeight) {
-        int content = CELL + glyphHeight + PREVIEW_GAP + CELL + 2 * glyphHeight;
+        int content = CELL + PREVIEW_GAP + CELL + PaintPreview.SCALES[PaintPreview.SCALES.length - 1] * glyphHeight;
         return 2 + (content + CELL - 1) / CELL;
     }
 

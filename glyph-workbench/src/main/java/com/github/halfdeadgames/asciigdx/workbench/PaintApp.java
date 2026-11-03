@@ -183,6 +183,10 @@ public final class PaintApp implements WorkbenchScreen {
         sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
         grid = new PaintGridView(painter, editor, PaintGuides.saiksistt(editor.cellWidth()));
         preview = new PaintPreview(painter, editor);
+        PreviewTabs.Tab requestedTab = DevCapture.requestedTab();
+        if (requestedTab != null) {
+            preview.selectTab(requestedTab);
+        }
         rules = new RulesOverlay(painter, fontDir);
         notePanel = new NotePanel(painter);
         loadReviewNotes(directory);
@@ -831,6 +835,7 @@ public final class PaintApp implements WorkbenchScreen {
         boolean clicked = leftClicked();
         int codePoint = codePoints[cursor];
         if (clicked) {
+            preview.click(rects.preview(), Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
             sheet.clickBar(pointerX, pointerY);
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {

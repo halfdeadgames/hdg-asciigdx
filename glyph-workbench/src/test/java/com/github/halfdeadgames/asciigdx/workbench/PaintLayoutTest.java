@@ -22,11 +22,11 @@ class PaintLayoutTest {
 
     @Test
     void previewHeightGrowsWithTheGlyphHeight() {
-        assertEquals(6, PaintLayout.previewHeight(8));
+        assertEquals(8, PaintLayout.previewHeight(8));
         assertTrue(PaintLayout.previewHeight(32) > PaintLayout.previewHeight(16));
-        // 1x and 2x blocks plus two label rows must fit inside the borders
+        // tab row, gap, label row, and the 8x block must fit inside the borders
         for (int height : new int[] {8, 16, 24, 32, 40}) {
-            int content = 24 + height + 12 + 24 + 2 * height;
+            int content = 24 + 12 + 24 + 8 * height;
             assertTrue((PaintLayout.previewHeight(height) - 2) * 24 >= content);
         }
     }
