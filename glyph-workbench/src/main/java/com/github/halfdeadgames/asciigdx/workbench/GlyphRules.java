@@ -35,7 +35,7 @@ final class GlyphRules {
         PixelGrid pixels = glyph.pixels();
         if (glyph.full() && hasGapInk(pixels, bodyWidth)) {
             warnings.add(new RuleWarning(KEY_GAP,
-                String.format(Locale.ROOT, "U+%04X has ink in the gap column", codePoint)));
+                String.format(Locale.ROOT, "U+%04X %s has ink in the gap column", codePoint, GlyphName.fullName(codePoint))));
         }
         if (hasInkInRows(pixels, 0, accentRowCount)) {
             warnings.add(new RuleWarning(KEY_ACCENT_INK, "INK IN ACCENT ROW"));

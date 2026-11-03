@@ -171,16 +171,104 @@ class UiKitTest {
     }
 
     @Test
-    void messageStripReplacesTheLastSlotWithTheNewestResultWhenItWouldBeCutOff() {
+    void messageStripScrollsToTheNewestResultWhenItWouldBeCutOff() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        List<MessageStrip.Message> shown = strip.visible(2);
+        assertEquals(2, shown.size());
+        assertEquals("third", shown.get(0).text());
+        assertEquals("Undid move", shown.get(1).text());
+        assertTrue(strip.hiddenAbove());
+        assertFalse(strip.hiddenBelow());
+    }
+
+    private static MessageStrip fourMessagesWithNewestResultLast() {
         MessageStrip strip = new MessageStrip();
         strip.setCondition("a", false, "first");
         strip.setCondition("b", false, "second");
         strip.setCondition("c", false, "third");
         strip.ok("Undid move");
+        return strip;
+    }
+
+    @Test
+    void messageStripScrollOffsetStaysWithinTheList() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        strip.visible(2);
+        strip.scrollBy(-100);
+        assertEquals("first", strip.visible(2).get(0).text());
+        strip.scrollBy(100);
         List<MessageStrip.Message> shown = strip.visible(2);
+        assertEquals("third", shown.get(0).text());
         assertEquals(2, shown.size());
+    }
+
+    @Test
+    void messageStripReportsMessagesHiddenAboveAndBelow() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        strip.visible(2);
+        strip.scrollBy(-1);
+        strip.visible(2);
+        assertTrue(strip.hiddenAbove());
+        assertTrue(strip.hiddenBelow());
+        strip.scrollBy(-1);
+        strip.visible(2);
+        assertFalse(strip.hiddenAbove());
+        assertTrue(strip.hiddenBelow());
+        assertFalse(new MessageStrip().hiddenAbove());
+        assertFalse(new MessageStrip().hiddenBelow());
+    }
+
+    @Test
+    void messageStripJumpsToANewResultEvenWhenScrolledAway() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        strip.visible(2);
+        strip.scrollBy(-100);
+        assertEquals("first", strip.visible(2).get(0).text());
+        strip.ok("Saved");
+        List<MessageStrip.Message> shown = strip.visible(2);
+        assertEquals("Saved", shown.get(shown.size() - 1).text());
+        assertFalse(strip.hiddenBelow());
+    }
+
+    @Test
+    void messageStripDoesNotJumpForANewCondition() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        strip.visible(2);
+        strip.scrollBy(-100);
+        strip.visible(2);
+        strip.setCondition("d", false, "fourth");
+        List<MessageStrip.Message> shown = strip.visible(2);
         assertEquals("first", shown.get(0).text());
-        assertEquals("Undid move", shown.get(1).text());
+        assertTrue(strip.hiddenBelow());
+    }
+
+    @Test
+    void messageStripButtonsAreUsableOnlyTowardsHiddenMessages() {
+        MessageStrip strip = fourMessagesWithNewestResultLast();
+        strip.place(10, 20, 30, 4);
+        strip.visible(2);
+        // The list sits at its bottom: the up button is usable, the down button is not, but both can be hit.
+        assertTrue(strip.hiddenAbove());
+        assertFalse(strip.hiddenBelow());
+        int buttonColumn = 10 + 30 - 2;
+        assertTrue(strip.click(buttonColumn, 22));
+        assertEquals("third", strip.visible(2).get(0).text());
+        assertTrue(strip.click(buttonColumn, 21));
+        assertEquals("second", strip.visible(2).get(0).text());
+        assertFalse(strip.click(buttonColumn - 1, 21));
+        assertTrue(strip.click(buttonColumn, 22));
+        assertEquals("third", strip.visible(2).get(0).text());
+    }
+
+    @Test
+    void messageStripKnowsWhichCellsBelongToIt() {
+        MessageStrip strip = new MessageStrip();
+        assertFalse(strip.contains(0, 0));
+        strip.place(10, 20, 30, 4);
+        assertTrue(strip.contains(10, 20));
+        assertTrue(strip.contains(39, 23));
+        assertFalse(strip.contains(40, 23));
+        assertFalse(strip.contains(39, 24));
     }
 
     @Test

@@ -72,7 +72,7 @@ class GlyphRulesTest {
             "........", "........", "........", "........", "........", ".......#", "........", "........");
         List<RuleWarning> warnings = check(true, gapRows);
         assertEquals(List.of(GlyphRules.KEY_GAP), keys(warnings));
-        assertEquals("U+0041 has ink in the gap column", warnings.get(0).message());
+        assertEquals("U+0041 " + GlyphName.fullName('A') + " has ink in the gap column", warnings.get(0).message());
     }
 
     @Test

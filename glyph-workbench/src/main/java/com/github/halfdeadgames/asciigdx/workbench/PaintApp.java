@@ -44,7 +44,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int WHEEL_ROWS = 3;
     private static final int HELP_PADDING = 1;
-    // Cells the message strip spends on its frame, marker, and gaps (MessageStrip.draw uses width - 6).
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
@@ -817,7 +816,9 @@ public final class PaintApp implements WorkbenchScreen {
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (wheelTicks != 0) {
-            if (notePanel.contains(pointerX, pointerY)) {
+            if (messages.contains(Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE))) {
+                messages.scrollBy(wheelTicks);
+            } else if (notePanel.contains(pointerX, pointerY)) {
                 notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
                 sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
@@ -833,6 +834,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (clicked) {
             preview.click(rects.preview(), Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
             sheet.clickBar(pointerX, pointerY);
+            messages.click(Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
                 messages.nextAction();

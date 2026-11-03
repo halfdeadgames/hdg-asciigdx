@@ -419,7 +419,9 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (wheelTicks != 0) {
-            if (notePanel.contains(pointerX, pointerY)) {
+            if (messages.contains(Math.floorDiv(pointerX, CELL), Math.floorDiv(pointerY, CELL))) {
+                messages.scrollBy(wheelTicks);
+            } else if (notePanel.contains(pointerX, pointerY)) {
                 notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
                 sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
@@ -432,6 +434,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private void handleActions() {
         if (Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             sheet.clickBar(pointerX, pointerY);
+            messages.click(Math.floorDiv(pointerX, CELL), Math.floorDiv(pointerY, CELL));
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
                 if (slot != cursor) {

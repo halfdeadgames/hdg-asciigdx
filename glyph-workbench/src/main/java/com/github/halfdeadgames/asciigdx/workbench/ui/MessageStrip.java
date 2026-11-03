@@ -18,7 +18,19 @@ public final class MessageStrip {
     public record Message(boolean warning, String text) {
     }
 
+    /** Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll button column. */
+    public static final int RESERVED_COLUMNS = 7;
+
     private static final int CELL = Painter.TEXT_SIZE;
+    private static final float BLINK_HALF_CYCLE_SECONDS = 0.25f;
+    private int firstIndex;
+    private int viewRows;
+    private int totalCount;
+    private boolean revealNewestResult;
+    private int boundsX;
+    private int boundsY;
+    private int boundsWidth;
+    private int boundsHeight;
     private final Map<String, Message> conditions = new LinkedHashMap<>();
     private final List<Message> results = new ArrayList<>();
     private final Map<Message, Float> scrollStartSeconds = new IdentityHashMap<>();
@@ -27,10 +39,12 @@ public final class MessageStrip {
     /** Reports something that just happened; it stays until the next call to {@link #nextAction()}. */
     public void ok(String text) {
         results.add(new Message(false, text));
+        revealNewestResult = true;
     }
 
     public void warn(String text) {
         results.add(new Message(true, text));
+        revealNewestResult = true;
     }
 
     /** Shows a condition until {@link #clearCondition} is called for the key; setting it again replaces it. */
@@ -51,8 +65,100 @@ public final class MessageStrip {
         results.clear();
     }
 
-    /** Up to {@code count} messages to show: warnings first, then the rest; conditions before results in each group. */
+    /**
+     * Up to {@code count} messages to show, starting at the scroll position. The order is warnings first, then the
+     * rest; conditions before results in each group. A result posted since the last call is scrolled into view.
+     */
     public List<Message> visible(int count) {
+        List<Message> ordered = orderedMessages();
+        viewRows = Math.max(0, count);
+        totalCount = ordered.size();
+        if (revealNewestResult && viewRows > 0) {
+            revealNewestResult = false;
+            scrollNewestResultIntoView(ordered);
+        }
+        firstIndex = clampedIndex(firstIndex);
+        int end = Math.min(totalCount, firstIndex + viewRows);
+        return new ArrayList<>(ordered.subList(firstIndex, end));
+    }
+
+    /** Whether messages are cut off above the view, going by the last {@link #visible} call. */
+    public boolean hiddenAbove() {
+        return firstIndex > 0;
+    }
+
+    /** Whether messages are cut off below the view, going by the last {@link #visible} call. */
+    public boolean hiddenBelow() {
+        return firstIndex + viewRows < totalCount;
+    }
+
+    /** Scrolls by whole messages (negative goes up); the position stays within the list. */
+    public void scrollBy(int messages) {
+        firstIndex = clampedIndex(firstIndex + messages);
+    }
+
+    /** Whether the cell lies inside the panel as it was last drawn. */
+    public boolean contains(int cellX, int cellY) {
+        return cellX >= boundsX && cellX < boundsX + boundsWidth
+            && cellY >= boundsY && cellY < boundsY + boundsHeight;
+    }
+
+    /** Presses the scroll button under the cell, if any; returns whether a button was hit. */
+    public boolean click(int cellX, int cellY) {
+        if (!buttonsFit() || cellX != buttonColumn()) {
+            return false;
+        }
+        if (cellY == topButtonRow()) {
+            scrollBy(-1);
+            return true;
+        }
+        if (cellY == bottomButtonRow()) {
+            scrollBy(1);
+            return true;
+        }
+        return false;
+    }
+
+    void place(int x, int y, int width, int height) {
+        boundsX = x;
+        boundsY = y;
+        boundsWidth = width;
+        boundsHeight = height;
+    }
+
+    private boolean buttonsFit() {
+        return boundsHeight - 2 >= 2 && boundsWidth > RESERVED_COLUMNS;
+    }
+
+    private int buttonColumn() {
+        return boundsX + boundsWidth - 2;
+    }
+
+    private int topButtonRow() {
+        return boundsY + 1;
+    }
+
+    private int bottomButtonRow() {
+        return boundsY + boundsHeight - 2;
+    }
+
+    private int clampedIndex(int index) {
+        return Math.max(0, Math.min(Math.max(0, totalCount - viewRows), index));
+    }
+
+    private void scrollNewestResultIntoView(List<Message> ordered) {
+        if (results.isEmpty()) {
+            return;
+        }
+        int index = indexOfInstance(ordered, results.get(results.size() - 1));
+        if (index < firstIndex) {
+            firstIndex = index;
+        } else if (index >= firstIndex + viewRows) {
+            firstIndex = index - viewRows + 1;
+        }
+    }
+
+    private List<Message> orderedMessages() {
         List<Message> ordered = new ArrayList<>();
         for (int pass = 0; pass < 2; pass++) {
             boolean warning = pass == 0;
@@ -67,15 +173,7 @@ public final class MessageStrip {
                 }
             }
         }
-        int shown = Math.min(ordered.size(), Math.max(0, count));
-        List<Message> visible = new ArrayList<>(ordered.subList(0, shown));
-        if (shown > 0 && !results.isEmpty()) {
-            Message newestResult = results.get(results.size() - 1);
-            if (indexOfInstance(ordered, newestResult) >= shown) {
-                visible.set(shown - 1, newestResult);
-            }
-        }
-        return visible;
+        return ordered;
     }
 
     private static int indexOfInstance(List<Message> messages, Message target) {
@@ -115,12 +213,38 @@ public final class MessageStrip {
         }
     }
 
-    /** Draws the panel; messages wider than the panel scroll back and forth, each on its own timer. */
+    private boolean blinkOn() {
+        return (int) (clockSeconds / BLINK_HALF_CYCLE_SECONDS) % 2 == 0;
+    }
+
+    private void drawScrollIndicators(Painter painter) {
+        if (blinkOn()) {
+            int arrowColumn = (boundsX + 1) * CELL;
+            if (hiddenAbove()) {
+                painter.text("▲", arrowColumn, topButtonRow() * CELL, UiPalette.ACCENT);
+            }
+            if (hiddenBelow()) {
+                painter.text("▼", arrowColumn, bottomButtonRow() * CELL, UiPalette.ACCENT);
+            }
+        }
+        if (buttonsFit()) {
+            painter.text("▲", buttonColumn() * CELL, topButtonRow() * CELL,
+                hiddenAbove() ? UiPalette.TEXT : UiPalette.DIM);
+            painter.text("▼", buttonColumn() * CELL, bottomButtonRow() * CELL,
+                hiddenBelow() ? UiPalette.TEXT : UiPalette.DIM);
+        }
+    }
+
+    /**
+     * Draws the panel; messages wider than the text area scroll back and forth, each on its own timer. When messages
+     * are cut off, blinking arrows mark the hidden side and two buttons at the right edge scroll the list.
+     */
     public void draw(Painter painter, int x, int y, int width, int height, float deltaSeconds) {
         Panel.draw(painter, x, y, width, height, "MESSAGES", false);
         advance(deltaSeconds);
+        place(x, y, width, height);
         List<Message> shown = visible(height - 2);
-        int room = width - 6;
+        int room = width - RESERVED_COLUMNS;
         int row = y + 1;
         for (Message message : shown) {
             painter.text(message.warning() ? "!" : "✓", (x + 2) * CELL, row * CELL,
@@ -128,6 +252,7 @@ public final class MessageStrip {
             painter.text(lineText(message, room), (x + 4) * CELL, row * CELL, UiPalette.TEXT);
             row++;
         }
+        drawScrollIndicators(painter);
         forgetScrollsExcept(shown);
     }
 }
