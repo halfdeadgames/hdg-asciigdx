@@ -1,7 +1,10 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 import com.github.halfdeadgames.asciigdx.workbench.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.BounceScroll;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,8 @@ public final class MessageStrip {
     private static final int CELL = Painter.TEXT_SIZE;
     private final Map<String, Message> conditions = new LinkedHashMap<>();
     private final List<Message> results = new ArrayList<>();
+    private final Map<Message, Float> scrollStartSeconds = new IdentityHashMap<>();
+    private float clockSeconds;
 
     /** Reports something that just happened; it stays until the next call to {@link #nextAction()}. */
     public void ok(String text) {
@@ -82,17 +87,47 @@ public final class MessageStrip {
         return -1;
     }
 
-    public void draw(Painter painter, int x, int y, int width, int height) {
+    void advance(float deltaSeconds) {
+        clockSeconds += deltaSeconds;
+    }
+
+    String lineText(Message message, int room) {
+        if (message.text().length() <= room) {
+            return message.text();
+        }
+        Float startSeconds = scrollStartSeconds.get(message);
+        if (startSeconds == null) {
+            startSeconds = clockSeconds;
+            scrollStartSeconds.put(message, startSeconds);
+        }
+        return BounceScroll.window(message.text(), room, clockSeconds - startSeconds);
+    }
+
+    private void forgetScrollsExcept(List<Message> shown) {
+        if (scrollStartSeconds.isEmpty()) {
+            return;
+        }
+        Iterator<Message> tracked = scrollStartSeconds.keySet().iterator();
+        while (tracked.hasNext()) {
+            if (indexOfInstance(shown, tracked.next()) < 0) {
+                tracked.remove();
+            }
+        }
+    }
+
+    /** Draws the panel; messages wider than the panel scroll back and forth, each on its own timer. */
+    public void draw(Painter painter, int x, int y, int width, int height, float deltaSeconds) {
         Panel.draw(painter, x, y, width, height, "MESSAGES", false);
+        advance(deltaSeconds);
+        List<Message> shown = visible(height - 2);
+        int room = width - 6;
         int row = y + 1;
-        for (Message message : visible(height - 2)) {
+        for (Message message : shown) {
             painter.text(message.warning() ? "!" : "✓", (x + 2) * CELL, row * CELL,
                 message.warning() ? UiPalette.WARN : UiPalette.OK);
-            String text = message.text();
-            int room = width - 6;
-            painter.text(text.length() > room ? text.substring(0, Math.max(0, room)) : text,
-                (x + 4) * CELL, row * CELL, UiPalette.TEXT);
+            painter.text(lineText(message, room), (x + 4) * CELL, row * CELL, UiPalette.TEXT);
             row++;
         }
+        forgetScrollsExcept(shown);
     }
 }

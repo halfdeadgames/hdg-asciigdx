@@ -103,7 +103,7 @@ class FontRulesTest {
         assertNotNull(rules.group(FontRules.PUNCTUATION));
         assertNotNull(rules.group("At 16 and above"));
         FontRules.Group core = rules.group(FontRules.CORE);
-        assertEquals(5, core.bullets().stream().filter(b -> !b.sub()).count());
+        assertEquals(6, core.bullets().stream().filter(b -> !b.sub()).count());
         assertEquals(6, core.bullets().stream().filter(FontRules.Bullet::sub).count());
         assertFalse(core.bullets().get(0).sub());
         assertTrue(core.bullets().get(2).sub());

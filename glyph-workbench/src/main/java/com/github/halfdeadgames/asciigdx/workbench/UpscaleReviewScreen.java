@@ -592,7 +592,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         drawCandidates(codePoint);
         drawNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
+        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns(), rows() - 1, noteEditor.isActive() ? NOTE_KEYS : BROWSE_KEYS);
         if (replaceColumn >= 0) {
             Dialog.draw(painter, columns(), rows(), "REPLACE GLYPH",

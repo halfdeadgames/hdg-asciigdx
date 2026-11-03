@@ -182,4 +182,42 @@ class UiKitTest {
         assertEquals("first", shown.get(0).text());
         assertEquals("Undid move", shown.get(1).text());
     }
+
+    @Test
+    void messageStripLeavesMessagesThatFitUntouchedAtAnyTime() {
+        MessageStrip strip = new MessageStrip();
+        strip.ok("short");
+        MessageStrip.Message message = strip.visible(1).get(0);
+        strip.advance(30f);
+        assertEquals("short", strip.lineText(message, 5));
+    }
+
+    @Test
+    void messageStripScrollsOverlongMessagesAndRestartsWhenTheTextChanges() {
+        MessageStrip strip = new MessageStrip();
+        strip.setCondition("long", false, "0123456789");
+        MessageStrip.Message first = strip.visible(1).get(0);
+        assertEquals("01234", strip.lineText(first, 5));
+        strip.advance(30f);
+        String scrolled = strip.lineText(first, 5);
+        assertEquals(5, scrolled.length());
+        assertTrue("0123456789".contains(scrolled));
+
+        strip.setCondition("long", false, "abcdefghij");
+        MessageStrip.Message replaced = strip.visible(1).get(0);
+        assertEquals("abcde", strip.lineText(replaced, 5));
+    }
+
+    @Test
+    void messageStripScrollsEachOverlongMessageOnItsOwnTimer() {
+        MessageStrip strip = new MessageStrip();
+        strip.setCondition("a", false, "0123456789");
+        MessageStrip.Message early = strip.visible(1).get(0);
+        strip.lineText(early, 5);
+        strip.advance(3f);
+        strip.setCondition("b", false, "abcdefghij");
+        MessageStrip.Message late = strip.visible(2).get(1);
+        assertEquals("abcde", strip.lineText(late, 5));
+        assertEquals("56789", strip.lineText(early, 5));
+    }
 }

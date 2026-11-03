@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 /** Back-and-forth scrolling for text wider than its space: hold at the start, scroll to the end, hold, scroll back. */
-final class BounceScroll {
+public final class BounceScroll {
 
     static final float HOLD_SECONDS = 1.5f;
     static final float CHARS_PER_SECOND = 4f;
@@ -36,7 +36,7 @@ final class BounceScroll {
     }
 
     /** The visible part of {@code text}, {@code width} characters or fewer, scrolled for the given time. */
-    static String window(String text, int width, float seconds) {
+    public static String window(String text, int width, float seconds) {
         int visible = Math.min(Math.max(0, width), text.length());
         int start = offset(text.length() - visible, seconds);
         return text.substring(start, start + visible);

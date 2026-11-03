@@ -45,7 +45,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int WHEEL_ROWS = 3;
     private static final int HELP_PADDING = 1;
     // Cells the message strip spends on its frame, marker, and gaps (MessageStrip.draw uses width - 6).
-    private static final int STRIP_TEXT_MARGIN = 6;
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
@@ -105,8 +104,6 @@ public final class PaintApp implements WorkbenchScreen {
     private String lastProblem = "";
     private String pickPromptText = "";
     private String pickProblemText = "";
-    private String pickPromptClockText = "";
-    private float pickPromptSeconds;
     private float ghostSeconds;
     private int derivedTextGlyph = -1;
     private int derivedTextSource = -1;
@@ -355,8 +352,8 @@ public final class PaintApp implements WorkbenchScreen {
             if (derivedTextGlyph != codePoint || derivedTextSource != from) {
                 derivedTextGlyph = codePoint;
                 derivedTextSource = from;
-                describeGlyph(codePoint).append(" is derived from U+");
-                appendHex(line, from);
+                describeGlyph(codePoint).append(" is derived from ");
+                appendCodeAndName(line, from);
                 derivedText = line.append(": not editable").toString();
             }
             messages.setCondition(KEY_DERIVED, true, derivedText);
@@ -370,13 +367,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         refreshRuleWarnings(codePoint);
         if (flow.isPicking()) {
-            if (!pickPromptText.equals(pickPromptClockText)) {
-                pickPromptClockText = pickPromptText;
-                pickPromptSeconds = 0f;
-            }
-            pickPromptSeconds += Gdx.graphics.getDeltaTime();
-            messages.setCondition(KEY_PICK, false,
-                BounceScroll.window(pickPromptText, rects.messages().width() - STRIP_TEXT_MARGIN, pickPromptSeconds));
+            messages.setCondition(KEY_PICK, false, pickPromptText);
             if (pickProblemText.isEmpty()) {
                 messages.clearCondition(KEY_PICK_PROBLEM);
             } else {
@@ -426,10 +417,10 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         for (int i = 0; i < undos; i++) {
-            showChangedGlyph(editor.undo(), "Undid change to U+");
+            showChangedGlyph(editor.undo(), "Undid change to ");
         }
         for (int i = 0; i < redos; i++) {
-            showChangedGlyph(editor.redo(), "Redid change to U+");
+            showChangedGlyph(editor.redo(), "Redid change to ");
         }
     }
 
@@ -440,7 +431,7 @@ public final class PaintApp implements WorkbenchScreen {
         messages.nextAction();
         line.setLength(0);
         line.append(notice);
-        appendHex(line, codePoint);
+        appendCodeAndName(line, codePoint);
         messages.ok(line.toString());
         for (int slot = 0; slot < codePoints.length; slot++) {
             if (codePoints[slot] == codePoint && !unselectable[slot]) {
@@ -533,9 +524,14 @@ public final class PaintApp implements WorkbenchScreen {
 
     private StringBuilder describeGlyph(int codePoint) {
         line.setLength(0);
-        line.append("U+");
-        appendHex(line, codePoint);
+        appendCodeAndName(line, codePoint);
         return line;
+    }
+
+    private static void appendCodeAndName(StringBuilder out, int codePoint) {
+        out.append("U+");
+        appendHex(out, codePoint);
+        out.append(' ').append(GlyphName.fullName(codePoint));
     }
 
     private void handleDeriveMenu() {
@@ -583,12 +579,12 @@ public final class PaintApp implements WorkbenchScreen {
     private String pickPrompt(boolean withSource) {
         boolean overlay = flow.operation() == GlyphOp.Kind.OVERLAY;
         line.setLength(0);
-        line.append(DeriveFlow.label(flow.operation())).append(" U+");
-        appendHex(line, codePoints[cursor]);
+        line.append(DeriveFlow.label(flow.operation())).append(' ');
+        appendCodeAndName(line, codePoints[cursor]);
         line.append(':');
         if (withSource) {
-            line.append(overlay ? " PART FROM U+" : " FROM U+");
-            appendHex(line, codePoints[flow.sourceSlot()]);
+            line.append(overlay ? " PART FROM " : " FROM ");
+            appendCodeAndName(line, codePoints[flow.sourceSlot()]);
         } else {
             line.append(overlay ? " PICK A PART" : " PICK SOURCE");
         }
@@ -605,8 +601,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (flow.operation() == GlyphOp.Kind.OVERLAY) {
             return line.append(" FROM ").append(flow.parts().size()).append(" PARTS").toString();
         }
-        line.append(" FROM U+");
-        appendHex(line, codePoints[flow.sourceSlot()]);
+        line.append(" FROM ");
+        appendCodeAndName(line, codePoints[flow.sourceSlot()]);
         return line.toString();
     }
 
@@ -923,7 +919,7 @@ public final class PaintApp implements WorkbenchScreen {
         preview.draw(rects.preview(), codePoint, pickShown);
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height());
+        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns, rows - 1,
             !choosingSource ? KEYS : flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS);
         if (confirmingQuit) {
@@ -938,7 +934,9 @@ public final class PaintApp implements WorkbenchScreen {
             SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
                 MENU_ROWS, flow.menuIndex());
         } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
-            describeGlyph(codePoint);
+            line.setLength(0);
+            line.append("U+");
+            appendHex(line, codePoint);
             ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
                 List.of(line + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
