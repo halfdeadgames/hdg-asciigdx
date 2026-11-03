@@ -42,8 +42,7 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String KEY_PICK_PROBLEM = "pickProblem";
     private static final String KEY_REVIEW = "review";
     private static final String KEY_GUIDES = "guides";
-    private static final int MARGIN = 12;
-    private static final int TEXT_LINE = Painter.TEXT_SIZE;
+    private static final String KEY_SCALE = "scale";
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int WHEEL_ROWS = 3;
     private static final int HELP_PADDING = 1;
@@ -110,6 +109,11 @@ public final class PaintApp implements WorkbenchScreen {
     private Texture whitePixel;
     private TextureGlyphSource source;
     private Painter painter;
+    private Painter rulesPainter;
+    private UiScale uiScale = UiScale.DEFAULT;
+    private int autoFactor = UiScale.DEFAULT_FACTOR;
+    private Integer overrideFactor;
+    private String scaleLabel = "";
     private FileHandle dataFile;
     private String folderName;
     private FontEditor editor;
@@ -207,7 +211,16 @@ public final class PaintApp implements WorkbenchScreen {
         source = TextureGlyphSource.loadDungeonMode();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
-        sheet = new PaintSheetView(painter, editor, 0, 2 * TEXT_LINE);
+        rulesPainter = new Painter(batch, whitePixel, source, viewport);
+        overrideFactor = launchOverride();
+        autoFactor = PaintScale.bestFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+            PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight());
+        int firstFactor = chosenFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        showScale(firstFactor);
+        uiScale = new UiScale(firstFactor);
+        painter.setScale(uiScale);
+        rulesPainter.setScale(uiScale);
+        sheet = new PaintSheetView(painter, editor, 0);
         applyMinimumWindowSize();
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
@@ -217,7 +230,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (requestedTab != null) {
             preview.selectTab(requestedTab);
         }
-        rules = new RulesOverlay(painter, fontDir);
+        rules = new RulesOverlay(rulesPainter, fontDir);
         notePanel = new NotePanel(painter);
         loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
@@ -235,7 +248,7 @@ public final class PaintApp implements WorkbenchScreen {
 
             @Override
             public boolean keyTyped(char character) {
-                if (!guideListOpen || !guideList.isRenaming() || rules.isOpen()) {
+                if (!guideListOpen || !guideList.isRenaming() || rules.isOpen() || controlDown()) {
                     return false;
                 }
                 boolean startingKey = character == 'l' || character == 'L';
@@ -253,12 +266,83 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
+    private int cell() {
+        return uiScale.cell();
+    }
+
+    private static Integer launchOverride() {
+        String text = System.getProperty("workbench.scale");
+        if (text == null) {
+            return null;
+        }
+        int factor = PaintScale.parseFactor(text);
+        if (factor == 0) {
+            Gdx.app.error(TAG, "Ignoring workbench.scale=" + text + ": use a whole number from "
+                + UiScale.MIN_FACTOR + " to " + UiScale.MAX_FACTOR);
+            return null;
+        }
+        return factor;
+    }
+
+    // The requested override is kept as asked; only what is applied is cut down to fit the window.
+    private int chosenFactor(int width, int height) {
+        if (overrideFactor == null) {
+            return autoFactor;
+        }
+        return PaintScale.fittingFactor(overrideFactor, width, height, PaintSheetView.GAP,
+            editor.cellWidth(), editor.cellHeight());
+    }
+
+    private void showScale(int factor) {
+        scaleLabel = PaintScale.label(factor, overrideFactor == null);
+        if (overrideFactor != null && factor < overrideFactor) {
+            messages.setCondition(KEY_SCALE, true,
+                "UI " + overrideFactor + "X too big");
+        } else {
+            messages.clearCondition(KEY_SCALE);
+        }
+    }
+
+    private static boolean controlDown() {
+        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+    }
+
+    // Runs before the layout each frame, so a new scale never draws one frame with the old layout.
+    private void handleScaleKeys() {
+        if (!controlDown()) {
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.EQUALS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {
+            overrideFactor = PaintScale.stepped(uiScale.factor(), 1);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_SUBTRACT)) {
+            overrideFactor = PaintScale.stepped(uiScale.factor(), -1);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0)) {
+            overrideFactor = null;
+        } else {
+            return;
+        }
+        updateScale(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    private void updateScale(int width, int height) {
+        autoFactor = PaintScale.bestFactor(width, height, PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight());
+        int factor = chosenFactor(width, height);
+        showScale(factor);
+        if (factor != uiScale.factor()) {
+            uiScale = new UiScale(factor);
+            painter.setScale(uiScale);
+            rulesPainter.setScale(uiScale);
+            revealCursor = true;
+        }
+    }
+
     // Only the lwjgl3 desktop window has size limits; GLFW enforces them, also on a window that is already smaller.
+    // The limits are the smallest scale's minimum, so the window can shrink far enough to step the scale down.
     private void applyMinimumWindowSize() {
         if (Gdx.graphics instanceof Lwjgl3Graphics graphics) {
             graphics.getWindow().setSizeLimits(
-                PaintColumns.minimumWidth(sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth()),
-                PaintLayout.minimumHeight(editor.cellHeight()), -1, -1);
+                PaintScale.minimumWidth(UiScale.MIN_FACTOR, PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight()),
+                PaintScale.minimumHeight(UiScale.MIN_FACTOR, editor.cellHeight()), -1, -1);
         }
     }
 
@@ -414,8 +498,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (wheelTicks != 0) {
             pointer.set(Gdx.input.getX(), Gdx.input.getY());
             viewport.unproject(pointer);
-            int column = Math.floorDiv((int) Math.floor(pointer.x), TEXT_LINE);
-            int row = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), TEXT_LINE);
+            int column = Math.floorDiv((int) Math.floor(pointer.x), cell());
+            int row = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), cell());
             ReviewLayout.Rect area = rects.note();
             if (column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom()) {
                 step += wheelTicks;
@@ -499,6 +583,9 @@ public final class PaintApp implements WorkbenchScreen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+        if (editor != null) {
+            updateScale(width, height);
+        }
     }
 
     @Override
@@ -517,13 +604,15 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleInput(float delta) {
+        handleScaleKeys();
         PaintColumns.Split split = PaintColumns.split(
-            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth());
+            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cell());
         sheet.setVisibleColumns(split.sheetColumns());
-        sheet.fitToHeight(worldHeight(), TEXT_LINE, cursor, revealCursor);
+        sheet.fitToHeight(worldHeight(), cell(), cursor, revealCursor);
         revealCursor = false;
-        rects = PaintLayout.compute(worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE,
-            sheet.frameRight() / TEXT_LINE, split.rightCells(), editor.cellWidth(), editor.cellHeight());
+        rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
+            sheet.frameRight() / cell(), split.rightCells(), editor.cellWidth(), editor.cellHeight(),
+            cell());
         fitGrid();
         scrollSheetSideways();
         updateConditions();
@@ -604,9 +693,9 @@ public final class PaintApp implements WorkbenchScreen {
     // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
     private void fitGrid() {
         ReviewLayout.Rect panel = rects.grid();
-        int left = (panel.x() + 2) * TEXT_LINE;
-        int top = (panel.y() + 1 + PaintGridView.LABEL_ROWS_ABOVE) * TEXT_LINE;
-        grid.fitTo(left, top, (panel.width() - 3) * TEXT_LINE, (panel.bottom() - 1) * TEXT_LINE - top - TEXT_LINE / 2);
+        int left = (panel.x() + 2) * cell();
+        int top = (panel.y() + 1 + PaintGridView.LABEL_ROWS_ABOVE) * cell();
+        grid.fitTo(left, top, (panel.width() - 3) * cell(), (panel.bottom() - 1) * cell() - top - cell() / 2);
     }
 
     // Conditions follow the current state every frame; texts are rebuilt only when their inputs change.
@@ -818,8 +907,8 @@ public final class PaintApp implements WorkbenchScreen {
         trackPointer();
         if (leftClicked()) {
             Dialog.Layout layout = menuLayout();
-            int column = pointerX / TEXT_LINE;
-            int row = SelectList.rowAt(pointerY / TEXT_LINE, layout.textY(), DeriveFlow.OPERATIONS.size());
+            int column = pointerX / cell();
+            int row = SelectList.rowAt(pointerY / cell(), layout.textY(), DeriveFlow.OPERATIONS.size());
             if (row >= 0 && column >= layout.x() && column < layout.x() + layout.width()) {
                 flow.highlightMenuRow(row);
                 choose = true;
@@ -1106,7 +1195,7 @@ public final class PaintApp implements WorkbenchScreen {
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (wheelTicks != 0) {
-            if (messages.contains(Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE))) {
+            if (messages.contains(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()))) {
                 messages.scrollBy(wheelTicks);
             } else if (notePanel.contains(pointerX, pointerY)) {
                 notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
@@ -1124,10 +1213,10 @@ public final class PaintApp implements WorkbenchScreen {
         boolean clicked = leftClicked();
         int codePoint = codePoints[cursor];
         if (clicked) {
-            preview.click(rects.preview(), Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
+            preview.click(rects.preview(), Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()));
             sheet.clickBar(pointerX, pointerY);
             sheet.pressColumnBar(pointerX, pointerY);
-            messages.click(Math.floorDiv(pointerX, TEXT_LINE), Math.floorDiv(pointerY, TEXT_LINE));
+            messages.click(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()));
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
                 messages.nextAction();
@@ -1195,10 +1284,10 @@ public final class PaintApp implements WorkbenchScreen {
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         int codePoint = codePoints[cursor];
-        int columns = worldWidth() / TEXT_LINE;
-        int rows = worldHeight() / TEXT_LINE;
+        int columns = worldWidth() / cell();
+        int rows = worldHeight() / cell();
         TopBar.draw(painter, columns, 0,
-            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
+            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), scaleLabel,
             editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
@@ -1291,11 +1380,11 @@ public final class PaintApp implements WorkbenchScreen {
         for (int i = 0; i < shown; i++) {
             int index = first + i;
             String text = guideList.row(index).text();
-            int top = (area.y() + 1 + i) * TEXT_LINE;
-            int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+            int top = (area.y() + 1 + i) * cell();
+            int textX = (area.x() + 1 + HELP_PADDING) * cell();
             if (index == guideList.selectedIndex()) {
-                painter.fill(UiPalette.KEYBG, (area.x() + 1) * TEXT_LINE, top, (area.width() - 2) * TEXT_LINE, TEXT_LINE);
-                painter.text("►", (area.x() + 1) * TEXT_LINE, top, UiPalette.ACCENT);
+                painter.fill(UiPalette.KEYBG, (area.x() + 1) * cell(), top, (area.width() - 2) * cell(), cell());
+                painter.text("►", (area.x() + 1) * cell(), top, UiPalette.ACCENT);
                 painter.text(BounceScroll.window(text, chars, guideListSeconds), textX, top, UiPalette.ACCENT);
             } else {
                 painter.text(text.length() > chars ? text.substring(0, chars) : text, textX, top, UiPalette.TEXT);
@@ -1304,12 +1393,12 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void drawGuideLegend(ReviewLayout.Rect area, int rowsAbove) {
-        int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+        int textX = (area.x() + 1 + HELP_PADDING) * cell();
         for (int i = 0; i < GUIDE_EDIT_LEGEND.size(); i++) {
             String[] entry = GUIDE_EDIT_LEGEND.get(i);
-            int top = (area.y() + 1 + rowsAbove + i) * TEXT_LINE;
+            int top = (area.y() + 1 + rowsAbove + i) * cell();
             painter.text(entry[0], textX, top, UiPalette.TITLE);
-            painter.text(entry[1], textX + GUIDE_LEGEND_ACTION_COLUMN * TEXT_LINE, top, UiPalette.TEXT);
+            painter.text(entry[1], textX + GUIDE_LEGEND_ACTION_COLUMN * cell(), top, UiPalette.TEXT);
         }
     }
 
@@ -1334,17 +1423,17 @@ public final class PaintApp implements WorkbenchScreen {
         helpShown = true;
         int first = helpScroll.offset();
         int last = Math.min(helpLines.size(), first + visible);
-        int textX = (area.x() + 1 + HELP_PADDING) * TEXT_LINE;
+        int textX = (area.x() + 1 + HELP_PADDING) * cell();
         for (int i = first; i < last; i++) {
             HelpWrap.Line line = helpLines.get(i);
             Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
                 : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
                 : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
-            int top = (area.y() + 1 + i - first) * TEXT_LINE;
+            int top = (area.y() + 1 + i - first) * cell();
             if (!line.key().isEmpty()) {
                 painter.text(line.key(), textX, top, color == UiPalette.TEXT ? UiPalette.FOCUS : color);
             }
-            painter.text(line.action(), textX + line.actionColumn() * TEXT_LINE, top, color);
+            painter.text(line.action(), textX + line.actionColumn() * cell(), top, color);
         }
         if (helpScroll.needed() && visible >= 2) {
             ScrollText.drawBar(painter, area.x() + area.width() - 2, area.y() + 1, visible,
@@ -1354,8 +1443,8 @@ public final class PaintApp implements WorkbenchScreen {
 
     private boolean helpContains(int pixelX, int pixelY) {
         return helpShown && helpRect != null
-            && pixelX >= helpRect.x() * TEXT_LINE && pixelX < (helpRect.x() + helpRect.width()) * TEXT_LINE
-            && pixelY >= helpRect.y() * TEXT_LINE && pixelY < (helpRect.y() + helpRect.height()) * TEXT_LINE;
+            && pixelX >= helpRect.x() * cell() && pixelX < (helpRect.x() + helpRect.width()) * cell()
+            && pixelY >= helpRect.y() * cell() && pixelY < (helpRect.y() + helpRect.height()) * cell();
     }
 
     private PaintHelp.State helpState() {

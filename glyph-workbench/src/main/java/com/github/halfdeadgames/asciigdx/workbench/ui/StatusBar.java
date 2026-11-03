@@ -14,8 +14,6 @@ public final class StatusBar {
     public record Cap(String capText, int capX, String label, int labelX) {
     }
 
-    private static final int CELL = Painter.TEXT_SIZE;
-
     private StatusBar() {
     }
 
@@ -32,11 +30,12 @@ public final class StatusBar {
     }
 
     public static void draw(Painter painter, int columns, int row, List<Key> keys) {
-        painter.fill(UiPalette.PANEL, 0, row * CELL, columns * CELL, CELL);
+        int cell = painter.cell();
+        painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
         for (Cap cap : layout(keys)) {
-            painter.fill(UiPalette.KEYBG, cap.capX() * CELL, row * CELL, cap.capText().length() * CELL, CELL);
-            painter.text(cap.capText(), cap.capX() * CELL, row * CELL, UiPalette.TEXT);
-            painter.text(cap.label(), cap.labelX() * CELL, row * CELL, UiPalette.DIM);
+            painter.fill(UiPalette.KEYBG, cap.capX() * cell, row * cell, cap.capText().length() * cell, cell);
+            painter.text(cap.capText(), cap.capX() * cell, row * cell, UiPalette.TEXT);
+            painter.text(cap.label(), cap.labelX() * cell, row * cell, UiPalette.DIM);
         }
     }
 }

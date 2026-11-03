@@ -8,8 +8,6 @@ import java.util.List;
 /** Wrapped text with a ▲ ░ █ ▼ scrollbar in the last column; never clips silently. */
 public final class ScrollText {
 
-    private static final int CELL = Painter.TEXT_SIZE;
-
     private List<String> lines = new ArrayList<>();
     private int offset;
     private int visible = 1;
@@ -97,8 +95,9 @@ public final class ScrollText {
         visible = Math.max(1, heightCells);
         offset = Math.max(0, Math.min(maxOffset(), offset));
         int end = Math.min(lines.size(), offset + visible);
+        int cell = painter.cell();
         for (int i = offset; i < end; i++) {
-            painter.text(lines.get(i), x * CELL, (y + i - offset) * CELL, color);
+            painter.text(lines.get(i), x * cell, (y + i - offset) * cell, color);
         }
         if (lines.size() > visible) {
             drawBar(painter, x + widthCells - 1, y, heightCells);
@@ -111,14 +110,15 @@ public final class ScrollText {
 
     /** The shared scrollbar: ▲ and ▼ at the ends, a ░ track and a █ thumb; only shown by callers when text overflows. */
     public static void drawBar(Painter painter, int x, int y, int height, int total, int visible, int offset) {
-        painter.text("▲", x * CELL, y * CELL, UiPalette.FRAME);
-        painter.text("▼", x * CELL, (y + height - 1) * CELL, UiPalette.FRAME);
+        int cell = painter.cell();
+        painter.text("▲", x * cell, y * cell, UiPalette.FRAME);
+        painter.text("▼", x * cell, (y + height - 1) * cell, UiPalette.FRAME);
         int track = height - 2;
         int start = thumbStart(track, total, visible, offset);
         int size = thumbSize(track, total, visible);
         for (int i = 0; i < track; i++) {
             boolean thumb = i >= start && i < start + size;
-            painter.text(thumb ? "█" : "░", x * CELL, (y + 1 + i) * CELL, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+            painter.text(thumb ? "█" : "░", x * cell, (y + 1 + i) * cell, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
         }
     }
 }

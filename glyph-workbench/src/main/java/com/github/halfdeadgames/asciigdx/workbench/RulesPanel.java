@@ -39,8 +39,8 @@ final class RulesPanel {
     }
 
     /** Width in text cells for a window width: comfortable reading, never wider than the window. */
-    static int cellsWideFor(int worldWidth) {
-        return Math.max(MIN_CELLS_WIDE, Math.min(MAX_CELLS_WIDE, worldWidth / Painter.TEXT_SIZE));
+    static int cellsWideFor(int worldWidth, int cellPixels) {
+        return Math.max(MIN_CELLS_WIDE, Math.min(MAX_CELLS_WIDE, worldWidth / cellPixels));
     }
 
     void setRules(FontRules rules) {
@@ -81,24 +81,25 @@ final class RulesPanel {
         if (!groupName.equals(shownGroupName) || cellsWide != builtCellsWide) {
             rebuild(groupName, codePoint, cellsWide);
         }
-        painter.fill(fillColor, x, top, cellsWide * Painter.TEXT_SIZE, pixelHeight);
+        int cell = painter.cell();
+        painter.fill(fillColor, x, top, cellsWide * cell, pixelHeight);
         painter.frame(frameColor, x, top, cellsWide, cellsHigh);
         room = Math.max(1, cellsHigh - 2);
         offset = Math.max(0, Math.min(maxOffset(), offset));
-        int textLeft = x + Painter.TEXT_SIZE;
-        int textTop = top + Painter.TEXT_SIZE;
+        int textLeft = x + cell;
+        int textTop = top + cell;
         int end = Math.min(lines.size, offset + room);
         for (int i = offset; i < end; i++) {
             Line line = lines.get(i);
-            painter.text(line.text, textLeft + line.indent * Painter.TEXT_SIZE,
-                textTop + (i - offset) * Painter.TEXT_SIZE, line.color);
+            painter.text(line.text, textLeft + line.indent * cell,
+                textTop + (i - offset) * cell, line.color);
         }
-        int arrowLeft = textLeft + textChars * Painter.TEXT_SIZE;
+        int arrowLeft = textLeft + textChars * cell;
         if (offset > 0) {
             painter.text("▲", arrowLeft, textTop, headingColor);
         }
         if (offset < maxOffset()) {
-            painter.text("▼", arrowLeft, textTop + (room - 1) * Painter.TEXT_SIZE, headingColor);
+            painter.text("▼", arrowLeft, textTop + (room - 1) * cell, headingColor);
         }
     }
 

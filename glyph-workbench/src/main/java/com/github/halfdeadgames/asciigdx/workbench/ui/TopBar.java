@@ -14,7 +14,6 @@ public final class TopBar {
     public record Segment(String text, int x, Kind kind) {
     }
 
-    private static final int CELL = Painter.TEXT_SIZE;
     private static final String SEPARATOR = "►";
 
     private TopBar() {
@@ -36,24 +35,64 @@ public final class TopBar {
         return segments;
     }
 
+    /** Drops the left-most crumbs until the rest fit the cells; the last crumb always stays. */
+    public static List<String> fit(List<String> crumbs, int availableCells) {
+        int start = 0;
+        while (start < crumbs.size() - 1 && width(crumbs, start) > availableCells) {
+            start++;
+        }
+        return crumbs.subList(start, crumbs.size());
+    }
+
+    private static int width(List<String> crumbs, int start) {
+        int width = 1 + 3 * (crumbs.size() - 1 - start);
+        for (int i = start; i < crumbs.size(); i++) {
+            width += crumbs.get(i).length();
+        }
+        return width;
+    }
+
     /** Column of a right-aligned text with one blank cell before the edge. */
     public static int rightX(int columns, String text) {
         return Math.max(0, columns - text.length() - 1);
     }
 
     public static void draw(Painter painter, int columns, int row, List<String> crumbs, String status, Color statusColor) {
-        painter.fill(UiPalette.PANEL, 0, row * CELL, columns * CELL, CELL);
-        for (Segment segment : layout(crumbs)) {
+        draw(painter, columns, row, crumbs, "", status, statusColor);
+    }
+
+    /** Also draws a plain tag just left of the status; the crumbs shorten to leave room for both. */
+    public static void draw(Painter painter, int columns, int row, List<String> crumbs, String tag,
+                            String status, Color statusColor) {
+        int cell = painter.cell();
+        painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
+        boolean hasStatus = status != null && !status.isEmpty();
+        boolean hasTag = tag != null && !tag.isEmpty();
+        int available = columns - 1 - rightWidth(hasTag ? tag : "", hasStatus ? status : "");
+        for (Segment segment : layout(fit(crumbs, available))) {
             Color color = switch (segment.kind()) {
                 case TITLE -> UiPalette.TITLE;
                 case TEXT -> UiPalette.TEXT;
                 case ACCENT -> UiPalette.ACCENT;
                 case SEPARATOR -> UiPalette.DIM;
             };
-            painter.text(segment.text(), segment.x() * CELL, row * CELL, color);
+            painter.text(segment.text(), segment.x() * cell, row * cell, color);
         }
-        if (status != null && !status.isEmpty()) {
-            painter.text(status, rightX(columns, status) * CELL, row * CELL, statusColor);
+        if (hasTag) {
+            painter.text(tag, tagX(columns, tag, hasStatus ? status : "") * cell, row * cell, UiPalette.TEXT);
         }
+        if (hasStatus) {
+            painter.text(status, rightX(columns, status) * cell, row * cell, statusColor);
+        }
+    }
+
+    /** Cells taken at the right edge by a tag and a status, each followed by one blank cell. */
+    static int rightWidth(String tag, String status) {
+        return (tag.isEmpty() ? 0 : tag.length() + 1) + (status.isEmpty() ? 0 : status.length() + 1);
+    }
+
+    /** Column of a tag that sits left of the status, with one blank cell between them. */
+    static int tagX(int columns, String tag, String status) {
+        return Math.max(0, columns - rightWidth(tag, status));
     }
 }

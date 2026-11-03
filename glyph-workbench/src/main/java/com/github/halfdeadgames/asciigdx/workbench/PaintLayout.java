@@ -8,8 +8,6 @@ final class PaintLayout {
 
     static final int MESSAGES_HEIGHT = 4;
     private static final int TOP_ROWS = 2;
-    private static final int CELL = Painter.TEXT_SIZE;
-    private static final int PREVIEW_GAP = PaintPreview.SECTION_GAP;
     private static final int MAX_PREVIEW_SHARE_PERCENT = 40;
     private static final int MIN_NOTE_HEIGHT = 6;
     private static final int MIN_HELP_HEIGHT = 4;
@@ -17,20 +15,24 @@ final class PaintLayout {
     private PaintLayout() {
     }
 
+    private static int previewGap(int cellPixels) {
+        return cellPixels / 2;
+    }
+
     /** Preview panel height in cells: borders, the tab row, a gap, a label row, and the tallest kept scale block. */
-    static int previewHeight(int glyphHeight, int largestScale) {
-        int content = CELL + PREVIEW_GAP + CELL + largestScale * glyphHeight;
-        return 2 + (content + CELL - 1) / CELL;
+    static int previewHeight(int glyphHeight, int largestScale, int cellPixels) {
+        int content = cellPixels + previewGap(cellPixels) + cellPixels + largestScale * glyphHeight;
+        return 2 + (content + cellPixels - 1) / cellPixels;
     }
 
     /** Pixels between the preview panel's borders, as far as the glyph blocks may extend. */
-    static int previewInnerWidth(int panelWidthCells) {
-        return (panelWidthCells - 3) * CELL;
+    static int previewInnerWidth(int panelWidthCells, int cellPixels) {
+        return (panelWidthCells - 3) * cellPixels;
     }
 
     /** Pixels left for the tallest glyph block in a preview panel of the given height in cells. */
-    static int previewBlockBudget(int panelHeightCells) {
-        return (panelHeightCells - 2) * CELL - CELL - PREVIEW_GAP - CELL;
+    static int previewBlockBudget(int panelHeightCells, int cellPixels) {
+        return (panelHeightCells - 2) * cellPixels - cellPixels - previewGap(cellPixels) - cellPixels;
     }
 
     /** The area under the preview: the help panel alone, or the help over the review note when there is one. */
@@ -52,22 +54,24 @@ final class PaintLayout {
     }
 
     /** Window pixels high that hold the editor at its minimum zoom, the smallest preview and help, the messages, and the bars. */
-    static int minimumHeight(int glyphHeight) {
+    static int minimumHeight(int glyphHeight, int cellPixels) {
         int editorRows = 2 + PaintGridView.LABEL_ROWS_ABOVE
-            + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + CELL / 2 + CELL - 1) / CELL;
-        int rightRows = previewHeight(glyphHeight, PreviewFit.SCALES[0]) + MIN_NOTE_HEIGHT;
-        return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * CELL;
+            + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + cellPixels / 2 + cellPixels - 1) / cellPixels;
+        int rightRows = previewHeight(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_NOTE_HEIGHT;
+        return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * cellPixels;
     }
 
-    static Result compute(int columns, int rows, int sheetCellsWide, int rightWidth, int glyphWidth, int glyphHeight) {
+    static Result compute(int columns, int rows, int sheetCellsWide, int rightWidth, int glyphWidth, int glyphHeight,
+                          int cellPixels) {
         int gridX = sheetCellsWide + 1;
         int rightX = columns - rightWidth;
         int messagesY = rows - 1 - MESSAGES_HEIGHT;
         int columnHeight = messagesY - TOP_ROWS;
         int maxPreviewHeight = Math.min(columnHeight * MAX_PREVIEW_SHARE_PERCENT / 100, columnHeight - MIN_NOTE_HEIGHT);
-        int scaleCount = PreviewFit.scaleCount(previewInnerWidth(rightWidth),previewBlockBudget(maxPreviewHeight),
-            glyphWidth, glyphHeight, PaintPreview.SECTION_GAP, PaintPreview.LABEL_WIDTH);
-        int previewHeight = previewHeight(glyphHeight, PreviewFit.largestScale(scaleCount));
+        int scaleCount = PreviewFit.scaleCount(previewInnerWidth(rightWidth, cellPixels),
+            previewBlockBudget(maxPreviewHeight, cellPixels),
+            glyphWidth, glyphHeight, previewGap(cellPixels), 2 * cellPixels);
+        int previewHeight = previewHeight(glyphHeight, PreviewFit.largestScale(scaleCount), cellPixels);
         int noteY = TOP_ROWS + previewHeight;
         return new Result(
             new ReviewLayout.Rect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),

@@ -59,6 +59,7 @@ run {
   if (commandLineProperties.containsKey('tab')) systemProperty 'workbench.tab', commandLineProperties['tab']
   if (commandLineProperties.containsKey('window')) systemProperty 'workbench.window', commandLineProperties['window']
   if (commandLineProperties.containsKey('mode')) systemProperty 'workbench.mode', commandLineProperties['mode']
+  if (commandLineProperties.containsKey('scale')) systemProperty 'workbench.scale', commandLineProperties['scale']
   systemProperty 'workbench.fontsRoot', rootProject.file('fonts').absolutePath
   systemProperty 'workbench.fontSize', commandLineProperties.getOrDefault('fontSize', '8')
   if (commandLineProperties.containsKey('rulesOpen')) systemProperty 'workbench.rulesOpen', 'true'

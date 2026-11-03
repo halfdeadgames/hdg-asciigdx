@@ -158,7 +158,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         source = TextureGlyphSource.loadDungeonMode();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
-        sheet = new PaintSheetView(painter, sheetFont, 0, 2 * CELL);
+        sheet = new PaintSheetView(painter, sheetFont, 0);
         columnPanel = new ColumnPanel(painter, CELL_FILL, UiPalette.TEXT, UiPalette.ACCENT, UiPalette.FRAME);
         notePanel = new NotePanel(painter);
         rules = new RulesOverlay(painter, fontDir);

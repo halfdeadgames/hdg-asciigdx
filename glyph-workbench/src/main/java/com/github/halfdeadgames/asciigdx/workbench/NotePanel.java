@@ -11,8 +11,6 @@ import java.util.Locale;
  */
 final class NotePanel {
 
-    private static final int CELL = Painter.TEXT_SIZE;
-    private static final int CARET_THICKNESS = 3;
 
     private final Painter painter;
     private final ScrollText display = new ScrollText();
@@ -54,15 +52,16 @@ final class NotePanel {
     }
 
     boolean contains(int pixelX, int pixelY) {
-        return pixelX >= left * CELL && pixelX < (left + width) * CELL
-            && pixelY >= top * CELL && pixelY < (top + height) * CELL;
+        int cell = painter.cell();
+        return pixelX >= left * cell && pixelX < (left + width) * cell
+            && pixelY >= top * cell && pixelY < (top + height) * cell;
     }
 
     void drawReadOnly(ReviewLayout.Rect rect, String pick, String note) {
         remember(rect);
         Panel.draw(painter, rect.x(), rect.y(), rect.width(), rect.height(), "REVIEW NOTE   [ ] SCROLLS", false);
         painter.text(pick == null ? "" : "PICK: " + pick.toUpperCase(Locale.ROOT),
-            (rect.x() + 2) * CELL, (rect.y() + 1) * CELL, UiPalette.ACCENT);
+            (rect.x() + 2) * painter.cell(), (rect.y() + 1) * painter.cell(), UiPalette.ACCENT);
         display.setText(note, textChars(rect.width()));
         display.draw(painter, rect.x() + 2, rect.y() + 2, rect.width() - 4, rect.height() - 3, UiPalette.TEXT);
     }
@@ -72,18 +71,20 @@ final class NotePanel {
         Panel.draw(painter, rect.x(), rect.y(), rect.width(), rect.height(), "NOTE", true);
         int chars = textChars(rect.width());
         int rows = editorRows(rect.height());
-        int textX = (rect.x() + 2) * CELL;
+        int cell = painter.cell();
+        int textX = (rect.x() + 2) * cell;
         int textY = rect.y() + 1;
         int first = editor.viewTop(chars, rows);
         int total = editor.rowCount(chars);
         int last = Math.min(total, first + rows);
         for (int i = first; i < last; i++) {
-            painter.text(editor.row(i, chars), textX, (textY + i - first) * CELL, UiPalette.TEXT);
+            painter.text(editor.row(i, chars), textX, (textY + i - first) * cell, UiPalette.TEXT);
         }
         int caretRow = editor.caretRow(chars) - first;
         if (caretRow >= 0 && caretRow < rows) {
-            painter.fill(UiPalette.ACCENT, textX + editor.caretColumn(chars) * CELL,
-                (textY + caretRow + 1) * CELL - CARET_THICKNESS, CELL, CARET_THICKNESS);
+            int caretThickness = painter.scale().px(1);
+            painter.fill(UiPalette.ACCENT, textX + editor.caretColumn(chars) * cell,
+                (textY + caretRow + 1) * cell - caretThickness, cell, caretThickness);
         }
         if (total > rows) {
             ScrollText.drawBar(painter, rect.x() + rect.width() - 3, textY, rows, total, rows, first);

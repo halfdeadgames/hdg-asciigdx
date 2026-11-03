@@ -27,7 +27,6 @@ public final class Dialog {
         }
     }
 
-    private static final int CELL = Painter.TEXT_SIZE;
     private static final int PADDING = 2;
     private static final int BUTTON_GAP = 3;
     private static final int MIN_BUTTON_GAP = 1;
@@ -93,32 +92,33 @@ public final class Dialog {
     /** Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. */
     public static void draw(Painter painter, int columns, int rows, String title, List<String> lines,
                             List<Button> buttons, int areaX, int areaY, int areaWidth, int areaHeight) {
-        painter.fill(DIM_COLOR, 0, 0, columns * CELL, rows * CELL);
+        int cell = painter.cell();
+        painter.fill(DIM_COLOR, 0, 0, columns * cell, rows * cell);
         Layout layout = layout(title, lines, buttons, areaX, areaY, areaWidth, areaHeight);
         for (int i = 1; i <= layout.height(); i++) {
-            painter.text("▓", (layout.x() + layout.width()) * CELL, (layout.y() + i) * CELL, UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + layout.width()) * cell, (layout.y() + i) * cell, UiPalette.SHADOW);
         }
         for (int i = 1; i <= layout.width(); i++) {
-            painter.text("▓", (layout.x() + i) * CELL, (layout.y() + layout.height()) * CELL, UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + i) * cell, (layout.y() + layout.height()) * cell, UiPalette.SHADOW);
         }
         Panel.draw(painter, layout.x(), layout.y(), layout.width(), layout.height(), title, true);
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             painter.text(line.length() > layout.textWidth() ? line.substring(0, layout.textWidth()) : line,
-                layout.textX() * CELL, (layout.textY() + i) * CELL, UiPalette.TEXT);
+                layout.textX() * cell, (layout.textY() + i) * cell, UiPalette.TEXT);
         }
         for (int i = 0; i < buttons.size(); i++) {
             Button button = buttons.get(i);
             int capWidth = button.key().length() + 2;
             int bx = layout.buttonXs().get(i);
-            painter.fill(UiPalette.KEYBG, bx * CELL, layout.buttonY() * CELL, capWidth * CELL, CELL);
-            painter.text(" " + button.key() + " ", bx * CELL, layout.buttonY() * CELL, UiPalette.TEXT);
+            painter.fill(UiPalette.KEYBG, bx * cell, layout.buttonY() * cell, capWidth * cell, cell);
+            painter.text(" " + button.key() + " ", bx * cell, layout.buttonY() * cell, UiPalette.TEXT);
             Color label = switch (button.tone()) {
                 case OK -> UiPalette.OK;
                 case WARN -> UiPalette.WARN;
                 case DIM -> UiPalette.DIM;
             };
-            painter.text(button.label(), (bx + capWidth + 1) * CELL, layout.buttonY() * CELL, label);
+            painter.text(button.label(), (bx + capWidth + 1) * cell, layout.buttonY() * cell, label);
         }
     }
 }

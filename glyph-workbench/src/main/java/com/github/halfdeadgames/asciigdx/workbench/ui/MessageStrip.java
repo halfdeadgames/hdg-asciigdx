@@ -21,7 +21,6 @@ public final class MessageStrip {
     /** Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll button column. */
     public static final int RESERVED_COLUMNS = 7;
 
-    private static final int CELL = Painter.TEXT_SIZE;
     private static final float BLINK_HALF_CYCLE_SECONDS = 0.25f;
     private int firstIndex;
     private int viewRows;
@@ -218,19 +217,20 @@ public final class MessageStrip {
     }
 
     private void drawScrollIndicators(Painter painter) {
+        int cell = painter.cell();
         if (blinkOn()) {
-            int arrowColumn = (boundsX + 1) * CELL;
+            int arrowColumn = (boundsX + 1) * cell;
             if (hiddenAbove()) {
-                painter.text("▲", arrowColumn, topButtonRow() * CELL, UiPalette.ACCENT);
+                painter.text("▲", arrowColumn, topButtonRow() * cell, UiPalette.ACCENT);
             }
             if (hiddenBelow()) {
-                painter.text("▼", arrowColumn, bottomButtonRow() * CELL, UiPalette.ACCENT);
+                painter.text("▼", arrowColumn, bottomButtonRow() * cell, UiPalette.ACCENT);
             }
         }
         if (buttonsFit()) {
-            painter.text("▲", buttonColumn() * CELL, topButtonRow() * CELL,
+            painter.text("▲", buttonColumn() * cell, topButtonRow() * cell,
                 hiddenAbove() ? UiPalette.TEXT : UiPalette.DIM);
-            painter.text("▼", buttonColumn() * CELL, bottomButtonRow() * CELL,
+            painter.text("▼", buttonColumn() * cell, bottomButtonRow() * cell,
                 hiddenBelow() ? UiPalette.TEXT : UiPalette.DIM);
         }
     }
@@ -246,10 +246,11 @@ public final class MessageStrip {
         List<Message> shown = visible(height - 2);
         int room = width - RESERVED_COLUMNS;
         int row = y + 1;
+        int cell = painter.cell();
         for (Message message : shown) {
-            painter.text(message.warning() ? "!" : "✓", (x + 2) * CELL, row * CELL,
+            painter.text(message.warning() ? "!" : "✓", (x + 2) * cell, row * cell,
                 message.warning() ? UiPalette.WARN : UiPalette.OK);
-            painter.text(lineText(message, room), (x + 4) * CELL, row * CELL, UiPalette.TEXT);
+            painter.text(lineText(message, room), (x + 4) * cell, row * cell, UiPalette.TEXT);
             row++;
         }
         drawScrollIndicators(painter);

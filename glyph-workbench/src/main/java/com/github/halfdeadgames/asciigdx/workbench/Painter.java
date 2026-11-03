@@ -11,18 +11,34 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 /** Draws rectangles, glyphs, and text using window pixels with the origin at the top-left. */
 public final class Painter {
 
+    /** The cell size at {@link UiScale#DEFAULT}, for screens that do not scale. */
     public static final int TEXT_SIZE = 24;
 
     private final SpriteBatch batch;
     private final Texture whitePixel;
     private final GlyphSource font;
     private final Viewport viewport;
+    private UiScale scale = UiScale.DEFAULT;
 
     Painter(SpriteBatch batch, Texture whitePixel, GlyphSource font, Viewport viewport) {
         this.batch = batch;
         this.whitePixel = whitePixel;
         this.font = font;
         this.viewport = viewport;
+    }
+
+    /** Sets the cell size used by text, frames, and the views drawn through this painter. */
+    void setScale(UiScale scale) {
+        this.scale = scale;
+    }
+
+    public UiScale scale() {
+        return scale;
+    }
+
+    /** Pixels of one text cell at this painter's scale. */
+    public int cell() {
+        return scale.cell();
     }
 
     public void fill(Color color, int x, int top, int width, int height) {
@@ -47,41 +63,48 @@ public final class Painter {
     }
 
     public void text(CharSequence value, int x, int top, Color color) {
+        int size = cell();
         batch.setColor(color);
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (c != ' ') {
-                batch.draw(font.glyph(c), x + i * TEXT_SIZE, flipY(top, TEXT_SIZE), TEXT_SIZE, TEXT_SIZE);
+                batch.draw(font.glyph(c), x + i * size, flipY(top, size), size, size);
             }
         }
     }
 
     /** Draws a double-line border of text-sized cells; the size must be at least 2x2 cells. */
     void frame(Color color, int x, int top, int cellsWide, int cellsHigh) {
-        int right = x + (cellsWide - 1) * TEXT_SIZE;
-        int bottom = top + (cellsHigh - 1) * TEXT_SIZE;
+        int size = cell();
+        int right = x + (cellsWide - 1) * size;
+        int bottom = top + (cellsHigh - 1) * size;
         batch.setColor(color);
         cell('╔', x, top);
         cell('╗', right, top);
         cell('╚', x, bottom);
         cell('╝', right, bottom);
         for (int col = 1; col < cellsWide - 1; col++) {
-            cell('═', x + col * TEXT_SIZE, top);
-            cell('═', x + col * TEXT_SIZE, bottom);
+            cell('═', x + col * size, top);
+            cell('═', x + col * size, bottom);
         }
         for (int row = 1; row < cellsHigh - 1; row++) {
-            cell('║', x, top + row * TEXT_SIZE);
-            cell('║', right, top + row * TEXT_SIZE);
+            cell('║', x, top + row * size);
+            cell('║', right, top + row * size);
         }
     }
 
     private void cell(char c, int x, int top) {
-        batch.draw(font.glyph(c), x, flipY(top, TEXT_SIZE), TEXT_SIZE, TEXT_SIZE);
+        int size = cell();
+        batch.draw(font.glyph(c), x, flipY(top, size), size, size);
     }
 
-    /** Rounds a pixel length up to whole text cells. */
+    /** Rounds a pixel length up to whole text cells at the default scale. */
     static int roundUpToCells(int pixels) {
-        return (pixels + TEXT_SIZE - 1) / TEXT_SIZE * TEXT_SIZE;
+        return roundUpToCells(pixels, TEXT_SIZE);
+    }
+
+    static int roundUpToCells(int pixels, int cellPixels) {
+        return (pixels + cellPixels - 1) / cellPixels * cellPixels;
     }
 
     private float flipY(int top, int height) {

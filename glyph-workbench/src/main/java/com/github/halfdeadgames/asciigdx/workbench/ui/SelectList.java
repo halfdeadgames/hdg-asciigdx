@@ -15,7 +15,6 @@ public final class SelectList {
     }
 
     public static final int PITCH = 2;
-    private static final int CELL = Painter.TEXT_SIZE;
     private static final int INDENT_CELLS = 2;
 
     private SelectList() {
@@ -37,12 +36,13 @@ public final class SelectList {
 
     /** @param selectedRow row index to highlight, or -1 */
     public static void draw(Painter painter, int x, int topRow, int widthCells, List<Row> rows, int selectedRow) {
+        int cell = painter.cell();
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
-            int y = (topRow + i * PITCH) * CELL;
-            int rowX = (x + row.indent() * INDENT_CELLS) * CELL;
+            int y = (topRow + i * PITCH) * cell;
+            int rowX = (x + row.indent() * INDENT_CELLS) * cell;
             if (i == selectedRow) {
-                painter.fill(UiPalette.KEYBG, x * CELL, y, widthCells * CELL, CELL);
+                painter.fill(UiPalette.KEYBG, x * cell, y, widthCells * cell, cell);
                 painter.text("► " + row.text(), rowX, y, UiPalette.ACCENT);
                 continue;
             }

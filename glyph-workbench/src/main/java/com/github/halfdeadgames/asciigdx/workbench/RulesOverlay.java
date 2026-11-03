@@ -111,9 +111,10 @@ final class RulesOverlay {
         }
         dim.set(0f, 0f, 0f, DIM_ALPHA * slide);
         painter.fill(dim, 0, 0, worldWidth, worldHeight);
-        int cellsWide = RulesPanel.cellsWideFor(worldWidth);
+        int cell = painter.cell();
+        int cellsWide = RulesPanel.cellsWideFor(worldWidth, cell);
         float eased = 1f - (1f - slide) * (1f - slide);
-        int left = worldWidth - Math.round(cellsWide * Painter.TEXT_SIZE * eased);
-        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / Painter.TEXT_SIZE), worldHeight, codePoint);
+        int left = worldWidth - Math.round(cellsWide * cell * eased);
+        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / cell), worldHeight, codePoint);
     }
 }

@@ -5,7 +5,6 @@ import com.github.halfdeadgames.asciigdx.workbench.Painter;
 /** A filled, framed box on the cell grid: single line, or double line and brighter when focused. */
 public final class Panel {
 
-    private static final int CELL = Painter.TEXT_SIZE;
     private static final int TITLE_INSET = 2;
     private static final int MIN_WIDTH_FOR_TITLE = 7;
 
@@ -51,19 +50,20 @@ public final class Panel {
 
     /** Draws at a cell position; width and height are in cells, at least 2. */
     public static void draw(Painter painter, int x, int y, int width, int height, String title, boolean focus) {
-        painter.fill(UiPalette.PANEL, x * CELL, y * CELL, width * CELL, height * CELL);
+        int cell = painter.cell();
+        painter.fill(UiPalette.PANEL, x * cell, y * cell, width * cell, height * cell);
         var color = focus ? UiPalette.FOCUS : UiPalette.FRAME;
-        painter.text(topEdge(width, title, focus), x * CELL, y * CELL, color);
-        painter.text(bottomEdge(width, focus), x * CELL, (y + height - 1) * CELL, color);
+        painter.text(topEdge(width, title, focus), x * cell, y * cell, color);
+        painter.text(bottomEdge(width, focus), x * cell, (y + height - 1) * cell, color);
         String vertical = focus ? "║" : "│";
         for (int row = 1; row < height - 1; row++) {
-            painter.text(vertical, x * CELL, (y + row) * CELL, color);
-            painter.text(vertical, (x + width - 1) * CELL, (y + row) * CELL, color);
+            painter.text(vertical, x * cell, (y + row) * cell, color);
+            painter.text(vertical, (x + width - 1) * cell, (y + row) * cell, color);
         }
         String label = titleLabel(width, title);
         if (!label.isEmpty()) {
-            painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * CELL, y * CELL, label.length() * CELL, CELL);
-            painter.text(label, (x + TITLE_INSET) * CELL, y * CELL, focus ? UiPalette.ACCENT : UiPalette.TITLE);
+            painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * cell, y * cell, label.length() * cell, cell);
+            painter.text(label, (x + TITLE_INSET) * cell, y * cell, focus ? UiPalette.ACCENT : UiPalette.TITLE);
         }
     }
 }
