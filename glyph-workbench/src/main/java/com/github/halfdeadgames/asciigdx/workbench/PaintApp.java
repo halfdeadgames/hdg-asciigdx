@@ -32,6 +32,12 @@ import java.util.List;
 public final class PaintApp implements WorkbenchScreen {
 
     private static final String TAG = "Paint";
+    private static final String KEY_DERIVED = "derived";
+    private static final String KEY_EMPTY = "empty";
+    private static final String KEY_GAP = "gap";
+    private static final String KEY_PICK = "pick";
+    private static final String KEY_PICK_PROBLEM = "pickProblem";
+    private static final String KEY_REVIEW = "review";
     private static final int MARGIN = 12;
     private static final int TEXT_LINE = Painter.TEXT_SIZE;
     private static final int COLUMNS = PaintSheetView.COLUMNS;
@@ -89,8 +95,15 @@ public final class PaintApp implements WorkbenchScreen {
     private final MessageStrip messages = new MessageStrip();
     private PaintLayout.Result rects;
     private String lastProblem = "";
-    private int announcedFor = -1;
-    private boolean gapInkShown;
+    private String pickPromptText = "";
+    private String pickProblemText = "";
+    private int derivedTextGlyph = -1;
+    private int derivedTextSource = -1;
+    private String derivedText = "";
+    private int gapTextGlyph = -1;
+    private String gapText = "";
+    private int gapWatchGlyph = -1;
+    private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
     private int shownNoteFor = -1;
     private boolean[] unselectable;
@@ -191,7 +204,7 @@ public final class PaintApp implements WorkbenchScreen {
         try {
             review = ReviewFile.parse(reviewFile.readString("UTF-8"));
         } catch (IllegalArgumentException e) {
-            messages.warn("Review file is bad: notes are off");
+            messages.setCondition(KEY_REVIEW, true, "Review file is bad: notes are off");
             Gdx.app.error(TAG, "Cannot read " + reviewFile.path() + ": " + e.getMessage());
         }
     }
@@ -222,9 +235,7 @@ public final class PaintApp implements WorkbenchScreen {
         rects = PaintLayout.compute(worldWidth() / TEXT_LINE, worldHeight() / TEXT_LINE,
             sheet.frameRight() / TEXT_LINE, editor.cellHeight());
         fitGrid();
-        if (announcedFor != cursor) {
-            announceGlyph();
-        }
+        updateConditions();
         if (rules.handleInput(delta, wheelTicks)) {
             wheelTicks = 0;
             stroke.end();
@@ -254,6 +265,7 @@ public final class PaintApp implements WorkbenchScreen {
             if (flow.isPicking()) {
                 cancelPick();
             } else if (editor.isModified()) {
+                messages.nextAction();
                 confirmingQuit = true;
                 stroke.end();
             } else {
@@ -277,11 +289,11 @@ public final class PaintApp implements WorkbenchScreen {
         handleScrollKeys();
         trackPointer();
         handleMouse();
-        watchGapInk(codePoints[cursor]);
         String problem = editor.problem();
         if (!problem.equals(lastProblem)) {
             lastProblem = problem;
             if (!problem.isEmpty()) {
+                messages.nextAction();
                 messages.warn("Edit rejected: " + problem);
             }
         }
@@ -295,44 +307,53 @@ public final class PaintApp implements WorkbenchScreen {
         grid.fitTo(left, top, (panel.width() - 3) * TEXT_LINE, (panel.bottom() - 1) * TEXT_LINE - top - TEXT_LINE / 2);
     }
 
-    // Derived and empty slots are explained once, when the cursor lands on them.
-    private void announceGlyph() {
-        announcedFor = cursor;
+    // Conditions follow the current state every frame; texts are rebuilt only when their inputs change.
+    private void updateConditions() {
         int codePoint = codePoints[cursor];
-        if (editor.isDerived(codePoint)) {
-            line.setLength(0);
-            line.append("U+");
-            appendHex(line, codePoint);
-            line.append(" is derived from U+");
-            appendHex(line, editor.derivedFrom(codePoint));
-            line.append(": not editable");
-            messages.warn(line.toString());
-        } else if (!editor.hasGlyph(codePoint)) {
-            messages.ok("Empty slot: click the grid to create it");
-        }
-        gapInkShown = editor.hasGapInk(codePoint);
-        if (gapInkShown) {
-            warnGapInk(codePoint);
-        }
-    }
-
-    private void warnGapInk(int codePoint) {
-        describeGlyph(codePoint).append(" has ink in the gap column");
-        messages.warn(line.toString());
-    }
-
-    // Messages only on a change, so the strip is not rewritten every frame.
-    private void watchGapInk(int codePoint) {
-        boolean ink = editor.hasGapInk(codePoint);
-        if (ink == gapInkShown || announcedFor != cursor) {
-            return;
-        }
-        gapInkShown = ink;
-        if (ink) {
-            warnGapInk(codePoint);
+        boolean derived = editor.isDerived(codePoint);
+        if (derived) {
+            int from = editor.derivedFrom(codePoint);
+            if (derivedTextGlyph != codePoint || derivedTextSource != from) {
+                derivedTextGlyph = codePoint;
+                derivedTextSource = from;
+                describeGlyph(codePoint).append(" is derived from U+");
+                appendHex(line, from);
+                derivedText = line.append(": not editable").toString();
+            }
+            messages.setCondition(KEY_DERIVED, true, derivedText);
         } else {
-            describeGlyph(codePoint).append(" gap column is empty: back to normal width");
-            messages.ok(line.toString());
+            messages.clearCondition(KEY_DERIVED);
+        }
+        if (!derived && !editor.hasGlyph(codePoint)) {
+            messages.setCondition(KEY_EMPTY, false, "Empty slot: click the grid to create it");
+        } else {
+            messages.clearCondition(KEY_EMPTY);
+        }
+        boolean ink = editor.hasGapInk(codePoint);
+        if (ink) {
+            if (gapTextGlyph != codePoint) {
+                gapTextGlyph = codePoint;
+                gapText = describeGlyph(codePoint).append(" has ink in the gap column").toString();
+            }
+            messages.setCondition(KEY_GAP, true, gapText);
+        } else {
+            messages.clearCondition(KEY_GAP);
+        }
+        if (gapWatchGlyph == codePoint && gapWatchInk && !ink) {
+            messages.ok(describeGlyph(codePoint).append(" gap column is empty: back to normal width").toString());
+        }
+        gapWatchGlyph = codePoint;
+        gapWatchInk = ink;
+        if (flow.isPicking()) {
+            messages.setCondition(KEY_PICK, false, pickPromptText);
+            if (pickProblemText.isEmpty()) {
+                messages.clearCondition(KEY_PICK_PROBLEM);
+            } else {
+                messages.setCondition(KEY_PICK_PROBLEM, true, pickProblemText);
+            }
+        } else {
+            messages.clearCondition(KEY_PICK);
+            messages.clearCondition(KEY_PICK_PROBLEM);
         }
     }
 
@@ -348,14 +369,22 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         for (int i = 0; i < undos; i++) {
-            showChangedGlyph(editor.undo());
+            showChangedGlyph(editor.undo(), "Undid change to U+");
         }
         for (int i = 0; i < redos; i++) {
-            showChangedGlyph(editor.redo());
+            showChangedGlyph(editor.redo(), "Redid change to U+");
         }
     }
 
-    private void showChangedGlyph(int codePoint) {
+    private void showChangedGlyph(int codePoint, String notice) {
+        if (codePoint == FontEditor.NO_GLYPH) {
+            return;
+        }
+        messages.nextAction();
+        line.setLength(0);
+        line.append(notice);
+        appendHex(line, codePoint);
+        messages.ok(line.toString());
         for (int slot = 0; slot < codePoints.length; slot++) {
             if (codePoints[slot] == codePoint && !unselectable[slot]) {
                 cursor = slot;
@@ -388,6 +417,7 @@ public final class PaintApp implements WorkbenchScreen {
             position = CursorNavigator.move(unselectable, COLUMNS, rows, position, 0, 1);
         }
         if (position != before) {
+            messages.nextAction();
             if (picking) {
                 flow.moveSource(position);
                 refreshPick();
@@ -407,9 +437,11 @@ public final class PaintApp implements WorkbenchScreen {
     private void handleDeriveKeys() {
         int codePoint = codePoints[cursor];
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+            messages.nextAction();
             stroke.end();
             flow.openMenu(cursor);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
+            messages.nextAction();
             stroke.end();
             if (editor.unlock(codePoint)) {
                 describeGlyph(codePoint).append(" unlocked: now editable");
@@ -418,6 +450,7 @@ public final class PaintApp implements WorkbenchScreen {
                 messages.warn("Only a derived glyph can be unlocked");
             }
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
+            messages.nextAction();
             stroke.end();
             int sourceSlot = slotOf(editor.derivedFrom(codePoint));
             if (sourceSlot >= 0) {
@@ -450,13 +483,16 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void handleDeriveMenu() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            messages.nextAction();
             flow.cancel();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            messages.nextAction();
             flow.moveMenu(-1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            messages.nextAction();
             flow.moveMenu(1);
         }
         boolean choose = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
@@ -477,12 +513,14 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void beginPick() {
+        messages.nextAction();
         flow.chooseOperation();
         stroke.end();
         blankPick = new PixelGlyph(codePoints[cursor], false, PixelGrid.blank(editor.bodyWidth(), editor.cellHeight()));
         pickShown = null;
         pickValid = false;
-        messages.ok(pickPrompt(false));
+        pickPromptText = pickPrompt(false);
+        pickProblemText = "";
     }
 
     private String pickPrompt(boolean withSource) {
@@ -505,24 +543,30 @@ public final class PaintApp implements WorkbenchScreen {
         if (flow.sourceSlot() == cursor) {
             pickShown = null;
             pickValid = false;
-            messages.ok(pickPrompt(false));
+            pickPromptText = pickPrompt(false);
+            pickProblemText = "";
             return;
         }
         PixelGlyph result = editor.previewDerived(codePoints[cursor], currentOp());
         lastProblem = editor.problem();
         pickValid = result != null;
+        pickPromptText = pickPrompt(pickValid);
         if (pickValid) {
             pickShown = result;
-            messages.ok(pickPrompt(true));
+            pickProblemText = "";
         } else {
             pickShown = blankPick;
-            messages.warn(editor.problem());
+            pickProblemText = editor.problem();
         }
     }
 
+    // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
     private void confirmSource() {
+        messages.nextAction();
         if (!pickValid) {
-            messages.warn(flow.sourceSlot() == cursor ? "Pick a different glyph as the source" : editor.problem());
+            if (flow.sourceSlot() == cursor) {
+                messages.warn("Pick a different glyph as the source");
+            }
             return;
         }
         if (editor.wouldReplaceDrawing(codePoints[cursor])) {
@@ -535,6 +579,7 @@ public final class PaintApp implements WorkbenchScreen {
     private void applyDerive() {
         int target = codePoints[cursor];
         String summary = pickPrompt(true);
+        messages.nextAction();
         if (editor.derive(target, currentOp())) {
             lastProblem = "";
             flow.finish();
@@ -551,6 +596,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void cancelPick() {
+        messages.nextAction();
         flow.cancel();
         pickShown = null;
         sheet.scroll().keepVisible(cursor / COLUMNS);
@@ -561,6 +607,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             applyDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            messages.nextAction();
             flow.cancel();
         }
     }
@@ -621,6 +668,7 @@ public final class PaintApp implements WorkbenchScreen {
             sheet.clickBar(pointerX, pointerY);
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
+                messages.nextAction();
                 if (!flow.isPicking()) {
                     cursor = slot;
                 } else if (flow.clickSource(slot)) {
@@ -632,6 +680,8 @@ public final class PaintApp implements WorkbenchScreen {
                 int column = grid.columnAt(pointerX);
                 int row = grid.rowAt(pointerY);
                 if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
+                    messages.nextAction();
+                    lastProblem = "";
                     stroke.begin(codePoint, column, row);
                 }
             }
@@ -654,11 +704,13 @@ public final class PaintApp implements WorkbenchScreen {
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             onExit.run();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            messages.nextAction();
             confirmingQuit = false;
         }
     }
 
     private void save() {
+        messages.nextAction();
         try {
             AtomicFiles.write(dataFile.file().toPath(), editor.toText());
             editor.markSaved();

@@ -336,6 +336,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     }
 
     private void saveNote() {
+        messages.nextAction();
         ReviewFile.Answer answer = answers.get(codePoints[cursor]);
         if (answer != null) {
             answers.put(answer.withNote(noteEditor.value().strip()));
@@ -352,6 +353,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             commitPick(column);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.N) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             replaceColumn = -1;
+            messages.nextAction();
             messages.ok("Kept the existing glyph");
         }
     }
@@ -382,6 +384,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             }
         }
         if (cursor != before) {
+            messages.nextAction();
             sheet.scroll().keepVisible(cursor / PaintSheetView.COLUMNS);
         }
     }
@@ -429,6 +432,9 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             sheet.clickBar(pointerX, pointerY);
             int slot = sheet.slotAt(pointerX, pointerY);
             if (slot >= 0 && !unselectable[slot]) {
+                if (slot != cursor) {
+                    messages.nextAction();
+                }
                 cursor = slot;
             } else if (hoveredColumn >= 1) {
                 pick(hoveredColumn);
@@ -442,10 +448,12 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         }
         if ((Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0))
             && !noGlyph[cursor]) {
+            messages.nextAction();
             recordAnswer(ReviewFile.NONE, -1);
             messages.ok("None good: nothing written to " + choice.target() + ".txt");
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.T) && answers.has(codePoints[cursor])) {
+            messages.nextAction();
             noteEditor.begin(answers.get(codePoints[cursor]).note(), true);
         }
     }
@@ -454,6 +462,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         if (builtFor != cursor || column < 1 || column > shown.size()) {
             return;
         }
+        messages.nextAction();
         PixelGrid cell = shown.get(column - 1).sheet.cell(cursor);
         if (target != null && target.wouldReplace(codePoints[cursor], cell)) {
             replaceColumn = column;
@@ -465,6 +474,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     // Writes the target file first, so an answer is only recorded for a glyph that really was written.
     // A failed write puts the in-memory target back, so it never holds a glyph that is not on disk.
     private void commitPick(int column) {
+        messages.nextAction();
         Candidate candidate = shown.get(column - 1);
         PixelGrid cell = candidate.sheet.cell(cursor);
         UpscaleTarget before = target;

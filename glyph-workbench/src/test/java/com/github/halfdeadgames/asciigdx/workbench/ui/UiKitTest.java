@@ -119,15 +119,54 @@ class UiKitTest {
     }
 
     @Test
-    void messageStripKeepsTheNewest() {
+    void messageStripResultsClearOnTheNextAction() {
         MessageStrip strip = new MessageStrip();
-        strip.ok("one");
-        strip.warn("two");
+        strip.setCondition("c", false, "cond");
+        strip.ok("saved");
+        assertEquals(2, strip.visible(5).size());
+        strip.nextAction();
+        List<MessageStrip.Message> left = strip.visible(5);
+        assertEquals(1, left.size());
+        assertEquals("cond", left.get(0).text());
+    }
+
+    @Test
+    void messageStripConditionGoesWhenCleared() {
+        MessageStrip strip = new MessageStrip();
+        strip.setCondition("gap", true, "ink");
+        strip.setCondition("gap", true, "more ink");
+        assertEquals(1, strip.visible(5).size());
+        assertEquals("more ink", strip.visible(5).get(0).text());
+        strip.clearCondition("gap");
+        assertTrue(strip.visible(5).isEmpty());
+    }
+
+    @Test
+    void messageStripListsWarningsFirstAndConditionsBeforeResults() {
+        MessageStrip strip = new MessageStrip();
+        strip.ok("result ok");
+        strip.warn("result warn");
+        strip.setCondition("a", false, "cond ok");
+        strip.setCondition("b", true, "cond warn");
+        List<MessageStrip.Message> all = strip.visible(10);
+        assertEquals("cond warn", all.get(0).text());
+        assertEquals("result warn", all.get(1).text());
+        assertEquals("cond ok", all.get(2).text());
+        assertEquals("result ok", all.get(3).text());
+    }
+
+    @Test
+    void messageStripKeepsAWarningWhenLinesRunOut() {
+        MessageStrip strip = new MessageStrip();
+        strip.setCondition("a", false, "one");
+        strip.ok("two");
         strip.ok("three");
-        List<MessageStrip.Message> recent = strip.recent(2);
-        assertEquals("two", recent.get(0).text());
-        assertTrue(recent.get(0).warning());
-        assertEquals("three", recent.get(1).text());
-        assertTrue(strip.recent(0).isEmpty());
+        strip.warn("careful");
+        List<MessageStrip.Message> shown = strip.visible(2);
+        assertEquals(2, shown.size());
+        assertEquals("careful", shown.get(0).text());
+        assertTrue(shown.get(0).warning());
+        assertEquals("one", shown.get(1).text());
+        assertTrue(strip.visible(0).isEmpty());
     }
 }
