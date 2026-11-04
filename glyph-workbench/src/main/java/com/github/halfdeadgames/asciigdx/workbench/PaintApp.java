@@ -1636,18 +1636,20 @@ public final class PaintApp implements WorkbenchScreen {
             StatusBar.draw(painter, columns, rows - 1,
                 statusKeys(choosingSource));
         }
-        if (confirmingQuit) {
+        // Each dialog dims the screen itself, so one under an overlay would dim the background twice.
+        boolean overlayShown = controls.isOpen() || rules.isShowing();
+        if (confirmingQuit && !overlayShown) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
         }
-        if (flow.mode() == DeriveFlow.Mode.MENU) {
+        if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
             ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS,
                 area.x(), area.y(), area.width(), area.height());
             Dialog.Layout menu = menuLayout();
             SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
                 MENU_ROWS, flow.menuIndex());
-        } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+        } else if (!overlayShown && flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
             line.setLength(0);
             line.append("U+");
             appendHex(line, codePoint);
@@ -1656,7 +1658,8 @@ public final class PaintApp implements WorkbenchScreen {
                 List.of(line + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
                 area.x(), area.y(), area.width(), area.height());
         }
-        if (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+        if (!overlayShown
+            && (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
             drawHelp(helpRect);
         }
         MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
