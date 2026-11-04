@@ -95,6 +95,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final Predicate<PaintMenu.Action> menuAvailability =
         action -> PaintMenu.isAvailable(action, menuContext());
     private PaintDerivePick derivePick;
+    private PaintDerive derive;
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
     private final StringBuilder line = new StringBuilder();
@@ -200,6 +201,7 @@ public final class PaintApp implements WorkbenchScreen {
         editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
+        derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new DeriveHost());
 
         readSlots();
         cursor = editor.startSlot();
@@ -583,6 +585,59 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
+    private final class DeriveHost implements PaintDerive.Host {
+
+        @Override
+        public int[] codePoints() {
+            return codePoints;
+        }
+
+        @Override
+        public int cursor() {
+            return cursor;
+        }
+
+        @Override
+        public void setCursor(int slot) {
+            cursor = slot;
+        }
+
+        @Override
+        public void endStroke() {
+            stroke.end();
+        }
+
+        @Override
+        public void keepVisible(int slot) {
+            sheet.keepVisible(slot);
+        }
+
+        @Override
+        public int slotOf(int codePoint) {
+            return PaintApp.this.slotOf(codePoint);
+        }
+
+        @Override
+        public String describeGlyph(int codePoint, String suffix) {
+            return PaintApp.this.describeGlyph(codePoint).append(suffix).toString();
+        }
+
+        @Override
+        public void rememberProblem(String problem) {
+            lastProblem = problem;
+        }
+
+        @Override
+        public void trackPointer() {
+            PaintApp.this.trackPointer();
+        }
+
+        @Override
+        public boolean menuClicked(PaintDeriveMenu menu) {
+            return menu.handleClick(rects.grid(), cell(), pointerX, pointerY, leftClicked());
+        }
+    }
+
     private void openDeriveForCapture() {
         String request = DevCapture.deriveRequest();
         if (request == null) {
@@ -595,23 +650,23 @@ public final class PaintApp implements WorkbenchScreen {
         DevCapture.OverlayRequest overlay = DevCapture.parseOverlayRequest(request);
         if (overlay != null) {
             flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(GlyphOp.Kind.OVERLAY));
-            beginPick();
+            derive.beginPick();
             int overlaySlot = slotOf(overlay.codePoint());
             if (overlaySlot >= 0 && !unselectable[overlaySlot]) {
                 flow.moveSource(overlaySlot);
                 sheet.keepVisible(overlaySlot);
             }
             flow.shiftSource(overlay.shift());
-            refreshPick();
+            derive.refreshPick();
             return;
         }
         int sourceSlot = slotOf(DevCapture.parseCodePoint(request));
         if (sourceSlot < 0 || unselectable[sourceSlot]) {
             return;
         }
-        beginPick();
+        derive.beginPick();
         flow.moveSource(sourceSlot);
-        refreshPick();
+        derive.refreshPick();
     }
 
     // A review file of this size is read once; its notes are shown read-only next to the grid.
@@ -751,10 +806,10 @@ public final class PaintApp implements WorkbenchScreen {
             case NEW_SIZE -> openNewSizeFromMenu();
             case NEW_FONT -> openNewFont();
             case NEW_GLYPH -> openNewGlyph();
-            case DERIVE -> openDerive();
-            case UNLOCK_DERIVED -> unlockDerived();
-            case GO_TO_SOURCE -> goToSource();
-            case CANCEL_DERIVE -> cancelDerive();
+            case DERIVE -> derive.openDerive();
+            case UNLOCK_DERIVED -> derive.unlockDerived();
+            case GO_TO_SOURCE -> derive.goToSource();
+            case CANCEL_DERIVE -> derive.cancelDerive();
             case NEXT_PREVIEW -> preview.cycleTab(false);
             case GUIDES -> guideListPanel.open();
             case BIGGER_UI -> stepScale(1);
@@ -869,17 +924,17 @@ public final class PaintApp implements WorkbenchScreen {
         }
         if (flow.mode() == DeriveFlow.Mode.MENU) {
             wheelTicks = 0;
-            handleDeriveMenu();
+            derive.handleDeriveMenu();
             return;
         }
         if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
             wheelTicks = 0;
-            handleReplacePrompt();
+            derive.handleReplacePrompt();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (flow.isPicking()) {
-                cancelDerive();
+                derive.cancelDerive();
             } else {
                 leave();
             }
@@ -888,10 +943,10 @@ public final class PaintApp implements WorkbenchScreen {
         handleUndoKeys(control, delta);
         if (flow.isPicking()) {
             if (flow.isOverlay()) {
-                handleOverlayKeys();
+                derive.handleOverlayKeys();
             }
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-                confirmSource();
+                derive.confirmSource();
                 return;
             }
         } else if (!control) {
@@ -1106,7 +1161,7 @@ public final class PaintApp implements WorkbenchScreen {
             messages.nextAction();
             if (picking) {
                 flow.moveSource(position);
-                refreshPick();
+                derive.refreshPick();
             } else {
                 cursor = position;
                 stroke.end();
@@ -1126,42 +1181,11 @@ public final class PaintApp implements WorkbenchScreen {
             openNewGlyph();
             newGlyph.swallowOpeningKey();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            openDerive();
+            derive.openDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
-            unlockDerived();
+            derive.unlockDerived();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
-            goToSource();
-        }
-    }
-
-    private void openDerive() {
-        messages.nextAction();
-        stroke.end();
-        flow.openMenu(cursor);
-    }
-
-    private void unlockDerived() {
-        int codePoint = codePoints[cursor];
-        messages.nextAction();
-        stroke.end();
-        if (editor.unlock(codePoint)) {
-            describeGlyph(codePoint).append(" unlocked: now editable");
-            messages.ok(line.toString());
-        } else {
-            messages.warn("Only a derived glyph can be unlocked");
-        }
-    }
-
-    private void goToSource() {
-        int codePoint = codePoints[cursor];
-        messages.nextAction();
-        stroke.end();
-        int sourceSlot = slotOf(editor.derivedFrom(codePoint));
-        if (sourceSlot >= 0) {
-            cursor = sourceSlot;
-            sheet.keepVisible(cursor);
-        } else {
-            messages.warn("Only a derived glyph has a source to go to");
+            derive.goToSource();
         }
     }
 
@@ -1181,141 +1205,6 @@ public final class PaintApp implements WorkbenchScreen {
         line.setLength(0);
         GlyphLabel.appendCodeAndName(line, codePoint);
         return line;
-    }
-
-    private void handleDeriveMenu() {
-        boolean choseByKey = deriveMenu.handleKeys();
-        if (flow.mode() != DeriveFlow.Mode.MENU) {
-            return;
-        }
-        trackPointer();
-        boolean choseByClick = deriveMenu.handleClick(rects.grid(), cell(), pointerX, pointerY, leftClicked());
-        if (choseByKey || choseByClick) {
-            beginPick();
-        }
-    }
-
-    private void beginPick() {
-        messages.nextAction();
-        flow.chooseOperation();
-        stroke.end();
-        derivePick.begin(codePoints, cursor);
-    }
-
-    // Overlay keys: [ and ] shift the pending part, Backspace removes the last part, F finishes.
-    private void handleOverlayKeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            messages.nextAction();
-            flow.shiftSource(-1);
-            refreshPick();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            messages.nextAction();
-            flow.shiftSource(1);
-            refreshPick();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
-            messages.nextAction();
-            if (flow.removeLastPart()) {
-                refreshPick();
-            } else {
-                messages.warn("No part to remove");
-            }
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            finishOverlay();
-        }
-    }
-
-    private void addOverlayPart() {
-        OverlayCheck.Result check = currentOverlayCheck();
-        if (check.blocksAdd()) {
-            messages.warn(check.message());
-        } else if (!derivePick.isValid()) {
-            String problem = derivePick.problemText();
-            messages.warn(problem.isEmpty() ? "This part cannot be added" : problem);
-        } else {
-            flow.addPart();
-            refreshPick();
-        }
-    }
-
-    private void finishOverlay() {
-        messages.nextAction();
-        if (flow.parts().isEmpty()) {
-            messages.warn("Add at least one part first");
-        } else if (currentOverlayCheck().blocksFinish()) {
-            messages.warn(currentOverlayCheck().message());
-        } else if (editor.wouldReplaceDrawing(codePoints[cursor])) {
-            flow.askReplace();
-        } else {
-            applyDerive();
-        }
-    }
-
-    // Runs only when the source changes.
-    private void refreshPick() {
-        derivePick.refresh(codePoints, cursor);
-        if (derivePick.didPreview()) {
-            lastProblem = derivePick.previewProblem();
-        }
-    }
-
-    // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
-    private void confirmSource() {
-        messages.nextAction();
-        if (flow.isOverlay()) {
-            addOverlayPart();
-            return;
-        }
-        if (!derivePick.isValid()) {
-            if (flow.sourceSlot() == cursor) {
-                messages.warn(OverlayCheck.SAME_AS_TARGET_MESSAGE);
-            }
-            return;
-        }
-        if (editor.wouldReplaceDrawing(codePoints[cursor])) {
-            flow.askReplace();
-        } else {
-            applyDerive();
-        }
-    }
-
-    private void applyDerive() {
-        int target = codePoints[cursor];
-        String summary = derivePick.summary(codePoints, target);
-        messages.nextAction();
-        if (editor.derive(target, derivePick.currentOp(codePoints))) {
-            lastProblem = "";
-            flow.finish();
-            derivePick.clear();
-            sheet.keepVisible(cursor);
-            messages.ok("Derived: " + summary);
-        } else {
-            lastProblem = editor.problem();
-            messages.warn(editor.problem());
-            if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
-                flow.cancel();
-            }
-        }
-    }
-
-    // Leaves derive from any mode. Nothing reaches the font before applyDerive's editor.derive call.
-    private void cancelDerive() {
-        messages.nextAction();
-        flow.cancelAll();
-        derivePick.clear();
-        sheet.keepVisible(cursor);
-        messages.ok("Derive cancelled");
-    }
-
-    private void handleReplacePrompt() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
-            applyDerive();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            messages.nextAction();
-            flow.cancel();
-        }
     }
 
     private void handleScrollKeys() {
@@ -1404,9 +1293,9 @@ public final class PaintApp implements WorkbenchScreen {
                 if (!flow.isPicking()) {
                     cursor = slot;
                 } else if (flow.clickSource(slot)) {
-                    confirmSource();
+                    derive.confirmSource();
                 } else {
-                    refreshPick();
+                    derive.refreshPick();
                 }
             } else if (!flow.isPicking()) {
                 int column = grid.columnAt(pointerX);
@@ -1650,20 +1539,16 @@ public final class PaintApp implements WorkbenchScreen {
         }
         PaintHelp.PartView pending = flow.sourceIsTarget()
             ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
-        return new PaintHelp.State(mode, operation, committed, pending, currentOverlayCheck());
+        return new PaintHelp.State(mode, operation, committed, pending, derive.overlayCheck());
     }
 
     // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
     private PaintGridView.Ghost pendingGhost() {
         if (!flow.isOverlay() || !flow.isPicking() || flow.sourceIsTarget()
-            || currentOverlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
+            || derive.overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
             return null;
         }
         return new PaintGridView.Ghost(editor.glyph(codePoints[flow.sourceSlot()]).pixels(), flow.pendingShift());
-    }
-
-    private OverlayCheck.Result currentOverlayCheck() {
-        return derivePick.overlayCheck(codePoints);
     }
 
     @Override
