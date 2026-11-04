@@ -625,35 +625,7 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         menuPinned = true;
-        for (int i = 0; i < menuBar.menuCount(); i++) {
-            if (!menuBar.menu(i).title().equalsIgnoreCase(request.title())) {
-                continue;
-            }
-            if (request.inspect()) {
-                inspectForCapture(i, request.item());
-            } else if (request.hoverOnly()) {
-                menuBar.hover(menuBar.titleColumn(i), MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-            } else if (menuBar.openByAccessKey(menuBar.menu(i).accessKey(), menuAvailability)) {
-                int moves = menuBar.menu(i).items().size();
-                while (request.item() >= 0 && menuBar.highlightedItem() != request.item() && moves-- > 0) {
-                    menuBar.moveItem(1, menuAvailability);
-                }
-            }
-            return;
-        }
-    }
-
-    /** Hovers a title (item -1) or an item of that menu, opened via any available entry, as the pointer would. */
-    private void inspectForCapture(int menu, int item) {
-        if (item < 0) {
-            menuBar.hover(menuBar.titleColumn(menu), MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-            return;
-        }
-        if (!menuBar.openByAccessKey(menuBar.menu(menu).accessKey(), menuAvailability)) {
-            return;
-        }
-        int columns = Gdx.graphics.getWidth() / cell();
-        menuBar.hover(menuBar.dropDownColumn(menu, columns) + 1, item, columns, menuAvailability);
+        MenuCaptureHook.apply(request, menuBar, menuAvailability, cell());
     }
 
     private int cell() {
