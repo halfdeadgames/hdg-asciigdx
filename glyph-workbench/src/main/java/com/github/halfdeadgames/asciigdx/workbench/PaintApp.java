@@ -103,12 +103,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<Dialog.Button> NEW_GLYPH_GO_TO_BUTTONS = List.of(
         new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
-    private static final String NEW_SIZE_TITLE = "NEW SIZE";
-    private static final List<Dialog.Button> NEW_SIZE_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-    private static final List<Dialog.Button> NEW_SIZE_CLOSE_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CLOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-
     private static final String MENU_TITLE = "DERIVE";
     private static final int MENU_WIDTH = 26;
     private static final List<Dialog.Button> MENU_BUTTONS = List.of(
@@ -152,10 +146,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatNewGlyphBackspace = new KeyRepeat();
     private final NewGlyphPrompt newGlyph = new NewGlyphPrompt();
     private final IntPredicate glyphSlotExists = codePoint -> slotOf(codePoint) >= 0;
-    private final NewSizePrompt newSize = new NewSizePrompt();
-    // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private int newSizeHoverX;
-    private int newSizeHoverY;
+    private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
     private final NewFontDialogs newFont = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
     private int renameKeySwallowFrames;
     private int newGlyphKeySwallowFrames;
@@ -399,9 +390,7 @@ public final class PaintApp implements WorkbenchScreen {
             Gdx.app.error(TAG, "Cannot list sizes: " + e.getMessage());
             return;
         }
-        for (int i = 0; i < moves; i++) {
-            newSize.move(1);
-        }
+        newSize.moveForCapture(moves);
     }
 
     private void openNewFontForCapture() {
@@ -455,56 +444,17 @@ public final class PaintApp implements WorkbenchScreen {
     private void openNewSize(List<NewSizePlan.SizeOption> options) {
         stroke.end();
         updatePointerCell();
-        newSizeHoverX = pointerX;
-        newSizeHoverY = pointerY;
-        newSize.open(options);
+        newSize.open(options, pointerX, pointerY);
     }
 
-    // Enter or Esc returns right away so the key does not also act on the screen beneath in the same frame.
     private void handleNewSize() {
         wheelTicks = 0;
         sidewaysTicks = 0;
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            newSize.close();
+        if (newSize.handleKeys()) {
             return;
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-            chooseNewSize();
-            return;
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            newSize.move(-1);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            newSize.move(1);
         }
         updatePointerCell();
-        if (!newSize.hasChoices()) {
-            if (leftClicked() && !insideNewSizeDialog()) {
-                newSize.close();
-            }
-            return;
-        }
-        Dialog.Layout layout = newSizeLayout();
-        int row = SelectList.rowAt(Math.floorDiv(pointerY, cell()), layout.textY(), newSize.optionCount());
-        boolean onRow = row >= 0 && insideNewSizeDialog();
-        if (pointerX != newSizeHoverX || pointerY != newSizeHoverY) {
-            newSizeHoverX = pointerX;
-            newSizeHoverY = pointerY;
-            if (onRow) {
-                newSize.hover(row);
-            }
-        }
-        if (leftClicked()) {
-            if (!insideNewSizeDialog()) {
-                newSize.close();
-            } else if (onRow) {
-                newSize.hover(row);
-                if (newSize.rows().get(row).selectable()) {
-                    chooseNewSize();
-                }
-            }
-        }
+        newSize.handlePointer(leftClicked(), pointerX, pointerY, cell(), rects.grid());
     }
 
     private void openNewSizeFromMenu() {
@@ -518,12 +468,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     // Unsaved changes are asked about after the pick, so cancelling the prompt loses nothing and creates nothing.
-    private void chooseNewSize() {
-        NewSizePlan.SizeOption chosen = newSize.selected();
-        newSize.close();
-        if (chosen == null) {
-            return;
-        }
+    private void confirmNewSize(NewSizePlan.SizeOption chosen) {
         runAfterUnsavedCheck(() -> createSize(chosen), SWITCH_SIZE_QUESTION);
     }
 
@@ -540,24 +485,6 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         openSize.accept(chosen.height());
-    }
-
-    private Dialog.Layout newSizeLayout() {
-        ReviewLayout.Rect area = rects.grid();
-        return Dialog.layout(NEW_SIZE_TITLE, newSize.lines(), newSizeButtons(),
-            area.x(), area.y(), area.width(), area.height());
-    }
-
-    private List<Dialog.Button> newSizeButtons() {
-        return newSize.hasChoices() ? NEW_SIZE_BUTTONS : NEW_SIZE_CLOSE_BUTTONS;
-    }
-
-    private boolean insideNewSizeDialog() {
-        Dialog.Layout layout = newSizeLayout();
-        int column = Math.floorDiv(pointerX, cell());
-        int row = Math.floorDiv(pointerY, cell());
-        return column >= layout.x() && column < layout.x() + layout.width()
-            && row >= layout.y() && row < layout.y() + layout.height();
     }
 
     private void openNewGlyph() {
@@ -1972,14 +1899,7 @@ public final class PaintApp implements WorkbenchScreen {
             newFont.draw(painter, columns, rows, rects.grid());
         }
         if (newSize.isOpen() && !overlayShown) {
-            ReviewLayout.Rect area = rects.grid();
-            Dialog.draw(painter, columns, rows, NEW_SIZE_TITLE, newSize.lines(), newSizeButtons(),
-                area.x(), area.y(), area.width(), area.height());
-            if (newSize.hasChoices()) {
-                Dialog.Layout list = newSizeLayout();
-                SelectList.draw(painter, list.textX(), list.textY(), Math.min(newSize.listWidth(), list.textWidth()),
-                    newSize.rows(), newSize.selectedIndex());
-            }
+            newSize.draw(painter, columns, rows, rects.grid());
         }
         if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
             ReviewLayout.Rect area = rects.grid();
