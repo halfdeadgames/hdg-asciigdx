@@ -1,6 +1,14 @@
 plugins {
   id "application"
+  id "checkstyle"
 }
+
+checkstyle {
+  toolVersion = '10.21.4'
+  configFile = file('config/checkstyle/checkstyle.xml')
+  ignoreFailures = true
+}
+tasks.named('checkstyleTest') { enabled = false }
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
 application.mainClass = 'com.github.halfdeadgames.asciigdx.workbench.WorkbenchLauncher'

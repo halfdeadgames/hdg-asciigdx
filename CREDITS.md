@@ -22,9 +22,10 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 
 ## Development tools
 
-Used only by the `sandbox` demo modules. Not part of any release artifact.
+Used only by the `sandbox` demo modules and, for Checkstyle, the glyph workbench. Not part of any release artifact.
 
 | Library | Author | License | Used for |
 |---|---|---|---|
 | [anim8-gdx](https://github.com/tommyettinger/anim8-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Recording GIF captures of the demo |
 | [sjInGameConsole](https://github.com/tommyettinger/sjInGameConsole) | StrongJoshua, Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | In-game debug console |
+| [Checkstyle](https://checkstyle.org/) | Checkstyle contributors | [LGPL 2.1 or later](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt) | Code size and nesting reports for the glyph workbench; runs at build time only |
