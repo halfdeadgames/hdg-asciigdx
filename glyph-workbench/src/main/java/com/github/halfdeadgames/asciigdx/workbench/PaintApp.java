@@ -44,7 +44,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String TAG = "Paint";
     private static final String LEAVE_QUESTION = "before leaving?";
     private static final String SWITCH_SIZE_QUESTION = "before switching size?";
-    private static final String NEW_FONT_QUESTION = "before starting a new font?";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final List<String> RULE_KEYS = List.of(
@@ -137,7 +136,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
     private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
-    private final NewFontDialogs newFont = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
+    private final PaintNewFont newFont;
     private int renameKeySwallowFrames;
 
     private SpriteBatch batch;
@@ -208,7 +207,6 @@ public final class PaintApp implements WorkbenchScreen {
     private final String fontDir;
     private final String fontSize;
     private final IntConsumer openSize;
-    private final BiConsumer<Path, Integer> openFont;
     // What the unsaved-changes prompt continues with once the changes are saved or discarded.
     private Runnable afterUnsavedPrompt = () -> { };
     private String unsavedQuestion = LEAVE_QUESTION;
@@ -226,7 +224,7 @@ public final class PaintApp implements WorkbenchScreen {
         this.fontDir = fontDir;
         this.fontSize = fontSize;
         this.openSize = openSize;
-        this.openFont = openFont;
+        this.newFont = new PaintNewFont(this::fontsRoot, this::runAfterUnsavedCheck, openFont, messages);
     }
 
     @Override
@@ -387,42 +385,11 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void openNewFont() {
         stroke.end();
-        messages.nextAction();
         newFont.open();
-    }
-
-    // Font folders sit side by side, so the names already taken are the folders next to the current one.
-    private List<String> existingFontFolders() {
-        return NewFontDialogs.foldersIn(fontsRoot());
     }
 
     private Path fontsRoot() {
         return Path.of(fontDir).toAbsolutePath().getParent();
-    }
-
-    // Unsaved changes are asked about after the size is chosen. The dialog stays open (and hidden) under the
-    // prompt, so cancelling it returns to the size page with the selection kept.
-    private void createNewFont(String name, NewFontInput.Shape shape, int height) {
-        runAfterUnsavedCheck(() -> finishNewFont(name, shape, height), NEW_FONT_QUESTION);
-    }
-
-    // On success the host opens a fresh paint screen on the new font. A name problem (for example a folder made
-    // since the name page opened) goes back to the name page, which shows it; anything else is shown on the size page.
-    private void finishNewFont(String name, NewFontInput.Shape shape, int height) {
-        messages.nextAction();
-        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot(), name, shape, height);
-        if (outcome.created()) {
-            newFont.close();
-            openFont.accept(outcome.folder(), height);
-            return;
-        }
-        if (outcome.nameProblem()) {
-            newFont.backToName();
-            messages.warn(outcome.problem());
-        } else {
-            Gdx.app.error(TAG, outcome.problem());
-            newFont.showSizeProblem(outcome.problem());
-        }
     }
 
     private void openNewSize(List<NewSizePlan.SizeOption> options) {
