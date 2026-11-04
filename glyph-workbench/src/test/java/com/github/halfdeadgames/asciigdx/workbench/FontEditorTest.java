@@ -383,6 +383,95 @@ class FontEditorTest {
     }
 
     @Test
+    void addedSlotOutsideCp437IsEmptyAndNotAChange() {
+        FontEditor editor = editor();
+        int slot = editor.addSlot(0x2603);
+        assertEquals(0x2603, editor.codePointAtSlot(slot));
+        assertNull(editor.glyph(0x2603));
+        assertFalse(editor.hasGlyph(0x2603));
+        assertFalse(editor.isModified());
+        assertFalse(editor.canUndo());
+        assertFalse(editor.toText().contains("U+2603"));
+        assertEquals(0, editor.slotCount() % 16);
+    }
+
+    @Test
+    void addSlotForExistingCodePointsChangesNothing() {
+        FontEditor editor = editor();
+        int slotCount = editor.slotCount();
+        assertEquals(256, editor.addSlot(0x100));
+        assertEquals(GlyphOrder.CP437.slotOf(0x41), editor.addSlot(0x41));
+        assertEquals(GlyphOrder.CP437.slotOf(0x44), editor.addSlot(0x44));
+        assertEquals(slotCount, editor.slotCount());
+    }
+
+    @Test
+    void addingTheSameSlotTwiceIsStable() {
+        FontEditor editor = editor();
+        int first = editor.addSlot(0x2603);
+        int slotCount = editor.slotCount();
+        assertEquals(first, editor.addSlot(0x2603));
+        assertEquals(slotCount, editor.slotCount());
+    }
+
+    @Test
+    void addingALowerCodePointInTheSameBlockMovesTheLaterSlot() {
+        FontEditor editor = editor();
+        int later = editor.addSlot(0x105);
+        assertEquals(257, later);
+        int lower = editor.addSlot(0x102);
+        assertEquals(257, lower);
+        assertEquals(0x105, editor.codePointAtSlot(258));
+        assertEquals(258, editor.addSlot(0x105));
+    }
+
+    @Test
+    void addingACodePointInAnotherBlockStartsANewRow() {
+        FontEditor editor = editor();
+        int slot = editor.addSlot(0x2603);
+        assertEquals(0, slot % 16);
+        assertTrue(slot > 256);
+    }
+
+    @Test
+    void paintingAnAddedSlotModifiesAndSavesIt() {
+        FontEditor editor = editor();
+        editor.addSlot(0x2603);
+        assertTrue(editor.setPixel(0x2603, 1, 1, true));
+        assertTrue(editor.isModified());
+        assertTrue(editor.toText().contains("U+2603"));
+    }
+
+    @Test
+    void undoRemovesTheAddedGlyphButKeepsItsSlot() {
+        FontEditor editor = editor();
+        int slot = editor.addSlot(0x2603);
+        editor.beginEdit();
+        editor.setPixel(0x2603, 1, 1, true);
+        editor.commitEdit();
+
+        editor.undo();
+        assertFalse(editor.toText().contains("U+2603"));
+        assertFalse(editor.hasGlyph(0x2603));
+        assertEquals(0x2603, editor.codePointAtSlot(slot));
+        assertEquals(slot, editor.addSlot(0x2603));
+
+        editor.redo();
+        assertTrue(editor.toText().contains("U+2603"));
+        assertEquals(0x2603, editor.codePointAtSlot(slot));
+    }
+
+    @Test
+    void addedSlotCanBeDerivedInto() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        int slot = editor.addSlot(0x2603);
+        assertTrue(editor.derive(0x2603, op(GlyphOp.Kind.MIRROR, 0x41)));
+        assertTrue(editor.isDerived(0x2603));
+        assertEquals(0x2603, editor.codePointAtSlot(slot));
+    }
+
+    @Test
     void markSavedClearsModified() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 0, 0, true);

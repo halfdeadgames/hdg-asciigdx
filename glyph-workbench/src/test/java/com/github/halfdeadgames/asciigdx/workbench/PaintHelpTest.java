@@ -79,10 +79,11 @@ class PaintHelpTest {
         assertTrue(lines.contains(String.format("%-12s%s", "CTRL+Y", "REDO")));
         assertTrue(lines.contains(String.format("%-12s%s", "CTRL+S", "SAVE")));
         assertTrue(lines.contains(String.format("%-12s%s", "D", "DERIVE")));
+        assertTrue(lines.contains(String.format("%-12s%s", "N", "NEW GLYPH")));
         assertTrue(lines.contains(String.format("%-12s%s", "ESC", "BACK")));
         assertTrue(lines.contains(String.format("%-12s%s", "ALT+LETTER", "OPEN MENU")));
         assertTrue(lines.contains(String.format("%-12s%s", "F10", "MENU BAR")));
-        assertEquals(24, rows.size());
+        assertEquals(25, rows.size());
         for (PaintHelp.Row row : rows) {
             assertEquals(PaintHelp.Kind.CONTROL, row.kind());
             assertEquals(12, row.actionColumn());

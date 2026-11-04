@@ -10,7 +10,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
  * {@code workbench.capture} saves a screenshot after a few frames, then exits, and
  * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
  * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
- * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel.
+ * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
+ * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it.
  */
 final class DevCapture {
 
@@ -19,6 +20,7 @@ final class DevCapture {
     static final String TAB_PROPERTY = "workbench.tab";
     static final String GUIDES_PROPERTY = "workbench.guides";
     static final String MENU_PROPERTY = "workbench.menu";
+    static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -75,6 +77,11 @@ final class DevCapture {
     /** The raw {@code workbench.menu} value, or null when unset. */
     static String menuRequest() {
         return System.getProperty(MENU_PROPERTY);
+    }
+
+    /** The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or null to leave it closed. */
+    static String newGlyphRequest() {
+        return System.getProperty(NEW_GLYPH_PROPERTY);
     }
 
     /** True for the request {@code controls}, which opens the Controls panel instead of a menu. */

@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * The editable state of one font: its glyphs, the sheet slots, and the unsaved flag. Derived
@@ -33,7 +34,9 @@ final class FontEditor {
     private final int cellWidth;
     private final int cellHeight;
     private final Map<Integer, GlyphEntry> entries = new TreeMap<>();
-    private final int[] slots;
+    // Every code point the sheet has ever had a slot for; only grows, so undo never removes a slot.
+    private final Set<Integer> knownCodePoints = new TreeSet<>();
+    private int[] slots;
     private Map<Integer, PixelGlyph> resolved;
     // Each edit builds a new resolved map, so keeping the old reference is a free snapshot.
     private Map<Integer, PixelGlyph> savedGlyphs;
@@ -56,13 +59,14 @@ final class FontEditor {
         entries.putAll(data.entries());
         resolved = GlyphResolver.resolveAll(data);
         savedGlyphs = resolved;
-        slots = buildSlots(data);
+        knownCodePoints.addAll(data.entries().keySet());
+        slots = buildSlots(knownCodePoints);
     }
 
     // Empty CP437 slots keep their own code point so they stay selectable; other padding is not selectable.
-    // Painting only fills existing slots, so the slots never change during a session.
-    private static int[] buildSlots(FontData data) {
-        int[] ordered = SheetOrder.slotsFor(data.entries().keySet());
+    // Slots are only added during a session (see addSlot), never removed, so a slot survives undo.
+    private static int[] buildSlots(Set<Integer> codePoints) {
+        int[] ordered = SheetOrder.slotsFor(codePoints);
         for (int slot = 0; slot < ordered.length; slot++) {
             if (slot < GlyphOrder.CP437.size()) {
                 ordered[slot] = GlyphOrder.CP437.codePointAt(slot);
@@ -91,6 +95,35 @@ final class FontEditor {
 
     int codePointAtSlot(int slot) {
         return slots[slot];
+    }
+
+    /**
+     * Makes sure a code point has a slot and returns its index. A new slot is empty and sits in normal
+     * sheet order, so the indexes of later slots can shift. This neither adds a glyph nor counts as a
+     * change: it touches no revision, modified flag, or undo history.
+     *
+     * @throws IllegalArgumentException if the code point is not a valid glyph code point
+     */
+    int addSlot(int codePoint) {
+        if (!Character.isValidCodePoint(codePoint) || codePoint == SheetOrder.FILLER) {
+            throw new IllegalArgumentException(String.format("U+%04X cannot have a slot", codePoint));
+        }
+        int existingSlot = slotOf(codePoint);
+        if (existingSlot != NO_GLYPH) {
+            return existingSlot;
+        }
+        knownCodePoints.add(codePoint);
+        slots = buildSlots(knownCodePoints);
+        return slotOf(codePoint);
+    }
+
+    private int slotOf(int codePoint) {
+        for (int slot = 0; slot < slots.length; slot++) {
+            if (slots[slot] == codePoint) {
+                return slot;
+            }
+        }
+        return NO_GLYPH;
     }
 
     boolean hasGlyph(int codePoint) {

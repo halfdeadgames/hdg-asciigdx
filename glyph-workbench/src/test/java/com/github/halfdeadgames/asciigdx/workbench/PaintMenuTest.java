@@ -38,6 +38,24 @@ class PaintMenuTest {
     }
 
     @Test
+    void newGlyphLeadsTheGlyphMenuWithTheNKey() {
+        MenuBar<Action> bar = PaintMenu.create(true);
+        MenuBar.Item<Action> first = bar.menu(2).items().get(0);
+        assertEquals("GLYPH", bar.menu(2).title());
+        assertEquals(Action.NEW_GLYPH, first.action());
+        assertEquals("NEW GLYPH", first.label());
+        assertEquals("N", first.shortcut());
+        assertEquals(Action.DERIVE, bar.menu(2).items().get(1).action());
+    }
+
+    @Test
+    void newGlyphIsAvailableOnlyWhenIdle() {
+        for (Context context : Context.values()) {
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_GLYPH, context), context.name());
+        }
+    }
+
+    @Test
     void whileDerivingOnlyCancelAndTheHelpItemsAreAvailable() {
         assertAvailableOnly(Context.DERIVING, Set.of(Action.CANCEL_DERIVE, Action.RULES, Action.CONTROLS));
     }

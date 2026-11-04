@@ -29,7 +29,7 @@ final class PaintSheetView {
 
     private final int frameLeft;
     private final int topRows;
-    private final int rows;
+    private int rows;
     private SheetGridLayout layout;
     private int layoutCell;
     private final ScrollState scroll;
@@ -102,6 +102,18 @@ final class PaintSheetView {
         layout = new SheetGridLayout(frameLeft + cell() + inset, frameTop() + cell(),
             slotWidth(), editor.cellHeight() * pixelScale(), GAP, COLUMNS, visibleColumns, rows);
         barLeft = frameLeft + (frameCellsWide - 2) * cell();
+    }
+
+    /**
+     * Picks up slots the editor added: the row count, scroll limits, and grid layout follow it. Marks are
+     * indexed by slot, so they are dropped and must be set again.
+     */
+    void refreshSlots() {
+        rows = editor.slotCount() / COLUMNS;
+        scroll.setTotalRows(rows);
+        marks = null;
+        layoutCell = -1;
+        setVisibleColumns(visibleColumns);
     }
 
     ScrollState scroll() {

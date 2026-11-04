@@ -33,6 +33,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
@@ -73,6 +74,8 @@ public final class PaintApp implements WorkbenchScreen {
         Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
     // The L that starts a rename can also arrive as a typed character a frame later; it must not enter the text.
     private static final int RENAME_KEY_SWALLOW_FRAMES = 2;
+    // The N that opens the new glyph prompt can also arrive as a typed character a frame later.
+    private static final int NEW_GLYPH_KEY_SWALLOW_FRAMES = 2;
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
         new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
         new StatusBar.Key("ESC", "CANCEL"));
@@ -88,6 +91,11 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+
+    private static final List<Dialog.Button> NEW_GLYPH_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "ADD", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> NEW_GLYPH_GO_TO_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private static final String MENU_TITLE = "DERIVE";
     private static final int MENU_WIDTH = 26;
@@ -129,7 +137,11 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
+    private final KeyRepeat repeatNewGlyphBackspace = new KeyRepeat();
+    private final NewGlyphPrompt newGlyph = new NewGlyphPrompt();
+    private final IntPredicate glyphSlotExists = codePoint -> slotOf(codePoint) >= 0;
     private int renameKeySwallowFrames;
+    private int newGlyphKeySwallowFrames;
 
     private SpriteBatch batch;
     private Texture whitePixel;
@@ -219,12 +231,7 @@ public final class PaintApp implements WorkbenchScreen {
         editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
 
-        codePoints = new int[editor.slotCount()];
-        unselectable = new boolean[editor.slotCount()];
-        for (int slot = 0; slot < codePoints.length; slot++) {
-            codePoints[slot] = editor.codePointAtSlot(slot);
-            unselectable[slot] = codePoints[slot] == FontEditor.NO_GLYPH;
-        }
+        readSlots();
         cursor = Math.max(0, CursorNavigator.firstNonBlank(unselectable));
         int preselected = DevCapture.slotToSelect(codePoints, unselectable);
         if (preselected >= 0) {
@@ -299,6 +306,13 @@ public final class PaintApp implements WorkbenchScreen {
                 if (menuPointer.isCapturing(menuBar) || altSeenDown || altDown()) {
                     return true;
                 }
+                if (newGlyph.isOpen()) {
+                    boolean openingKey = character == 'n' || character == 'N';
+                    if (!(newGlyphKeySwallowFrames > 0 && openingKey)) {
+                        newGlyph.type(character);
+                    }
+                    return true;
+                }
                 if (!guideListOpen || !guideList.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
                     return false;
                 }
@@ -316,6 +330,82 @@ public final class PaintApp implements WorkbenchScreen {
             openGuideList();
         }
         openMenuForCapture();
+        openNewGlyphForCapture();
+    }
+
+    private void readSlots() {
+        codePoints = new int[editor.slotCount()];
+        unselectable = new boolean[editor.slotCount()];
+        for (int slot = 0; slot < codePoints.length; slot++) {
+            codePoints[slot] = editor.codePointAtSlot(slot);
+            unselectable[slot] = codePoints[slot] == FontEditor.NO_GLYPH;
+        }
+    }
+
+    private void openNewGlyphForCapture() {
+        String typed = DevCapture.newGlyphRequest();
+        if (typed == null || flow.isActive() || guideListOpen || confirmingQuit) {
+            return;
+        }
+        openNewGlyph();
+        for (int i = 0; i < typed.length(); i++) {
+            newGlyph.type(typed.charAt(i));
+        }
+    }
+
+    private void openNewGlyph() {
+        stroke.end();
+        newGlyph.open();
+        repeatNewGlyphBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
+    }
+
+    // Typed characters arrive through keyTyped. Returning right after Enter or Esc keeps that key from also
+    // acting on the screen beneath in the same frame.
+    private void handleNewGlyph(float delta) {
+        wheelTicks = 0;
+        sidewaysTicks = 0;
+        newGlyphKeySwallowFrames = Math.max(0, newGlyphKeySwallowFrames - 1);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            closeNewGlyph();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            NewGlyphInput.Result result = newGlyph.result();
+            if (result.isValid()) {
+                addGlyphSlot(result.codePoint());
+                closeNewGlyph();
+            }
+            return;
+        }
+        int backspaces = repeatNewGlyphBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            newGlyph.backspace();
+        }
+    }
+
+    private void closeNewGlyph() {
+        newGlyph.close();
+        repeatNewGlyphBackspace.update(false, 0f);
+    }
+
+    // Later slots shift when a slot is inserted, so everything indexed by slot is rebuilt before the cursor moves.
+    private void addGlyphSlot(int codePoint) {
+        boolean existed = slotOf(codePoint) >= 0;
+        editor.addSlot(codePoint);
+        readSlots();
+        sheet.refreshSlots();
+        int slot = slotOf(codePoint);
+        if (slot < 0) {
+            return;
+        }
+        cursor = slot;
+        sheet.keepVisible(cursor);
+        revealCursor = true;
+        messages.nextAction();
+        line.setLength(0);
+        appendCodeAndName(line, codePoint);
+        line.append(existed ? " already has a slot" : " added");
+        messages.ok(line.toString());
     }
 
     private void openMenuForCapture() {
@@ -724,7 +814,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (rules.isShowing()) {
             return PaintMenu.Context.RULES_OPEN;
         }
-        if (confirmingQuit || guideListOpen) {
+        if (confirmingQuit || guideListOpen || newGlyph.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -803,6 +893,7 @@ public final class PaintApp implements WorkbenchScreen {
             case BACK -> leave();
             case UNDO -> undoOnce();
             case REDO -> redoOnce();
+            case NEW_GLYPH -> openNewGlyph();
             case DERIVE -> openDerive();
             case UNLOCK_DERIVED -> unlockDerived();
             case GO_TO_SOURCE -> goToSource();
@@ -849,7 +940,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (controlsOpen) {
             updatePointerCell();
             menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-        } else if (!menuOwnsInput) {
+        } else if (!menuOwnsInput && !newGlyph.isOpen()) {
             handleScaleKeys();
         }
         layoutPanels();
@@ -862,6 +953,12 @@ public final class PaintApp implements WorkbenchScreen {
             stroke.end();
             swallowInput();
             updateConditions();
+            return;
+        }
+        if (newGlyph.isOpen()) {
+            stroke.end();
+            updateConditions();
+            handleNewGlyph(delta);
             return;
         }
         scrollSheetSideways();
@@ -918,7 +1015,7 @@ public final class PaintApp implements WorkbenchScreen {
             }
         } else if (!control) {
             handleDeriveKeys();
-            if (flow.isActive()) {
+            if (flow.isActive() || newGlyph.isOpen()) {
                 return;
             }
         }
@@ -1134,9 +1231,13 @@ public final class PaintApp implements WorkbenchScreen {
         return Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
     }
 
-    // D opens the derive menu, U unlocks a derived glyph, G jumps to the source of a derived glyph.
+    // N opens the new glyph prompt, D opens the derive menu, U unlocks a derived glyph, G jumps to the source
+    // of a derived glyph.
     private void handleDeriveKeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.N) && !altDown() && !shiftDown()) {
+            openNewGlyph();
+            newGlyphKeySwallowFrames = NEW_GLYPH_KEY_SWALLOW_FRAMES;
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             openDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
             unlockDerived();
@@ -1642,6 +1743,12 @@ public final class PaintApp implements WorkbenchScreen {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
         }
+        if (newGlyph.isOpen() && !overlayShown) {
+            ReviewLayout.Rect area = rects.grid();
+            Dialog.draw(painter, columns, rows, "NEW GLYPH", newGlyph.lines(glyphSlotExists),
+                newGlyph.goesToExisting(glyphSlotExists) ? NEW_GLYPH_GO_TO_BUTTONS : NEW_GLYPH_BUTTONS,
+                area.x(), area.y(), area.width(), area.height());
+        }
         if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
             ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS,
@@ -1659,7 +1766,7 @@ public final class PaintApp implements WorkbenchScreen {
                 area.x(), area.y(), area.width(), area.height());
         }
         if (!overlayShown
-            && (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
+            && (confirmingQuit || newGlyph.isOpen() || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
             drawHelp(helpRect);
         }
         MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
