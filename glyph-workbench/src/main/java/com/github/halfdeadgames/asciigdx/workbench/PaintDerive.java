@@ -2,10 +2,19 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import java.util.ArrayList;
+import java.util.List;
 
 /** The derive actions of the paint screen: opening the menu, picking sources, applying, and cancelling. */
 final class PaintDerive {
+
+    private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
+        new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+
+    private final StringBuilder replaceLine = new StringBuilder();
 
     private final DeriveFlow flow;
     private final PaintDerivePick derivePick;
@@ -59,6 +68,53 @@ final class PaintDerive {
 
     OverlayCheck.Result overlayCheck() {
         return derivePick.overlayCheck(host.codePoints());
+    }
+
+    /** Whether a derive dialog is open and dims the screen, so the help must be drawn again above it. */
+    boolean dialogShown() {
+        return flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
+    }
+
+    void drawDialog(Painter painter, int columns, int rows, ReviewLayout.Rect area, int codePoint) {
+        if (flow.mode() == DeriveFlow.Mode.MENU) {
+            deriveMenu.draw(painter, columns, rows, area);
+        } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            drawReplaceDialog(painter, columns, rows, area, codePoint);
+        }
+    }
+
+    PaintHelp.State helpState() {
+        int[] codePoints = host.codePoints();
+        DeriveFlow.Mode mode = flow.mode();
+        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? DeriveFlow.OPERATIONS.get(flow.menuIndex()) : flow.operation();
+        if (!flow.isOverlay() || mode != DeriveFlow.Mode.PICK_SOURCE) {
+            return new PaintHelp.State(mode, operation, List.of(), null);
+        }
+        List<PaintHelp.PartView> committed = new ArrayList<>();
+        for (DeriveFlow.Part part : flow.parts()) {
+            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift()));
+        }
+        PaintHelp.PartView pending = flow.sourceIsTarget()
+            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
+        return new PaintHelp.State(mode, operation, committed, pending, overlayCheck());
+    }
+
+    // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
+    PaintGridView.Ghost pendingGhost() {
+        if (!flow.isOverlay() || !flow.isPicking() || flow.sourceIsTarget()
+            || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
+            return null;
+        }
+        return new PaintGridView.Ghost(editor.glyph(host.codePoints()[flow.sourceSlot()]).pixels(), flow.pendingShift());
+    }
+
+    private void drawReplaceDialog(Painter painter, int columns, int rows, ReviewLayout.Rect area, int codePoint) {
+        replaceLine.setLength(0);
+        replaceLine.append("U+");
+        GlyphLabel.appendHex(replaceLine, codePoint);
+        Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
+            List.of(replaceLine + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
+            area.x(), area.y(), area.width(), area.height());
     }
 
     void openDerive() {

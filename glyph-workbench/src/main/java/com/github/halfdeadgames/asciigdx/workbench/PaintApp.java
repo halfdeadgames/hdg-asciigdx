@@ -29,7 +29,6 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
@@ -75,9 +74,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-
-    private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
-        new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final DeriveFlow flow = new DeriveFlow();
     // Rebuilt only when the auto-size mark changes, which never happens while a menu is open.
@@ -1381,7 +1377,7 @@ public final class PaintApp implements WorkbenchScreen {
         Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
         ghostSeconds += Gdx.graphics.getDeltaTime();
         grid.setHighlight(guideListPanel.highlightedGuide());
-        grid.draw(codePoint, derivePick.shown(), pendingGhost(), ghostSeconds);
+        grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(),ghostSeconds);
         preview.draw(rects.preview(), codePoint, derivePick.shown());
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
@@ -1411,19 +1407,11 @@ public final class PaintApp implements WorkbenchScreen {
         if (newSize.isOpen() && !overlayShown) {
             newSize.draw(painter, columns, rows, rects.grid());
         }
-        if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
-            deriveMenu.draw(painter, columns, rows, rects.grid());
-        } else if (!overlayShown && flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
-            line.setLength(0);
-            line.append("U+");
-            GlyphLabel.appendHex(line, codePoint);
-            ReviewLayout.Rect area = rects.grid();
-            Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
-                List.of(line + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
-                area.x(), area.y(), area.width(), area.height());
+        if (!overlayShown) {
+            derive.drawDialog(painter, columns, rows, rects.grid(), codePoint);
         }
         // The derive help describes the highlighted operation, so it is drawn again above the dim.
-        if (!overlayShown && (flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
+        if (!overlayShown && derive.dialogShown()) {
             drawHelp(helpRect);
         }
         if (!promptShown) {
@@ -1485,7 +1473,7 @@ public final class PaintApp implements WorkbenchScreen {
     // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
     private void drawHelp(ReviewLayout.Rect area) {
         Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), "HELP", false);
-        PaintHelp.State state = helpState();
+        PaintHelp.State state = derive.helpState();
         int chars = Math.max(1, area.width() - 2 * TEXT_PADDING - 2);
         int visible = Math.max(1, area.height() - 2);
         if (!state.equals(helpShownState)) {
@@ -1525,30 +1513,6 @@ public final class PaintApp implements WorkbenchScreen {
         return helpShown && helpRect != null
             && pixelX >= helpRect.x() * cell() && pixelX < (helpRect.x() + helpRect.width()) * cell()
             && pixelY >= helpRect.y() * cell() && pixelY < (helpRect.y() + helpRect.height()) * cell();
-    }
-
-    private PaintHelp.State helpState() {
-        DeriveFlow.Mode mode = flow.mode();
-        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? DeriveFlow.OPERATIONS.get(flow.menuIndex()) : flow.operation();
-        if (!flow.isOverlay() || mode != DeriveFlow.Mode.PICK_SOURCE) {
-            return new PaintHelp.State(mode, operation, List.of(), null);
-        }
-        List<PaintHelp.PartView> committed = new ArrayList<>();
-        for (DeriveFlow.Part part : flow.parts()) {
-            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift()));
-        }
-        PaintHelp.PartView pending = flow.sourceIsTarget()
-            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
-        return new PaintHelp.State(mode, operation, committed, pending, derive.overlayCheck());
-    }
-
-    // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
-    private PaintGridView.Ghost pendingGhost() {
-        if (!flow.isOverlay() || !flow.isPicking() || flow.sourceIsTarget()
-            || derive.overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
-            return null;
-        }
-        return new PaintGridView.Ghost(editor.glyph(codePoints[flow.sourceSlot()]).pixels(), flow.pendingShift());
     }
 
     @Override
