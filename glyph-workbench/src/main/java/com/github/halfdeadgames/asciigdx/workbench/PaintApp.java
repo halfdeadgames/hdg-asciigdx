@@ -918,14 +918,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
         }
-        if (flow.mode() == DeriveFlow.Mode.MENU) {
+        if (derive.handleModalKeys()) {
             wheelTicks = 0;
-            derive.handleDeriveMenu();
-            return;
-        }
-        if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
-            wheelTicks = 0;
-            derive.handleReplacePrompt();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -938,11 +932,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         handleUndoKeys(control, delta);
         if (flow.isPicking()) {
-            if (flow.isOverlay()) {
-                derive.handleOverlayKeys();
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-                derive.confirmSource();
+            if (derive.handlePickingKeys()) {
                 return;
             }
         } else if (!control) {
@@ -1156,8 +1146,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (position != before) {
             messages.nextAction();
             if (picking) {
-                flow.moveSource(position);
-                derive.refreshPick();
+                derive.moveSource(position);
             } else {
                 cursor = position;
                 stroke.end();
@@ -1170,18 +1159,13 @@ public final class PaintApp implements WorkbenchScreen {
         return Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
     }
 
-    // N opens the new glyph prompt, D opens the derive menu, U unlocks a derived glyph, G jumps to the source
-    // of a derived glyph.
+    // N opens the new glyph prompt; other derive shortcuts go to PaintDerive.
     private void handleDeriveKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.N) && !altDown() && !shiftDown()) {
             openNewGlyph();
             newGlyph.swallowOpeningKey();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            derive.openDerive();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
-            derive.unlockDerived();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
-            derive.goToSource();
+        } else {
+            derive.handleShortcutKeys();
         }
     }
 
@@ -1288,10 +1272,8 @@ public final class PaintApp implements WorkbenchScreen {
                 messages.nextAction();
                 if (!flow.isPicking()) {
                     cursor = slot;
-                } else if (flow.clickSource(slot)) {
-                    derive.confirmSource();
                 } else {
-                    derive.refreshPick();
+                    derive.clickSource(slot);
                 }
             } else if (!flow.isPicking()) {
                 int column = grid.columnAt(pointerX);

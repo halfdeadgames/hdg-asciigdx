@@ -147,6 +147,55 @@ final class PaintDerive {
         }
     }
 
+    /** Routes keys to the menu or replace prompt when one is open, and returns whether it consumed the frame. */
+    boolean handleModalKeys() {
+        if (flow.mode() == DeriveFlow.Mode.MENU) {
+            handleDeriveMenu();
+            return true;
+        }
+        if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            handleReplacePrompt();
+            return true;
+        }
+        return false;
+    }
+
+    /** Handles keys while picking a source, and returns whether Enter confirmed the pick. */
+    boolean handlePickingKeys() {
+        if (flow.isOverlay()) {
+            handleOverlayKeys();
+        }
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && !Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            return false;
+        }
+        confirmSource();
+        return true;
+    }
+
+    /** D opens the derive menu, U unlocks a derived glyph, G jumps to the source of a derived glyph. */
+    void handleShortcutKeys() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+            openDerive();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
+            unlockDerived();
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
+            goToSource();
+        }
+    }
+
+    void clickSource(int slot) {
+        if (flow.clickSource(slot)) {
+            confirmSource();
+        } else {
+            refreshPick();
+        }
+    }
+
+    void moveSource(int slot) {
+        flow.moveSource(slot);
+        refreshPick();
+    }
+
     void handleDeriveMenu() {
         boolean choseByKey = deriveMenu.handleKeys();
         if (flow.mode() != DeriveFlow.Mode.MENU) {
