@@ -154,13 +154,17 @@ public final class WorkbenchHost extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        if (active != null) {
+        if (active != null && width > 0 && height > 0) {
             active.resize(width, height);
         }
     }
 
+    // A minimized window reports a 0x0 size, and the backend still calls render from its resize callback.
     @Override
     public void render() {
+        if (Gdx.graphics.getWidth() <= 0 || Gdx.graphics.getHeight() <= 0) {
+            return;
+        }
         active.render();
         if (pending != null) {
             applyPending();

@@ -9,13 +9,24 @@ final class KeyRepeat {
     private static final float INTERVAL_SECONDS = 1f / REPEATS_PER_SECOND;
 
     private boolean wasDown;
+    private boolean ignoredUntilRelease;
     private float heldSeconds;
     private float nextRepeatAt;
+
+    /** Makes a key that is down now produce no moves until it has been released. */
+    void hold(boolean down) {
+        wasDown = down;
+        ignoredUntilRelease = down;
+    }
 
     /** Call once per frame; returns how many moves to make this frame. */
     int update(boolean down, float deltaSeconds) {
         if (!down) {
             wasDown = false;
+            ignoredUntilRelease = false;
+            return 0;
+        }
+        if (ignoredUntilRelease) {
             return 0;
         }
         if (!wasDown) {

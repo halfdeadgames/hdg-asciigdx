@@ -10,7 +10,8 @@ class PaintScaleTest {
     private static final int[][] FONTS = {{8, 8}, {16, 16}, {8, 16}, {32, 32}};
 
     private static final int[] EIGHT_BARE_WIDTHS = {336, 608, 888, 1152};
-    private static final int[] EIGHT_HEIGHTS = {184, 320, 480, 640};
+    // Cell sizes 8, 16, 24, and 32 pixels; each height includes one row for the menu bar.
+    private static final int[] EIGHT_HEIGHTS = {192, 336, 504, 672};
 
     @Test
     void eightByEightMinimumsAreExact() {
@@ -62,14 +63,14 @@ class PaintScaleTest {
 
     @Test
     void fittingFactorKeepsARequestThatFitsItsBareMinimum() {
-        assertEquals(4, PaintScale.fittingFactor(4, 1152, 640, PaintSheetView.GAP, 8, 8));
+        assertEquals(4, PaintScale.fittingFactor(4, 1152, 672, PaintSheetView.GAP, 8, 8));
         assertEquals(2, PaintScale.fittingFactor(2, 1900, 1000, PaintSheetView.GAP, 8, 8));
     }
 
     @Test
     void fittingFactorDropsToTheLargestBareFit() {
         assertEquals(3, PaintScale.fittingFactor(4, 1151, 1000, PaintSheetView.GAP, 8, 8));
-        assertEquals(3, PaintScale.fittingFactor(4, 1900, 639, PaintSheetView.GAP, 8, 8));
+        assertEquals(3, PaintScale.fittingFactor(4, 1900, 671, PaintSheetView.GAP, 8, 8));
         assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, 8, 8));
         assertEquals(1, PaintScale.fittingFactor(4, 1, 1, PaintSheetView.GAP, 8, 8));
     }

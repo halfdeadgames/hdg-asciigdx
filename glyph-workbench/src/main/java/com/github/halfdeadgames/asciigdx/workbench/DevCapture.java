@@ -9,7 +9,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and
  * {@code workbench.capture} saves a screenshot after a few frames, then exits, and
  * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
- * and {@code workbench.guides} opens the guide list with that row selected.
+ * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
+ * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel.
  */
 final class DevCapture {
 
@@ -17,6 +18,7 @@ final class DevCapture {
     static final String DERIVE_PROPERTY = "workbench.derive";
     static final String TAB_PROPERTY = "workbench.tab";
     static final String GUIDES_PROPERTY = "workbench.guides";
+    static final String MENU_PROPERTY = "workbench.menu";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -68,6 +70,65 @@ final class DevCapture {
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    /** The raw {@code workbench.menu} value, or null when unset. */
+    static String menuRequest() {
+        return System.getProperty(MENU_PROPERTY);
+    }
+
+    /** True for the request {@code controls}, which opens the Controls panel instead of a menu. */
+    static boolean opensControls(String request) {
+        return request != null && "controls".equalsIgnoreCase(request.trim());
+    }
+
+    /** A parsed menu request; {@code item} is -1 for the first available item. */
+    record MenuRequest(String title, boolean hoverOnly, int item, boolean inspect) { }
+
+    /**
+     * Parses {@code edit}, {@code edit:1}, {@code hover:view}, {@code inspect:file} (hover a title), or
+     * {@code inspect:glyph:0} (open that menu and hover that item); null for anything else.
+     */
+    static MenuRequest parseMenuRequest(String request) {
+        if (request == null) {
+            return null;
+        }
+        String[] fields = request.trim().split(":", -1);
+        if ("inspect".equalsIgnoreCase(fields[0].trim())) {
+            if (fields.length < 2 || fields.length > 3 || fields[1].isBlank()) {
+                return null;
+            }
+            int item = -1;
+            if (fields.length == 3) {
+                try {
+                    item = Integer.parseInt(fields[2].trim());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+                if (item < 0) {
+                    return null;
+                }
+            }
+            return new MenuRequest(fields[1].trim(), false, item, true);
+        }
+        if (fields.length == 2 && "hover".equalsIgnoreCase(fields[0].trim()) && !fields[1].isBlank()) {
+            return new MenuRequest(fields[1].trim(), true, -1, false);
+        }
+        if (fields[0].isBlank() || fields.length > 2) {
+            return null;
+        }
+        int item = -1;
+        if (fields.length == 2) {
+            try {
+                item = Integer.parseInt(fields[1].trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+            if (item < 0) {
+                return null;
+            }
+        }
+        return new MenuRequest(fields[0].trim(), false, item, false);
     }
 
     /** The raw {@code workbench.derive} value, or null when unset. */

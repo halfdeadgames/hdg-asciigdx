@@ -15,6 +15,7 @@ public final class TopBar {
     }
 
     private static final String SEPARATOR = "►";
+    private static final int DEFAULT_START = 1;
 
     private TopBar() {
     }
@@ -22,7 +23,7 @@ public final class TopBar {
     /** The first crumb is the title colour, the last the accent colour, the rest plain; separators are dim. */
     public static List<Segment> layout(List<String> crumbs) {
         List<Segment> segments = new ArrayList<>();
-        int x = 1;
+        int x = DEFAULT_START;
         for (int i = 0; i < crumbs.size(); i++) {
             Kind kind = i == 0 ? Kind.TITLE : i == crumbs.size() - 1 ? Kind.ACCENT : Kind.TEXT;
             segments.add(new Segment(crumbs.get(i), x, kind));
@@ -45,7 +46,7 @@ public final class TopBar {
     }
 
     private static int width(List<String> crumbs, int start) {
-        int width = 1 + 3 * (crumbs.size() - 1 - start);
+        int width = DEFAULT_START + 3 * (crumbs.size() - 1 - start);
         for (int i = start; i < crumbs.size(); i++) {
             width += crumbs.get(i).length();
         }

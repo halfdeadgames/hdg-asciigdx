@@ -208,6 +208,12 @@ final class DeriveFlow {
         }
     }
 
+    /** Ends the flow from any mode; unlike {@link #cancel}, the replace question does not step back to picking. */
+    void cancelAll() {
+        clearOverlayState();
+        mode = Mode.IDLE;
+    }
+
     void finish() {
         clearOverlayState();
         mode = Mode.IDLE;

@@ -43,6 +43,24 @@ class KeyRepeatTest {
     }
 
     @Test
+    void holdIgnoresAHeldKeyUntilItIsReleased() {
+        KeyRepeat repeat = new KeyRepeat();
+        repeat.hold(true);
+        assertEquals(0, repeat.update(true, 0.016f));
+        assertEquals(0, repeat.update(true, 5f));
+        assertEquals(0, repeat.update(false, 0.016f));
+        assertEquals(1, repeat.update(true, 0.016f));
+    }
+
+    @Test
+    void holdWithAnUpKeyMakesTheNextPressFresh() {
+        KeyRepeat repeat = new KeyRepeat();
+        repeat.update(true, 0f);
+        repeat.hold(false);
+        assertEquals(1, repeat.update(true, 0.016f));
+    }
+
+    @Test
     void releasingAndPressingAgainRestartsTheDelay() {
         KeyRepeat repeat = new KeyRepeat();
         repeat.update(true, 0f);

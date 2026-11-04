@@ -26,9 +26,9 @@ final class PaintSheetView {
 
     private final Painter painter;
     private final FontEditor editor;
-    private static final int TOP_BAR_CELLS = 2;
 
     private final int frameLeft;
+    private final int topRows;
     private final int rows;
     private SheetGridLayout layout;
     private int layoutCell;
@@ -46,10 +46,11 @@ final class PaintSheetView {
     private int barLeft;
     private int barCells;
 
-    PaintSheetView(Painter painter, FontEditor editor, int frameLeft) {
+    PaintSheetView(Painter painter, FontEditor editor, int frameLeft, int topRows) {
         this.painter = painter;
         this.editor = editor;
         this.frameLeft = frameLeft;
+        this.topRows = topRows;
         rows = editor.slotCount() / COLUMNS;
         scroll = new ScrollState(rows);
         setVisibleColumns(COLUMNS);
@@ -60,7 +61,7 @@ final class PaintSheetView {
     }
 
     private int frameTop() {
-        return TOP_BAR_CELLS * cell();
+        return topRows * cell();
     }
 
     // Whole-number zoom that makes a glyph's longer side at least one text cell.
@@ -130,9 +131,12 @@ final class PaintSheetView {
         return columnScroll.needed();
     }
 
-    /** Fits the frame to the window height; keeps the cursor visible when asked or when the size changed. */
-    void fitToHeight(int worldHeight, int margin, int cursorSlot, boolean revealCursor) {
-        frameCellsHigh = Math.max(3, (worldHeight - frameTop() - margin) / cell());
+    /**
+     * Fits the frame to the window height, down to the bottom row when the key bar is hidden. Keeps the cursor
+     * visible when asked or when the number of visible rows changed.
+     */
+    void fitToHeight(int worldHeight, boolean statusBarShown, int cursorSlot, boolean revealCursor) {
+        frameCellsHigh = PaintLayout.sheetRows(worldHeight, cell(), statusBarShown, topRows);
         barCells = Math.max(1, frameCellsHigh - 2 - (columnBarShown() ? 1 : 0));
         int before = scroll.visibleRows();
         scroll.setVisibleRows(layout.rowsThatFit(barCells * cell()));
@@ -230,7 +234,7 @@ final class PaintSheetView {
 
     /** @param sourceSlot slot of the derive source cursor, or -1 for none */
     void draw(int cursorSlot, int sourceSlot) {
-        Panel.draw(painter, frameLeft / cell(), TOP_BAR_CELLS, frameCellsWide, frameCellsHigh,
+        Panel.draw(painter, frameLeft / cell(), topRows, frameCellsWide, frameCellsHigh,
             PaintColumns.sheetTitle(frameCellsWide), false);
         drawBar();
         if (columnBarShown()) {

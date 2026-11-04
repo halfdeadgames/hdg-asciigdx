@@ -64,6 +64,17 @@ final class RulesOverlay {
         return open;
     }
 
+    /** True while the page is open or still sliding out. */
+    boolean isShowing() {
+        return open || slide > 0f;
+    }
+
+    /** Opens the page from the top; F1 and the Help menu both come here. */
+    void open() {
+        open = true;
+        panel.resetScroll();
+    }
+
     /**
      * Advances the slide and handles F1, Esc, and scrolling. Returns true when the overlay used this
      * frame's input, so the caller must skip its own input handling (and must not quit on Esc).
@@ -74,8 +85,7 @@ final class RulesOverlay {
         slide = MathUtils.clamp(slide + (open ? step : -step), 0f, 1f);
         if (!open) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.F1)) {
-                open = true;
-                panel.resetScroll();
+                open();
                 return true;
             }
             return false;

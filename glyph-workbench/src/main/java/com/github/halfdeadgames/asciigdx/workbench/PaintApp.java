@@ -19,6 +19,10 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
@@ -29,6 +33,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
 public final class PaintApp implements WorkbenchScreen {
@@ -44,6 +49,8 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String KEY_GUIDES = "guides";
     private static final String KEY_SCALE = "scale";
     private static final int COLUMNS = PaintSheetView.COLUMNS;
+    private static final int MENU_ROW = 0;
+    private static final int CRUMB_ROW = 1;
     private static final int WHEEL_ROWS = 3;
     private static final int HELP_PADDING = 1;
 
@@ -69,6 +76,11 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
         new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
         new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<StatusBar.Key> MENU_KEYS = List.of(
+        new StatusBar.Key("ARROWS", "CHOOSE"), new StatusBar.Key("ENTER", "SELECT"),
+        new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<StatusBar.Key> REPLACE_KEYS = List.of(
+        new StatusBar.Key("R", "REPLACE"), new StatusBar.Key("ESC", "BACK"));
     private static final List<StatusBar.Key> OVERLAY_PICK_KEYS = List.of(
         new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("ENTER", "ADD"),
         new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
@@ -89,6 +101,20 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<SelectList.Row> MENU_ROWS = menuRows();
 
     private final DeriveFlow flow = new DeriveFlow();
+    // Rebuilt only when the auto-size mark changes, which never happens while a menu is open.
+    private MenuBar<PaintMenu.Action> menuBar = PaintMenu.create(true);
+    private boolean menuMarksAutoScale = true;
+    // A menu state requested by the dev hook stays as set until the pointer moves, a click lands, or Esc is pressed.
+    private boolean menuPinned;
+    private boolean menuPinCellKnown;
+    private int menuPinX;
+    private int menuPinY;
+    private final MenuPointer<PaintMenu.Action> menuPointer = new MenuPointer<>(MENU_ROW);
+    private final MenuKeys<PaintMenu.Action> menuKeys = new MenuKeys<>();
+    // Alt as the input events saw it, because typed characters arrive before this frame's polling can say so.
+    private boolean altSeenDown;
+    private final Predicate<PaintMenu.Action> menuAvailability =
+        action -> PaintMenu.isAvailable(action, menuContext());
     private PixelGlyph pickShown;
     private PixelGlyph blankPick;
     private boolean pickValid;
@@ -125,6 +151,8 @@ public final class PaintApp implements WorkbenchScreen {
     private NotePanel notePanel;
     private final MessageStrip messages = new MessageStrip();
     private PaintLayout.Result rects;
+    private boolean layoutBarShown;
+    private final ControlsOverlay controls = new ControlsOverlay();
     private String lastProblem = "";
     private String pickPromptText = "";
     private String pickProblemText = "";
@@ -213,6 +241,7 @@ public final class PaintApp implements WorkbenchScreen {
         painter = new Painter(batch, whitePixel, source, viewport);
         rulesPainter = new Painter(batch, whitePixel, source, viewport);
         overrideFactor = launchOverride();
+        syncScaleMark();
         autoFactor = PaintScale.bestFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
             PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight());
         int firstFactor = chosenFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -220,7 +249,7 @@ public final class PaintApp implements WorkbenchScreen {
         uiScale = new UiScale(firstFactor);
         painter.setScale(uiScale);
         rulesPainter.setScale(uiScale);
-        sheet = new PaintSheetView(painter, editor, 0);
+        sheet = new PaintSheetView(painter, editor, 0, PaintLayout.TOP_ROWS);
         applyMinimumWindowSize();
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
@@ -236,6 +265,9 @@ public final class PaintApp implements WorkbenchScreen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
+                if (menuPointer.isCapturing(menuBar)) {
+                    return true;
+                }
                 boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
                     || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
                 float sideways = amountX != 0 ? amountX : shift ? amountY : 0;
@@ -247,8 +279,27 @@ public final class PaintApp implements WorkbenchScreen {
             }
 
             @Override
+            public boolean keyDown(int keycode) {
+                if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
+                    altSeenDown = true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean keyUp(int keycode) {
+                if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
+                    altSeenDown = false;
+                }
+                return false;
+            }
+
+            @Override
             public boolean keyTyped(char character) {
-                if (!guideListOpen || !guideList.isRenaming() || rules.isOpen() || controlDown()) {
+                if (menuPointer.isCapturing(menuBar) || altSeenDown || altDown()) {
+                    return true;
+                }
+                if (!guideListOpen || !guideList.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
                     return false;
                 }
                 boolean startingKey = character == 'l' || character == 'L';
@@ -264,6 +315,48 @@ public final class PaintApp implements WorkbenchScreen {
             guideList.select(guideRequest);
             openGuideList();
         }
+        openMenuForCapture();
+    }
+
+    private void openMenuForCapture() {
+        if (DevCapture.opensControls(DevCapture.menuRequest())) {
+            controls.open();
+            return;
+        }
+        DevCapture.MenuRequest request = DevCapture.parseMenuRequest(DevCapture.menuRequest());
+        if (request == null) {
+            return;
+        }
+        menuPinned = true;
+        for (int i = 0; i < menuBar.menuCount(); i++) {
+            if (!menuBar.menu(i).title().equalsIgnoreCase(request.title())) {
+                continue;
+            }
+            if (request.inspect()) {
+                inspectForCapture(i, request.item());
+            } else if (request.hoverOnly()) {
+                menuBar.hover(menuBar.titleColumn(i), MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
+            } else if (menuBar.openByAccessKey(menuBar.menu(i).accessKey(), menuAvailability)) {
+                int moves = menuBar.menu(i).items().size();
+                while (request.item() >= 0 && menuBar.highlightedItem() != request.item() && moves-- > 0) {
+                    menuBar.moveItem(1, menuAvailability);
+                }
+            }
+            return;
+        }
+    }
+
+    /** Hovers a title (item -1) or an item of that menu, opened via any available entry, as the pointer would. */
+    private void inspectForCapture(int menu, int item) {
+        if (item < 0) {
+            menuBar.hover(menuBar.titleColumn(menu), MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
+            return;
+        }
+        if (!menuBar.openByAccessKey(menuBar.menu(menu).accessKey(), menuAvailability)) {
+            return;
+        }
+        int columns = Gdx.graphics.getWidth() / cell();
+        menuBar.hover(menuBar.dropDownColumn(menu, columns) + 1, item, columns, menuAvailability);
     }
 
     private int cell() {
@@ -303,6 +396,10 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
+    private static boolean altDown() {
+        return Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT);
+    }
+
     private static boolean controlDown() {
         return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
     }
@@ -313,15 +410,32 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.EQUALS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {
-            overrideFactor = PaintScale.stepped(uiScale.factor(), 1);
+            stepScale(1);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_SUBTRACT)) {
-            overrideFactor = PaintScale.stepped(uiScale.factor(), -1);
+            stepScale(-1);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0)) {
-            overrideFactor = null;
-        } else {
-            return;
+            useAutoScale();
         }
+    }
+
+    private void stepScale(int delta) {
+        overrideFactor = PaintScale.stepped(uiScale.factor(), delta);
         updateScale(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        syncScaleMark();
+    }
+
+    private void useAutoScale() {
+        overrideFactor = null;
+        updateScale(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        syncScaleMark();
+    }
+
+    private void syncScaleMark() {
+        boolean auto = overrideFactor == null;
+        if (auto != menuMarksAutoScale) {
+            menuMarksAutoScale = auto;
+            menuBar = PaintMenu.create(auto);
+        }
     }
 
     private void updateScale(int width, int height) {
@@ -603,17 +717,153 @@ public final class PaintApp implements WorkbenchScreen {
         return Math.round(viewport.getWorldHeight());
     }
 
+    private PaintMenu.Context menuContext() {
+        if (controls.isOpen()) {
+            return PaintMenu.Context.CONTROLS_OPEN;
+        }
+        if (rules.isShowing()) {
+            return PaintMenu.Context.RULES_OPEN;
+        }
+        if (confirmingQuit || guideListOpen) {
+            return PaintMenu.Context.MODAL;
+        }
+        return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
+    }
+
+    // Runs before everything else. While the menu owns the frame, nothing below it may read input.
+    private boolean handleMenuInput(float delta) {
+        updatePointerCell();
+        if (!altDown()) {
+            altSeenDown = false;
+        }
+        if (menuPinned) {
+            if (!menuPinCellKnown) {
+                menuPinCellKnown = true;
+                menuPinX = pointerX;
+                menuPinY = pointerY;
+            }
+            if (pointerX == menuPinX && pointerY == menuPinY && !leftClicked()
+                && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                return menuBar.isOpen();
+            }
+            menuPinned = false;
+        }
+        boolean wasOpen = menuBar.isOpen();
+        boolean escape = Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
+        PaintMenu.Action chosen = menuPointer.update(menuBar, menuAvailability,
+            Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()), worldWidth() / cell(),
+            escape, leftClicked(),
+            Gdx.input.isButtonPressed(Input.Buttons.LEFT), stroke.isActive() || sheet.isDraggingColumnBar());
+        boolean keysOwnFrame = false;
+        if (chosen == null && (!escape || altDown())) {
+            chosen = routeMenuKeys(delta);
+            keysOwnFrame = menuKeys.consumed();
+        }
+        if (chosen != null) {
+            stroke.end();
+            runMenuAction(chosen);
+        }
+        if (menuBar.isOpen() != wasOpen) {
+            repeatLeft.hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
+            repeatRight.hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
+            repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
+            repeatDown.hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
+        }
+        return menuPointer.captured() || keysOwnFrame;
+    }
+
+    // Arrow repeats are read only while a menu is open, so a closed menu leaves them to the cursor.
+    private PaintMenu.Action routeMenuKeys(float delta) {
+        boolean alt = altDown();
+        boolean steering = menuBar.isOpen() && !alt;
+        int lefts = steering ? repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
+        int rights = steering ? repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
+        int ups = steering ? repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
+        int downs = steering ? repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
+        boolean enter = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
+        return menuKeys.route(menuBar, menuAvailability, !(guideListOpen && guideList.isRenaming()), alt,
+            alt ? pressedAccessKey() : MenuKeys.NO_KEY, Gdx.input.isKeyJustPressed(Input.Keys.F10), enter,
+            lefts, rights, ups, downs);
+    }
+
+    private char pressedAccessKey() {
+        for (int i = 0; i < menuBar.menuCount(); i++) {
+            char key = Character.toLowerCase(menuBar.menu(i).accessKey());
+            if (key >= 'a' && key <= 'z' && Gdx.input.isKeyJustPressed(Input.Keys.A + (key - 'a'))) {
+                return key;
+            }
+        }
+        return MenuKeys.NO_KEY;
+    }
+
+    private void runMenuAction(PaintMenu.Action action) {
+        switch (action) {
+            case SAVE -> save();
+            case BACK -> leave();
+            case UNDO -> undoOnce();
+            case REDO -> redoOnce();
+            case DERIVE -> openDerive();
+            case UNLOCK_DERIVED -> unlockDerived();
+            case GO_TO_SOURCE -> goToSource();
+            case CANCEL_DERIVE -> cancelDerive();
+            case NEXT_PREVIEW -> preview.cycleTab(false);
+            case GUIDES -> openGuideList();
+            case BIGGER_UI -> stepScale(1);
+            case SMALLER_UI -> stepScale(-1);
+            case AUTO_UI -> useAutoScale();
+            case RULES -> {
+                rules.open();
+                wheelTicks = 0;
+                stroke.end();
+            }
+            case CONTROLS -> {
+                controls.open();
+                wheelTicks = 0;
+                sidewaysTicks = 0;
+                stroke.end();
+            }
+        }
+    }
+
+    // Drops queued wheel ticks and keeps the repeaters tracking the real keys without producing moves,
+    // so a key held through the menu neither bursts nor counts as freshly pressed when the menu closes.
+    private void swallowInput() {
+        wheelTicks = 0;
+        sidewaysTicks = 0;
+        boolean control = controlDown();
+        boolean shift = shiftDown();
+        repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), 0f);
+        repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), 0f);
+        repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), 0f);
+        repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), 0f);
+        repeatUndo.update(undoHeld(control, shift), 0f);
+        repeatRedo.update(redoHeld(control, shift), 0f);
+        repeatLabelBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), 0f);
+    }
+
     private void handleInput(float delta) {
-        handleScaleKeys();
-        PaintColumns.Split split = PaintColumns.split(
-            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cell());
-        sheet.setVisibleColumns(split.sheetColumns());
-        sheet.fitToHeight(worldHeight(), cell(), cursor, revealCursor);
-        revealCursor = false;
-        rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
-            sheet.frameRight() / cell(), split.rightCells(), editor.cellWidth(), editor.cellHeight(),
-            cell());
-        fitGrid();
+        // The Controls panel takes the frame before the menu does, so a click on the bar row can still close it.
+        boolean controlsOpen = controls.isOpen();
+        boolean menuOwnsInput = !controlsOpen && handleMenuInput(delta);
+        if (controlsOpen) {
+            updatePointerCell();
+            menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
+        } else if (!menuOwnsInput) {
+            handleScaleKeys();
+        }
+        layoutPanels();
+        if (controlsOpen) {
+            controls.handleInput(delta, wheelTicks, leftClicked(),
+                Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()),
+                worldWidth() / cell(), worldHeight() / cell());
+        }
+        if (menuOwnsInput || controlsOpen) {
+            stroke.end();
+            swallowInput();
+            updateConditions();
+            return;
+        }
         scrollSheetSideways();
         updateConditions();
         if (rules.handleInput(delta, wheelTicks)) {
@@ -651,13 +901,9 @@ public final class PaintApp implements WorkbenchScreen {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (flow.isPicking()) {
-                cancelPick();
-            } else if (editor.isModified()) {
-                messages.nextAction();
-                confirmingQuit = true;
-                stroke.end();
+                cancelDerive();
             } else {
-                onExit.run();
+                leave();
             }
             return;
         }
@@ -689,6 +935,24 @@ public final class PaintApp implements WorkbenchScreen {
                 messages.warn("Edit rejected: " + problem);
             }
         }
+    }
+
+    // The key bar owns the last row only while deriving or editing guides; otherwise the sheet and messages panels reach it.
+    private boolean statusBarShown() {
+        return flow.isActive() || guideListOpen;
+    }
+
+    private void layoutPanels() {
+        layoutBarShown = statusBarShown();
+        PaintColumns.Split split = PaintColumns.split(
+            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cell());
+        sheet.setVisibleColumns(split.sheetColumns());
+        sheet.fitToHeight(worldHeight(), layoutBarShown, cursor, revealCursor);
+        revealCursor = false;
+        rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
+            sheet.frameRight() / cell(), split.rightCells(), editor.cellWidth(), editor.cellHeight(),
+            cell(), layoutBarShown);
+        fitGrid();
     }
 
     // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
@@ -762,28 +1026,55 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void handlePreviewTabKey() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
-            boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-            preview.cycleTab(shift);
+            preview.cycleTab(shiftDown());
         }
+    }
+
+    // Esc and the Back menu item: leaves at once, or asks about unsaved changes first.
+    private void leave() {
+        if (editor.isModified()) {
+            messages.nextAction();
+            confirmingQuit = true;
+            stroke.end();
+        } else {
+            onExit.run();
+        }
+    }
+
+    private static boolean shiftDown() {
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+    }
+
+    private static boolean undoHeld(boolean control, boolean shift) {
+        return control && Gdx.input.isKeyPressed(Input.Keys.Z) && !shift;
+    }
+
+    private static boolean redoHeld(boolean control, boolean shift) {
+        return control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (shift && Gdx.input.isKeyPressed(Input.Keys.Z)));
     }
 
     // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active.
     private void handleUndoKeys(boolean control, float delta) {
-        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-        boolean zDown = control && Gdx.input.isKeyPressed(Input.Keys.Z);
-        boolean undoDown = zDown && !shift;
-        boolean redoDown = control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (zDown && shift));
-        int undos = repeatUndo.update(undoDown, delta);
-        int redos = repeatRedo.update(redoDown, delta);
+        boolean shift = shiftDown();
+        int undos = repeatUndo.update(undoHeld(control, shift), delta);
+        int redos = repeatRedo.update(redoHeld(control, shift), delta);
         if (stroke.isActive() || flow.isActive()) {
             return;
         }
         for (int i = 0; i < undos; i++) {
-            showChangedGlyph(editor.undo(), "Undid change to ");
+            undoOnce();
         }
         for (int i = 0; i < redos; i++) {
-            showChangedGlyph(editor.redo(), "Redid change to ");
+            redoOnce();
         }
+    }
+
+    private void undoOnce() {
+        showChangedGlyph(editor.undo(), "Undid change to ");
+    }
+
+    private void redoOnce() {
+        showChangedGlyph(editor.redo(), "Redid change to ");
     }
 
     private void showChangedGlyph(int codePoint, String notice) {
@@ -845,30 +1136,43 @@ public final class PaintApp implements WorkbenchScreen {
 
     // D opens the derive menu, U unlocks a derived glyph, G jumps to the source of a derived glyph.
     private void handleDeriveKeys() {
-        int codePoint = codePoints[cursor];
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            messages.nextAction();
-            stroke.end();
-            flow.openMenu(cursor);
+            openDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
-            messages.nextAction();
-            stroke.end();
-            if (editor.unlock(codePoint)) {
-                describeGlyph(codePoint).append(" unlocked: now editable");
-                messages.ok(line.toString());
-            } else {
-                messages.warn("Only a derived glyph can be unlocked");
-            }
+            unlockDerived();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.G)) {
-            messages.nextAction();
-            stroke.end();
-            int sourceSlot = slotOf(editor.derivedFrom(codePoint));
-            if (sourceSlot >= 0) {
-                cursor = sourceSlot;
-                sheet.keepVisible(cursor);
-            } else {
-                messages.warn("Only a derived glyph has a source to go to");
-            }
+            goToSource();
+        }
+    }
+
+    private void openDerive() {
+        messages.nextAction();
+        stroke.end();
+        flow.openMenu(cursor);
+    }
+
+    private void unlockDerived() {
+        int codePoint = codePoints[cursor];
+        messages.nextAction();
+        stroke.end();
+        if (editor.unlock(codePoint)) {
+            describeGlyph(codePoint).append(" unlocked: now editable");
+            messages.ok(line.toString());
+        } else {
+            messages.warn("Only a derived glyph can be unlocked");
+        }
+    }
+
+    private void goToSource() {
+        int codePoint = codePoints[cursor];
+        messages.nextAction();
+        stroke.end();
+        int sourceSlot = slotOf(editor.derivedFrom(codePoint));
+        if (sourceSlot >= 0) {
+            cursor = sourceSlot;
+            sheet.keepVisible(cursor);
+        } else {
+            messages.warn("Only a derived glyph has a source to go to");
         }
     }
 
@@ -1119,9 +1423,10 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private void cancelPick() {
+    // Leaves derive from any mode. Nothing reaches the font before applyDerive's editor.derive call.
+    private void cancelDerive() {
         messages.nextAction();
-        flow.cancel();
+        flow.cancelAll();
         pickShown = null;
         sheet.keepVisible(cursor);
         messages.ok("Derive cancelled");
@@ -1197,11 +1502,15 @@ public final class PaintApp implements WorkbenchScreen {
         sidewaysTicks = 0;
     }
 
-    private void trackPointer() {
+    private void updatePointerCell() {
         pointer.set(Gdx.input.getX(), Gdx.input.getY());
         viewport.unproject(pointer);
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
+    }
+
+    private void trackPointer() {
+        updatePointerCell();
         if (wheelTicks != 0) {
             if (messages.contains(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()))) {
                 messages.scrollBy(wheelTicks);
@@ -1287,6 +1596,10 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void draw() {
+        // Input this frame may have started or ended derive or the guide list after the layout was made.
+        if (statusBarShown() != layoutBarShown) {
+            layoutPanels();
+        }
         ScreenUtils.clear(UiPalette.BG);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -1294,7 +1607,7 @@ public final class PaintApp implements WorkbenchScreen {
         int codePoint = codePoints[cursor];
         int columns = worldWidth() / cell();
         int rows = worldHeight() / cell();
-        TopBar.draw(painter, columns, 0,
+        TopBar.draw(painter, columns, CRUMB_ROW,
             List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), scaleLabel,
             editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
@@ -1319,8 +1632,10 @@ public final class PaintApp implements WorkbenchScreen {
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
         messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
-        StatusBar.draw(painter, columns, rows - 1,
-            guideListOpen ? (guideList.isRenaming() ? GUIDE_RENAME_KEYS : GUIDE_LIST_KEYS) : !choosingSource ? KEYS : flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS);
+        if (layoutBarShown) {
+            StatusBar.draw(painter, columns, rows - 1,
+                statusKeys(choosingSource));
+        }
         if (confirmingQuit) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
@@ -1344,8 +1659,29 @@ public final class PaintApp implements WorkbenchScreen {
         if (confirmingQuit || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
             drawHelp(helpRect);
         }
+        MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
+        MenuBarView.drawDropDown(painter, menuBar, columns, MENU_ROW, menuAvailability);
         rules.draw(worldWidth(), worldHeight(), codePoint);
+        if (controls.isOpen()) {
+            controls.draw(painter, columns, rows);
+        }
         batch.end();
+    }
+
+    private List<StatusBar.Key> statusKeys(boolean choosingSource) {
+        if (guideListOpen) {
+            return guideList.isRenaming() ? GUIDE_RENAME_KEYS : GUIDE_LIST_KEYS;
+        }
+        if (flow.mode() == DeriveFlow.Mode.MENU) {
+            return MENU_KEYS;
+        }
+        if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
+            return REPLACE_KEYS;
+        }
+        if (!choosingSource) {
+            return KEYS;
+        }
+        return flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS;
     }
 
     // Read-only: the note and pick the upscale review recorded for this glyph, if it has a note.

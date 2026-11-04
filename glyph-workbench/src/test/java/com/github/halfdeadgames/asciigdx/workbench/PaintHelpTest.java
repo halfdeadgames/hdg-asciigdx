@@ -56,30 +56,50 @@ class PaintHelpTest {
     }
 
     @Test
-    void paintingListsTheRealControlsOnOneAlignedColumn() {
+    void paintingListsOnlyTheMouseAndNavigationControlsOnOneAlignedColumn() {
         List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.IDLE, GlyphOp.Kind.MIRROR);
-        List<String> lines = plain(rows);
-        assertTrue(lines.contains("CTRL+Z  UNDO"));
-        assertTrue(lines.contains("CTRL+Y  REDO"));
-        assertTrue(lines.contains("CTRL+S  SAVE"));
-        assertTrue(lines.contains("D       DERIVE"));
-        assertTrue(lines.contains("ESC     BACK"));
+        List<String> keys = new ArrayList<>();
         for (PaintHelp.Row row : rows) {
+            keys.add(row.key());
             assertEquals(PaintHelp.Kind.CONTROL, row.kind());
             assertEquals(8, row.actionColumn());
             assertEquals(8, row.plain().indexOf(row.action()), row.plain());
+        }
+        assertEquals(List.of("CLICK", "DRAG", "ARROWS", "PGUP", "PGDN", "HOME", "END", "[ ]"), keys);
+        assertTrue(plain(rows).contains("ARROWS  PICK GLYPH"));
+        assertNoOnce(rows);
+    }
+
+    @Test
+    void theFullListKeepsEveryControlAndAddsTheMenuKeys() {
+        List<PaintHelp.Row> rows = PaintHelp.allControlRows();
+        List<String> lines = plain(rows);
+        // The longest key, ALT+LETTER, is 10 characters; the shared key gap is 2.
+        assertTrue(lines.contains(String.format("%-12s%s", "CTRL+Z", "UNDO")));
+        assertTrue(lines.contains(String.format("%-12s%s", "CTRL+Y", "REDO")));
+        assertTrue(lines.contains(String.format("%-12s%s", "CTRL+S", "SAVE")));
+        assertTrue(lines.contains(String.format("%-12s%s", "D", "DERIVE")));
+        assertTrue(lines.contains(String.format("%-12s%s", "ESC", "BACK")));
+        assertTrue(lines.contains(String.format("%-12s%s", "ALT+LETTER", "OPEN MENU")));
+        assertTrue(lines.contains(String.format("%-12s%s", "F10", "MENU BAR")));
+        assertEquals(24, rows.size());
+        for (PaintHelp.Row row : rows) {
+            assertEquals(PaintHelp.Kind.CONTROL, row.kind());
+            assertEquals(12, row.actionColumn());
+        }
+        for (PaintHelp.Row idle : rows(DeriveFlow.Mode.IDLE, GlyphOp.Kind.MIRROR)) {
+            assertNotNull(find(rows, idle.key()), idle.key());
         }
         assertNoOnce(rows);
     }
 
     @Test
     void longTableActionsAreNeverWrapped() {
-        List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.IDLE, GlyphOp.Kind.MIRROR);
+        List<PaintHelp.Row> rows = PaintHelp.allControlRows();
         PaintHelp.Row unlock = find(rows, "U");
         assertNotNull(unlock);
         assertEquals("UNLOCK DERIVED", unlock.action());
         assertTrue(unlock.action().length() > WIDTH - unlock.actionColumn());
-        assertEquals(22, rows.size());
         assertNotNull(find(rows, "F2"));
         assertEquals("GUIDES", find(rows, "F2").action());
         assertTrue(plain(rows).stream().noneMatch(line -> line.startsWith("  ")));
@@ -213,6 +233,67 @@ class PaintHelpTest {
         assertTrue(lines.contains("ESC  BACK"));
         assertNoOnce(rows);
         assertProseFits(rows);
+    }
+
+    @Test
+    void controlsBoxIsCentredAndHoldsTheWholeListInABigWindow() {
+        ControlsOverlay.Layout layout = ControlsOverlay.layout(100, 60);
+        ReviewLayout.Rect box = layout.rect();
+        assertEquals((100 - box.width()) / 2, box.x());
+        assertEquals((60 - box.height()) / 2, box.y());
+        assertEquals(PaintHelp.allControlRows().size(), layout.lines().size());
+        assertEquals(layout.lines().size() + 2, box.height());
+        assertEquals(layout.lines().size(), layout.visibleRows());
+        assertEquals(0, layout.maxOffset());
+        assertFalse(ControlsOverlay.isOutside(box, box.x(), box.y()));
+        assertFalse(ControlsOverlay.isOutside(box, box.x() + box.width() - 1, box.bottom() - 1));
+    }
+
+    @Test
+    void controlsBoxScrollsWhenTheWindowIsShort() {
+        ControlsOverlay.Layout layout = ControlsOverlay.layout(100, 12);
+        assertEquals(8, layout.rect().height());
+        assertEquals(6, layout.visibleRows());
+        assertEquals(layout.lines().size() - 6, layout.maxOffset());
+        assertTrue(layout.rect().y() >= 0 && layout.rect().bottom() <= 12);
+        ScrollState scroll = new ScrollState(layout.lines().size());
+        scroll.setVisibleRows(layout.visibleRows());
+        scroll.scrollBy(1000);
+        assertEquals(layout.maxOffset(), scroll.offset());
+        scroll.scrollBy(-1000);
+        assertEquals(0, scroll.offset());
+    }
+
+    @Test
+    void controlsBoxWrapsInANarrowWindowAndStaysInsideIt() {
+        ControlsOverlay.Layout layout = ControlsOverlay.layout(30, 40);
+        ReviewLayout.Rect box = layout.rect();
+        assertTrue(box.x() >= 0 && box.x() + box.width() <= 30);
+        assertEquals(box.width() - 4, layout.chars());
+        for (HelpWrap.Line line : layout.lines()) {
+            assertTrue(line.actionColumn() + line.action().length() <= layout.chars(), line.toString());
+            assertTrue(line.key().length() <= layout.chars(), line.toString());
+        }
+        assertTrue(layout.lines().size() > PaintHelp.allControlRows().size());
+    }
+
+    @Test
+    void controlsBoxNeverOutgrowsATinyWindow() {
+        ControlsOverlay.Layout layout = ControlsOverlay.layout(8, 5);
+        ReviewLayout.Rect box = layout.rect();
+        assertTrue(box.width() <= 8 && box.height() <= 5);
+        assertTrue(box.x() >= 0 && box.y() >= 0);
+        assertTrue(layout.visibleRows() >= 1);
+    }
+
+    @Test
+    void aClickOutsideTheControlsBoxIsOutsideAndOneInsideIsNot() {
+        ReviewLayout.Rect box = new ReviewLayout.Rect(10, 5, 20, 10);
+        assertTrue(ControlsOverlay.isOutside(box, 9, 8));
+        assertTrue(ControlsOverlay.isOutside(box, 30, 8));
+        assertTrue(ControlsOverlay.isOutside(box, 15, 4));
+        assertTrue(ControlsOverlay.isOutside(box, 15, 15));
+        assertFalse(ControlsOverlay.isOutside(box, 15, 8));
     }
 
     @Test

@@ -104,9 +104,8 @@ class HelpWrapTest {
 
     @Test
     void everyPaintControlFitsTheSixteenCellColumn() {
-        PaintHelp.State idle = new PaintHelp.State(DeriveFlow.Mode.IDLE, GlyphOp.Kind.MIRROR, List.of(), null);
         int chars = 12;
-        List<HelpWrap.Line> lines = HelpWrap.lines(idle, chars, 100);
+        List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), chars);
         assertTrue(lines.size() > 18);
         for (HelpWrap.Line line : lines) {
             assertTrue(line.actionColumn() + line.action().length() <= chars, line.toString());

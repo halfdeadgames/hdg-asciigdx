@@ -65,6 +65,7 @@ run {
   if (commandLineProperties.containsKey('rulesOpen')) systemProperty 'workbench.rulesOpen', 'true'
   if (commandLineProperties.containsKey('derive')) systemProperty 'workbench.derive', commandLineProperties['derive']
   if (commandLineProperties.containsKey('guides')) systemProperty 'workbench.guides', commandLineProperties['guides']
+  if (commandLineProperties.containsKey('menu')) systemProperty 'workbench.menu', commandLineProperties['menu']
   def rulesFontDir = commandLineProperties.containsKey('fontDir') ? commandLineProperties['fontDir'] : 'fonts/saiksistt'
   systemProperty 'workbench.fontDir', rootProject.file(rulesFontDir).absolutePath
   if (commandLineProperties.containsKey('capture')) {

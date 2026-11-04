@@ -158,7 +158,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         source = TextureGlyphSource.loadDungeonMode();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
-        sheet = new PaintSheetView(painter, sheetFont, 0);
+        sheet = new PaintSheetView(painter, sheetFont, 0, ReviewLayout.TOP_ROWS);
         columnPanel = new ColumnPanel(painter, CELL_FILL, UiPalette.TEXT, UiPalette.ACCENT, UiPalette.FRAME);
         notePanel = new NotePanel(painter);
         rules = new RulesOverlay(painter, fontDir);
@@ -260,7 +260,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     }
 
     private void handleInput(float delta) {
-        sheet.fitToHeight(Math.round(viewport.getWorldHeight()), CELL, cursor, revealCursor);
+        sheet.fitToHeight(Math.round(viewport.getWorldHeight()), true, cursor, revealCursor);
         revealCursor = false;
         rects = ReviewLayout.compute(columns(), rows(), sheet.frameRight() / CELL);
         if (rules.handleInput(delta, wheelTicks)) {

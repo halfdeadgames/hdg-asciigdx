@@ -59,12 +59,15 @@ final class PaintHelp {
     private static final String PARTS_TITLE = "PARTS";
 
     // Each control is {key, action}; a block lines its actions up in one column.
-    private static final String[][] PAINT_CONTROLS = {
+    private static final String[][] IDLE_CONTROLS = {
+        {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"},
+        {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}};
+    private static final String[][] ALL_CONTROLS = {
         {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
         {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}, {"D", "DERIVE"}, {"U", "UNLOCK DERIVED"},
         {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
         {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
-        {"F1", "RULES"}, {"F2", "GUIDES"}, {"ESC", "BACK"}};
+        {"F1", "RULES"}, {"F2", "GUIDES"}, {"ALT+LETTER", "OPEN MENU"}, {"F10", "MENU BAR"}, {"ESC", "BACK"}};
     private static final String[][] MENU_CONTROLS = {
         {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
     private static final String[][] PICK_CONTROLS = {
@@ -81,7 +84,7 @@ final class PaintHelp {
     static List<Row> rows(State state, int width) {
         List<Row> out = new ArrayList<>();
         switch (state.mode()) {
-            case IDLE -> addControls(out, PAINT_CONTROLS);
+            case IDLE -> addControls(out, IDLE_CONTROLS);
             case MENU -> {
                 addText(out, describe(state.operation()), width);
                 addBlank(out);
@@ -106,6 +109,13 @@ final class PaintHelp {
                 addControls(out, REPLACE_CONTROLS);
             }
         }
+        return out;
+    }
+
+    /** Every paint control on one aligned column; the Controls panel shows these. */
+    static List<Row> allControlRows() {
+        List<Row> out = new ArrayList<>();
+        addControls(out, ALL_CONTROLS);
         return out;
     }
 
