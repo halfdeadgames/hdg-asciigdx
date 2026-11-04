@@ -25,13 +25,11 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
-import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
@@ -78,16 +76,8 @@ public final class PaintApp implements WorkbenchScreen {
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
-    private static final String MENU_TITLE = "DERIVE";
-    private static final int MENU_WIDTH = 26;
-    private static final List<Dialog.Button> MENU_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "SELECT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
         new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-    // Blank dialog lines reserve the room the select list is drawn into, two cells per operation.
-    private static final List<String> MENU_LINES = Collections.nCopies(
-        DeriveFlow.OPERATIONS.size() * SelectList.PITCH - 1, " ".repeat(MENU_WIDTH));
-    private static final List<SelectList.Row> MENU_ROWS = menuRows();
 
     private final DeriveFlow flow = new DeriveFlow();
     // Rebuilt only when the auto-size mark changes, which never happens while a menu is open.
@@ -136,6 +126,7 @@ public final class PaintApp implements WorkbenchScreen {
     private RulesOverlay rules;
     private NotePanel notePanel;
     private final MessageStrip messages = new MessageStrip();
+    private final PaintDeriveMenu deriveMenu = new PaintDeriveMenu(flow, messages);
     // Static so a paint screen opened later in the same run does not open the capture dialog again.
     private static boolean newFontCaptureOpened;
     private PaintLayout.Result rects;
@@ -1193,32 +1184,13 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleDeriveMenu() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            messages.nextAction();
-            flow.cancel();
+        boolean choseByKey = deriveMenu.handleKeys();
+        if (flow.mode() != DeriveFlow.Mode.MENU) {
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            messages.nextAction();
-            flow.moveMenu(-1);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            messages.nextAction();
-            flow.moveMenu(1);
-        }
-        boolean choose = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
         trackPointer();
-        if (leftClicked()) {
-            Dialog.Layout layout = menuLayout();
-            int column = pointerX / cell();
-            int row = SelectList.rowAt(pointerY / cell(), layout.textY(), DeriveFlow.OPERATIONS.size());
-            if (row >= 0 && column >= layout.x() && column < layout.x() + layout.width()) {
-                flow.highlightMenuRow(row);
-                choose = true;
-            }
-        }
-        if (choose) {
+        boolean choseByClick = deriveMenu.handleClick(rects.grid(), cell(), pointerX, pointerY, leftClicked());
+        if (choseByKey || choseByClick) {
             beginPick();
         }
     }
@@ -1344,19 +1316,6 @@ public final class PaintApp implements WorkbenchScreen {
             messages.nextAction();
             flow.cancel();
         }
-    }
-
-    private Dialog.Layout menuLayout() {
-        ReviewLayout.Rect area = rects.grid();
-        return Dialog.layout(MENU_TITLE, MENU_LINES, MENU_BUTTONS, area.x(), area.y(), area.width(), area.height());
-    }
-
-    private static List<SelectList.Row> menuRows() {
-        List<SelectList.Row> rows = new ArrayList<>();
-        for (GlyphOp.Kind kind : DeriveFlow.OPERATIONS) {
-            rows.add(new SelectList.Row(DeriveFlow.label(kind), true, false, 0));
-        }
-        return List.copyOf(rows);
     }
 
     private void handleScrollKeys() {
@@ -1564,12 +1523,7 @@ public final class PaintApp implements WorkbenchScreen {
             newSize.draw(painter, columns, rows, rects.grid());
         }
         if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
-            ReviewLayout.Rect area = rects.grid();
-            Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS,
-                area.x(), area.y(), area.width(), area.height());
-            Dialog.Layout menu = menuLayout();
-            SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
-                MENU_ROWS, flow.menuIndex());
+            deriveMenu.draw(painter, columns, rows, rects.grid());
         } else if (!overlayShown && flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
             line.setLength(0);
             line.append("U+");
