@@ -157,8 +157,7 @@ public final class PaintApp implements WorkbenchScreen {
     private float titleSeconds;
     private boolean revealCursor = true;
     private boolean confirmingQuit;
-    private int wheelTicks;
-    private int sidewaysTicks;
+    private final WheelTicks wheelTicks = new WheelTicks();
     private int pointerX;
     private int pointerY;
 
@@ -243,11 +242,7 @@ public final class PaintApp implements WorkbenchScreen {
                 }
                 boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
                     || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-                float sideways = amountX != 0 ? amountX : shift ? amountY : 0;
-                sidewaysTicks += sideways > 0 ? 1 : sideways < 0 ? -1 : 0;
-                if (!shift || amountX != 0) {
-                    wheelTicks += amountY > 0 ? 1 : amountY < 0 ? -1 : 0;
-                }
+                wheelTicks.add(amountX, amountY, shift);
                 return true;
             }
 
@@ -351,8 +346,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleNewSize() {
-        wheelTicks = 0;
-        sidewaysTicks = 0;
+        wheelTicks.clear();
         if (newSize.handleKeys()) {
             return;
         }
@@ -396,8 +390,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleNewGlyph(float delta) {
-        wheelTicks = 0;
-        sidewaysTicks = 0;
+        wheelTicks.clear();
         newGlyph.handle(delta);
     }
 
@@ -572,7 +565,7 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void clearWheelTicks() {
-            wheelTicks = 0;
+            wheelTicks.clearVertical();
         }
 
         @Override
@@ -813,13 +806,12 @@ public final class PaintApp implements WorkbenchScreen {
             case AUTO_UI -> useAutoScale();
             case RULES -> {
                 rules.open();
-                wheelTicks = 0;
+                wheelTicks.clearVertical();
                 stroke.end();
             }
             case CONTROLS -> {
                 controls.open();
-                wheelTicks = 0;
-                sidewaysTicks = 0;
+                wheelTicks.clear();
                 stroke.end();
             }
         }
@@ -828,8 +820,7 @@ public final class PaintApp implements WorkbenchScreen {
     // Drops queued wheel ticks and keeps the repeaters tracking the real keys without producing moves,
     // so a key held through the menu neither bursts nor counts as freshly pressed when the menu closes.
     private void swallowInput() {
-        wheelTicks = 0;
-        sidewaysTicks = 0;
+        wheelTicks.clear();
         boolean control = controlDown();
         boolean shift = shiftDown();
         repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), 0f);
@@ -856,7 +847,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         layoutPanels();
         if (controlsOpen) {
-            controls.handleInput(delta, wheelTicks, leftClicked(),
+            controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
                 Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()),
                 worldWidth() / cell(), worldHeight() / cell());
         }
@@ -883,30 +874,28 @@ public final class PaintApp implements WorkbenchScreen {
             updateConditions();
             if (confirmingQuit) {
                 handleQuitPrompt();
-                wheelTicks = 0;
-                sidewaysTicks = 0;
+                wheelTicks.clear();
                 return;
             }
-            int wheel = wheelTicks;
-            wheelTicks = 0;
-            sidewaysTicks = 0;
+            int wheel = wheelTicks.vertical();
+            wheelTicks.clear();
             newFont.handleInput(delta, wheel, leftClicked(), pointerX, pointerY, cell(), rects.grid());
             return;
         }
         scrollSheetSideways();
         updateConditions();
-        if (rules.handleInput(delta, wheelTicks)) {
-            wheelTicks = 0;
+        if (rules.handleInput(delta, wheelTicks.vertical())) {
+            wheelTicks.clearVertical();
             stroke.end();
             return;
         }
         if (confirmingQuit) {
             handleQuitPrompt();
-            wheelTicks = 0;
+            wheelTicks.clearVertical();
             return;
         }
         if (guideListPanel.isOpen()) {
-            guideListPanel.handle(delta, wheelTicks);
+            guideListPanel.handle(delta, wheelTicks.vertical());
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2) && flow.mode() == DeriveFlow.Mode.IDLE) {
@@ -919,7 +908,7 @@ public final class PaintApp implements WorkbenchScreen {
             save();
         }
         if (derive.handleModalKeys()) {
-            wheelTicks = 0;
+            wheelTicks.clearVertical();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -1222,40 +1211,44 @@ public final class PaintApp implements WorkbenchScreen {
 
     // Applied before the modal checks so ticks never pile up; the view scroll never moves the cursor.
     private void scrollSheetSideways() {
-        if (sidewaysTicks == 0) {
+        if (wheelTicks.sideways() == 0) {
             return;
         }
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
+        unprojectInputToPointer();
         int x = (int) Math.floor(pointer.x);
         int y = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
         if (sheet.contains(x, y)) {
-            sheet.columnScroll().scrollBy(sidewaysTicks);
+            sheet.columnScroll().scrollBy(wheelTicks.sideways());
         }
-        sidewaysTicks = 0;
+        wheelTicks.clearSideways();
+    }
+
+    private void unprojectInputToPointer() {
+        pointer.set(Gdx.input.getX(), Gdx.input.getY());
+        viewport.unproject(pointer);
     }
 
     private void updatePointerCell() {
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
+        unprojectInputToPointer();
         pointerX = (int) Math.floor(pointer.x);
         pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
     }
 
     private void trackPointer() {
         updatePointerCell();
-        if (wheelTicks != 0) {
+        int ticks = wheelTicks.vertical();
+        if (ticks != 0) {
             if (messages.contains(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()))) {
-                messages.scrollBy(wheelTicks);
+                messages.scrollBy(ticks);
             } else if (notePanel.contains(pointerX, pointerY)) {
-                notePanel.scrollDisplay(wheelTicks * WHEEL_ROWS);
+                notePanel.scrollDisplay(ticks * WHEEL_ROWS);
             } else if (helpContains(pointerX, pointerY)) {
-                helpScroll.scrollBy(wheelTicks * WHEEL_ROWS);
+                helpScroll.scrollBy(ticks * WHEEL_ROWS);
             } else if (sheet.contains(pointerX, pointerY)) {
-                sheet.scroll().scrollBy(wheelTicks * WHEEL_ROWS);
+                sheet.scroll().scrollBy(ticks * WHEEL_ROWS);
             }
         }
-        wheelTicks = 0;
+        wheelTicks.clearVertical();
     }
 
     private void handleMouse() {
