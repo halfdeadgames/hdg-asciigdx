@@ -73,6 +73,7 @@ public final class PaintApp implements WorkbenchScreen {
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final DeriveFlow flow = new DeriveFlow();
+    private final PaintLayers layers = new PaintLayers();
     // Rebuilt only when the auto-size mark changes, which never happens while a menu is open.
     private MenuBar<PaintMenu.Action> menuBar = PaintMenu.create(true);
     private boolean menuMarksAutoScale = true;
@@ -1305,6 +1306,14 @@ public final class PaintApp implements WorkbenchScreen {
         int codePoint = codePoints[cursor];
         int columns = worldWidth() / cell();
         int rows = worldHeight() / cell();
+        drawBase(codePoint, columns, rows);
+        refreshLayers();
+        drawDialogs(codePoint, columns, rows);
+        drawTopLayers(codePoint, columns, rows);
+        batch.end();
+    }
+
+    private void drawBase(int codePoint, int columns, int rows) {
         TopBar.draw(painter, columns, CRUMB_ROW,
             List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), uiScale.label(),
             editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
@@ -1323,49 +1332,57 @@ public final class PaintApp implements WorkbenchScreen {
             StatusBar.draw(painter, columns, rows - 1,
                 statusKeys(choosingSource));
         }
-        // Each dialog dims the screen itself, so one under an overlay would dim the background twice.
-        boolean overlayShown = controls.isOpen() || rules.isShowing();
-        // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and must stay clear.
-        boolean promptShown = dialogDimsScreen() && !overlayShown && !menuBar.isOpen();
-        if (promptShown) {
+    }
+
+    private void refreshLayers() {
+        layers.update(confirmingQuit, newGlyph.isOpen(), newSize.isOpen(), newFont.isOpen(), deriveDimsScreen(),
+            controls.isOpen(), rules.isShowing(), menuBar.isOpen());
+    }
+
+    private void drawDialogs(int codePoint, int columns, int rows) {
+        if (layers.menuBarBelowDim()) {
             MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
         }
-        if (confirmingQuit && !overlayShown) {
+        if (layers.quitPromptShown()) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
                 List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS);
         }
-        if (newGlyph.isOpen() && !overlayShown) {
+        if (layers.newGlyphShown()) {
             newGlyph.draw(painter, columns, rows, rects.grid());
         }
-        // Under the unsaved-changes prompt the dialog is hidden but kept, so cancelling returns to it.
-        if (newFont.isOpen() && !overlayShown && !confirmingQuit) {
+        if (layers.newFontShown()) {
             newFont.draw(painter, columns, rows, rects.grid());
         }
-        if (newSize.isOpen() && !overlayShown) {
+        if (layers.newSizeShown()) {
             newSize.draw(painter, columns, rows, rects.grid());
         }
-        if (!overlayShown) {
+        if (layers.deriveDialogDrawn()) {
             derive.drawDialog(painter, columns, rows, rects.grid(), codePoint);
         }
-        // The derive help describes the highlighted operation, so it is drawn again above the dim.
-        if (!overlayShown && derive.dialogShown()) {
+        if (layers.redrawsDeriveHelp()) {
             helpPanel.redraw(derive.helpState(), cell());
         }
-        if (!promptShown) {
+    }
+
+    private void drawTopLayers(int codePoint, int columns, int rows) {
+        if (!layers.menuBarBelowDim()) {
             MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
         }
         MenuBarView.drawDropDown(painter, menuBar, columns, MENU_ROW, menuAvailability);
         rules.draw(worldWidth(), worldHeight(), codePoint);
-        if (controls.isOpen()) {
+        if (layers.controlsShown()) {
             controls.draw(painter, columns, rows);
         }
-        batch.end();
     }
 
-    // The dialogs that dim the whole screen when drawn.
+    private boolean deriveDimsScreen() {
+        return derive.dialogShown();
+    }
+
+    // Input runs before the frame's layers are refreshed, so it calls the static check directly.
     private boolean dialogDimsScreen() {
-        return confirmingQuit || newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen()
-            || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
+        return PaintLayers.dialogDimsScreen(confirmingQuit, newGlyph.isOpen(), newSize.isOpen(), newFont.isOpen(),
+            deriveDimsScreen());
     }
 
     private List<StatusBar.Key> statusKeys(boolean choosingSource) {
