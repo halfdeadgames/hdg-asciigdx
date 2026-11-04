@@ -59,6 +59,11 @@ final class PaintGuidesFile {
         return path;
     }
 
+    // Slash-separated, as FileHandle.path() wrote it.
+    String displayPath() {
+        return path.toString().replace('\\', '/');
+    }
+
     /** Throws instead of writing when the file is unreadable, so its content is never destroyed. Check {@link #isUnreadable()} first to warn instead. */
     void save(PaintGuides guidesToWrite) throws IOException {
         if (isUnreadable()) {
