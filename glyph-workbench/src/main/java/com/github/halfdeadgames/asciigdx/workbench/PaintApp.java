@@ -24,7 +24,6 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -142,13 +141,8 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintGuides guides = PaintGuides.NONE;
     private PaintGuidesFile guidesFile;
     private int shownNoteFor = -1;
-    private PaintHelp.State helpShownState;
-    private int helpShownChars;
-    private int helpShownVisible;
-    private List<HelpWrap.Line> helpLines = List.of();
     private final ScrollState helpScroll = new ScrollState(0);
-    private ReviewLayout.Rect helpRect;
-    private boolean helpShown;
+    private PaintHelpPanel helpPanel;
     private boolean[] unselectable;
     private int[] codePoints;
     private int cursor;
@@ -233,6 +227,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         rules = new RulesOverlay(rulesPainter, fontDir);
         notePanel = new NotePanel(painter);
+        helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
         loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
@@ -1181,12 +1176,12 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public boolean helpShown() {
-            return helpShown;
+            return helpPanel.isShown();
         }
 
         @Override
         public boolean helpContains(int pixelX, int pixelY) {
-            return PaintApp.this.helpContains(pixelX, pixelY);
+            return helpPanel.contains(pixelX, pixelY, PaintApp.this.cell());
         }
 
         @Override
@@ -1367,7 +1362,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         // The derive help describes the highlighted operation, so it is drawn again above the dim.
         if (!overlayShown && derive.dialogShown()) {
-            drawHelp(helpRect);
+            helpPanel.redraw(derive.helpState(), cell());
         }
         if (!promptShown) {
             MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
@@ -1411,63 +1406,17 @@ public final class PaintApp implements WorkbenchScreen {
         if (guideListPanel.isOpen()) {
             guideListPanel.draw(rects.note(), cell());
             notePanel.markHidden();
-            helpShown = false;
+            helpPanel.markHidden();
             return;
         }
         ReviewFile.Answer answer = review.get(codePoint);
         boolean hasNote = answer != null && !answer.note().isEmpty();
-        helpRect = PaintLayout.helpArea(rects, hasNote);
-        drawHelp(helpRect);
+        helpPanel.draw(PaintLayout.helpArea(rects, hasNote), derive.helpState(), cell());
         if (hasNote) {
             notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
         } else {
             notePanel.markHidden();
         }
-    }
-
-    // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
-    private void drawHelp(ReviewLayout.Rect area) {
-        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), "HELP", false);
-        PaintHelp.State state = derive.helpState();
-        int chars = Math.max(1, area.width() - 2 * TEXT_PADDING - 2);
-        int visible = Math.max(1, area.height() - 2);
-        if (!state.equals(helpShownState)) {
-            helpScroll.toTop();
-        }
-        if (!state.equals(helpShownState) || chars != helpShownChars || visible != helpShownVisible) {
-            helpShownState = state;
-            helpShownChars = chars;
-            helpShownVisible = visible;
-            helpLines = HelpWrap.lines(state, chars, visible);
-        }
-        helpScroll.setVisibleRows(visible);
-        helpScroll.setTotalRows(helpLines.size());
-        helpRect = area;
-        helpShown = true;
-        int first = helpScroll.offset();
-        int last = Math.min(helpLines.size(), first + visible);
-        int textX = (area.x() + 1 + TEXT_PADDING) * cell();
-        for (int i = first; i < last; i++) {
-            HelpWrap.Line line = helpLines.get(i);
-            Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
-                : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
-                : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
-            int top = (area.y() + 1 + i - first) * cell();
-            if (!line.key().isEmpty()) {
-                painter.text(line.key(), textX, top, color == UiPalette.TEXT ? UiPalette.FOCUS : color);
-            }
-            painter.text(line.action(), textX + line.actionColumn() * cell(), top, color);
-        }
-        if (helpScroll.needed() && visible >= 2) {
-            ScrollText.drawBar(painter, area.x() + area.width() - 2, area.y() + 1, visible,
-                helpLines.size(), visible, first);
-        }
-    }
-
-    private boolean helpContains(int pixelX, int pixelY) {
-        return helpShown && helpRect != null
-            && pixelX >= helpRect.x() * cell() && pixelX < (helpRect.x() + helpRect.width()) * cell()
-            && pixelY >= helpRect.y() * cell() && pixelY < (helpRect.y() + helpRect.height()) * cell();
     }
 
     @Override
