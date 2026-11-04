@@ -52,7 +52,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int MENU_ROW = 0;
     private static final int CRUMB_ROW = 1;
-    private static final int WHEEL_ROWS = 3;
     static final int TEXT_PADDING = 1;
 
     private static final List<StatusBar.Key> KEYS = List.of(
@@ -158,6 +157,7 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean revealCursor = true;
     private boolean confirmingQuit;
     private final WheelTicks wheelTicks = new WheelTicks();
+    private PaintScrollRouting scrollRouting;
     private int pointerX;
     private int pointerY;
 
@@ -233,6 +233,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         rules = new RulesOverlay(rulesPainter, fontDir);
         notePanel = new NotePanel(painter);
+        scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
         loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
@@ -882,7 +883,7 @@ public final class PaintApp implements WorkbenchScreen {
             newFont.handleInput(delta, wheel, leftClicked(), pointerX, pointerY, cell(), rects.grid());
             return;
         }
-        scrollSheetSideways();
+        scrollRouting.scrollSheetSideways();
         updateConditions();
         if (rules.handleInput(delta, wheelTicks.vertical())) {
             wheelTicks.clearVertical();
@@ -932,7 +933,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         handlePreviewTabKey();
         moveCursor(delta);
-        handleScrollKeys();
+        scrollRouting.handleScrollKeys();
         trackPointer();
         handleMouse();
         String problem = editor.problem();
@@ -1176,51 +1177,42 @@ public final class PaintApp implements WorkbenchScreen {
         return line;
     }
 
-    private void handleScrollKeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_UP)) {
-            sheet.scroll().pageUp();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
-            sheet.scroll().pageDown();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.HOME)) {
-            sheet.scroll().toTop();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
-            sheet.scroll().toBottom();
-        }
-        if (flow.isOverlay()) {
-            return;
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            scrollNoteOrHelp(-1);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            scrollNoteOrHelp(1);
-        }
-    }
+    private final class ScrollHost implements PaintScrollRouting.Host {
 
-    // The keys follow the note while it overflows; otherwise they scroll the help.
-    private void scrollNoteOrHelp(int rows) {
-        if (notePanel.canScroll()) {
-            notePanel.scrollDisplay(rows);
-        } else if (helpShown) {
-            helpScroll.scrollBy(rows);
+        @Override
+        public boolean helpShown() {
+            return helpShown;
         }
-    }
 
-    // Applied before the modal checks so ticks never pile up; the view scroll never moves the cursor.
-    private void scrollSheetSideways() {
-        if (wheelTicks.sideways() == 0) {
-            return;
+        @Override
+        public boolean helpContains(int pixelX, int pixelY) {
+            return PaintApp.this.helpContains(pixelX, pixelY);
         }
-        unprojectInputToPointer();
-        int x = (int) Math.floor(pointer.x);
-        int y = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-        if (sheet.contains(x, y)) {
-            sheet.columnScroll().scrollBy(wheelTicks.sideways());
+
+        @Override
+        public boolean isOverlay() {
+            return flow.isOverlay();
         }
-        wheelTicks.clearSideways();
+
+        @Override
+        public int cell() {
+            return PaintApp.this.cell();
+        }
+
+        @Override
+        public void unprojectInputToPointer() {
+            PaintApp.this.unprojectInputToPointer();
+        }
+
+        @Override
+        public int unprojectedPixelX() {
+            return (int) Math.floor(pointer.x);
+        }
+
+        @Override
+        public int unprojectedPixelY() {
+            return (int) Math.floor(viewport.getWorldHeight() - pointer.y);
+        }
     }
 
     private void unprojectInputToPointer() {
@@ -1236,19 +1228,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void trackPointer() {
         updatePointerCell();
-        int ticks = wheelTicks.vertical();
-        if (ticks != 0) {
-            if (messages.contains(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()))) {
-                messages.scrollBy(ticks);
-            } else if (notePanel.contains(pointerX, pointerY)) {
-                notePanel.scrollDisplay(ticks * WHEEL_ROWS);
-            } else if (helpContains(pointerX, pointerY)) {
-                helpScroll.scrollBy(ticks * WHEEL_ROWS);
-            } else if (sheet.contains(pointerX, pointerY)) {
-                sheet.scroll().scrollBy(ticks * WHEEL_ROWS);
-            }
-        }
-        wheelTicks.clearVertical();
+        scrollRouting.routeVerticalWheel(pointerX, pointerY);
     }
 
     private void handleMouse() {
