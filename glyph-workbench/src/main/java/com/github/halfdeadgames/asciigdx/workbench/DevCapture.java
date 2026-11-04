@@ -1,9 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.PixmapIO;
-import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and
@@ -255,18 +252,11 @@ final class DevCapture {
         if (frames < CAPTURE_FRAME) {
             return;
         }
-        int width = Gdx.graphics.getBackBufferWidth();
-        int height = Gdx.graphics.getBackBufferHeight();
-        byte[] pixels = ScreenUtils.getFrameBufferPixels(0, 0, width, height, true);
-        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         try {
-            pixmap.getPixels().put(pixels).rewind();
-            PixmapIO.writePNG(Gdx.files.absolute(capturePath), pixmap);
+            ScreenshotFile.writeBackBuffer(capturePath);
             Gdx.app.log("Workbench", "Captured " + capturePath);
         } catch (RuntimeException e) {
             Gdx.app.error("Workbench", "Capture failed: " + e.getMessage());
-        } finally {
-            pixmap.dispose();
         }
         Gdx.app.exit();
     }

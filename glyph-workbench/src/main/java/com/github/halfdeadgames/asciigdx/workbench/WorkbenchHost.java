@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
+import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +34,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     private final String mode;
     private WorkbenchScreen active;
     private Supplier<WorkbenchScreen> pending;
+    private ScriptSession scriptSession;
 
     /** @param mode {@code paint}, {@code upscale}, or anything else (including null) for the menus */
     public WorkbenchHost(String mode) {
@@ -41,6 +43,10 @@ public final class WorkbenchHost extends ApplicationAdapter {
 
     @Override
     public void create() {
+        String scriptPath = System.getProperty(ScriptSession.SCRIPT_PROPERTY);
+        if (scriptPath != null) {
+            scriptSession = new ScriptSession(scriptPath);
+        }
         if ("paint".equals(mode)) {
             switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
                 System.getProperty("workbench.fontSize", DEFAULT_FONT_SIZE)));
@@ -251,7 +257,13 @@ public final class WorkbenchHost extends ApplicationAdapter {
         if (Gdx.graphics.getWidth() <= 0 || Gdx.graphics.getHeight() <= 0) {
             return;
         }
+        if (scriptSession != null) {
+            scriptSession.beforeFrame(Gdx.graphics.getDeltaTime());
+        }
         active.render();
+        if (scriptSession != null) {
+            scriptSession.afterFrame();
+        }
         if (pending != null) {
             applyPending();
         }
