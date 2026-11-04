@@ -144,10 +144,7 @@ public final class PaintApp implements WorkbenchScreen {
     private TextureGlyphSource source;
     private Painter painter;
     private Painter rulesPainter;
-    private UiScale uiScale = UiScale.DEFAULT;
-    private int autoFactor = UiScale.DEFAULT_FACTOR;
-    private Integer overrideFactor;
-    private String scaleLabel = "";
+    private PaintUiScale uiScale;
     private FileHandle dataFile;
     private String folderName;
     private FontEditor editor;
@@ -254,15 +251,12 @@ public final class PaintApp implements WorkbenchScreen {
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
         rulesPainter = new Painter(batch, whitePixel, source, viewport);
-        overrideFactor = launchOverride();
+        uiScale = new PaintUiScale(editor.cellWidth(), editor.cellHeight(), launchOverride());
         syncScaleMark();
-        autoFactor = PaintScale.bestFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
-            PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight());
-        int firstFactor = chosenFactor(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        showScale(firstFactor);
-        uiScale = new UiScale(firstFactor);
-        painter.setScale(uiScale);
-        rulesPainter.setScale(uiScale);
+        uiScale.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        showScaleMessage();
+        painter.setScale(uiScale.scale());
+        rulesPainter.setScale(uiScale.scale());
         sheet = new PaintSheetView(painter, editor, 0, PaintLayout.TOP_ROWS);
         applyMinimumWindowSize();
         loadGuides(directory);
@@ -483,7 +477,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private int cell() {
-        return uiScale.cell();
+        return uiScale.scale().cell();
     }
 
     private static Integer launchOverride() {
@@ -500,20 +494,10 @@ public final class PaintApp implements WorkbenchScreen {
         return factor;
     }
 
-    // The requested override is kept as asked; only what is applied is cut down to fit the window.
-    private int chosenFactor(int width, int height) {
-        if (overrideFactor == null) {
-            return autoFactor;
-        }
-        return PaintScale.fittingFactor(overrideFactor, width, height, PaintSheetView.GAP,
-            editor.cellWidth(), editor.cellHeight());
-    }
-
-    private void showScale(int factor) {
-        scaleLabel = PaintScale.label(factor, overrideFactor == null);
-        if (overrideFactor != null && factor < overrideFactor) {
+    private void showScaleMessage() {
+        if (uiScale.overrideTooBig()) {
             messages.setCondition(KEY_SCALE, true,
-                "UI " + overrideFactor + "X too big");
+                "UI " + uiScale.overrideFactor() + "X too big");
         } else {
             messages.clearCondition(KEY_SCALE);
         }
@@ -542,19 +526,21 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void stepScale(int delta) {
-        overrideFactor = PaintScale.stepped(uiScale.factor(), delta);
-        updateScale(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        int oldFactor = uiScale.factor();
+        uiScale.step(delta, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        applyScaleChange(oldFactor);
         syncScaleMark();
     }
 
     private void useAutoScale() {
-        overrideFactor = null;
-        updateScale(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        int oldFactor = uiScale.factor();
+        uiScale.useAuto(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        applyScaleChange(oldFactor);
         syncScaleMark();
     }
 
     private void syncScaleMark() {
-        boolean auto = overrideFactor == null;
+        boolean auto = uiScale.isAuto();
         if (auto != menuMarksAutoScale) {
             menuMarksAutoScale = auto;
             menuBar = PaintMenu.create(auto);
@@ -562,15 +548,19 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void updateScale(int width, int height) {
-        autoFactor = PaintScale.bestFactor(width, height, PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight());
-        int factor = chosenFactor(width, height);
-        showScale(factor);
-        if (factor != uiScale.factor()) {
-            uiScale = new UiScale(factor);
-            painter.setScale(uiScale);
-            rulesPainter.setScale(uiScale);
-            revealCursor = true;
+        int oldFactor = uiScale.factor();
+        uiScale.update(width, height);
+        applyScaleChange(oldFactor);
+    }
+
+    private void applyScaleChange(int oldFactor) {
+        showScaleMessage();
+        if (uiScale.factor() == oldFactor) {
+            return;
         }
+        painter.setScale(uiScale.scale());
+        rulesPainter.setScale(uiScale.scale());
+        revealCursor = true;
     }
 
     // Only the lwjgl3 desktop window has size limits; GLFW enforces them, also on a window that is already smaller.
@@ -1776,7 +1766,7 @@ public final class PaintApp implements WorkbenchScreen {
         int columns = worldWidth() / cell();
         int rows = worldHeight() / cell();
         TopBar.draw(painter, columns, CRUMB_ROW,
-            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), scaleLabel,
+            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), uiScale.label(),
             editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
