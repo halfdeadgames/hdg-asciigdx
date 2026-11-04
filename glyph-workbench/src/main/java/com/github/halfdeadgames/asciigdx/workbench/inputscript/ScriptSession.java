@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 
 import com.badlogic.gdx.Gdx;
 import com.github.halfdeadgames.asciigdx.workbench.ScreenshotFile;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import java.io.IOException;
@@ -20,6 +21,8 @@ public final class ScriptSession implements ScriptListener {
 
   private final Input realInput;
   private final ScriptedInput scriptedInput;
+  private final Graphics realGraphics;
+  private final FixedStepGraphics fixedStepGraphics;
   private final InputScriptPlayer player;
   private final Path captureDirectory;
 
@@ -42,11 +45,15 @@ public final class ScriptSession implements ScriptListener {
             state,
             this,
             scriptedInput::currentProcessor);
-    Gdx.input = scriptedInput;
+    realGraphics = Gdx.graphics;
+    fixedStepGraphics = new FixedStepGraphics(realGraphics);
+    installScriptedDevices();
   }
 
   public void beforeFrame(float delta) {
     if (realInputRestored) return;
+    // The backend may reassign the statics when it switches windows.
+    installScriptedDevices();
     player.advanceFrame(delta);
   }
 
@@ -77,9 +84,15 @@ public final class ScriptSession implements ScriptListener {
     }
   }
 
+  private void installScriptedDevices() {
+    Gdx.input = scriptedInput;
+    Gdx.graphics = fixedStepGraphics;
+  }
+
   private void restoreRealInput() {
     realInputRestored = true;
     Gdx.input = realInput;
+    Gdx.graphics = realGraphics;
     realInput.setInputProcessor(scriptedInput.currentProcessor());
   }
 
