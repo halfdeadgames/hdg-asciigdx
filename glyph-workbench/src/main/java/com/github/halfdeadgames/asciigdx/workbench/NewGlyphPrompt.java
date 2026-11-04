@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import java.util.List;
 import java.util.function.IntPredicate;
 
-/** The text typed into the "new glyph" dialog, and the three lines the dialog shows for it. */
+/** The text typed into the "new glyph" dialog, and the four lines the dialog shows for it. */
 final class NewGlyphPrompt {
 
     static final int MAX_CHARS = 10;
@@ -59,8 +59,8 @@ final class NewGlyphPrompt {
     }
 
     /**
-     * Exactly three lines: the typed text with a cursor, then either the hint or error wrapped over two lines,
-     * or the code point and the glyph name.
+     * Exactly four lines: the typed text with a cursor, a blank line, then either the hint or error wrapped
+     * over two lines, or the code point and the glyph name.
      *
      * @param hasSlot tells whether the sheet already has a slot for a code point
      */
@@ -75,21 +75,29 @@ final class NewGlyphPrompt {
         int codePoint = result.codePoint();
         String code = String.format("U+%04X", codePoint);
         String name = GlyphName.fullName(codePoint);
-        return List.of(typedLine(), hasSlot.test(codePoint) ? code + EXISTS_SUFFIX : code, cut(name));
+        String status = hasSlot.test(codePoint) ? code + EXISTS_SUFFIX : code;
+        List<String> nameLines = twoLines(name);
+        if (nameLines.get(1).isEmpty()) {
+            return List.of(typedLine(), "", status, nameLines.get(0));
+        }
+        return List.of(typedLine(), "", status, nameLines.get(0), nameLines.get(1));
     }
 
     private List<String> wrapped(String message) {
-        String first = message;
-        String second = "";
-        if (message.length() > LINE_CELLS) {
-            int split = message.lastIndexOf(' ', LINE_CELLS);
-            if (split <= 0) {
-                split = LINE_CELLS;
-            }
-            first = message.substring(0, split).stripTrailing();
-            second = cut(message.substring(split).strip());
+        List<String> messageLines = twoLines(message);
+        return List.of(typedLine(), "", messageLines.get(0), messageLines.get(1));
+    }
+
+    // Splits at the last space that fits; the second line is cut if it is still too long.
+    private static List<String> twoLines(String message) {
+        if (message.length() <= LINE_CELLS) {
+            return List.of(message, "");
         }
-        return List.of(typedLine(), first, second);
+        int split = message.lastIndexOf(' ', LINE_CELLS);
+        if (split <= 0) {
+            split = LINE_CELLS;
+        }
+        return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
     }
 
     private static String cut(String value) {

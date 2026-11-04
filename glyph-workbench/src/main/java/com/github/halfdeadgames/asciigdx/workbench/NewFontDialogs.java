@@ -1,0 +1,281 @@
+package com.github.halfdeadgames.asciigdx.workbench;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Supplier;
+
+/**
+ * The two pages of the "new font" dialog (name, then first size) with their input handling and drawing.
+ * The paint screen and the start screen both host it; the host decides what creating the font means.
+ */
+final class NewFontDialogs {
+
+    /** Called when Enter is pressed on a size. The host creates the font, then closes this or reports a problem. */
+    interface Creator {
+        void create(String name, Shape shape, int height);
+    }
+
+    private static final String TAG = "NewFont";
+    private static final String TITLE = "NEW FONT";
+    // Typed characters of the key that opened the dialog can arrive a frame or two after it.
+    private static final int OPENING_SWALLOW_FRAMES = 2;
+    private static final List<Dialog.Button> NAME_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "NEXT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> NAME_BLOCKED_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "NEXT", Dialog.Tone.DIM), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> SIZE_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "CREATE", Dialog.Tone.OK), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
+
+    private final Supplier<List<String>> existingFolders;
+    private final Creator onCreate;
+    private final Runnable onCancel;
+    private final NewFontNamePrompt namePage = new NewFontNamePrompt(this::continueToSize, this::cancel);
+    private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::chooseSize, this::backToName);
+    private final KeyRepeat repeatBackspace = new KeyRepeat();
+    // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
+    private boolean sizeHoverKnown;
+    private int sizeHoverX;
+    private int sizeHoverY;
+    private int swallowFrames;
+
+    /**
+     * @param existingFolders the font folder names already taken, read each time the name page opens
+     * @param onCreate called when a size is chosen
+     * @param onCancel called after Esc closed the name page
+     */
+    NewFontDialogs(Supplier<List<String>> existingFolders, Creator onCreate, Runnable onCancel) {
+        this.existingFolders = existingFolders;
+        this.onCreate = onCreate;
+        this.onCancel = onCancel;
+    }
+
+    /** The names of the folders in {@code fontsRoot}; empty (and logged) when it cannot be listed. */
+    static List<String> foldersIn(Path fontsRoot) {
+        if (fontsRoot == null) {
+            return List.of();
+        }
+        try {
+            return NewFontPlan.folderNames(fontsRoot);
+        } catch (IOException e) {
+            Gdx.app.error(TAG, "Cannot list font folders: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    boolean isOpen() {
+        return namePage.isOpen() || sizePage.isOpen();
+    }
+
+    /** Opens the name page empty and ignores typed characters for the first frames. */
+    void open() {
+        swallowFrames = OPENING_SWALLOW_FRAMES;
+        openName("");
+    }
+
+    /** Closes both pages. */
+    void close() {
+        namePage.close();
+        sizePage.close();
+        repeatBackspace.update(false, 0f);
+    }
+
+    /** Returns from the size page to the name page with the name kept, and re-reads the taken names. */
+    void backToName() {
+        String name = sizePage.name();
+        sizePage.close();
+        openName(name);
+    }
+
+    /** Shows a creation problem inside the size page. */
+    void showSizeProblem(String message) {
+        sizePage.showProblem(message);
+    }
+
+    /** Typed characters go to the name page only. */
+    void type(char character) {
+        if (swallowFrames == 0) {
+            namePage.type(character);
+        }
+    }
+
+    /**
+     * Opens the page the dev hooks {@code workbench.newfont} and {@code workbench.newfontsize} ask for.
+     *
+     * @return whether a hook asked for it
+     */
+    boolean openForCapture() {
+        String typed = DevCapture.newFontRequest();
+        DevCapture.NewFontSizeRequest sizeRequest = DevCapture.newFontSizeRequest();
+        if (typed != null) {
+            openName("");
+            for (int i = 0; i < typed.length(); i++) {
+                namePage.type(typed.charAt(i));
+            }
+            return true;
+        }
+        if (sizeRequest != null) {
+            openSize(sizeRequest.name());
+            for (int i = 0; i < sizeRequest.moves(); i++) {
+                sizePage.move(1);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void openName(String initialText) {
+        namePage.open(existingFolders.get(), initialText);
+        repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
+    }
+
+    private void openSize(String name) {
+        sizePage.open(name);
+        sizeHoverKnown = false;
+    }
+
+    private void continueToSize(String name) {
+        namePage.close();
+        repeatBackspace.update(false, 0f);
+        openSize(name);
+    }
+
+    private void cancel() {
+        close();
+        onCancel.run();
+    }
+
+    private void chooseSize(Shape shape, int height) {
+        onCreate.create(sizePage.name(), shape, height);
+    }
+
+    /**
+     * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also act on
+     * what lies beneath in the same frame.
+     *
+     * @param pointerX pointer position in pixels from the left
+     * @param pointerY pointer position in pixels from the top
+     * @param area the cell rectangle the dialog is centred in
+     */
+    void handleInput(float delta, int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
+                     ReviewLayout.Rect area) {
+        swallowFrames = Math.max(0, swallowFrames - 1);
+        if (namePage.isOpen()) {
+            handleName(delta);
+        } else if (sizePage.isOpen()) {
+            handleSize(wheelTicks, clicked, pointerX, pointerY, cell, area);
+        }
+    }
+
+    private void handleName(float delta) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            namePage.cancel();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            namePage.enter();
+            return;
+        }
+        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            namePage.backspace();
+        }
+    }
+
+    private void handleSize(int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
+                            ReviewLayout.Rect area) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            sizePage.back();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            sizePage.enter();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            sizePage.move(-1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            sizePage.move(1);
+        }
+        Dialog.Layout layout = sizeLayout(area);
+        sizePage.wheel(wheelTicks);
+        int column = Math.floorDiv(pointerX, cell);
+        int cellRow = Math.floorDiv(pointerY, cell);
+        boolean inside = column >= layout.x() && column < layout.x() + layout.width()
+            && cellRow >= layout.y() && cellRow < layout.y() + layout.height();
+        int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
+        boolean onBar = sizePage.scrolls() && column == layout.textX() + layout.textWidth() - 1;
+        int viewRow = onBar || !inside ? -1 : SelectList.rowAt(cellRow, listTop, sizePage.shownRows());
+        int row = viewRow < 0 ? -1 : viewRow + sizePage.window().offset();
+        if (!sizeHoverKnown) {
+            sizeHoverKnown = true;
+            sizeHoverX = pointerX;
+            sizeHoverY = pointerY;
+        } else if (pointerX != sizeHoverX || pointerY != sizeHoverY) {
+            sizeHoverX = pointerX;
+            sizeHoverY = pointerY;
+            sizePage.hover(row);
+        }
+        if (!clicked) {
+            return;
+        }
+        if (!inside) {
+            sizePage.back();
+        } else if (onBar) {
+            int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
+            ScrollBarHit.click(sizePage.window(), ScrollBarHit.part(sizePage.window(), cellRow - listTop, barCells));
+        } else {
+            sizePage.pick(row);
+        }
+    }
+
+    private Dialog.Layout sizeLayout(ReviewLayout.Rect area) {
+        sizePage.fitTo(area.height());
+        return Dialog.layout(TITLE, sizePage.lines(), SIZE_BUTTONS,
+            area.x(), area.y(), area.width(), area.height());
+    }
+
+    /** Draws the open page, dimming the whole screen first. */
+    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
+        if (namePage.isOpen()) {
+            Dialog.draw(painter, columns, rows, TITLE, namePage.lines(),
+                namePage.error() == null ? NAME_BUTTONS : NAME_BLOCKED_BUTTONS,
+                area.x(), area.y(), area.width(), area.height(), 0, NewFontNamePrompt.LINE_CELLS);
+        } else if (sizePage.isOpen()) {
+            Dialog.Layout list = sizeLayout(area);
+            Dialog.draw(painter, columns, rows, TITLE, sizePage.lines(), SIZE_BUTTONS,
+                area.x(), area.y(), area.width(), area.height());
+            int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
+            SelectList.draw(painter, list.textX(), listTop,
+                Math.min(sizePage.listWidth(), list.textWidth()), sizePage.visibleRows(),
+                sizePage.visibleSelectedIndex());
+            if (sizePage.scrolls()) {
+                drawSizeBar(painter, list.textX() + list.textWidth() - 1, listTop);
+            }
+        }
+    }
+
+    // The bar sits in the last text column beside the list: arrows on the first and last cell, track between.
+    private void drawSizeBar(Painter painter, int column, int listTop) {
+        int cell = painter.cell();
+        ScrollState window = sizePage.window();
+        int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
+        int trackCells = barCells - 2;
+        int x = column * cell;
+        painter.text("▲", x, listTop * cell, UiPalette.FRAME);
+        painter.text("▼", x, (listTop + barCells - 1) * cell, UiPalette.FRAME);
+        int thumbStart = window.thumbStart(trackCells);
+        int thumbEnd = thumbStart + window.thumbSize(trackCells);
+        for (int i = 0; i < trackCells; i++) {
+            boolean thumb = i >= thumbStart && i < thumbEnd;
+            painter.text(thumb ? "█" : "░", x, (listTop + 1 + i) * cell, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+        }
+    }
+}

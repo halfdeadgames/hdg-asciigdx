@@ -89,10 +89,11 @@ class NewGlyphPromptTest {
     }
 
     @Test
-    void alwaysReturnsThreeLines() {
-        assertEquals(3, openPrompt("").lines(cp -> false).size());
-        assertEquals(3, openPrompt("U+ZZ").lines(cp -> false).size());
-        assertEquals(3, openPrompt("41").lines(cp -> true).size());
+    void alwaysReturnsFourLinesWithABlankLineAfterTheInput() {
+        assertEquals(4, openPrompt("").lines(cp -> false).size());
+        assertEquals(4, openPrompt("U+ZZ").lines(cp -> false).size());
+        assertEquals(4, openPrompt("41").lines(cp -> true).size());
+        assertEquals("", openPrompt("41").lines(cp -> true).get(1));
     }
 
     @Test
@@ -110,39 +111,54 @@ class NewGlyphPromptTest {
     @Test
     void emptyTextWrapsTheHintOverTwoLines() {
         List<String> lines = openPrompt("").lines(cp -> false);
-        assertEquals("Type a character or hex", lines.get(1));
-        assertEquals("code", lines.get(2));
+        assertEquals("Type a character or hex", lines.get(2));
+        assertEquals("code", lines.get(3));
     }
 
     @Test
     void wholeDialogTextIsExact() {
-        assertEquals(List.of(padded("_"), "Type a character or hex", "code"),
+        assertEquals(List.of(padded("_"), "", "Type a character or hex", "code"),
             openPrompt("").lines(cp -> false));
-        assertEquals(List.of(padded("2603_"), "U+2603 ALREADY IN FONT", "SNOWMAN"),
+        assertEquals(List.of(padded("2603_"), "", "U+2603 ALREADY IN FONT", "SNOWMAN"),
             openPrompt("2603").lines(cp -> true));
-        assertEquals(List.of(padded("U+ZZ_"), "Use 1 to 6 hex digits,", "like 41 or U+0041"),
+        assertEquals(List.of(padded("U+ZZ_"), "", "Use 1 to 6 hex digits,", "like 41 or U+0041"),
             openPrompt("U+ZZ").lines(cp -> false));
     }
 
     @Test
     void validTextShowsCodeAndName() {
         List<String> snowman = openPrompt("U+2603").lines(cp -> false);
-        assertEquals("U+2603", snowman.get(1));
-        assertEquals("SNOWMAN", snowman.get(2));
+        assertEquals("U+2603", snowman.get(2));
+        assertEquals("SNOWMAN", snowman.get(3));
         List<String> letter = openPrompt("A").lines(cp -> false);
-        assertEquals("U+0041", letter.get(1));
-        assertEquals("LATIN CAPITAL LETTER A", letter.get(2));
+        assertEquals("U+0041", letter.get(2));
+        assertEquals("LATIN CAPITAL LETTER A", letter.get(3));
     }
 
     @Test
-    void longNamesAreCutToTheLineWidth() {
-        assertEquals("LATIN SMALL LETTER A WITH ", openPrompt("1EA5").lines(cp -> false).get(2));
+    void longNamesWrapOntoASecondLine() {
+        List<String> lines = openPrompt("E9").lines(cp -> false);
+        assertEquals(5, lines.size());
+        assertEquals("LATIN SMALL LETTER E WITH", lines.get(3));
+        assertEquals("ACUTE", lines.get(4));
+    }
+
+    @Test
+    void shortNamesKeepOneLine() {
+        assertEquals(4, openPrompt("A").lines(cp -> false).size());
+    }
+
+    @Test
+    void namesLongerThanTwoLinesAreCut() {
+        List<String> lines = openPrompt("1EA5").lines(cp -> false);
+        assertEquals("LATIN SMALL LETTER A WITH", lines.get(3));
+        assertTrue(lines.get(4).length() <= NewGlyphPrompt.LINE_CELLS);
     }
 
     @Test
     void existingSlotIsMarked() {
-        assertEquals("U+2603 ALREADY IN FONT", openPrompt("2603").lines(cp -> cp == 0x2603).get(1));
-        assertEquals("U+2603", openPrompt("2603").lines(cp -> cp == 0x41).get(1));
+        assertEquals("U+2603 ALREADY IN FONT", openPrompt("2603").lines(cp -> cp == 0x2603).get(2));
+        assertEquals("U+2603", openPrompt("2603").lines(cp -> cp == 0x41).get(2));
     }
 
     @Test
@@ -151,8 +167,8 @@ class NewGlyphPromptTest {
         assertFalse(prompt.result().isValid());
         assertEquals("Use 1 to 6 hex digits, like 41 or U+0041", prompt.result().error());
         List<String> lines = prompt.lines(cp -> true);
-        assertEquals("Use 1 to 6 hex digits,", lines.get(1));
-        assertEquals("like 41 or U+0041", lines.get(2));
+        assertEquals("Use 1 to 6 hex digits,", lines.get(2));
+        assertEquals("like 41 or U+0041", lines.get(3));
     }
 
     @Test

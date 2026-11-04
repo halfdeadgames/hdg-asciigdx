@@ -19,7 +19,9 @@ final class MenuModel {
         /** Opens the list of sizes a font can still get. */
         NEW_SIZE,
         /** One size in that list; {@code size} is its height. */
-        CREATE_SIZE
+        CREATE_SIZE,
+        /** Opens the dialog that makes a font folder; the last entry of the font list. */
+        NEW_FONT
     }
 
     /**
@@ -47,7 +49,10 @@ final class MenuModel {
     private MenuModel() {
     }
 
-    /** The font list: one item per font folder, in the order the folders appear in {@code fonts}. */
+    /**
+     * The font list: one item per font folder, in the order the folders appear in {@code fonts}, then the
+     * new font entry, which is there even when there are no fonts.
+     */
     static MenuModel fontList(List<FontChoice> fonts) {
         MenuModel model = new MenuModel();
         List<String> folders = new ArrayList<>();
@@ -62,6 +67,7 @@ final class MenuModel {
         for (String folder : folders) {
             model.addItem(Kind.FONT, folder.toUpperCase(Locale.ROOT), folder, 0, null, 1);
         }
+        model.addItem(Kind.NEW_FONT, "NEW FONT", "", 0, null, 1);
         return model;
     }
 

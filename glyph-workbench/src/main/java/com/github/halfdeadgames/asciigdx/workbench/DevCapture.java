@@ -13,6 +13,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
  * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
  * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
  * {@code workbench.newsize} opens the New size dialog (optionally {@code down:N} rows into the list).
+ * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
+ * {@code workbench.newfontsize} opens the New font size page for a name (optionally {@code :down:N} sizes in).
+ * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
  */
 final class DevCapture {
 
@@ -23,6 +26,8 @@ final class DevCapture {
     static final String MENU_PROPERTY = "workbench.menu";
     static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
     static final String NEW_SIZE_PROPERTY = "workbench.newsize";
+    static final String NEW_FONT_PROPERTY = "workbench.newfont";
+    static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -84,6 +89,43 @@ final class DevCapture {
     /** The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or null to leave it closed. */
     static String newGlyphRequest() {
         return System.getProperty(NEW_GLYPH_PROPERTY);
+    }
+
+    /** The text to type into the opened New font dialog named by {@code workbench.newfont}, or null to leave it closed. */
+    static String newFontRequest() {
+        return parseNewFontRequest(System.getProperty(NEW_FONT_PROPERTY));
+    }
+
+    /** Any value opens the dialog and is typed as given, spaces included; a blank value opens it empty. */
+    static String parseNewFontRequest(String request) {
+        return request;
+    }
+
+    /** A parsed {@code workbench.newfontsize} request: the font name and how many sizes to move down. */
+    record NewFontSizeRequest(String name, int moves) { }
+
+    static final String DEFAULT_FONT_NAME = "my-font";
+
+    /** The New font size page to open, or null to leave it closed. */
+    static NewFontSizeRequest newFontSizeRequest() {
+        return parseNewFontSizeRequest(System.getProperty(NEW_FONT_SIZE_PROPERTY));
+    }
+
+    /** Parses {@code <name>}, {@code <name>:down:N}, {@code down:N}, or a blank value; null when unset. */
+    static NewFontSizeRequest parseNewFontSizeRequest(String request) {
+        if (request == null) {
+            return null;
+        }
+        String[] fields = request.trim().split(":", -1);
+        String name = fields[0].trim();
+        int moves = 0;
+        if (fields.length == 2 && "down".equalsIgnoreCase(name)) {
+            name = "";
+            moves = Math.max(0, parseRowIndex(fields[1]));
+        } else if (fields.length == 3 && "down".equalsIgnoreCase(fields[1].trim())) {
+            moves = Math.max(0, parseRowIndex(fields[2]));
+        }
+        return new NewFontSizeRequest(name.isEmpty() ? DEFAULT_FONT_NAME : name, moves);
     }
 
     /** Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave it closed. */

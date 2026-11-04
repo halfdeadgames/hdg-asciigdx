@@ -9,7 +9,7 @@ import java.util.List;
 final class PaintMenu {
 
     enum Action {
-        SAVE, NEW_SIZE, BACK, UNDO, REDO,
+        SAVE, NEW_SIZE, NEW_FONT, BACK, UNDO, REDO,
         NEW_GLYPH, DERIVE, UNLOCK_DERIVED, GO_TO_SOURCE, CANCEL_DERIVE,
         NEXT_PREVIEW, GUIDES, BIGGER_UI, SMALLER_UI, AUTO_UI,
         RULES, CONTROLS
@@ -35,6 +35,7 @@ final class PaintMenu {
             new Menu<>("FILE", 'f', List.of(
                 new Item<>("SAVE", "CTRL+S", Action.SAVE),
                 new Item<>("NEW SIZE", "", Action.NEW_SIZE),
+                new Item<>("NEW FONT", "", Action.NEW_FONT),
                 new Item<>("BACK", "ESC", Action.BACK))),
             new Menu<>("EDIT", 'e', List.of(
                 new Item<>("UNDO", "CTRL+Z", Action.UNDO),

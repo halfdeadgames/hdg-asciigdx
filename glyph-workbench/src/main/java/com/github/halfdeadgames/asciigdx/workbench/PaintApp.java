@@ -30,9 +30,11 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -43,6 +45,7 @@ public final class PaintApp implements WorkbenchScreen {
     private static final String TAG = "Paint";
     private static final String LEAVE_QUESTION = "before leaving?";
     private static final String SWITCH_SIZE_QUESTION = "before switching size?";
+    private static final String NEW_FONT_QUESTION = "before starting a new font?";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final List<String> RULE_KEYS = List.of(
@@ -153,6 +156,7 @@ public final class PaintApp implements WorkbenchScreen {
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
     private int newSizeHoverX;
     private int newSizeHoverY;
+    private final NewFontDialogs newFont = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
     private int renameKeySwallowFrames;
     private int newGlyphKeySwallowFrames;
 
@@ -175,6 +179,8 @@ public final class PaintApp implements WorkbenchScreen {
     private RulesOverlay rules;
     private NotePanel notePanel;
     private final MessageStrip messages = new MessageStrip();
+    // Static so a paint screen opened later in the same run does not open the capture dialog again.
+    private static boolean newFontCaptureOpened;
     private PaintLayout.Result rects;
     private boolean layoutBarShown;
     private final ControlsOverlay controls = new ControlsOverlay();
@@ -222,6 +228,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final String fontDir;
     private final String fontSize;
     private final IntConsumer openSize;
+    private final BiConsumer<Path, Integer> openFont;
     // What the unsaved-changes prompt continues with once the changes are saved or discarded.
     private Runnable afterUnsavedPrompt = () -> { };
     private String unsavedQuestion = LEAVE_QUESTION;
@@ -231,12 +238,15 @@ public final class PaintApp implements WorkbenchScreen {
      * @param fontDir absolute path of the font folder
      * @param fontSize size name, which is also the data file name without {@code .txt}
      * @param openSize called with the height of a size file this screen just created, to paint it next
+     * @param openFont called with the folder and first size height of a font this screen just created, to paint it next
      */
-    public PaintApp(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize) {
+    public PaintApp(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize,
+                    BiConsumer<Path, Integer> openFont) {
         this.onExit = onExit;
         this.fontDir = fontDir;
         this.fontSize = fontSize;
         this.openSize = openSize;
+        this.openFont = openFont;
     }
 
     @Override
@@ -332,6 +342,10 @@ public final class PaintApp implements WorkbenchScreen {
                     }
                     return true;
                 }
+                if (newFont.isOpen()) {
+                    newFont.type(character);
+                    return true;
+                }
                 if (!guideListOpen || !guideList.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
                     return false;
                 }
@@ -351,6 +365,7 @@ public final class PaintApp implements WorkbenchScreen {
         openMenuForCapture();
         openNewGlyphForCapture();
         openNewSizeForCapture();
+        openNewFontForCapture();
     }
 
     private void readSlots() {
@@ -386,6 +401,54 @@ public final class PaintApp implements WorkbenchScreen {
         }
         for (int i = 0; i < moves; i++) {
             newSize.move(1);
+        }
+    }
+
+    private void openNewFontForCapture() {
+        if (newFontCaptureOpened || flow.isActive() || guideListOpen || confirmingQuit || newGlyph.isOpen() || newSize.isOpen()) {
+            return;
+        }
+        stroke.end();
+        newFontCaptureOpened = newFont.openForCapture();
+    }
+
+    private void openNewFont() {
+        stroke.end();
+        messages.nextAction();
+        newFont.open();
+    }
+
+    // Font folders sit side by side, so the names already taken are the folders next to the current one.
+    private List<String> existingFontFolders() {
+        return NewFontDialogs.foldersIn(fontsRoot());
+    }
+
+    private Path fontsRoot() {
+        return Path.of(fontDir).toAbsolutePath().getParent();
+    }
+
+    // Unsaved changes are asked about after the size is chosen. The dialog stays open (and hidden) under the
+    // prompt, so cancelling it returns to the size page with the selection kept.
+    private void createNewFont(String name, NewFontInput.Shape shape, int height) {
+        runAfterUnsavedCheck(() -> finishNewFont(name, shape, height), NEW_FONT_QUESTION);
+    }
+
+    // On success the host opens a fresh paint screen on the new font. A name problem (for example a folder made
+    // since the name page opened) goes back to the name page, which shows it; anything else is shown on the size page.
+    private void finishNewFont(String name, NewFontInput.Shape shape, int height) {
+        messages.nextAction();
+        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot(), name, shape, height);
+        if (outcome.created()) {
+            newFont.close();
+            openFont.accept(outcome.folder(), height);
+            return;
+        }
+        if (outcome.nameProblem()) {
+            newFont.backToName();
+            messages.warn(outcome.problem());
+        } else {
+            Gdx.app.error(TAG, outcome.problem());
+            newFont.showSizeProblem(outcome.problem());
         }
     }
 
@@ -958,7 +1021,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (rules.isShowing()) {
             return PaintMenu.Context.RULES_OPEN;
         }
-        if (confirmingQuit || guideListOpen || newGlyph.isOpen() || newSize.isOpen()) {
+        if (confirmingQuit || guideListOpen || newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -1038,6 +1101,7 @@ public final class PaintApp implements WorkbenchScreen {
             case UNDO -> undoOnce();
             case REDO -> redoOnce();
             case NEW_SIZE -> openNewSizeFromMenu();
+            case NEW_FONT -> openNewFont();
             case NEW_GLYPH -> openNewGlyph();
             case DERIVE -> openDerive();
             case UNLOCK_DERIVED -> unlockDerived();
@@ -1085,7 +1149,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (controlsOpen) {
             updatePointerCell();
             menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-        } else if (!menuOwnsInput && !newGlyph.isOpen() && !newSize.isOpen()) {
+        } else if (!menuOwnsInput && !newGlyph.isOpen() && !newSize.isOpen() && !newFont.isOpen()) {
             handleScaleKeys();
         }
         if (dialogDimsScreen() && !menuBar.isOpen()) {
@@ -1113,6 +1177,21 @@ public final class PaintApp implements WorkbenchScreen {
             stroke.end();
             updateConditions();
             handleNewSize();
+            return;
+        }
+        if (newFont.isOpen()) {
+            stroke.end();
+            updateConditions();
+            if (confirmingQuit) {
+                handleQuitPrompt();
+                wheelTicks = 0;
+                sidewaysTicks = 0;
+                return;
+            }
+            int wheel = wheelTicks;
+            wheelTicks = 0;
+            sidewaysTicks = 0;
+            newFont.handleInput(delta, wheel, leftClicked(), pointerX, pointerY, cell(), rects.grid());
             return;
         }
         scrollSheetSideways();
@@ -1914,7 +1993,11 @@ public final class PaintApp implements WorkbenchScreen {
             ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, "NEW GLYPH", newGlyph.lines(glyphSlotExists),
                 newGlyph.goesToExisting(glyphSlotExists) ? NEW_GLYPH_GO_TO_BUTTONS : NEW_GLYPH_BUTTONS,
-                area.x(), area.y(), area.width(), area.height());
+                area.x(), area.y(), area.width(), area.height(), 0, NewGlyphPrompt.LINE_CELLS);
+        }
+        // Under the unsaved-changes prompt the dialog is hidden but kept, so cancelling returns to it.
+        if (newFont.isOpen() && !overlayShown && !confirmingQuit) {
+            newFont.draw(painter, columns, rows, rects.grid());
         }
         if (newSize.isOpen() && !overlayShown) {
             ReviewLayout.Rect area = rects.grid();
@@ -1959,7 +2042,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     // The dialogs that dim the whole screen when drawn.
     private boolean dialogDimsScreen() {
-        return confirmingQuit || newGlyph.isOpen() || newSize.isOpen()
+        return confirmingQuit || newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen()
             || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
     }
 

@@ -56,13 +56,23 @@ class PaintMenuTest {
     }
 
     @Test
-    void newSizeSitsInTheFileMenuBetweenSaveAndBack() {
+    void newSizeAndNewFontSitInTheFileMenuBetweenSaveAndBack() {
         MenuBar<Action> bar = PaintMenu.create(true);
         assertEquals("FILE", bar.menu(0).title());
+        assertEquals(4, bar.menu(0).items().size());
         assertEquals(Action.SAVE, bar.menu(0).items().get(0).action());
         assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(1).action());
         assertEquals("NEW SIZE", bar.menu(0).items().get(1).label());
-        assertEquals(Action.BACK, bar.menu(0).items().get(2).action());
+        assertEquals(Action.NEW_FONT, bar.menu(0).items().get(2).action());
+        assertEquals("NEW FONT", bar.menu(0).items().get(2).label());
+        assertEquals(Action.BACK, bar.menu(0).items().get(3).action());
+    }
+
+    @Test
+    void newFontIsAvailableOnlyWhenIdle() {
+        for (Context context : Context.values()) {
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_FONT, context), context.name());
+        }
     }
 
     @Test

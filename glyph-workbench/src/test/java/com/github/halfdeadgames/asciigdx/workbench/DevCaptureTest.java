@@ -45,6 +45,24 @@ class DevCaptureTest {
     }
 
     @Test
+    void newFontRequestIsTheTypedTextOrNullWhenUnset() {
+        assertNull(DevCapture.parseNewFontRequest(null));
+        assertEquals("", DevCapture.parseNewFontRequest(""));
+        assertEquals("My Font", DevCapture.parseNewFontRequest("My Font"));
+    }
+
+    @Test
+    void newFontSizeRequestHasANameAndOptionalMoves() {
+        assertNull(DevCapture.parseNewFontSizeRequest(null));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", 0), DevCapture.parseNewFontSizeRequest(""));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 3), DevCapture.parseNewFontSizeRequest("tiny:down:3"));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", 2), DevCapture.parseNewFontSizeRequest("down:2"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny:down:x"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny:down:-1"));
+    }
+
+    @Test
     void otherRequestsAreNotOverlayRequests() {
         assertNull(DevCapture.parseOverlayRequest(null));
         assertNull(DevCapture.parseOverlayRequest("menu"));
