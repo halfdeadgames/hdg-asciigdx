@@ -34,6 +34,17 @@ class DevCaptureTest {
     }
 
     @Test
+    void newSizeRequestOpensTheDialogAndMayMoveDown() {
+        assertEquals(-1, DevCapture.parseNewSizeRequest(null));
+        assertEquals(0, DevCapture.parseNewSizeRequest("1"));
+        assertEquals(0, DevCapture.parseNewSizeRequest(""));
+        assertEquals(2, DevCapture.parseNewSizeRequest("down:2"));
+        assertEquals(3, DevCapture.parseNewSizeRequest(" DOWN: 3 "));
+        assertEquals(0, DevCapture.parseNewSizeRequest("down:x"));
+        assertEquals(0, DevCapture.parseNewSizeRequest("down:-1"));
+    }
+
+    @Test
     void otherRequestsAreNotOverlayRequests() {
         assertNull(DevCapture.parseOverlayRequest(null));
         assertNull(DevCapture.parseOverlayRequest("menu"));

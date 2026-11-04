@@ -11,7 +11,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
  * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
  * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
  * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
- * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it.
+ * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
+ * {@code workbench.newsize} opens the New size dialog (optionally {@code down:N} rows into the list).
  */
 final class DevCapture {
 
@@ -21,6 +22,7 @@ final class DevCapture {
     static final String GUIDES_PROPERTY = "workbench.guides";
     static final String MENU_PROPERTY = "workbench.menu";
     static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
+    static final String NEW_SIZE_PROPERTY = "workbench.newsize";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final int CAPTURE_FRAME = 60;
 
@@ -82,6 +84,23 @@ final class DevCapture {
     /** The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or null to leave it closed. */
     static String newGlyphRequest() {
         return System.getProperty(NEW_GLYPH_PROPERTY);
+    }
+
+    /** Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave it closed. */
+    static int newSizeRequest() {
+        return parseNewSizeRequest(System.getProperty(NEW_SIZE_PROPERTY));
+    }
+
+    /** Any value opens the dialog; {@code down:N} also moves the cursor N rows. */
+    static int parseNewSizeRequest(String request) {
+        if (request == null) {
+            return -1;
+        }
+        String[] fields = request.trim().split(":", -1);
+        if (fields.length == 2 && "down".equalsIgnoreCase(fields[0].trim())) {
+            return Math.max(0, parseRowIndex(fields[1]));
+        }
+        return 0;
     }
 
     /** True for the request {@code controls}, which opens the Controls panel instead of a menu. */

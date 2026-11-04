@@ -42,7 +42,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     @Override
     public void create() {
         if ("paint".equals(mode)) {
-            switchTo(new PaintApp(Gdx.app::exit, System.getProperty("workbench.fontDir"),
+            switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
                 System.getProperty("workbench.fontSize", DEFAULT_FONT_SIZE)));
         } else if ("upscale".equals(mode)) {
             switchTo(directUpscaleScreen());
@@ -87,6 +87,15 @@ public final class WorkbenchHost extends ApplicationAdapter {
     }
 
     private WorkbenchScreen fontMenuScreen(String folderName) {
+        return fontMenuScreen(folderName, "");
+    }
+
+    private WorkbenchScreen fontMenuScreen(String folderName, String notice) {
+        return fontMenuScreen(folderName, notice, null);
+    }
+
+    // The cursor starts on the first item of selectKind, or on the first item when that is null or absent.
+    private WorkbenchScreen fontMenuScreen(String folderName, String notice, MenuModel.Kind selectKind) {
         String name = folderName.toUpperCase(Locale.ROOT);
         String motto = mottoOf(folderName);
         Function<MenuModel.Item, MenuScreen.Detail> detail = item -> {
@@ -98,8 +107,12 @@ public final class WorkbenchHost extends ApplicationAdapter {
             }
             return new MenuScreen.Detail(name, motto, lines);
         };
-        return new MenuScreen(MenuModel.fontActions(folderName, fonts()), "ACTIONS",
-            List.of("GLYPH WORKBENCH", name), "BACK", "",
+        MenuModel actions = MenuModel.fontActions(folderName, fonts());
+        if (selectKind != null) {
+            actions.select(actions.indexOfKind(selectKind));
+        }
+        return new MenuScreen(actions, "ACTIONS",
+            List.of("GLYPH WORKBENCH", name), "BACK", notice,
             detail, item -> chooseAction(folderName, item), () -> pending = () -> fontListScreen(""));
     }
 
@@ -108,9 +121,53 @@ public final class WorkbenchHost extends ApplicationAdapter {
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
         if (item.kind() == MenuModel.Kind.UPSCALE) {
             pending = () -> new UpscaleReviewScreen(backToFontMenu, fontDir, item.upscale());
+        } else if (item.kind() == MenuModel.Kind.NEW_SIZE) {
+            pending = () -> newSizeScreen(folderName);
         } else {
-            pending = () -> new PaintApp(backToFontMenu, fontDir, String.valueOf(item.size()));
+            pending = () -> paintScreen(backToFontMenu, fontDir, String.valueOf(item.size()));
         }
+    }
+
+    // A paint screen that can switch to a size file it creates; Esc there goes back as given.
+    private PaintApp paintScreen(Runnable back, String fontDir, String size) {
+        return new PaintApp(back, fontDir, size,
+            height -> pending = () -> paintScreen(back, fontDir, String.valueOf(height)));
+    }
+
+    // The size list is a menu of its own; choosing a free size creates the file and paints it.
+    private WorkbenchScreen newSizeScreen(String folderName) {
+        Path folder = Path.of(fontsRoot(), folderName);
+        List<NewSizePlan.SizeOption> options;
+        try {
+            options = NewSizePlan.options(folder);
+        } catch (IOException | IllegalStateException e) {
+            return fontMenuScreen(folderName, limited("CANNOT LIST SIZES: " + e.getMessage()), MenuModel.Kind.NEW_SIZE);
+        }
+        String name = folderName.toUpperCase(Locale.ROOT);
+        Runnable backToNewSize = () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE);
+        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
+            : new MenuScreen.Detail(name, "", List.of("CREATES " + item.size() + ".TXT"));
+        return new MenuScreen(MenuModel.newSizes(folderName, options), "NEW SIZE",
+            List.of("GLYPH WORKBENCH", name, "NEW SIZE"), "CREATE", "BACK", "",
+            detail, item -> createSize(folder, item.size()), backToNewSize);
+    }
+
+    private void createSize(Path folder, int height) {
+        String folderName = folder.getFileName().toString();
+        try {
+            NewSizePlan.create(folder, height);
+        } catch (IOException | RuntimeException e) {
+            Gdx.app.error(TAG, "Cannot create size " + height + ": " + e.getMessage());
+            pending = () -> fontMenuScreen(folderName, limited("CANNOT CREATE " + height + ": " + e.getMessage()),
+                MenuModel.Kind.NEW_SIZE);
+            return;
+        }
+        Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
+        pending = () -> paintScreen(backToFontMenu, folder.toString(), String.valueOf(height));
+    }
+
+    private static String limited(String notice) {
+        return notice.length() > 100 ? notice.substring(0, 100) : notice;
     }
 
     // Dev shortcut for captures: -Pmode=upscale reviews the next upscale of the -PfontDir font.
@@ -147,8 +204,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
             switchTo(request.get());
         } catch (FontDataException | GdxRuntimeException e) {
             Gdx.app.error(TAG, "Cannot open screen: " + e.getMessage());
-            String notice = "CANNOT OPEN: " + e.getMessage();
-            switchTo(fontListScreen(notice.length() > 100 ? notice.substring(0, 100) : notice));
+            switchTo(fontListScreen(limited("CANNOT OPEN: " + e.getMessage())));
         }
     }
 

@@ -98,6 +98,25 @@ final class FontEditor {
     }
 
     /**
+     * The slot the cursor starts on: the slot of U+0021 when the font has no glyphs yet, otherwise the
+     * first selectable slot. Falls back to slot 0 when nothing is selectable.
+     */
+    int startSlot() {
+        if (entries.isEmpty()) {
+            int exclamationSlot = slotOf('!');
+            if (exclamationSlot != NO_GLYPH) {
+                return exclamationSlot;
+            }
+        }
+        for (int slot = 0; slot < slots.length; slot++) {
+            if (slots[slot] != NO_GLYPH) {
+                return slot;
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Makes sure a code point has a slot and returns its index. A new slot is empty and sits in normal
      * sheet order, so the indexes of later slots can shift. This neither adds a glyph nor counts as a
      * change: it touches no revision, modified flag, or undo history.

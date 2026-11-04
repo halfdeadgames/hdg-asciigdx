@@ -472,6 +472,43 @@ class FontEditorTest {
     }
 
     @Test
+    void startSlotOfAnEmptyFontIsTheExclamationMarkSlot() {
+        FontEditor empty = new FontEditor(FontDataParser.parse("cell 8x8\n"));
+        assertEquals(GlyphOrder.CP437.slotOf(0x21), empty.startSlot());
+        assertEquals(0x21, empty.codePointAtSlot(empty.startSlot()));
+    }
+
+    @Test
+    void startSlotOfAFontWithGlyphsIsTheFirstSelectableSlot() {
+        FontEditor editor = editor();
+        assertEquals(0, editor.startSlot());
+        assertEquals(editor.codePointAtSlot(0), GlyphOrder.CP437.codePointAt(0));
+    }
+
+    @Test
+    void emptyFontSavesBackUnchanged() {
+        assertEquals("cell 8x8\n", new FontEditor(FontDataParser.parse("cell 8x8\n")).toText());
+    }
+
+    @Test
+    void paintingOnePixelInAnEmptyFontSavesOneGlyphEntry() {
+        FontEditor editor = new FontEditor(FontDataParser.parse("cell 8x8\n"));
+        assertTrue(editor.setPixel(0x21, 2, 3, true));
+
+        String saved = editor.toText();
+        List<String> lines = List.of(saved.split("\n"));
+        assertEquals("cell 8x8", lines.get(0));
+        assertEquals(1, lines.stream().filter(line -> line.startsWith("U+")).count());
+        assertTrue(lines.get(2).startsWith("U+0021"));
+
+        FontData reread = FontDataParser.parse(saved);
+        assertEquals(1, reread.entries().size());
+        PixelGlyph glyph = (PixelGlyph) reread.entries().get(0x21);
+        assertEquals(1, glyph.pixels().toRows().stream().mapToInt(row -> row.replace(".", "").length()).sum());
+        assertTrue(glyph.pixels().isLit(2, 3));
+    }
+
+    @Test
     void markSavedClearsModified() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 0, 0, true);

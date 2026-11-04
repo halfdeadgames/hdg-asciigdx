@@ -15,11 +15,15 @@ final class MenuModel {
         /** Opens the action menu of a font. */
         FONT,
         PAINT,
-        UPSCALE
+        UPSCALE,
+        /** Opens the list of sizes a font can still get. */
+        NEW_SIZE,
+        /** One size in that list; {@code size} is its height. */
+        CREATE_SIZE
     }
 
     /**
-     * A selectable entry. {@code size} is set for paint entries and {@code upscale} for upscale entries.
+     * A selectable entry. {@code size} is set for paint and create-size entries and {@code upscale} for upscale entries.
      */
     record Item(Kind kind, String label, String folderName, int size, UpscalePlan.Choice upscale) {
     }
@@ -32,6 +36,8 @@ final class MenuModel {
     }
 
     private static final int MAX_NUMBERED = 9;
+    // Each indent step is two cells: the arrow column plus the "N " number prefix.
+    private static final int TAKEN_INDENT = 2;
     private static final String NO_SOURCE_NOTE = " (NO EVEN SOURCE)";
 
     private final List<Item> items = new ArrayList<>();
@@ -79,8 +85,31 @@ final class MenuModel {
             } else {
                 model.lines.add(new Line("  " + text + NO_SOURCE_NOTE, -1, 0, true));
             }
+            model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, 0, null, 0);
         } else {
             model.lines.add(new Line("NO SIZE FILES FOUND", -1, 0, true));
+        }
+        return model;
+    }
+
+    /**
+     * The sizes a font can get: free sizes are items, taken sizes are dimmed lines, and a dimmed note
+     * says why when nothing can be chosen.
+     */
+    static MenuModel newSizes(String folderName, List<NewSizePlan.SizeOption> options) {
+        MenuModel model = new MenuModel();
+        for (NewSizePlan.SizeOption option : options) {
+            String label = NewSizePrompt.label(option);
+            if (option.taken()) {
+                // MenuScreen strips the text, so the indent lines the label up with numbered items (arrow, number).
+                model.lines.add(new Line(label + "  (EXISTS)", -1, TAKEN_INDENT, true));
+            } else {
+                model.addItem(Kind.CREATE_SIZE, label, folderName, option.height(), null, 0);
+            }
+        }
+        if (model.items.isEmpty()) {
+            model.lines.add(new Line(options.isEmpty() ? NewSizePrompt.NO_SIZES_MESSAGE : NewSizePrompt.ALL_TAKEN_MESSAGE,
+                -1, 0, true));
         }
         return model;
     }
@@ -106,6 +135,16 @@ final class MenuModel {
 
     int selectedIndex() {
         return selected;
+    }
+
+    /** Index of the first item of a kind, or -1 (which {@link #select} ignores). */
+    int indexOfKind(Kind kind) {
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).kind() == kind) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** The selected item, or null when the menu has none. */

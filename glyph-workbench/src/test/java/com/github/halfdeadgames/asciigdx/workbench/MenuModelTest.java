@@ -40,7 +40,10 @@ class MenuModelTest {
     @Test
     void fontActionsPaintEverySizeThenUpscale() {
         MenuModel model = MenuModel.fontActions("saiksistt", FONTS);
-        assertEquals(3, model.itemCount());
+        assertEquals(4, model.itemCount());
+        assertEquals(MenuModel.Kind.NEW_SIZE, model.item(3).kind());
+        assertEquals("4 NEW SIZE", model.item(3).label());
+        assertEquals("saiksistt", model.item(3).folderName());
         assertEquals("1 PAINT 8", model.item(0).label());
         assertEquals(8, model.item(0).size());
         assertEquals("2 PAINT 16", model.item(1).label());
@@ -53,7 +56,7 @@ class MenuModelTest {
     @Test
     void upscaleWithoutAnEvenSourceIsDimmedAndNotSelectable() {
         MenuModel model = MenuModel.fontActions("beta", List.of(new FontChoice("beta", 16)));
-        assertEquals(1, model.itemCount());
+        assertEquals(2, model.itemCount());
         MenuModel.Line dimmed = model.lines().get(1);
         assertEquals("  UPSCALE 16 -> 24 (NO EVEN SOURCE)", dimmed.text());
         assertEquals(-1, dimmed.itemIndex());
@@ -64,15 +67,61 @@ class MenuModelTest {
     @Test
     void fontActionsOnlyUseTheFontsOwnSizes() {
         MenuModel model = MenuModel.fontActions("alpha", FONTS);
-        assertEquals(2, model.itemCount());
+        assertEquals(3, model.itemCount());
         assertEquals("2 UPSCALE 8 -> 16", model.item(1).label());
+    }
+
+    @Test
+    void aFontWithoutSizeFilesHasNoNewSizeEntry() {
+        assertEquals(0, MenuModel.fontActions("gamma", FONTS).itemCount());
+    }
+
+    @Test
+    void newSizesListFreeSizesAsItemsAndTakenOnesAsDimmedLines() {
+        MenuModel model = MenuModel.newSizes("alpha", List.of(
+            new NewSizePlan.SizeOption(8, 8, true), new NewSizePlan.SizeOption(16, 16, false),
+            new NewSizePlan.SizeOption(24, 24, false)));
+        assertEquals(2, model.itemCount());
+        assertEquals(MenuModel.Kind.CREATE_SIZE, model.item(0).kind());
+        assertEquals(16, model.item(0).size());
+        assertEquals("1 16X16", model.item(0).label());
+        assertEquals("alpha", model.item(0).folderName());
+        MenuModel.Line taken = model.lines().get(0);
+        assertEquals("8X8  (EXISTS)", taken.text());
+        assertEquals(2, taken.indent());
+        assertEquals(-1, taken.itemIndex());
+        assertTrue(taken.dimmed());
+        assertEquals(0, model.lines().get(1).itemIndex());
+        assertEquals(1, model.lines().get(2).itemIndex());
+    }
+
+    @Test
+    void indexOfKindFindsTheFirstItemOfThatKind() {
+        MenuModel model = MenuModel.fontActions("saiksistt", FONTS);
+        assertEquals(3, model.indexOfKind(MenuModel.Kind.NEW_SIZE));
+        assertEquals(2, model.indexOfKind(MenuModel.Kind.UPSCALE));
+        assertEquals(-1, model.indexOfKind(MenuModel.Kind.FONT));
+        model.select(model.indexOfKind(MenuModel.Kind.NEW_SIZE));
+        assertEquals(MenuModel.Kind.NEW_SIZE, model.selectedItem().kind());
+        model.select(model.indexOfKind(MenuModel.Kind.FONT));
+        assertEquals(3, model.selectedIndex());
+    }
+
+    @Test
+    void newSizesSaysWhyWhenNothingCanBeChosen() {
+        MenuModel allTaken = MenuModel.newSizes("alpha", List.of(new NewSizePlan.SizeOption(8, 8, true)));
+        assertEquals(0, allTaken.itemCount());
+        assertEquals(NewSizePrompt.ALL_TAKEN_MESSAGE, allTaken.lines().get(1).text());
+        MenuModel none = MenuModel.newSizes("alpha", List.of());
+        assertEquals(NewSizePrompt.NO_SIZES_MESSAGE, none.lines().get(0).text());
+        assertNull(none.selectedItem());
     }
 
     @Test
     void selectionWrapsAround() {
         MenuModel model = MenuModel.fontActions("saiksistt", FONTS);
         model.move(-1);
-        assertEquals(2, model.selectedIndex());
+        assertEquals(3, model.selectedIndex());
         model.move(1);
         assertEquals(0, model.selectedIndex());
     }
@@ -92,7 +141,8 @@ class MenuModelTest {
         MenuModel model = MenuModel.fontActions("saiksistt", FONTS);
         assertEquals(0, model.itemForNumber(1));
         assertEquals(2, model.itemForNumber(3));
-        assertEquals(-1, model.itemForNumber(4));
+        assertEquals(3, model.itemForNumber(4));
+        assertEquals(-1, model.itemForNumber(5));
         assertEquals(-1, model.itemForNumber(0));
     }
 }

@@ -33,6 +33,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
@@ -40,6 +41,8 @@ import java.util.function.Predicate;
 public final class PaintApp implements WorkbenchScreen {
 
     private static final String TAG = "Paint";
+    private static final String LEAVE_QUESTION = "before leaving?";
+    private static final String SWITCH_SIZE_QUESTION = "before switching size?";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final List<String> RULE_KEYS = List.of(
@@ -97,6 +100,12 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<Dialog.Button> NEW_GLYPH_GO_TO_BUTTONS = List.of(
         new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
+    private static final String NEW_SIZE_TITLE = "NEW SIZE";
+    private static final List<Dialog.Button> NEW_SIZE_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> NEW_SIZE_CLOSE_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "CLOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+
     private static final String MENU_TITLE = "DERIVE";
     private static final int MENU_WIDTH = 26;
     private static final List<Dialog.Button> MENU_BUTTONS = List.of(
@@ -140,6 +149,10 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatNewGlyphBackspace = new KeyRepeat();
     private final NewGlyphPrompt newGlyph = new NewGlyphPrompt();
     private final IntPredicate glyphSlotExists = codePoint -> slotOf(codePoint) >= 0;
+    private final NewSizePrompt newSize = new NewSizePrompt();
+    // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
+    private int newSizeHoverX;
+    private int newSizeHoverY;
     private int renameKeySwallowFrames;
     private int newGlyphKeySwallowFrames;
 
@@ -208,16 +221,22 @@ public final class PaintApp implements WorkbenchScreen {
     private final Runnable onExit;
     private final String fontDir;
     private final String fontSize;
+    private final IntConsumer openSize;
+    // What the unsaved-changes prompt continues with once the changes are saved or discarded.
+    private Runnable afterUnsavedPrompt = () -> { };
+    private String unsavedQuestion = LEAVE_QUESTION;
 
     /**
      * @param onExit called when the user leaves the screen with Esc (after the unsaved prompt)
      * @param fontDir absolute path of the font folder
      * @param fontSize size name, which is also the data file name without {@code .txt}
+     * @param openSize called with the height of a size file this screen just created, to paint it next
      */
-    public PaintApp(Runnable onExit, String fontDir, String fontSize) {
+    public PaintApp(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize) {
         this.onExit = onExit;
         this.fontDir = fontDir;
         this.fontSize = fontSize;
+        this.openSize = openSize;
     }
 
     @Override
@@ -232,7 +251,7 @@ public final class PaintApp implements WorkbenchScreen {
         stroke = new PaintStroke(editor);
 
         readSlots();
-        cursor = Math.max(0, CursorNavigator.firstNonBlank(unselectable));
+        cursor = editor.startSlot();
         int preselected = DevCapture.slotToSelect(codePoints, unselectable);
         if (preselected >= 0) {
             cursor = preselected;
@@ -331,6 +350,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         openMenuForCapture();
         openNewGlyphForCapture();
+        openNewSizeForCapture();
     }
 
     private void readSlots() {
@@ -351,6 +371,130 @@ public final class PaintApp implements WorkbenchScreen {
         for (int i = 0; i < typed.length(); i++) {
             newGlyph.type(typed.charAt(i));
         }
+    }
+
+    private void openNewSizeForCapture() {
+        int moves = DevCapture.newSizeRequest();
+        if (moves < 0 || flow.isActive() || guideListOpen || confirmingQuit || newGlyph.isOpen()) {
+            return;
+        }
+        try {
+            openNewSize(NewSizePlan.options(java.nio.file.Path.of(fontDir)));
+        } catch (java.io.IOException | IllegalStateException e) {
+            Gdx.app.error(TAG, "Cannot list sizes: " + e.getMessage());
+            return;
+        }
+        for (int i = 0; i < moves; i++) {
+            newSize.move(1);
+        }
+    }
+
+    private void openNewSize(List<NewSizePlan.SizeOption> options) {
+        stroke.end();
+        updatePointerCell();
+        newSizeHoverX = pointerX;
+        newSizeHoverY = pointerY;
+        newSize.open(options);
+    }
+
+    // Enter or Esc returns right away so the key does not also act on the screen beneath in the same frame.
+    private void handleNewSize() {
+        wheelTicks = 0;
+        sidewaysTicks = 0;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            newSize.close();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+            chooseNewSize();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            newSize.move(-1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            newSize.move(1);
+        }
+        updatePointerCell();
+        if (!newSize.hasChoices()) {
+            if (leftClicked() && !insideNewSizeDialog()) {
+                newSize.close();
+            }
+            return;
+        }
+        Dialog.Layout layout = newSizeLayout();
+        int row = SelectList.rowAt(Math.floorDiv(pointerY, cell()), layout.textY(), newSize.optionCount());
+        boolean onRow = row >= 0 && insideNewSizeDialog();
+        if (pointerX != newSizeHoverX || pointerY != newSizeHoverY) {
+            newSizeHoverX = pointerX;
+            newSizeHoverY = pointerY;
+            if (onRow) {
+                newSize.hover(row);
+            }
+        }
+        if (leftClicked()) {
+            if (!insideNewSizeDialog()) {
+                newSize.close();
+            } else if (onRow) {
+                newSize.hover(row);
+                if (newSize.rows().get(row).selectable()) {
+                    chooseNewSize();
+                }
+            }
+        }
+    }
+
+    private void openNewSizeFromMenu() {
+        try {
+            openNewSize(NewSizePlan.options(java.nio.file.Path.of(fontDir)));
+        } catch (java.io.IOException | IllegalStateException e) {
+            Gdx.app.error(TAG, "Cannot list sizes: " + e.getMessage());
+            messages.nextAction();
+            messages.warn("Cannot list sizes: " + e.getMessage());
+        }
+    }
+
+    // Unsaved changes are asked about after the pick, so cancelling the prompt loses nothing and creates nothing.
+    private void chooseNewSize() {
+        NewSizePlan.SizeOption chosen = newSize.selected();
+        newSize.close();
+        if (chosen == null) {
+            return;
+        }
+        runAfterUnsavedCheck(() -> createSize(chosen), SWITCH_SIZE_QUESTION);
+    }
+
+    private void createSize(NewSizePlan.SizeOption chosen) {
+        messages.nextAction();
+        try {
+            NewSizePlan.create(java.nio.file.Path.of(fontDir), chosen.height());
+        } catch (java.nio.file.FileAlreadyExistsException e) {
+            messages.warn("Size " + NewSizePrompt.label(chosen) + " already exists");
+            return;
+        } catch (java.io.IOException | RuntimeException e) {
+            Gdx.app.error(TAG, "Cannot create size " + chosen.height() + ": " + e.getMessage());
+            messages.warn("Cannot create " + NewSizePrompt.label(chosen) + ": " + e.getMessage());
+            return;
+        }
+        openSize.accept(chosen.height());
+    }
+
+    private Dialog.Layout newSizeLayout() {
+        ReviewLayout.Rect area = rects.grid();
+        return Dialog.layout(NEW_SIZE_TITLE, newSize.lines(), newSizeButtons(),
+            area.x(), area.y(), area.width(), area.height());
+    }
+
+    private List<Dialog.Button> newSizeButtons() {
+        return newSize.hasChoices() ? NEW_SIZE_BUTTONS : NEW_SIZE_CLOSE_BUTTONS;
+    }
+
+    private boolean insideNewSizeDialog() {
+        Dialog.Layout layout = newSizeLayout();
+        int column = Math.floorDiv(pointerX, cell());
+        int row = Math.floorDiv(pointerY, cell());
+        return column >= layout.x() && column < layout.x() + layout.width()
+            && row >= layout.y() && row < layout.y() + layout.height();
     }
 
     private void openNewGlyph() {
@@ -814,7 +958,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (rules.isShowing()) {
             return PaintMenu.Context.RULES_OPEN;
         }
-        if (confirmingQuit || guideListOpen || newGlyph.isOpen()) {
+        if (confirmingQuit || guideListOpen || newGlyph.isOpen() || newSize.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -893,6 +1037,7 @@ public final class PaintApp implements WorkbenchScreen {
             case BACK -> leave();
             case UNDO -> undoOnce();
             case REDO -> redoOnce();
+            case NEW_SIZE -> openNewSizeFromMenu();
             case NEW_GLYPH -> openNewGlyph();
             case DERIVE -> openDerive();
             case UNLOCK_DERIVED -> unlockDerived();
@@ -940,8 +1085,11 @@ public final class PaintApp implements WorkbenchScreen {
         if (controlsOpen) {
             updatePointerCell();
             menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-        } else if (!menuOwnsInput && !newGlyph.isOpen()) {
+        } else if (!menuOwnsInput && !newGlyph.isOpen() && !newSize.isOpen()) {
             handleScaleKeys();
+        }
+        if (dialogDimsScreen() && !menuBar.isOpen()) {
+            menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
         }
         layoutPanels();
         if (controlsOpen) {
@@ -959,6 +1107,12 @@ public final class PaintApp implements WorkbenchScreen {
             stroke.end();
             updateConditions();
             handleNewGlyph(delta);
+            return;
+        }
+        if (newSize.isOpen()) {
+            stroke.end();
+            updateConditions();
+            handleNewSize();
             return;
         }
         scrollSheetSideways();
@@ -1129,12 +1283,19 @@ public final class PaintApp implements WorkbenchScreen {
 
     // Esc and the Back menu item: leaves at once, or asks about unsaved changes first.
     private void leave() {
+        runAfterUnsavedCheck(onExit, LEAVE_QUESTION);
+    }
+
+    // Runs the action now, or after the user saves or discards when there are unsaved changes.
+    private void runAfterUnsavedCheck(Runnable action, String question) {
         if (editor.isModified()) {
             messages.nextAction();
+            afterUnsavedPrompt = action;
+            unsavedQuestion = question;
             confirmingQuit = true;
             stroke.end();
         } else {
-            onExit.run();
+            action.run();
         }
     }
 
@@ -1672,12 +1833,13 @@ public final class PaintApp implements WorkbenchScreen {
     private void handleQuitPrompt() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
-            if (!editor.isModified()) {
-                onExit.run();
-            }
             confirmingQuit = false;
+            if (!editor.isModified()) {
+                afterUnsavedPrompt.run();
+            }
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            onExit.run();
+            confirmingQuit = false;
+            afterUnsavedPrompt.run();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             messages.nextAction();
             confirmingQuit = false;
@@ -1739,15 +1901,30 @@ public final class PaintApp implements WorkbenchScreen {
         }
         // Each dialog dims the screen itself, so one under an overlay would dim the background twice.
         boolean overlayShown = controls.isOpen() || rules.isShowing();
+        // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and must stay clear.
+        boolean promptShown = dialogDimsScreen() && !overlayShown && !menuBar.isOpen();
+        if (promptShown) {
+            MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
+        }
         if (confirmingQuit && !overlayShown) {
             Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
-                List.of("Save changes to " + dataFile.name(), "before leaving?"), QUIT_BUTTONS);
+                List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS);
         }
         if (newGlyph.isOpen() && !overlayShown) {
             ReviewLayout.Rect area = rects.grid();
             Dialog.draw(painter, columns, rows, "NEW GLYPH", newGlyph.lines(glyphSlotExists),
                 newGlyph.goesToExisting(glyphSlotExists) ? NEW_GLYPH_GO_TO_BUTTONS : NEW_GLYPH_BUTTONS,
                 area.x(), area.y(), area.width(), area.height());
+        }
+        if (newSize.isOpen() && !overlayShown) {
+            ReviewLayout.Rect area = rects.grid();
+            Dialog.draw(painter, columns, rows, NEW_SIZE_TITLE, newSize.lines(), newSizeButtons(),
+                area.x(), area.y(), area.width(), area.height());
+            if (newSize.hasChoices()) {
+                Dialog.Layout list = newSizeLayout();
+                SelectList.draw(painter, list.textX(), list.textY(), Math.min(newSize.listWidth(), list.textWidth()),
+                    newSize.rows(), newSize.selectedIndex());
+            }
         }
         if (!overlayShown && flow.mode() == DeriveFlow.Mode.MENU) {
             ReviewLayout.Rect area = rects.grid();
@@ -1765,17 +1942,25 @@ public final class PaintApp implements WorkbenchScreen {
                 List.of(line + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
                 area.x(), area.y(), area.width(), area.height());
         }
-        if (!overlayShown
-            && (confirmingQuit || newGlyph.isOpen() || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
+        // The derive help describes the highlighted operation, so it is drawn again above the dim.
+        if (!overlayShown && (flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE)) {
             drawHelp(helpRect);
         }
-        MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
+        if (!promptShown) {
+            MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
+        }
         MenuBarView.drawDropDown(painter, menuBar, columns, MENU_ROW, menuAvailability);
         rules.draw(worldWidth(), worldHeight(), codePoint);
         if (controls.isOpen()) {
             controls.draw(painter, columns, rows);
         }
         batch.end();
+    }
+
+    // The dialogs that dim the whole screen when drawn.
+    private boolean dialogDimsScreen() {
+        return confirmingQuit || newGlyph.isOpen() || newSize.isOpen()
+            || flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
     }
 
     private List<StatusBar.Key> statusKeys(boolean choosingSource) {

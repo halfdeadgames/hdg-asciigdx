@@ -68,11 +68,18 @@ final class MenuScreen implements WorkbenchScreen {
      */
     MenuScreen(MenuModel model, String listTitle, List<String> crumbs, String escapeLabel, String notice,
         Function<MenuModel.Item, Detail> detailFor, Consumer<MenuModel.Item> onChoose, Runnable onBack) {
+        this(model, listTitle, crumbs, "OPEN", escapeLabel, notice, detailFor, onChoose, onBack);
+    }
+
+    /** @param enterLabel what Enter does, one word for the status bar; the shorter form says {@code OPEN} */
+    MenuScreen(MenuModel model, String listTitle, List<String> crumbs, String enterLabel, String escapeLabel,
+        String notice, Function<MenuModel.Item, Detail> detailFor, Consumer<MenuModel.Item> onChoose,
+        Runnable onBack) {
         this.model = model;
         this.listTitle = listTitle;
         this.crumbs = crumbs;
         this.keys = List.of(
-            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", "OPEN"),
+            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", enterLabel),
             new StatusBar.Key("1-9", "QUICK PICK"), new StatusBar.Key("ESC", escapeLabel));
         this.notice = notice;
         this.detailFor = detailFor;

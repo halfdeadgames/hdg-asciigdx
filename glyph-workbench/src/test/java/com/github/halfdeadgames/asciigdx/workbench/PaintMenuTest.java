@@ -56,6 +56,23 @@ class PaintMenuTest {
     }
 
     @Test
+    void newSizeSitsInTheFileMenuBetweenSaveAndBack() {
+        MenuBar<Action> bar = PaintMenu.create(true);
+        assertEquals("FILE", bar.menu(0).title());
+        assertEquals(Action.SAVE, bar.menu(0).items().get(0).action());
+        assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(1).action());
+        assertEquals("NEW SIZE", bar.menu(0).items().get(1).label());
+        assertEquals(Action.BACK, bar.menu(0).items().get(2).action());
+    }
+
+    @Test
+    void newSizeIsAvailableOnlyWhenIdle() {
+        for (Context context : Context.values()) {
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_SIZE, context), context.name());
+        }
+    }
+
+    @Test
     void whileDerivingOnlyCancelAndTheHelpItemsAreAvailable() {
         assertAvailableOnly(Context.DERIVING, Set.of(Action.CANCEL_DERIVE, Action.RULES, Action.CONTROLS));
     }
