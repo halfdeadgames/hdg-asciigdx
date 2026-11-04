@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
-import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
 /** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
@@ -80,8 +79,6 @@ public final class PaintApp implements WorkbenchScreen {
         Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
     // The L that starts a rename can also arrive as a typed character a frame later; it must not enter the text.
     private static final int RENAME_KEY_SWALLOW_FRAMES = 2;
-    // The N that opens the new glyph prompt can also arrive as a typed character a frame later.
-    private static final int NEW_GLYPH_KEY_SWALLOW_FRAMES = 2;
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
         new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
         new StatusBar.Key("ESC", "CANCEL"));
@@ -97,11 +94,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-
-    private static final List<Dialog.Button> NEW_GLYPH_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "ADD", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-    private static final List<Dialog.Button> NEW_GLYPH_GO_TO_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private static final String MENU_TITLE = "DERIVE";
     private static final int MENU_WIDTH = 26;
@@ -143,13 +135,10 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
-    private final KeyRepeat repeatNewGlyphBackspace = new KeyRepeat();
-    private final NewGlyphPrompt newGlyph = new NewGlyphPrompt();
-    private final IntPredicate glyphSlotExists = codePoint -> slotOf(codePoint) >= 0;
+    private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
     private final NewFontDialogs newFont = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
     private int renameKeySwallowFrames;
-    private int newGlyphKeySwallowFrames;
 
     private SpriteBatch batch;
     private Texture whitePixel;
@@ -327,10 +316,7 @@ public final class PaintApp implements WorkbenchScreen {
                     return true;
                 }
                 if (newGlyph.isOpen()) {
-                    boolean openingKey = character == 'n' || character == 'N';
-                    if (!(newGlyphKeySwallowFrames > 0 && openingKey)) {
-                        newGlyph.type(character);
-                    }
+                    newGlyph.type(character);
                     return true;
                 }
                 if (newFont.isOpen()) {
@@ -374,9 +360,7 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         openNewGlyph();
-        for (int i = 0; i < typed.length(); i++) {
-            newGlyph.type(typed.charAt(i));
-        }
+        newGlyph.typeForCapture(typed);
     }
 
     private void openNewSizeForCapture() {
@@ -490,36 +474,12 @@ public final class PaintApp implements WorkbenchScreen {
     private void openNewGlyph() {
         stroke.end();
         newGlyph.open();
-        repeatNewGlyphBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
-    // Typed characters arrive through keyTyped. Returning right after Enter or Esc keeps that key from also
-    // acting on the screen beneath in the same frame.
     private void handleNewGlyph(float delta) {
         wheelTicks = 0;
         sidewaysTicks = 0;
-        newGlyphKeySwallowFrames = Math.max(0, newGlyphKeySwallowFrames - 1);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            closeNewGlyph();
-            return;
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-            NewGlyphInput.Result result = newGlyph.result();
-            if (result.isValid()) {
-                addGlyphSlot(result.codePoint());
-                closeNewGlyph();
-            }
-            return;
-        }
-        int backspaces = repeatNewGlyphBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            newGlyph.backspace();
-        }
-    }
-
-    private void closeNewGlyph() {
-        newGlyph.close();
-        repeatNewGlyphBackspace.update(false, 0f);
+        newGlyph.handle(delta);
     }
 
     // Later slots shift when a slot is inserted, so everything indexed by slot is rebuilt before the cursor moves.
@@ -1375,7 +1335,7 @@ public final class PaintApp implements WorkbenchScreen {
     private void handleDeriveKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.N) && !altDown() && !shiftDown()) {
             openNewGlyph();
-            newGlyphKeySwallowFrames = NEW_GLYPH_KEY_SWALLOW_FRAMES;
+            newGlyph.swallowOpeningKey();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             openDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.U)) {
@@ -1889,10 +1849,7 @@ public final class PaintApp implements WorkbenchScreen {
                 List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS);
         }
         if (newGlyph.isOpen() && !overlayShown) {
-            ReviewLayout.Rect area = rects.grid();
-            Dialog.draw(painter, columns, rows, "NEW GLYPH", newGlyph.lines(glyphSlotExists),
-                newGlyph.goesToExisting(glyphSlotExists) ? NEW_GLYPH_GO_TO_BUTTONS : NEW_GLYPH_BUTTONS,
-                area.x(), area.y(), area.width(), area.height(), 0, NewGlyphPrompt.LINE_CELLS);
+            newGlyph.draw(painter, columns, rows, rects.grid());
         }
         // Under the unsaved-changes prompt the dialog is hidden but kept, so cancelling returns to it.
         if (newFont.isOpen() && !overlayShown && !confirmingQuit) {
