@@ -77,15 +77,8 @@ public final class PaintApp implements WorkbenchScreen {
     // Rebuilt only when the auto-size mark changes, which never happens while a menu is open.
     private MenuBar<PaintMenu.Action> menuBar = PaintMenu.create(true);
     private boolean menuMarksAutoScale = true;
-    // A menu state requested by the dev hook stays as set until the pointer moves, a click lands, or Esc is pressed.
-    private boolean menuPinned;
-    private boolean menuPinCellKnown;
-    private int menuPinX;
-    private int menuPinY;
     private final MenuPointer<PaintMenu.Action> menuPointer = new MenuPointer<>(MENU_ROW);
     private final MenuKeys<PaintMenu.Action> menuKeys = new MenuKeys<>();
-    // Alt as the input events saw it, because typed characters arrive before this frame's polling can say so.
-    private boolean altSeenDown;
     private final Predicate<PaintMenu.Action> menuAvailability =
         action -> PaintMenu.isAvailable(action, menuContext());
     private PaintDerivePick derivePick;
@@ -100,6 +93,8 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatDown = new KeyRepeat();
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
+    private final PaintMenuInput menuInput = new PaintMenuInput(new MenuHost(), menuPointer, menuKeys,
+        menuAvailability, repeatLeft, repeatRight, repeatUp, repeatDown);
     private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
     private final PaintNewFont newFont;
@@ -244,7 +239,7 @@ public final class PaintApp implements WorkbenchScreen {
             @Override
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
-                    altSeenDown = true;
+                    menuInput.noteAltPressed();
                 }
                 return false;
             }
@@ -252,14 +247,14 @@ public final class PaintApp implements WorkbenchScreen {
             @Override
             public boolean keyUp(int keycode) {
                 if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
-                    altSeenDown = false;
+                    menuInput.noteAltReleased();
                 }
                 return false;
             }
 
             @Override
             public boolean keyTyped(char character) {
-                if (menuPointer.isCapturing(menuBar) || altSeenDown || altDown()) {
+                if (menuPointer.isCapturing(menuBar) || menuInput.altSeenDown() || altDown()) {
                     return true;
                 }
                 if (newGlyph.isOpen()) {
@@ -418,7 +413,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (request == null) {
             return;
         }
-        menuPinned = true;
+        menuInput.pin();
         MenuCaptureHook.apply(request, menuBar, menuAvailability, cell());
     }
 
@@ -714,73 +709,6 @@ public final class PaintApp implements WorkbenchScreen {
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
     }
 
-    // Runs before everything else. While the menu owns the frame, nothing below it may read input.
-    private boolean handleMenuInput(float delta) {
-        updatePointerCell();
-        if (!altDown()) {
-            altSeenDown = false;
-        }
-        if (menuPinned) {
-            if (!menuPinCellKnown) {
-                menuPinCellKnown = true;
-                menuPinX = pointerX;
-                menuPinY = pointerY;
-            }
-            if (pointerX == menuPinX && pointerY == menuPinY && !leftClicked()
-                && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-                return menuBar.isOpen();
-            }
-            menuPinned = false;
-        }
-        boolean wasOpen = menuBar.isOpen();
-        boolean escape = Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
-        PaintMenu.Action chosen = menuPointer.update(menuBar, menuAvailability,
-            Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()), worldWidth() / cell(),
-            escape, leftClicked(),
-            Gdx.input.isButtonPressed(Input.Buttons.LEFT), stroke.isActive() || sheet.isDraggingColumnBar());
-        boolean keysOwnFrame = false;
-        if (chosen == null && (!escape || altDown())) {
-            chosen = routeMenuKeys(delta);
-            keysOwnFrame = menuKeys.consumed();
-        }
-        if (chosen != null) {
-            stroke.end();
-            runMenuAction(chosen);
-        }
-        if (menuBar.isOpen() != wasOpen) {
-            repeatLeft.hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
-            repeatRight.hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
-            repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
-            repeatDown.hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
-        }
-        return menuPointer.captured() || keysOwnFrame;
-    }
-
-    // Arrow repeats are read only while a menu is open, so a closed menu leaves them to the cursor.
-    private PaintMenu.Action routeMenuKeys(float delta) {
-        boolean alt = altDown();
-        boolean steering = menuBar.isOpen() && !alt;
-        int lefts = steering ? repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
-        int rights = steering ? repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
-        int ups = steering ? repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
-        int downs = steering ? repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
-        boolean enter = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
-        return menuKeys.route(menuBar, menuAvailability, !guideListPanel.isRenaming(), alt,
-            alt ? pressedAccessKey() : MenuKeys.NO_KEY, Gdx.input.isKeyJustPressed(Input.Keys.F10), enter,
-            lefts, rights, ups, downs);
-    }
-
-    private char pressedAccessKey() {
-        for (int i = 0; i < menuBar.menuCount(); i++) {
-            char key = Character.toLowerCase(menuBar.menu(i).accessKey());
-            if (key >= 'a' && key <= 'z' && Gdx.input.isKeyJustPressed(Input.Keys.A + (key - 'a'))) {
-                return key;
-            }
-        }
-        return MenuKeys.NO_KEY;
-    }
-
     private void runMenuAction(PaintMenu.Action action) {
         switch (action) {
             case SAVE -> save();
@@ -830,7 +758,7 @@ public final class PaintApp implements WorkbenchScreen {
     private void handleInput(float delta) {
         // The Controls panel takes the frame before the menu does, so a click on the bar row can still close it.
         boolean controlsOpen = controls.isOpen();
-        boolean menuOwnsInput = !controlsOpen && handleMenuInput(delta);
+        boolean menuOwnsInput = !controlsOpen && menuInput.handle(delta);
         if (controlsOpen) {
             updatePointerCell();
             menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
@@ -1169,6 +1097,65 @@ public final class PaintApp implements WorkbenchScreen {
         line.setLength(0);
         GlyphLabel.appendCodeAndName(line, codePoint);
         return line;
+    }
+
+    private final class MenuHost implements PaintMenuInput.Host {
+
+        @Override
+        public MenuBar<PaintMenu.Action> menuBar() {
+            return menuBar;
+        }
+
+        @Override
+        public void updatePointerCell() {
+            PaintApp.this.updatePointerCell();
+        }
+
+        @Override
+        public int pointerX() {
+            return pointerX;
+        }
+
+        @Override
+        public int pointerY() {
+            return pointerY;
+        }
+
+        @Override
+        public int cell() {
+            return PaintApp.this.cell();
+        }
+
+        @Override
+        public int worldWidth() {
+            return PaintApp.this.worldWidth();
+        }
+
+        @Override
+        public boolean altDown() {
+            return PaintApp.altDown();
+        }
+
+        @Override
+        public boolean leftClicked() {
+            return PaintApp.this.leftClicked();
+        }
+
+        @Override
+        public boolean mouseHeldByPainting() {
+            return stroke.isActive() || sheet.isDraggingColumnBar();
+        }
+
+        @Override
+        public boolean renamingGuide() {
+            return guideListPanel.isRenaming();
+        }
+
+        @Override
+        public void runMenuAction(PaintMenu.Action action) {
+            stroke.end();
+            PaintApp.this.runMenuAction(action);
+        }
     }
 
     private final class ScrollHost implements PaintScrollRouting.Host {
