@@ -174,8 +174,7 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
     private PaintGuides guides = PaintGuides.NONE;
-    private FileHandle guidesFile;
-    private boolean guidesFileUnreadable;
+    private PaintGuidesFile guidesFile;
     private GuideListModel guideList;
     private boolean guideListOpen;
     private float guideListSeconds;
@@ -613,18 +612,17 @@ public final class PaintApp implements WorkbenchScreen {
             closeGuideList();
             return;
         }
-        if (guidesFileUnreadable) {
-            messages.warn("Not saved: " + guidesFile.name() + " could not be read and would be overwritten");
+        if (guidesFile.isUnreadable()) {
+            messages.warn("Not saved: " + guidesFile.fileName() + " could not be read and would be overwritten");
             return;
         }
         try {
-            AtomicFiles.write(guidesFile.file().toPath(), guideList.guides().toText());
-            guidesFileUnreadable = false;
-            messages.ok("Saved " + guidesFile.name());
+            guidesFile.save(guideList.guides());
+            messages.ok("Saved " + guidesFile.fileName());
             closeGuideList();
         } catch (java.io.IOException e) {
             messages.warn("Save failed: see log");
-            Gdx.app.error(TAG, "Cannot write " + guidesFile.path() + ": " + e.getMessage());
+            Gdx.app.error(TAG, "Cannot write " + guidesFilePath() + ": " + e.getMessage());
         }
     }
 
@@ -794,17 +792,18 @@ public final class PaintApp implements WorkbenchScreen {
 
     // A missing guides file means no guides; a bad one warns and also means no guides.
     private void loadGuides(FileHandle directory) {
-        guidesFile = directory.child(fontSize + ".guides.txt");
-        if (!guidesFile.exists()) {
+        guidesFile = PaintGuidesFile.open(directory.file().toPath(), fontSize);
+        guides = guidesFile.guides();
+        if (!guidesFile.isUnreadable()) {
             return;
         }
-        try {
-            guides = PaintGuides.parse(guidesFile.readString("UTF-8"));
-        } catch (IllegalArgumentException | GdxRuntimeException e) {
-            guidesFileUnreadable = true;
-            messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
-            Gdx.app.error(TAG, "Cannot read " + guidesFile.path() + ": " + e.getMessage());
-        }
+        messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
+        Gdx.app.error(TAG, "Cannot read " + guidesFilePath() + ": " + guidesFile.readError());
+    }
+
+    // Slash-separated, as FileHandle.path() wrote it.
+    private String guidesFilePath() {
+        return guidesFile.path().toString().replace('\\', '/');
     }
 
     @Override
