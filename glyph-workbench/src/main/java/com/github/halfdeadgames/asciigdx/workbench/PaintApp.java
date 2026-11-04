@@ -23,7 +23,6 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
-import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -120,6 +119,7 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintPreview preview;
     private RulesOverlay rules;
     private NotePanel notePanel;
+    private final GlyphTitle glyphTitle = new GlyphTitle();
     private final MessageStrip messages = new MessageStrip();
     private final PaintDeriveMenu deriveMenu = new PaintDeriveMenu(flow, messages);
     // Static so a paint screen opened later in the same run does not open the capture dialog again.
@@ -146,8 +146,6 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean[] unselectable;
     private int[] codePoints;
     private int cursor;
-    private int titleCodePoint = -1;
-    private float titleSeconds;
     private boolean revealCursor = true;
     private boolean confirmingQuit;
     private final WheelTicks wheelTicks = new WheelTicks();
@@ -1313,18 +1311,7 @@ public final class PaintApp implements WorkbenchScreen {
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
         ReviewLayout.Rect panel = rects.grid();
-        line.setLength(0);
-        line.append("U+");
-        GlyphLabel.appendHex(line, codePoint);
-        line.append("  ");
-        int nameChars = Math.max(1, panel.width() - 6 - line.length());
-        if (codePoint != titleCodePoint) {
-            titleCodePoint = codePoint;
-            titleSeconds = 0f;
-        }
-        titleSeconds += Gdx.graphics.getDeltaTime();
-        line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
-        Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), line.toString(), true);
+        glyphTitle.draw(painter, panel, codePoint, Gdx.graphics.getDeltaTime());
         ghostSeconds += Gdx.graphics.getDeltaTime();
         grid.setHighlight(guideListPanel.highlightedGuide());
         grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(),ghostSeconds);
