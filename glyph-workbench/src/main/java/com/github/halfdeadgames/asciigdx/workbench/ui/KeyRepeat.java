@@ -1,7 +1,7 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /** Turns a held key into moves: one on press, then steady repeats after a delay. */
-final class KeyRepeat {
+public final class KeyRepeat {
 
     static final float DELAY_SECONDS = 0.5f;
     static final float REPEATS_PER_SECOND = 12f;
@@ -14,13 +14,13 @@ final class KeyRepeat {
     private float nextRepeatAt;
 
     /** Makes a key that is down now produce no moves until it has been released. */
-    void hold(boolean down) {
+    public void hold(boolean down) {
         wasDown = down;
         ignoredUntilRelease = down;
     }
 
     /** Call once per frame; returns how many moves to make this frame. */
-    int update(boolean down, float deltaSeconds) {
+    public int update(boolean down, float deltaSeconds) {
         if (!down) {
             wasDown = false;
             ignoredUntilRelease = false;

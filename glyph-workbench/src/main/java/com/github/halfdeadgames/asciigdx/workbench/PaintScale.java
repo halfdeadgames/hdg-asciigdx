@@ -1,5 +1,8 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
+
 /** Picks the UI scale of the paint screen from the window size. */
 final class PaintScale {
 

@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /** Back-and-forth scrolling for text wider than its space: hold at the start, scroll to the end, hold, scroll back. */
 public final class BounceScroll {

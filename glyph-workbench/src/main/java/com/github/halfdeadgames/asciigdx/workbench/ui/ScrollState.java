@@ -1,21 +1,21 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /** Whole-row scroll position over a list of rows, plus the maths for drawing a scroll bar. */
-final class ScrollState {
+public final class ScrollState {
 
     private int totalRows;
     private int visibleRows = 1;
     private int offset;
 
-    ScrollState(int totalRows) {
+    public ScrollState(int totalRows) {
         this.totalRows = Math.max(0, totalRows);
     }
 
-    int offset() {
+    public int offset() {
         return offset;
     }
 
-    int visibleRows() {
+    public int visibleRows() {
         return visibleRows;
     }
 
@@ -27,47 +27,47 @@ final class ScrollState {
         return Math.max(0, totalRows - visibleRows);
     }
 
-    boolean needed() {
+    public boolean needed() {
         return totalRows > visibleRows;
     }
 
     /** Changes the number of rows; the offset is pulled back into range. */
-    void setTotalRows(int rows) {
+    public void setTotalRows(int rows) {
         totalRows = Math.max(0, rows);
         offset = clamp(offset);
     }
 
-    void setVisibleRows(int rows) {
+    public void setVisibleRows(int rows) {
         visibleRows = Math.max(1, rows);
         offset = clamp(offset);
     }
 
-    void scrollBy(int rows) {
+    public void scrollBy(int rows) {
         offset = clamp(offset + rows);
     }
 
-    void scrollTo(int newOffset) {
+    public void scrollTo(int newOffset) {
         offset = clamp(newOffset);
     }
 
-    void pageUp() {
+    public void pageUp() {
         scrollBy(-visibleRows);
     }
 
-    void pageDown() {
+    public void pageDown() {
         scrollBy(visibleRows);
     }
 
-    void toTop() {
+    public void toTop() {
         offset = 0;
     }
 
-    void toBottom() {
+    public void toBottom() {
         offset = maxOffset();
     }
 
     /** Scrolls the least amount that makes the row visible. */
-    void keepVisible(int row) {
+    public void keepVisible(int row) {
         if (row < offset) {
             offset = clamp(row);
         } else if (row >= offset + visibleRows) {
@@ -75,12 +75,12 @@ final class ScrollState {
         }
     }
 
-    boolean isVisible(int row) {
+    public boolean isVisible(int row) {
         return row >= offset && row < offset + visibleRows;
     }
 
     /** Thumb length in track cells: proportional to visible over total rows, at least 1. */
-    int thumbSize(int trackCells) {
+    public int thumbSize(int trackCells) {
         if (trackCells <= 0) {
             return 0;
         }
@@ -92,7 +92,7 @@ final class ScrollState {
     }
 
     /** First thumb cell in the track; the thumb touches the track end exactly at the last offset. */
-    int thumbStart(int trackCells) {
+    public int thumbStart(int trackCells) {
         int travel = trackCells - thumbSize(trackCells);
         int max = maxOffset();
         if (travel <= 0 || max == 0) {
@@ -102,7 +102,7 @@ final class ScrollState {
     }
 
     /** Pages towards a clicked track cell; clicks on the thumb do nothing. */
-    void clickTrack(int trackCell, int trackCells) {
+    public void clickTrack(int trackCell, int trackCells) {
         int start = thumbStart(trackCells);
         if (trackCell < start) {
             pageUp();

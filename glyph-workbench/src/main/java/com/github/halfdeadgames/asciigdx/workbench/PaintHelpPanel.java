@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
@@ -28,7 +30,7 @@ final class PaintHelpPanel {
     void draw(ReviewLayout.Rect drawArea, PaintHelp.State state, int cell) {
         Panel.draw(painter, drawArea.toCellRect(),
             "HELP", false);
-        int chars = Math.max(1, drawArea.width() - 2 * PaintApp.TEXT_PADDING - 2);
+        int chars = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
         int visible = Math.max(1, drawArea.height() - 2);
         if (!state.equals(shownState)) {
             scroll.toTop();
@@ -45,7 +47,7 @@ final class PaintHelpPanel {
         shown = true;
         int first = scroll.offset();
         int last = Math.min(lines.size(), first + visible);
-        int textX = (drawArea.x() + 1 + PaintApp.TEXT_PADDING) * cell;
+        int textX = (drawArea.x() + 1 + Panel.TEXT_PADDING) * cell;
         for (int i = first; i < last; i++) {
             drawLine(lines.get(i), textX, (drawArea.y() + 1 + i - first) * cell, cell);
         }

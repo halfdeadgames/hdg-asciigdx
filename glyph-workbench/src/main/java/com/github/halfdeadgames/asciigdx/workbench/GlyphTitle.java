@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 
 /** The grid panel title: the code point followed by the glyph name, which scrolls when it does not fit. */

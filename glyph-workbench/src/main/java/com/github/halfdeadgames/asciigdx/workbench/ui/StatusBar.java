@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.github.halfdeadgames.asciigdx.workbench.Painter;
 import java.util.ArrayList;
 import java.util.List;
 

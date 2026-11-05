@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.List;
 import java.util.function.Consumer;

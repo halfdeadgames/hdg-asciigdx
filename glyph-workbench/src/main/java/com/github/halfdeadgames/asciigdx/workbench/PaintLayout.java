@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+
 /** Where the panels of the paint screen go, in text cells: the sheet on the left, the grid in the middle, the previews on the right. */
 final class PaintLayout {
 

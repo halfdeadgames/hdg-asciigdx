@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;

@@ -1,10 +1,10 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /**
  * The text being typed for a guide label. The guide file splits on whitespace, so only printable characters
  * without whitespace are accepted; letters are uppercased, {@code #} cannot start a label, and the length is capped.
  */
-final class LabelField {
+public final class LabelField {
 
     static final int MAX_LENGTH = 8;
 
@@ -14,30 +14,30 @@ final class LabelField {
     private boolean active;
 
     /** Starts editing from {@code initial}, which is kept as given even when it breaks the rules. */
-    void begin(String initial) {
+    public void begin(String initial) {
         text.setLength(0);
         text.append(initial);
         active = true;
     }
 
-    void end() {
+    public void end() {
         active = false;
     }
 
-    boolean isActive() {
+    public boolean isActive() {
         return active;
     }
 
-    String value() {
+    public String value() {
         return text.toString();
     }
 
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return text.length() == 0;
     }
 
     /** Appends the character if the rules accept it; anything else, or any input while not editing, is ignored. */
-    void type(char character) {
+    public void type(char character) {
         if (!active || text.length() >= MAX_LENGTH || !isAccepted(character)) {
             return;
         }
@@ -47,7 +47,7 @@ final class LabelField {
         text.append(Character.toUpperCase(character));
     }
 
-    void backspace() {
+    public void backspace() {
         if (active && text.length() > 0) {
             text.deleteCharAt(text.length() - 1);
         }

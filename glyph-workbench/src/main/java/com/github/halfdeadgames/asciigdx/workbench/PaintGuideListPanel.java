@@ -2,7 +2,11 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
+import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
+import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -154,7 +158,7 @@ final class PaintGuideListPanel {
         Panel.draw(painter, area.toCellRect(), title, true);
         seconds += Gdx.graphics.getDeltaTime();
         int visible = area.height() - 2;
-        int chars = Math.max(1, area.width() - 2 - 2 * PaintApp.TEXT_PADDING);
+        int chars = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
         if (visible - EDIT_LEGEND.size() >= LEGEND_MIN_LIST_ROWS) {
             visible -= EDIT_LEGEND.size();
             if (!guideList.isRenaming()) {
@@ -167,7 +171,7 @@ final class PaintGuideListPanel {
             int index = first + i;
             String text = guideList.row(index).text();
             int top = (area.y() + 1 + i) * cell;
-            int textX = (area.x() + 1 + PaintApp.TEXT_PADDING) * cell;
+            int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
             if (index == guideList.selectedIndex()) {
                 painter.fill(UiPalette.KEYBG, (area.x() + 1) * cell, top, (area.width() - 2) * cell, cell);
                 painter.text("►", (area.x() + 1) * cell, top, UiPalette.ACCENT);
@@ -179,7 +183,7 @@ final class PaintGuideListPanel {
     }
 
     private void drawLegend(ReviewLayout.Rect area, int rowsAbove, int cell) {
-        int textX = (area.x() + 1 + PaintApp.TEXT_PADDING) * cell;
+        int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
         for (int i = 0; i < EDIT_LEGEND.size(); i++) {
             String[] entry = EDIT_LEGEND.get(i);
             int top = (area.y() + 1 + rowsAbove + i) * cell;

@@ -16,18 +16,25 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
+import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -52,7 +59,6 @@ public final class PaintApp implements WorkbenchScreen {
     private static final int COLUMNS = PaintSheetView.COLUMNS;
     private static final int MENU_ROW = 0;
     private static final int CRUMB_ROW = 1;
-    static final int TEXT_PADDING = 1;
 
     private static final List<StatusBar.Key> KEYS = List.of(
         new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),

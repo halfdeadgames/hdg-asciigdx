@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /** How large the UI is drawn: a whole-number factor on the 8x8 font. Sizes derived from the cell stay whole pixels. */
 public record UiScale(int factor) {

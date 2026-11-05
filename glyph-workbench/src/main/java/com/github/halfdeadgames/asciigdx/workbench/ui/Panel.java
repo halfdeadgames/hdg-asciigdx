@@ -1,10 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.github.halfdeadgames.asciigdx.workbench.Painter;
-
 /** A filled, framed box on the cell grid: single line, or double line and brighter when focused. */
 public final class Panel {
 
+    public static final int TEXT_PADDING = 1;
     private static final int TITLE_INSET = 2;
     private static final int MIN_WIDTH_FOR_TITLE = 7;
 

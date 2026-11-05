@@ -3,6 +3,8 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
+import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 
 final class PaintScrollRouting {
 

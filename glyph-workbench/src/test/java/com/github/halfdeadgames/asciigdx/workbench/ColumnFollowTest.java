@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import org.junit.jupiter.api.Test;
 
 /** The sheet scrolls glyph columns with a {@link ScrollState} that has 16 "rows" and a window of n of them. */

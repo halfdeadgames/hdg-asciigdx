@@ -7,6 +7,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;

@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+
 /**
  * Pixel layout of a grid of equal rectangular cells separated by gaps, in window pixels with the
  * origin at the top-left and y pointing down. The panel starts with a gap, so it is

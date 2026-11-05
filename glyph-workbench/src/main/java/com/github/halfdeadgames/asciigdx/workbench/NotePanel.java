@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;

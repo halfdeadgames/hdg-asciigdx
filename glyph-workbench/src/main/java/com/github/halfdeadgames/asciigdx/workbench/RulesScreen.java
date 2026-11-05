@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
+import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 
 /**
  * The F1 rules page as a slide-in overlay: loads the rules file of the font directory, owns the

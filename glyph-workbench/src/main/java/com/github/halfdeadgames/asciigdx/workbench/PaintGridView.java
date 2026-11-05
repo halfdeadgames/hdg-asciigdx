@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 import java.util.Objects;

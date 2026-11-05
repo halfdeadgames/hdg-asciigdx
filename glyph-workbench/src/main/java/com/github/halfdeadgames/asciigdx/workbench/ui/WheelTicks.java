@@ -1,11 +1,11 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-final class WheelTicks {
+public final class WheelTicks {
 
     private int vertical;
     private int sideways;
 
-    void add(float amountX, float amountY, boolean shift) {
+    public void add(float amountX, float amountY, boolean shift) {
         float sidewaysAmount = amountX != 0 ? amountX : shift ? amountY : 0;
         sideways += sign(sidewaysAmount);
         if (!shift || amountX != 0) {
@@ -13,24 +13,24 @@ final class WheelTicks {
         }
     }
 
-    int vertical() {
+    public int vertical() {
         return vertical;
     }
 
-    int sideways() {
+    public int sideways() {
         return sideways;
     }
 
-    void clear() {
+    public void clear() {
         vertical = 0;
         sideways = 0;
     }
 
-    void clearVertical() {
+    public void clearVertical() {
         vertical = 0;
     }
 
-    void clearSideways() {
+    public void clearSideways() {
         sideways = 0;
     }
 

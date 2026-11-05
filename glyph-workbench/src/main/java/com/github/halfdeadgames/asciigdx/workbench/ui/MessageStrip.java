@@ -1,7 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.github.halfdeadgames.asciigdx.workbench.Painter;
-import com.github.halfdeadgames.asciigdx.workbench.BounceScroll;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.Iterator;

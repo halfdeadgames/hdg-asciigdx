@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 
 /**
  * One column of the candidate panel: two header lines (pick number and letter, then the name)

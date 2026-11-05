@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Array;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.Arrays;
 
 /** Draws the candidate columns side by side and tells which column is under a pixel. */

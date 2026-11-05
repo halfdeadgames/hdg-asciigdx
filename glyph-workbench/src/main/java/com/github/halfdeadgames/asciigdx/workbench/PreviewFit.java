@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+
 /** Decides which preview scales fit a panel; whatever does not fit is dropped, never clipped. 1X is always kept. */
 final class PreviewFit {
 

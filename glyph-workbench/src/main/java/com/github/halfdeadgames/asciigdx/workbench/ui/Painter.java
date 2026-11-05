@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -20,7 +20,7 @@ public final class Painter {
     private final Viewport viewport;
     private UiScale scale = UiScale.DEFAULT;
 
-    Painter(SpriteBatch batch, Texture whitePixel, GlyphSource font, Viewport viewport) {
+    public Painter(SpriteBatch batch, Texture whitePixel, GlyphSource font, Viewport viewport) {
         this.batch = batch;
         this.whitePixel = whitePixel;
         this.font = font;
@@ -28,7 +28,7 @@ public final class Painter {
     }
 
     /** Sets the cell size used by text, frames, and the views drawn through this painter. */
-    void setScale(UiScale scale) {
+    public void setScale(UiScale scale) {
         this.scale = scale;
     }
 
@@ -47,7 +47,7 @@ public final class Painter {
     }
 
     /** Draws the lit pixels of a grid as filled squares of {@code scale} pixels. */
-    void pixels(PixelGrid grid, int x, int top, int scale, Color color) {
+    public void pixels(PixelGrid grid, int x, int top, int scale, Color color) {
         for (int py = 0; py < grid.getHeight(); py++) {
             for (int px = 0; px < grid.getWidth(); px++) {
                 if (grid.isLit(px, py)) {
@@ -57,7 +57,7 @@ public final class Painter {
         }
     }
 
-    void region(TextureRegion region, int x, int top, int size, Color tint) {
+    public void region(TextureRegion region, int x, int top, int size, Color tint) {
         batch.setColor(tint);
         batch.draw(region, x, flipY(top, size), size, size);
     }
@@ -74,7 +74,7 @@ public final class Painter {
     }
 
     /** Draws a double-line border of text-sized cells; the size must be at least 2x2 cells. */
-    void frame(Color color, int x, int top, int cellsWide, int cellsHigh) {
+    public void frame(Color color, int x, int top, int cellsWide, int cellsHigh) {
         int size = cell();
         int right = x + (cellsWide - 1) * size;
         int bottom = top + (cellsHigh - 1) * size;
@@ -99,7 +99,7 @@ public final class Painter {
     }
 
     /** Rounds a pixel length up to whole text cells at the default scale. */
-    static int roundUpToCells(int pixels) {
+    public static int roundUpToCells(int pixels) {
         return roundUpToCells(pixels, TEXT_SIZE);
     }
 

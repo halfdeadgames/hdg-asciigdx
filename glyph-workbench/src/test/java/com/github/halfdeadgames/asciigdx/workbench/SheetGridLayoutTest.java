@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import org.junit.jupiter.api.Test;
 
 class SheetGridLayoutTest {

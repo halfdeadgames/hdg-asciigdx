@@ -3,7 +3,11 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBarHit;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 
 /** The scrollable sheet of all slots on the left of the paint screen. */
