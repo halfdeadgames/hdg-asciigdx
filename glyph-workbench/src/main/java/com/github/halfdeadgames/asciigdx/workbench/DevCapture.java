@@ -160,40 +160,49 @@ final class DevCapture {
         }
         String[] fields = request.trim().split(":", -1);
         if ("inspect".equalsIgnoreCase(fields[0].trim())) {
-            if (fields.length < 2 || fields.length > 3 || fields[1].isBlank()) {
-                return null;
-            }
-            int item = -1;
-            if (fields.length == 3) {
-                try {
-                    item = Integer.parseInt(fields[2].trim());
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-                if (item < 0) {
-                    return null;
-                }
-            }
-            return new MenuRequest(fields[1].trim(), false, item, true);
+            return parseInspectRequest(fields);
         }
         if (fields.length == 2 && "hover".equalsIgnoreCase(fields[0].trim()) && !fields[1].isBlank()) {
             return new MenuRequest(fields[1].trim(), true, -1, false);
         }
+        return parseOpenMenuRequest(fields);
+    }
+
+    private static MenuRequest parseInspectRequest(String[] fields) {
+        if (fields.length < 2 || fields.length > 3 || fields[1].isBlank()) {
+            return null;
+        }
+        int item = -1;
+        if (fields.length == 3) {
+            item = parseMenuItemIndex(fields[2]);
+            if (item < 0) {
+                return null;
+            }
+        }
+        return new MenuRequest(fields[1].trim(), false, item, true);
+    }
+
+    private static MenuRequest parseOpenMenuRequest(String[] fields) {
         if (fields[0].isBlank() || fields.length > 2) {
             return null;
         }
         int item = -1;
         if (fields.length == 2) {
-            try {
-                item = Integer.parseInt(fields[1].trim());
-            } catch (NumberFormatException e) {
-                return null;
-            }
+            item = parseMenuItemIndex(fields[1]);
             if (item < 0) {
                 return null;
             }
         }
         return new MenuRequest(fields[0].trim(), false, item, false);
+    }
+
+    /** The item index parsed from the field, or -1 if the field is not a whole number of 0 or more. */
+    private static int parseMenuItemIndex(String field) {
+        try {
+            return Math.max(-1, Integer.parseInt(field.trim()));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /** The raw {@code workbench.derive} value, or null when unset. */

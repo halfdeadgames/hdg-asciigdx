@@ -55,6 +55,12 @@ public final class InputScriptParser {
       case "hold" -> new ScriptStep.Hold(parseKey(singleArgument(arguments, "hold KEY")));
       case "release" -> new ScriptStep.Release(parseKey(singleArgument(arguments, "release KEY")));
       case "type" -> parseType(rest);
+      default -> parseMouseOrSessionCommand(word, arguments);
+    };
+  }
+
+  private static ScriptStep parseMouseOrSessionCommand(String word, String[] arguments) {
+    return switch (word.toLowerCase(Locale.ROOT)) {
       case "move" -> parseMove(arguments);
       case "click" -> parseClick(arguments);
       case "mousedown" -> new ScriptStep.MouseDown(parseOptionalButton(arguments, "mousedown [button]"));
