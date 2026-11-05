@@ -232,13 +232,12 @@ public final class MenuBar<A> {
     }
 
     /** Opens the first menu that is not locked. */
-    public boolean openFirst(Predicate<A> availability) {
+    public void openFirst(Predicate<A> availability) {
         for (int i = 0; i < menus.size(); i++) {
             if (open(i, availability)) {
-                return true;
+                return;
             }
         }
-        return false;
     }
 
     /** Moves the open drop-down left or right, wrapping and skipping locked menus. Does nothing when closed. */

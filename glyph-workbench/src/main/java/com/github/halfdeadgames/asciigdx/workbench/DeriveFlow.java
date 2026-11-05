@@ -94,14 +94,12 @@ final class DeriveFlow {
         }
     }
 
-    /** @return false when not picking an overlay or when the source is the target slot */
-    boolean addPart() {
+    void addPart() {
         if (!isOverlayPicking() || sourceIsTarget()) {
-            return false;
+            return;
         }
         parts.add(new Part(sourceSlot, pendingShift));
         pendingShift = 0;
-        return true;
     }
 
     /** @return whether a part was removed */
@@ -170,13 +168,11 @@ final class DeriveFlow {
         mode = Mode.PICK_SOURCE;
     }
 
-    /** @return whether the source slot changed */
-    boolean moveSource(int slot) {
+    void moveSource(int slot) {
         if (mode != Mode.PICK_SOURCE || slot == sourceSlot) {
-            return false;
+            return;
         }
         sourceSlot = slot;
-        return true;
     }
 
     /** @return true when the click was on the current source, which confirms it; otherwise the source moves there */

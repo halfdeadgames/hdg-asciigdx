@@ -117,23 +117,22 @@ final class FontEditor {
     }
 
     /**
-     * Makes sure a code point has a slot and returns its index. A new slot is empty and sits in normal
+     * Makes sure a code point has a slot. A new slot is empty and sits in normal
      * sheet order, so the indexes of later slots can shift. This neither adds a glyph nor counts as a
      * change: it touches no revision, modified flag, or undo history.
      *
      * @throws IllegalArgumentException if the code point is not a valid glyph code point
      */
-    int addSlot(int codePoint) {
+    void addSlot(int codePoint) {
         if (!Character.isValidCodePoint(codePoint) || codePoint == SheetOrder.FILLER) {
             throw new IllegalArgumentException(String.format("U+%04X cannot have a slot", codePoint));
         }
         int existingSlot = slotOf(codePoint);
         if (existingSlot != NO_GLYPH) {
-            return existingSlot;
+            return;
         }
         knownCodePoints.add(codePoint);
         slots = buildSlots(knownCodePoints);
-        return slotOf(codePoint);
     }
 
     private int slotOf(int codePoint) {
@@ -231,17 +230,17 @@ final class FontEditor {
 
     /**
      * Sets a pixel, creating the glyph first if the slot is empty. Lighting a gap column makes the glyph
-     * full; erasing the last gap ink of a full glyph makes it normal again. Returns whether anything changed;
-     * an edit that would break a derived glyph is undone and explained by {@link #problem()}.
+     * full; erasing the last gap ink of a full glyph makes it normal again.
+     * An edit that would break a derived glyph is undone and explained by {@link #problem()}.
      */
-    boolean setPixel(int codePoint, int x, int y, boolean on) {
+    void setPixel(int codePoint, int x, int y, boolean on) {
         if (!isPaintable(codePoint, x, y)) {
-            return false;
+            return;
         }
         GlyphEntry before = entries.get(codePoint);
         PixelGlyph current = (PixelGlyph) before;
         if (!changesPixel(codePoint, x, y, on, current)) {
-            return false;
+            return;
         }
         entries.put(codePoint, glyphWithPixel(codePoint, x, y, on, current));
         try {
@@ -249,11 +248,10 @@ final class FontEditor {
         } catch (FontDataException e) {
             restore(codePoint, before);
             problem = e.getMessage();
-            return false;
+            return;
         }
         problem = "";
         revision = nextRevision++;
-        return true;
     }
 
     private boolean changesPixel(int codePoint, int x, int y, boolean on, PixelGlyph current) {

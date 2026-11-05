@@ -68,14 +68,13 @@ final class PaintPreview {
         activeTab = backward ? PreviewTabs.previous(activeTab) : PreviewTabs.next(activeTab);
     }
 
-    /** Switches tab when the clicked text cell is on a tab label; returns whether it was. */
-    boolean click(ReviewLayout.Rect rect, int column, int row) {
+    /** Switches tab when the clicked text cell is on a tab label. */
+    void click(ReviewLayout.Rect rect, int column, int row) {
         PreviewTabs.Tab tab = PreviewTabs.tabAt(rect, column, row);
         if (tab == null) {
-            return false;
+            return;
         }
         activeTab = tab;
-        return true;
     }
 
     void draw(ReviewLayout.Rect rect, int codePoint) {

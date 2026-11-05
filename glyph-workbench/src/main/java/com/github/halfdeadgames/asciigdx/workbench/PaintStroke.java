@@ -22,10 +22,10 @@ final class PaintStroke {
         return active;
     }
 
-    /** Starts a stroke on a pixel; returns false (and stays inactive) when that pixel cannot be painted. */
-    boolean begin(int codePoint, int x, int y) {
+    /** Starts a stroke on a pixel; stays inactive when that pixel cannot be painted. */
+    void begin(int codePoint, int x, int y) {
         if (!editor.isPaintable(codePoint, x, y)) {
-            return false;
+            return;
         }
         this.codePoint = codePoint;
         editor.beginEdit();
@@ -34,7 +34,6 @@ final class PaintStroke {
         lastX = x;
         lastY = y;
         active = true;
-        return true;
     }
 
     void drag(int x, int y) {

@@ -51,10 +51,12 @@ class DeriveFlowTest {
     void sourceMovesOnlyWhilePicking() {
         DeriveFlow flow = new DeriveFlow();
         flow.openMenu(3);
-        assertFalse(flow.moveSource(4));
+        flow.moveSource(4);
+        assertEquals(3, flow.sourceSlot());
         flow.chooseOperation();
-        assertTrue(flow.moveSource(4));
-        assertFalse(flow.moveSource(4));
+        flow.moveSource(4);
+        assertEquals(4, flow.sourceSlot());
+        flow.moveSource(4);
         assertEquals(4, flow.sourceSlot());
         assertEquals(3, flow.targetSlot());
     }
@@ -180,9 +182,10 @@ class DeriveFlowTest {
     void addsAndRemovesParts() {
         DeriveFlow flow = overlayPicking(2);
         flow.moveSource(5);
-        assertTrue(flow.addPart());
+        flow.addPart();
+        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
         flow.moveSource(6);
-        assertTrue(flow.addPart());
+        flow.addPart();
         assertEquals(List.of(new DeriveFlow.Part(5, 0), new DeriveFlow.Part(6, 0)), flow.parts());
         assertTrue(flow.removeLastPart());
         assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
@@ -198,7 +201,7 @@ class DeriveFlowTest {
         flow.shiftSource(-3);
         flow.shiftSource(4);
         assertEquals(3, flow.pendingShift());
-        assertTrue(flow.addPart());
+        flow.addPart();
         assertEquals(0, flow.pendingShift());
         assertEquals(new DeriveFlow.Part(5, 3), flow.parts().get(0));
     }
@@ -207,7 +210,7 @@ class DeriveFlowTest {
     void refusesThePartOnTheTargetSlot() {
         DeriveFlow flow = overlayPicking(2);
         assertTrue(flow.sourceIsTarget());
-        assertFalse(flow.addPart());
+        flow.addPart();
         assertTrue(flow.parts().isEmpty());
     }
 
@@ -219,7 +222,8 @@ class DeriveFlowTest {
         flow.moveSource(5);
         flow.shiftSource(3);
         assertEquals(0, flow.pendingShift());
-        assertFalse(flow.addPart());
+        flow.addPart();
+        assertTrue(flow.parts().isEmpty());
         assertFalse(flow.removeLastPart());
         assertFalse(flow.isOverlay());
     }

@@ -160,7 +160,8 @@ class MenuBarTest {
     @Test
     void openFirstSkipsLockedMenus() {
         MenuBar<String> bar = bar();
-        assertTrue(bar.openFirst(without("new", "open", "save")));
+        bar.openFirst(without("new", "open", "save"));
+        assertTrue(bar.isOpen());
         assertEquals(1, bar.openMenu());
     }
 
@@ -168,7 +169,8 @@ class MenuBarTest {
     void allLockedBarCannotOpenAtAll() {
         MenuBar<String> bar = bar();
         Predicate<String> nothing = action -> false;
-        assertFalse(bar.openFirst(nothing));
+        bar.openFirst(nothing);
+        assertFalse(bar.isOpen());
         assertFalse(bar.openByAccessKey('f', nothing));
         bar.pressTitle(0, nothing);
         bar.hover(1, NONE, WIDE, nothing);
@@ -410,7 +412,8 @@ class MenuBarTest {
         assertFalse(bar.openByAccessKey('n', ALL));
         bar.pressTitle(0, ALL);
         assertFalse(bar.isOpen());
-        assertTrue(bar.openFirst(ALL));
+        bar.openFirst(ALL);
+        assertTrue(bar.isOpen());
         assertEquals(1, bar.openMenu());
         bar.moveMenu(1, ALL);
         assertEquals(1, bar.openMenu());
@@ -716,6 +719,7 @@ class MenuBarTest {
         MenuBar<String> bar = new MenuBar<>(List.of());
         assertEquals(1, bar.barWidth());
         assertEquals(-1, bar.titleAt(1));
-        assertFalse(bar.openFirst(ALL));
+        bar.openFirst(ALL);
+        assertFalse(bar.isOpen());
     }
 }

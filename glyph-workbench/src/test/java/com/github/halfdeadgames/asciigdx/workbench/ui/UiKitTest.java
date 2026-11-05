@@ -251,12 +251,13 @@ class UiKitTest {
         assertTrue(strip.hiddenAbove());
         assertFalse(strip.hiddenBelow());
         int buttonColumn = 10 + 30 - 2;
-        assertTrue(strip.click(buttonColumn, 22));
+        strip.click(buttonColumn, 22);
         assertEquals("third", strip.visible(2).get(0).text());
-        assertTrue(strip.click(buttonColumn, 21));
+        strip.click(buttonColumn, 21);
         assertEquals("second", strip.visible(2).get(0).text());
-        assertFalse(strip.click(buttonColumn - 1, 21));
-        assertTrue(strip.click(buttonColumn, 22));
+        strip.click(buttonColumn - 1, 21);
+        assertEquals("second", strip.visible(2).get(0).text());
+        strip.click(buttonColumn, 22);
         assertEquals("third", strip.visible(2).get(0).text());
     }
 

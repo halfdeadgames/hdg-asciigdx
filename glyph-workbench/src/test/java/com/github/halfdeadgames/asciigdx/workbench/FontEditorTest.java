@@ -54,7 +54,7 @@ class FontEditorTest {
     void paintingTheGapTurnsAGlyphFullAndKeepsItsInk() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 2, 3, true);
-        assertTrue(editor.setPixel(0x41, 7, 0, true));
+        editor.setPixel(0x41, 7, 0, true);
         assertTrue(editor.glyph(0x41).full());
         assertEquals(8, editor.glyph(0x41).pixels().getWidth());
         assertTrue(editor.isLit(0x41, 2, 3));
@@ -65,7 +65,7 @@ class FontEditorTest {
     @Test
     void paintingTheGapOfAnEmptySlotCreatesAFullGlyph() {
         FontEditor editor = editor();
-        assertTrue(editor.setPixel(0x44, 7, 4, true));
+        editor.setPixel(0x44, 7, 4, true);
         assertTrue(editor.glyph(0x44).full());
         assertEquals(8, editor.glyph(0x44).pixels().getWidth());
         assertTrue(editor.isLit(0x44, 7, 4));
@@ -77,9 +77,10 @@ class FontEditorTest {
         editor.setPixel(0x41, 2, 3, true);
         editor.setPixel(0x41, 7, 0, true);
         editor.setPixel(0x41, 7, 1, true);
-        assertTrue(editor.setPixel(0x41, 7, 0, false));
+        editor.setPixel(0x41, 7, 0, false);
+        assertFalse(editor.isLit(0x41, 7, 0));
         assertTrue(editor.glyph(0x41).full());
-        assertTrue(editor.setPixel(0x41, 7, 1, false));
+        editor.setPixel(0x41, 7, 1, false);
         assertFalse(editor.glyph(0x41).full());
         assertEquals(7, editor.glyph(0x41).pixels().getWidth());
         assertTrue(editor.isLit(0x41, 2, 3));
@@ -92,7 +93,9 @@ class FontEditorTest {
         assertTrue(editor.glyph(0x42).full());
         editor.setPixel(0x42, 3, 3, true);
         assertTrue(editor.glyph(0x42).full());
-        assertFalse(editor.setPixel(0x42, 7, 3, false));
+        int revisionBefore = editor.revision();
+        editor.setPixel(0x42, 7, 3, false);
+        assertEquals(revisionBefore, editor.revision());
         assertTrue(editor.glyph(0x42).full());
         assertEquals(8, editor.glyph(0x42).pixels().getWidth());
     }
@@ -116,7 +119,7 @@ class FontEditorTest {
     void derivedGlyphGapIsStillRejected() {
         FontEditor editor = editor();
         assertFalse(editor.isPaintable(0x43, 7, 0));
-        assertFalse(editor.setPixel(0x43, 7, 0, true));
+        editor.setPixel(0x43, 7, 0, true);
         assertFalse(editor.isModified());
     }
 
@@ -132,7 +135,7 @@ class FontEditorTest {
     @Test
     void fullGlyphsAreFullyPaintable() {
         FontEditor editor = editor();
-        assertTrue(editor.setPixel(0x42, 7, 3, true));
+        editor.setPixel(0x42, 7, 3, true);
         assertTrue(editor.isLit(0x42, 7, 3));
     }
 
@@ -150,7 +153,9 @@ class FontEditorTest {
         assertTrue(editor.isDerived(0x43));
         assertEquals(0x41, editor.derivedFrom(0x43));
         assertTrue(editor.isLit(0x43, 6, 0));
-        assertFalse(editor.setPixel(0x43, 0, 0, true));
+        int revisionBefore = editor.revision();
+        editor.setPixel(0x43, 0, 0, true);
+        assertEquals(revisionBefore, editor.revision());
     }
 
     @Test
@@ -164,7 +169,7 @@ class FontEditorTest {
     void paintingAnEmptySlotCreatesABodyGlyph() {
         FontEditor editor = editor();
         assertFalse(editor.hasGlyph(0x44));
-        assertTrue(editor.setPixel(0x44, 2, 3, true));
+        editor.setPixel(0x44, 2, 3, true);
         assertTrue(editor.hasGlyph(0x44));
         assertEquals(7, editor.glyph(0x44).pixels().getWidth());
         assertFalse(editor.glyph(0x44).full());
@@ -175,7 +180,7 @@ class FontEditorTest {
     @Test
     void clearingAPixelOfAnEmptySlotCreatesNothing() {
         FontEditor editor = editor();
-        assertFalse(editor.setPixel(0x44, 2, 3, false));
+        editor.setPixel(0x44, 2, 3, false);
         assertNull(editor.glyph(0x44));
         assertFalse(editor.isModified());
     }
@@ -385,7 +390,8 @@ class FontEditorTest {
     @Test
     void addedSlotOutsideCp437IsEmptyAndNotAChange() {
         FontEditor editor = editor();
-        int slot = editor.addSlot(0x2603);
+        editor.addSlot(0x2603);
+        int slot = slotOf(editor, 0x2603);
         assertEquals(0x2603, editor.codePointAtSlot(slot));
         assertNull(editor.glyph(0x2603));
         assertFalse(editor.hasGlyph(0x2603));
@@ -399,36 +405,52 @@ class FontEditorTest {
     void addSlotForExistingCodePointsChangesNothing() {
         FontEditor editor = editor();
         int slotCount = editor.slotCount();
-        assertEquals(256, editor.addSlot(0x100));
-        assertEquals(GlyphOrder.CP437.slotOf(0x41), editor.addSlot(0x41));
-        assertEquals(GlyphOrder.CP437.slotOf(0x44), editor.addSlot(0x44));
+        editor.addSlot(0x100);
+        editor.addSlot(0x41);
+        editor.addSlot(0x44);
+        assertEquals(256, slotOf(editor, 0x100));
+        assertEquals(GlyphOrder.CP437.slotOf(0x41), slotOf(editor, 0x41));
+        assertEquals(GlyphOrder.CP437.slotOf(0x44), slotOf(editor, 0x44));
         assertEquals(slotCount, editor.slotCount());
+    }
+
+    private static int slotOf(FontEditor editor, int codePoint) {
+        for (int slot = 0; slot < editor.slotCount(); slot++) {
+            if (editor.codePointAtSlot(slot) == codePoint) {
+                return slot;
+            }
+        }
+        return FontEditor.NO_GLYPH;
     }
 
     @Test
     void addingTheSameSlotTwiceIsStable() {
         FontEditor editor = editor();
-        int first = editor.addSlot(0x2603);
+        editor.addSlot(0x2603);
+        int first = slotOf(editor, 0x2603);
         int slotCount = editor.slotCount();
-        assertEquals(first, editor.addSlot(0x2603));
+        editor.addSlot(0x2603);
+        assertEquals(first, slotOf(editor, 0x2603));
         assertEquals(slotCount, editor.slotCount());
     }
 
     @Test
     void addingALowerCodePointInTheSameBlockMovesTheLaterSlot() {
         FontEditor editor = editor();
-        int later = editor.addSlot(0x105);
-        assertEquals(257, later);
-        int lower = editor.addSlot(0x102);
-        assertEquals(257, lower);
+        editor.addSlot(0x105);
+        assertEquals(257, slotOf(editor, 0x105));
+        editor.addSlot(0x102);
+        assertEquals(257, slotOf(editor, 0x102));
         assertEquals(0x105, editor.codePointAtSlot(258));
-        assertEquals(258, editor.addSlot(0x105));
+        editor.addSlot(0x105);
+        assertEquals(258, slotOf(editor, 0x105));
     }
 
     @Test
     void addingACodePointInAnotherBlockStartsANewRow() {
         FontEditor editor = editor();
-        int slot = editor.addSlot(0x2603);
+        editor.addSlot(0x2603);
+        int slot = slotOf(editor, 0x2603);
         assertEquals(0, slot % 16);
         assertTrue(slot > 256);
     }
@@ -437,7 +459,7 @@ class FontEditorTest {
     void paintingAnAddedSlotModifiesAndSavesIt() {
         FontEditor editor = editor();
         editor.addSlot(0x2603);
-        assertTrue(editor.setPixel(0x2603, 1, 1, true));
+        editor.setPixel(0x2603, 1, 1, true);
         assertTrue(editor.isModified());
         assertTrue(editor.toText().contains("U+2603"));
     }
@@ -445,7 +467,8 @@ class FontEditorTest {
     @Test
     void undoRemovesTheAddedGlyphButKeepsItsSlot() {
         FontEditor editor = editor();
-        int slot = editor.addSlot(0x2603);
+        editor.addSlot(0x2603);
+        int slot = slotOf(editor, 0x2603);
         editor.beginEdit();
         editor.setPixel(0x2603, 1, 1, true);
         editor.commitEdit();
@@ -454,7 +477,8 @@ class FontEditorTest {
         assertFalse(editor.toText().contains("U+2603"));
         assertFalse(editor.hasGlyph(0x2603));
         assertEquals(0x2603, editor.codePointAtSlot(slot));
-        assertEquals(slot, editor.addSlot(0x2603));
+        editor.addSlot(0x2603);
+        assertEquals(slot, slotOf(editor, 0x2603));
 
         editor.redo();
         assertTrue(editor.toText().contains("U+2603"));
@@ -465,7 +489,8 @@ class FontEditorTest {
     void addedSlotCanBeDerivedInto() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 0, 0, true);
-        int slot = editor.addSlot(0x2603);
+        editor.addSlot(0x2603);
+        int slot = slotOf(editor, 0x2603);
         assertTrue(editor.derive(0x2603, op(GlyphOp.Kind.MIRROR, 0x41)));
         assertTrue(editor.isDerived(0x2603));
         assertEquals(0x2603, editor.codePointAtSlot(slot));
@@ -493,7 +518,7 @@ class FontEditorTest {
     @Test
     void paintingOnePixelInAnEmptyFontSavesOneGlyphEntry() {
         FontEditor editor = new FontEditor(FontDataParser.parse("cell 8x8\n"));
-        assertTrue(editor.setPixel(0x21, 2, 3, true));
+        editor.setPixel(0x21, 2, 3, true);
 
         String saved = editor.toText();
         List<String> lines = List.of(saved.split("\n"));

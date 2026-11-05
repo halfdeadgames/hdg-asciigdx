@@ -102,20 +102,18 @@ public final class MessageStrip {
             && cellY >= boundsY && cellY < boundsY + boundsHeight;
     }
 
-    /** Presses the scroll button under the cell, if any; returns whether a button was hit. */
-    public boolean click(int cellX, int cellY) {
+    /** Presses the scroll button under the cell, if any. */
+    public void click(int cellX, int cellY) {
         if (!buttonsFit() || cellX != buttonColumn()) {
-            return false;
+            return;
         }
         if (cellY == topButtonRow()) {
             scrollBy(-1);
-            return true;
+            return;
         }
         if (cellY == bottomButtonRow()) {
             scrollBy(1);
-            return true;
         }
-        return false;
     }
 
     void place(int x, int y, int width, int height) {

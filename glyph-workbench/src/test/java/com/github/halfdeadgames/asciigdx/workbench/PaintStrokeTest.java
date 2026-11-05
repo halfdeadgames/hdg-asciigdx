@@ -22,7 +22,8 @@ class PaintStrokeTest {
     void firstPixelToggleDecidesTheDragColour() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertTrue(stroke.begin(0x41, 0, 0));
+        stroke.begin(0x41, 0, 0);
+        assertTrue(stroke.isActive());
         stroke.drag(3, 0);
         stroke.end();
         for (int x = 0; x <= 3; x++) {
@@ -30,7 +31,8 @@ class PaintStrokeTest {
         }
         assertFalse(editor.isLit(0x41, 4, 0));
 
-        assertTrue(stroke.begin(0x41, 1, 0));
+        stroke.begin(0x41, 1, 0);
+        assertTrue(stroke.isActive());
         stroke.drag(2, 0);
         stroke.end();
         assertTrue(editor.isLit(0x41, 0, 0));
@@ -72,7 +74,8 @@ class PaintStrokeTest {
     void strokeStartingInTheGapWorksOnNormalGlyphs() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertTrue(stroke.begin(0x41, 7, 0));
+        stroke.begin(0x41, 7, 0);
+        assertTrue(stroke.isActive());
         stroke.drag(7, 2);
         stroke.end();
         assertTrue(editor.isLit(0x41, 7, 2));
@@ -92,7 +95,7 @@ class PaintStrokeTest {
     void beginOnADerivedGlyphDoesNothing() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertFalse(stroke.begin(0x43, 0, 0));
+        stroke.begin(0x43, 0, 0);
         assertFalse(stroke.isActive());
         stroke.drag(1, 1);
         assertFalse(editor.isModified());
@@ -135,7 +138,8 @@ class PaintStrokeTest {
     void strokeThatChangesNothingAddsNoStep() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
-        assertFalse(stroke.begin(0x43, 7, 0));
+        stroke.begin(0x43, 7, 0);
+        assertFalse(stroke.isActive());
         stroke.end();
         editor.beginEdit();
         editor.setPixel(0x41, 2, 2, true);
