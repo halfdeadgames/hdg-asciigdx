@@ -149,6 +149,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final WheelTicks wheelTicks = new WheelTicks();
     private PaintScrollRouting scrollRouting;
     private PaintPointer pointerInput;
+    private PaintClicks pointerClicks;
 
     private final Runnable onExit;
     private final String fontDir;
@@ -244,8 +245,9 @@ public final class PaintApp implements WorkbenchScreen {
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
-        pointerInput = new PaintPointer(viewport, sheet, grid, preview, messages, flow, derive, stroke, editor,
-            scrollRouting, new PointerHost());
+        pointerInput = new PaintPointer(viewport, scrollRouting);
+        pointerClicks = new PaintClicks(pointerInput, sheet, grid, preview, messages, flow, derive, stroke, editor,
+            new PointerHost());
         loadReviewNotes(directory);
     }
 
@@ -954,7 +956,7 @@ public final class PaintApp implements WorkbenchScreen {
         moveCursor(delta);
         scrollRouting.handleScrollKeys();
         pointerInput.track();
-        pointerInput.handleMouse();
+        pointerClicks.handleMouse();
     }
 
     private void reportEditProblem() {
@@ -1301,7 +1303,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class PointerHost implements PaintPointer.Host {
+    private final class PointerHost implements PaintClicks.Host {
 
         @Override
         public int cell() {
