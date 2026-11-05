@@ -324,6 +324,48 @@ public final class FontEditor {
         changeAsOneStep(() -> entries.put(codePoint, new PixelGlyph(codePoint, current.full(), current.pixels())));
     }
 
+    /**
+     * Replaces a slot's glyph with the given whole cell, as one undo step. A normal glyph keeps only the body
+     * columns of the cell. Refuses when the code point is not a slot, the cell is the wrong size, the glyph is
+     * derived, or a derived glyph would break; {@link #problem()} then says why and nothing else changes.
+     */
+    public void replaceGlyph(int codePoint, boolean full, PixelGrid cell) {
+        if (!isSlotCodePoint(codePoint)) {
+            problem = String.format("U+%04X is not a glyph slot", codePoint);
+            return;
+        }
+        if (cell.getWidth() != cellWidth || cell.getHeight() != cellHeight) {
+            problem = "cell is " + cell.getWidth() + "x" + cell.getHeight()
+                + " but the font cell is " + cellWidth + "x" + cellHeight;
+            return;
+        }
+        if (isDerived(codePoint)) {
+            problem = "derived glyph; unlock it first (U)";
+            return;
+        }
+        PixelGlyph replacement = new PixelGlyph(codePoint, full, full ? cell : croppedToBody(cell));
+        Resolution resolution = resolveWithEntry(codePoint, replacement);
+        problem = resolution.problem();
+        if (resolution.glyphs() == null) {
+            return;
+        }
+        changeAsOneStep(() -> {
+            entries.put(codePoint, replacement);
+            resolved = resolution.glyphs();
+        });
+    }
+
+    // Resolves the font as if the entry were stored; no glyphs (with a problem) when a derived glyph would break.
+    private Resolution resolveWithEntry(int codePoint, GlyphEntry entry) {
+        Map<Integer, GlyphEntry> trial = new TreeMap<>(entries);
+        trial.put(codePoint, entry);
+        try {
+            return new Resolution(GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial)), "");
+        } catch (FontDataException e) {
+            return refused(e.getMessage());
+        }
+    }
+
     /** Whether deriving into this slot would discard a drawing, meaning it holds a drawn glyph with a lit pixel. */
     public boolean wouldReplaceDrawing(int codePoint) {
         return entries.get(codePoint) instanceof PixelGlyph drawn && drawn.pixels().hasLitPixel();
@@ -339,13 +381,7 @@ public final class FontEditor {
                 return refused(String.format("source U+%04X is empty; draw it first", source.codePoint()));
             }
         }
-        Map<Integer, GlyphEntry> trial = new TreeMap<>(entries);
-        trial.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
-        try {
-            return new Resolution(GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial)), "");
-        } catch (FontDataException e) {
-            return refused(e.getMessage());
-        }
+        return resolveWithEntry(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
     }
 
     private static Resolution refused(String reason) {

@@ -13,6 +13,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.io.IOException;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
@@ -585,6 +586,110 @@ class FontEditorTest {
         PixelGlyph glyph = (PixelGlyph) reread.entries().get(0x21);
         assertEquals(1, glyph.pixels().toRows().stream().mapToInt(row -> row.replace(".", "").length()).sum());
         assertTrue(glyph.pixels().isLit(2, 3));
+    }
+
+    private static PixelGrid cellWithPixels(int width, int height, int... xyPairs) {
+        PixelGrid cell = PixelGrid.blank(width, height);
+        for (int i = 0; i < xyPairs.length; i += 2) {
+            cell = cell.withPixel(xyPairs[i], xyPairs[i + 1], true);
+        }
+        return cell;
+    }
+
+    @Test
+    void replaceGlyphReplacesDrawnPixels() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+
+        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 3, 4));
+
+        assertEquals("", editor.problem());
+        assertTrue(editor.isLit(0x41, 3, 4));
+        assertFalse(editor.isLit(0x41, 0, 0));
+        assertTrue(editor.isModified());
+    }
+
+    @Test
+    void replaceGlyphIsOneUndoStep() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.markSaved();
+
+        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 3, 4));
+        editor.undo();
+
+        assertTrue(editor.isLit(0x41, 0, 0));
+        assertFalse(editor.isLit(0x41, 3, 4));
+        assertFalse(editor.isModified());
+        assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void replaceGlyphKeepsOnlyTheBodyOfANormalGlyph() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x44, false, cellWithPixels(8, 8, 1, 1, 7, 0));
+
+        assertFalse(editor.glyph(0x44).full());
+        assertEquals(7, editor.glyph(0x44).pixels().getWidth());
+        assertTrue(editor.isLit(0x44, 1, 1));
+        assertFalse(editor.isLit(0x44, 7, 0));
+    }
+
+    @Test
+    void replaceGlyphKeepsTheGapOfAFullGlyph() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x44, true, cellWithPixels(8, 8, 1, 1, 7, 0));
+
+        assertTrue(editor.glyph(0x44).full());
+        assertEquals(8, editor.glyph(0x44).pixels().getWidth());
+        assertTrue(editor.isLit(0x44, 7, 0));
+    }
+
+    @Test
+    void replaceGlyphRefusesADerivedTarget() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x43, false, cellWithPixels(8, 8, 1, 1));
+
+        assertTrue(editor.problem().contains("unlock"));
+        assertTrue(editor.isDerived(0x43));
+        assertFalse(editor.canUndo());
+        assertFalse(editor.isModified());
+    }
+
+    @Test
+    void replaceGlyphRefusesACodePointThatIsNotASlot() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x1234, false, cellWithPixels(8, 8, 1, 1));
+
+        assertEquals("U+1234 is not a glyph slot", editor.problem());
+        assertFalse(editor.hasGlyph(0x1234));
+        assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void replaceGlyphRefusesACellOfTheWrongSize() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x41, false, cellWithPixels(16, 16, 1, 1));
+
+        assertTrue(editor.problem().contains("16x16"));
+        assertTrue(editor.problem().contains("8x8"));
+        assertFalse(editor.isLit(0x41, 1, 1));
+        assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void glyphsDerivedFromAReplacedGlyphFollowTheNewPixels() {
+        FontEditor editor = editor();
+
+        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 1, 2));
+
+        assertTrue(editor.isDerived(0x43));
+        assertTrue(editor.isLit(0x43, 5, 2));
     }
 
     @Test
