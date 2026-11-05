@@ -161,12 +161,12 @@ public final class FontEditor {
     }
 
     /** The drawn pixels of a glyph with derived ones resolved, or null when the slot is empty. */
-    PixelGlyph glyph(int codePoint) {
+    public PixelGlyph glyph(int codePoint) {
         return resolved.get(codePoint);
     }
 
     /** The code points of every glyph that has at least one lit pixel, derived ones included. */
-    Set<Integer> codePointsWithInk() {
+    public Set<Integer> codePointsWithInk() {
         Set<Integer> withInk = new HashSet<>();
         for (Map.Entry<Integer, PixelGlyph> entry : resolved.entrySet()) {
             if (entry.getValue().pixels().hasLitPixel()) {
@@ -217,7 +217,7 @@ public final class FontEditor {
     }
 
     /** Identifies the current state; it changes with every edit, undo, redo, and derive. */
-    int revision() {
+    public int revision() {
         return revision;
     }
 

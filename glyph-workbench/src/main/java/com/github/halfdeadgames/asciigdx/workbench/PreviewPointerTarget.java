@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.preview.PaintPreview;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;

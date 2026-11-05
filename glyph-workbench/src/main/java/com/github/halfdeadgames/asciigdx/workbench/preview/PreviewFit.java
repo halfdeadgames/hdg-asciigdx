@@ -1,11 +1,11 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
 /** Decides which preview scales fit a panel; whatever does not fit is dropped, never clipped. 1X is always kept. */
-final class PreviewFit {
+public final class PreviewFit {
 
-    static final int[] SCALES = {1, 2, 4, 8};
+    public static final int[] SCALES = {1, 2, 4, 8};
 
     private PreviewFit() {
     }
@@ -18,7 +18,7 @@ final class PreviewFit {
      * @param gap            pixels between neighbouring blocks
      * @param labelWidth     pixels a block's label needs; a block is at least this wide
      */
-    static int scaleCount(int innerWidth, int maxBlockHeight, GlyphSize cell, int gap, int labelWidth) {
+    public static int scaleCount(int innerWidth, int maxBlockHeight, GlyphSize cell, int gap, int labelWidth) {
         int count = 1;
         int used = Math.max(labelWidth, cell.width() * SCALES[0]);
         for (int i = 1; i < SCALES.length; i++) {
@@ -32,7 +32,7 @@ final class PreviewFit {
         return count;
     }
 
-    static int largestScale(int scaleCount) {
+    public static int largestScale(int scaleCount) {
         return SCALES[scaleCount - 1];
     }
 

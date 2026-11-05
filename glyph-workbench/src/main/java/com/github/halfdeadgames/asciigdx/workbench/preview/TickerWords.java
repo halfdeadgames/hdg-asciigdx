@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import java.util.Arrays;
 import java.util.Collection;

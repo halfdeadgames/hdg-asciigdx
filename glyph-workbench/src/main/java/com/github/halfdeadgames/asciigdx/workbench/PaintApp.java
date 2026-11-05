@@ -27,6 +27,8 @@ import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.PaintNewFont;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PaintPreview;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 import com.github.halfdeadgames.asciigdx.workbench.rules.GlyphRules;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RuleWarning;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesScreen;

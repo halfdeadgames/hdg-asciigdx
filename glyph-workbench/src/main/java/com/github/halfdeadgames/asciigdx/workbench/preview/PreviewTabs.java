@@ -1,11 +1,11 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 
 /** The tab strip of the preview panel: label positions and hit-testing in text cells, with no drawing code. */
-final class PreviewTabs {
+public final class PreviewTabs {
 
-    enum Tab { SCALES, TILE, TEXT }
+    public enum Tab { SCALES, TILE, TEXT }
 
     static final int LABEL_GAP = 2;
     private static final int LEFT_PADDING = 2;

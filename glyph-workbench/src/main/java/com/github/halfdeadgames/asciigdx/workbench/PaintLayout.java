@@ -1,11 +1,12 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewFit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
 /** Where the panels of the paint screen go, in text cells: the sheet on the left, the grid in the middle, the previews on the right. */
-final class PaintLayout {
+public final class PaintLayout {
 
     record Result(CellRect grid, CellRect preview, CellRect belowPreview, CellRect messages) {
     }
@@ -31,12 +32,12 @@ final class PaintLayout {
     }
 
     /** Pixels between the preview panel's borders, as far as the glyph blocks may extend. */
-    static int previewInnerWidth(int panelWidthCells, int cellPixels) {
+    public static int previewInnerWidth(int panelWidthCells, int cellPixels) {
         return (panelWidthCells - 3) * cellPixels;
     }
 
     /** Pixels left for the tallest glyph block in a preview panel of the given height in cells. */
-    static int previewBlockBudget(int panelHeightCells, int cellPixels) {
+    public static int previewBlockBudget(int panelHeightCells, int cellPixels) {
         return (panelHeightCells - 2) * cellPixels - cellPixels - previewGap(cellPixels) - cellPixels;
     }
 

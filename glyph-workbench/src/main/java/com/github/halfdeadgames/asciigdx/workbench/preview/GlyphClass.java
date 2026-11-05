@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 /** Broad family a glyph belongs to, so preview text can group glyphs that are seen together. */
 enum GlyphClass {

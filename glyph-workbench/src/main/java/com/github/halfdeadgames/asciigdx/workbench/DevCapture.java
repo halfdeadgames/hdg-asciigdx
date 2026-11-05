@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 
 /**
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and

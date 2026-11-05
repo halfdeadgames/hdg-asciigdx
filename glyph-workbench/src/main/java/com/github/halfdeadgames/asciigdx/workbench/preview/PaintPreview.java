@@ -1,8 +1,10 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.IntMap;
+import com.github.halfdeadgames.asciigdx.workbench.FontEditor;
+import com.github.halfdeadgames.asciigdx.workbench.PaintLayout;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -14,7 +16,7 @@ import java.util.Random;
 import java.util.Set;
 
 /** The "PREVIEW" panel: a tab strip over a side-by-side 1x to 8x view of the selected glyph's whole cell, at real font pixel size. */
-final class PaintPreview {
+public final class PaintPreview {
 
     private static final int[] SCALES = PreviewFit.SCALES;
     private static final String[] SCALE_LABELS = {"1X", "2X", "4X", "8X"};
@@ -42,7 +44,7 @@ final class PaintPreview {
     private int tickerRevision = -1;
     private float tickerSeconds;
 
-    PaintPreview(Painter painter, FontEditor editor) {
+    public PaintPreview(Painter painter, FontEditor editor) {
         this.painter = painter;
         this.editor = editor;
     }
@@ -63,16 +65,16 @@ final class PaintPreview {
         return activeTab;
     }
 
-    void selectTab(PreviewTabs.Tab tab) {
+    public void selectTab(PreviewTabs.Tab tab) {
         activeTab = tab;
     }
 
-    void cycleTab(boolean backward) {
+    public void cycleTab(boolean backward) {
         activeTab = backward ? PreviewTabs.previous(activeTab) : PreviewTabs.next(activeTab);
     }
 
     /** Switches tab when the clicked text cell is on a tab label. */
-    void click(CellRect rect, int column, int row) {
+    public void click(CellRect rect, int column, int row) {
         PreviewTabs.Tab tab = PreviewTabs.tabAt(rect, column, row);
         if (tab == null) {
             return;
@@ -85,7 +87,7 @@ final class PaintPreview {
     }
 
     /** @param shown glyph to show instead of the slot's own, or null */
-    void draw(CellRect rect, int codePoint, PixelGlyph shown) {
+    public void draw(CellRect rect, int codePoint, PixelGlyph shown) {
         Panel.draw(painter, rect, "PREVIEW", false);
         drawTabs(rect);
         int left = (rect.x() + 2) * cell();
