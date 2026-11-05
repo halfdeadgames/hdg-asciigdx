@@ -51,6 +51,10 @@ final class PaintGridView {
     private int areaHeight;
     private boolean layoutDirty = true;
     private final PaintGridLabels labels = new PaintGridLabels();
+    private int ghostFirstInk;
+    private int ghostLastInk;
+    private int ghostFirstRow;
+    private int ghostLastRow;
 
     PaintGridView(Painter painter, FontEditor editor, PaintGuides guides) {
         this.painter = painter;
@@ -115,6 +119,23 @@ final class PaintGridView {
      * @param seconds running clock that drives the off-grid arrow blink
      */
     void draw(int codePoint, PixelGlyph previewGlyph, Ghost ghost, float seconds) {
+        drawCells(codePoint, previewGlyph);
+        if (ghost != null) {
+            drawGhost(ghost, seconds);
+        }
+        drawGridLines();
+        drawMarkers(codePoint);
+        selectGuides(FontRules.groupNameFor(codePoint));
+        if (layoutDirty) {
+            layoutLabels();
+        }
+        drawGuides();
+        drawWidthGuides();
+        drawBarGuides();
+        drawHighlight();
+    }
+
+    private void drawCells(int codePoint, PixelGlyph previewGlyph) {
         int bodyWidth = editor.bodyWidth();
         Color lit = previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
@@ -124,29 +145,24 @@ final class PaintGridView {
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
         }
-        if (ghost != null) {
-            drawGhost(ghost, seconds);
-        }
+    }
+
+    private void drawGridLines() {
         for (int x = 0; x <= editor.cellWidth(); x++) {
             painter.fill(LINE_COLOR, left + x * pixelSize, top, 1, height());
         }
         for (int y = 0; y <= editor.cellHeight(); y++) {
             painter.fill(LINE_COLOR, left, top + y * pixelSize, editor.cellWidth() * pixelSize, 1);
         }
-        drawMarkers(codePoint);
-        selectGuides(FontRules.groupNameFor(codePoint));
-        if (layoutDirty) {
-            layoutLabels();
-        }
-        drawGuides();
-        drawWidthGuides();
+    }
+
+    private void drawBarGuides() {
         List<PaintGuides.BarGuide> bars = shown.bars();
         for (int i = 0; i < bars.size(); i++) {
             int slot = shown.rows().size() + i;
             drawBarGuide(bars.get(i), labels.rowLabelY(slot),
                 slot == labels.highlightRowSlot() ? HIGHLIGHT_COLOR : BAR_GUIDE_COLOR);
         }
-        drawHighlight();
     }
 
     // Guides are filtered once per group change, not per frame.
@@ -160,20 +176,18 @@ final class PaintGridView {
 
     // Only pixels inside the visible grid are drawn; ink wholly beyond one side gets a blinking arrow on that edge.
     private void drawGhost(Ghost ghost, float seconds) {
+        drawGhostPixels(ghost);
+        measureGhostInk(ghost.pixels());
+        drawOffGridArrow(ghost, seconds);
+    }
+
+    private void drawGhostPixels(Ghost ghost) {
         PixelGrid pixels = ghost.pixels();
-        int firstInk = Integer.MAX_VALUE;
-        int lastInk = -1;
-        int firstRow = Integer.MAX_VALUE;
-        int lastRow = -1;
         for (int y = 0; y < pixels.getHeight(); y++) {
             for (int x = 0; x < pixels.getWidth(); x++) {
                 if (!pixels.isLit(x, y)) {
                     continue;
                 }
-                firstInk = Math.min(firstInk, x);
-                lastInk = Math.max(lastInk, x);
-                firstRow = Math.min(firstRow, y);
-                lastRow = Math.max(lastRow, y);
                 int column = x + ghost.shift();
                 if (column >= 0 && column < editor.cellWidth() && y < editor.cellHeight()) {
                     boolean inside = column < pixels.getWidth();
@@ -182,14 +196,36 @@ final class PaintGridView {
                 }
             }
         }
-        if (lastInk < 0 || !OverlayCheck.blinkOn(seconds)) {
+    }
+
+    private void measureGhostInk(PixelGrid pixels) {
+        ghostFirstInk = Integer.MAX_VALUE;
+        ghostLastInk = -1;
+        ghostFirstRow = Integer.MAX_VALUE;
+        ghostLastRow = -1;
+        for (int y = 0; y < pixels.getHeight(); y++) {
+            for (int x = 0; x < pixels.getWidth(); x++) {
+                if (!pixels.isLit(x, y)) {
+                    continue;
+                }
+                ghostFirstInk = Math.min(ghostFirstInk, x);
+                ghostLastInk = Math.max(ghostLastInk, x);
+                ghostFirstRow = Math.min(ghostFirstRow, y);
+                ghostLastRow = Math.max(ghostLastRow, y);
+            }
+        }
+    }
+
+    private void drawOffGridArrow(Ghost ghost, float seconds) {
+        if (ghostLastInk < 0 || !OverlayCheck.blinkOn(seconds)) {
             return;
         }
-        OverlayCheck.OffGrid side = OverlayCheck.offGrid(firstInk, lastInk, ghost.shift(), editor.cellWidth());
+        OverlayCheck.OffGrid side =
+            OverlayCheck.offGrid(ghostFirstInk, ghostLastInk, ghost.shift(), editor.cellWidth());
         if (side == OverlayCheck.OffGrid.NONE) {
             return;
         }
-        int arrowTop = top + (firstRow + lastRow + 1) * pixelSize / 2 - painter.cell() / 2;
+        int arrowTop = top + (ghostFirstRow + ghostLastRow + 1) * pixelSize / 2 - painter.cell() / 2;
         int gridRight = left + editor.cellWidth() * pixelSize;
         if (side == OverlayCheck.OffGrid.RIGHT) {
             painter.text(">", gridRight - painter.cell(), arrowTop, UiPalette.WARN);
@@ -293,14 +329,16 @@ final class PaintGridView {
     // Dashed so the lit pixels under it stay visible.
     private void drawBarGuide(PaintGuides.BarGuide bar, int labelY, Color labelColor) {
         int lineY = top + Math.round(bar.centerRow() * pixelSize);
-        int width = editor.cellWidth() * pixelSize;
-        int end = left + width + overhang();
-        int dash = scaled(BAR_DASH);
-        int thickness = scaled(BAR_THICKNESS);
-        for (int x = left - overhang(); x < end; x += 2 * dash) {
-            painter.fill(BAR_GUIDE_COLOR, x, lineY - thickness / 2, Math.min(dash, end - x), thickness);
-        }
+        drawDashedLine(BAR_GUIDE_COLOR, lineY, scaled(BAR_THICKNESS));
         drawRowLabel(bar.label(), labelColor, lineY, labelY);
+    }
+
+    private void drawDashedLine(Color color, int lineY, int thickness) {
+        int end = left + editor.cellWidth() * pixelSize + overhang();
+        int dash = scaled(BAR_DASH);
+        for (int x = left - overhang(); x < end; x += 2 * dash) {
+            painter.fill(color, x, lineY - thickness / 2, Math.min(dash, end - x), thickness);
+        }
     }
 
     /** Guide to draw thick and bright whatever its groups; null for none. Guides beyond the cell are not drawn. */
@@ -312,51 +350,48 @@ final class PaintGridView {
     }
 
     private void drawHighlight() {
-        PaintGuides.Listed guide = highlighted;
-        if (guide == null) {
+        if (!highlightVisible()) {
             return;
         }
-        int width = editor.cellWidth() * pixelSize;
-        int overhang = overhang();
+        PaintGuides.Listed guide = highlighted;
         int thickness = highlightThickness();
-        // A highlight that is also a shown guide had its label drawn in the highlight colour with that guide.
-        int shownRowSlots = shown.rows().size() + shown.bars().size();
         switch (guide.kind()) {
-            case ROW -> {
-                if (guide.position() <= editor.cellHeight()) {
-                    int lineY = top + guide.position() * pixelSize;
-                    painter.fill(HIGHLIGHT_COLOR, left - overhang, lineY - thickness / 2,
-                        width + 2 * overhang, thickness);
-                    if (labels.highlightRowSlot() >= shownRowSlots) {
-                        drawRowLabel(guide.label(), HIGHLIGHT_COLOR, lineY, labels.rowLabelY(labels.highlightRowSlot()));
-                    }
-                }
-            }
-            case COLUMN -> {
-                if (guide.position() <= editor.cellWidth()) {
-                    int lineX = left + guide.position() * pixelSize;
-                    painter.fill(HIGHLIGHT_COLOR, lineX - thickness / 2, top - overhang,
-                        thickness, height() + 2 * overhang);
-                    if (labels.highlightWidthSlot() >= shown.widths().size()) {
-                        drawWidthLabel(guide.label(), HIGHLIGHT_COLOR, lineX,
-                            labels.widthLabelX(labels.highlightWidthSlot()), 0);
-                    }
-                }
-            }
-            case BAR -> {
-                if (guide.position() + guide.rowCount() <= editor.cellHeight()) {
-                    int lineY = top + Math.round(guide.centerRow() * pixelSize);
-                    int end = left + width + overhang;
-                    int dash = scaled(BAR_DASH);
-                    for (int x = left - overhang; x < end; x += 2 * dash) {
-                        painter.fill(HIGHLIGHT_COLOR, x, lineY - thickness / 2,
-                            Math.min(dash, end - x), thickness);
-                    }
-                    if (labels.highlightRowSlot() >= shownRowSlots) {
-                        drawRowLabel(guide.label(), HIGHLIGHT_COLOR, lineY, labels.rowLabelY(labels.highlightRowSlot()));
-                    }
-                }
-            }
+            case ROW -> drawRowHighlight(guide, thickness);
+            case COLUMN -> drawColumnHighlight(guide, thickness);
+            case BAR -> drawBarHighlight(guide, thickness);
+        }
+    }
+
+    // A highlight that is also a shown guide had its label drawn in the highlight colour with that guide.
+    private boolean highlightNeedsOwnRowLabel() {
+        return labels.highlightRowSlot() >= shown.rows().size() + shown.bars().size();
+    }
+
+    private void drawRowHighlight(PaintGuides.Listed guide, int thickness) {
+        int overhang = overhang();
+        int lineY = top + guide.position() * pixelSize;
+        painter.fill(HIGHLIGHT_COLOR, left - overhang, lineY - thickness / 2,
+            editor.cellWidth() * pixelSize + 2 * overhang, thickness);
+        if (highlightNeedsOwnRowLabel()) {
+            drawRowLabel(guide.label(), HIGHLIGHT_COLOR, lineY, labels.rowLabelY(labels.highlightRowSlot()));
+        }
+    }
+
+    private void drawColumnHighlight(PaintGuides.Listed guide, int thickness) {
+        int lineX = left + guide.position() * pixelSize;
+        painter.fill(HIGHLIGHT_COLOR, lineX - thickness / 2, top - overhang(),
+            thickness, height() + 2 * overhang());
+        if (labels.highlightWidthSlot() >= shown.widths().size()) {
+            drawWidthLabel(guide.label(), HIGHLIGHT_COLOR, lineX,
+                labels.widthLabelX(labels.highlightWidthSlot()), 0);
+        }
+    }
+
+    private void drawBarHighlight(PaintGuides.Listed guide, int thickness) {
+        int lineY = top + Math.round(guide.centerRow() * pixelSize);
+        drawDashedLine(HIGHLIGHT_COLOR, lineY, thickness);
+        if (highlightNeedsOwnRowLabel()) {
+            drawRowLabel(guide.label(), HIGHLIGHT_COLOR, lineY, labels.rowLabelY(labels.highlightRowSlot()));
         }
     }
 
