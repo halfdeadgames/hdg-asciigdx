@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.nio.file.Path;
@@ -56,11 +57,11 @@ final class PaintNewFont {
         dialogs.type(character);
     }
 
-    void handleInput(float delta, NewFontPointer pointer, ReviewLayout.Rect area) {
+    void handleInput(float delta, NewFontPointer pointer, CellRect area) {
         dialogs.handleInput(delta, pointer, area);
     }
 
-    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
+    void draw(Painter painter, int columns, int rows, CellRect area) {
         dialogs.draw(painter, columns, rows, area);
     }
 

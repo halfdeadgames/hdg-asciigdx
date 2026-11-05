@@ -21,7 +21,7 @@ final class ControlsScreen {
     static final String TITLE = "CONTROLS";
 
     /** The box, its text width, and the wrapped lines; {@code visibleRows} is how many lines show at once. */
-    record Layout(ReviewLayout.Rect rect, int chars, int visibleRows, List<HelpWrap.Line> lines) {
+    record Layout(CellRect rect, int chars, int visibleRows, List<HelpWrap.Line> lines) {
 
         int maxOffset() {
             return Math.max(0, lines.size() - visibleRows);
@@ -55,12 +55,12 @@ final class ControlsScreen {
         int chars = Math.max(1, width - extra);
         List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), chars);
         int height = Math.min(rows, Math.min(lines.size() + FRAME, Math.max(MIN_HEIGHT, rows - 2 * MARGIN)));
-        ReviewLayout.Rect rect = new ReviewLayout.Rect((columns - width) / 2, (rows - height) / 2, width, height);
+        CellRect rect = new CellRect((columns - width) / 2, (rows - height) / 2, width, height);
         return new Layout(rect, chars, Math.max(1, height - FRAME), lines);
     }
 
     /** True when a click at this cell is outside the box, which closes it. */
-    static boolean isOutside(ReviewLayout.Rect rect, int cellX, int cellY) {
+    static boolean isOutside(CellRect rect, int cellX, int cellY) {
         return cellX < rect.x() || cellX >= rect.x() + rect.width() || cellY < rect.y() || cellY >= rect.bottom();
     }
 
@@ -117,15 +117,15 @@ final class ControlsScreen {
     void draw(Painter painter, int columns, int rows) {
         refresh(columns, rows);
         int cell = painter.cell();
-        ReviewLayout.Rect rect = layout.rect();
+        CellRect rect = layout.rect();
         painter.fill(DIM, 0, 0, columns * cell, rows * cell);
         for (int i = 1; i <= rect.height(); i++) {
             painter.text("▓", (rect.x() + rect.width()) * cell, (rect.y() + i) * cell, UiPalette.SHADOW);
         }
         for (int i = 1; i <= rect.width(); i++) {
-            painter.text("▓", (rect.x() + i) * cell, (rect.y() + rect.height()) * cell, UiPalette.SHADOW);
+            painter.text("▓", (rect.x() + i) * cell, rect.bottom() * cell, UiPalette.SHADOW);
         }
-        Panel.draw(painter, rect.toCellRect(), TITLE, true);
+        Panel.draw(painter, rect, TITLE, true);
         List<HelpWrap.Line> lines = layout.lines();
         int first = scroll.offset();
         int last = Math.min(lines.size(), first + layout.visibleRows());

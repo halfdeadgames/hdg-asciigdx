@@ -1,11 +1,12 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
 /** Where the panels of the paint screen go, in text cells: the sheet on the left, the grid in the middle, the previews on the right. */
 final class PaintLayout {
 
-    record Result(ReviewLayout.Rect grid, ReviewLayout.Rect preview, ReviewLayout.Rect belowPreview, ReviewLayout.Rect messages) {
+    record Result(CellRect grid, CellRect preview, CellRect belowPreview, CellRect messages) {
     }
 
     static final int MESSAGES_HEIGHT = 6;
@@ -39,20 +40,20 @@ final class PaintLayout {
     }
 
     /** The area under the preview: the help panel alone, or the help over the review note when there is one. */
-    static ReviewLayout.Rect helpArea(Result result, boolean withNote) {
-        ReviewLayout.Rect area = result.belowPreview();
-        return withNote ? new ReviewLayout.Rect(area.x(), area.y(), area.width(), area.height() - noteHeight(area)) : area;
+    static CellRect helpArea(Result result, boolean withNote) {
+        CellRect area = result.belowPreview();
+        return withNote ? new CellRect(area.x(), area.y(), area.width(), area.height() - noteHeight(area)) : area;
     }
 
     /** The note panel when it shares the area under the preview with the help. */
-    static ReviewLayout.Rect noteArea(Result result) {
-        ReviewLayout.Rect area = result.belowPreview();
+    static CellRect noteArea(Result result) {
+        CellRect area = result.belowPreview();
         int height = noteHeight(area);
-        return new ReviewLayout.Rect(area.x(), area.bottom() - height, area.width(), height);
+        return new CellRect(area.x(), area.bottom() - height, area.width(), height);
     }
 
     // The note gets half the area, but the help keeps at least MIN_HELP_HEIGHT rows.
-    private static int noteHeight(ReviewLayout.Rect area) {
+    private static int noteHeight(CellRect area) {
         return Math.max(2, Math.min(area.height() - MIN_HELP_HEIGHT, Math.max(MIN_NOTE_HEIGHT, area.height() / 2)));
     }
 
@@ -92,9 +93,9 @@ final class PaintLayout {
         int previewHeight = previewHeight(glyph.height(), PreviewFit.largestScale(scaleCount), cellPixels);
         int noteY = TOP_ROWS + previewHeight;
         return new Result(
-            new ReviewLayout.Rect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),
-            new ReviewLayout.Rect(rightX, TOP_ROWS, rightWidth, previewHeight),
-            new ReviewLayout.Rect(rightX, noteY, rightWidth,Math.max(MIN_NOTE_HEIGHT, messagesY - noteY)),
-            new ReviewLayout.Rect(gridX, messagesY, columns - gridX, MESSAGES_HEIGHT + (statusBarShown ? 0 : 1)));
+            new CellRect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),
+            new CellRect(rightX, TOP_ROWS, rightWidth, previewHeight),
+            new CellRect(rightX, noteY, rightWidth,Math.max(MIN_NOTE_HEIGHT, messagesY - noteY)),
+            new CellRect(gridX, messagesY, columns - gridX, MESSAGES_HEIGHT + (statusBarShown ? 0 : 1)));
     }
 }

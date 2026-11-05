@@ -78,7 +78,7 @@ final class NewSizeDialog {
      * @param cell the cell size in pixels
      * @param area the cell rectangle the dialog is centred in
      */
-    void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, ReviewLayout.Rect area) {
+    void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
         Dialog.Layout layout = layout(area);
         boolean inside = isInside(layout, pointerX, pointerY, cell);
         if (!prompt.hasChoices()) {
@@ -93,10 +93,10 @@ final class NewSizeDialog {
         }
     }
 
-    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
+    void draw(Painter painter, int columns, int rows, CellRect area) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
             DialogContent.of(TITLE, prompt.lines(), buttons()),
-            area.toCellRect());
+            area);
         if (!prompt.hasChoices()) {
             return;
         }
@@ -147,9 +147,9 @@ final class NewSizeDialog {
         }
     }
 
-    private Dialog.Layout layout(ReviewLayout.Rect area) {
+    private Dialog.Layout layout(CellRect area) {
         return Dialog.layout(DialogContent.of(TITLE, prompt.lines(), buttons()),
-            area.toCellRect());
+            area);
     }
 
     private List<Dialog.Button> buttons() {

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import java.util.ArrayList;
 import java.util.List;
@@ -240,7 +241,7 @@ class PaintHelpTest {
     @Test
     void controlsBoxIsCentredAndHoldsTheWholeListInABigWindow() {
         ControlsScreen.Layout layout = ControlsScreen.layout(100, 60);
-        ReviewLayout.Rect box = layout.rect();
+        CellRect box = layout.rect();
         assertEquals((100 - box.width()) / 2, box.x());
         assertEquals((60 - box.height()) / 2, box.y());
         assertEquals(PaintHelp.allControlRows().size(), layout.lines().size());
@@ -269,7 +270,7 @@ class PaintHelpTest {
     @Test
     void controlsBoxWrapsInANarrowWindowAndStaysInsideIt() {
         ControlsScreen.Layout layout = ControlsScreen.layout(30, 40);
-        ReviewLayout.Rect box = layout.rect();
+        CellRect box = layout.rect();
         assertTrue(box.x() >= 0 && box.x() + box.width() <= 30);
         assertEquals(box.width() - 4, layout.chars());
         for (HelpWrap.Line line : layout.lines()) {
@@ -282,7 +283,7 @@ class PaintHelpTest {
     @Test
     void controlsBoxNeverOutgrowsATinyWindow() {
         ControlsScreen.Layout layout = ControlsScreen.layout(8, 5);
-        ReviewLayout.Rect box = layout.rect();
+        CellRect box = layout.rect();
         assertTrue(box.width() <= 8 && box.height() <= 5);
         assertTrue(box.x() >= 0 && box.y() >= 0);
         assertTrue(layout.visibleRows() >= 1);
@@ -290,7 +291,7 @@ class PaintHelpTest {
 
     @Test
     void aClickOutsideTheControlsBoxIsOutsideAndOneInsideIsNot() {
-        ReviewLayout.Rect box = new ReviewLayout.Rect(10, 5, 20, 10);
+        CellRect box = new CellRect(10, 5, 20, 10);
         assertTrue(ControlsScreen.isOutside(box, 9, 8));
         assertTrue(ControlsScreen.isOutside(box, 30, 8));
         assertTrue(ControlsScreen.isOutside(box, 15, 4));

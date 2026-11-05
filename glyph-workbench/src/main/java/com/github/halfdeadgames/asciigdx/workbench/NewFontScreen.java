@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
@@ -114,8 +115,8 @@ final class NewFontScreen implements WorkbenchScreen {
         return Math.round(viewport.getWorldHeight()) / CELL;
     }
 
-    private ReviewLayout.Rect dialogArea() {
-        return new ReviewLayout.Rect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
+    private CellRect dialogArea() {
+        return new CellRect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
     }
 
     private void create(String name, Shape shape, int height) {

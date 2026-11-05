@@ -169,7 +169,7 @@ final class NewFontDialogs {
      * @param pointer this frame's wheel, click, and pointer position (pixels from the left and top)
      * @param area the cell rectangle the dialog is centred in
      */
-    void handleInput(float delta, NewFontPointer pointer, ReviewLayout.Rect area) {
+    void handleInput(float delta, NewFontPointer pointer, CellRect area) {
         swallowFrames = Math.max(0, swallowFrames - 1);
         if (namePage.isOpen()) {
             handleName(delta);
@@ -193,7 +193,7 @@ final class NewFontDialogs {
         }
     }
 
-    private void handleSize(NewFontPointer pointer, ReviewLayout.Rect area) {
+    private void handleSize(NewFontPointer pointer, CellRect area) {
         if (handleSizeKeys()) {
             return;
         }
@@ -256,25 +256,25 @@ final class NewFontDialogs {
         sizePage.pick(hit.row());
     }
 
-    private Dialog.Layout sizeLayout(ReviewLayout.Rect area) {
+    private Dialog.Layout sizeLayout(CellRect area) {
         sizePage.fitTo(area.height());
         return Dialog.layout(DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
-            area.toCellRect());
+            area);
     }
 
     /** Draws the open page, dimming the whole screen first. */
-    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
+    void draw(Painter painter, int columns, int rows, CellRect area) {
         if (namePage.isOpen()) {
             Dialog.draw(painter, new CellRect(0, 0, columns, rows),
                 new DialogContent(TITLE, namePage.lines(),
                     namePage.error() == null ? NAME_BUTTONS : NAME_BLOCKED_BUTTONS,
                     0, NewFontNamePrompt.LINE_CELLS),
-                area.toCellRect());
+                area);
         } else if (sizePage.isOpen()) {
             Dialog.Layout list = sizeLayout(area);
             Dialog.draw(painter, new CellRect(0, 0, columns, rows),
                 DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
-                area.toCellRect());
+                area);
             int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
             List<SelectList.Row> visibleRows = sizePage.visibleRows();
             SelectList.draw(painter,

@@ -59,9 +59,9 @@ final class NotePanel {
             && pixelY >= top * cell && pixelY < (top + height) * cell;
     }
 
-    void drawReadOnly(ReviewLayout.Rect rect, String pick, String note) {
+    void drawReadOnly(CellRect rect, String pick, String note) {
         remember(rect);
-        Panel.draw(painter, rect.toCellRect(),
+        Panel.draw(painter, rect,
             "REVIEW NOTE   [ ] SCROLLS", false);
         painter.text(pick == null ? "" : "PICK: " + pick.toUpperCase(Locale.ROOT),
             (rect.x() + 2) * painter.cell(), (rect.y() + 1) * painter.cell(), UiPalette.ACCENT);
@@ -70,9 +70,9 @@ final class NotePanel {
             UiPalette.TEXT);
     }
 
-    void drawEditor(ReviewLayout.Rect rect, NoteEditor editor) {
+    void drawEditor(CellRect rect, NoteEditor editor) {
         remember(rect);
-        Panel.draw(painter, rect.toCellRect(), "NOTE", true);
+        Panel.draw(painter, rect, "NOTE", true);
         int chars = textChars(rect.width());
         int rows = editorRows(rect.height());
         int cell = painter.cell();
@@ -95,7 +95,7 @@ final class NotePanel {
         }
     }
 
-    private void remember(ReviewLayout.Rect rect) {
+    private void remember(CellRect rect) {
         left = rect.x();
         top = rect.y();
         width = rect.width();

@@ -4,12 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import org.junit.jupiter.api.Test;
 
 class PreviewTabsTest {
 
-    private static final ReviewLayout.Rect RECT = new ReviewLayout.Rect(55, 2, 24, 7);
-    private static final ReviewLayout.Rect NARROW = new ReviewLayout.Rect(55, 2, 16, 7);
+    private static final CellRect RECT = new CellRect(55, 2, 24, 7);
+    private static final CellRect NARROW = new CellRect(55, 2, 16, 7);
 
     @Test
     void labelsSitSideBySideWithAGap() {
@@ -81,7 +82,7 @@ class PreviewTabsTest {
 
     @Test
     void midWidthKeepsFullNamesWithATighterGap() {
-        ReviewLayout.Rect mid = new ReviewLayout.Rect(0, 0, 19, 7);
+        CellRect mid = new CellRect(0, 0, 19, 7);
         assertEquals("SCALES", PreviewTabs.label(mid, PreviewTabs.Tab.SCALES));
         assertEquals(9, PreviewTabs.labelColumn(mid, PreviewTabs.Tab.TILE));
         assertEquals(14, PreviewTabs.labelColumn(mid, PreviewTabs.Tab.TEXT));

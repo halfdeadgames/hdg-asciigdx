@@ -52,7 +52,7 @@ final class PaintDeriveMenu {
     }
 
     /** Highlights the clicked row; returns whether a click chose an operation. */
-    boolean handleClick(ReviewLayout.Rect grid, int cell, int pointerX, int pointerY, boolean leftClicked) {
+    boolean handleClick(CellRect grid, int cell, int pointerX, int pointerY, boolean leftClicked) {
         if (!leftClicked) {
             return false;
         }
@@ -66,19 +66,19 @@ final class PaintDeriveMenu {
         return true;
     }
 
-    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect grid) {
+    void draw(Painter painter, int columns, int rows, CellRect grid) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
             DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
-            grid.toCellRect());
+            grid);
         Dialog.Layout menu = layout(grid);
         SelectList.draw(painter,
             SelectList.areaOf(menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()), MENU_ROWS.size()),
             MENU_ROWS, flow.menuIndex());
     }
 
-    private static Dialog.Layout layout(ReviewLayout.Rect area) {
+    private static Dialog.Layout layout(CellRect area) {
         return Dialog.layout(DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
-            area.toCellRect());
+            area);
     }
 
     private static List<SelectList.Row> menuRows() {

@@ -600,8 +600,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         sheet.draw(cursor);
         drawCandidates(codePoint);
         drawNote(codePoint);
-        ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.toCellRect(),
+        CellRect strip = rects.messages();
+        messages.draw(painter, strip,
             Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns(), rows() - 1, noteEditor.isActive() ? NOTE_KEYS : BROWSE_KEYS);
         if (replaceColumn >= 0) {
@@ -624,7 +624,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     }
 
     private void drawCandidates(int codePoint) {
-        ReviewLayout.Rect area = rects.candidates();
+        CellRect area = rects.candidates();
         line.setLength(0);
         line.append("U+");
         appendHex(line, codePoint);
@@ -636,7 +636,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         }
         titleSeconds += Gdx.graphics.getDeltaTime();
         line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
-        Panel.draw(painter, area.toCellRect(), line.toString(), true);
+        Panel.draw(painter, area, line.toString(), true);
         columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
         columnPanel.setViewed(-1, CURSOR_COLOR);
         columnPanel.setMaxOuterHeight((area.height() - 2) * CELL);
@@ -654,7 +654,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         } else {
             notePanel.markHidden();
             Panel.draw(painter,
-                rects.note().toCellRect(),
+                rects.note(),
                 "REVIEW NOTE   [ ] SCROLLS", false);
         }
     }

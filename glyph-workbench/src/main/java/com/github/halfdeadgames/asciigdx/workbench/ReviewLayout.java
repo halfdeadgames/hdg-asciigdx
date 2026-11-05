@@ -5,19 +5,8 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 /** Where the panels of the upscale review go, in text cells: the sheet on the left, three panels stacked on the right. */
 final class ReviewLayout {
 
-    record Rect(int x, int y, int width, int height) {
-
-        int bottom() {
-            return y + height;
-        }
-
-        CellRect toCellRect() {
-            return new CellRect(x, y, width, height);
-        }
-    }
-
     /** Candidates on top, then the note, then the messages; the status bar is the last row. */
-    record Result(Rect candidates, Rect note, Rect messages) {
+    record Result(CellRect candidates, CellRect note, CellRect messages) {
     }
 
     static final int TOP_ROWS = 2;
@@ -36,8 +25,8 @@ final class ReviewLayout {
         int noteY = messagesY - NOTE_HEIGHT;
         int candidatesHeight = Math.max(MIN_CANDIDATES_HEIGHT, noteY - TOP_ROWS);
         return new Result(
-            new Rect(x, TOP_ROWS, width, candidatesHeight),
-            new Rect(x, noteY, width, NOTE_HEIGHT),
-            new Rect(x, messagesY, width, MESSAGES_HEIGHT));
+            new CellRect(x, TOP_ROWS, width, candidatesHeight),
+            new CellRect(x, noteY, width, NOTE_HEIGHT),
+            new CellRect(x, messagesY, width, MESSAGES_HEIGHT));
     }
 }

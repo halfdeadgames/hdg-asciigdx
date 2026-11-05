@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+
 /** The tab strip of the preview panel: label positions and hit-testing in text cells, with no drawing code. */
 final class PreviewTabs {
 
@@ -16,12 +18,12 @@ final class PreviewTabs {
     }
 
     /** The label for a tab in a panel of this rectangle: the full name, or the short form when the panel is narrow. */
-    static String label(ReviewLayout.Rect rect, Tab tab) {
+    static String label(CellRect rect, Tab tab) {
         return labelsFor(rect.width())[tab.ordinal()];
     }
 
     /** The text column where a tab's label starts. */
-    static int labelColumn(ReviewLayout.Rect rect, Tab tab) {
+    static int labelColumn(CellRect rect, Tab tab) {
         String[] labels = labelsFor(rect.width());
         int gap = gapFor(rect.width(), labels);
         int column = rect.x() + LEFT_PADDING;
@@ -32,12 +34,12 @@ final class PreviewTabs {
     }
 
     /** The row the labels sit on: the first content row under the panel border. */
-    static int labelRow(ReviewLayout.Rect rect) {
+    static int labelRow(CellRect rect) {
         return rect.y() + 1;
     }
 
     /** The tab whose label covers the text cell, or null when the cell is not on a label. */
-    static Tab tabAt(ReviewLayout.Rect rect, int column, int row) {
+    static Tab tabAt(CellRect rect, int column, int row) {
         if (row != labelRow(rect)) {
             return null;
         }

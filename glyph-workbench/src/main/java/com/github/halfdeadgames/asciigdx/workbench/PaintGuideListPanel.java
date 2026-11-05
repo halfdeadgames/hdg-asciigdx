@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -154,8 +155,8 @@ final class PaintGuideListPanel {
     }
 
     // One row per text line; only the selected row bounces when it is too long, the others are cut.
-    void draw(ReviewLayout.Rect area, int cell) {
-        Panel.draw(painter, area.toCellRect(), title, true);
+    void draw(CellRect area, int cell) {
+        Panel.draw(painter, area, title, true);
         seconds += Gdx.graphics.getDeltaTime();
         int visible = area.height() - 2;
         int chars = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
@@ -182,7 +183,7 @@ final class PaintGuideListPanel {
         }
     }
 
-    private void drawLegend(ReviewLayout.Rect area, int rowsAbove, int cell) {
+    private void drawLegend(CellRect area, int rowsAbove, int cell) {
         int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
         for (int i = 0; i < EDIT_LEGEND.size(); i++) {
             String[] entry = EDIT_LEGEND.get(i);

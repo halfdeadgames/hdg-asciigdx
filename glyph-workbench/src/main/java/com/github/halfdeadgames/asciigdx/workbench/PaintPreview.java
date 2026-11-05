@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.IntMap;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
@@ -71,7 +72,7 @@ final class PaintPreview {
     }
 
     /** Switches tab when the clicked text cell is on a tab label. */
-    void click(ReviewLayout.Rect rect, int column, int row) {
+    void click(CellRect rect, int column, int row) {
         PreviewTabs.Tab tab = PreviewTabs.tabAt(rect, column, row);
         if (tab == null) {
             return;
@@ -79,13 +80,13 @@ final class PaintPreview {
         activeTab = tab;
     }
 
-    void draw(ReviewLayout.Rect rect, int codePoint) {
+    void draw(CellRect rect, int codePoint) {
         draw(rect, codePoint, null);
     }
 
     /** @param shown glyph to show instead of the slot's own, or null */
-    void draw(ReviewLayout.Rect rect, int codePoint, PixelGlyph shown) {
-        Panel.draw(painter, rect.toCellRect(), "PREVIEW", false);
+    void draw(CellRect rect, int codePoint, PixelGlyph shown) {
+        Panel.draw(painter, rect, "PREVIEW", false);
         drawTabs(rect);
         int left = (rect.x() + 2) * cell();
         int rowTop = (PreviewTabs.labelRow(rect) + 1) * cell() + sectionGap();
@@ -122,7 +123,7 @@ final class PaintPreview {
     }
 
     // Glyphs are clipped by skipping the pixel columns outside the content area; no GL scissor is involved.
-    private void drawTicker(ReviewLayout.Rect rect, int selected, int left, int top, int largestScale) {
+    private void drawTicker(CellRect rect, int selected, int left, int top, int largestScale) {
         float delta = Math.min(Gdx.graphics.getDeltaTime(), MAX_FRAME_SECONDS);
         tickerSeconds += delta;
         int clipRight = (rect.x() + rect.width() - 1) * cell();
@@ -245,7 +246,7 @@ final class PaintPreview {
         }
     }
 
-    private void drawTabs(ReviewLayout.Rect rect) {
+    private void drawTabs(CellRect rect) {
         int top = PreviewTabs.labelRow(rect) * cell();
         for (PreviewTabs.Tab tab : PreviewTabs.Tab.values()) {
             painter.text(PreviewTabs.label(rect, tab), PreviewTabs.labelColumn(rect, tab) * cell(), top,

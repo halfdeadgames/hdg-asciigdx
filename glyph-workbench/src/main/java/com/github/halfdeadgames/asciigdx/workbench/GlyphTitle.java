@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 
@@ -13,10 +14,10 @@ final class GlyphTitle {
     private int shownCodePoint = -1;
     private float shownSeconds;
 
-    void draw(Painter painter, ReviewLayout.Rect panel, int codePoint, float deltaSeconds) {
+    void draw(Painter painter, CellRect panel, int codePoint, float deltaSeconds) {
         advance(codePoint, deltaSeconds);
         String title = text(codePoint, panel.width()).toString();
-        Panel.draw(painter, panel.toCellRect(), title, true);
+        Panel.draw(painter, panel, title, true);
     }
 
     void advance(int codePoint, float deltaSeconds) {

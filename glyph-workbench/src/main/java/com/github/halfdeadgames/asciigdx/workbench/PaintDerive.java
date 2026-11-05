@@ -77,7 +77,7 @@ final class PaintDerive {
         return flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
     }
 
-    void drawDialog(Painter painter, int columns, int rows, ReviewLayout.Rect area, int codePoint) {
+    void drawDialog(Painter painter, int columns, int rows, CellRect area, int codePoint) {
         if (flow.mode() == DeriveFlow.Mode.MENU) {
             deriveMenu.draw(painter, columns, rows, area);
         } else if (flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE) {
@@ -110,7 +110,7 @@ final class PaintDerive {
         return new PaintGridView.Ghost(editor.glyph(host.codePoints()[flow.sourceSlot()]).pixels(), flow.pendingShift());
     }
 
-    private void drawReplaceDialog(Painter painter, int columns, int rows, ReviewLayout.Rect area, int codePoint) {
+    private void drawReplaceDialog(Painter painter, int columns, int rows, CellRect area, int codePoint) {
         replaceLine.setLength(0);
         replaceLine.append("U+");
         GlyphLabel.appendHex(replaceLine, codePoint);
@@ -118,7 +118,7 @@ final class PaintDerive {
             DialogContent.of("REPLACE DRAWING",
                 List.of(replaceLine + " holds a drawing.", "Deriving replaces it.", "Undo restores it."),
                 REPLACE_BUTTONS),
-            area.toCellRect());
+            area);
     }
 
     void openDerive() {

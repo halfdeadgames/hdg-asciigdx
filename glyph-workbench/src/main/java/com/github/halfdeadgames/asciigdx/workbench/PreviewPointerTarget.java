@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
@@ -7,10 +8,10 @@ import java.util.function.Supplier;
 final class PreviewPointerTarget implements PointerTarget {
 
     private final PaintPreview preview;
-    private final Supplier<ReviewLayout.Rect> previewArea;
+    private final Supplier<CellRect> previewArea;
     private final IntSupplier cell;
 
-    PreviewPointerTarget(PaintPreview preview, Supplier<ReviewLayout.Rect> previewArea, IntSupplier cell) {
+    PreviewPointerTarget(PaintPreview preview, Supplier<CellRect> previewArea, IntSupplier cell) {
         this.preview = preview;
         this.previewArea = previewArea;
         this.cell = cell;

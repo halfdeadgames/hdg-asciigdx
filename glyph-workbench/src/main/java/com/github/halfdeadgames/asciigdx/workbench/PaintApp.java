@@ -575,7 +575,7 @@ public final class PaintApp implements WorkbenchScreen {
         pointer.unprojectInput();
         int column = Math.floorDiv(pointer.unprojectedPixelX(), cell());
         int row = Math.floorDiv(pointer.unprojectedPixelY(), cell());
-        ReviewLayout.Rect area = rects.belowPreview();
+        CellRect area = rects.belowPreview();
         return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
     }
 
@@ -1002,7 +1002,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
     private void fitGrid() {
-        ReviewLayout.Rect panel = rects.grid();
+        CellRect panel = rects.grid();
         int left = (panel.x() + 2) * cell();
         int top = (panel.y() + 1 + PaintGridView.LABEL_ROWS_ABOVE) * cell();
         grid.fitTo(left, top, (panel.width() - 3) * cell(), (panel.bottom() - 1) * cell() - top - cell() / 2);
@@ -1392,15 +1392,15 @@ public final class PaintApp implements WorkbenchScreen {
             new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
-        ReviewLayout.Rect panel = rects.grid();
+        CellRect panel = rects.grid();
         glyphTitle.draw(painter, panel, codePoint, Gdx.graphics.getDeltaTime());
         ghostSeconds += Gdx.graphics.getDeltaTime();
         grid.setHighlight(guideListPanel.highlightedGuide());
         grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(), ghostSeconds);
         preview.draw(rects.preview(), codePoint, derivePick.shown());
         drawBelowPreviewPanels(codePoint);
-        ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.toCellRect(),
+        CellRect strip = rects.messages();
+        messages.draw(painter, strip,
             Gdx.graphics.getDeltaTime());
         if (layoutBarShown) {
             StatusBar.draw(painter, columns, rows - 1,

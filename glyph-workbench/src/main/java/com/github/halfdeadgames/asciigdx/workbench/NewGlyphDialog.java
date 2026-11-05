@@ -79,12 +79,12 @@ final class NewGlyphDialog {
         repeatBackspaces(delta);
     }
 
-    void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
+    void draw(Painter painter, int columns, int rows, CellRect area) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
             new DialogContent(TITLE, prompt.lines(slotExists),
                 prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,
                 0, NewGlyphPrompt.LINE_CELLS),
-            area.toCellRect());
+            area);
     }
 
     private void addIfValid() {

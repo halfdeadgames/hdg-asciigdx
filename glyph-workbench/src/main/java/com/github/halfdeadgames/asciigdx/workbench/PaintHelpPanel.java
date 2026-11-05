@@ -18,7 +18,7 @@ final class PaintHelpPanel {
     private int shownChars;
     private int shownVisible;
     private List<HelpWrap.Line> lines = List.of();
-    private ReviewLayout.Rect area;
+    private CellRect area;
     private boolean shown;
 
     PaintHelpPanel(Painter painter, ScrollState scroll) {
@@ -27,8 +27,8 @@ final class PaintHelpPanel {
     }
 
     // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
-    void draw(ReviewLayout.Rect drawArea, PaintHelp.State state, int cell) {
-        Panel.draw(painter, drawArea.toCellRect(),
+    void draw(CellRect drawArea, PaintHelp.State state, int cell) {
+        Panel.draw(painter, drawArea,
             "HELP", false);
         int chars = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
         int visible = Math.max(1, drawArea.height() - 2);
@@ -76,7 +76,7 @@ final class PaintHelpPanel {
     boolean contains(int pixelX, int pixelY, int cell) {
         return shown && area != null
             && pixelX >= area.x() * cell && pixelX < (area.x() + area.width()) * cell
-            && pixelY >= area.y() * cell && pixelY < (area.y() + area.height()) * cell;
+            && pixelY >= area.y() * cell && pixelY < area.bottom() * cell;
     }
 
     boolean isShown() {
