@@ -40,6 +40,10 @@ final class NewGlyphInput {
         if (!hasPrefix && stripped.codePointCount(0, stripped.length()) == 1) {
             return check(stripped.codePointAt(0));
         }
+        return parseHex(stripped, hasPrefix);
+    }
+
+    private static Result parseHex(String stripped, boolean hasPrefix) {
         var digits = hasPrefix ? stripped.substring(2) : stripped;
         if (digits.isEmpty()) {
             return failure("Add hex digits after U+");

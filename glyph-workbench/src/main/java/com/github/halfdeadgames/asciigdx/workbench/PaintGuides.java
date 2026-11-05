@@ -48,18 +48,18 @@ final class PaintGuides {
     record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
     }
 
-    private record Scoped<T>(T guide, Set<String> groups) {
+    record Scoped<T>(T guide, Set<String> groups) {
 
         boolean appliesTo(String groupName) {
             return groups.contains(groupName);
         }
     }
 
-    private static final List<String> ALL_GROUPS = List.of(
+    static final List<String> ALL_GROUPS = List.of(
         FontRules.UPPERCASE, FontRules.LOWERCASE, FontRules.DIGITS, FontRules.PUNCTUATION);
 
     /** The optional {@code warn} settings; an empty value means the file leaves that check off. */
-    private static final class WarnSettings {
+    static final class WarnSettings {
         OptionalInt accentRows = OptionalInt.empty();
         OptionalInt descenderFirstRow = OptionalInt.empty();
     }
@@ -72,8 +72,8 @@ final class PaintGuides {
     private final OptionalInt accentRows;
     private final OptionalInt descenderFirstRow;
 
-    private PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
-                        WarnSettings warnSettings) {
+    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
+                WarnSettings warnSettings) {
         this(rows, columns, bars, warnSettings.accentRows, warnSettings.descenderFirstRow);
     }
 
@@ -269,105 +269,7 @@ final class PaintGuides {
 
     /** Reads the file text. Throws {@link IllegalArgumentException} naming the line on a bad line. */
     static PaintGuides parse(String text) {
-        List<Scoped<Guide>> rows = new ArrayList<>();
-        List<Scoped<WidthGuide>> columns = new ArrayList<>();
-        List<Scoped<BarGuide>> bars = new ArrayList<>();
-        WarnSettings warnSettings = new WarnSettings();
-        String[] lines = text.split("\r?\n", -1);
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].strip();
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
-            }
-            try {
-                parseLine(line.split("\\s+"), rows, columns, bars, warnSettings);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Line " + (i + 1) + ": " + e.getMessage(), e);
-            }
-        }
-        return new PaintGuides(rows, columns, bars, warnSettings);
-    }
-
-    private static void parseWarn(String[] words, WarnSettings settings) {
-        expectWords(words, 3, "warn <accent-rows|descender-from> <number>");
-        switch (words[1]) {
-            case "accent-rows" -> {
-                rejectRepeat(settings.accentRows, words[1]);
-                settings.accentRows = OptionalInt.of(number(words[2], 0));
-            }
-            case "descender-from" -> {
-                rejectRepeat(settings.descenderFirstRow, words[1]);
-                settings.descenderFirstRow = OptionalInt.of(number(words[2], 0));
-            }
-            default -> throw new IllegalArgumentException(
-                "expected 'accent-rows' or 'descender-from' but found '" + words[1] + "'");
-        }
-    }
-
-    private static void rejectRepeat(OptionalInt setting, String name) {
-        if (setting.isPresent()) {
-            throw new IllegalArgumentException("'warn " + name + "' is set twice");
-        }
-    }
-
-    private static void parseLine(String[] words, List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns,
-                                  List<Scoped<BarGuide>> bars, WarnSettings warnSettings) {
-        switch (words[0]) {
-            case "warn" -> parseWarn(words, warnSettings);
-            case "row" -> {
-                expectWords(words, 4, "row <label> <boundaryRow> <groups>");
-                rows.add(new Scoped<>(new Guide(words[1], number(words[2], 0)), groups(words[3])));
-            }
-            case "column" -> {
-                expectWords(words, 4, "column <label> <boundaryColumn> <groups>");
-                columns.add(new Scoped<>(new WidthGuide(words[1], number(words[2], 0), 0), groups(words[3])));
-            }
-            case "bar" -> {
-                expectWords(words, 5, "bar <label> <firstRow> <rowCount> <groups>");
-                bars.add(new Scoped<>(new BarGuide(words[1], number(words[2], 0), number(words[3], 1)),
-                    groups(words[4])));
-            }
-            default -> throw new IllegalArgumentException(
-                "expected 'row', 'column', 'bar', or 'warn' but found '" + words[0] + "'");
-        }
-    }
-
-    private static void expectWords(String[] words, int count, String usage) {
-        if (words.length != count) {
-            throw new IllegalArgumentException("expected '" + usage + "'");
-        }
-    }
-
-    private static int number(String word, int minimum) {
-        try {
-            int value = Integer.parseInt(word);
-            if (value < minimum) {
-                throw new IllegalArgumentException("'" + word + "' must be at least " + minimum);
-            }
-            return value;
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("bad number '" + word + "'", e);
-        }
-    }
-
-    private static Set<String> groups(String word) {
-        if (word.equalsIgnoreCase("all")) {
-            return Set.copyOf(ALL_GROUPS);
-        }
-        Set<String> found = new LinkedHashSet<>();
-        for (String name : word.split(",", -1)) {
-            found.add(canonicalGroup(name));
-        }
-        return found;
-    }
-
-    private static String canonicalGroup(String name) {
-        for (String group : ALL_GROUPS) {
-            if (group.equalsIgnoreCase(name)) {
-                return group;
-            }
-        }
-        throw new IllegalArgumentException("unknown group '" + name + "'");
+        return PaintGuidesText.parse(text);
     }
 
     /**
@@ -375,26 +277,7 @@ final class PaintGuides {
      * columns, and bars, each kind in its stored order. Comments and blank lines are not kept.
      */
     String toText() {
-        StringBuilder text = new StringBuilder();
-        if (accentRows.isPresent()) {
-            text.append("warn accent-rows ").append(accentRows.getAsInt()).append('\n');
-        }
-        if (descenderFirstRow.isPresent()) {
-            text.append("warn descender-from ").append(descenderFirstRow.getAsInt()).append('\n');
-        }
-        for (Scoped<Guide> row : rows) {
-            text.append("row ").append(row.guide().label()).append(' ').append(row.guide().boundaryRow())
-                .append(' ').append(groupsText(row.groups())).append('\n');
-        }
-        for (Scoped<WidthGuide> column : columns) {
-            text.append("column ").append(column.guide().label()).append(' ').append(column.guide().boundaryColumn())
-                .append(' ').append(groupsText(column.groups())).append('\n');
-        }
-        for (Scoped<BarGuide> bar : bars) {
-            text.append("bar ").append(bar.guide().label()).append(' ').append(bar.guide().firstRow())
-                .append(' ').append(bar.guide().rowCount()).append(' ').append(groupsText(bar.groups())).append('\n');
-        }
-        return text.toString();
+        return PaintGuidesText.toText(this);
     }
 
     private static String groupsText(Set<String> groups) {

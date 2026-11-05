@@ -56,14 +56,18 @@ public final class FontRules {
                 if (line.isBlank()) {
                     mottoDone = motto.length() > 0;
                 } else {
-                    if (motto.length() > 0) {
-                        motto.append(' ');
-                    }
-                    motto.append(line.strip());
+                    appendMottoLine(motto, line);
                 }
             }
         }
         return new FontRules(title, motto.toString(), groups);
+    }
+
+    private static void appendMottoLine(StringBuilder motto, String line) {
+        if (motto.length() > 0) {
+            motto.append(' ');
+        }
+        motto.append(line.strip());
     }
 
     private static void addBullet(List<Bullet> bullets, String line) {
