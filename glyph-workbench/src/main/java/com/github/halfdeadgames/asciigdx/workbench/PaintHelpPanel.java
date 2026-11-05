@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -25,7 +26,8 @@ final class PaintHelpPanel {
 
     // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
     void draw(ReviewLayout.Rect drawArea, PaintHelp.State state, int cell) {
-        Panel.draw(painter, drawArea.x(), drawArea.y(), drawArea.width(), drawArea.height(), "HELP", false);
+        Panel.draw(painter, new CellRect(drawArea.x(), drawArea.y(), drawArea.width(), drawArea.height()),
+            "HELP", false);
         int chars = Math.max(1, drawArea.width() - 2 * PaintApp.TEXT_PADDING - 2);
         int visible = Math.max(1, drawArea.height() - 2);
         if (!state.equals(shownState)) {

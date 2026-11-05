@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
@@ -201,7 +202,7 @@ final class MenuScreen implements WorkbenchScreen {
         TopBar.draw(painter, columns, 0, crumbs, "", UiPalette.TEXT);
 
         int panelHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
-        Panel.draw(painter, LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight, listTitle, true);
+        Panel.draw(painter, new CellRect(LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight), listTitle, true);
         SelectList.draw(painter, LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, rows(), selectedRow());
 
         Detail detail = detailFor.apply(model.selectedItem());
@@ -217,7 +218,7 @@ final class MenuScreen implements WorkbenchScreen {
     }
 
     private void drawDetail(Detail detail, int width, int height) {
-        Panel.draw(painter, DETAIL_X, PANEL_TOP, width, height, detail.title(), false);
+        Panel.draw(painter, new CellRect(DETAIL_X, PANEL_TOP, width, height), detail.title(), false);
         int y = LIST_TOP;
         int bottom = PANEL_TOP + height - 1;
         if (!detail.motto().isEmpty()) {

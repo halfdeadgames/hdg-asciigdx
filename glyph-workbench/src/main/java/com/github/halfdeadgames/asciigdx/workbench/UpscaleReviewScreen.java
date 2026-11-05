@@ -19,6 +19,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
@@ -595,7 +596,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         drawCandidates(codePoint);
         drawNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
+        messages.draw(painter, new CellRect(strip.x(), strip.y(), strip.width(), strip.height()),
+            Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns(), rows() - 1, noteEditor.isActive() ? NOTE_KEYS : BROWSE_KEYS);
         if (replaceColumn >= 0) {
             Dialog.draw(painter, columns(), rows(), "REPLACE GLYPH",
@@ -628,7 +630,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         }
         titleSeconds += Gdx.graphics.getDeltaTime();
         line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
-        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), line.toString(), true);
+        Panel.draw(painter, new CellRect(area.x(), area.y(), area.width(), area.height()), line.toString(), true);
         columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
         columnPanel.setViewed(-1, CURSOR_COLOR);
         columnPanel.setMaxOuterHeight((area.height() - 2) * CELL);
@@ -645,7 +647,8 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
             notePanel.drawReadOnly(rects.note(), answer.pick(), answer.note());
         } else {
             notePanel.markHidden();
-            Panel.draw(painter, rects.note().x(), rects.note().y(), rects.note().width(), rects.note().height(),
+            Panel.draw(painter,
+                new CellRect(rects.note().x(), rects.note().y(), rects.note().width(), rects.note().height()),
                 "REVIEW NOTE   [ ] SCROLLS", false);
         }
     }

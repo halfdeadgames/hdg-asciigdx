@@ -52,7 +52,7 @@ public final class MenuBarView {
         int x = bar.dropDownColumn(menu, columns);
         int width = bar.dropDownWidth(menu);
         int top = barRow + 1;
-        Panel.draw(painter, x, top, width, items.size() + 2, "", false);
+        Panel.draw(painter, new CellRect(x, top, width, items.size() + 2), "", false);
         painter.fill(UiPalette.MENU, (x + 1) * cell, (top + 1) * cell, (width - 2) * cell, items.size() * cell);
         for (int i = 0; i < items.size(); i++) {
             MenuBar.Item<A> item = items.get(i);

@@ -124,7 +124,7 @@ public final class Dialog {
         for (int i = 1; i <= layout.width(); i++) {
             painter.text("▓", (layout.x() + i) * cell, (layout.y() + layout.height()) * cell, UiPalette.SHADOW);
         }
-        Panel.draw(painter, layout.x(), layout.y(), layout.width(), layout.height(), title, true);
+        Panel.draw(painter, new CellRect(layout.x(), layout.y(), layout.width(), layout.height()), title, true);
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             boolean input = i == inputLine;

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
@@ -154,7 +155,7 @@ final class PaintGuideListPanel {
 
     // One row per text line; only the selected row bounces when it is too long, the others are cut.
     void draw(ReviewLayout.Rect area, int cell) {
-        Panel.draw(painter, area.x(), area.y(), area.width(), area.height(), title, true);
+        Panel.draw(painter, new CellRect(area.x(), area.y(), area.width(), area.height()), title, true);
         seconds += Gdx.graphics.getDeltaTime();
         int visible = area.height() - 2;
         int chars = Math.max(1, area.width() - 2 - 2 * PaintApp.TEXT_PADDING);

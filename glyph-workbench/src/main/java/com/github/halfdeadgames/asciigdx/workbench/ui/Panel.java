@@ -49,7 +49,11 @@ public final class Panel {
     }
 
     /** Draws at a cell position; width and height are in cells, at least 2. */
-    public static void draw(Painter painter, int x, int y, int width, int height, String title, boolean focus) {
+    public static void draw(Painter painter, CellRect area, String title, boolean focus) {
+        int x = area.x();
+        int y = area.y();
+        int width = area.width();
+        int height = area.height();
         int cell = painter.cell();
         painter.fill(UiPalette.PANEL, x * cell, y * cell, width * cell, height * cell);
         var color = focus ? UiPalette.FOCUS : UiPalette.FRAME;

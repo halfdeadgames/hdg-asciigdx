@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 
@@ -246,7 +247,7 @@ final class PaintSheetView {
 
     /** @param sourceSlot slot of the derive source cursor, or -1 for none */
     void draw(int cursorSlot, int sourceSlot) {
-        Panel.draw(painter, frameLeft / cell(), topRows, frameCellsWide, frameCellsHigh,
+        Panel.draw(painter, new CellRect(frameLeft / cell(), topRows, frameCellsWide, frameCellsHigh),
             PaintColumns.sheetTitle(frameCellsWide), false);
         drawBar();
         if (columnBarShown()) {

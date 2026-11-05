@@ -237,8 +237,12 @@ public final class MessageStrip {
      * Draws the panel; messages wider than the text area scroll back and forth, each on its own timer. When messages
      * are cut off, blinking arrows mark the hidden side and two buttons at the right edge scroll the list.
      */
-    public void draw(Painter painter, int x, int y, int width, int height, float deltaSeconds) {
-        Panel.draw(painter, x, y, width, height, "MESSAGES", false);
+    public void draw(Painter painter, CellRect area, float deltaSeconds) {
+        int x = area.x();
+        int y = area.y();
+        int width = area.width();
+        int height = area.height();
+        Panel.draw(painter, area, "MESSAGES", false);
         advance(deltaSeconds);
         place(x, y, width, height);
         List<Message> shown = visible(height - 2);

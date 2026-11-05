@@ -91,7 +91,11 @@ public final class ScrollText {
      * Draws into a cell rectangle: text in the first {@code widthCells - 1} columns and the scrollbar
      * in the last. Wrap with {@code widthCells - 1} when calling {@link #setText}.
      */
-    public void draw(Painter painter, int x, int y, int widthCells, int heightCells, Color color) {
+    public void draw(Painter painter, CellRect area, Color color) {
+        int x = area.x();
+        int y = area.y();
+        int widthCells = area.width();
+        int heightCells = area.height();
         visible = Math.max(1, heightCells);
         offset = Math.max(0, Math.min(maxOffset(), offset));
         int end = Math.min(lines.size(), offset + visible);

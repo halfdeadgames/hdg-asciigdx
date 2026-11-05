@@ -16,6 +16,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
@@ -1395,7 +1396,8 @@ public final class PaintApp implements WorkbenchScreen {
         preview.draw(rects.preview(), codePoint, derivePick.shown());
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, strip.x(), strip.y(), strip.width(), strip.height(), Gdx.graphics.getDeltaTime());
+        messages.draw(painter, new CellRect(strip.x(), strip.y(), strip.width(), strip.height()),
+            Gdx.graphics.getDeltaTime());
         if (layoutBarShown) {
             StatusBar.draw(painter, columns, rows - 1,
                 statusKeys(choosingSource));

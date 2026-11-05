@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 
 /** The grid panel title: the code point followed by the glyph name, which scrolls when it does not fit. */
@@ -14,7 +15,7 @@ final class GlyphTitle {
     void draw(Painter painter, ReviewLayout.Rect panel, int codePoint, float deltaSeconds) {
         advance(codePoint, deltaSeconds);
         String title = text(codePoint, panel.width()).toString();
-        Panel.draw(painter, panel.x(), panel.y(), panel.width(), panel.height(), title, true);
+        Panel.draw(painter, new CellRect(panel.x(), panel.y(), panel.width(), panel.height()), title, true);
     }
 
     void advance(int codePoint, float deltaSeconds) {

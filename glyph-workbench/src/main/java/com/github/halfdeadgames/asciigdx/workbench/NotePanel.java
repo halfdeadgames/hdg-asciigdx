@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -59,16 +60,18 @@ final class NotePanel {
 
     void drawReadOnly(ReviewLayout.Rect rect, String pick, String note) {
         remember(rect);
-        Panel.draw(painter, rect.x(), rect.y(), rect.width(), rect.height(), "REVIEW NOTE   [ ] SCROLLS", false);
+        Panel.draw(painter, new CellRect(rect.x(), rect.y(), rect.width(), rect.height()),
+            "REVIEW NOTE   [ ] SCROLLS", false);
         painter.text(pick == null ? "" : "PICK: " + pick.toUpperCase(Locale.ROOT),
             (rect.x() + 2) * painter.cell(), (rect.y() + 1) * painter.cell(), UiPalette.ACCENT);
         display.setText(note, textChars(rect.width()));
-        display.draw(painter, rect.x() + 2, rect.y() + 2, rect.width() - 4, rect.height() - 3, UiPalette.TEXT);
+        display.draw(painter, new CellRect(rect.x() + 2, rect.y() + 2, rect.width() - 4, rect.height() - 3),
+            UiPalette.TEXT);
     }
 
     void drawEditor(ReviewLayout.Rect rect, NoteEditor editor) {
         remember(rect);
-        Panel.draw(painter, rect.x(), rect.y(), rect.width(), rect.height(), "NOTE", true);
+        Panel.draw(painter, new CellRect(rect.x(), rect.y(), rect.width(), rect.height()), "NOTE", true);
         int chars = textChars(rect.width());
         int rows = editorRows(rect.height());
         int cell = painter.cell();
