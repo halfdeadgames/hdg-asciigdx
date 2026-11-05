@@ -176,20 +176,34 @@ public final class PaintApp implements WorkbenchScreen {
             throw new GdxRuntimeException("workbench.fontDir is not set; start with -Pmode=paint through Gradle");
         }
         FileHandle directory = Gdx.files.absolute(fontDir);
+        loadFont(directory);
+        pickStartCursor();
+        createPainters();
+        setUpScale();
+        buildViews(directory);
+        installInputProcessor();
+        openCaptureHooks();
+    }
+
+    private void loadFont(FileHandle directory) {
         dataFile = directory.child(fontSize + ".txt");
         folderName = directory.name().toUpperCase(java.util.Locale.ROOT);
         editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
         derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new DeriveHost());
+    }
 
+    private void pickStartCursor() {
         readSlots();
         cursor = editor.startSlot();
         int preselected = DevCapture.slotToSelect(codePoints, unselectable);
         if (preselected >= 0) {
             cursor = preselected;
         }
+    }
 
+    private void createPainters() {
         Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixel.setColor(Color.WHITE);
         pixel.fill();
@@ -199,12 +213,18 @@ public final class PaintApp implements WorkbenchScreen {
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
         rulesPainter = new Painter(batch, whitePixel, source, viewport);
+    }
+
+    private void setUpScale() {
         uiScale = new PaintUiScale(editor.cellWidth(), editor.cellHeight(), launchOverride());
         syncScaleMark();
         uiScale.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         showScaleMessage();
         painter.setScale(uiScale.scale());
         rulesPainter.setScale(uiScale.scale());
+    }
+
+    private void buildViews(FileHandle directory) {
         sheet = new PaintSheetView(painter, editor, 0, PaintLayout.TOP_ROWS);
         applyMinimumWindowSize();
         loadGuides(directory);
@@ -223,54 +243,62 @@ public final class PaintApp implements WorkbenchScreen {
         pointerInput = new PaintPointer(viewport, sheet, grid, preview, messages, flow, derive, stroke, editor,
             scrollRouting, new PointerHost());
         loadReviewNotes(directory);
-        Gdx.input.setInputProcessor(new InputAdapter() {
-            @Override
-            public boolean scrolled(float amountX, float amountY) {
-                if (menuPointer.isCapturing(menuBar)) {
-                    return true;
-                }
-                boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-                    || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-                wheelTicks.add(amountX, amountY, shift);
+    }
+
+    private void installInputProcessor() {
+        Gdx.input.setInputProcessor(new PaintInputEvents());
+    }
+
+    private final class PaintInputEvents extends InputAdapter {
+        @Override
+        public boolean scrolled(float amountX, float amountY) {
+            if (menuPointer.isCapturing(menuBar)) {
                 return true;
             }
+            boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+            wheelTicks.add(amountX, amountY, shift);
+            return true;
+        }
 
-            @Override
-            public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
-                    menuInput.noteAltPressed();
-                }
-                return false;
+        @Override
+        public boolean keyDown(int keycode) {
+            if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
+                menuInput.noteAltPressed();
             }
+            return false;
+        }
 
-            @Override
-            public boolean keyUp(int keycode) {
-                if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
-                    menuInput.noteAltReleased();
-                }
-                return false;
+        @Override
+        public boolean keyUp(int keycode) {
+            if (keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT) {
+                menuInput.noteAltReleased();
             }
+            return false;
+        }
 
-            @Override
-            public boolean keyTyped(char character) {
-                if (menuPointer.isCapturing(menuBar) || menuInput.altSeenDown() || altDown()) {
-                    return true;
-                }
-                if (newGlyph.isOpen()) {
-                    newGlyph.type(character);
-                    return true;
-                }
-                if (newFont.isOpen()) {
-                    newFont.type(character);
-                    return true;
-                }
-                if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
-                    return false;
-                }
-                guideListPanel.typeChar(character);
+        @Override
+        public boolean keyTyped(char character) {
+            if (menuPointer.isCapturing(menuBar) || menuInput.altSeenDown() || altDown()) {
                 return true;
             }
-        });
+            if (newGlyph.isOpen()) {
+                newGlyph.type(character);
+                return true;
+            }
+            if (newFont.isOpen()) {
+                newFont.type(character);
+                return true;
+            }
+            if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
+                return false;
+            }
+            guideListPanel.typeChar(character);
+            return true;
+        }
+    }
+
+    private void openCaptureHooks() {
         openDeriveForCapture();
         guideListPanel.openForCapture(flow.mode() == DeriveFlow.Mode.IDLE);
         openMenuForCapture();
@@ -725,17 +753,21 @@ public final class PaintApp implements WorkbenchScreen {
             case BIGGER_UI -> stepScale(1);
             case SMALLER_UI -> stepScale(-1);
             case AUTO_UI -> useAutoScale();
-            case RULES -> {
-                rules.open();
-                wheelTicks.clearVertical();
-                stroke.end();
-            }
-            case CONTROLS -> {
-                controls.open();
-                wheelTicks.clear();
-                stroke.end();
-            }
+            case RULES -> openRules();
+            case CONTROLS -> openControls();
         }
+    }
+
+    private void openRules() {
+        rules.open();
+        wheelTicks.clearVertical();
+        stroke.end();
+    }
+
+    private void openControls() {
+        controls.open();
+        wheelTicks.clear();
+        stroke.end();
     }
 
     // Drops queued wheel ticks and keeps the repeaters tracking the real keys without producing moves,
