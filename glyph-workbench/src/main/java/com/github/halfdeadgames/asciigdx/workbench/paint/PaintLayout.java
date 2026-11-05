@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewFit;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewPanelSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
@@ -19,26 +20,6 @@ public final class PaintLayout {
     private static final int MIN_HELP_HEIGHT = 4;
 
     private PaintLayout() {
-    }
-
-    private static int previewGap(int cellPixels) {
-        return cellPixels / 2;
-    }
-
-    /** Preview panel height in cells: borders, the tab row, a gap, a label row, and the tallest kept scale block. */
-    static int previewHeight(int glyphHeight, int largestScale, int cellPixels) {
-        int content = cellPixels + previewGap(cellPixels) + cellPixels + largestScale * glyphHeight;
-        return 2 + (content + cellPixels - 1) / cellPixels;
-    }
-
-    /** Pixels between the preview panel's borders, as far as the glyph blocks may extend. */
-    public static int previewInnerWidth(int panelWidthCells, int cellPixels) {
-        return (panelWidthCells - 3) * cellPixels;
-    }
-
-    /** Pixels left for the tallest glyph block in a preview panel of the given height in cells. */
-    public static int previewBlockBudget(int panelHeightCells, int cellPixels) {
-        return (panelHeightCells - 2) * cellPixels - cellPixels - previewGap(cellPixels) - cellPixels;
     }
 
     /** The area under the preview: the help panel alone, or the help over the review note when there is one. */
@@ -63,7 +44,7 @@ public final class PaintLayout {
     static int minimumHeight(int glyphHeight, int cellPixels) {
         int editorRows = 2 + PaintGridLabels.LABEL_ROWS_ABOVE
             + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + cellPixels / 2 + cellPixels - 1) / cellPixels;
-        int rightRows = previewHeight(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_NOTE_HEIGHT;
+        int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_NOTE_HEIGHT;
         return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * cellPixels;
     }
 
@@ -89,10 +70,10 @@ public final class PaintLayout {
         int messagesY = rows - 1 - MESSAGES_HEIGHT;
         int columnHeight = messagesY - TOP_ROWS;
         int maxPreviewHeight = Math.min(columnHeight * MAX_PREVIEW_SHARE_PERCENT / 100, columnHeight - MIN_NOTE_HEIGHT);
-        int scaleCount = PreviewFit.scaleCount(previewInnerWidth(rightWidth, cellPixels),
-            previewBlockBudget(maxPreviewHeight, cellPixels),
-            glyph, previewGap(cellPixels), 2 * cellPixels);
-        int previewHeight = previewHeight(glyph.height(), PreviewFit.largestScale(scaleCount), cellPixels);
+        int scaleCount = PreviewFit.scaleCount(PreviewPanelSize.innerWidth(rightWidth, cellPixels),
+            PreviewPanelSize.blockBudget(maxPreviewHeight, cellPixels),
+            glyph, PreviewPanelSize.gap(cellPixels), 2 * cellPixels);
+        int previewHeight = PreviewPanelSize.height(glyph.height(), PreviewFit.largestScale(scaleCount), cellPixels);
         int noteY = TOP_ROWS + previewHeight;
         return new Result(
             new CellRect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewFit;
+import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewPanelSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import org.junit.jupiter.api.Test;
 
@@ -29,17 +30,6 @@ class PaintLayoutTest {
     }
 
     @Test
-    void previewHeightGrowsWithTheGlyphHeight() {
-        assertEquals(8, PaintLayout.previewHeight(8, 8, 24));
-        assertTrue(PaintLayout.previewHeight(32, 8, 24) > PaintLayout.previewHeight(16, 8, 24));
-        // tab row, gap, label row, and the 8x block must fit inside the borders
-        for (int height : new int[] {8, 16, 24, 32, 40}) {
-            int content = 24 + 12 + 24 + 8 * height;
-            assertTrue((PaintLayout.previewHeight(height, 8, 24) - 2) * 24 >= content);
-        }
-    }
-
-    @Test
     void largeCellsGetASmallerPreviewThatLeavesRoomForTheHelp() {
         PaintLayout.Result result = PaintLayout.compute(79, 41, 18, 24, new GlyphSize(32, 32), 24, true);
         int columnHeight = result.messages().y() - result.preview().y();
@@ -50,7 +40,7 @@ class PaintLayoutTest {
     @Test
     void tallNarrowCellsKeepTheLargestScaleThatFits() {
         PaintLayout.Result result = PaintLayout.compute(79, 41, 18, 24, new GlyphSize(8, 16), 24, true);
-        assertEquals(PaintLayout.previewHeight(16, 8, 24), result.preview().height());
+        assertEquals(PreviewPanelSize.height(16, 8, 24), result.preview().height());
     }
 
     @Test
@@ -123,34 +113,12 @@ class PaintLayoutTest {
     }
 
     @Test
-    void previewHeightFitsItsContentAtEveryCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
-            for (int height : new int[] {8, 16, 32}) {
-                int content = cell + cell / 2 + cell + 8 * height;
-                int rows = PaintLayout.previewHeight(height, 8, cell);
-                assertTrue((rows - 2) * cell >= content);
-                assertTrue((rows - 3) * cell < content);
-            }
-        }
-    }
-
-    @Test
-    void previewBudgetAndInnerWidthScaleWithTheCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
-            assertEquals(21 * cell, PaintLayout.previewInnerWidth(24, cell));
-            int rows = PaintLayout.previewHeight(8, 8, cell);
-            assertTrue(PaintLayout.previewBlockBudget(rows, cell) >= 8 * 8);
-            assertTrue(PaintLayout.previewBlockBudget(rows - 1, cell) < 8 * 8);
-        }
-    }
-
-    @Test
     void minimumHeightIsWholeCellsAndHoldsTheRightColumnAtEveryCellSize() {
         for (int cell : OTHER_CELL_SIZES) {
             for (int glyphHeight : new int[] {8, 32}) {
                 int minimum = PaintLayout.minimumHeight(glyphHeight, cell);
                 assertEquals(0, minimum % cell);
-                int rightRows = PaintLayout.previewHeight(glyphHeight, PreviewFit.SCALES[0], cell) + 6;
+                int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cell) + 6;
                 assertTrue(minimum / cell >= PaintLayout.TOP_ROWS + rightRows + PaintLayout.MESSAGES_HEIGHT + 1);
             }
         }

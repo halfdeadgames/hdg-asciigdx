@@ -6,7 +6,6 @@ import com.badlogic.gdx.utils.IntMap;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
-import com.github.halfdeadgames.asciigdx.workbench.paint.PaintLayout;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -54,7 +53,7 @@ public final class PaintPreview {
     }
 
     private int sectionGap() {
-        return painter.scale().half();
+        return PreviewPanelSize.gap(cell());
     }
 
     private int labelWidth() {
@@ -93,9 +92,9 @@ public final class PaintPreview {
         int left = (rect.x() + 2) * cell();
         int rowTop = (PreviewTabs.labelRow(rect) + 1) * cell() + sectionGap();
         PixelGlyph glyph = shown != null ? shown : editor.glyph(codePoint);
-        int innerWidth = PaintLayout.previewInnerWidth(rect.width(), cell());
+        int innerWidth = PreviewPanelSize.innerWidth(rect.width(), cell());
         int scaleCount = PreviewFit.scaleCount(innerWidth,
-            PaintLayout.previewBlockBudget(rect.height(), cell()),
+            PreviewPanelSize.blockBudget(rect.height(), cell()),
             new GlyphSize(editor.cellWidth(), editor.cellHeight()), sectionGap(), labelWidth());
         int largestScale = PreviewFit.largestScale(scaleCount);
         if (activeTab == PreviewTabs.Tab.SCALES) {
