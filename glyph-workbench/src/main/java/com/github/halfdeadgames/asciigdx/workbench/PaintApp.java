@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -84,7 +83,6 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintDerivePick derivePick;
     private PaintDerive derive;
     private final ScreenViewport viewport = new ScreenViewport();
-    private final Vector2 pointer = new Vector2();
     private final StringBuilder line = new StringBuilder();
     private final DevCapture devCapture = new DevCapture();
     private final KeyRepeat repeatLeft = new KeyRepeat();
@@ -146,8 +144,7 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean confirmingQuit;
     private final WheelTicks wheelTicks = new WheelTicks();
     private PaintScrollRouting scrollRouting;
-    private int pointerX;
-    private int pointerY;
+    private PaintPointer pointerInput;
 
     private final Runnable onExit;
     private final String fontDir;
@@ -223,6 +220,8 @@ public final class PaintApp implements WorkbenchScreen {
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
+        pointerInput = new PaintPointer(viewport, sheet, grid, preview, messages, flow, derive, stroke, editor,
+            scrollRouting, new PointerHost());
         loadReviewNotes(directory);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
@@ -331,8 +330,8 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void openNewSize(List<NewSizePlan.SizeOption> options) {
         stroke.end();
-        updatePointerCell();
-        newSize.open(options, pointerX, pointerY);
+        pointerInput.updateCell();
+        newSize.open(options, pointerInput.pixelX(), pointerInput.pixelY());
     }
 
     private void handleNewSize() {
@@ -340,8 +339,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (newSize.handleKeys()) {
             return;
         }
-        updatePointerCell();
-        newSize.handlePointer(leftClicked(), pointerX, pointerY, cell(), rects.grid());
+        pointerInput.updateCell();
+        newSize.handlePointer(leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell(), rects.grid());
     }
 
     private void openNewSizeFromMenu() {
@@ -528,10 +527,9 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private boolean pointerOverNotePanel() {
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
-        int column = Math.floorDiv((int) Math.floor(pointer.x), cell());
-        int row = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), cell());
+        pointerInput.unprojectInput();
+        int column = Math.floorDiv(pointerInput.unprojectedPixelX(), cell());
+        int row = Math.floorDiv(pointerInput.unprojectedPixelY(), cell());
         ReviewLayout.Rect area = rects.note();
         return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
     }
@@ -608,12 +606,12 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void trackPointer() {
-            PaintApp.this.trackPointer();
+            pointerInput.track();
         }
 
         @Override
         public boolean menuClicked(PaintDeriveMenu menu) {
-            return menu.handleClick(rects.grid(), cell(), pointerX, pointerY, leftClicked());
+            return menu.handleClick(rects.grid(), cell(), pointerInput.pixelX(), pointerInput.pixelY(), leftClicked());
         }
     }
 
@@ -760,7 +758,7 @@ public final class PaintApp implements WorkbenchScreen {
         boolean controlsOpen = controls.isOpen();
         boolean menuOwnsInput = !controlsOpen && menuInput.handle(delta);
         if (controlsOpen) {
-            updatePointerCell();
+            pointerInput.updateCell();
             menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
         } else if (!menuOwnsInput && !newGlyph.isOpen() && !newSize.isOpen() && !newFont.isOpen()) {
             handleScaleKeys();
@@ -771,7 +769,7 @@ public final class PaintApp implements WorkbenchScreen {
         layoutPanels();
         if (controlsOpen) {
             controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
-                Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()),
+                Math.floorDiv(pointerInput.pixelX(), cell()), Math.floorDiv(pointerInput.pixelY(), cell()),
                 worldWidth() / cell(), worldHeight() / cell());
         }
         if (menuOwnsInput || controlsOpen) {
@@ -802,7 +800,8 @@ public final class PaintApp implements WorkbenchScreen {
             }
             int wheel = wheelTicks.vertical();
             wheelTicks.clear();
-            newFont.handleInput(delta, wheel, leftClicked(), pointerX, pointerY, cell(), rects.grid());
+            newFont.handleInput(delta, wheel, leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell(),
+                rects.grid());
             return;
         }
         scrollRouting.scrollSheetSideways();
@@ -856,8 +855,8 @@ public final class PaintApp implements WorkbenchScreen {
         handlePreviewTabKey();
         moveCursor(delta);
         scrollRouting.handleScrollKeys();
-        trackPointer();
-        handleMouse();
+        pointerInput.track();
+        pointerInput.handleMouse();
         String problem = editor.problem();
         if (!problem.equals(lastProblem)) {
             lastProblem = problem;
@@ -1108,17 +1107,17 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void updatePointerCell() {
-            PaintApp.this.updatePointerCell();
+            pointerInput.updateCell();
         }
 
         @Override
         public int pointerX() {
-            return pointerX;
+            return pointerInput.pixelX();
         }
 
         @Override
         public int pointerY() {
-            return pointerY;
+            return pointerInput.pixelY();
         }
 
         @Override
@@ -1182,74 +1181,55 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void unprojectInputToPointer() {
-            PaintApp.this.unprojectInputToPointer();
+            pointerInput.unprojectInput();
         }
 
         @Override
         public int unprojectedPixelX() {
-            return (int) Math.floor(pointer.x);
+            return pointerInput.unprojectedPixelX();
         }
 
         @Override
         public int unprojectedPixelY() {
-            return (int) Math.floor(viewport.getWorldHeight() - pointer.y);
+            return pointerInput.unprojectedPixelY();
         }
     }
 
-    private void unprojectInputToPointer() {
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
-    }
+    private final class PointerHost implements PaintPointer.Host {
 
-    private void updatePointerCell() {
-        unprojectInputToPointer();
-        pointerX = (int) Math.floor(pointer.x);
-        pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-    }
+        @Override
+        public int cell() {
+            return PaintApp.this.cell();
+        }
 
-    private void trackPointer() {
-        updatePointerCell();
-        scrollRouting.routeVerticalWheel(pointerX, pointerY);
-    }
+        @Override
+        public boolean leftClicked() {
+            return PaintApp.this.leftClicked();
+        }
 
-    private void handleMouse() {
-        boolean pressed = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
-        boolean clicked = leftClicked();
-        int codePoint = codePoints[cursor];
-        if (clicked) {
-            preview.click(rects.preview(), Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()));
-            sheet.clickBar(pointerX, pointerY);
-            sheet.pressColumnBar(pointerX, pointerY);
-            messages.click(Math.floorDiv(pointerX, cell()), Math.floorDiv(pointerY, cell()));
-            int slot = sheet.slotAt(pointerX, pointerY);
-            if (slot >= 0 && !unselectable[slot]) {
-                messages.nextAction();
-                if (!flow.isPicking()) {
-                    cursor = slot;
-                } else {
-                    derive.clickSource(slot);
-                }
-            } else if (!flow.isPicking()) {
-                int column = grid.columnAt(pointerX);
-                int row = grid.rowAt(pointerY);
-                if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
-                    messages.nextAction();
-                    lastProblem = "";
-                    stroke.begin(codePoint, column, row);
-                }
-            }
-        } else if (sheet.isDraggingColumnBar()) {
-            if (pressed) {
-                sheet.dragColumnBar(pointerX);
-            } else {
-                sheet.endColumnBarDrag();
-            }
-        } else if (stroke.isActive()) {
-            if (pressed) {
-                stroke.drag(grid.columnAt(pointerX), grid.rowAt(pointerY));
-            } else {
-                stroke.end();
-            }
+        @Override
+        public ReviewLayout.Rect previewArea() {
+            return rects.preview();
+        }
+
+        @Override
+        public int cursorCodePoint() {
+            return codePoints[cursor];
+        }
+
+        @Override
+        public boolean isSelectableSlot(int slot) {
+            return !unselectable[slot];
+        }
+
+        @Override
+        public void selectSlot(int slot) {
+            cursor = slot;
+        }
+
+        @Override
+        public void clearLastProblem() {
+            lastProblem = "";
         }
     }
 
