@@ -19,7 +19,8 @@ final class MenuCaptureHook {
                 inspect(menuBar, availability, cell, i, request.item());
             } else if (request.hoverOnly()) {
                 menuBar.hover(menuBar.titleColumn(i), MenuBar.NOT_IN_DROP_DOWN, 0, availability);
-            } else if (menuBar.openByAccessKey(menuBar.menu(i).accessKey(), availability)) {
+            } else if (menuBar.canOpenByAccessKey(menuBar.menu(i).accessKey(), availability)) {
+                menuBar.openByAccessKey(menuBar.menu(i).accessKey(), availability);
                 int moves = menuBar.menu(i).items().size();
                 while (request.item() >= 0 && menuBar.highlightedItem() != request.item() && moves-- > 0) {
                     menuBar.moveItem(1, availability);
@@ -36,9 +37,10 @@ final class MenuCaptureHook {
             menuBar.hover(menuBar.titleColumn(menu), MenuBar.NOT_IN_DROP_DOWN, 0, availability);
             return;
         }
-        if (!menuBar.openByAccessKey(menuBar.menu(menu).accessKey(), availability)) {
+        if (!menuBar.canOpenByAccessKey(menuBar.menu(menu).accessKey(), availability)) {
             return;
         }
+        menuBar.openByAccessKey(menuBar.menu(menu).accessKey(), availability);
         int columns = Gdx.graphics.getWidth() / cell;
         menuBar.hover(menuBar.dropDownColumn(menu, columns) + 1, item, columns, availability);
     }

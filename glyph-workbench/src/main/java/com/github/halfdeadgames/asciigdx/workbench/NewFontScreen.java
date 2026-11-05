@@ -77,7 +77,9 @@ final class NewFontScreen implements WorkbenchScreen {
                 return true;
             }
         });
-        if (!dialogs.openForCapture()) {
+        if (dialogs.isCaptureRequested()) {
+            dialogs.openForCapture();
+        } else {
             dialogs.open();
         }
     }

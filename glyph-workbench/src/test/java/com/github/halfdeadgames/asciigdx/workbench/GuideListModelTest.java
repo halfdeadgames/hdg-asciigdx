@@ -325,10 +325,11 @@ class GuideListModelTest {
         for (int warningRow = 0; warningRow < 2; warningRow++) {
             model.select(warningRow);
             assertEquals(GuideListModel.GroupToggle.NOT_A_GUIDE, model.toggleGroup(0));
-            assertFalse(model.beginRename());
+            assertFalse(model.canRename());
+            model.beginRename();
             assertFalse(model.isRenaming());
             model.typeChar('x');
-            assertFalse(model.acceptRename());
+            assertFalse(model.canAcceptRename());
         }
         assertFalse(model.isChanged());
         assertEquals("WARN ACCENT ROWS 1", model.row(0).text());
@@ -338,7 +339,8 @@ class GuideListModelTest {
     void renamingStartsFromTheCurrentLabelAndShowsACursor() {
         GuideListModel model = model(FILE);
         model.select(3);
-        assertTrue(model.beginRename());
+        assertTrue(model.canRename());
+        model.beginRename();
         assertEquals("C", model.renameText());
         assertEquals("COLUMN C_ 7 UPP,DIG", model.row(3).text());
         type(model, "ab");
@@ -356,7 +358,8 @@ class GuideListModelTest {
         model.backspace();
         model.backspace();
         type(model, "x line");
-        assertTrue(model.acceptRename());
+        assertTrue(model.canAcceptRename());
+        model.acceptRename();
         assertFalse(model.isRenaming());
         assertEquals("BAR XLINE 6+1 LOW", model.row(4).text());
         assertTrue(model.guides().toText().contains("bar XLINE 6 1 lowercase\n"));
@@ -371,10 +374,12 @@ class GuideListModelTest {
         for (int i = 0; i < 5; i++) {
             model.backspace();
         }
-        assertFalse(model.acceptRename());
+        assertFalse(model.canAcceptRename());
+        model.acceptRename();
         assertTrue(model.isRenaming());
         type(model, "q");
-        assertTrue(model.acceptRename());
+        assertTrue(model.canAcceptRename());
+        model.acceptRename();
         assertEquals("ROW Q 1 ALL", model.row(2).text());
     }
 
@@ -397,7 +402,7 @@ class GuideListModelTest {
         model.select(3);
         model.beginRename();
         assertEquals(GuideListModel.GroupToggle.NOT_A_GUIDE, model.toggleGroup(0));
-        assertFalse(model.beginRename());
+        assertFalse(model.canRename());
         assertEquals("uppercase,digits", model.selectedGuide().groups());
     }
 

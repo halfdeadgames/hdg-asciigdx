@@ -66,9 +66,22 @@ class DeriveFlowTest {
         DeriveFlow flow = new DeriveFlow();
         flow.openMenu(3);
         flow.chooseOperation();
-        assertFalse(flow.clickSource(9));
+        assertFalse(flow.isConfirmingClick(9));
+        flow.clickSource(9);
         assertEquals(9, flow.sourceSlot());
-        assertTrue(flow.clickSource(9));
+        assertTrue(flow.isConfirmingClick(9));
+        flow.clickSource(9);
+        assertEquals(9, flow.sourceSlot());
+    }
+
+    @Test
+    void clickConfirmsNothingOutsideSourcePicking() {
+        DeriveFlow flow = new DeriveFlow();
+        assertFalse(flow.isConfirmingClick(0));
+        flow.openMenu(3);
+        assertFalse(flow.isConfirmingClick(3));
+        flow.clickSource(9);
+        assertEquals(3, flow.sourceSlot());
     }
 
     @Test
@@ -187,10 +200,12 @@ class DeriveFlowTest {
         flow.moveSource(6);
         flow.addPart();
         assertEquals(List.of(new DeriveFlow.Part(5, 0), new DeriveFlow.Part(6, 0)), flow.parts());
-        assertTrue(flow.removeLastPart());
+        assertTrue(flow.canRemovePart());
+        flow.removeLastPart();
         assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
-        assertTrue(flow.removeLastPart());
-        assertFalse(flow.removeLastPart());
+        assertTrue(flow.canRemovePart());
+        flow.removeLastPart();
+        assertFalse(flow.canRemovePart());
     }
 
     @Test
@@ -224,7 +239,7 @@ class DeriveFlowTest {
         assertEquals(0, flow.pendingShift());
         flow.addPart();
         assertTrue(flow.parts().isEmpty());
-        assertFalse(flow.removeLastPart());
+        assertFalse(flow.canRemovePart());
         assertFalse(flow.isOverlay());
     }
 

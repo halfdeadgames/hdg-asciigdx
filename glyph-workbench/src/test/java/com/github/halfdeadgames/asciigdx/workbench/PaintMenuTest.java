@@ -127,7 +127,7 @@ class PaintMenuTest {
             items += bar.menu(i).items().size();
         }
         assertEquals(Action.values().length, items);
-        assertTrue(bar.openByAccessKey('H', action -> true));
+        assertTrue(bar.canOpenByAccessKey('H', action -> true));
     }
 
     @Test

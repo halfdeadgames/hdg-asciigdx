@@ -127,11 +127,12 @@ final class PaintDerive {
         int codePoint = host.codePoints()[host.cursor()];
         messages.nextAction();
         host.endStroke();
-        if (editor.unlock(codePoint)) {
-            messages.ok(host.describeGlyph(codePoint, " unlocked: now editable"));
-        } else {
+        if (!editor.isDerived(codePoint)) {
             messages.warn("Only a derived glyph can be unlocked");
+            return;
         }
+        editor.unlock(codePoint);
+        messages.ok(host.describeGlyph(codePoint, " unlocked: now editable"));
     }
 
     void goToSource() {
@@ -184,11 +185,12 @@ final class PaintDerive {
     }
 
     void clickSource(int slot) {
-        if (flow.clickSource(slot)) {
+        if (flow.isConfirmingClick(slot)) {
             confirmSource();
-        } else {
-            refreshPick();
+            return;
         }
+        flow.clickSource(slot);
+        refreshPick();
     }
 
     void moveSource(int slot) {
@@ -229,7 +231,8 @@ final class PaintDerive {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
             messages.nextAction();
-            if (flow.removeLastPart()) {
+            if (flow.canRemovePart()) {
+                flow.removeLastPart();
                 refreshPick();
             } else {
                 messages.warn("No part to remove");

@@ -196,17 +196,30 @@ public final class MenuBar<A> {
     // ---- keyboard ----
 
     /**
-     * Opens the first menu with this access key (any case) that is not locked. Returns false when the
+     * Opens the first menu with this access key (any case) that is not locked. Does nothing when the
      * key is unknown or every menu using it is locked.
      */
-    public boolean openByAccessKey(char key, Predicate<A> availability) {
+    public void openByAccessKey(char key, Predicate<A> availability) {
+        int menu = firstUnlockedMenuWithAccessKey(key, availability);
+        if (menu < 0) {
+            return;
+        }
+        open(menu, availability);
+    }
+
+    /** Whether {@link #openByAccessKey} would open a menu: some menu uses this access key (any case) and is not locked. */
+    public boolean canOpenByAccessKey(char key, Predicate<A> availability) {
+        return firstUnlockedMenuWithAccessKey(key, availability) >= 0;
+    }
+
+    private int firstUnlockedMenuWithAccessKey(char key, Predicate<A> availability) {
         char wanted = Character.toLowerCase(key);
         for (int i = 0; i < menus.size(); i++) {
-            if (Character.toLowerCase(menus.get(i).accessKey()) == wanted && open(i, availability)) {
-                return true;
+            if (Character.toLowerCase(menus.get(i).accessKey()) == wanted && !isLocked(i, availability)) {
+                return i;
             }
         }
-        return false;
+        return -1;
     }
 
     /**

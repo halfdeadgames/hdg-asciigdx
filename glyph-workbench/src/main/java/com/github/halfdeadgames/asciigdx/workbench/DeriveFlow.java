@@ -102,13 +102,16 @@ final class DeriveFlow {
         pendingShift = 0;
     }
 
-    /** @return whether a part was removed */
-    boolean removeLastPart() {
-        if (!isOverlayPicking() || parts.isEmpty()) {
-            return false;
+    /** Whether an overlay is being picked and has a committed part that {@link #removeLastPart} would remove. */
+    boolean canRemovePart() {
+        return isOverlayPicking() && !parts.isEmpty();
+    }
+
+    void removeLastPart() {
+        if (!canRemovePart()) {
+            return;
         }
         parts.remove(parts.size() - 1);
-        return true;
     }
 
     List<Part> parts() {
@@ -175,16 +178,17 @@ final class DeriveFlow {
         sourceSlot = slot;
     }
 
-    /** @return true when the click was on the current source, which confirms it; otherwise the source moves there */
-    boolean clickSource(int slot) {
+    /** Whether a click on this slot lands on the current source while picking, which confirms it. */
+    boolean isConfirmingClick(int slot) {
+        return mode == Mode.PICK_SOURCE && slot == sourceSlot;
+    }
+
+    /** Moves the source to the clicked slot; a click on the current source confirms it instead and moves nothing. */
+    void clickSource(int slot) {
         if (mode != Mode.PICK_SOURCE) {
-            return false;
-        }
-        if (slot == sourceSlot) {
-            return true;
+            return;
         }
         sourceSlot = slot;
-        return false;
     }
 
     /** Asks for confirmation before replacing a drawing. */

@@ -128,10 +128,12 @@ class MenuBarTest {
     @Test
     void accessKeysOpenInEitherCase() {
         MenuBar<String> lower = bar();
-        assertTrue(lower.openByAccessKey('e', ALL));
+        assertTrue(lower.canOpenByAccessKey('e', ALL));
+        lower.openByAccessKey('e', ALL);
         assertEquals(1, lower.openMenu());
         MenuBar<String> upper = bar();
-        assertTrue(upper.openByAccessKey('E', ALL));
+        assertTrue(upper.canOpenByAccessKey('E', ALL));
+        upper.openByAccessKey('E', ALL);
         assertEquals(1, upper.openMenu());
     }
 
@@ -139,14 +141,16 @@ class MenuBarTest {
     void unknownAccessKeyChangesNothing() {
         MenuBar<String> bar = bar();
         bar.openByAccessKey('f', ALL);
-        assertFalse(bar.openByAccessKey('z', ALL));
+        assertFalse(bar.canOpenByAccessKey('z', ALL));
+        bar.openByAccessKey('z', ALL);
         assertEquals(0, bar.openMenu());
     }
 
     @Test
     void lockedMenuCannotBeOpenedByAccessKey() {
         MenuBar<String> bar = bar();
-        assertFalse(bar.openByAccessKey('e', without("undo", "redo")));
+        assertFalse(bar.canOpenByAccessKey('e', without("undo", "redo")));
+        bar.openByAccessKey('e', without("undo", "redo"));
         assertFalse(bar.isOpen());
     }
 
@@ -171,7 +175,8 @@ class MenuBarTest {
         Predicate<String> nothing = action -> false;
         bar.openFirst(nothing);
         assertFalse(bar.isOpen());
-        assertFalse(bar.openByAccessKey('f', nothing));
+        assertFalse(bar.canOpenByAccessKey('f', nothing));
+        bar.openByAccessKey('f', nothing);
         bar.pressTitle(0, nothing);
         bar.hover(1, NONE, WIDE, nothing);
         assertFalse(bar.isOpen());
@@ -409,7 +414,8 @@ class MenuBarTest {
             new MenuBar.Menu<>("NONE", 'n', List.of()),
             new MenuBar.Menu<>("FILE", 'f', List.of(item("a")))));
         assertTrue(bar.isLocked(0, ALL));
-        assertFalse(bar.openByAccessKey('n', ALL));
+        assertFalse(bar.canOpenByAccessKey('n', ALL));
+        bar.openByAccessKey('n', ALL);
         bar.pressTitle(0, ALL);
         assertFalse(bar.isOpen());
         bar.openFirst(ALL);
@@ -424,9 +430,10 @@ class MenuBarTest {
         MenuBar<String> bar = new MenuBar<>(List.of(
             new MenuBar.Menu<>("FIRST", 'x', List.of(item("a"))),
             new MenuBar.Menu<>("SECOND", 'X', List.of(item("b")))));
-        assertTrue(bar.openByAccessKey('x', without("a")));
+        assertTrue(bar.canOpenByAccessKey('x', without("a")));
+        bar.openByAccessKey('x', without("a"));
         assertEquals(1, bar.openMenu());
-        assertFalse(bar.openByAccessKey('x', action -> false));
+        assertFalse(bar.canOpenByAccessKey('x', action -> false));
     }
 
     @Test

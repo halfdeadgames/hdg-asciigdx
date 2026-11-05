@@ -42,8 +42,13 @@ final class PaintNewFont {
         dialogs.open();
     }
 
-    boolean openForCapture() {
-        return dialogs.openForCapture();
+    void openForCapture() {
+        dialogs.openForCapture();
+    }
+
+    /** Whether a dev hook asks for a new-font page to open. */
+    boolean isCaptureRequested() {
+        return dialogs.isCaptureRequested();
     }
 
     void type(char character) {

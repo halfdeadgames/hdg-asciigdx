@@ -260,7 +260,8 @@ final class PaintGuideListPanel {
         } else if (pressedGroupKey() >= 0) {
             edited = toggleGroup(pressedGroupKey());
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            if (guideList.beginRename()) {
+            if (guideList.canRename()) {
+                guideList.beginRename();
                 messages.nextAction();
                 renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;
             }
@@ -310,10 +311,11 @@ final class PaintGuideListPanel {
     }
 
     private void acceptRename() {
-        if (!guideList.acceptRename()) {
+        if (!guideList.canAcceptRename()) {
             messages.warn("A label needs at least one character");
             return;
         }
+        guideList.acceptRename();
         messages.nextAction();
         host.showGuides(guideList.guides());
         refreshTitle();

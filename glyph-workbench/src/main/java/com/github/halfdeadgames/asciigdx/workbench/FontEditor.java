@@ -306,17 +306,15 @@ final class FontEditor {
     }
 
     /**
-     * Turns a derived glyph into a drawn one holding its current pixels, as one undo step.
-     *
-     * @return false when the glyph is not derived
+     * Turns a derived glyph into a drawn one holding its current pixels, as one undo step. Does nothing when the
+     * glyph is not derived (see {@link #isDerived}).
      */
-    boolean unlock(int codePoint) {
+    void unlock(int codePoint) {
         if (!isDerived(codePoint)) {
-            return false;
+            return;
         }
         PixelGlyph current = resolved.get(codePoint);
         changeAsOneStep(() -> entries.put(codePoint, new PixelGlyph(codePoint, current.full(), current.pixels())));
-        return true;
     }
 
     /** Whether deriving into this slot would discard a drawing, meaning it holds a drawn glyph with a lit pixel. */

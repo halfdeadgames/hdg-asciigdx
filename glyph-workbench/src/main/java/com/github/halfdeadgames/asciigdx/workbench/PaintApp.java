@@ -344,7 +344,8 @@ public final class PaintApp implements WorkbenchScreen {
             return;
         }
         stroke.end();
-        newFontCaptureOpened = newFont.openForCapture();
+        newFontCaptureOpened = newFont.isCaptureRequested();
+        newFont.openForCapture();
     }
 
     private void openNewFont() {

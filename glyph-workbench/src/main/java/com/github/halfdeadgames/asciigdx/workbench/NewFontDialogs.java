@@ -106,11 +106,10 @@ final class NewFontDialogs {
     }
 
     /**
-     * Opens the page the dev hooks {@code workbench.newfont} and {@code workbench.newfontsize} ask for.
-     *
-     * @return whether a hook asked for it
+     * Opens the page the dev hooks {@code workbench.newfont} and {@code workbench.newfontsize} ask for;
+     * does nothing when no hook asked (see {@link #isCaptureRequested}).
      */
-    boolean openForCapture() {
+    void openForCapture() {
         String typed = DevCapture.newFontRequest();
         DevCapture.NewFontSizeRequest sizeRequest = DevCapture.newFontSizeRequest();
         if (typed != null) {
@@ -118,16 +117,19 @@ final class NewFontDialogs {
             for (int i = 0; i < typed.length(); i++) {
                 namePage.type(typed.charAt(i));
             }
-            return true;
+            return;
         }
         if (sizeRequest != null) {
             openSize(sizeRequest.name());
             for (int i = 0; i < sizeRequest.moves(); i++) {
                 sizePage.move(1);
             }
-            return true;
         }
-        return false;
+    }
+
+    /** Whether a dev hook ({@code workbench.newfont} or {@code workbench.newfontsize}) asks for a page to open. */
+    boolean isCaptureRequested() {
+        return DevCapture.newFontRequest() != null || DevCapture.newFontSizeRequest() != null;
     }
 
     private void openName(String initialText) {

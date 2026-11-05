@@ -338,7 +338,8 @@ class FontEditorTest {
         PixelGlyph before = editor.glyph(0x44);
         PixelGlyph dependentBefore = editor.glyph(0x100);
 
-        assertTrue(editor.unlock(0x44));
+        assertTrue(editor.isDerived(0x44));
+        editor.unlock(0x44);
 
         assertFalse(editor.isDerived(0x44));
         assertEquals(before.pixels(), editor.glyph(0x44).pixels());
@@ -354,8 +355,10 @@ class FontEditorTest {
     @Test
     void unlockRefusesGlyphsThatAreNotDerived() {
         FontEditor editor = editor();
-        assertFalse(editor.unlock(0x41));
-        assertFalse(editor.unlock(0x44));
+        assertFalse(editor.isDerived(0x41));
+        assertFalse(editor.isDerived(0x44));
+        editor.unlock(0x41);
+        editor.unlock(0x44);
         assertFalse(editor.canUndo());
         assertFalse(editor.isModified());
     }

@@ -174,12 +174,16 @@ final class GuideListModel {
     }
 
     /** Starts renaming the selected guide from its current label; a warning row cannot be renamed. */
-    boolean beginRename() {
-        if (selectedGuide() == null || label.isActive()) {
-            return false;
+    void beginRename() {
+        if (!canRename()) {
+            return;
         }
         label.begin(selectedGuide().label());
-        return true;
+    }
+
+    /** Whether {@link #beginRename} would start: a guide is selected and no rename is in progress. */
+    boolean canRename() {
+        return selectedGuide() != null && !label.isActive();
     }
 
     boolean isRenaming() {
@@ -200,15 +204,19 @@ final class GuideListModel {
         label.backspace();
     }
 
-    /** Applies the typed label. An empty label is refused and the rename goes on; returns whether it was applied. */
-    boolean acceptRename() {
-        if (!label.isActive() || label.isEmpty()) {
-            return false;
+    /** Applies the typed label. An empty label is refused and the rename stays open. */
+    void acceptRename() {
+        if (!canAcceptRename()) {
+            return;
         }
         current = current.withGuideRelabeled(selected - WARNING_ROWS, label.value());
         label.end();
         rows = buildRows();
-        return true;
+    }
+
+    /** Whether {@link #acceptRename} would apply: a rename is in progress and the typed label is not empty. */
+    boolean canAcceptRename() {
+        return label.isActive() && !label.isEmpty();
     }
 
     /** Ends the rename and keeps the old label. */
