@@ -18,20 +18,23 @@ final class PaintLayers {
         return confirmingQuit || newGlyphOpen || newSizeOpen || newFontOpen || deriveDims;
     }
 
-    /** deriveDims is true while the derive flow shows its menu or the replace confirmation. */
-    void update(boolean confirmingQuit, boolean newGlyphOpen, boolean newSizeOpen, boolean newFontOpen,
-                boolean deriveDims, boolean controlsOpen, boolean rulesShowing, boolean menuOpen) {
-        this.confirmingQuit = confirmingQuit;
-        this.newGlyphOpen = newGlyphOpen;
-        this.newSizeOpen = newSizeOpen;
-        this.newFontOpen = newFontOpen;
-        this.deriveDialogShown = deriveDims;
-        this.controlsOpen = controlsOpen;
+    /** What is open this frame; deriveDims is true while the derive flow shows its menu or the replace confirmation. */
+    record State(boolean confirmingQuit, boolean newGlyphOpen, boolean newSizeOpen, boolean newFontOpen,
+                 boolean deriveDims, boolean controlsOpen, boolean rulesShowing, boolean menuOpen) {
+    }
+
+    void update(State state) {
+        this.confirmingQuit = state.confirmingQuit();
+        this.newGlyphOpen = state.newGlyphOpen();
+        this.newSizeOpen = state.newSizeOpen();
+        this.newFontOpen = state.newFontOpen();
+        this.deriveDialogShown = state.deriveDims();
+        this.controlsOpen = state.controlsOpen();
         // Each dialog dims the screen itself, so one under an overlay would dim the background twice.
-        overlayShown = controlsOpen || rulesShowing;
+        overlayShown = state.controlsOpen() || state.rulesShowing();
         // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and must stay clear.
-        promptShown = dialogDimsScreen(confirmingQuit, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims)
-            && !overlayShown && !menuOpen;
+        promptShown = dialogDimsScreen(state.confirmingQuit(), state.newGlyphOpen(), state.newSizeOpen(),
+            state.newFontOpen(), state.deriveDims()) && !overlayShown && !state.menuOpen();
     }
 
     boolean overlayShown() {

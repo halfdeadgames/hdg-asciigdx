@@ -1404,8 +1404,15 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void refreshLayers() {
-        layers.update(confirmingQuit, newGlyph.isOpen(), newSize.isOpen(), newFont.isOpen(), deriveDimsScreen(),
-            controls.isOpen(), rules.isShowing(), menuBar.isOpen());
+        boolean newGlyphOpen = newGlyph.isOpen();
+        boolean newSizeOpen = newSize.isOpen();
+        boolean newFontOpen = newFont.isOpen();
+        boolean deriveDims = deriveDimsScreen();
+        boolean controlsOpen = controls.isOpen();
+        boolean rulesShowing = rules.isShowing();
+        boolean menuOpen = menuBar.isOpen();
+        layers.update(new PaintLayers.State(confirmingQuit, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
+            controlsOpen, rulesShowing, menuOpen));
     }
 
     private void drawDialogs(int codePoint, int columns, int rows) {
