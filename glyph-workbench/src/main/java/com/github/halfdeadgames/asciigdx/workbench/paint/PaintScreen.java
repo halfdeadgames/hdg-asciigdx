@@ -67,7 +67,7 @@ import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 
 /** Paint screen: edits one font data file glyph by glyph. */
-public final class PaintApp implements WorkbenchScreen {
+public final class PaintScreen implements WorkbenchScreen {
 
     private static final String TAG = "Paint";
     private static final String LEAVE_QUESTION = "before leaving?";
@@ -197,7 +197,7 @@ public final class PaintApp implements WorkbenchScreen {
      * @param openSize called with the height of a size file this screen just created, to paint it next
      * @param openFont called with the folder and first size height of a font this screen just created, to paint it next
      */
-    public PaintApp(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize,
+    public PaintScreen(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize,
                     BiConsumer<Path, Integer> openFont) {
         this.onExit = onExit;
         this.fontDir = fontDir;
@@ -613,7 +613,7 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void showGuides(PaintGuides shownGuides) {
-            PaintApp.this.showGuides(shownGuides);
+            PaintScreen.this.showGuides(shownGuides);
         }
 
         @Override
@@ -661,12 +661,12 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public int slotOf(int codePoint) {
-            return PaintApp.this.slotOf(codePoint);
+            return PaintScreen.this.slotOf(codePoint);
         }
 
         @Override
         public String describeGlyph(int codePoint, String suffix) {
-            return PaintApp.this.describeGlyph(codePoint).append(suffix).toString();
+            return PaintScreen.this.describeGlyph(codePoint).append(suffix).toString();
         }
 
         @Override
@@ -1265,22 +1265,22 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public int cell() {
-            return PaintApp.this.cell();
+            return PaintScreen.this.cell();
         }
 
         @Override
         public int worldWidth() {
-            return PaintApp.this.worldWidth();
+            return PaintScreen.this.worldWidth();
         }
 
         @Override
         public boolean altDown() {
-            return PaintApp.altDown();
+            return PaintScreen.altDown();
         }
 
         @Override
         public boolean leftClicked() {
-            return PaintApp.this.leftClicked();
+            return PaintScreen.this.leftClicked();
         }
 
         @Override
@@ -1296,7 +1296,7 @@ public final class PaintApp implements WorkbenchScreen {
         @Override
         public void runMenuAction(PaintMenu.Action action) {
             stroke.end();
-            PaintApp.this.runMenuAction(action);
+            PaintScreen.this.runMenuAction(action);
         }
     }
 
@@ -1309,7 +1309,7 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public boolean helpContains(int pixelX, int pixelY) {
-            return helpPanel.contains(pixelX, pixelY, PaintApp.this.cell());
+            return helpPanel.contains(pixelX, pixelY, PaintScreen.this.cell());
         }
 
         @Override
@@ -1319,7 +1319,7 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public int cell() {
-            return PaintApp.this.cell();
+            return PaintScreen.this.cell();
         }
 
         @Override

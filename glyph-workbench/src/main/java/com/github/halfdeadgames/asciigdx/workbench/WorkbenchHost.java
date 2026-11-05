@@ -9,7 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
-import com.github.halfdeadgames.asciigdx.workbench.paint.PaintApp;
+import com.github.halfdeadgames.asciigdx.workbench.paint.PaintScreen;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleReviewScreen;
 import java.io.IOException;
@@ -169,8 +169,8 @@ public final class WorkbenchHost extends ApplicationAdapter {
     }
 
     // A paint screen that can switch to a size file or a font it creates; Esc there goes back as given.
-    private PaintApp paintScreen(Runnable back, String fontDir, String size) {
-        return new PaintApp(back, fontDir, size,
+    private PaintScreen paintScreen(Runnable back, String fontDir, String size) {
+        return new PaintScreen(back, fontDir, size,
             height -> pending = () -> paintScreen(back, fontDir, String.valueOf(height)),
             (folder, height) -> pending = () -> paintCreatedFont(folder, height));
     }
