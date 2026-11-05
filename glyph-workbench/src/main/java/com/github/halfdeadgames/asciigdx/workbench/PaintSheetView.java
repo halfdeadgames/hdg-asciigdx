@@ -252,41 +252,64 @@ final class PaintSheetView {
         if (columnBarShown()) {
             drawColumnBar();
         }
-        int width = layout.cellWidth();
-        int height = layout.cellHeight();
-        int firstColumn = columnScroll.offset();
+        drawSlots();
+        drawCursor(cursorSlot);
+        drawSourceCursor(sourceSlot);
+    }
+
+    private void drawSlots() {
         int firstSlot = scroll.offset() * COLUMNS;
         int endSlot = Math.min(editor.slotCount(), (scroll.offset() + scroll.visibleRows()) * COLUMNS);
-        int hairline = painter.scale().scaled(1);
-        int markSize = painter.scale().scaled(MARK_SIZE);
-        int outline = painter.scale().scaled(OUTLINE);
         for (int slot = firstSlot; slot < endSlot; slot++) {
             int codePoint = editor.codePointAtSlot(slot);
             if (!columnScroll.isVisible(slot % COLUMNS) || codePoint == FontEditor.NO_GLYPH) {
                 continue;
             }
-            int x = layout.cellLeft(slot, firstColumn);
-            int top = layout.cellTop(slot, scroll.offset());
-            painter.fill(CELL_FILL, x, top, width, height);
-            PixelGlyph glyph = editor.glyph(codePoint);
-            if (glyph == null) {
-                outline(EMPTY_OUTLINE, x, top, width, height, hairline);
-            } else {
-                painter.pixels(glyph.pixels(), x, top, pixelScale(), editor.isDerived(codePoint) ? DERIVED_COLOR : GLYPH_COLOR);
-            }
-            if (marks != null && marks[slot] != null) {
-                painter.fill(marks[slot], x + width - markSize - hairline, top + hairline, markSize, markSize);
-            }
+            drawSlot(slot, codePoint);
         }
-        if (scroll.isVisible(cursorSlot / COLUMNS) && columnScroll.isVisible(cursorSlot % COLUMNS)) {
-            outline(CURSOR_COLOR, layout.cellLeft(cursorSlot, firstColumn),
-                layout.cellTop(cursorSlot, scroll.offset()), width, height, outline);
+    }
+
+    private void drawSlot(int slot, int codePoint) {
+        int width = layout.cellWidth();
+        int height = layout.cellHeight();
+        int hairline = painter.scale().scaled(1);
+        int x = layout.cellLeft(slot, columnScroll.offset());
+        int top = layout.cellTop(slot, scroll.offset());
+        painter.fill(CELL_FILL, x, top, width, height);
+        PixelGlyph glyph = editor.glyph(codePoint);
+        if (glyph == null) {
+            outline(EMPTY_OUTLINE, x, top, width, height, hairline);
+        } else {
+            painter.pixels(glyph.pixels(), x, top, pixelScale(), editor.isDerived(codePoint) ? DERIVED_COLOR : GLYPH_COLOR);
         }
-        if (sourceSlot >= 0 && scroll.isVisible(sourceSlot / COLUMNS) && columnScroll.isVisible(sourceSlot % COLUMNS)) {
-            int inset = outline + hairline;
-            outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot, firstColumn) + inset,
-                layout.cellTop(sourceSlot, scroll.offset()) + inset, width - 2 * inset, height - 2 * inset, outline);
+        if (marks != null && marks[slot] != null) {
+            int markSize = painter.scale().scaled(MARK_SIZE);
+            painter.fill(marks[slot], x + width - markSize - hairline, top + hairline, markSize, markSize);
         }
+    }
+
+    private void drawCursor(int cursorSlot) {
+        if (!isSlotVisible(cursorSlot)) {
+            return;
+        }
+        outline(CURSOR_COLOR, layout.cellLeft(cursorSlot, columnScroll.offset()),
+            layout.cellTop(cursorSlot, scroll.offset()), layout.cellWidth(), layout.cellHeight(),
+            painter.scale().scaled(OUTLINE));
+    }
+
+    private void drawSourceCursor(int sourceSlot) {
+        if (sourceSlot < 0 || !isSlotVisible(sourceSlot)) {
+            return;
+        }
+        int outline = painter.scale().scaled(OUTLINE);
+        int inset = outline + painter.scale().scaled(1);
+        outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot, columnScroll.offset()) + inset,
+            layout.cellTop(sourceSlot, scroll.offset()) + inset,
+            layout.cellWidth() - 2 * inset, layout.cellHeight() - 2 * inset, outline);
+    }
+
+    private boolean isSlotVisible(int slot) {
+        return scroll.isVisible(slot / COLUMNS) && columnScroll.isVisible(slot % COLUMNS);
     }
 
     private void outline(Color color, int x, int top, int width, int height, int thickness) {

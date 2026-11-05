@@ -468,12 +468,23 @@ final class PaintGuides {
      * by column and alternate label tiers 0, 1, 0, ... so neighbouring labels never overlap.
      */
     Shown forGroup(String groupName, int cellWidth, int cellHeight) {
+        List<Guide> shownRows = fittingRows(groupName, cellHeight);
+        List<WidthGuide> shownWidths = withAlternatingTiers(fittingColumns(groupName, cellWidth));
+        List<BarGuide> shownBars = fittingBars(groupName, cellHeight);
+        return new Shown(List.copyOf(shownRows), List.copyOf(shownWidths), List.copyOf(shownBars));
+    }
+
+    private List<Guide> fittingRows(String groupName, int cellHeight) {
         List<Guide> shownRows = new ArrayList<>();
         for (Scoped<Guide> row : rows) {
             if (row.appliesTo(groupName) && row.guide().boundaryRow() <= cellHeight) {
                 shownRows.add(row.guide());
             }
         }
+        return shownRows;
+    }
+
+    private List<WidthGuide> fittingColumns(String groupName, int cellWidth) {
         List<WidthGuide> fitting = new ArrayList<>();
         for (Scoped<WidthGuide> column : columns) {
             if (column.appliesTo(groupName) && column.guide().boundaryColumn() <= cellWidth) {
@@ -481,17 +492,25 @@ final class PaintGuides {
             }
         }
         fitting.sort(Comparator.comparingInt(WidthGuide::boundaryColumn));
+        return fitting;
+    }
+
+    private static List<WidthGuide> withAlternatingTiers(List<WidthGuide> sortedGuides) {
         List<WidthGuide> shownWidths = new ArrayList<>();
-        for (int i = 0; i < fitting.size(); i++) {
-            WidthGuide guide = fitting.get(i);
+        for (int i = 0; i < sortedGuides.size(); i++) {
+            WidthGuide guide = sortedGuides.get(i);
             shownWidths.add(new WidthGuide(guide.label(), guide.boundaryColumn(), i % 2));
         }
+        return shownWidths;
+    }
+
+    private List<BarGuide> fittingBars(String groupName, int cellHeight) {
         List<BarGuide> shownBars = new ArrayList<>();
         for (Scoped<BarGuide> bar : bars) {
             if (bar.appliesTo(groupName) && bar.guide().firstRow() + bar.guide().rowCount() <= cellHeight) {
                 shownBars.add(bar.guide());
             }
         }
-        return new Shown(List.copyOf(shownRows), List.copyOf(shownWidths), List.copyOf(shownBars));
+        return shownBars;
     }
 }

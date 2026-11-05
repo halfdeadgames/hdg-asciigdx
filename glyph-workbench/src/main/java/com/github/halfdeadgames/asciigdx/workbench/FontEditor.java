@@ -240,12 +240,30 @@ final class FontEditor {
         }
         GlyphEntry before = entries.get(codePoint);
         PixelGlyph current = (PixelGlyph) before;
-        if (current == null && !on) {
+        if (!changesPixel(codePoint, x, y, on, current)) {
             return false;
         }
-        if (current != null && isLit(codePoint, x, y) == on) {
+        entries.put(codePoint, glyphWithPixel(codePoint, x, y, on, current));
+        try {
+            resolved = GlyphResolver.resolveAll(data());
+        } catch (FontDataException e) {
+            restore(codePoint, before);
+            problem = e.getMessage();
             return false;
         }
+        problem = "";
+        revision = nextRevision++;
+        return true;
+    }
+
+    private boolean changesPixel(int codePoint, int x, int y, boolean on, PixelGlyph current) {
+        if (current == null) {
+            return on;
+        }
+        return isLit(codePoint, x, y) != on;
+    }
+
+    private PixelGlyph glyphWithPixel(int codePoint, int x, int y, boolean on, PixelGlyph current) {
         PixelGrid base = current == null ? PixelGrid.blank(bodyWidth(), cellHeight) : current.pixels();
         boolean full = current != null && current.full();
         boolean inGap = x >= bodyWidth();
@@ -258,17 +276,7 @@ final class FontEditor {
             base = croppedToBody(base);
             full = false;
         }
-        entries.put(codePoint, new PixelGlyph(codePoint, full, base));
-        try {
-            resolved = GlyphResolver.resolveAll(data());
-        } catch (FontDataException e) {
-            restore(codePoint, before);
-            problem = e.getMessage();
-            return false;
-        }
-        problem = "";
-        revision = nextRevision++;
-        return true;
+        return new PixelGlyph(codePoint, full, base);
     }
 
     /**
