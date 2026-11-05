@@ -15,29 +15,29 @@ class PaintLayersTest {
 
         assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
-        assertFalse(layers.overlayShown());
+        assertFalse(layers.coveringPanelShown());
         assertFalse(layers.redrawsDeriveHelp());
     }
 
     @Test
-    void overlayHidesDialogs() {
-        layers.update(nothingOpen().confirmingQuit().newGlyphOpen().newSizeOpen().newFontOpen().deriveDims()
+    void coveringPanelHidesDialogs() {
+        layers.update(nothingOpen().confirmingUnsaved().newGlyphOpen().newSizeOpen().newFontOpen().deriveDims()
             .controlsOpen().build());
 
-        assertTrue(layers.overlayShown());
-        assertFalse(layers.quitPromptShown());
+        assertTrue(layers.coveringPanelShown());
+        assertFalse(layers.unsavedPromptShown());
         assertFalse(layers.newGlyphShown());
         assertFalse(layers.newFontShown());
         assertFalse(layers.newSizeShown());
-        assertFalse(layers.deriveDialogDrawn());
+        assertFalse(layers.deriveDialogAllowed());
         assertFalse(layers.promptShown());
     }
 
     @Test
-    void rulesCountAsOverlay() {
+    void rulesCountAsCoveringPanel() {
         layers.update(nothingOpen().newGlyphOpen().rulesShowing().build());
 
-        assertTrue(layers.overlayShown());
+        assertTrue(layers.coveringPanelShown());
         assertFalse(layers.newGlyphShown());
     }
 
@@ -66,7 +66,7 @@ class PaintLayersTest {
     }
 
     @Test
-    void openMenuOrOverlayTurnsPromptOff() {
+    void openMenuOrCoveringPanelTurnsPromptOff() {
         layers.update(nothingOpen().newGlyphOpen().menuOpen().build());
         assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
@@ -80,16 +80,16 @@ class PaintLayersTest {
 
     @Test
     void promptWithMenuOpenKeepsBarOnTop() {
-        layers.update(nothingOpen().confirmingQuit().menuOpen().build());
+        layers.update(nothingOpen().confirmingUnsaved().menuOpen().build());
 
         assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
-        assertTrue(layers.quitPromptShown());
+        assertTrue(layers.unsavedPromptShown());
     }
 
     @Test
-    void newFontHiddenWhileConfirmingQuit() {
-        layers.update(nothingOpen().confirmingQuit().newFontOpen().build());
+    void newFontHiddenWhileConfirmingUnsaved() {
+        layers.update(nothingOpen().confirmingUnsaved().newFontOpen().build());
 
         assertFalse(layers.newFontShown());
 
@@ -99,10 +99,10 @@ class PaintLayersTest {
     }
 
     @Test
-    void deriveHelpRedrawnOnlyWhenDeriveDialogShownWithoutOverlay() {
+    void deriveHelpRedrawnOnlyWhenDeriveDialogShownWithoutCoveringPanel() {
         layers.update(nothingOpen().deriveDims().build());
         assertTrue(layers.redrawsDeriveHelp());
-        assertTrue(layers.deriveDialogDrawn());
+        assertTrue(layers.deriveDialogAllowed());
 
         layers.update(nothingOpen().build());
         assertFalse(layers.redrawsDeriveHelp());
@@ -126,7 +126,7 @@ class PaintLayersTest {
     }
 
     private static final class StateBuilder {
-        private boolean confirmingQuit;
+        private boolean confirmingUnsaved;
         private boolean newGlyphOpen;
         private boolean newSizeOpen;
         private boolean newFontOpen;
@@ -135,8 +135,8 @@ class PaintLayersTest {
         private boolean rulesShowing;
         private boolean menuOpen;
 
-        StateBuilder confirmingQuit() {
-            confirmingQuit = true;
+        StateBuilder confirmingUnsaved() {
+            confirmingUnsaved = true;
             return this;
         }
 
@@ -176,7 +176,7 @@ class PaintLayersTest {
         }
 
         PaintLayers.State build() {
-            return new PaintLayers.State(confirmingQuit, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
+            return new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
                 controlsOpen, rulesShowing, menuOpen);
         }
     }

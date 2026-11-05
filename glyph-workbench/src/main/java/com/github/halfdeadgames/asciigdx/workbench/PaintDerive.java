@@ -32,7 +32,7 @@ final class PaintDerive {
         int[] codePoints();
 
         /** The slot the cursor is on. */
-        int cursor();
+        int cursorSlot();
 
         void setCursor(int slot);
 
@@ -88,7 +88,7 @@ final class PaintDerive {
         int[] codePoints = host.codePoints();
         DeriveFlow.Mode mode = flow.mode();
         GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? DeriveFlow.OPERATIONS.get(flow.menuIndex()) : flow.operation();
-        if (!flow.isOverlay() || mode != DeriveFlow.Mode.PICK_SOURCE) {
+        if (!flow.isOverlayOperation() || mode != DeriveFlow.Mode.PICK_SOURCE) {
             return new PaintHelp.State(mode, operation, List.of(), null);
         }
         List<PaintHelp.PartView> committed = new ArrayList<>();
@@ -102,7 +102,7 @@ final class PaintDerive {
 
     // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
     PaintGridView.Ghost pendingGhost() {
-        if (!flow.isOverlay() || !flow.isPicking() || flow.sourceIsTarget()
+        if (!flow.isOverlayOperation() || !flow.isPicking() || flow.sourceIsTarget()
             || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
             return null;
         }
@@ -123,11 +123,11 @@ final class PaintDerive {
     void openDerive() {
         messages.nextAction();
         host.endStroke();
-        flow.openMenu(host.cursor());
+        flow.openMenu(host.cursorSlot());
     }
 
     void unlockDerived() {
-        int codePoint = host.codePoints()[host.cursor()];
+        int codePoint = host.codePoints()[host.cursorSlot()];
         messages.nextAction();
         host.endStroke();
         if (!editor.isDerived(codePoint)) {
@@ -139,7 +139,7 @@ final class PaintDerive {
     }
 
     void goToSource() {
-        int codePoint = host.codePoints()[host.cursor()];
+        int codePoint = host.codePoints()[host.cursorSlot()];
         messages.nextAction();
         host.endStroke();
         int sourceSlot = host.slotOf(editor.derivedFrom(codePoint));
@@ -166,7 +166,7 @@ final class PaintDerive {
 
     /** Handles keys while picking a source, and returns whether Enter confirmed the pick. */
     boolean handlePickingKeys() {
-        if (flow.isOverlay()) {
+        if (flow.isOverlayOperation()) {
             handleOverlayKeys();
         }
         if (!Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && !Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
@@ -216,7 +216,7 @@ final class PaintDerive {
         messages.nextAction();
         flow.chooseOperation();
         host.endStroke();
-        derivePick.begin(host.codePoints(), host.cursor());
+        derivePick.begin(host.codePoints(), host.cursorSlot());
     }
 
     void handleOverlayKeys() {
@@ -245,18 +245,18 @@ final class PaintDerive {
     }
 
     void refreshPick() {
-        derivePick.refresh(host.codePoints(), host.cursor());
+        derivePick.refresh(host.codePoints(), host.cursorSlot());
     }
 
     // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
     void confirmSource() {
         messages.nextAction();
-        if (flow.isOverlay()) {
+        if (flow.isOverlayOperation()) {
             addOverlayPart();
             return;
         }
         if (!derivePick.isValid()) {
-            if (flow.sourceSlot() == host.cursor()) {
+            if (flow.sourceSlot() == host.cursorSlot()) {
                 messages.warn(OverlayCheck.SAME_AS_TARGET_MESSAGE);
             }
             return;
@@ -269,7 +269,7 @@ final class PaintDerive {
         messages.nextAction();
         flow.cancelAll();
         derivePick.clear();
-        host.keepVisible(host.cursor());
+        host.keepVisible(host.cursorSlot());
         messages.ok("Derive cancelled");
     }
 
@@ -307,7 +307,7 @@ final class PaintDerive {
     }
 
     private void applyOrAskReplace() {
-        if (editor.wouldReplaceDrawing(host.codePoints()[host.cursor()])) {
+        if (editor.wouldReplaceDrawing(host.codePoints()[host.cursorSlot()])) {
             flow.askReplace();
         } else {
             applyDerive();
@@ -316,7 +316,7 @@ final class PaintDerive {
 
     private void applyDerive() {
         int[] codePoints = host.codePoints();
-        int target = codePoints[host.cursor()];
+        int target = codePoints[host.cursorSlot()];
         String summary = derivePick.summary(codePoints, target);
         messages.nextAction();
         editor.derive(target, derivePick.currentOp(codePoints));
@@ -324,7 +324,7 @@ final class PaintDerive {
             host.rememberProblem("");
             flow.finish();
             derivePick.clear();
-            host.keepVisible(host.cursor());
+            host.keepVisible(host.cursorSlot());
             messages.ok("Derived: " + summary);
         } else {
             host.rememberProblem(editor.problem());

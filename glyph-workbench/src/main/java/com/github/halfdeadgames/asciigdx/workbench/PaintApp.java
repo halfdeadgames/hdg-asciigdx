@@ -70,7 +70,7 @@ public final class PaintApp implements WorkbenchScreen {
         new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("ENTER", "ADD"),
         new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
         new StatusBar.Key("ESC", "CANCEL"));
-    private static final List<Dialog.Button> QUIT_BUTTONS = List.of(
+    private static final List<Dialog.Button> UNSAVED_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
@@ -95,7 +95,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
     private final ArrowRepeats arrowRepeats = new ArrowRepeats(repeatLeft, repeatRight, repeatUp, repeatDown);
-    private final PaintMenuInput menuInput = new PaintMenuInput(new MenuHost(), menuPointer, menuKeys,
+    private final PaintMenuInput menuInput = new PaintMenuInput(new MenuInputHost(), menuPointer, menuKeys,
         menuAvailability, arrowRepeats);
     private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
@@ -145,7 +145,7 @@ public final class PaintApp implements WorkbenchScreen {
     private int[] codePoints;
     private int cursor;
     private boolean revealCursor = true;
-    private boolean confirmingQuit;
+    private boolean confirmingUnsaved;
     private final WheelTicks wheelTicks = new WheelTicks();
     private PaintScrollRouting scrollRouting;
     private PaintPointer pointer;
@@ -196,7 +196,7 @@ public final class PaintApp implements WorkbenchScreen {
         editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
-        derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new DeriveHost());
+        derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new PaintDeriveHost());
     }
 
     private void pickStartCursor() {
@@ -235,7 +235,7 @@ public final class PaintApp implements WorkbenchScreen {
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
         guideListPanel = new PaintGuideListPanel(painter, messages, guidesFile, editor, arrowRepeats,
-            new GuideListHost());
+            new GuideListPanelHost());
         preview = new PaintPreview(painter, editor);
         PreviewTabs.Tab requestedTab = DevCapture.requestedTab();
         if (requestedTab != null) {
@@ -244,14 +244,14 @@ public final class PaintApp implements WorkbenchScreen {
         rules = new RulesOverlay(rulesPainter, fontDir);
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
-        scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
+        scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
         pointer = new PaintPointer(viewport, scrollRouting);
         pointerTargets = new PointerTargets(List.of(
             new PreviewPointerTarget(preview, () -> rects.preview(), this::cell),
             new SheetBarPointerTarget(sheet),
             new MessagesPointerTarget(messages, this::cell),
-            new SheetSlotPointerTarget(sheet, flow, derive, messages, new SlotSelectionHost()),
-            new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new StrokeStartHost())));
+            new SheetSlotPointerTarget(sheet, flow, derive, messages, new CursorSlotSelection()),
+            new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new CursorStrokeStart())));
         loadReviewNotes(directory);
     }
 
@@ -328,7 +328,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void openNewGlyphForCapture() {
         String typed = DevCapture.newGlyphRequest();
-        if (typed == null || flow.isActive() || guideListPanel.isOpen() || confirmingQuit) {
+        if (typed == null || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved) {
             return;
         }
         openNewGlyph();
@@ -337,7 +337,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void openNewSizeForCapture() {
         int moves = DevCapture.newSizeRequest();
-        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingQuit || newGlyph.isOpen()) {
+        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()) {
             return;
         }
         try {
@@ -350,7 +350,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void openNewFontForCapture() {
-        if (newFontCaptureOpened || flow.isActive() || guideListPanel.isOpen() || confirmingQuit || newGlyph.isOpen() || newSize.isOpen()) {
+        if (newFontCaptureOpened || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen() || newSize.isOpen()) {
             return;
         }
         stroke.end();
@@ -573,7 +573,7 @@ public final class PaintApp implements WorkbenchScreen {
         return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
     }
 
-    private final class GuideListHost implements PaintGuideListPanel.Host {
+    private final class GuideListPanelHost implements PaintGuideListPanel.Host {
 
         @Override
         public PaintGuides currentGuides() {
@@ -601,7 +601,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class DeriveHost implements PaintDerive.Host {
+    private final class PaintDeriveHost implements PaintDerive.Host {
 
         @Override
         public int[] codePoints() {
@@ -609,7 +609,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
 
         @Override
-        public int cursor() {
+        public int cursorSlot() {
             return cursor;
         }
 
@@ -740,7 +740,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (rules.isShowing()) {
             return PaintMenu.Context.RULES_OPEN;
         }
-        if (confirmingQuit || guideListPanel.isOpen() || newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen()) {
+        if (confirmingUnsaved || guideListPanel.isOpen() || newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -877,8 +877,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (newFont.isOpen()) {
             stroke.end();
             updateConditions();
-            if (confirmingQuit) {
-                handleQuitPrompt();
+            if (confirmingUnsaved) {
+                handleUnsavedPrompt();
                 wheelTicks.clear();
                 return true;
             }
@@ -900,8 +900,8 @@ public final class PaintApp implements WorkbenchScreen {
             stroke.end();
             return true;
         }
-        if (confirmingQuit) {
-            handleQuitPrompt();
+        if (confirmingUnsaved) {
+            handleUnsavedPrompt();
             wheelTicks.clearVertical();
             return true;
         }
@@ -929,7 +929,7 @@ public final class PaintApp implements WorkbenchScreen {
             return true;
         }
         handleUndoKeys(control, delta);
-        return handleDerivationKeys(control);
+        return handlePickOrShortcutKeys(control);
     }
 
     private boolean handleEscapeKey() {
@@ -944,14 +944,14 @@ public final class PaintApp implements WorkbenchScreen {
         return true;
     }
 
-    private boolean handleDerivationKeys(boolean control) {
+    private boolean handlePickOrShortcutKeys(boolean control) {
         if (flow.isPicking()) {
             return derive.handlePickingKeys();
         }
         if (control) {
             return false;
         }
-        handleDeriveKeys();
+        handleShortcutKeys();
         return flow.isActive() || newGlyph.isOpen();
     }
 
@@ -1080,7 +1080,7 @@ public final class PaintApp implements WorkbenchScreen {
             messages.nextAction();
             afterUnsavedPrompt = action;
             unsavedQuestion = question;
-            confirmingQuit = true;
+            confirmingUnsaved = true;
             stroke.end();
         } else {
             action.run();
@@ -1183,7 +1183,7 @@ public final class PaintApp implements WorkbenchScreen {
         return Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
     }
 
-    private void handleDeriveKeys() {
+    private void handleShortcutKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.N) && !altDown() && !shiftDown()) {
             openNewGlyph();
             newGlyph.swallowOpeningKey();
@@ -1210,7 +1210,7 @@ public final class PaintApp implements WorkbenchScreen {
         return line;
     }
 
-    private final class MenuHost implements PaintMenuInput.Host {
+    private final class MenuInputHost implements PaintMenuInput.Host {
 
         @Override
         public MenuBar<PaintMenu.Action> menuBar() {
@@ -1269,7 +1269,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class ScrollHost implements PaintScrollRouting.Host {
+    private final class ScrollRoutingHost implements PaintScrollRouting.Host {
 
         @Override
         public boolean helpShown() {
@@ -1282,8 +1282,8 @@ public final class PaintApp implements WorkbenchScreen {
         }
 
         @Override
-        public boolean isOverlay() {
-            return flow.isOverlay();
+        public boolean isOverlayOperation() {
+            return flow.isOverlayOperation();
         }
 
         @Override
@@ -1307,7 +1307,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class SlotSelectionHost implements SheetSlotPointerTarget.Selection {
+    private final class CursorSlotSelection implements SheetSlotPointerTarget.Selection {
 
         @Override
         public boolean isSelectable(int slot) {
@@ -1320,7 +1320,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class StrokeStartHost implements GridStrokePointerTarget.Start {
+    private final class CursorStrokeStart implements GridStrokePointerTarget.StrokeContext {
 
         @Override
         public int cursorCodePoint() {
@@ -1333,19 +1333,19 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private void handleQuitPrompt() {
+    private void handleUnsavedPrompt() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
-            confirmingQuit = false;
+            confirmingUnsaved = false;
             if (!editor.isModified()) {
                 afterUnsavedPrompt.run();
             }
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            confirmingQuit = false;
+            confirmingUnsaved = false;
             afterUnsavedPrompt.run();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             messages.nextAction();
-            confirmingQuit = false;
+            confirmingUnsaved = false;
         }
     }
 
@@ -1390,9 +1390,9 @@ public final class PaintApp implements WorkbenchScreen {
         glyphTitle.draw(painter, panel, codePoint, Gdx.graphics.getDeltaTime());
         ghostSeconds += Gdx.graphics.getDeltaTime();
         grid.setHighlight(guideListPanel.highlightedGuide());
-        grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(),ghostSeconds);
+        grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(), ghostSeconds);
         preview.draw(rects.preview(), codePoint, derivePick.shown());
-        drawReviewNote(codePoint);
+        drawBelowPreviewPanels(codePoint);
         ReviewLayout.Rect strip = rects.messages();
         messages.draw(painter, strip.toCellRect(),
             Gdx.graphics.getDeltaTime());
@@ -1410,7 +1410,7 @@ public final class PaintApp implements WorkbenchScreen {
         boolean controlsOpen = controls.isOpen();
         boolean rulesShowing = rules.isShowing();
         boolean menuOpen = menuBar.isOpen();
-        layers.update(new PaintLayers.State(confirmingQuit, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
+        layers.update(new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
             controlsOpen, rulesShowing, menuOpen));
     }
 
@@ -1418,10 +1418,10 @@ public final class PaintApp implements WorkbenchScreen {
         if (layers.menuBarBelowDim()) {
             MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
         }
-        if (layers.quitPromptShown()) {
+        if (layers.unsavedPromptShown()) {
             Dialog.draw(painter, new CellRect(0, 0, columns, rows),
                 DialogContent.of("UNSAVED CHANGES",
-                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS));
+                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), UNSAVED_BUTTONS));
         }
         if (layers.newGlyphShown()) {
             newGlyph.draw(painter, columns, rows, rects.grid());
@@ -1432,7 +1432,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (layers.newSizeShown()) {
             newSize.draw(painter, columns, rows, rects.grid());
         }
-        if (layers.deriveDialogDrawn()) {
+        if (layers.deriveDialogAllowed()) {
             derive.drawDialog(painter, columns, rows, rects.grid(), codePoint);
         }
         if (layers.redrawsDeriveHelp()) {
@@ -1457,7 +1457,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     // Input runs before the frame's layers are refreshed, so it calls the static check directly.
     private boolean dialogDimsScreen() {
-        return PaintLayers.dialogDimsScreen(confirmingQuit, newGlyph.isOpen(), newSize.isOpen(), newFont.isOpen(),
+        return PaintLayers.dialogDimsScreen(confirmingUnsaved, newGlyph.isOpen(), newSize.isOpen(), newFont.isOpen(),
             deriveDimsScreen());
     }
 
@@ -1474,12 +1474,12 @@ public final class PaintApp implements WorkbenchScreen {
         if (!choosingSource) {
             return KEYS;
         }
-        return flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS;
+        return flow.isOverlayOperation() ? OVERLAY_PICK_KEYS : PICK_KEYS;
     }
 
     // Draws a glyph's side panels: the guide list when open; otherwise the help panel,
     // plus the read-only review note and pick if the glyph has a note.
-    private void drawReviewNote(int codePoint) {
+    private void drawBelowPreviewPanels(int codePoint) {
         if (shownNoteFor != codePoint) {
             shownNoteFor = codePoint;
             notePanel.resetDisplayScroll();

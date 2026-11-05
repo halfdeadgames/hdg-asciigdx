@@ -144,7 +144,7 @@ class DeriveFlowTest {
         flow.cancelAll();
         assertTrue(flow.parts().isEmpty());
         assertEquals(0, flow.pendingShift());
-        assertFalse(flow.isOverlay());
+        assertFalse(flow.isOverlayOperation());
     }
 
     @Test
@@ -184,11 +184,11 @@ class DeriveFlowTest {
     @Test
     void overlayFlagFollowsOperationAndMode() {
         DeriveFlow flow = overlayPicking(2);
-        assertTrue(flow.isOverlay());
+        assertTrue(flow.isOverlayOperation());
         flow.askReplace();
-        assertTrue(flow.isOverlay());
+        assertTrue(flow.isOverlayOperation());
         flow.finish();
-        assertFalse(flow.isOverlay());
+        assertFalse(flow.isOverlayOperation());
     }
 
     @Test
@@ -240,7 +240,7 @@ class DeriveFlowTest {
         flow.addPart();
         assertTrue(flow.parts().isEmpty());
         assertFalse(flow.canRemovePart());
-        assertFalse(flow.isOverlay());
+        assertFalse(flow.isOverlayOperation());
     }
 
     @Test

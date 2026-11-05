@@ -14,7 +14,7 @@ final class PaintScrollRouting {
 
         boolean helpContains(int pixelX, int pixelY);
 
-        boolean isOverlay();
+        boolean isOverlayOperation();
 
         int cell();
 
@@ -55,7 +55,7 @@ final class PaintScrollRouting {
         if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
             sheet.scroll().toBottom();
         }
-        if (host.isOverlay()) {
+        if (host.isOverlayOperation()) {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {

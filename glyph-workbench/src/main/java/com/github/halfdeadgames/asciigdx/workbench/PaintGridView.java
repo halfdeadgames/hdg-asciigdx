@@ -119,7 +119,7 @@ final class PaintGridView {
      * @param seconds running clock that drives the off-grid arrow blink
      */
     void draw(int codePoint, PixelGlyph previewGlyph, Ghost ghost, float seconds) {
-        drawCells(codePoint, previewGlyph);
+        drawPixels(codePoint, previewGlyph);
         if (ghost != null) {
             drawGhost(ghost, seconds);
         }
@@ -135,7 +135,7 @@ final class PaintGridView {
         drawHighlight();
     }
 
-    private void drawCells(int codePoint, PixelGlyph previewGlyph) {
+    private void drawPixels(int codePoint, PixelGlyph previewGlyph) {
         int bodyWidth = editor.bodyWidth();
         Color lit = previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {

@@ -179,13 +179,13 @@ final class PaintSheetView {
             || pixelY < barTop || pixelY >= barTop + barCells * cell()) {
             return;
         }
-        int cell = (pixelY - barTop) / cell();
-        if (cell == 0) {
+        int barCell = (pixelY - barTop) / cell();
+        if (barCell == 0) {
             scroll.scrollBy(-1);
-        } else if (cell == barCells - 1) {
+        } else if (barCell == barCells - 1) {
             scroll.scrollBy(1);
         } else {
-            scroll.clickTrack(cell - 1, barCells - 2);
+            scroll.clickTrack(barCell - 1, barCells - 2);
         }
     }
 
@@ -208,14 +208,14 @@ final class PaintSheetView {
 
     /** Handles a press on the glyph column bar; true when the press landed on it. A press on the thumb starts a drag. */
     boolean pressColumnBar(int pixelX, int pixelY) {
-        int cell = columnBarCellAt(pixelX, pixelY);
-        if (cell < 0) {
+        int barCell = columnBarCellAt(pixelX, pixelY);
+        if (barCell < 0) {
             return false;
         }
-        ScrollBarHit.Part part = ScrollBarHit.part(columnScroll, cell, columnBarCells());
+        ScrollBarHit.Part part = ScrollBarHit.part(columnScroll, barCell, columnBarCells());
         if (part == ScrollBarHit.Part.THUMB) {
             draggingColumnBar = true;
-            columnGrabOffset = ScrollBarHit.grabOffset(columnScroll, cell, columnBarCells());
+            columnGrabOffset = ScrollBarHit.grabOffset(columnScroll, barCell, columnBarCells());
         } else {
             ScrollBarHit.click(columnScroll, part);
         }
@@ -228,8 +228,8 @@ final class PaintSheetView {
 
     /** Moves the thumb with the pointer; the pointer may leave the bar sideways. */
     void dragColumnBar(int pixelX) {
-        int cell = Math.floorDiv(pixelX - frameLeft - cell(), cell());
-        columnScroll.scrollTo(ScrollBarHit.offsetForDrag(columnScroll, cell, columnBarCells(), columnGrabOffset));
+        int barCell = Math.floorDiv(pixelX - frameLeft - cell(), cell());
+        columnScroll.scrollTo(ScrollBarHit.offsetForDrag(columnScroll, barCell, columnBarCells(), columnGrabOffset));
     }
 
     void endColumnBarDrag() {

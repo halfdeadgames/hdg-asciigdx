@@ -6,7 +6,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 final class GridStrokePointerTarget implements PointerTarget {
 
     /** What starting a stroke needs from the paint screen. */
-    interface Start {
+    interface StrokeContext {
 
         int cursorCodePoint();
 
@@ -18,10 +18,10 @@ final class GridStrokePointerTarget implements PointerTarget {
     private final DeriveFlow flow;
     private final MessageStrip messages;
     private final FontEditor editor;
-    private final Start start;
+    private final StrokeContext start;
 
     GridStrokePointerTarget(PaintGridView grid, PaintStroke stroke, DeriveFlow flow, MessageStrip messages,
-                            FontEditor editor, Start start) {
+                            FontEditor editor, StrokeContext start) {
         this.grid = grid;
         this.stroke = stroke;
         this.flow = flow;

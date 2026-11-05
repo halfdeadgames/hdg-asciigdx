@@ -74,7 +74,7 @@ final class DeriveFlow {
         mode = Mode.MENU;
     }
 
-    boolean isOverlay() {
+    boolean isOverlayOperation() {
         return operation == GlyphOp.Kind.OVERLAY
             && (mode == Mode.PICK_SOURCE || mode == Mode.CONFIRM_REPLACE);
     }
