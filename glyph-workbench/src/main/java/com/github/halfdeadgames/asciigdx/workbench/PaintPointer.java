@@ -95,40 +95,65 @@ final class PaintPointer {
         boolean clicked = host.leftClicked();
         int codePoint = host.cursorCodePoint();
         if (clicked) {
-            int cell = host.cell();
-            preview.click(host.previewArea(), Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell));
-            sheet.clickBar(pointerX, pointerY);
-            sheet.pressColumnBar(pointerX, pointerY);
-            messages.click(Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell));
-            int slot = sheet.slotAt(pointerX, pointerY);
-            if (slot >= 0 && host.isSelectableSlot(slot)) {
-                messages.nextAction();
-                if (!flow.isPicking()) {
-                    host.selectSlot(slot);
-                } else {
-                    derive.clickSource(slot);
-                }
-            } else if (!flow.isPicking()) {
-                int column = grid.columnAt(pointerX);
-                int row = grid.rowAt(pointerY);
-                if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
-                    messages.nextAction();
-                    host.clearLastProblem();
-                    stroke.begin(codePoint, column, row);
-                }
-            }
+            handleClick(codePoint);
         } else if (sheet.isDraggingColumnBar()) {
-            if (pressed) {
-                sheet.dragColumnBar(pointerX);
-            } else {
-                sheet.endColumnBarDrag();
-            }
+            continueColumnBarDrag(pressed);
         } else if (stroke.isActive()) {
-            if (pressed) {
-                stroke.drag(grid.columnAt(pointerX), grid.rowAt(pointerY));
-            } else {
-                stroke.end();
-            }
+            continueStroke(pressed);
+        }
+    }
+
+    private void handleClick(int codePoint) {
+        clickPanels();
+        int slot = sheet.slotAt(pointerX, pointerY);
+        if (slot >= 0 && host.isSelectableSlot(slot)) {
+            clickSlot(slot);
+        } else if (!flow.isPicking()) {
+            beginStrokeAtPointer(codePoint);
+        }
+    }
+
+    private void clickPanels() {
+        int cell = host.cell();
+        preview.click(host.previewArea(), Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell));
+        sheet.clickBar(pointerX, pointerY);
+        sheet.pressColumnBar(pointerX, pointerY);
+        messages.click(Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell));
+    }
+
+    private void clickSlot(int slot) {
+        messages.nextAction();
+        if (!flow.isPicking()) {
+            host.selectSlot(slot);
+        } else {
+            derive.clickSource(slot);
+        }
+    }
+
+    private void beginStrokeAtPointer(int codePoint) {
+        int column = grid.columnAt(pointerX);
+        int row = grid.rowAt(pointerY);
+        if (column < 0 || column >= editor.cellWidth() || row < 0 || row >= editor.cellHeight()) {
+            return;
+        }
+        messages.nextAction();
+        host.clearLastProblem();
+        stroke.begin(codePoint, column, row);
+    }
+
+    private void continueColumnBarDrag(boolean pressed) {
+        if (pressed) {
+            sheet.dragColumnBar(pointerX);
+        } else {
+            sheet.endColumnBarDrag();
+        }
+    }
+
+    private void continueStroke(boolean pressed) {
+        if (pressed) {
+            stroke.drag(grid.columnAt(pointerX), grid.rowAt(pointerY));
+        } else {
+            stroke.end();
         }
     }
 }

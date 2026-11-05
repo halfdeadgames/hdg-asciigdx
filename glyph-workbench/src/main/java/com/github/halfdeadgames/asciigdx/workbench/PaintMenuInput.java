@@ -86,47 +86,73 @@ final class PaintMenuInput {
     // Runs before everything else. While the menu owns the frame, nothing below it may read input.
     boolean handle(float delta) {
         host.updatePointerCell();
-        if (!host.altDown()) {
-            altSeenDown = false;
-        }
+        forgetAltWhenReleased();
         MenuBar<PaintMenu.Action> menuBar = host.menuBar();
         int pointerX = host.pointerX();
         int pointerY = host.pointerY();
         if (menuPinned) {
-            if (!menuPinCellKnown) {
-                menuPinCellKnown = true;
-                menuPinX = pointerX;
-                menuPinY = pointerY;
-            }
-            if (pointerX == menuPinX && pointerY == menuPinY && !host.leftClicked()
-                && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            rememberPinCell(pointerX, pointerY);
+            if (pinHolds(pointerX, pointerY)) {
                 return menuBar.isOpen();
             }
             menuPinned = false;
         }
         boolean wasOpen = menuBar.isOpen();
         boolean escape = Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
-        int cell = host.cell();
-        PaintMenu.Action chosen = menuPointer.update(menuBar, menuAvailability,
-            Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell), host.worldWidth() / cell,
-            escape, host.leftClicked(),
-            Gdx.input.isButtonPressed(Input.Buttons.LEFT), host.mouseHeldByPainting());
+        PaintMenu.Action chosen = pointMenu(menuBar, pointerX, pointerY, escape);
         boolean keysOwnFrame = false;
         if (chosen == null && (!escape || host.altDown())) {
             chosen = routeMenuKeys(menuBar, delta);
             keysOwnFrame = menuKeys.consumed();
         }
+        runChosenAction(chosen, wasOpen);
+        return menuPointer.captured() || keysOwnFrame;
+    }
+
+    private void forgetAltWhenReleased() {
+        if (!host.altDown()) {
+            altSeenDown = false;
+        }
+    }
+
+    private void rememberPinCell(int pointerX, int pointerY) {
+        if (menuPinCellKnown) {
+            return;
+        }
+        menuPinCellKnown = true;
+        menuPinX = pointerX;
+        menuPinY = pointerY;
+    }
+
+    private boolean pinHolds(int pointerX, int pointerY) {
+        return pointerX == menuPinX && pointerY == menuPinY && !host.leftClicked()
+            && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
+    }
+
+    private PaintMenu.Action pointMenu(MenuBar<PaintMenu.Action> menuBar, int pointerX, int pointerY,
+                                       boolean escape) {
+        int cell = host.cell();
+        return menuPointer.update(menuBar, menuAvailability,
+            Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell), host.worldWidth() / cell,
+            escape, host.leftClicked(),
+            Gdx.input.isButtonPressed(Input.Buttons.LEFT), host.mouseHeldByPainting());
+    }
+
+    private void runChosenAction(PaintMenu.Action chosen, boolean wasOpen) {
         if (chosen != null) {
             host.runMenuAction(chosen);
         }
         // An action can swap the bar, so the open state is read from the host again.
         if (host.menuBar().isOpen() != wasOpen) {
-            repeatLeft.hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
-            repeatRight.hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
-            repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
-            repeatDown.hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
+            holdArrowRepeats();
         }
-        return menuPointer.captured() || keysOwnFrame;
+    }
+
+    private void holdArrowRepeats() {
+        repeatLeft.hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
+        repeatRight.hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
+        repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
+        repeatDown.hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
     }
 
     // Arrow repeats are read only while a menu is open, so a closed menu leaves them to the cursor.

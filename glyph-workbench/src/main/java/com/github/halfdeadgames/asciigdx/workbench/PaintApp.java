@@ -806,28 +806,48 @@ public final class PaintApp implements WorkbenchScreen {
         // The Controls panel takes the frame before the menu does, so a click on the bar row can still close it.
         boolean controlsOpen = controls.isOpen();
         boolean menuOwnsInput = !controlsOpen && menuInput.handle(delta);
-        if (controlsOpen) {
-            pointerInput.updateCell();
-            menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-        } else if (!menuOwnsInput && !newGlyph.isOpen() && !newSize.isOpen() && !newFont.isOpen()) {
-            handleScaleKeys();
-        }
-        if (dialogDimsScreen() && !menuBar.isOpen()) {
-            menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
-        }
+        routeHoverAndScaleKeys(controlsOpen, menuOwnsInput);
+        clearMenuHoverUnderDialog();
         layoutPanels();
         if (controlsOpen) {
-            controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
-                Math.floorDiv(pointerInput.pixelX(), cell()), Math.floorDiv(pointerInput.pixelY(), cell()),
-                worldWidth() / cell(), worldHeight() / cell());
+            handleControlsPanel(delta);
         }
-        if (menuOwnsInput || controlsOpen) {
-            stroke.end();
-            swallowInput();
-            updateConditions();
-            return true;
+        if (!menuOwnsInput && !controlsOpen) {
+            return false;
         }
-        return false;
+        stroke.end();
+        swallowInput();
+        updateConditions();
+        return true;
+    }
+
+    private void routeHoverAndScaleKeys(boolean controlsOpen, boolean menuOwnsInput) {
+        if (controlsOpen) {
+            pointerInput.updateCell();
+            clearMenuHover();
+        } else if (!menuOwnsInput && !newItemDialogOpen()) {
+            handleScaleKeys();
+        }
+    }
+
+    private void clearMenuHoverUnderDialog() {
+        if (dialogDimsScreen() && !menuBar.isOpen()) {
+            clearMenuHover();
+        }
+    }
+
+    private void clearMenuHover() {
+        menuBar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, menuAvailability);
+    }
+
+    private boolean newItemDialogOpen() {
+        return newGlyph.isOpen() || newSize.isOpen() || newFont.isOpen();
+    }
+
+    private void handleControlsPanel(float delta) {
+        controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
+            Math.floorDiv(pointerInput.pixelX(), cell()), Math.floorDiv(pointerInput.pixelY(), cell()),
+            worldWidth() / cell(), worldHeight() / cell());
     }
 
     private boolean handleNewItemDialogs(float delta) {
@@ -885,8 +905,7 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private boolean handleCommandKeys(float delta) {
-        boolean control = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
-            || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+        boolean control = controlDown();
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
         }
@@ -894,26 +913,34 @@ public final class PaintApp implements WorkbenchScreen {
             wheelTicks.clearVertical();
             return true;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (flow.isPicking()) {
-                derive.cancelDerive();
-            } else {
-                leave();
-            }
+        if (handleEscapeKey()) {
             return true;
         }
         handleUndoKeys(control, delta);
-        if (flow.isPicking()) {
-            if (derive.handlePickingKeys()) {
-                return true;
-            }
-        } else if (!control) {
-            handleDeriveKeys();
-            if (flow.isActive() || newGlyph.isOpen()) {
-                return true;
-            }
+        return handleDerivationKeys(control);
+    }
+
+    private boolean handleEscapeKey() {
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            return false;
         }
-        return false;
+        if (flow.isPicking()) {
+            derive.cancelDerive();
+        } else {
+            leave();
+        }
+        return true;
+    }
+
+    private boolean handleDerivationKeys(boolean control) {
+        if (flow.isPicking()) {
+            return derive.handlePickingKeys();
+        }
+        if (control) {
+            return false;
+        }
+        handleDeriveKeys();
+        return flow.isActive() || newGlyph.isOpen();
     }
 
     private void handleEditing(float delta) {
