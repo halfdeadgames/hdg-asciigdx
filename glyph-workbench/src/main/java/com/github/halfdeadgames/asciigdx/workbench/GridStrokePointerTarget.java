@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
+import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 
 /** Starts, continues, and ends a paint stroke on the pixel grid. */

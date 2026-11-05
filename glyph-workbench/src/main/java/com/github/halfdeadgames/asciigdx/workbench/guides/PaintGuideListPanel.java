@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
-import com.github.halfdeadgames.asciigdx.workbench.FontEditor;
+import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
