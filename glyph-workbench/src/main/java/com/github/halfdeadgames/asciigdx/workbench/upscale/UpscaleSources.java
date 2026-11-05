@@ -10,9 +10,9 @@ import java.util.List;
  */
 public final class UpscaleSources {
 
-    static final String NOT_SMALLER = "NOT SMALLER";
-    static final String DIFFERENT_SHAPE = "DIFFERENT SHAPE";
-    static final String NOT_AN_EVEN_DIVISION = "NOT AN EVEN DIVISION";
+    static final String TOO_BIG = "TOO BIG";
+    static final String SHAPE = "SHAPE";
+    static final String NOT_EVEN = "NOT EVEN";
 
     private static final int UNUSABLE_FACTOR = 0;
     private static final int NO_INDEX = -1;
@@ -87,14 +87,14 @@ public final class UpscaleSources {
 
     private static Option optionFor(Font target, Font source) {
         if (source.cellWidth() >= target.cellWidth() || source.cellHeight() >= target.cellHeight()) {
-            return unusable(source, NOT_SMALLER);
+            return unusable(source, TOO_BIG);
         }
         // Cross-multiplied so the shape check needs no division.
         if (target.cellWidth() * source.cellHeight() != target.cellHeight() * source.cellWidth()) {
-            return unusable(source, DIFFERENT_SHAPE);
+            return unusable(source, SHAPE);
         }
         if (target.cellWidth() % source.cellWidth() != 0 || target.cellHeight() % source.cellHeight() != 0) {
-            return unusable(source, NOT_AN_EVEN_DIVISION);
+            return unusable(source, NOT_EVEN);
         }
         return new Option(source, target.cellWidth() / source.cellWidth(), "");
     }

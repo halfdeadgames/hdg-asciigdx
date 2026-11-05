@@ -51,6 +51,10 @@ final class NewFontSizePrompt {
         this.onBack = onBack;
     }
 
+    GroupedPickList<Entry> list() {
+        return list;
+    }
+
     boolean isOpen() {
         return open;
     }

@@ -76,6 +76,7 @@ run {
   if (commandLineProperties.containsKey('menu')) systemProperty 'workbench.menu', commandLineProperties['menu']
   if (commandLineProperties.containsKey('newglyph')) systemProperty 'workbench.newglyph', commandLineProperties['newglyph']
   if (commandLineProperties.containsKey('newsize')) systemProperty 'workbench.newsize', commandLineProperties['newsize']
+  if (commandLineProperties.containsKey('upscalesource')) systemProperty 'workbench.upscalesource', commandLineProperties['upscalesource']
   if (commandLineProperties.containsKey('newfont')) systemProperty 'workbench.newfont', commandLineProperties['newfont']
   if (commandLineProperties.containsKey('newfontsize')) systemProperty 'workbench.newfontsize', commandLineProperties['newfontsize']
   def rulesFontDir = commandLineProperties.containsKey('fontDir') ? commandLineProperties['fontDir'] : 'fonts/saiksistt'

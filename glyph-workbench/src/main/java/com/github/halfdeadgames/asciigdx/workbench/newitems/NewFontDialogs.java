@@ -7,12 +7,12 @@ import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer.Click;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ListHit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBarHit;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
-import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
-import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -46,10 +46,7 @@ final class NewFontDialogs {
     private final NewFontNamePrompt namePage = new NewFontNamePrompt(this::continueToSize, this::cancel);
     private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::chooseSize, this::backToName);
     private final KeyRepeat repeatBackspace = new KeyRepeat();
-    // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private boolean lastPointerKnown;
-    private int lastPointerX;
-    private int lastPointerY;
+    private final GroupedPickListPointer sizePointer = new GroupedPickListPointer();
     private int swallowFrames;
 
     /**
@@ -145,7 +142,7 @@ final class NewFontDialogs {
 
     private void openSize(String name) {
         sizePage.open(name);
-        lastPointerKnown = false;
+        sizePointer.reset();
     }
 
     private void continueToSize(String name) {
@@ -201,11 +198,14 @@ final class NewFontDialogs {
         Dialog.Layout layout = sizeLayout(area);
         sizePage.wheel(pointer.wheelTicks());
         int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-        SizeListHit hit = SizeListHit.of(layout, pointer.pointerX(), pointer.pointerY(), pointer.cell(), listTop,
+        ListHit hit = ListHit.of(layout, pointer.pointerX(), pointer.pointerY(), pointer.cell(), listTop,
             sizePage.shownRows(), sizePage.window().offset(), sizePage.scrolls());
-        trackSizeHover(pointer.pointerX(), pointer.pointerY(), hit);
-        if (pointer.clicked()) {
-            handleSizeClick(hit, listTop);
+        Click click = sizePointer.handle(sizePage.list(), hit, pointer.pointerX(), pointer.pointerY(),
+            pointer.clicked(), listTop);
+        if (click == Click.OUTSIDE) {
+            sizePage.back();
+        } else if (click == Click.PICK) {
+            sizePage.enter();
         }
     }
 
@@ -228,35 +228,6 @@ final class NewFontDialogs {
         return false;
     }
 
-    private void trackSizeHover(int pointerX, int pointerY, SizeListHit hit) {
-        if (!lastPointerKnown) {
-            lastPointerKnown = true;
-            lastPointerX = pointerX;
-            lastPointerY = pointerY;
-            return;
-        }
-        if (pointerX == lastPointerX && pointerY == lastPointerY) {
-            return;
-        }
-        lastPointerX = pointerX;
-        lastPointerY = pointerY;
-        sizePage.hover(hit.row());
-    }
-
-    private void handleSizeClick(SizeListHit hit, int listTop) {
-        if (!hit.inside()) {
-            sizePage.back();
-            return;
-        }
-        if (hit.onBar()) {
-            int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
-            ScrollBarHit.click(sizePage.window(),
-                ScrollBarHit.part(sizePage.window(), hit.cellRow() - listTop, barCells));
-            return;
-        }
-        sizePage.pick(hit.row());
-    }
-
     private Dialog.Layout sizeLayout(CellRect area) {
         sizePage.fitTo(area.height());
         return Dialog.layout(DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
@@ -277,31 +248,7 @@ final class NewFontDialogs {
                 DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
                 area);
             int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-            List<SelectList.Row> visibleRows = sizePage.visibleRows();
-            SelectList.draw(painter,
-                SelectList.areaOf(list.textX(), listTop, Math.min(sizePage.listWidth(), list.textWidth()),
-                    visibleRows.size()),
-                visibleRows, sizePage.visibleSelectedIndex());
-            if (sizePage.scrolls()) {
-                drawSizeBar(painter, list.textX() + list.textWidth() - 1, listTop);
-            }
-        }
-    }
-
-    // The bar sits in the last text column beside the list: arrows on the first and last cell, track between.
-    private void drawSizeBar(Painter painter, int column, int listTop) {
-        int cell = painter.cell();
-        ScrollState window = sizePage.window();
-        int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
-        int trackCells = barCells - 2;
-        int x = column * cell;
-        painter.text("▲", x, listTop * cell, UiPalette.FRAME);
-        painter.text("▼", x, (listTop + barCells - 1) * cell, UiPalette.FRAME);
-        int thumbStart = window.thumbStart(trackCells);
-        int thumbEnd = thumbStart + window.thumbSize(trackCells);
-        for (int i = 0; i < trackCells; i++) {
-            boolean thumb = i >= thumbStart && i < thumbEnd;
-            painter.text(thumb ? "█" : "░", x, (listTop + 1 + i) * cell, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+            GroupedPickListView.draw(painter, sizePage.list(), list.textX(), listTop, list.textWidth());
         }
     }
 }

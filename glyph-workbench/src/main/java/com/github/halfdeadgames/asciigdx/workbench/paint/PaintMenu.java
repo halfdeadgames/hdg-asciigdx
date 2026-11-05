@@ -10,7 +10,7 @@ final class PaintMenu {
 
     enum Action {
         SAVE, NEW_SIZE, NEW_FONT, BACK, UNDO, REDO,
-        NEW_GLYPH, DERIVE, UNLOCK_DERIVED, GO_TO_SOURCE, CANCEL_DERIVE,
+        NEW_GLYPH, DERIVE, UPSCALE, UNLOCK_DERIVED, GO_TO_SOURCE, CANCEL_DERIVE,
         NEXT_PREVIEW, GUIDES, BIGGER_UI, SMALLER_UI, AUTO_UI,
         RULES, CONTROLS
     }
@@ -43,6 +43,7 @@ final class PaintMenu {
             new Menu<>("GLYPH", 'g', List.of(
                 new Item<>("NEW GLYPH", "N", Action.NEW_GLYPH),
                 new Item<>("DERIVE", "D", Action.DERIVE),
+                new Item<>("UPSCALE", "", Action.UPSCALE),
                 new Item<>("UNLOCK DERIVED", "U", Action.UNLOCK_DERIVED),
                 new Item<>("GO TO SOURCE", "G", Action.GO_TO_SOURCE),
                 new Item<>("CANCEL DERIVE", "ESC", Action.CANCEL_DERIVE))),

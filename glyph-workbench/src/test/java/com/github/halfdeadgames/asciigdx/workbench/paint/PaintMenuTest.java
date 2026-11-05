@@ -76,6 +76,21 @@ class PaintMenuTest {
     }
 
     @Test
+    void upscaleFollowsDeriveInTheGlyphMenuWithoutAKey() {
+        MenuBar.Item<Action> item = PaintMenu.create(true).menu(2).items().get(2);
+        assertEquals(Action.UPSCALE, item.action());
+        assertEquals("UPSCALE", item.label());
+        assertEquals("", item.shortcut());
+    }
+
+    @Test
+    void upscaleIsAvailableOnlyWhenIdle() {
+        for (Context context : Context.values()) {
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.UPSCALE, context), context.name());
+        }
+    }
+
+    @Test
     void newSizeIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
             assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_SIZE, context), context.name());

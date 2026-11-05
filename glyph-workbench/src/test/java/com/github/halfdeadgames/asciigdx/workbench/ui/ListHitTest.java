@@ -1,14 +1,13 @@
-package com.github.halfdeadgames.asciigdx.workbench.newitems;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class SizeListHitTest {
+class ListHitTest {
 
     private static final int CELL = 10;
     private static final int LIST_TOP = 10;
@@ -21,11 +20,11 @@ class SizeListHitTest {
         return cells * CELL + CELL / 2;
     }
 
-    private static SizeListHit hit(int pointerX, int pointerY, int offset, boolean scrolls) {
-        return SizeListHit.of(LAYOUT, pointerX, pointerY, CELL, LIST_TOP, SHOWN_ROWS, offset, scrolls);
+    private static ListHit hit(int pointerX, int pointerY, int offset, boolean scrolls) {
+        return ListHit.of(LAYOUT, pointerX, pointerY, CELL, LIST_TOP, SHOWN_ROWS, offset, scrolls);
     }
 
-    private static SizeListHit hitAtCell(int column, int cellRow, int offset, boolean scrolls) {
+    private static ListHit hitAtCell(int column, int cellRow, int offset, boolean scrolls) {
         return hit(centerOf(column), centerOf(cellRow), offset, scrolls);
     }
 
@@ -60,7 +59,7 @@ class SizeListHitTest {
 
     @Test
     void barColumnIsBarWhenListScrolls() {
-        SizeListHit hit = hitAtCell(BAR_COLUMN, 11, 0, true);
+        ListHit hit = hitAtCell(BAR_COLUMN, 11, 0, true);
         assertTrue(hit.inside());
         assertTrue(hit.onBar());
         assertEquals(11, hit.cellRow());
@@ -69,7 +68,7 @@ class SizeListHitTest {
 
     @Test
     void barColumnIsARowWhenListDoesNotScroll() {
-        SizeListHit hit = hitAtCell(BAR_COLUMN, 12, 0, false);
+        ListHit hit = hitAtCell(BAR_COLUMN, 12, 0, false);
         assertFalse(hit.onBar());
         assertEquals(1, hit.row());
     }
@@ -98,8 +97,8 @@ class SizeListHitTest {
 
     @Test
     void cellRowsOutsideTheListButInsideTheFrameHaveNoRow() {
-        SizeListHit above = hitAtCell(15, LIST_TOP - 1, 4, false);
-        SizeListHit below = hitAtCell(15, LIST_TOP + SHOWN_ROWS * 2, 4, false);
+        ListHit above = hitAtCell(15, LIST_TOP - 1, 4, false);
+        ListHit below = hitAtCell(15, LIST_TOP + SHOWN_ROWS * 2, 4, false);
         assertTrue(above.inside());
         assertTrue(below.inside());
         assertEquals(-1, above.row());
@@ -108,7 +107,7 @@ class SizeListHitTest {
 
     @Test
     void negativePointerFloorsTowardsNegativeInfinity() {
-        SizeListHit hit = hit(-1, -1, 0, false);
+        ListHit hit = hit(-1, -1, 0, false);
         assertFalse(hit.inside());
         assertEquals(-1, hit.cellRow());
         assertEquals(-2, hit(0, -CELL - 1, 0, false).cellRow());

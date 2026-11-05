@@ -6,6 +6,7 @@ final class PaintLayers {
     private boolean confirmingUnsaved;
     private boolean newGlyphOpen;
     private boolean newSizeOpen;
+    private boolean upscaleSourceOpen;
     private boolean newFontOpen;
     private boolean deriveDialogShown;
     private boolean controlsOpen;
@@ -14,19 +15,21 @@ final class PaintLayers {
 
     // The dialogs that dim the whole screen when drawn. Static so input code can ask before a frame refresh.
     static boolean dialogDimsScreen(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen,
-                                    boolean newFontOpen, boolean deriveDims) {
-        return confirmingUnsaved || newGlyphOpen || newSizeOpen || newFontOpen || deriveDims;
+                                    boolean upscaleSourceOpen, boolean newFontOpen, boolean deriveDims) {
+        return confirmingUnsaved || newGlyphOpen || newSizeOpen || upscaleSourceOpen || newFontOpen || deriveDims;
     }
 
     /** What is open this frame; deriveDims is true while the derive flow shows its menu or the replace confirmation. */
-    record State(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen, boolean newFontOpen,
-                 boolean deriveDims, boolean controlsOpen, boolean rulesShowing, boolean menuOpen) {
+    record State(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen, boolean upscaleSourceOpen,
+                 boolean newFontOpen, boolean deriveDims, boolean controlsOpen, boolean rulesShowing,
+                 boolean menuOpen) {
     }
 
     void update(State state) {
         this.confirmingUnsaved = state.confirmingUnsaved();
         this.newGlyphOpen = state.newGlyphOpen();
         this.newSizeOpen = state.newSizeOpen();
+        this.upscaleSourceOpen = state.upscaleSourceOpen();
         this.newFontOpen = state.newFontOpen();
         this.deriveDialogShown = state.deriveDims();
         this.controlsOpen = state.controlsOpen();
@@ -34,7 +37,7 @@ final class PaintLayers {
         coveringPanelShown = state.controlsOpen() || state.rulesShowing();
         // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and must stay clear.
         promptShown = dialogDimsScreen(state.confirmingUnsaved(), state.newGlyphOpen(), state.newSizeOpen(),
-            state.newFontOpen(), state.deriveDims()) && !coveringPanelShown && !state.menuOpen();
+            state.upscaleSourceOpen(), state.newFontOpen(), state.deriveDims()) && !coveringPanelShown && !state.menuOpen();
     }
 
     boolean coveringPanelShown() {
@@ -68,6 +71,10 @@ final class PaintLayers {
 
     boolean newSizeShown() {
         return newSizeOpen && !coveringPanelShown;
+    }
+
+    boolean upscaleSourceShown() {
+        return upscaleSourceOpen && !coveringPanelShown;
     }
 
     boolean deriveDialogAllowed() {

@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontHeader;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -27,8 +27,6 @@ public final class NewSizePlan {
     }
 
     private static final Pattern SIZE_FILE = Pattern.compile("(\\d{1,4})\\.txt");
-    private static final Pattern CELL = Pattern.compile("cell (\\d+)x(\\d+)");
-    private static final int BYTE_ORDER_MARK = 0xFEFF;
     private static final int STEP = 8;
     private static final int MAX_HEIGHT = 64;
 
@@ -123,27 +121,7 @@ public final class NewSizePlan {
 
     // Null when the file has no valid cell line.
     private static Shape shapeOfFile(Path file) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            String line = reader.readLine();
-            while (line != null && isSkippable(line)) {
-                line = reader.readLine();
-            }
-            if (line == null) {
-                return null;
-            }
-            if (!line.isEmpty() && line.charAt(0) == BYTE_ORDER_MARK) {
-                line = line.substring(1);
-            }
-            Matcher matcher = CELL.matcher(line.strip());
-            if (!matcher.matches()) {
-                return null;
-            }
-            return NewFontInput.shapeOf(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
-        }
-    }
-
-    private static boolean isSkippable(String line) {
-        String content = line.isEmpty() || line.charAt(0) != BYTE_ORDER_MARK ? line : line.substring(1);
-        return content.isBlank() || content.equals("#") || content.startsWith("# ");
+        FontHeader.CellSize cell = FontHeader.read(file);
+        return cell == null ? null : NewFontInput.shapeOf(cell.width(), cell.height());
     }
 }

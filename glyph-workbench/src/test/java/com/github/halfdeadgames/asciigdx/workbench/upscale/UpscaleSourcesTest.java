@@ -35,7 +35,7 @@ class UpscaleSourcesTest {
     void twentyFourFromSixteenIsNotAnEvenDivision() {
         List<Option> options = UpscaleSources.options(square("f", 24), List.of(square("f", 8), square("f", 16)));
         assertFalse(options.get(1).usable());
-        assertEquals("NOT AN EVEN DIVISION", options.get(1).problem());
+        assertEquals("NOT EVEN", options.get(1).problem());
         assertEquals(0, options.get(1).factor());
     }
 
@@ -68,19 +68,19 @@ class UpscaleSourcesTest {
         Font target = new Font("f", 16, 32);
         List<Option> options = UpscaleSources.options(target, List.of(square("f", 8)));
         assertFalse(options.get(0).usable());
-        assertEquals("DIFFERENT SHAPE", options.get(0).problem());
+        assertEquals("SHAPE", options.get(0).problem());
     }
 
     @Test
     void largerSourceIsNotSmaller() {
         List<Option> options = UpscaleSources.options(square("f", 16), List.of(square("g", 24)));
-        assertEquals("NOT SMALLER", options.get(0).problem());
+        assertEquals("TOO BIG", options.get(0).problem());
     }
 
     @Test
     void equalSizeFromAnotherFamilyIsNotSmaller() {
         List<Option> options = UpscaleSources.options(square("f", 16), List.of(square("g", 16)));
-        assertEquals("NOT SMALLER", options.get(0).problem());
+        assertEquals("TOO BIG", options.get(0).problem());
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
  * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
  * {@code workbench.newsize} opens the New size dialog (optionally {@code down:N} rows into the list).
+ * {@code workbench.upscalesource} opens the Upscale from dialog (optionally {@code down:N} rows into the list).
  * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
  * {@code workbench.newfontsize} opens the New font size page for a name (optionally {@code :down:N} sizes in).
  * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
@@ -24,6 +25,7 @@ public final class DevCapture {
     static final String MENU_PROPERTY = "workbench.menu";
     static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
     static final String NEW_SIZE_PROPERTY = "workbench.newsize";
+    static final String UPSCALE_SOURCE_PROPERTY = "workbench.upscalesource";
     static final String NEW_FONT_PROPERTY = "workbench.newfont";
     static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
     static final String CAPTURE_PROPERTY = "workbench.capture";
@@ -141,6 +143,27 @@ public final class DevCapture {
             return Math.max(0, parseRowIndex(fields[1]));
         }
         return 0;
+    }
+
+    /** Rows to move down in the Upscale from dialog opened by {@code workbench.upscalesource}, or -1 to leave it closed. */
+    public static int upscaleSourceRequest() {
+        return parseUpscaleSourceRequest(System.getProperty(UPSCALE_SOURCE_PROPERTY));
+    }
+
+    /** Only a blank value, {@code open}, or {@code down:N} opens the dialog; {@code down:N} also moves the cursor N rows. */
+    static int parseUpscaleSourceRequest(String request) {
+        if (request == null) {
+            return -1;
+        }
+        String trimmed = request.trim();
+        if (trimmed.isEmpty() || "open".equalsIgnoreCase(trimmed)) {
+            return 0;
+        }
+        String[] fields = trimmed.split(":", -1);
+        if (fields.length == 2 && "down".equalsIgnoreCase(fields[0].trim())) {
+            return Math.max(0, parseRowIndex(fields[1]));
+        }
+        return -1;
     }
 
     /** True for the request {@code controls}, which opens the Controls panel instead of a menu. */

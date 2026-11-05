@@ -21,10 +21,11 @@ class PaintLayersTest {
 
     @Test
     void coveringPanelHidesDialogs() {
-        layers.update(nothingOpen().confirmingUnsaved().newGlyphOpen().newSizeOpen().newFontOpen().deriveDims()
-            .controlsOpen().build());
+        layers.update(nothingOpen().confirmingUnsaved().newGlyphOpen().newSizeOpen().upscaleSourceOpen()
+            .newFontOpen().deriveDims().controlsOpen().build());
 
         assertTrue(layers.coveringPanelShown());
+        assertFalse(layers.upscaleSourceShown());
         assertFalse(layers.unsavedPromptShown());
         assertFalse(layers.newGlyphShown());
         assertFalse(layers.newFontShown());
@@ -113,12 +114,32 @@ class PaintLayersTest {
 
     @Test
     void dialogDimsScreenMatchesAnyDimmingDialog() {
-        assertFalse(PaintLayers.dialogDimsScreen(false, false, false, false, false));
-        assertTrue(PaintLayers.dialogDimsScreen(true, false, false, false, false));
-        assertTrue(PaintLayers.dialogDimsScreen(false, true, false, false, false));
-        assertTrue(PaintLayers.dialogDimsScreen(false, false, true, false, false));
-        assertTrue(PaintLayers.dialogDimsScreen(false, false, false, true, false));
-        assertTrue(PaintLayers.dialogDimsScreen(false, false, false, false, true));
+        assertFalse(PaintLayers.dialogDimsScreen(false, false, false, false, false, false));
+        assertTrue(PaintLayers.dialogDimsScreen(true, false, false, false, false, false));
+        assertTrue(PaintLayers.dialogDimsScreen(false, true, false, false, false, false));
+        assertTrue(PaintLayers.dialogDimsScreen(false, false, true, false, false, false));
+        assertTrue(PaintLayers.dialogDimsScreen(false, false, false, true, false, false));
+        assertTrue(PaintLayers.dialogDimsScreen(false, false, false, false, true, false));
+        assertTrue(PaintLayers.dialogDimsScreen(false, false, false, false, false, true));
+    }
+
+    @Test
+    void upscaleSourceDimsAndShowsLikeNewSize() {
+        layers.update(nothingOpen().upscaleSourceOpen().build());
+
+        assertTrue(layers.upscaleSourceShown());
+        assertTrue(layers.promptShown());
+        assertTrue(layers.menuBarBelowDim());
+    }
+
+    @Test
+    void upscaleSourceHiddenUnderCoveringPanelAndWithMenuKeepsBarOnTop() {
+        layers.update(nothingOpen().upscaleSourceOpen().rulesShowing().build());
+        assertFalse(layers.upscaleSourceShown());
+
+        layers.update(nothingOpen().upscaleSourceOpen().menuOpen().build());
+        assertTrue(layers.upscaleSourceShown());
+        assertFalse(layers.menuBarBelowDim());
     }
 
     private static StateBuilder nothingOpen() {
@@ -129,6 +150,7 @@ class PaintLayersTest {
         private boolean confirmingUnsaved;
         private boolean newGlyphOpen;
         private boolean newSizeOpen;
+        private boolean upscaleSourceOpen;
         private boolean newFontOpen;
         private boolean deriveDims;
         private boolean controlsOpen;
@@ -147,6 +169,11 @@ class PaintLayersTest {
 
         StateBuilder newSizeOpen() {
             newSizeOpen = true;
+            return this;
+        }
+
+        StateBuilder upscaleSourceOpen() {
+            upscaleSourceOpen = true;
             return this;
         }
 
@@ -176,8 +203,8 @@ class PaintLayersTest {
         }
 
         PaintLayers.State build() {
-            return new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, newFontOpen, deriveDims,
-                controlsOpen, rulesShowing, menuOpen);
+            return new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, upscaleSourceOpen,
+                newFontOpen, deriveDims, controlsOpen, rulesShowing, menuOpen);
         }
     }
 }

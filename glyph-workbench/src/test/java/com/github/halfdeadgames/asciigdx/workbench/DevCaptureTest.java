@@ -35,6 +35,17 @@ class DevCaptureTest {
     }
 
     @Test
+    void upscaleSourceRequestOpensOnBlankOpenOrDown() {
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest(null));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest(""));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest(" OPEN "));
+        assertEquals(2, DevCapture.parseUpscaleSourceRequest("down:2"));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest("down:-1"));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("1"));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("sideways"));
+    }
+
+    @Test
     void newSizeRequestOpensTheDialogAndMayMoveDown() {
         assertEquals(-1, DevCapture.parseNewSizeRequest(null));
         assertEquals(0, DevCapture.parseNewSizeRequest("1"));
