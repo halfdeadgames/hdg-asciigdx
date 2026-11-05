@@ -754,6 +754,23 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void handleInput(float delta) {
+        if (routeMenuAndControls(delta)) {
+            return;
+        }
+        if (handleNewItemDialogs(delta)) {
+            return;
+        }
+        if (handleModalPanels(delta)) {
+            return;
+        }
+        if (handleCommandKeys(delta)) {
+            return;
+        }
+        handleEditing(delta);
+        reportEditProblem();
+    }
+
+    private boolean routeMenuAndControls(float delta) {
         // The Controls panel takes the frame before the menu does, so a click on the bar row can still close it.
         boolean controlsOpen = controls.isOpen();
         boolean menuOwnsInput = !controlsOpen && menuInput.handle(delta);
@@ -776,19 +793,23 @@ public final class PaintApp implements WorkbenchScreen {
             stroke.end();
             swallowInput();
             updateConditions();
-            return;
+            return true;
         }
+        return false;
+    }
+
+    private boolean handleNewItemDialogs(float delta) {
         if (newGlyph.isOpen()) {
             stroke.end();
             updateConditions();
             handleNewGlyph(delta);
-            return;
+            return true;
         }
         if (newSize.isOpen()) {
             stroke.end();
             updateConditions();
             handleNewSize();
-            return;
+            return true;
         }
         if (newFont.isOpen()) {
             stroke.end();
@@ -796,34 +817,42 @@ public final class PaintApp implements WorkbenchScreen {
             if (confirmingQuit) {
                 handleQuitPrompt();
                 wheelTicks.clear();
-                return;
+                return true;
             }
             int wheel = wheelTicks.vertical();
             wheelTicks.clear();
             newFont.handleInput(delta, wheel, leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell(),
                 rects.grid());
-            return;
+            return true;
         }
+        return false;
+    }
+
+    private boolean handleModalPanels(float delta) {
         scrollRouting.scrollSheetSideways();
         updateConditions();
         if (rules.handleInput(delta, wheelTicks.vertical())) {
             wheelTicks.clearVertical();
             stroke.end();
-            return;
+            return true;
         }
         if (confirmingQuit) {
             handleQuitPrompt();
             wheelTicks.clearVertical();
-            return;
+            return true;
         }
         if (guideListPanel.isOpen()) {
             guideListPanel.handle(delta, wheelTicks.vertical());
-            return;
+            return true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F2) && flow.mode() == DeriveFlow.Mode.IDLE) {
             guideListPanel.open();
-            return;
+            return true;
         }
+        return false;
+    }
+
+    private boolean handleCommandKeys(float delta) {
         boolean control = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
             || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
@@ -831,7 +860,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
         if (derive.handleModalKeys()) {
             wheelTicks.clearVertical();
-            return;
+            return true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (flow.isPicking()) {
@@ -839,31 +868,39 @@ public final class PaintApp implements WorkbenchScreen {
             } else {
                 leave();
             }
-            return;
+            return true;
         }
         handleUndoKeys(control, delta);
         if (flow.isPicking()) {
             if (derive.handlePickingKeys()) {
-                return;
+                return true;
             }
         } else if (!control) {
             handleDeriveKeys();
             if (flow.isActive() || newGlyph.isOpen()) {
-                return;
+                return true;
             }
         }
+        return false;
+    }
+
+    private void handleEditing(float delta) {
         handlePreviewTabKey();
         moveCursor(delta);
         scrollRouting.handleScrollKeys();
         pointerInput.track();
         pointerInput.handleMouse();
+    }
+
+    private void reportEditProblem() {
         String problem = editor.problem();
-        if (!problem.equals(lastProblem)) {
-            lastProblem = problem;
-            if (!problem.isEmpty()) {
-                messages.nextAction();
-                messages.warn("Edit rejected: " + problem);
-            }
+        if (problem.equals(lastProblem)) {
+            return;
+        }
+        lastProblem = problem;
+        if (!problem.isEmpty()) {
+            messages.nextAction();
+            messages.warn("Edit rejected: " + problem);
         }
     }
 
