@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -16,7 +16,7 @@ import java.util.List;
  * The Help > Controls panel: a centred modal box listing every paint control. While it is open it takes
  * the whole frame; Esc, Enter, or a click outside the box closes it. Sizes are in text cells, so it follows the UI scale.
  */
-final class ControlsScreen {
+public final class ControlsScreen {
 
     static final String TITLE = "CONTROLS";
 
@@ -64,12 +64,12 @@ final class ControlsScreen {
         return cellX < rect.x() || cellX >= rect.x() + rect.width() || cellY < rect.y() || cellY >= rect.bottom();
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return open;
     }
 
     /** Opens at the top. Arrow keys still held from the menu stay quiet until released. */
-    void open() {
+    public void open() {
         open = true;
         scroll.toTop();
         repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
@@ -100,7 +100,7 @@ final class ControlsScreen {
      * @param wheelTicks wheel notches this frame, positive towards later lines
      * @param clicked the left button went down this frame, at cell ({@code cellX}, {@code cellY})
      */
-    void handleInput(float delta, int wheelTicks, boolean clicked, int cellX, int cellY, int columns, int rows) {
+    public void handleInput(float delta, int wheelTicks, boolean clicked, int cellX, int cellY, int columns, int rows) {
         refresh(columns, rows);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
             || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)
@@ -114,7 +114,7 @@ final class ControlsScreen {
     }
 
     /** Draws the dimmed screen and the box over everything drawn before. */
-    void draw(Painter painter, int columns, int rows) {
+    public void draw(Painter painter, int columns, int rows) {
         refresh(columns, rows);
         int cell = painter.cell();
         CellRect rect = layout.rect();

@@ -21,6 +21,8 @@ import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuideListPanel;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuidesFile;
+import com.github.halfdeadgames.asciigdx.workbench.help.ControlsScreen;
+import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelpPanel;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontPointer;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewGlyphDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeDialog;

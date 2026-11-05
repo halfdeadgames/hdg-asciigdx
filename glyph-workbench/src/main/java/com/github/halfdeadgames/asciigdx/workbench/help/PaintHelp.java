@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Builds the rows of the paint screen help panel for the current state. It holds no drawing or input code. */
-final class PaintHelp {
+public final class PaintHelp {
 
     /** One overlay part as the help shows it. */
-    record PartView(int codePoint, int shift) { }
+    public record PartView(int codePoint, int shift) { }
 
     /**
      * What the help depends on.
@@ -20,11 +20,11 @@ final class PaintHelp {
      * @param committedParts overlay parts already added, in order
      * @param pending the overlay part being picked, or null when the source is the target
      */
-    record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
-                 OverlayCheck.Result check) {
+    public record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
+                        OverlayCheck.Result check) {
 
         /** A state with no overlay check. */
-        State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending) {
+        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending) {
             this(mode, operation, committedParts, pending, null);
         }
     }

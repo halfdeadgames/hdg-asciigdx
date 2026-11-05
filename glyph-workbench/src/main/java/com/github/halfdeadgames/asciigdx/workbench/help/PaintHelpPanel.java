@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -10,7 +10,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
 /** The help panel of the paint screen: wraps the help lines, scrolls them, and tracks where it was last drawn. */
-final class PaintHelpPanel {
+public final class PaintHelpPanel {
 
     private final Painter painter;
     private final ScrollState scroll;
@@ -21,13 +21,13 @@ final class PaintHelpPanel {
     private CellRect area;
     private boolean shown;
 
-    PaintHelpPanel(Painter painter, ScrollState scroll) {
+    public PaintHelpPanel(Painter painter, ScrollState scroll) {
         this.painter = painter;
         this.scroll = scroll;
     }
 
     // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
-    void draw(CellRect drawArea, PaintHelp.State state, int cell) {
+    public void draw(CellRect drawArea, PaintHelp.State state, int cell) {
         Panel.draw(painter, drawArea,
             "HELP", false);
         int chars = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
@@ -59,7 +59,7 @@ final class PaintHelpPanel {
     }
 
     // Draws again where the panel was last drawn, for a state that changed since.
-    void redraw(PaintHelp.State state, int cell) {
+    public void redraw(PaintHelp.State state, int cell) {
         draw(area, state, cell);
     }
 
@@ -73,17 +73,17 @@ final class PaintHelpPanel {
         painter.text(line.action(), textX + line.actionColumn() * cell, top, color);
     }
 
-    boolean contains(int pixelX, int pixelY, int cell) {
+    public boolean contains(int pixelX, int pixelY, int cell) {
         return shown && area != null
             && pixelX >= area.x() * cell && pixelX < (area.x() + area.width()) * cell
             && pixelY >= area.y() * cell && pixelY < area.bottom() * cell;
     }
 
-    boolean isShown() {
+    public boolean isShown() {
         return shown;
     }
 
-    void markHidden() {
+    public void markHidden() {
         shown = false;
     }
 }

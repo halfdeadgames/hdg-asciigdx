@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelp;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
