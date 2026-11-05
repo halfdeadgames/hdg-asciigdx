@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+
 /** Where the panels of the upscale review go, in text cells: the sheet on the left, three panels stacked on the right. */
 final class ReviewLayout {
 
@@ -7,6 +9,10 @@ final class ReviewLayout {
 
         int bottom() {
             return y + height;
+        }
+
+        CellRect toCellRect() {
+            return new CellRect(x, y, width, height);
         }
     }
 

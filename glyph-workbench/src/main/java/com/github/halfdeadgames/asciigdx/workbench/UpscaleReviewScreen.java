@@ -21,6 +21,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
@@ -596,13 +597,14 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         drawCandidates(codePoint);
         drawNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, new CellRect(strip.x(), strip.y(), strip.width(), strip.height()),
+        messages.draw(painter, strip.toCellRect(),
             Gdx.graphics.getDeltaTime());
         StatusBar.draw(painter, columns(), rows() - 1, noteEditor.isActive() ? NOTE_KEYS : BROWSE_KEYS);
         if (replaceColumn >= 0) {
-            Dialog.draw(painter, columns(), rows(), "REPLACE GLYPH",
-                List.of("REPLACE EXISTING " + target.cellWidth() + "X" + target.cellHeight() + " GLYPH?"),
-                REPLACE_BUTTONS);
+            Dialog.draw(painter, new CellRect(0, 0, columns(), rows()),
+                DialogContent.of("REPLACE GLYPH",
+                    List.of("REPLACE EXISTING " + target.cellWidth() + "X" + target.cellHeight() + " GLYPH?"),
+                    REPLACE_BUTTONS));
         }
         rules.draw(Math.round(viewport.getWorldWidth()), Math.round(viewport.getWorldHeight()), codePoint);
         batch.end();
@@ -630,7 +632,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         }
         titleSeconds += Gdx.graphics.getDeltaTime();
         line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, titleSeconds));
-        Panel.draw(painter, new CellRect(area.x(), area.y(), area.width(), area.height()), line.toString(), true);
+        Panel.draw(painter, area.toCellRect(), line.toString(), true);
         columnPanel.setHighlights(hoveredColumn, pickedColumn, CURSOR_COLOR, PICKED_COLOR);
         columnPanel.setViewed(-1, CURSOR_COLOR);
         columnPanel.setMaxOuterHeight((area.height() - 2) * CELL);
@@ -648,7 +650,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         } else {
             notePanel.markHidden();
             Panel.draw(painter,
-                new CellRect(rects.note().x(), rects.note().y(), rects.note().width(), rects.note().height()),
+                rects.note().toCellRect(),
                 "REVIEW NOTE   [ ] SCROLLS", false);
         }
     }

@@ -3,7 +3,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,9 +114,11 @@ final class PaintDerive {
         replaceLine.setLength(0);
         replaceLine.append("U+");
         GlyphLabel.appendHex(replaceLine, codePoint);
-        Dialog.draw(painter, columns, rows, "REPLACE DRAWING",
-            List.of(replaceLine + " holds a drawing.", "Deriving replaces it.", "Undo restores it."), REPLACE_BUTTONS,
-            area.x(), area.y(), area.width(), area.height());
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+            DialogContent.of("REPLACE DRAWING",
+                List.of(replaceLine + " holds a drawing.", "Deriving replaces it.", "Undo restores it."),
+                REPLACE_BUTTONS),
+            area.toCellRect());
     }
 
     void openDerive() {

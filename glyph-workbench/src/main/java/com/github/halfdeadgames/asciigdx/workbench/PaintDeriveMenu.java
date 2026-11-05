@@ -3,7 +3,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
@@ -64,15 +66,17 @@ final class PaintDeriveMenu {
     }
 
     void draw(Painter painter, int columns, int rows, ReviewLayout.Rect grid) {
-        Dialog.draw(painter, columns, rows, MENU_TITLE, MENU_LINES, MENU_BUTTONS,
-            grid.x(), grid.y(), grid.width(), grid.height());
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+            DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
+            grid.toCellRect());
         Dialog.Layout menu = layout(grid);
         SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
             MENU_ROWS, flow.menuIndex());
     }
 
     private static Dialog.Layout layout(ReviewLayout.Rect area) {
-        return Dialog.layout(MENU_TITLE, MENU_LINES, MENU_BUTTONS, area.x(), area.y(), area.width(), area.height());
+        return Dialog.layout(DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
+            area.toCellRect());
     }
 
     private static List<SelectList.Row> menuRows() {

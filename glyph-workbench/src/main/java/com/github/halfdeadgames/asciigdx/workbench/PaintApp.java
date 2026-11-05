@@ -18,6 +18,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
@@ -1396,7 +1397,7 @@ public final class PaintApp implements WorkbenchScreen {
         preview.draw(rects.preview(), codePoint, derivePick.shown());
         drawReviewNote(codePoint);
         ReviewLayout.Rect strip = rects.messages();
-        messages.draw(painter, new CellRect(strip.x(), strip.y(), strip.width(), strip.height()),
+        messages.draw(painter, strip.toCellRect(),
             Gdx.graphics.getDeltaTime());
         if (layoutBarShown) {
             StatusBar.draw(painter, columns, rows - 1,
@@ -1414,8 +1415,9 @@ public final class PaintApp implements WorkbenchScreen {
             MenuBarView.drawBar(painter, menuBar, columns, MENU_ROW, menuAvailability);
         }
         if (layers.quitPromptShown()) {
-            Dialog.draw(painter, columns, rows, "UNSAVED CHANGES",
-                List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS);
+            Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+                DialogContent.of("UNSAVED CHANGES",
+                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), QUIT_BUTTONS));
         }
         if (layers.newGlyphShown()) {
             newGlyph.draw(painter, columns, rows, rects.grid());

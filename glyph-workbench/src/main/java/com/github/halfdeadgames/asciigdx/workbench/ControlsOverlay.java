@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -122,7 +121,7 @@ final class ControlsOverlay {
         for (int i = 1; i <= rect.width(); i++) {
             painter.text("▓", (rect.x() + i) * cell, (rect.y() + rect.height()) * cell, UiPalette.SHADOW);
         }
-        Panel.draw(painter, new CellRect(rect.x(), rect.y(), rect.width(), rect.height()), TITLE, true);
+        Panel.draw(painter, rect.toCellRect(), TITLE, true);
         List<HelpWrap.Line> lines = layout.lines();
         int first = scroll.offset();
         int last = Math.min(lines.size(), first + layout.visibleRows());

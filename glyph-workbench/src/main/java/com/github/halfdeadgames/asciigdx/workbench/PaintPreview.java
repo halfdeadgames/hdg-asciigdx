@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.IntMap;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
-import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.Random;
@@ -84,7 +83,7 @@ final class PaintPreview {
 
     /** @param shown glyph to show instead of the slot's own, or null */
     void draw(ReviewLayout.Rect rect, int codePoint, PixelGlyph shown) {
-        Panel.draw(painter, new CellRect(rect.x(), rect.y(), rect.width(), rect.height()), "PREVIEW", false);
+        Panel.draw(painter, rect.toCellRect(), "PREVIEW", false);
         drawTabs(rect);
         int left = (rect.x() + 2) * cell();
         int rowTop = (PreviewTabs.labelRow(rect) + 1) * cell() + sectionGap();

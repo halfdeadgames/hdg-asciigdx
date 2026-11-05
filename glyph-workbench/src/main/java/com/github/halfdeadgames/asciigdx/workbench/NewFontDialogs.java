@@ -3,7 +3,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
@@ -256,20 +258,23 @@ final class NewFontDialogs {
 
     private Dialog.Layout sizeLayout(ReviewLayout.Rect area) {
         sizePage.fitTo(area.height());
-        return Dialog.layout(TITLE, sizePage.lines(), SIZE_BUTTONS,
-            area.x(), area.y(), area.width(), area.height());
+        return Dialog.layout(DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
+            area.toCellRect());
     }
 
     /** Draws the open page, dimming the whole screen first. */
     void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
         if (namePage.isOpen()) {
-            Dialog.draw(painter, columns, rows, TITLE, namePage.lines(),
-                namePage.error() == null ? NAME_BUTTONS : NAME_BLOCKED_BUTTONS,
-                area.x(), area.y(), area.width(), area.height(), 0, NewFontNamePrompt.LINE_CELLS);
+            Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+                new DialogContent(TITLE, namePage.lines(),
+                    namePage.error() == null ? NAME_BUTTONS : NAME_BLOCKED_BUTTONS,
+                    0, NewFontNamePrompt.LINE_CELLS),
+                area.toCellRect());
         } else if (sizePage.isOpen()) {
             Dialog.Layout list = sizeLayout(area);
-            Dialog.draw(painter, columns, rows, TITLE, sizePage.lines(), SIZE_BUTTONS,
-                area.x(), area.y(), area.width(), area.height());
+            Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+                DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
+                area.toCellRect());
             int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
             SelectList.draw(painter, list.textX(), listTop,
                 Math.min(sizePage.listWidth(), list.textWidth()), sizePage.visibleRows(),

@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -91,8 +93,9 @@ final class NewSizeDialog {
     }
 
     void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
-        Dialog.draw(painter, columns, rows, TITLE, prompt.lines(), buttons(),
-            area.x(), area.y(), area.width(), area.height());
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+            DialogContent.of(TITLE, prompt.lines(), buttons()),
+            area.toCellRect());
         if (!prompt.hasChoices()) {
             return;
         }
@@ -142,8 +145,8 @@ final class NewSizeDialog {
     }
 
     private Dialog.Layout layout(ReviewLayout.Rect area) {
-        return Dialog.layout(TITLE, prompt.lines(), buttons(),
-            area.x(), area.y(), area.width(), area.height());
+        return Dialog.layout(DialogContent.of(TITLE, prompt.lines(), buttons()),
+            area.toCellRect());
     }
 
     private List<Dialog.Button> buttons() {

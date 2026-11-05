@@ -40,24 +40,24 @@ public final class Dialog {
     private static final Color DIM_COLOR = new Color(0f, 0f, 0f, DIM_ALPHA);
     private static final Color INPUT_BACKGROUND = new Color(0x000000FF);
     private static final Color INPUT_TEXT = new Color(0xFFFFFFFF);
-    private static final int NO_INPUT_LINE = -1;
     private static final int INPUT_INSET_DIVISOR = 4;
     private static final int MIN_INPUT_INSET = 2;
 
     private Dialog() {
     }
 
-    /** Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centres it. */
-    public static Layout layout(String title, List<String> lines, List<Button> buttons, int columns, int rows) {
-        return layout(title, lines, buttons, 0, 0, columns, rows);
-    }
-
     /**
-     * Like {@link #layout(String, List, List, int, int)}, but centred in a cell rectangle and capped so the
-     * frame and its one-cell shadow stay inside it.
+     * Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centres it in the
+     * area, capped so the frame and its one-cell shadow stay inside it.
      */
-    public static Layout layout(String title, List<String> lines, List<Button> buttons,
-                                int areaX, int areaY, int areaWidth, int areaHeight) {
+    public static Layout layout(DialogContent dialog, CellRect area) {
+        String title = dialog.title();
+        List<String> lines = dialog.lines();
+        List<Button> buttons = dialog.buttons();
+        int areaX = area.x();
+        int areaY = area.y();
+        int areaWidth = area.width();
+        int areaHeight = area.height();
         int content = Math.max(buttonsWidth(buttons, BUTTON_GAP), title.length() + 2);
         for (String line : lines) {
             content = Math.max(content, line.length());
@@ -98,32 +98,25 @@ public final class Dialog {
         return total;
     }
 
-    public static void draw(Painter painter, int columns, int rows, String title, List<String> lines, List<Button> buttons) {
-        draw(painter, columns, rows, title, lines, buttons, 0, 0, columns, rows);
-    }
-
-    /** Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. */
-    public static void draw(Painter painter, int columns, int rows, String title, List<String> lines,
-                            List<Button> buttons, int areaX, int areaY, int areaWidth, int areaHeight) {
-        draw(painter, columns, rows, title, lines, buttons, areaX, areaY, areaWidth, areaHeight, NO_INPUT_LINE, 0);
+    /** Dims the screen and centres the dialog in it. */
+    public static void draw(Painter painter, CellRect screen, DialogContent content) {
+        draw(painter, screen, content, screen);
     }
 
     /**
-     * Like the area overload, but draws line {@code inputLine} as a text field: a black box
-     * {@code inputCells} wide behind white text.
+     * Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. Draws line
+     * {@code inputLine} as a text field: a black box {@code inputCells} wide behind white text.
      */
-    public static void draw(Painter painter, int columns, int rows, String title, List<String> lines,
-                            List<Button> buttons, int areaX, int areaY, int areaWidth, int areaHeight,
-                            int inputLine, int inputCells) {
+    public static void draw(Painter painter, CellRect screen, DialogContent content, CellRect area) {
+        String title = content.title();
+        List<String> lines = content.lines();
+        List<Button> buttons = content.buttons();
+        int inputLine = content.inputLine();
+        int inputCells = content.inputCells();
         int cell = painter.cell();
-        painter.fill(DIM_COLOR, 0, 0, columns * cell, rows * cell);
-        Layout layout = layout(title, lines, buttons, areaX, areaY, areaWidth, areaHeight);
-        for (int i = 1; i <= layout.height(); i++) {
-            painter.text("▓", (layout.x() + layout.width()) * cell, (layout.y() + i) * cell, UiPalette.SHADOW);
-        }
-        for (int i = 1; i <= layout.width(); i++) {
-            painter.text("▓", (layout.x() + i) * cell, (layout.y() + layout.height()) * cell, UiPalette.SHADOW);
-        }
+        painter.fill(DIM_COLOR, 0, 0, screen.width() * cell, screen.height() * cell);
+        Layout layout = layout(content, area);
+        drawShadow(painter, layout);
         Panel.draw(painter, new CellRect(layout.x(), layout.y(), layout.width(), layout.height()), title, true);
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
@@ -148,6 +141,16 @@ public final class Dialog {
                 case DIM -> UiPalette.DIM;
             };
             painter.text(button.label(), (bx + capWidth + 1) * cell, layout.buttonY() * cell, label);
+        }
+    }
+
+    private static void drawShadow(Painter painter, Layout layout) {
+        int cell = painter.cell();
+        for (int i = 1; i <= layout.height(); i++) {
+            painter.text("▓", (layout.x() + layout.width()) * cell, (layout.y() + i) * cell, UiPalette.SHADOW);
+        }
+        for (int i = 1; i <= layout.width(); i++) {
+            painter.text("▓", (layout.x() + i) * cell, (layout.y() + layout.height()) * cell, UiPalette.SHADOW);
         }
     }
 }

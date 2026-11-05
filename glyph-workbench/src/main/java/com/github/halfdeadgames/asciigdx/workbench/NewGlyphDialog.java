@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
@@ -76,9 +78,11 @@ final class NewGlyphDialog {
     }
 
     void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
-        Dialog.draw(painter, columns, rows, TITLE, prompt.lines(slotExists),
-            prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,
-            area.x(), area.y(), area.width(), area.height(), 0, NewGlyphPrompt.LINE_CELLS);
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows),
+            new DialogContent(TITLE, prompt.lines(slotExists),
+                prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,
+                0, NewGlyphPrompt.LINE_CELLS),
+            area.toCellRect());
     }
 
     private void addIfValid() {

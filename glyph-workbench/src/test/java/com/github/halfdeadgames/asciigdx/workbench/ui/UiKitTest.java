@@ -107,8 +107,9 @@ class UiKitTest {
             new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
             new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
             new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-        Dialog.Layout layout = Dialog.layout("UNSAVED CHANGES",
-            List.of("Save changes to 8.txt", "before leaving?"), buttons, 79, 41);
+        Dialog.Layout layout = Dialog.layout(
+            DialogContent.of("UNSAVED CHANGES", List.of("Save changes to 8.txt", "before leaving?"), buttons),
+            new CellRect(0, 0, 79, 41));
         int last = layout.buttonXs().get(2) + buttons.get(2).key().length() + 3 + buttons.get(2).label().length();
         assertTrue(layout.buttonXs().get(0) >= layout.x() + 3);
         assertTrue(last <= layout.x() + layout.width() - 3);
