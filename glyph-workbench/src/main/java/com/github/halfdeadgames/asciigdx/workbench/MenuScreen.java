@@ -17,6 +17,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.ArrayList;
 import java.util.List;
@@ -199,11 +200,13 @@ final class MenuScreen implements WorkbenchScreen {
         batch.begin();
         int columns = Math.round(viewport.getWorldWidth()) / CELL;
         int rowCount = Math.round(viewport.getWorldHeight()) / CELL;
-        TopBar.draw(painter, columns, 0, crumbs, "", UiPalette.TEXT);
+        TopBar.draw(painter, columns, 0, crumbs, TopBarStatus.of("", UiPalette.TEXT));
 
         int panelHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
         Panel.draw(painter, new CellRect(LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight), listTitle, true);
-        SelectList.draw(painter, LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, rows(), selectedRow());
+        List<SelectList.Row> listRows = rows();
+        SelectList.draw(painter, SelectList.areaOf(LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, listRows.size()),
+            listRows, selectedRow());
 
         Detail detail = detailFor.apply(model.selectedItem());
         int detailWidth = Math.max(10, Math.min(DETAIL_MAX_WIDTH, columns - DETAIL_X - 2));

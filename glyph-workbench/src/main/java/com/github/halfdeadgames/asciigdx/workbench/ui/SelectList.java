@@ -34,8 +34,16 @@ public final class SelectList {
         return index >= 0 && index < rows.size() && rows.get(index).selectable();
     }
 
+    /** The cells a list of {@code rowCount} rows covers, from its first text line to its last. */
+    public static CellRect areaOf(int x, int topRow, int widthCells, int rowCount) {
+        return new CellRect(x, topRow, widthCells, Math.max(0, rowCount * PITCH - 1));
+    }
+
     /** @param selectedRow row index to highlight, or -1 */
-    public static void draw(Painter painter, int x, int topRow, int widthCells, List<Row> rows, int selectedRow) {
+    public static void draw(Painter painter, CellRect area, List<Row> rows, int selectedRow) {
+        int x = area.x();
+        int topRow = area.y();
+        int widthCells = area.width();
         int cell = painter.cell();
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);

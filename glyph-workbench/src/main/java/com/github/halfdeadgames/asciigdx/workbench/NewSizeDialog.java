@@ -100,8 +100,10 @@ final class NewSizeDialog {
             return;
         }
         Dialog.Layout list = layout(area);
-        SelectList.draw(painter, list.textX(), list.textY(), Math.min(prompt.listWidth(), list.textWidth()),
-            prompt.rows(), prompt.selectedIndex());
+        List<SelectList.Row> sizeRows = prompt.rows();
+        SelectList.draw(painter,
+            SelectList.areaOf(list.textX(), list.textY(), Math.min(prompt.listWidth(), list.textWidth()), sizeRows.size()),
+            sizeRows, prompt.selectedIndex());
     }
 
     private void chooseSelected() {

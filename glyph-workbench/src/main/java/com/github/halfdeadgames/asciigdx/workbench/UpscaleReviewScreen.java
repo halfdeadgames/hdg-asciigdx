@@ -26,6 +26,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -616,7 +617,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         TopBar.draw(painter, columns(), 0,
             List.of("GLYPH WORKBENCH", choice.folderName().toUpperCase(Locale.ROOT),
                 "UPSCALE " + choice.largest() + " -> " + choice.target()),
-            status, noGlyph[cursor] ? UiPalette.WARN : UiPalette.TEXT);
+            TopBarStatus.of(status, noGlyph[cursor] ? UiPalette.WARN : UiPalette.TEXT));
     }
 
     private void drawCandidates(int codePoint) {

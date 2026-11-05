@@ -70,7 +70,8 @@ final class PaintDeriveMenu {
             DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
             grid.toCellRect());
         Dialog.Layout menu = layout(grid);
-        SelectList.draw(painter, menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
+        SelectList.draw(painter,
+            SelectList.areaOf(menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()), MENU_ROWS.size()),
             MENU_ROWS, flow.menuIndex());
     }
 

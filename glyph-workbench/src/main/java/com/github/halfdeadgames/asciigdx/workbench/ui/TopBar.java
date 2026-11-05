@@ -58,13 +58,11 @@ public final class TopBar {
         return Math.max(0, columns - text.length() - 1);
     }
 
-    public static void draw(Painter painter, int columns, int row, List<String> crumbs, String status, Color statusColor) {
-        draw(painter, columns, row, crumbs, "", status, statusColor);
-    }
-
     /** Also draws a plain tag just left of the status; the crumbs shorten to leave room for both. */
-    public static void draw(Painter painter, int columns, int row, List<String> crumbs, String tag,
-                            String status, Color statusColor) {
+    public static void draw(Painter painter, int columns, int row, List<String> crumbs, TopBarStatus barStatus) {
+        String tag = barStatus.tag();
+        String status = barStatus.text();
+        Color statusColor = barStatus.color();
         int cell = painter.cell();
         painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
         boolean hasStatus = isPresent(status);

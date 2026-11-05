@@ -276,9 +276,11 @@ final class NewFontDialogs {
                 DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
                 area.toCellRect());
             int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-            SelectList.draw(painter, list.textX(), listTop,
-                Math.min(sizePage.listWidth(), list.textWidth()), sizePage.visibleRows(),
-                sizePage.visibleSelectedIndex());
+            List<SelectList.Row> visibleRows = sizePage.visibleRows();
+            SelectList.draw(painter,
+                SelectList.areaOf(list.textX(), listTop, Math.min(sizePage.listWidth(), list.textWidth()),
+                    visibleRows.size()),
+                visibleRows, sizePage.visibleSelectedIndex());
             if (sizePage.scrolls()) {
                 drawSizeBar(painter, list.textX() + list.textWidth() - 1, listTop);
             }

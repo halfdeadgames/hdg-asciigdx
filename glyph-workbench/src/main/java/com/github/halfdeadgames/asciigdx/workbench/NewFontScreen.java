@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.nio.file.Path;
 import java.util.List;
@@ -147,7 +148,8 @@ final class NewFontScreen implements WorkbenchScreen {
         batch.begin();
         int columns = columns();
         int rows = rows();
-        TopBar.draw(painter, columns, CRUMB_ROW, List.of("GLYPH WORKBENCH", "NEW FONT"), "", UiPalette.TEXT);
+        TopBar.draw(painter, columns, CRUMB_ROW, List.of("GLYPH WORKBENCH", "NEW FONT"),
+            TopBarStatus.of("", UiPalette.TEXT));
         dialogs.draw(painter, columns, rows, dialogArea());
         if (!notice.isEmpty()) {
             int room = Math.max(1, columns - 2 * NOTICE_MARGIN_CELLS);

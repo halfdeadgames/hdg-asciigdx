@@ -104,16 +104,15 @@ public final class ScrollText {
             painter.text(lines.get(i), x * cell, (y + i - offset) * cell, color);
         }
         if (lines.size() > visible) {
-            drawBar(painter, x + widthCells - 1, y, heightCells);
+            drawBar(painter, new CellRect(x + widthCells - 1, y, 1, heightCells), lines.size(), visible, offset);
         }
     }
 
-    private void drawBar(Painter painter, int x, int y, int height) {
-        drawBar(painter, x, y, height, lines.size(), visible, offset);
-    }
-
-    /** The shared scrollbar: ▲ and ▼ at the ends, a ░ track and a █ thumb; only shown by callers when text overflows. */
-    public static void drawBar(Painter painter, int x, int y, int height, int total, int visible, int offset) {
+    /** The shared scrollbar in a one-column rectangle: ▲ and ▼ at the ends, a ░ track, and a █ thumb. Callers show it only when text overflows. */
+    public static void drawBar(Painter painter, CellRect bar, int total, int visible, int offset) {
+        int x = bar.x();
+        int y = bar.y();
+        int height = bar.height();
         int cell = painter.cell();
         painter.text("▲", x * cell, y * cell, UiPalette.FRAME);
         painter.text("▼", x * cell, (y + height - 1) * cell, UiPalette.FRAME);

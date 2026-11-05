@@ -26,6 +26,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.nio.file.Path;
 import java.util.List;
@@ -1385,8 +1386,8 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void drawBase(int codePoint, int columns, int rows) {
         TopBar.draw(painter, columns, CRUMB_ROW,
-            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize), uiScale.label(),
-            editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE);
+            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
+            new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
         ReviewLayout.Rect panel = rects.grid();

@@ -90,7 +90,7 @@ final class NotePanel {
                 (textY + caretRow + 1) * cell - caretThickness, cell, caretThickness);
         }
         if (total > rows) {
-            ScrollText.drawBar(painter, rect.x() + rect.width() - 3, textY, rows, total, rows, first);
+            ScrollText.drawBar(painter, new CellRect(rect.x() + rect.width() - 3, textY, 1, rows), total, rows, first);
         }
     }
 
