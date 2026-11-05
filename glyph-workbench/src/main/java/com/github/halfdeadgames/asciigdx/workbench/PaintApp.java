@@ -149,7 +149,7 @@ public final class PaintApp implements WorkbenchScreen {
     private final WheelTicks wheelTicks = new WheelTicks();
     private PaintScrollRouting scrollRouting;
     private PaintPointer pointerInput;
-    private PaintClicks pointerClicks;
+    private PointerTargets pointerTargets;
 
     private final Runnable onExit;
     private final String fontDir;
@@ -246,8 +246,12 @@ public final class PaintApp implements WorkbenchScreen {
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
         pointerInput = new PaintPointer(viewport, scrollRouting);
-        pointerClicks = new PaintClicks(pointerInput, sheet, grid, preview, messages, flow, derive, stroke, editor,
-            new PointerHost());
+        pointerTargets = new PointerTargets(List.of(
+            new PreviewPointerTarget(preview, () -> rects.preview(), this::cell),
+            new SheetBarPointerTarget(sheet),
+            new MessagesPointerTarget(messages, this::cell),
+            new SheetSlotPointerTarget(sheet, flow, derive, messages, new SlotSelectionHost()),
+            new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new StrokeStartHost())));
         loadReviewNotes(directory);
     }
 
@@ -956,7 +960,8 @@ public final class PaintApp implements WorkbenchScreen {
         moveCursor(delta);
         scrollRouting.handleScrollKeys();
         pointerInput.track();
-        pointerClicks.handleMouse();
+        pointerTargets.dispatch(pointerInput.pixelX(), pointerInput.pixelY(), leftClicked(),
+            Gdx.input.isButtonPressed(Input.Buttons.LEFT));
     }
 
     private void reportEditProblem() {
@@ -1303,36 +1308,24 @@ public final class PaintApp implements WorkbenchScreen {
         }
     }
 
-    private final class PointerHost implements PaintClicks.Host {
+    private final class SlotSelectionHost implements SheetSlotPointerTarget.Selection {
 
         @Override
-        public int cell() {
-            return PaintApp.this.cell();
-        }
-
-        @Override
-        public boolean leftClicked() {
-            return PaintApp.this.leftClicked();
-        }
-
-        @Override
-        public ReviewLayout.Rect previewArea() {
-            return rects.preview();
-        }
-
-        @Override
-        public int cursorCodePoint() {
-            return codePoints[cursor];
-        }
-
-        @Override
-        public boolean isSelectableSlot(int slot) {
+        public boolean isSelectable(int slot) {
             return !unselectable[slot];
         }
 
         @Override
-        public void selectSlot(int slot) {
+        public void select(int slot) {
             cursor = slot;
+        }
+    }
+
+    private final class StrokeStartHost implements GridStrokePointerTarget.Start {
+
+        @Override
+        public int cursorCodePoint() {
+            return codePoints[cursor];
         }
 
         @Override
