@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
 

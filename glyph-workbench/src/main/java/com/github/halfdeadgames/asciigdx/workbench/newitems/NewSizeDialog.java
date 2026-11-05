@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /** The "new size" dialog: a list of sizes to add, with its input handling and drawing. */
-final class NewSizeDialog {
+public final class NewSizeDialog {
 
     private static final String TITLE = "NEW SIZE";
     private static final List<Dialog.Button> BUTTONS = List.of(
@@ -26,21 +26,21 @@ final class NewSizeDialog {
     private int lastPointerY;
 
     /** @param onChoose called with the chosen size after the dialog closes */
-    NewSizeDialog(Consumer<NewSizePlan.SizeOption> onChoose) {
+    public NewSizeDialog(Consumer<NewSizePlan.SizeOption> onChoose) {
         this.onChoose = onChoose;
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return prompt.isOpen();
     }
 
-    void open(List<NewSizePlan.SizeOption> options, int pointerX, int pointerY) {
+    public void open(List<NewSizePlan.SizeOption> options, int pointerX, int pointerY) {
         lastPointerX = pointerX;
         lastPointerY = pointerY;
         prompt.open(options);
     }
 
-    void moveForCapture(int moves) {
+    public void moveForCapture(int moves) {
         for (int i = 0; i < moves; i++) {
             prompt.move(1);
         }
@@ -52,7 +52,7 @@ final class NewSizeDialog {
      *
      * @return whether Esc or Enter consumed the frame
      */
-    boolean handleKeys() {
+    public boolean handleKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             prompt.close();
             return true;
@@ -78,7 +78,7 @@ final class NewSizeDialog {
      * @param cell the cell size in pixels
      * @param area the cell rectangle the dialog is centred in
      */
-    void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
+    public void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
         Dialog.Layout layout = layout(area);
         boolean inside = isInside(layout, pointerX, pointerY, cell);
         if (!prompt.hasChoices()) {
@@ -93,7 +93,7 @@ final class NewSizeDialog {
         }
     }
 
-    void draw(Painter painter, int columns, int rows, CellRect area) {
+    public void draw(Painter painter, int columns, int rows, CellRect area) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
             DialogContent.of(TITLE, prompt.lines(), buttons()),
             area);

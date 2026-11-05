@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -12,7 +12,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
 /** The "new glyph" dialog: a typed character to add or go to, with its input handling and drawing. */
-final class NewGlyphDialog {
+public final class NewGlyphDialog {
 
     private static final String TITLE = "NEW GLYPH";
     // The N that opens the prompt can also arrive as a typed character a frame later.
@@ -32,25 +32,25 @@ final class NewGlyphDialog {
      * @param onAdd called with the code point to add, before the dialog closes
      * @param slotExists whether a glyph slot already exists for a code point
      */
-    NewGlyphDialog(IntConsumer onAdd, IntPredicate slotExists) {
+    public NewGlyphDialog(IntConsumer onAdd, IntPredicate slotExists) {
         this.onAdd = onAdd;
         this.slotExists = slotExists;
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return prompt.isOpen();
     }
 
-    void open() {
+    public void open() {
         prompt.open();
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
-    void swallowOpeningKey() {
+    public void swallowOpeningKey() {
         keySwallowFrames = KEY_SWALLOW_FRAMES;
     }
 
-    void type(char character) {
+    public void type(char character) {
         boolean openingKey = character == 'n' || character == 'N';
         if (keySwallowFrames > 0 && openingKey) {
             return;
@@ -58,7 +58,7 @@ final class NewGlyphDialog {
         prompt.type(character);
     }
 
-    void typeForCapture(String characters) {
+    public void typeForCapture(String characters) {
         for (int i = 0; i < characters.length(); i++) {
             prompt.type(characters.charAt(i));
         }
@@ -66,7 +66,7 @@ final class NewGlyphDialog {
 
     // Typed characters arrive through keyTyped. Returning right after Enter or Esc keeps that key from also
     // acting on the screen beneath in the same frame.
-    void handle(float delta) {
+    public void handle(float delta) {
         keySwallowFrames = Math.max(0, keySwallowFrames - 1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             close();
@@ -79,7 +79,7 @@ final class NewGlyphDialog {
         repeatBackspaces(delta);
     }
 
-    void draw(Painter painter, int columns, int rows, CellRect area) {
+    public void draw(Painter painter, int columns, int rows, CellRect area) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
             new DialogContent(TITLE, prompt.lines(slotExists),
                 prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,

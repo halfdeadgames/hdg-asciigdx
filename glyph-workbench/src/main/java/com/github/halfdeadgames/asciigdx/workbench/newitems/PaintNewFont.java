@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /** The "new font" dialog as the paint screen hosts it: which folders are taken, and what creating the font does. */
-final class PaintNewFont {
+public final class PaintNewFont {
 
     private static final String TAG = "Paint";
     private static final String NEW_FONT_QUESTION = "before starting a new font?";
@@ -27,41 +27,41 @@ final class PaintNewFont {
      * @param openFont called with the folder and first size height of the font just created
      * @param messages the strip that shows warnings
      */
-    PaintNewFont(Supplier<Path> fontsRoot, BiConsumer<Runnable, String> runAfterUnsavedCheck,
-                 BiConsumer<Path, Integer> openFont, MessageStrip messages) {
+    public PaintNewFont(Supplier<Path> fontsRoot, BiConsumer<Runnable, String> runAfterUnsavedCheck,
+                        BiConsumer<Path, Integer> openFont, MessageStrip messages) {
         this.fontsRoot = fontsRoot;
         this.runAfterUnsavedCheck = runAfterUnsavedCheck;
         this.openFont = openFont;
         this.messages = messages;
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return dialogs.isOpen();
     }
 
-    void open() {
+    public void open() {
         messages.nextAction();
         dialogs.open();
     }
 
-    void openForCapture() {
+    public void openForCapture() {
         dialogs.openForCapture();
     }
 
     /** Whether a dev hook asks for a new-font page to open. */
-    boolean isCaptureRequested() {
+    public boolean isCaptureRequested() {
         return dialogs.isCaptureRequested();
     }
 
-    void type(char character) {
+    public void type(char character) {
         dialogs.type(character);
     }
 
-    void handleInput(float delta, NewFontPointer pointer, CellRect area) {
+    public void handleInput(float delta, NewFontPointer pointer, CellRect area) {
         dialogs.handleInput(delta, pointer, area);
     }
 
-    void draw(Painter painter, int columns, int rows, CellRect area) {
+    public void draw(Painter painter, int columns, int rows, CellRect area) {
         dialogs.draw(painter, columns, rows, area);
     }
 

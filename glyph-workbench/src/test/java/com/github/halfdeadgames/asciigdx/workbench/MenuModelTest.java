@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

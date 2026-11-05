@@ -1,11 +1,11 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

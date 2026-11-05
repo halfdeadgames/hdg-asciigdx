@@ -29,7 +29,7 @@ public final class FontDiscovery {
     }
 
     /** Fonts sorted by folder name, then size. A missing or unreadable root gives an empty list. */
-    static List<FontChoice> discover(Path fontsRoot) {
+    public static List<FontChoice> discover(Path fontsRoot) {
         List<FontChoice> found = new ArrayList<>();
         if (!Files.isDirectory(fontsRoot)) {
             return found;

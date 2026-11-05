@@ -89,7 +89,7 @@ public final class DevCapture {
     }
 
     /** The text to type into the opened New font dialog named by {@code workbench.newfont}, or null to leave it closed. */
-    static String newFontRequest() {
+    public static String newFontRequest() {
         return parseNewFontRequest(System.getProperty(NEW_FONT_PROPERTY));
     }
 
@@ -99,12 +99,12 @@ public final class DevCapture {
     }
 
     /** A parsed {@code workbench.newfontsize} request: the font name and how many sizes to move down. */
-    record NewFontSizeRequest(String name, int moves) { }
+    public record NewFontSizeRequest(String name, int moves) { }
 
     static final String DEFAULT_FONT_NAME = "my-font";
 
     /** The New font size page to open, or null to leave it closed. */
-    static NewFontSizeRequest newFontSizeRequest() {
+    public static NewFontSizeRequest newFontSizeRequest() {
         return parseNewFontSizeRequest(System.getProperty(NEW_FONT_SIZE_PROPERTY));
     }
 

@@ -1,6 +1,6 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
-import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;

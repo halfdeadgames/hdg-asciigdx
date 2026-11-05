@@ -1,16 +1,16 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
-import com.github.halfdeadgames.asciigdx.workbench.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /** The selection state of the "new size" pick list. Taken sizes are shown but the selection never lands on one. */
-final class NewSizePrompt {
+public final class NewSizePrompt {
 
-    static final String ALL_TAKEN_MESSAGE = "All sizes already exist";
-    static final String NO_SIZES_MESSAGE = "No sizes to add";
+    public static final String ALL_TAKEN_MESSAGE = "All sizes already exist";
+    public static final String NO_SIZES_MESSAGE = "No sizes to add";
 
     private static final String TAKEN_SUFFIX = "  (EXISTS)";
     private static final String INDENT = "  ";
@@ -53,7 +53,7 @@ final class NewSizePrompt {
     }
 
     /** The cell as {@code WxH}, for example {@code 16X32}. */
-    static String label(SizeOption option) {
+    public static String label(SizeOption option) {
         return option.cellWidth() + "X" + option.height();
     }
 

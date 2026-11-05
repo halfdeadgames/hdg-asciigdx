@@ -1,5 +1,6 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import java.util.List;
 import java.util.function.IntPredicate;
 

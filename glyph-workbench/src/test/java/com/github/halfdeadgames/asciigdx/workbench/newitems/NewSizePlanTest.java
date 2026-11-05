@@ -1,11 +1,12 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;

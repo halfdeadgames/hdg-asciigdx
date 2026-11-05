@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -11,7 +11,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
-import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
+import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -22,7 +24,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /** The start screen's "new font" flow: an empty page that hosts the name and size dialogs. */
-final class NewFontScreen implements WorkbenchScreen {
+public final class NewFontScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewFont";
     private static final int CELL = Painter.TEXT_SIZE;
@@ -50,7 +52,7 @@ final class NewFontScreen implements WorkbenchScreen {
      * @param onBack called when the user cancels on the name page
      * @param onCreated called with the new font folder and the height of its first size file
      */
-    NewFontScreen(Path fontsRoot, Runnable onBack, BiConsumer<Path, Integer> onCreated) {
+    public NewFontScreen(Path fontsRoot, Runnable onBack, BiConsumer<Path, Integer> onCreated) {
         this.fontsRoot = fontsRoot;
         this.onBack = onBack;
         this.onCreated = onCreated;

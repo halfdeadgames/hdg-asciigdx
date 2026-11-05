@@ -1,6 +1,6 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
-import com.github.halfdeadgames.asciigdx.workbench.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,10 +20,10 @@ import java.util.regex.Pattern;
  * The folder's shape is taken from its existing {@code <height>.txt} files; {@code .guides.txt}
  * files are not size files.
  */
-final class NewSizePlan {
+public final class NewSizePlan {
 
     /** One entry of the size pick list. Taken sizes are listed so they can be shown greyed. */
-    record SizeOption(int height, int cellWidth, boolean taken) {
+    public record SizeOption(int height, int cellWidth, boolean taken) {
     }
 
     private static final Pattern SIZE_FILE = Pattern.compile("(\\d{1,4})\\.txt");
@@ -43,7 +43,7 @@ final class NewSizePlan {
      * @throws IllegalStateException if the size files disagree about the shape
      * @throws IOException if the folder cannot be read
      */
-    static List<SizeOption> options(Path fontFolder) throws IOException {
+    public static List<SizeOption> options(Path fontFolder) throws IOException {
         Shape shape = shapeOfFolder(fontFolder);
         List<SizeOption> options = new ArrayList<>();
         if (shape == null) {
@@ -68,7 +68,7 @@ final class NewSizePlan {
      * @throws java.nio.file.FileAlreadyExistsException if the size is already taken
      * @throws IOException if the file cannot be written
      */
-    static void create(Path fontFolder, int height) throws IOException {
+    public static void create(Path fontFolder, int height) throws IOException {
         Shape shape = shapeOfFolder(fontFolder);
         if (shape == null) {
             throw new IllegalStateException("The folder has no size file to take the shape from");
