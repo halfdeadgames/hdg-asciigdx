@@ -49,7 +49,7 @@ public final class MenuPointer<A> {
         if (captured && escapePressed) {
             bar.close();
         }
-        int rowOffset = row == barRow ? MenuBar.NOT_IN_DROP_DOWN : row - barRow - FIRST_ITEM_ROW_OFFSET;
+        int rowOffset = dropDownRowOffset(row);
         if (pressStarted && !pointerBusy && press(bar, availability, column, row, rowOffset, totalColumns)) {
             captured = true;
         }
@@ -60,10 +60,8 @@ public final class MenuPointer<A> {
             captured = true;
             chosen = bar.releaseOnItem(column, rowOffset, totalColumns, availability);
         }
-        boolean cellChanged = !cellKnown || column != lastColumn || row != lastRow;
-        cellKnown = true;
-        lastColumn = column;
-        lastRow = row;
+        boolean cellChanged = hasCellChanged(column, row);
+        rememberCell(column, row);
         if (pointerBusy) {
             bar.hover(-1, MenuBar.NOT_IN_DROP_DOWN, 0, availability);
         } else if (shouldHover(bar.isOpen(), cellChanged, pressActive)) {
@@ -71,6 +69,20 @@ public final class MenuPointer<A> {
         }
         captured |= bar.isOpen();
         return chosen;
+    }
+
+    private int dropDownRowOffset(int row) {
+        return row == barRow ? MenuBar.NOT_IN_DROP_DOWN : row - barRow - FIRST_ITEM_ROW_OFFSET;
+    }
+
+    private boolean hasCellChanged(int column, int row) {
+        return !cellKnown || column != lastColumn || row != lastRow;
+    }
+
+    private void rememberCell(int column, int row) {
+        cellKnown = true;
+        lastColumn = column;
+        lastRow = row;
     }
 
     /**

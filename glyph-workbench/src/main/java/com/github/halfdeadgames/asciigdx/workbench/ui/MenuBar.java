@@ -307,17 +307,24 @@ public final class MenuBar<A> {
         refresh(availability);
         clearInspected();
         if (rowOffset == NOT_IN_DROP_DOWN) {
-            int title = titleAt(column);
-            boolean locked = title >= 0 && isLocked(title, availability);
-            hoveredTitle = title >= 0 && !locked ? title : -1;
-            inspectedTitle = locked ? title : -1;
-            if (hoveredTitle >= 0 && openMenu >= 0 && hoveredTitle != openMenu) {
-                open(hoveredTitle, availability);
-            }
+            hoverBarTitle(column, availability);
             return;
         }
         hoveredTitle = -1;
-        int item = itemAt(column, rowOffset, totalColumns);
+        hoverDropDownItem(itemAt(column, rowOffset, totalColumns), availability);
+    }
+
+    private void hoverBarTitle(int column, Predicate<A> availability) {
+        int title = titleAt(column);
+        boolean locked = title >= 0 && isLocked(title, availability);
+        hoveredTitle = title >= 0 && !locked ? title : -1;
+        inspectedTitle = locked ? title : -1;
+        if (hoveredTitle >= 0 && openMenu >= 0 && hoveredTitle != openMenu) {
+            open(hoveredTitle, availability);
+        }
+    }
+
+    private void hoverDropDownItem(int item, Predicate<A> availability) {
         if (item < 0) {
             return;
         }

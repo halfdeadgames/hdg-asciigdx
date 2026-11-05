@@ -39,38 +39,50 @@ public final class MenuKeys<A> {
         bar.refresh(availability);
         boolean wasOpen = bar.isOpen();
         if (altDown) {
-            consumed = true;
-            if (accessKey != NO_KEY) {
-                toggleByAccessKey(bar, availability, accessKey);
-            }
+            routeAlt(bar, availability, accessKey);
             return null;
         }
         if (f10Pressed) {
-            consumed = true;
-            if (wasOpen) {
-                bar.close();
-            } else {
-                bar.openFirst(availability);
-            }
+            routeF10(bar, availability, wasOpen);
             return null;
         }
         if (!wasOpen) {
             return null;
         }
         consumed = true;
-        for (int i = 0; i < lefts; i++) {
-            bar.moveMenu(-1, availability);
-        }
-        for (int i = 0; i < rights; i++) {
-            bar.moveMenu(1, availability);
-        }
-        for (int i = 0; i < ups; i++) {
-            bar.moveItem(-1, availability);
-        }
-        for (int i = 0; i < downs; i++) {
-            bar.moveItem(1, availability);
-        }
+        repeatMoveMenu(bar, availability, -1, lefts);
+        repeatMoveMenu(bar, availability, 1, rights);
+        repeatMoveItem(bar, availability, -1, ups);
+        repeatMoveItem(bar, availability, 1, downs);
         return enterPressed ? bar.chooseHighlighted(availability) : null;
+    }
+
+    private void routeAlt(MenuBar<A> bar, Predicate<A> availability, char accessKey) {
+        consumed = true;
+        if (accessKey != NO_KEY) {
+            toggleByAccessKey(bar, availability, accessKey);
+        }
+    }
+
+    private void routeF10(MenuBar<A> bar, Predicate<A> availability, boolean wasOpen) {
+        consumed = true;
+        if (wasOpen) {
+            bar.close();
+        } else {
+            bar.openFirst(availability);
+        }
+    }
+
+    private static <A> void repeatMoveMenu(MenuBar<A> bar, Predicate<A> availability, int direction, int count) {
+        for (int i = 0; i < count; i++) {
+            bar.moveMenu(direction, availability);
+        }
+    }
+
+    private static <A> void repeatMoveItem(MenuBar<A> bar, Predicate<A> availability, int direction, int count) {
+        for (int i = 0; i < count; i++) {
+            bar.moveItem(direction, availability);
+        }
     }
 
     private static <A> void toggleByAccessKey(MenuBar<A> bar, Predicate<A> availability, char accessKey) {
