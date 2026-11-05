@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
+import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.ArrayList;
 import java.util.List;

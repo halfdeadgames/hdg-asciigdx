@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 
 /** Selects the glyph slot under a press, or picks it as the derive source while picking. */

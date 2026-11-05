@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.derive;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.ArrayList;
@@ -9,17 +9,17 @@ import java.util.List;
  * The state of deriving one glyph from another: choosing the operation in a menu, picking the source
  * slot, and confirming a replacement. It holds no drawing or input code.
  */
-final class DeriveFlow {
+public final class DeriveFlow {
 
-    enum Mode { IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE }
+    public enum Mode { IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE }
 
     /** The operations offered by the menu, in menu order. */
-    static final List<GlyphOp.Kind> OPERATIONS = List.of(
+    public static final List<GlyphOp.Kind> OPERATIONS = List.of(
         GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE90,
         GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT, GlyphOp.Kind.OVERLAY);
 
     /** One committed overlay source: the slot it comes from and how far it is shifted. */
-    record Part(int slot, int shift) { }
+    public record Part(int slot, int shift) { }
 
     private final List<Part> parts = new ArrayList<>();
     private int pendingShift;
@@ -29,7 +29,10 @@ final class DeriveFlow {
     private int sourceSlot;
     private GlyphOp.Kind operation = OPERATIONS.get(0);
 
-    static String label(GlyphOp.Kind kind) {
+    public DeriveFlow() {
+    }
+
+    public static String label(GlyphOp.Kind kind) {
         return switch (kind) {
             case ROTATE90 -> "ROTATE 90";
             case ROTATE180 -> "ROTATE 180";
@@ -38,19 +41,19 @@ final class DeriveFlow {
         };
     }
 
-    Mode mode() {
+    public Mode mode() {
         return mode;
     }
 
-    boolean isActive() {
+    public boolean isActive() {
         return mode != Mode.IDLE;
     }
 
-    boolean isPicking() {
+    public boolean isPicking() {
         return mode == Mode.PICK_SOURCE;
     }
 
-    int menuIndex() {
+    public int menuIndex() {
         return menuIndex;
     }
 
@@ -58,15 +61,15 @@ final class DeriveFlow {
         return targetSlot;
     }
 
-    int sourceSlot() {
+    public int sourceSlot() {
         return sourceSlot;
     }
 
-    GlyphOp.Kind operation() {
+    public GlyphOp.Kind operation() {
         return operation;
     }
 
-    void openMenu(int targetSlot) {
+    public void openMenu(int targetSlot) {
         this.targetSlot = targetSlot;
         sourceSlot = targetSlot;
         menuIndex = 0;
@@ -74,27 +77,27 @@ final class DeriveFlow {
         mode = Mode.MENU;
     }
 
-    boolean isOverlayOperation() {
+    public boolean isOverlayOperation() {
         return operation == GlyphOp.Kind.OVERLAY
             && (mode == Mode.PICK_SOURCE || mode == Mode.CONFIRM_REPLACE);
     }
 
-    boolean sourceIsTarget() {
+    public boolean sourceIsTarget() {
         return sourceSlot == targetSlot;
     }
 
-    int pendingShift() {
+    public int pendingShift() {
         return pendingShift;
     }
 
     /** Adds to the shift of the source being picked; only overlay source picking uses it. */
-    void shiftSource(int delta) {
+    public void shiftSource(int delta) {
         if (isOverlayPicking()) {
             pendingShift += delta;
         }
     }
 
-    void addPart() {
+    public void addPart() {
         if (!isOverlayPicking() || sourceIsTarget()) {
             return;
         }
@@ -103,23 +106,23 @@ final class DeriveFlow {
     }
 
     /** Whether an overlay is being picked and has a committed part that {@link #removeLastPart} would remove. */
-    boolean canRemovePart() {
+    public boolean canRemovePart() {
         return isOverlayPicking() && !parts.isEmpty();
     }
 
-    void removeLastPart() {
+    public void removeLastPart() {
         if (!canRemovePart()) {
             return;
         }
         parts.remove(parts.size() - 1);
     }
 
-    List<Part> parts() {
+    public List<Part> parts() {
         return Collections.unmodifiableList(new ArrayList<>(parts));
     }
 
     /** The committed parts followed by the part being picked, which counts only while the source is not the target. */
-    List<Part> partsWithPending() {
+    public List<Part> partsWithPending() {
         List<Part> all = new ArrayList<>(parts);
         if (isOverlayPicking() && !sourceIsTarget()) {
             all.add(new Part(sourceSlot, pendingShift));
@@ -128,7 +131,7 @@ final class DeriveFlow {
     }
 
     /** Builds the overlay operation for parts, looking each slot up in {@code codePoints}. */
-    static GlyphOp overlayOp(List<Part> parts, int[] codePoints) {
+    public static GlyphOp overlayOp(List<Part> parts, int[] codePoints) {
         List<GlyphOp.Source> sources = new ArrayList<>(parts.size());
         for (Part part : parts) {
             sources.add(new GlyphOp.Source(codePoints[part.slot()], part.shift()));
@@ -146,7 +149,7 @@ final class DeriveFlow {
     }
 
     /** Moves the highlighted menu row, wrapping at both ends. */
-    void moveMenu(int delta) {
+    public void moveMenu(int delta) {
         if (mode != Mode.MENU) {
             return;
         }
@@ -154,14 +157,14 @@ final class DeriveFlow {
         menuIndex = Math.floorMod(menuIndex + delta, count);
     }
 
-    void highlightMenuRow(int index) {
+    public void highlightMenuRow(int index) {
         if (mode == Mode.MENU && index >= 0 && index < OPERATIONS.size()) {
             menuIndex = index;
         }
     }
 
     /** Takes the highlighted operation and starts picking, with the source on the target. */
-    void chooseOperation() {
+    public void chooseOperation() {
         if (mode != Mode.MENU) {
             return;
         }
@@ -171,7 +174,7 @@ final class DeriveFlow {
         mode = Mode.PICK_SOURCE;
     }
 
-    void moveSource(int slot) {
+    public void moveSource(int slot) {
         if (mode != Mode.PICK_SOURCE || slot == sourceSlot) {
             return;
         }
@@ -179,26 +182,26 @@ final class DeriveFlow {
     }
 
     /** Whether a click on this slot lands on the current source while picking, which confirms it. */
-    boolean isConfirmingClick(int slot) {
+    public boolean isConfirmingClick(int slot) {
         return mode == Mode.PICK_SOURCE && slot == sourceSlot;
     }
 
     /** Moves the source to the clicked slot; a click on the current source confirms it instead and moves nothing. */
-    void clickSource(int slot) {
+    public void clickSource(int slot) {
         if (mode != Mode.PICK_SOURCE) {
             return;
         }
         sourceSlot = slot;
     }
 
-    void askReplace() {
+    public void askReplace() {
         if (mode == Mode.PICK_SOURCE) {
             mode = Mode.CONFIRM_REPLACE;
         }
     }
 
     /** Backs out one level: the menu and source picking end the flow, the replace question returns to picking. */
-    void cancel() {
+    public void cancel() {
         if (mode == Mode.CONFIRM_REPLACE) {
             mode = Mode.PICK_SOURCE;
         } else {
@@ -208,12 +211,12 @@ final class DeriveFlow {
     }
 
     /** Ends the flow from any mode; unlike {@link #cancel}, the replace question does not step back to picking. */
-    void cancelAll() {
+    public void cancelAll() {
         clearOverlayState();
         mode = Mode.IDLE;
     }
 
-    void finish() {
+    public void finish() {
         clearOverlayState();
         mode = Mode.IDLE;
     }

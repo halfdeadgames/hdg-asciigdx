@@ -1,12 +1,12 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.derive;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 
 /** Judges the overlay part being picked and words the warning for it. It holds no drawing or input code. */
-final class OverlayCheck {
+public final class OverlayCheck {
 
-    enum Problem { NONE, SAME_AS_TARGET, EMPTY, MIXED, OUTSIDE }
+    public enum Problem { NONE, SAME_AS_TARGET, EMPTY, MIXED, OUTSIDE }
 
     /**
      * @param problem what is wrong with the pending part, or NONE
@@ -15,29 +15,29 @@ final class OverlayCheck {
      * @param minShift the most negative shift that keeps all ink inside
      * @param maxShift the most positive shift that keeps all ink inside
      */
-    record Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift) {
+    public record Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift) {
 
-        boolean hasWarning() {
+        public boolean hasWarning() {
             return problem != Problem.NONE;
         }
 
         /** Whether the part cannot be added. */
-        boolean blocksAdd() {
+        public boolean blocksAdd() {
             return problem != Problem.NONE;
         }
 
         /** Whether finishing is refused too: the pending part would make the file fail to load. */
-        boolean blocksFinish() {
+        public boolean blocksFinish() {
             return problem == Problem.MIXED || problem == Problem.OUTSIDE;
         }
 
         /** The allowed shifts as text, for example {@code -2..+3}. */
-        String rangeText() {
+        public String rangeText() {
             return signed(minShift) + ".." + signed(maxShift);
         }
     }
 
-    static final String SAME_AS_TARGET_MESSAGE = "PICK A DIFFERENT GLYPH";
+    public static final String SAME_AS_TARGET_MESSAGE = "PICK A DIFFERENT GLYPH";
     static final String EMPTY_MESSAGE = "SOURCE SLOT IS EMPTY: DRAW IT FIRST";
 
     private OverlayCheck() {
@@ -49,7 +49,7 @@ final class OverlayCheck {
      * @param firstPart the first part already added, or null when there is none
      * @param shift the pending shift
      */
-    static Result check(boolean sourceIsTarget, PixelGlyph source, PixelGlyph firstPart, int shift) {
+    public static Result check(boolean sourceIsTarget, PixelGlyph source, PixelGlyph firstPart, int shift) {
         if (sourceIsTarget) {
             return new Result(Problem.SAME_AS_TARGET, SAME_AS_TARGET_MESSAGE, false, 0, 0);
         }
@@ -76,7 +76,7 @@ final class OverlayCheck {
         return new Result(Problem.NONE, "", hasRange, min, max);
     }
 
-    enum OffGrid { NONE, LEFT, RIGHT }
+    public enum OffGrid { NONE, LEFT, RIGHT }
 
     static final float BLINK_ON_SECONDS = 0.25f;
     static final float BLINK_OFF_SECONDS = 0.25f;
@@ -89,7 +89,7 @@ final class OverlayCheck {
      * @param shift columns the ink moves right (negative moves left)
      * @param gridWidth width of the visible grid
      */
-    static OffGrid offGrid(int firstInkColumn, int lastInkColumn, int shift, int gridWidth) {
+    public static OffGrid offGrid(int firstInkColumn, int lastInkColumn, int shift, int gridWidth) {
         if (lastInkColumn + shift < 0) {
             return OffGrid.LEFT;
         }
@@ -100,7 +100,7 @@ final class OverlayCheck {
     }
 
     /** Whether a blinking marker is lit at the given time. */
-    static boolean blinkOn(float seconds) {
+    public static boolean blinkOn(float seconds) {
         float cycle = BLINK_ON_SECONDS + BLINK_OFF_SECONDS;
         float phase = seconds % cycle;
         if (phase < 0) {
