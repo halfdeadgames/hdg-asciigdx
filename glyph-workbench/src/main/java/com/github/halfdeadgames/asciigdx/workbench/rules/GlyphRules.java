@@ -1,5 +1,6 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.rules;
 
+import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.ArrayList;
@@ -8,11 +9,11 @@ import java.util.Locale;
 import java.util.OptionalInt;
 
 /** Checks one glyph's pixels against the font's design rules; no drawing, no libGDX. */
-final class GlyphRules {
+public final class GlyphRules {
 
-    static final String KEY_GAP = "gap";
-    static final String KEY_ACCENT_INK = "accentInk";
-    static final String KEY_DESCENDER_INK = "descenderInk";
+    public static final String KEY_GAP = "gap";
+    public static final String KEY_ACCENT_INK = "accentInk";
+    public static final String KEY_DESCENDER_INK = "descenderInk";
 
     private GlyphRules() {
     }
@@ -27,7 +28,7 @@ final class GlyphRules {
      * @param descenderFirstRow first row of the descender band; empty skips the descender check
      * @return the warnings, empty when the glyph is fine
      */
-    static List<RuleWarning> check(int codePoint, PixelGlyph glyph, int bodyWidth,
+    public static List<RuleWarning> check(int codePoint, PixelGlyph glyph, int bodyWidth,
                                    OptionalInt accentRowCount, OptionalInt descenderFirstRow) {
         List<RuleWarning> warnings = new ArrayList<>();
         if (glyph == null) {
@@ -49,7 +50,7 @@ final class GlyphRules {
     }
 
     /** Whether any pixel from column {@code bodyWidth} on is lit. */
-    static boolean hasGapInk(PixelGrid grid, int bodyWidth) {
+    public static boolean hasGapInk(PixelGrid grid, int bodyWidth) {
         for (int y = 0; y < grid.getHeight(); y++) {
             for (int x = bodyWidth; x < grid.getWidth(); x++) {
                 if (grid.isLit(x, y)) {

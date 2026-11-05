@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Splits note text into lines of at most a given number of characters. */
-final class NoteText {
+public final class NoteText {
 
     private NoteText() {
     }
@@ -14,7 +14,7 @@ final class NoteText {
      * the line width. Always returns at least one line, and the last line is empty when the text
      * ends right after a break.
      */
-    static List<String> wrap(String text, int width) {
+    public static List<String> wrap(String text, int width) {
         List<String> lines = new ArrayList<>();
         int start = 0;
         while (true) {

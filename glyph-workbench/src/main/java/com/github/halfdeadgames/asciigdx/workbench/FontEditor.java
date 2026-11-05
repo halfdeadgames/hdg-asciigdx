@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
+import com.github.halfdeadgames.asciigdx.workbench.rules.GlyphRules;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;

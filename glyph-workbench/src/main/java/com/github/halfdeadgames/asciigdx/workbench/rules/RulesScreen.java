@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.rules;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -62,17 +62,17 @@ public final class RulesScreen {
         }
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return open;
     }
 
     /** True while the page is open or still sliding out. */
-    boolean isShowing() {
+    public boolean isShowing() {
         return open || slide > 0f;
     }
 
     /** Opens the page from the top; F1 and the Help menu both come here. */
-    void open() {
+    public void open() {
         open = true;
         panel.resetScroll();
     }
