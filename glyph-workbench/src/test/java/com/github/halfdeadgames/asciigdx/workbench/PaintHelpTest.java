@@ -238,7 +238,7 @@ class PaintHelpTest {
 
     @Test
     void controlsBoxIsCentredAndHoldsTheWholeListInABigWindow() {
-        ControlsOverlay.Layout layout = ControlsOverlay.layout(100, 60);
+        ControlsScreen.Layout layout = ControlsScreen.layout(100, 60);
         ReviewLayout.Rect box = layout.rect();
         assertEquals((100 - box.width()) / 2, box.x());
         assertEquals((60 - box.height()) / 2, box.y());
@@ -246,13 +246,13 @@ class PaintHelpTest {
         assertEquals(layout.lines().size() + 2, box.height());
         assertEquals(layout.lines().size(), layout.visibleRows());
         assertEquals(0, layout.maxOffset());
-        assertFalse(ControlsOverlay.isOutside(box, box.x(), box.y()));
-        assertFalse(ControlsOverlay.isOutside(box, box.x() + box.width() - 1, box.bottom() - 1));
+        assertFalse(ControlsScreen.isOutside(box, box.x(), box.y()));
+        assertFalse(ControlsScreen.isOutside(box, box.x() + box.width() - 1, box.bottom() - 1));
     }
 
     @Test
     void controlsBoxScrollsWhenTheWindowIsShort() {
-        ControlsOverlay.Layout layout = ControlsOverlay.layout(100, 12);
+        ControlsScreen.Layout layout = ControlsScreen.layout(100, 12);
         assertEquals(8, layout.rect().height());
         assertEquals(6, layout.visibleRows());
         assertEquals(layout.lines().size() - 6, layout.maxOffset());
@@ -267,7 +267,7 @@ class PaintHelpTest {
 
     @Test
     void controlsBoxWrapsInANarrowWindowAndStaysInsideIt() {
-        ControlsOverlay.Layout layout = ControlsOverlay.layout(30, 40);
+        ControlsScreen.Layout layout = ControlsScreen.layout(30, 40);
         ReviewLayout.Rect box = layout.rect();
         assertTrue(box.x() >= 0 && box.x() + box.width() <= 30);
         assertEquals(box.width() - 4, layout.chars());
@@ -280,7 +280,7 @@ class PaintHelpTest {
 
     @Test
     void controlsBoxNeverOutgrowsATinyWindow() {
-        ControlsOverlay.Layout layout = ControlsOverlay.layout(8, 5);
+        ControlsScreen.Layout layout = ControlsScreen.layout(8, 5);
         ReviewLayout.Rect box = layout.rect();
         assertTrue(box.width() <= 8 && box.height() <= 5);
         assertTrue(box.x() >= 0 && box.y() >= 0);
@@ -290,11 +290,11 @@ class PaintHelpTest {
     @Test
     void aClickOutsideTheControlsBoxIsOutsideAndOneInsideIsNot() {
         ReviewLayout.Rect box = new ReviewLayout.Rect(10, 5, 20, 10);
-        assertTrue(ControlsOverlay.isOutside(box, 9, 8));
-        assertTrue(ControlsOverlay.isOutside(box, 30, 8));
-        assertTrue(ControlsOverlay.isOutside(box, 15, 4));
-        assertTrue(ControlsOverlay.isOutside(box, 15, 15));
-        assertFalse(ControlsOverlay.isOutside(box, 15, 8));
+        assertTrue(ControlsScreen.isOutside(box, 9, 8));
+        assertTrue(ControlsScreen.isOutside(box, 30, 8));
+        assertTrue(ControlsScreen.isOutside(box, 15, 4));
+        assertTrue(ControlsScreen.isOutside(box, 15, 15));
+        assertFalse(ControlsScreen.isOutside(box, 15, 8));
     }
 
     @Test

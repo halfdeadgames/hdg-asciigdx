@@ -93,7 +93,7 @@ class PaintMenuTest {
     }
 
     @Test
-    void withTheRulesOverlayOpenNothingIsAvailable() {
+    void withTheRulesScreenOpenNothingIsAvailable() {
         assertAvailableOnly(Context.RULES_OPEN, Set.of());
     }
 

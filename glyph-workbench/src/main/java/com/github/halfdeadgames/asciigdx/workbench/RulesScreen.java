@@ -12,9 +12,9 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
  * The F1 rules page as a slide-in overlay: loads the rules file of the font directory, owns the
  * open state and slide animation, and takes over the keyboard and wheel while it is open.
  */
-final class RulesOverlay {
+final class RulesScreen {
 
-    private static final String TAG = "RulesOverlay";
+    private static final String TAG = "RulesScreen";
     private static final float SLIDE_SECONDS = 0.15f;
     private static final float DIM_ALPHA = 0.7f;
     private static final int WHEEL_ROWS = 3;
@@ -32,7 +32,7 @@ final class RulesOverlay {
     private float slide;
 
     /** @param fontDir absolute path of the font folder holding rules.md, or null for none */
-    RulesOverlay(Painter painter, String fontDir) {
+    RulesScreen(Painter painter, String fontDir) {
         this.painter = painter;
         panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR);
         loadRules(fontDir);

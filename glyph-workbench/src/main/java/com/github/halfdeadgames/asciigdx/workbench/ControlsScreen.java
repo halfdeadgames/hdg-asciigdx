@@ -13,7 +13,7 @@ import java.util.List;
  * The Help > Controls panel: a centred modal box listing every paint control. While it is open it takes
  * the whole frame; Esc, Enter, or a click outside the box closes it. Sizes are in text cells, so it follows the UI scale.
  */
-final class ControlsOverlay {
+final class ControlsScreen {
 
     static final String TITLE = "CONTROLS";
 

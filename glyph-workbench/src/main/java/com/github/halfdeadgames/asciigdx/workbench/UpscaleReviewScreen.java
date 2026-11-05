@@ -93,7 +93,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
     private PaintSheetView sheet;
     private ColumnPanel columnPanel;
     private NotePanel notePanel;
-    private RulesOverlay rules;
+    private RulesScreen rules;
     private UpscaledSheet original;
     private UpscaleTarget target;
     private Path targetPath;
@@ -164,7 +164,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
         sheet = new PaintSheetView(painter, sheetFont, 0, ReviewLayout.TOP_ROWS);
         columnPanel = new ColumnPanel(painter, CELL_FILL, UiPalette.TEXT, UiPalette.ACCENT, UiPalette.FRAME);
         notePanel = new NotePanel(painter);
-        rules = new RulesOverlay(painter, fontDir);
+        rules = new RulesScreen(painter, fontDir);
         refreshMarks();
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override

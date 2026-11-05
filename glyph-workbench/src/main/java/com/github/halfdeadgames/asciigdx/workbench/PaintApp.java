@@ -115,7 +115,7 @@ public final class PaintApp implements WorkbenchScreen {
     private PaintSheetView sheet;
     private PaintGridView grid;
     private PaintPreview preview;
-    private RulesOverlay rules;
+    private RulesScreen rules;
     private NotePanel notePanel;
     private final GlyphTitle glyphTitle = new GlyphTitle();
     private final MessageStrip messages = new MessageStrip();
@@ -124,7 +124,7 @@ public final class PaintApp implements WorkbenchScreen {
     private static boolean newFontCaptureOpened;
     private PaintLayout.Result rects;
     private boolean layoutBarShown;
-    private final ControlsOverlay controls = new ControlsOverlay();
+    private final ControlsScreen controls = new ControlsScreen();
     private String lastProblem = "";
     private float ghostSeconds;
     private int derivedTextGlyph = -1;
@@ -241,7 +241,7 @@ public final class PaintApp implements WorkbenchScreen {
         if (requestedTab != null) {
             preview.selectTab(requestedTab);
         }
-        rules = new RulesOverlay(rulesPainter, fontDir);
+        rules = new RulesScreen(rulesPainter, fontDir);
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
