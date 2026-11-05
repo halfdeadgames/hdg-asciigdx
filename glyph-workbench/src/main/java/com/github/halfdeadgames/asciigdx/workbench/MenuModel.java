@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;

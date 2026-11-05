@@ -5,7 +5,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
  * {@link #show()} creates its textures and batches and sets the input processor, and
  * {@link #hide()} disposes them, so switching screens back and forth leaks nothing.
  */
-interface WorkbenchScreen {
+public interface WorkbenchScreen {
 
     void show();
 

@@ -14,7 +14,7 @@ import com.badlogic.gdx.Gdx;
  * {@code workbench.newfontsize} opens the New font size page for a name (optionally {@code :down:N} sizes in).
  * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
  */
-final class DevCapture {
+public final class DevCapture {
 
     static final String SELECT_PROPERTY = "workbench.select";
     static final String DERIVE_PROPERTY = "workbench.derive";
@@ -32,7 +32,7 @@ final class DevCapture {
     private int frames;
 
     /** Returns the first non-blank slot holding the requested code point, or -1. */
-    static int slotToSelect(int[] codePoints, boolean[] blank) {
+    public static int slotToSelect(int[] codePoints, boolean[] blank) {
         int wanted = parseCodePoint(System.getProperty(SELECT_PROPERTY));
         if (wanted < 0) {
             return -1;
@@ -253,7 +253,7 @@ final class DevCapture {
     }
 
     /** Call at the end of each render, after the frame has been drawn. */
-    void afterRender() {
+    public void afterRender() {
         if (capturePath == null || capturePath.isEmpty()) {
             return;
         }

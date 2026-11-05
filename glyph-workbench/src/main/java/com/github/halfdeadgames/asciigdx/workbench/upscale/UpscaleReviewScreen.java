@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -14,6 +14,16 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.workbench.AtomicFiles;
+import com.github.halfdeadgames.asciigdx.workbench.CursorNavigator;
+import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
+import com.github.halfdeadgames.asciigdx.workbench.FontEditor;
+import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
+import com.github.halfdeadgames.asciigdx.workbench.NoteEditor;
+import com.github.halfdeadgames.asciigdx.workbench.NotePanel;
+import com.github.halfdeadgames.asciigdx.workbench.PaintSheetView;
+import com.github.halfdeadgames.asciigdx.workbench.RulesScreen;
+import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
@@ -44,7 +54,7 @@ import java.util.Map;
  * what each method makes of the selected glyph at the target size. Picking a column writes that
  * candidate into the target size file and records the answer, with an optional note, in the review file.
  */
-final class UpscaleReviewScreen implements WorkbenchScreen {
+public final class UpscaleReviewScreen implements WorkbenchScreen {
 
     private static final String TAG = "UpscaleReview";
     private static final int CELL = Painter.TEXT_SIZE;
@@ -122,7 +132,7 @@ final class UpscaleReviewScreen implements WorkbenchScreen {
      * @param fontDir absolute path of the font folder
      * @param choice the font and the sizes to upscale between; must have a source
      */
-    UpscaleReviewScreen(Runnable onExit, String fontDir, UpscalePlan.Choice choice) {
+    public UpscaleReviewScreen(Runnable onExit, String fontDir, UpscalePlan.Choice choice) {
         this.onExit = onExit;
         this.fontDir = fontDir;
         this.choice = choice;

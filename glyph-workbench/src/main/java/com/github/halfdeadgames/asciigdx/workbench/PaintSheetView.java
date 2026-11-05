@@ -11,9 +11,9 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 
 /** The scrollable sheet of all slots on the left of the paint screen. */
-final class PaintSheetView {
+public final class PaintSheetView {
 
-    static final int COLUMNS = 16;
+    public static final int COLUMNS = 16;
     static final int GAP = 1;
     private static final int OUTLINE = 2;
     private static final int MARK_SIZE = 6;
@@ -51,7 +51,7 @@ final class PaintSheetView {
     private int barLeft;
     private int barCells;
 
-    PaintSheetView(Painter painter, FontEditor editor, int frameLeft, int topRows) {
+    public PaintSheetView(Painter painter, FontEditor editor, int frameLeft, int topRows) {
         this.painter = painter;
         this.editor = editor;
         this.frameLeft = frameLeft;
@@ -121,7 +121,7 @@ final class PaintSheetView {
         setVisibleColumns(visibleColumns);
     }
 
-    ScrollState scroll() {
+    public ScrollState scroll() {
         return scroll;
     }
 
@@ -134,7 +134,7 @@ final class PaintSheetView {
         return columnScroll;
     }
 
-    int frameRight() {
+    public int frameRight() {
         return frameLeft + frameCellsWide * cell();
     }
 
@@ -152,7 +152,7 @@ final class PaintSheetView {
      * Fits the frame to the window height, down to the bottom row when the key bar is hidden. Keeps the cursor
      * visible when asked or when the number of visible rows changed.
      */
-    void fitToHeight(int worldHeight, boolean statusBarShown, int cursorSlot, boolean revealCursor) {
+    public void fitToHeight(int worldHeight, boolean statusBarShown, int cursorSlot, boolean revealCursor) {
         frameCellsHigh = PaintLayout.sheetRows(worldHeight, cell(), statusBarShown, topRows);
         barCells = Math.max(1, frameCellsHigh - 2 - (columnBarShown() ? 1 : 0));
         int before = scroll.visibleRows();
@@ -166,18 +166,18 @@ final class PaintSheetView {
         }
     }
 
-    boolean contains(int pixelX, int pixelY) {
+    public boolean contains(int pixelX, int pixelY) {
         return pixelX >= frameLeft && pixelX < frameRight()
             && pixelY >= frameTop() && pixelY < frameTop() + frameCellsHigh * cell();
     }
 
     /** Slot under a pixel, or -1. */
-    int slotAt(int pixelX, int pixelY) {
+    public int slotAt(int pixelX, int pixelY) {
         return layout.cellAt(pixelX, pixelY, scroll.offset(), scroll.visibleRows(), columnScroll.offset());
     }
 
     /** Handles a click on the scroll bar arrows or track. */
-    void clickBar(int pixelX, int pixelY) {
+    public void clickBar(int pixelX, int pixelY) {
         int barTop = layout.top();
         if (!scroll.needed() || pixelX < barLeft || pixelX >= barLeft + cell()
             || pixelY < barTop || pixelY >= barTop + barCells * cell()) {
@@ -241,11 +241,11 @@ final class PaintSheetView {
     }
 
     /** Small corner squares drawn on slots; one color (or null for none) per slot, or null for no marks. */
-    void setMarks(Color[] marks) {
+    public void setMarks(Color[] marks) {
         this.marks = marks;
     }
 
-    void draw(int cursorSlot) {
+    public void draw(int cursorSlot) {
         draw(cursorSlot, -1);
     }
 

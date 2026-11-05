@@ -1,9 +1,10 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Disposable;
+import com.github.halfdeadgames.asciigdx.workbench.PaintSheetView;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 
 /** All glyph cells of one candidate as a texture, one region per sheet slot; empty slots are blank. */

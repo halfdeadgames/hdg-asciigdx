@@ -12,10 +12,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Finds the paintable fonts: every {@code <fontsRoot>/<folder>/<size>.txt}. */
-final class FontDiscovery {
+public final class FontDiscovery {
 
     /** One font data file; the name is the folder name and the size is the file name without {@code .txt}. */
-    record FontChoice(String folderName, int size) {
+    public record FontChoice(String folderName, int size) {
 
         /** Menu text such as {@code SAIKSISTT 8}. */
         String label() {

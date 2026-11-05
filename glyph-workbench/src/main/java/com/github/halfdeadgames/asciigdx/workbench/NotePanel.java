@@ -11,7 +11,7 @@ import java.util.Locale;
  * The review note in a UI kit panel: read-only (pick line, then scrolling text) or with the note
  * editor. Text starts two cells in; the last text column holds the shared scrollbar.
  */
-final class NotePanel {
+public final class NotePanel {
 
 
     private final Painter painter;
@@ -21,30 +21,30 @@ final class NotePanel {
     private int width;
     private int height;
 
-    NotePanel(Painter painter) {
+    public NotePanel(Painter painter) {
         this.painter = painter;
     }
 
     /** Characters per row for a panel width in cells. */
-    static int textChars(int panelWidth) {
+    public static int textChars(int panelWidth) {
         return Math.max(1, panelWidth - 5);
     }
 
     /** Editor rows for a panel height in cells. */
-    static int editorRows(int panelHeight) {
+    public static int editorRows(int panelHeight) {
         return Math.max(1, panelHeight - 2);
     }
 
-    void resetDisplayScroll() {
+    public void resetDisplayScroll() {
         display.toTop();
     }
 
-    void scrollDisplay(int rows) {
+    public void scrollDisplay(int rows) {
         display.scrollBy(rows);
     }
 
     /** Call when the panel is not drawn this frame, so the wheel does not scroll something invisible. */
-    void markHidden() {
+    public void markHidden() {
         width = 0;
     }
 
@@ -53,13 +53,13 @@ final class NotePanel {
         return width > 0 && display.overflows();
     }
 
-    boolean contains(int pixelX, int pixelY) {
+    public boolean contains(int pixelX, int pixelY) {
         int cell = painter.cell();
         return pixelX >= left * cell && pixelX < (left + width) * cell
             && pixelY >= top * cell && pixelY < (top + height) * cell;
     }
 
-    void drawReadOnly(CellRect rect, String pick, String note) {
+    public void drawReadOnly(CellRect rect, String pick, String note) {
         remember(rect);
         Panel.draw(painter, rect,
             "REVIEW NOTE   [ ] SCROLLS", false);
@@ -70,7 +70,7 @@ final class NotePanel {
             UiPalette.TEXT);
     }
 
-    void drawEditor(CellRect rect, NoteEditor editor) {
+    public void drawEditor(CellRect rect, NoteEditor editor) {
         remember(rect);
         Panel.draw(painter, rect, "NOTE", true);
         int chars = textChars(rect.width());

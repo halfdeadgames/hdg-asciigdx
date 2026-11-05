@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import java.util.Collection;
 import java.util.Map;
@@ -10,14 +10,14 @@ import java.util.TreeMap;
  * (for example {@code mmpx@16}), or {@code none}. In the note, backslash, tab, and newline are
  * written as {@code \\}, {@code \t}, and {@code \n}. Lines are sorted by code point.
  */
-final class ReviewFile {
+public final class ReviewFile {
 
     static final String NONE = "none";
 
     /** One answer; the note may be empty. */
-    record Answer(int codePoint, String pick, String note) {
+    public record Answer(int codePoint, String pick, String note) {
 
-        Answer {
+        public Answer {
             if (pick.isEmpty() || pick.indexOf('\t') >= 0 || pick.indexOf('\n') >= 0) {
                 throw new IllegalArgumentException("Bad pick: '" + pick + "'");
             }
@@ -31,7 +31,7 @@ final class ReviewFile {
     private final Map<Integer, Answer> answers = new TreeMap<>();
 
     /** Reads the file text; blank lines are skipped. Throws {@link IllegalArgumentException} on a bad line. */
-    static ReviewFile parse(String text) {
+    public static ReviewFile parse(String text) {
         ReviewFile file = new ReviewFile();
         String[] lines = text.split("\r?\n", -1);
         for (int i = 0; i < lines.length; i++) {
@@ -77,7 +77,7 @@ final class ReviewFile {
         return text.toString();
     }
 
-    Answer get(int codePoint) {
+    public Answer get(int codePoint) {
         return answers.get(codePoint);
     }
 

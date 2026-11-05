@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.TreeSet;
  * the target is the largest existing size plus 8, and a source must be a smaller existing size
  * that divides the target evenly (16 from 8, 24 from 8, 32 from 16 or 8).
  */
-final class UpscalePlan {
+public final class UpscalePlan {
 
     static final int STEP = 8;
 
@@ -22,9 +22,9 @@ final class UpscalePlan {
      *
      * @param sources existing sizes that divide {@code target} evenly, ascending; empty when none does
      */
-    record Choice(String folderName, int largest, int target, List<Integer> sources) {
+    public record Choice(String folderName, int largest, int target, List<Integer> sources) {
 
-        boolean hasSource() {
+        public boolean hasSource() {
             return !sources.isEmpty();
         }
 
@@ -33,7 +33,7 @@ final class UpscalePlan {
             return sources.get(sources.size() - 1);
         }
 
-        int factorFrom(int source) {
+        public int factorFrom(int source) {
             return target / source;
         }
 
@@ -64,7 +64,7 @@ final class UpscalePlan {
     }
 
     /** One choice per font folder, in the order the folders first appear in {@code fonts}. */
-    static List<Choice> plan(List<FontChoice> fonts) {
+    public static List<Choice> plan(List<FontChoice> fonts) {
         Map<String, List<Integer>> sizesByFolder = new LinkedHashMap<>();
         for (FontChoice font : fonts) {
             sizesByFolder.computeIfAbsent(font.folderName(), name -> new ArrayList<>()).add(font.size());

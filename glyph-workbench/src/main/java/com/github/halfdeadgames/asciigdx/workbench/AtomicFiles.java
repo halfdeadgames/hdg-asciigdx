@@ -7,13 +7,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 /** Writes a text file so a failed write never leaves a truncated file. */
-final class AtomicFiles {
+public final class AtomicFiles {
 
     private AtomicFiles() {
     }
 
     /** Writes to a {@code .tmp} file beside the target, then moves it over the target. */
-    static void write(Path target, String text) throws IOException {
+    public static void write(Path target, String text) throws IOException {
         Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
         Files.writeString(temporary, text, StandardCharsets.UTF_8);
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);

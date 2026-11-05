@@ -7,6 +7,8 @@ import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
+import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
+import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleReviewScreen;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

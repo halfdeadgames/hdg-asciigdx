@@ -35,6 +35,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
 import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
+import com.github.halfdeadgames.asciigdx.workbench.upscale.ReviewFile;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;

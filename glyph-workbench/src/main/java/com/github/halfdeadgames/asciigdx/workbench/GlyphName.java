@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 /** The Unicode name of a code point, reduced to what the uppercase ASCII text font can draw. */
-final class GlyphName {
+public final class GlyphName {
 
     static final String CUSTOM = "PRIVATE USE (CUSTOM GLYPH)";
     private static final String PRIVATE_USE_PREFIX = "PRIVATE USE";
@@ -10,7 +10,7 @@ final class GlyphName {
     }
 
     /** The complete sanitized name, or {@link #CUSTOM} for private use and unnamed code points. */
-    static String fullName(int codePoint) {
+    public static String fullName(int codePoint) {
         String name = Character.getName(codePoint);
         if (name == null || name.startsWith(PRIVATE_USE_PREFIX)) {
             return CUSTOM;

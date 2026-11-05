@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 

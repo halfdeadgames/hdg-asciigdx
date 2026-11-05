@@ -24,10 +24,10 @@ import java.util.TreeSet;
  * glyphs are shown but cannot be painted. Painting a gap column of a normal glyph turns it into a full
  * glyph; erasing the last gap ink of a full glyph turns it back into a normal one.
  */
-final class FontEditor {
+public final class FontEditor {
 
     /** Slot content for padding slots that hold no glyph and cannot be selected. */
-    static final int NO_GLYPH = -1;
+    public static final int NO_GLYPH = -1;
 
     static final int MAX_UNDO_STEPS = 200;
 
@@ -53,7 +53,7 @@ final class FontEditor {
     private record State(Map<Integer, GlyphEntry> entries, int revision) {
     }
 
-    FontEditor(FontData data) {
+    public FontEditor(FontData data) {
         cellWidth = data.cellWidth();
         cellHeight = data.cellHeight();
         entries.putAll(data.entries());
@@ -89,11 +89,11 @@ final class FontEditor {
         return cellWidth - cellWidth / 8;
     }
 
-    int slotCount() {
+    public int slotCount() {
         return slots.length;
     }
 
-    int codePointAtSlot(int slot) {
+    public int codePointAtSlot(int slot) {
         return slots[slot];
     }
 
@@ -144,7 +144,7 @@ final class FontEditor {
         return NO_GLYPH;
     }
 
-    boolean hasGlyph(int codePoint) {
+    public boolean hasGlyph(int codePoint) {
         return entries.containsKey(codePoint);
     }
 

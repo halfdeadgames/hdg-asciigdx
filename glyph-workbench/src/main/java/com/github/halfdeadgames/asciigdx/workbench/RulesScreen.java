@@ -14,7 +14,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
  * The F1 rules page as a slide-in overlay: loads the rules file of the font directory, owns the
  * open state and slide animation, and takes over the keyboard and wheel while it is open.
  */
-final class RulesScreen {
+public final class RulesScreen {
 
     private static final String TAG = "RulesScreen";
     private static final float SLIDE_SECONDS = 0.15f;
@@ -34,7 +34,7 @@ final class RulesScreen {
     private float slide;
 
     /** @param fontDir absolute path of the font folder holding rules.md, or null for none */
-    RulesScreen(Painter painter, String fontDir) {
+    public RulesScreen(Painter painter, String fontDir) {
         this.painter = painter;
         panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR);
         loadRules(fontDir);
@@ -82,7 +82,7 @@ final class RulesScreen {
      * frame's input, so the caller must skip its own input handling (and must not quit on Esc).
      * The wheel ticks are read, not cleared; the caller clears them.
      */
-    boolean handleInput(float delta, int wheelTicks) {
+    public boolean handleInput(float delta, int wheelTicks) {
         float step = delta / SLIDE_SECONDS;
         slide = MathUtils.clamp(slide + (open ? step : -step), 0f, 1f);
         if (!open) {
@@ -117,7 +117,7 @@ final class RulesScreen {
     }
 
     /** Draws the dimmed backdrop and the sliding page over everything drawn before. */
-    void draw(int worldWidth, int worldHeight, int codePoint) {
+    public void draw(int worldWidth, int worldHeight, int codePoint) {
         if (slide <= 0f) {
             return;
         }
