@@ -17,11 +17,7 @@ final class LabelPlacer {
      */
     static int[] place(int[] wanted, int[] sizes, int min, int max, int gap) {
         int count = wanted.length;
-        Integer[] order = new Integer[count];
-        for (int i = 0; i < count; i++) {
-            order[i] = i;
-        }
-        Arrays.sort(order, (a, b) -> Integer.compare(wanted[a], wanted[b]));
+        Integer[] order = indicesSortedByWanted(wanted);
 
         // A cluster is a run of touching labels that moves as one block; its position is the mean of what its members want.
         int[] firstOf = new int[count];
@@ -36,29 +32,51 @@ final class LabelPlacer {
             extentOf[clusters] = sizes[index];
             positionOf[clusters] = clampStart(wanted[index], sizes[index], min, max);
             clusters++;
-            while (clusters > 1) {
-                int last = clusters - 1;
-                int previous = last - 1;
-                if (positionOf[previous] + extentOf[previous] + gap <= positionOf[last]) {
-                    break;
-                }
-                int mergedExtent = extentOf[previous] + gap + extentOf[last];
-                long wantedSum = 0;
-                int offset = 0;
-                for (int rankInside = firstOf[previous]; rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
-                    int member = order[rankInside];
-                    wantedSum += wanted[member] - offset;
-                    offset += sizes[member] + gap;
-                }
-                int memberCount = lengthOf[previous] + lengthOf[last];
-                lengthOf[previous] = memberCount;
-                extentOf[previous] = mergedExtent;
-                positionOf[previous] = clampStart(Math.floorDiv(wantedSum, memberCount), mergedExtent, min, max);
-                clusters = last;
+            while (clusters > 1 && lastTwoClustersTouch(extentOf, positionOf, clusters, gap)) {
+                mergeLastClusterIntoPrevious(order, wanted, sizes, firstOf, lengthOf, extentOf, positionOf,
+                        clusters - 1, gap, min, max);
+                clusters--;
             }
         }
+        return startsFromClusters(order, sizes, firstOf, lengthOf, positionOf, clusters, gap);
+    }
 
-        int[] result = new int[count];
+    private static Integer[] indicesSortedByWanted(int[] wanted) {
+        Integer[] order = new Integer[wanted.length];
+        for (int i = 0; i < order.length; i++) {
+            order[i] = i;
+        }
+        Arrays.sort(order, (a, b) -> Integer.compare(wanted[a], wanted[b]));
+        return order;
+    }
+
+    private static boolean lastTwoClustersTouch(int[] extentOf, int[] positionOf, int clusters, int gap) {
+        int last = clusters - 1;
+        int previous = last - 1;
+        return positionOf[previous] + extentOf[previous] + gap > positionOf[last];
+    }
+
+    private static void mergeLastClusterIntoPrevious(Integer[] order, int[] wanted, int[] sizes, int[] firstOf,
+                                                     int[] lengthOf, int[] extentOf, int[] positionOf,
+                                                     int last, int gap, int min, int max) {
+        int previous = last - 1;
+        int mergedExtent = extentOf[previous] + gap + extentOf[last];
+        long wantedSum = 0;
+        int offset = 0;
+        for (int rankInside = firstOf[previous]; rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
+            int member = order[rankInside];
+            wantedSum += wanted[member] - offset;
+            offset += sizes[member] + gap;
+        }
+        int memberCount = lengthOf[previous] + lengthOf[last];
+        lengthOf[previous] = memberCount;
+        extentOf[previous] = mergedExtent;
+        positionOf[previous] = clampStart(Math.floorDiv(wantedSum, memberCount), mergedExtent, min, max);
+    }
+
+    private static int[] startsFromClusters(Integer[] order, int[] sizes, int[] firstOf, int[] lengthOf,
+                                            int[] positionOf, int clusters, int gap) {
+        int[] result = new int[order.length];
         for (int cluster = 0; cluster < clusters; cluster++) {
             int offset = 0;
             for (int rank = firstOf[cluster]; rank < firstOf[cluster] + lengthOf[cluster]; rank++) {

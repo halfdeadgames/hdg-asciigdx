@@ -67,17 +67,11 @@ public final class TopBar {
                             String status, Color statusColor) {
         int cell = painter.cell();
         painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
-        boolean hasStatus = status != null && !status.isEmpty();
-        boolean hasTag = tag != null && !tag.isEmpty();
+        boolean hasStatus = isPresent(status);
+        boolean hasTag = isPresent(tag);
         int available = columns - 1 - rightWidth(hasTag ? tag : "", hasStatus ? status : "");
         for (Segment segment : layout(fit(crumbs, available))) {
-            Color color = switch (segment.kind()) {
-                case TITLE -> UiPalette.TITLE;
-                case TEXT -> UiPalette.TEXT;
-                case ACCENT -> UiPalette.ACCENT;
-                case SEPARATOR -> UiPalette.DIM;
-            };
-            painter.text(segment.text(), segment.x() * cell, row * cell, color);
+            painter.text(segment.text(), segment.x() * cell, row * cell, colorOf(segment.kind()));
         }
         if (hasTag) {
             painter.text(tag, tagX(columns, tag, hasStatus ? status : "") * cell, row * cell, UiPalette.TEXT);
@@ -85,6 +79,19 @@ public final class TopBar {
         if (hasStatus) {
             painter.text(status, rightX(columns, status) * cell, row * cell, statusColor);
         }
+    }
+
+    private static boolean isPresent(String text) {
+        return text != null && !text.isEmpty();
+    }
+
+    private static Color colorOf(Kind kind) {
+        return switch (kind) {
+            case TITLE -> UiPalette.TITLE;
+            case TEXT -> UiPalette.TEXT;
+            case ACCENT -> UiPalette.ACCENT;
+            case SEPARATOR -> UiPalette.DIM;
+        };
     }
 
     /** Cells taken at the right edge by a tag and a status, each followed by one blank cell. */
