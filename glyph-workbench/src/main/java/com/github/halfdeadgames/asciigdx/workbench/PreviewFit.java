@@ -16,13 +16,13 @@ final class PreviewFit {
      * @param gap            pixels between neighbouring blocks
      * @param labelWidth     pixels a block's label needs; a block is at least this wide
      */
-    static int scaleCount(int innerWidth, int maxBlockHeight, int cellWidth, int cellHeight, int gap, int labelWidth) {
+    static int scaleCount(int innerWidth, int maxBlockHeight, GlyphSize cell, int gap, int labelWidth) {
         int count = 1;
-        int used = Math.max(labelWidth, cellWidth * SCALES[0]);
+        int used = Math.max(labelWidth, cell.width() * SCALES[0]);
         for (int i = 1; i < SCALES.length; i++) {
             int scale = SCALES[i];
-            used += gap + Math.max(labelWidth, cellWidth * scale);
-            if (used > innerWidth || scale * cellHeight > maxBlockHeight) {
+            used += gap + Math.max(labelWidth, cell.width() * scale);
+            if (used > innerWidth || scale * cell.height() > maxBlockHeight) {
                 break;
             }
             count++;

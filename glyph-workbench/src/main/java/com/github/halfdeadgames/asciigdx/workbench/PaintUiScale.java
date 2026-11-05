@@ -63,6 +63,6 @@ final class PaintUiScale {
             return autoFactor;
         }
         return PaintScale.fittingFactor(overrideFactor, width, height, PaintSheetView.GAP,
-            editorCellWidth, editorCellHeight);
+            new GlyphSize(editorCellWidth, editorCellHeight));
     }
 }

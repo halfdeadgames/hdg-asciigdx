@@ -77,7 +77,7 @@ final class PaintLayout {
      * @param statusBarShown whether the key bar owns the last row; when it does not, only the messages panel
      *                       (and the sheet, see {@link #sheetRows}) grow into that row and nothing else moves
      */
-    static Result compute(int columns, int rows, int sheetCellsWide, int rightWidth, int glyphWidth, int glyphHeight,
+    static Result compute(int columns, int rows, int sheetCellsWide, int rightWidth, GlyphSize glyph,
                           int cellPixels, boolean statusBarShown) {
         int gridX = sheetCellsWide + 1;
         int rightX = columns - rightWidth;
@@ -86,8 +86,8 @@ final class PaintLayout {
         int maxPreviewHeight = Math.min(columnHeight * MAX_PREVIEW_SHARE_PERCENT / 100, columnHeight - MIN_NOTE_HEIGHT);
         int scaleCount = PreviewFit.scaleCount(previewInnerWidth(rightWidth, cellPixels),
             previewBlockBudget(maxPreviewHeight, cellPixels),
-            glyphWidth, glyphHeight, previewGap(cellPixels), 2 * cellPixels);
-        int previewHeight = previewHeight(glyphHeight, PreviewFit.largestScale(scaleCount), cellPixels);
+            glyph, previewGap(cellPixels), 2 * cellPixels);
+        int previewHeight = previewHeight(glyph.height(), PreviewFit.largestScale(scaleCount), cellPixels);
         int noteY = TOP_ROWS + previewHeight;
         return new Result(
             new ReviewLayout.Rect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),

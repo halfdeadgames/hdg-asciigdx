@@ -101,7 +101,7 @@ final class PaintSheetView {
         frameCellsWide = PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP, cell());
         int inset = PaintColumns.panelInset(frameCellsWide, visibleColumns * (slotWidth() + GAP) + GAP, cell());
         layout = new SheetGridLayout(frameLeft + cell() + inset, frameTop() + cell(),
-            slotWidth(), editor.cellHeight() * pixelScale(), GAP, COLUMNS, visibleColumns, rows);
+            new GlyphSize(slotWidth(), editor.cellHeight() * pixelScale()), GAP, COLUMNS, visibleColumns, rows);
         barLeft = frameLeft + (frameCellsWide - 2) * cell();
     }
 

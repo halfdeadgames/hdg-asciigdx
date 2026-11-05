@@ -63,27 +63,27 @@ class PaintScaleTest {
 
     @Test
     void fittingFactorKeepsARequestThatFitsItsBareMinimum() {
-        assertEquals(4, PaintScale.fittingFactor(4, 1152, 672, PaintSheetView.GAP, 8, 8));
-        assertEquals(2, PaintScale.fittingFactor(2, 1900, 1000, PaintSheetView.GAP, 8, 8));
+        assertEquals(4, PaintScale.fittingFactor(4, 1152, 672, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2, PaintScale.fittingFactor(2, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
     void fittingFactorDropsToTheLargestBareFit() {
-        assertEquals(3, PaintScale.fittingFactor(4, 1151, 1000, PaintSheetView.GAP, 8, 8));
-        assertEquals(3, PaintScale.fittingFactor(4, 1900, 671, PaintSheetView.GAP, 8, 8));
-        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, 8, 8));
-        assertEquals(1, PaintScale.fittingFactor(4, 1, 1, PaintSheetView.GAP, 8, 8));
+        assertEquals(3, PaintScale.fittingFactor(4, 1151, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(3, PaintScale.fittingFactor(4, 1900, 671, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(1, PaintScale.fittingFactor(4, 1, 1, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
     void fittingFactorNeverRaisesTheRequest() {
-        assertEquals(2, PaintScale.fittingFactor(2, 100_000, 100_000, PaintSheetView.GAP, 8, 8));
+        assertEquals(2, PaintScale.fittingFactor(2, 100_000, 100_000, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
     void enlargingTheWindowRestoresTheRequestedFactor() {
-        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, 8, 8));
-        assertEquals(4, PaintScale.fittingFactor(4, 1900, 1000, PaintSheetView.GAP, 8, 8));
+        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(4, PaintScale.fittingFactor(4, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test

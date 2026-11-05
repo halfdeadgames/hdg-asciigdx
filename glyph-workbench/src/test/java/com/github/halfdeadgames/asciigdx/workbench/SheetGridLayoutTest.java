@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class SheetGridLayoutTest {
 
     // Panel at (10, 20), 24 px cells, 1 px gaps, 16 x 39 cells: cell 0 spans x 11..34, y 21..44.
-    private final SheetGridLayout layout = new SheetGridLayout(10, 20, 24, 24, 1, 16, 39);
+    private final SheetGridLayout layout = new SheetGridLayout(10, 20, new GlyphSize(24, 24), 1, 16, 39);
 
     @Test
     void computesPanelSize() {
@@ -65,7 +65,7 @@ class SheetGridLayoutTest {
     @Test
     void nonSquareCellsUseSeparatePitchPerAxis() {
         // Panel at (10, 20), 16x32 cells, 1 px gaps, 4 x 3 cells: x pitch 17, y pitch 33.
-        SheetGridLayout tall = new SheetGridLayout(10, 20, 16, 32, 1, 4, 3);
+        SheetGridLayout tall = new SheetGridLayout(10, 20, new GlyphSize(16, 32), 1, 4, 3);
         assertEquals(69, tall.panelWidth());
         assertEquals(100, tall.panelHeight());
         assertEquals(28, tall.cellLeft(1));
@@ -86,7 +86,7 @@ class SheetGridLayoutTest {
     @Test
     void horizontalOffsetShiftsMappingAndOrigins() {
         // 6 of 16 columns shown, first shown column 5, no row scroll.
-        SheetGridLayout window = new SheetGridLayout(10, 20, 24, 24, 1, 16, 6, 39);
+        SheetGridLayout window = new SheetGridLayout(10, 20, new GlyphSize(24, 24), 1, 16, 6, 39);
         assertEquals(11, window.cellLeft(5, 5));
         assertEquals(36, window.cellLeft(6, 5));
         assertEquals(5, window.cellAt(11, 21, 0, 10, 5));
@@ -96,7 +96,7 @@ class SheetGridLayoutTest {
 
     @Test
     void columnsOutsideTheHorizontalWindowMapToNone() {
-        SheetGridLayout window = new SheetGridLayout(10, 20, 24, 24, 1, 16, 6, 39);
+        SheetGridLayout window = new SheetGridLayout(10, 20, new GlyphSize(24, 24), 1, 16, 6, 39);
         assertEquals(-1, window.cellAt(11 + 6 * 25, 21, 0, 10, 5));
         assertEquals(15, window.cellAt(11 + 5 * 25, 21, 0, 10, 10));
         assertEquals(-1, window.cellAt(11 + 6 * 25, 21, 0, 10, 10));

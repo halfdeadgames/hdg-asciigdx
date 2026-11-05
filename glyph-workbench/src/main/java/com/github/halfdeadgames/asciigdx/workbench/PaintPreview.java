@@ -91,7 +91,7 @@ final class PaintPreview {
         int innerWidth = PaintLayout.previewInnerWidth(rect.width(), cell());
         int scaleCount = PreviewFit.scaleCount(innerWidth,
             PaintLayout.previewBlockBudget(rect.height(), cell()),
-            editor.cellWidth(), editor.cellHeight(), sectionGap(), labelWidth());
+            new GlyphSize(editor.cellWidth(), editor.cellHeight()), sectionGap(), labelWidth());
         int largestScale = PreviewFit.largestScale(scaleCount);
         if (activeTab == PreviewTabs.Tab.SCALES) {
             drawScales(left, rowTop, glyph, scaleCount);

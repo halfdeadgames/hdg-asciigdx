@@ -27,7 +27,7 @@ final class PaintScale {
     static int bestFactor(int windowWidth, int windowHeight, int gap, int glyphWidth, int glyphHeight) {
         double ratio = Math.min(windowWidth / (double) PROPORTION_WIDTH, windowHeight / (double) PROPORTION_HEIGHT);
         int target = (int) Math.max(2, Math.min(UiScale.MAX_FACTOR, Math.round(ratio)));
-        return fittingFactor(target, windowWidth, windowHeight, gap, glyphWidth, glyphHeight);
+        return fittingFactor(target, windowWidth, windowHeight, gap, new GlyphSize(glyphWidth, glyphHeight));
     }
 
     /** The factor one step up or down from the current one, kept within the allowed range. */
@@ -36,10 +36,10 @@ final class PaintScale {
     }
 
     /** The requested factor, or the largest smaller one whose bare minimum fits the window; the smallest factor if none does. */
-    static int fittingFactor(int requested, int windowWidth, int windowHeight, int gap, int glyphWidth, int glyphHeight) {
+    static int fittingFactor(int requested, int windowWidth, int windowHeight, int gap, GlyphSize glyph) {
         for (int factor = Math.min(requested, UiScale.MAX_FACTOR); factor > UiScale.MIN_FACTOR; factor--) {
-            if (minimumWidth(factor, gap, glyphWidth, glyphHeight) <= windowWidth
-                && minimumHeight(factor, glyphHeight) <= windowHeight) {
+            if (minimumWidth(factor, gap, glyph.width(), glyph.height()) <= windowWidth
+                && minimumHeight(factor, glyph.height()) <= windowHeight) {
                 return factor;
             }
         }

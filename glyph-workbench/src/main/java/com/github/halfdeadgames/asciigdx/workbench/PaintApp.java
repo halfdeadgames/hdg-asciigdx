@@ -989,7 +989,7 @@ public final class PaintApp implements WorkbenchScreen {
         sheet.fitToHeight(worldHeight(), layoutBarShown, cursor, revealCursor);
         revealCursor = false;
         rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
-            sheet.frameRight() / cell(), split.rightCells(), editor.cellWidth(), editor.cellHeight(),
+            sheet.frameRight() / cell(), split.rightCells(), new GlyphSize(editor.cellWidth(), editor.cellHeight()),
             cell(), layoutBarShown);
         fitGrid();
     }

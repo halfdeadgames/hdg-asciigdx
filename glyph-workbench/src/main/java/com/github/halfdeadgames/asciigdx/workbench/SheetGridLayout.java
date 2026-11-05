@@ -19,21 +19,21 @@ public final class SheetGridLayout {
     private final int visibleColumns;
     private final int rows;
 
-    public SheetGridLayout(int left, int top, int cellWidth, int cellHeight, int gap, int columns, int rows) {
-        this(left, top, cellWidth, cellHeight, gap, columns, columns, rows);
+    public SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns, int rows) {
+        this(left, top, cellSize, gap, columns, columns, rows);
     }
 
     /**
      * Cells are numbered across all {@code columns}, but only the first {@code visibleColumns} take
      * room in the panel and answer {@link #cellAt}.
      */
-    public SheetGridLayout(int left, int top, int cellWidth, int cellHeight, int gap, int columns,
+    public SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns,
                            int visibleColumns, int rows) {
         this.visibleColumns = Math.max(1, Math.min(columns, visibleColumns));
         this.left = left;
         this.top = top;
-        this.cellWidth = cellWidth;
-        this.cellHeight = cellHeight;
+        this.cellWidth = cellSize.width();
+        this.cellHeight = cellSize.height();
         this.gap = gap;
         this.pitchX = cellWidth + gap;
         this.pitchY = cellHeight + gap;
