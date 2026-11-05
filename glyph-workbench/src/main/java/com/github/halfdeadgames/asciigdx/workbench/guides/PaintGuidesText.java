@@ -1,10 +1,10 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
-import com.github.halfdeadgames.asciigdx.workbench.PaintGuides.BarGuide;
-import com.github.halfdeadgames.asciigdx.workbench.PaintGuides.Guide;
-import com.github.halfdeadgames.asciigdx.workbench.PaintGuides.Scoped;
-import com.github.halfdeadgames.asciigdx.workbench.PaintGuides.WarnSettings;
-import com.github.halfdeadgames.asciigdx.workbench.PaintGuides.WidthGuide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.BarGuide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.Guide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.Scoped;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.WarnSettings;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.WidthGuide;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;

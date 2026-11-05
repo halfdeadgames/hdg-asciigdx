@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
@@ -59,7 +60,7 @@ final class PaintLayout {
 
     /** Window pixels high that hold the editor at its minimum zoom, the smallest preview and help, the messages, and both bars, with the key bar shown. */
     static int minimumHeight(int glyphHeight, int cellPixels) {
-        int editorRows = 2 + PaintGridView.LABEL_ROWS_ABOVE
+        int editorRows = 2 + PaintGridLabels.LABEL_ROWS_ABOVE
             + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + cellPixels / 2 + cellPixels - 1) / cellPixels;
         int rightRows = previewHeight(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_NOTE_HEIGHT;
         return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * cellPixels;

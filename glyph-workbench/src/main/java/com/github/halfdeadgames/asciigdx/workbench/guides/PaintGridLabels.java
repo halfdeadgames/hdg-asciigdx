@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import java.util.Arrays;
 import java.util.List;
@@ -8,8 +8,10 @@ import java.util.List;
  * width labels are spread within each tier. A highlight that is also a shown guide reuses that guide's slot;
  * otherwise it gets an extra slot at the end.
  */
-final class PaintGridLabels {
+public final class PaintGridLabels {
 
+    /** Room above the grid for the two tiers of width labels. */
+    public static final int LABEL_ROWS_ABOVE = 3;
     private static final int WIDTH_TIERS = 2;
     private static final int WIDTH_LABEL_ROOM_LEFT = 2;
 
@@ -22,35 +24,37 @@ final class PaintGridLabels {
      * @param cell size of one label character
      * @param labelGap free space required between neighbouring labels
      */
-    record Frame(int left, int top, int pixelSize, int areaWidth, int areaHeight, int cell, int labelGap) { }
+    public record Frame(int left, int top, int pixelSize, int areaWidth, int areaHeight, int cell, int labelGap) { }
 
     private int[] rowLabelY = new int[0];
     private int[] widthLabelX = new int[0];
     private int highlightRowSlot = -1;
     private int highlightWidthSlot = -1;
 
+    public PaintGridLabels() { }
+
     /** Top of the label in a row slot: shown rows first, then shown bars, then the highlight's extra slot. */
-    int rowLabelY(int slot) {
+    public int rowLabelY(int slot) {
         return rowLabelY[slot];
     }
 
     /** Left of the label in a width slot: shown widths first, then the highlight's extra slot. */
-    int widthLabelX(int slot) {
+    public int widthLabelX(int slot) {
         return widthLabelX[slot];
     }
 
     /** Row slot of the highlight, or -1 when the highlight is not a row or bar. */
-    int highlightRowSlot() {
+    public int highlightRowSlot() {
         return highlightRowSlot;
     }
 
     /** Width slot of the highlight, or -1 when the highlight is not a column. */
-    int highlightWidthSlot() {
+    public int highlightWidthSlot() {
         return highlightWidthSlot;
     }
 
     /** @param mark the highlight to give a slot, or null for none */
-    void layout(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
+    public void layout(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
         layoutRowLabels(shown, mark, frame);
         layoutWidthLabels(shown.widths(), mark, frame);
     }
@@ -67,7 +71,7 @@ final class PaintGridLabels {
                 - frame.cell() / 2;
         }
         Arrays.fill(sizes, frame.cell());
-        rowLabelY = LabelPlacer.place(wanted, sizes, frame.top() - PaintGridView.LABEL_ROWS_ABOVE * frame.cell(),
+        rowLabelY = LabelPlacer.place(wanted, sizes, frame.top() - LABEL_ROWS_ABOVE * frame.cell(),
             frame.top() + frame.areaHeight() + frame.cell() / 2, frame.labelGap());
     }
 

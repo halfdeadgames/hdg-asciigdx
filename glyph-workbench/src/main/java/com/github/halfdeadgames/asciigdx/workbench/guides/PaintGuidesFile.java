@@ -1,5 +1,6 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
+import com.github.halfdeadgames.asciigdx.workbench.AtomicFiles;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,7 +10,7 @@ import java.nio.file.Path;
  * The {@code <size>.guides.txt} file of one font size. A missing file means no guides; a file that cannot be read or
  * parsed also means no guides, but is marked unreadable so it is never overwritten by mistake.
  */
-final class PaintGuidesFile {
+public final class PaintGuidesFile {
 
     private final Path path;
     private final PaintGuides guides;
@@ -21,7 +22,7 @@ final class PaintGuidesFile {
         this.readError = readError;
     }
 
-    static PaintGuidesFile open(Path directory, String fontSize) {
+    public static PaintGuidesFile open(Path directory, String fontSize) {
         Path path = directory.resolve(fontSize + ".guides.txt");
         if (!Files.exists(path)) {
             return new PaintGuidesFile(path, PaintGuides.NONE, null);
@@ -38,16 +39,16 @@ final class PaintGuidesFile {
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     }
 
-    PaintGuides guides() {
+    public PaintGuides guides() {
         return guides;
     }
 
-    boolean isUnreadable() {
+    public boolean isUnreadable() {
         return readError != null;
     }
 
     /** The message of the failure that made the file unreadable, or null when it was read or is missing. */
-    String readError() {
+    public String readError() {
         return readError;
     }
 
@@ -60,7 +61,7 @@ final class PaintGuidesFile {
     }
 
     // Slash-separated, as FileHandle.path() wrote it.
-    String displayPath() {
+    public String displayPath() {
         return path.toString().replace('\\', '/');
     }
 

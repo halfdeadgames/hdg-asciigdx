@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import java.util.ArrayList;
@@ -22,30 +22,30 @@ import java.util.Set;
  * The two {@code warn} lines are optional, each at most once; a check without its line is off.
  * {@code groups} is {@code all} or a comma list of rules group names (case-insensitive). Labels contain no spaces.
  */
-final class PaintGuides {
+public final class PaintGuides {
 
     /** A line across the grid at the top edge of {@code boundaryRow}. */
-    record Guide(String label, int boundaryRow) {
+    public record Guide(String label, int boundaryRow) {
     }
 
     /** A vertical line at the left edge of {@code boundaryColumn}, drawn above or below by {@code tier}. */
-    record WidthGuide(String label, int boundaryColumn, int tier) {
+    public record WidthGuide(String label, int boundaryColumn, int tier) {
     }
 
     /**
      * A bar marked through the middle of a band of rows: it shows a row to fill, not an edge.
      * The band is {@code rowCount} rows starting at {@code firstRow}.
      */
-    record BarGuide(String label, int firstRow, int rowCount) {
+    public record BarGuide(String label, int firstRow, int rowCount) {
 
         /** Middle of the band in rows from the top of the grid. */
-        float centerRow() {
+        public float centerRow() {
             return firstRow + rowCount / 2f;
         }
     }
 
     /** The guides to draw for one rules group in one cell size. */
-    record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
+    public record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
     }
 
     record Scoped<T>(T guide, Set<String> groups) {
@@ -64,7 +64,7 @@ final class PaintGuides {
         OptionalInt descenderFirstRow = OptionalInt.empty();
     }
 
-    static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), new WarnSettings());
+    public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), new WarnSettings());
 
     private final List<Scoped<Guide>> rows;
     private final List<Scoped<WidthGuide>> columns;
@@ -296,7 +296,7 @@ final class PaintGuides {
         return names.toString();
     }
 
-    enum ListedKind { ROW, COLUMN, BAR }
+    public enum ListedKind { ROW, COLUMN, BAR }
 
     /**
      * One guide as the guide list shows it, whatever its kind.
@@ -305,10 +305,10 @@ final class PaintGuides {
      * @param rowCount rows in a bar, 0 for the other kinds
      * @param groups the groups text as {@link #toText} writes it, such as {@code all} or {@code lowercase,digits}
      */
-    record Listed(ListedKind kind, String label, int position, int rowCount, String groups) {
+    public record Listed(ListedKind kind, String label, int position, int rowCount, String groups) {
 
         /** Middle of a bar's band in rows from the top of the grid. */
-        float centerRow() {
+        public float centerRow() {
             return position + rowCount / 2f;
         }
     }
@@ -332,12 +332,12 @@ final class PaintGuides {
     }
 
     /** Rows at the top reserved for accents, or empty when the file leaves the accent check off. */
-    OptionalInt accentRows() {
+    public OptionalInt accentRows() {
         return accentRows;
     }
 
     /** First row of the descender band, or empty when the file leaves the descender check off. */
-    OptionalInt descenderFirstRow() {
+    public OptionalInt descenderFirstRow() {
         return descenderFirstRow;
     }
 
@@ -350,7 +350,7 @@ final class PaintGuides {
      * The guides of a rules group (see {@code FontRules.groupNameFor}) that fit the cell. Width guides are sorted
      * by column and alternate label tiers 0, 1, 0, ... so neighbouring labels never overlap.
      */
-    Shown forGroup(String groupName, int cellWidth, int cellHeight) {
+    public Shown forGroup(String groupName, int cellWidth, int cellHeight) {
         List<Guide> shownRows = fittingRows(groupName, cellHeight);
         List<WidthGuide> shownWidths = withAlternatingTiers(fittingColumns(groupName, cellWidth));
         List<BarGuide> shownBars = fittingBars(groupName, cellHeight);

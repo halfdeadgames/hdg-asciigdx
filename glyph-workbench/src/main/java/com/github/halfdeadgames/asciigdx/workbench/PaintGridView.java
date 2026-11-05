@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
@@ -27,8 +29,6 @@ final class PaintGridView {
     private static final Color LINE_COLOR = new Color(0.22f, 0.24f, 0.3f, 1f);
     private static final Color GUIDE_COLOR = new Color(0.3f, 0.85f, 0.9f, 1f);
 
-    /** Room above the grid for the two tiers of width labels. */
-    static final int LABEL_ROWS_ABOVE = 3;
     private static final int WIDTH_GUIDE_THICKNESS = 2;
     private static final int BAR_THICKNESS = 2;
     private static final int BAR_DASH = 8;

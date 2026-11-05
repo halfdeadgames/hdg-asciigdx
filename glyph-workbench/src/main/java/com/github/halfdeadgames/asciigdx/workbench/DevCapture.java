@@ -63,7 +63,7 @@ public final class DevCapture {
     }
 
     /** The row to select in the opened guide list named by {@code workbench.guides}, or -1 to leave the list closed. */
-    static int guidesRequest() {
+    public static int guidesRequest() {
         return parseRowIndex(System.getProperty(GUIDES_PROPERTY));
     }
 

@@ -16,6 +16,10 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuideListPanel;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuidesFile;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontPointer;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewGlyphDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeDialog;
@@ -1014,7 +1018,7 @@ public final class PaintApp implements WorkbenchScreen {
     private void fitGrid() {
         CellRect panel = rects.grid();
         int left = (panel.x() + 2) * cell();
-        int top = (panel.y() + 1 + PaintGridView.LABEL_ROWS_ABOVE) * cell();
+        int top = (panel.y() + 1 + PaintGridLabels.LABEL_ROWS_ABOVE) * cell();
         grid.fitTo(left, top, (panel.width() - 3) * cell(), (panel.bottom() - 1) * cell() - top - cell() / 2);
     }
 

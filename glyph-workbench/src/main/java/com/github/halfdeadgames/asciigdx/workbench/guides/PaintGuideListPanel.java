@@ -1,7 +1,9 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
+import com.github.halfdeadgames.asciigdx.workbench.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -14,7 +16,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
 /** The guide list panel of the paint screen: lists, edits, renames, and saves the guides of one font size. */
-final class PaintGuideListPanel {
+public final class PaintGuideListPanel {
 
     private static final String TAG = "Paint";
     private static final List<StatusBar.Key> LIST_KEYS = List.of(
@@ -48,7 +50,7 @@ final class PaintGuideListPanel {
     private int renameKeySwallowFrames;
 
     /** What the panel needs from the screen it is shown on. */
-    interface Host {
+    public interface Host {
 
         /** The guides as shown now, which the list is rebuilt from when it closes. */
         PaintGuides currentGuides();
@@ -65,8 +67,8 @@ final class PaintGuideListPanel {
         boolean pointerOverList();
     }
 
-    PaintGuideListPanel(Painter painter, MessageStrip messages, PaintGuidesFile guidesFile, FontEditor editor,
-                        ArrowRepeats arrowRepeats, Host host) {
+    public PaintGuideListPanel(Painter painter, MessageStrip messages, PaintGuidesFile guidesFile, FontEditor editor,
+                               ArrowRepeats arrowRepeats, Host host) {
         this.painter = painter;
         this.messages = messages;
         this.guidesFile = guidesFile;
@@ -77,27 +79,27 @@ final class PaintGuideListPanel {
     }
 
     // Keeps the backspace repeater tracking the real key without producing deletions.
-    void swallowInput() {
+    public void swallowInput() {
         repeatLabelBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), 0f);
     }
 
-    boolean isOpen() {
+    public boolean isOpen() {
         return open;
     }
 
-    boolean isRenaming() {
+    public boolean isRenaming() {
         return open && guideList.isRenaming();
     }
 
-    PaintGuides.Listed highlightedGuide() {
+    public PaintGuides.Listed highlightedGuide() {
         return open ? guideList.selectedGuide() : null;
     }
 
-    List<StatusBar.Key> statusKeys() {
+    public List<StatusBar.Key> statusKeys() {
         return guideList.isRenaming() ? RENAME_KEYS : LIST_KEYS;
     }
 
-    void open() {
+    public void open() {
         messages.nextAction();
         host.endStroke();
         open = true;
@@ -105,7 +107,7 @@ final class PaintGuideListPanel {
         refreshTitle();
     }
 
-    void openForCapture(boolean deriveIdle) {
+    public void openForCapture(boolean deriveIdle) {
         int guideRequest = DevCapture.guidesRequest();
         if (guideRequest >= 0 && deriveIdle) {
             guideList.select(guideRequest);
@@ -114,7 +116,7 @@ final class PaintGuideListPanel {
     }
 
     // Reads the typed character only while a label is being renamed; the caller decides whether the input is free.
-    void typeChar(char character) {
+    public void typeChar(char character) {
         boolean startingKey = character == 'l' || character == 'L';
         if (renameKeySwallowFrames > 0 && startingKey) {
             return;
@@ -123,7 +125,7 @@ final class PaintGuideListPanel {
     }
 
     // Esc and F2 cancel the edits here, so Esc never reaches the unsaved-changes prompt.
-    void handle(float delta, int wheelTicks) {
+    public void handle(float delta, int wheelTicks) {
         if (guideList.isRenaming()) {
             handleRename(delta);
             return;
@@ -155,7 +157,7 @@ final class PaintGuideListPanel {
     }
 
     // One row per text line; only the selected row bounces when it is too long, the others are cut.
-    void draw(CellRect area, int cell) {
+    public void draw(CellRect area, int cell) {
         Panel.draw(painter, area, title, true);
         seconds += Gdx.graphics.getDeltaTime();
         int visible = area.height() - 2;

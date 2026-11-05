@@ -78,11 +78,11 @@ public final class FontEditor {
         return ordered;
     }
 
-    int cellWidth() {
+    public int cellWidth() {
         return cellWidth;
     }
 
-    int cellHeight() {
+    public int cellHeight() {
         return cellHeight;
     }
 

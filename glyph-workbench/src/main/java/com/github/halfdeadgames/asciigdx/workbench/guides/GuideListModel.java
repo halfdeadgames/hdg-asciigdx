@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.LabelField;
 import java.util.ArrayList;
