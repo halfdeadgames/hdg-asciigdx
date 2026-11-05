@@ -190,13 +190,29 @@ final class NewFontDialogs {
 
     private void handleSize(int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
                             ReviewLayout.Rect area) {
+        if (handleSizeKeys()) {
+            return;
+        }
+        Dialog.Layout layout = sizeLayout(area);
+        sizePage.wheel(wheelTicks);
+        int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
+        SizeListHit hit = SizeListHit.of(layout, pointerX, pointerY, cell, listTop, sizePage.shownRows(),
+            sizePage.window().offset(), sizePage.scrolls());
+        trackSizeHover(pointerX, pointerY, hit);
+        if (clicked) {
+            handleSizeClick(hit, listTop);
+        }
+    }
+
+    /** @return whether Esc or Enter consumed the frame */
+    private boolean handleSizeKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             sizePage.back();
-            return;
+            return true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
             sizePage.enter();
-            return;
+            return true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             sizePage.move(-1);
@@ -204,36 +220,36 @@ final class NewFontDialogs {
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             sizePage.move(1);
         }
-        Dialog.Layout layout = sizeLayout(area);
-        sizePage.wheel(wheelTicks);
-        int column = Math.floorDiv(pointerX, cell);
-        int cellRow = Math.floorDiv(pointerY, cell);
-        boolean inside = column >= layout.x() && column < layout.x() + layout.width()
-            && cellRow >= layout.y() && cellRow < layout.y() + layout.height();
-        int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-        boolean onBar = sizePage.scrolls() && column == layout.textX() + layout.textWidth() - 1;
-        int viewRow = onBar || !inside ? -1 : SelectList.rowAt(cellRow, listTop, sizePage.shownRows());
-        int row = viewRow < 0 ? -1 : viewRow + sizePage.window().offset();
+        return false;
+    }
+
+    private void trackSizeHover(int pointerX, int pointerY, SizeListHit hit) {
         if (!sizeHoverKnown) {
             sizeHoverKnown = true;
             sizeHoverX = pointerX;
             sizeHoverY = pointerY;
-        } else if (pointerX != sizeHoverX || pointerY != sizeHoverY) {
-            sizeHoverX = pointerX;
-            sizeHoverY = pointerY;
-            sizePage.hover(row);
-        }
-        if (!clicked) {
             return;
         }
-        if (!inside) {
-            sizePage.back();
-        } else if (onBar) {
-            int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
-            ScrollBarHit.click(sizePage.window(), ScrollBarHit.part(sizePage.window(), cellRow - listTop, barCells));
-        } else {
-            sizePage.pick(row);
+        if (pointerX == sizeHoverX && pointerY == sizeHoverY) {
+            return;
         }
+        sizeHoverX = pointerX;
+        sizeHoverY = pointerY;
+        sizePage.hover(hit.row());
+    }
+
+    private void handleSizeClick(SizeListHit hit, int listTop) {
+        if (!hit.inside()) {
+            sizePage.back();
+            return;
+        }
+        if (hit.onBar()) {
+            int barCells = sizePage.shownRows() * SelectList.PITCH - 1;
+            ScrollBarHit.click(sizePage.window(),
+                ScrollBarHit.part(sizePage.window(), hit.cellRow() - listTop, barCells));
+            return;
+        }
+        sizePage.pick(hit.row());
     }
 
     private Dialog.Layout sizeLayout(ReviewLayout.Rect area) {
