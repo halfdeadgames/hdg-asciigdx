@@ -33,29 +33,25 @@ public final class MenuPointer<A> {
         return captured;
     }
 
-    /**
-     * @param column          pointer cell column
-     * @param row             pointer cell row, counted from the top of the screen
-     * @param pressStarted    the left button went down this frame
-     * @param buttonDown      the left button is down now; false together with a held press means a release
-     * @param pointerBusy     another interaction (a paint stroke, a scrollbar drag) owns the pointer: the bar
-     *                        then ignores presses and lights nothing
-     * @return the action chosen this frame, or null
-     */
-    public A update(MenuBar<A> bar, Predicate<A> availability, int column, int row, int totalColumns,
-                    boolean escapePressed, boolean pressStarted, boolean buttonDown, boolean pointerBusy) {
+    /** @return the action chosen this frame, or null */
+    public A update(MenuBar<A> bar, Predicate<A> availability, MenuPointerInput input) {
+        int column = input.column();
+        int row = input.row();
+        int totalColumns = input.totalColumns();
+        boolean pointerBusy = input.pointerBusy();
         bar.refresh(availability);
         captured = isCapturing(bar);
-        if (captured && escapePressed) {
+        if (captured && input.escapePressed()) {
             bar.close();
         }
         int rowOffset = dropDownRowOffset(row);
-        if (pressStarted && !pointerBusy && press(bar, availability, column, row, rowOffset, totalColumns)) {
+        if (input.pressStarted() && !pointerBusy
+                && press(bar, availability, column, row, rowOffset, totalColumns)) {
             captured = true;
         }
         A chosen = null;
         boolean pressActive = pressHeld;
-        if (pressHeld && !buttonDown) {
+        if (pressHeld && !input.buttonDown()) {
             pressHeld = false;
             captured = true;
             chosen = bar.releaseOnItem(column, rowOffset, totalColumns, availability);

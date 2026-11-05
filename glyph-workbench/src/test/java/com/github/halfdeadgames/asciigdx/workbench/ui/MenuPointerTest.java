@@ -23,7 +23,8 @@ class MenuPointerTest {
     private Predicate<String> available = action -> true;
 
     private String frame(int column, int row, boolean escape, boolean pressStarted, boolean down, boolean busy) {
-        return pointer.update(bar, available, column, row, COLUMNS, escape, pressStarted, down, busy);
+        return pointer.update(bar, available,
+            new MenuPointerInput(column, row, COLUMNS, escape, pressStarted, down, busy));
     }
 
     private String press(int column, int row) {

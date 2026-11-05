@@ -21,28 +21,19 @@ public final class MenuKeys<A> {
         return consumed;
     }
 
-    /**
-     * @param enabled      false while text is being typed: every key is then left to the screen
-     * @param altDown      either Alt key is held
-     * @param accessKey    letter pressed this frame (any case), or {@link #NO_KEY}; used only with Alt
-     * @param f10Pressed   F10 went down this frame
-     * @param enterPressed Enter or numpad Enter went down this frame
-     * @param lefts        repeat-aware move counts for each arrow key this frame
-     * @return the action chosen with Enter, or null
-     */
-    public A route(MenuBar<A> bar, Predicate<A> availability, boolean enabled, boolean altDown, char accessKey,
-                   boolean f10Pressed, boolean enterPressed, int lefts, int rights, int ups, int downs) {
+    /** @return the action chosen with Enter, or null */
+    public A route(MenuBar<A> bar, Predicate<A> availability, MenuKeyInput input) {
         consumed = false;
-        if (!enabled) {
+        if (!input.enabled()) {
             return null;
         }
         bar.refresh(availability);
         boolean wasOpen = bar.isOpen();
-        if (altDown) {
-            routeAlt(bar, availability, accessKey);
+        if (input.altDown()) {
+            routeAlt(bar, availability, input.accessKey());
             return null;
         }
-        if (f10Pressed) {
+        if (input.f10Pressed()) {
             routeF10(bar, availability, wasOpen);
             return null;
         }
@@ -50,11 +41,11 @@ public final class MenuKeys<A> {
             return null;
         }
         consumed = true;
-        repeatMoveMenu(bar, availability, -1, lefts);
-        repeatMoveMenu(bar, availability, 1, rights);
-        repeatMoveItem(bar, availability, -1, ups);
-        repeatMoveItem(bar, availability, 1, downs);
-        return enterPressed ? bar.chooseHighlighted(availability) : null;
+        repeatMoveMenu(bar, availability, -1, input.lefts());
+        repeatMoveMenu(bar, availability, 1, input.rights());
+        repeatMoveItem(bar, availability, -1, input.ups());
+        repeatMoveItem(bar, availability, 1, input.downs());
+        return input.enterPressed() ? bar.chooseHighlighted(availability) : null;
     }
 
     private void routeAlt(MenuBar<A> bar, Predicate<A> availability, char accessKey) {

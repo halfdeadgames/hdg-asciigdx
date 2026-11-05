@@ -21,7 +21,8 @@ class MenuKeysTest {
 
     private String route(boolean enabled, boolean alt, char accessKey, boolean f10, boolean enter,
                          int lefts, int rights, int ups, int downs) {
-        return keys.route(bar, available, enabled, alt, accessKey, f10, enter, lefts, rights, ups, downs);
+        return keys.route(bar, available,
+            new MenuKeyInput(enabled, alt, accessKey, f10, enter, lefts, rights, ups, downs));
     }
 
     private void altKey(char key) {

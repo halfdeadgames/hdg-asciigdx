@@ -3,8 +3,10 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeyInput;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
+import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointerInput;
 import java.util.function.Predicate;
 
 /** Reads the mouse and keyboard for the paint menu bar and reports the action the user picked. */
@@ -132,10 +134,14 @@ final class PaintMenuInput {
     private PaintMenu.Action pointMenu(MenuBar<PaintMenu.Action> menuBar, int pointerX, int pointerY,
                                        boolean escape) {
         int cell = host.cell();
+        int column = Math.floorDiv(pointerX, cell);
+        int row = Math.floorDiv(pointerY, cell);
+        int totalColumns = host.worldWidth() / cell;
+        boolean pressStarted = host.leftClicked();
+        boolean buttonDown = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
+        boolean pointerBusy = host.mouseHeldByPainting();
         return menuPointer.update(menuBar, menuAvailability,
-            Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell), host.worldWidth() / cell,
-            escape, host.leftClicked(),
-            Gdx.input.isButtonPressed(Input.Buttons.LEFT), host.mouseHeldByPainting());
+            new MenuPointerInput(column, row, totalColumns, escape, pressStarted, buttonDown, pointerBusy));
     }
 
     private void runChosenAction(PaintMenu.Action chosen, boolean wasOpen) {
@@ -165,9 +171,11 @@ final class PaintMenuInput {
         int downs = steering ? repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
         boolean enter = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
             || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
-        return menuKeys.route(menuBar, menuAvailability, !host.renamingGuide(), alt,
-            alt ? pressedAccessKey(menuBar) : MenuKeys.NO_KEY, Gdx.input.isKeyJustPressed(Input.Keys.F10), enter,
-            lefts, rights, ups, downs);
+        boolean enabled = !host.renamingGuide();
+        char accessKey = alt ? pressedAccessKey(menuBar) : MenuKeys.NO_KEY;
+        boolean f10Pressed = Gdx.input.isKeyJustPressed(Input.Keys.F10);
+        return menuKeys.route(menuBar, menuAvailability,
+            new MenuKeyInput(enabled, alt, accessKey, f10Pressed, enter, lefts, rights, ups, downs));
     }
 
     private static char pressedAccessKey(MenuBar<PaintMenu.Action> menuBar) {
