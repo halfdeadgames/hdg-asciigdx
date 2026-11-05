@@ -31,6 +31,17 @@ final class MenuScreen implements WorkbenchScreen {
     record Detail(String title, String motto, List<String> lines) {
     }
 
+    /** The words on screen: panel title, breadcrumb, one-word Enter and Esc labels, and a notice (empty for none). */
+    record Text(String listTitle, List<String> crumbs, String enterLabel, String escapeLabel, String notice) {
+
+        private static final String DEFAULT_ENTER_LABEL = "OPEN";
+
+        /** Text whose Enter label is {@code OPEN}. */
+        static Text opening(String listTitle, List<String> crumbs, String escapeLabel, String notice) {
+            return new Text(listTitle, crumbs, DEFAULT_ENTER_LABEL, escapeLabel, notice);
+        }
+    }
+
     private static final int CELL = Painter.TEXT_SIZE;
     private static final int PANEL_TOP = 3;
     private static final int LIST_X = 2;
@@ -60,30 +71,20 @@ final class MenuScreen implements WorkbenchScreen {
     private int lastMouseY = -1;
 
     /**
-     * @param listTitle title of the left panel
-     * @param crumbs the breadcrumb in the top bar
-     * @param escapeLabel what Esc does, one word for the status bar, such as {@code QUIT}
-     * @param notice shown under the panels in the warning colour, or empty
+     * @param text the words on screen
      * @param detailFor the right panel for the selected item (null when the menu has no items)
      * @param onChoose called with the chosen item
      * @param onBack called when the user presses Esc
      */
-    MenuScreen(MenuModel model, String listTitle, List<String> crumbs, String escapeLabel, String notice,
-        Function<MenuModel.Item, Detail> detailFor, Consumer<MenuModel.Item> onChoose, Runnable onBack) {
-        this(model, listTitle, crumbs, "OPEN", escapeLabel, notice, detailFor, onChoose, onBack);
-    }
-
-    /** @param enterLabel what Enter does, one word for the status bar; the shorter form says {@code OPEN} */
-    MenuScreen(MenuModel model, String listTitle, List<String> crumbs, String enterLabel, String escapeLabel,
-        String notice, Function<MenuModel.Item, Detail> detailFor, Consumer<MenuModel.Item> onChoose,
-        Runnable onBack) {
+    MenuScreen(MenuModel model, Text text, Function<MenuModel.Item, Detail> detailFor,
+        Consumer<MenuModel.Item> onChoose, Runnable onBack) {
         this.model = model;
-        this.listTitle = listTitle;
-        this.crumbs = crumbs;
+        this.listTitle = text.listTitle();
+        this.crumbs = text.crumbs();
         this.keys = List.of(
-            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", enterLabel),
-            new StatusBar.Key("1-9", "QUICK PICK"), new StatusBar.Key("ESC", escapeLabel));
-        this.notice = notice;
+            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", text.enterLabel()),
+            new StatusBar.Key("1-9", "QUICK PICK"), new StatusBar.Key("ESC", text.escapeLabel()));
+        this.notice = text.notice();
         this.detailFor = detailFor;
         this.onChoose = onChoose;
         this.onBack = onBack;

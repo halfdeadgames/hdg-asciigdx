@@ -91,8 +91,8 @@ public final class WorkbenchHost extends ApplicationAdapter {
                 }
                 return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), mottoOf(folder), actions);
             });
-        return new MenuScreen(MenuModel.fontList(all), "FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice,
-            detail, this::chooseFont, Gdx.app::exit);
+        MenuScreen.Text text = MenuScreen.Text.opening("FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice);
+        return new MenuScreen(MenuModel.fontList(all), text, detail, this::chooseFont, Gdx.app::exit);
     }
 
     private static MenuScreen.Detail newFontDetail() {
@@ -146,9 +146,9 @@ public final class WorkbenchHost extends ApplicationAdapter {
         if (selectKind != null) {
             actions.select(actions.indexOfKind(selectKind));
         }
-        return new MenuScreen(actions, "ACTIONS",
-            List.of("GLYPH WORKBENCH", name), "BACK", notice,
-            detail, item -> chooseAction(folderName, item), () -> pending = () -> fontListScreen(""));
+        MenuScreen.Text text = MenuScreen.Text.opening("ACTIONS", List.of("GLYPH WORKBENCH", name), "BACK", notice);
+        return new MenuScreen(actions, text, detail, item -> chooseAction(folderName, item),
+            () -> pending = () -> fontListScreen(""));
     }
 
     private void chooseAction(String folderName, MenuModel.Item item) {
@@ -183,9 +183,10 @@ public final class WorkbenchHost extends ApplicationAdapter {
         Runnable backToNewSize = () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE);
         Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
             : new MenuScreen.Detail(name, "", List.of("CREATES " + item.size() + ".TXT"));
-        return new MenuScreen(MenuModel.newSizes(folderName, options), "NEW SIZE",
-            List.of("GLYPH WORKBENCH", name, "NEW SIZE"), "CREATE", "BACK", "",
-            detail, item -> createSize(folder, item.size()), backToNewSize);
+        MenuScreen.Text text = new MenuScreen.Text("NEW SIZE", List.of("GLYPH WORKBENCH", name, "NEW SIZE"),
+            "CREATE", "BACK", "");
+        return new MenuScreen(MenuModel.newSizes(folderName, options), text, detail,
+            item -> createSize(folder, item.size()), backToNewSize);
     }
 
     private void createSize(Path folder, int height) {
