@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench;
+package com.github.halfdeadgames.asciigdx.workbench.notes;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -49,7 +49,7 @@ public final class NotePanel {
     }
 
     /** Whether the note is on screen and has more lines than fit. */
-    boolean canScroll() {
+    public boolean canScroll() {
         return width > 0 && display.overflows();
     }
 
