@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
@@ -21,8 +22,6 @@ final class NewFontSizePrompt {
     private static final int FIRST_HEIGHT = 8;
     private static final int LAST_HEIGHT = 64;
     private static final int HEIGHT_STEP = 8;
-    private static final int MARKER_CELLS = 2;
-    private static final int NOTHING = -1;
     // Room for a heading and its first size at least.
     private static final int MIN_SHOWN_ROWS = 2;
     private static final String ELLIPSIS = "..";
@@ -36,17 +35,12 @@ final class NewFontSizePrompt {
 
     private final BiConsumer<Shape, Integer> onCreate;
     private final Runnable onBack;
-    private List<SelectList.Row> rows = List.of();
-    // Parallel to rows: null for a heading.
-    private List<Entry> entries = List.of();
+    // Entries are null for headings.
+    private final GroupedPickList<Entry> list = new GroupedPickList<>();
     private String name = "";
     // Shown on the blank line under the "Size for" line; cleared when the cursor moves.
     private String problem = "";
-    private int selected = NOTHING;
     private boolean open;
-    // Rows the dialog has room for; unlimited until the caller reports the area.
-    private int capacity = Integer.MAX_VALUE;
-    private final ScrollState window = new ScrollState(0);
 
     /**
      * @param onCreate receives the shape and cell height when Enter is pressed
@@ -78,24 +72,15 @@ final class NewFontSizePrompt {
                 }
             }
         }
-        rows = builtRows;
-        entries = builtEntries;
-        selected = NOTHING;
-        window.setTotalRows(rows.size());
-        window.setVisibleRows(shownRows());
-        window.toTop();
+        list.setRows(builtRows, builtEntries);
         move(1);
         open = true;
     }
 
     void close() {
-        rows = List.of();
-        entries = List.of();
+        list.clear();
         name = "";
         problem = "";
-        selected = NOTHING;
-        capacity = Integer.MAX_VALUE;
-        window.setTotalRows(0);
         open = false;
     }
 
@@ -105,67 +90,49 @@ final class NewFontSizePrompt {
      */
     void fitTo(int areaHeight) {
         int fitting = Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) - LINES_ABOVE_LIST + 1) / SelectList.PITCH);
-        if (fitting != capacity) {
-            capacity = fitting;
-            window.setVisibleRows(shownRows());
-            followCursor();
-        }
+        list.setCapacity(fitting);
     }
 
     /** Rows drawn: all of them when they fit. */
     int shownRows() {
-        return Math.min(rows.size(), capacity);
+        return list.shownRows();
     }
 
     /** Whether some rows are out of view. */
     boolean scrolls() {
-        return window.needed();
+        return list.scrolls();
     }
 
     ScrollState window() {
-        return window;
+        return list.window();
     }
 
     /** The rows currently in view, top first. */
     List<SelectList.Row> visibleRows() {
-        int first = window.offset();
-        return rows.subList(first, Math.min(rows.size(), first + shownRows()));
+        return list.visibleRows();
     }
 
     /** The cursor's place in {@link #visibleRows()}, or -1 when it has been scrolled out of view. */
     int visibleSelectedIndex() {
-        int inView = selected - window.offset();
-        return selected == NOTHING || inView < 0 || inView >= shownRows() ? NOTHING : inView;
+        return list.visibleSelectedIndex();
     }
 
     /** Scrolls the window by whole rows; the cursor stays where it is. */
     void wheel(int ticks) {
-        window.scrollBy(ticks);
+        list.wheel(ticks);
     }
 
     /** Highlights the size at a row of {@link #rows()}; headings and out-of-range rows are ignored. */
     void hover(int rowIndex) {
-        if (rowIndex >= 0 && rowIndex < entries.size() && entries.get(rowIndex) != null) {
-            selected = rowIndex;
-        }
+        list.hover(rowIndex);
     }
 
     /** Hands over the size at a row of {@link #rows()} as if it were highlighted and Enter pressed. */
     void pick(int rowIndex) {
         hover(rowIndex);
-        if (rowIndex >= 0 && rowIndex < entries.size() && entries.get(rowIndex) != null) {
+        if (list.isChoosable(rowIndex)) {
             enter();
         }
-    }
-
-    // Keeps the cursor in view, and its group heading too when the heading sits right above it.
-    private void followCursor() {
-        if (selected == NOTHING) {
-            return;
-        }
-        boolean headingAbove = selected > 0 && entries.get(selected - 1) == null;
-        window.keepVisible(headingAbove ? selected - 1 : selected);
-        window.keepVisible(selected);
     }
 
     /** The name the page was opened with, so Back can hand it to the name page. */
@@ -179,42 +146,30 @@ final class NewFontSizePrompt {
     }
 
     List<SelectList.Row> rows() {
-        return rows;
+        return list.rows();
     }
 
     int selectedIndex() {
-        return selected;
+        return list.selectedIndex();
     }
 
     /** The highlighted size, or null when closed. */
     Entry selected() {
-        return selected == NOTHING ? null : entries.get(selected);
+        return list.selected();
     }
 
     /** Moves to the next size in the direction of {@code step}, skipping headings; stays put at either end. */
     void move(int step) {
-        int direction = Integer.signum(step);
-        if (direction == 0) {
+        if (Integer.signum(step) == 0) {
             return;
         }
         problem = "";
-        for (int i = selected == NOTHING && direction > 0 ? 0 : selected + direction;
-             i >= 0 && i < entries.size(); i += direction) {
-            if (entries.get(i) != null) {
-                selected = i;
-                followCursor();
-                return;
-            }
-        }
+        list.move(step);
     }
 
     /** Cells the rows need, including the selection marker. */
     int listWidth() {
-        int width = 0;
-        for (SelectList.Row row : rows) {
-            width = Math.max(width, row.text().length() + (row.selectable() ? MARKER_CELLS : 0));
-        }
-        return width;
+        return list.listWidth();
     }
 
     /** Shows why creating failed on the line under the "Size for" line; cut to the line width. */
