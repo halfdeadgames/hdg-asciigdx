@@ -148,7 +148,7 @@ public final class PaintApp implements WorkbenchScreen {
     private boolean confirmingQuit;
     private final WheelTicks wheelTicks = new WheelTicks();
     private PaintScrollRouting scrollRouting;
-    private PaintPointer pointerInput;
+    private PaintPointer pointer;
     private PointerTargets pointerTargets;
 
     private final Runnable onExit;
@@ -245,7 +245,7 @@ public final class PaintApp implements WorkbenchScreen {
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollHost());
-        pointerInput = new PaintPointer(viewport, scrollRouting);
+        pointer = new PaintPointer(viewport, scrollRouting);
         pointerTargets = new PointerTargets(List.of(
             new PreviewPointerTarget(preview, () -> rects.preview(), this::cell),
             new SheetBarPointerTarget(sheet),
@@ -369,8 +369,8 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void openNewSize(List<NewSizePlan.SizeOption> options) {
         stroke.end();
-        pointerInput.updateCell();
-        newSize.open(options, pointerInput.pixelX(), pointerInput.pixelY());
+        pointer.updatePosition();
+        newSize.open(options, pointer.pixelX(), pointer.pixelY());
     }
 
     private void handleNewSize() {
@@ -378,8 +378,8 @@ public final class PaintApp implements WorkbenchScreen {
         if (newSize.handleKeys()) {
             return;
         }
-        pointerInput.updateCell();
-        newSize.handlePointer(leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell(), rects.grid());
+        pointer.updatePosition();
+        newSize.handlePointer(leftClicked(), pointer.pixelX(), pointer.pixelY(), cell(), rects.grid());
     }
 
     private void openNewSizeFromMenu() {
@@ -565,11 +565,11 @@ public final class PaintApp implements WorkbenchScreen {
         ruleRevision = -1;
     }
 
-    private boolean pointerOverNotePanel() {
-        pointerInput.unprojectInput();
-        int column = Math.floorDiv(pointerInput.unprojectedPixelX(), cell());
-        int row = Math.floorDiv(pointerInput.unprojectedPixelY(), cell());
-        ReviewLayout.Rect area = rects.note();
+    private boolean pointerOverGuideList() {
+        pointer.unprojectInput();
+        int column = Math.floorDiv(pointer.unprojectedPixelX(), cell());
+        int row = Math.floorDiv(pointer.unprojectedPixelY(), cell());
+        ReviewLayout.Rect area = rects.belowPreview();
         return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
     }
 
@@ -597,7 +597,7 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public boolean pointerOverList() {
-            return pointerOverNotePanel();
+            return pointerOverGuideList();
         }
     }
 
@@ -644,13 +644,13 @@ public final class PaintApp implements WorkbenchScreen {
         }
 
         @Override
-        public void trackPointer() {
-            pointerInput.track();
+        public void updateAndRouteWheel() {
+            pointer.updateAndRouteWheel();
         }
 
         @Override
         public boolean menuClicked(PaintDeriveMenu menu) {
-            return menu.handleClick(rects.grid(), cell(), pointerInput.pixelX(), pointerInput.pixelY(), leftClicked());
+            return menu.handleClick(rects.grid(), cell(), pointer.pixelX(), pointer.pixelY(), leftClicked());
         }
     }
 
@@ -834,7 +834,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void routeHoverAndScaleKeys(boolean controlsOpen, boolean menuOwnsInput) {
         if (controlsOpen) {
-            pointerInput.updateCell();
+            pointer.updatePosition();
             clearMenuHover();
         } else if (!menuOwnsInput && !newItemDialogOpen()) {
             handleScaleKeys();
@@ -857,7 +857,7 @@ public final class PaintApp implements WorkbenchScreen {
 
     private void handleControlsPanel(float delta) {
         controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
-            Math.floorDiv(pointerInput.pixelX(), cell()), Math.floorDiv(pointerInput.pixelY(), cell()),
+            Math.floorDiv(pointer.pixelX(), cell()), Math.floorDiv(pointer.pixelY(), cell()),
             worldWidth() / cell(), worldHeight() / cell());
     }
 
@@ -885,7 +885,7 @@ public final class PaintApp implements WorkbenchScreen {
             int wheel = wheelTicks.vertical();
             wheelTicks.clear();
             newFont.handleInput(delta,
-                new NewFontPointer(wheel, leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell()),
+                new NewFontPointer(wheel, leftClicked(), pointer.pixelX(), pointer.pixelY(), cell()),
                 rects.grid());
             return true;
         }
@@ -959,8 +959,8 @@ public final class PaintApp implements WorkbenchScreen {
         handlePreviewTabKey();
         moveCursor(delta);
         scrollRouting.handleScrollKeys();
-        pointerInput.track();
-        pointerTargets.dispatch(pointerInput.pixelX(), pointerInput.pixelY(), leftClicked(),
+        pointer.updateAndRouteWheel();
+        pointerTargets.dispatch(pointer.pixelX(), pointer.pixelY(), leftClicked(),
             Gdx.input.isButtonPressed(Input.Buttons.LEFT));
     }
 
@@ -1218,18 +1218,18 @@ public final class PaintApp implements WorkbenchScreen {
         }
 
         @Override
-        public void updatePointerCell() {
-            pointerInput.updateCell();
+        public void updatePointerPosition() {
+            pointer.updatePosition();
         }
 
         @Override
         public int pointerX() {
-            return pointerInput.pixelX();
+            return pointer.pixelX();
         }
 
         @Override
         public int pointerY() {
-            return pointerInput.pixelY();
+            return pointer.pixelY();
         }
 
         @Override
@@ -1253,7 +1253,7 @@ public final class PaintApp implements WorkbenchScreen {
         }
 
         @Override
-        public boolean mouseHeldByPainting() {
+        public boolean pointerBusy() {
             return stroke.isActive() || sheet.isDraggingColumnBar();
         }
 
@@ -1293,17 +1293,17 @@ public final class PaintApp implements WorkbenchScreen {
 
         @Override
         public void unprojectInputToPointer() {
-            pointerInput.unprojectInput();
+            pointer.unprojectInput();
         }
 
         @Override
         public int unprojectedPixelX() {
-            return pointerInput.unprojectedPixelX();
+            return pointer.unprojectedPixelX();
         }
 
         @Override
         public int unprojectedPixelY() {
-            return pointerInput.unprojectedPixelY();
+            return pointer.unprojectedPixelY();
         }
     }
 
@@ -1485,7 +1485,7 @@ public final class PaintApp implements WorkbenchScreen {
             notePanel.resetDisplayScroll();
         }
         if (guideListPanel.isOpen()) {
-            guideListPanel.draw(rects.note(), cell());
+            guideListPanel.draw(rects.belowPreview(), cell());
             notePanel.markHidden();
             helpPanel.markHidden();
             return;

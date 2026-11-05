@@ -21,8 +21,8 @@ final class NewSizeDialog {
     private final NewSizePrompt prompt = new NewSizePrompt();
     private final Consumer<NewSizePlan.SizeOption> onChoose;
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private int hoverX;
-    private int hoverY;
+    private int lastPointerX;
+    private int lastPointerY;
 
     /** @param onChoose called with the chosen size after the dialog closes */
     NewSizeDialog(Consumer<NewSizePlan.SizeOption> onChoose) {
@@ -34,8 +34,8 @@ final class NewSizeDialog {
     }
 
     void open(List<NewSizePlan.SizeOption> options, int pointerX, int pointerY) {
-        hoverX = pointerX;
-        hoverY = pointerY;
+        lastPointerX = pointerX;
+        lastPointerY = pointerY;
         prompt.open(options);
     }
 
@@ -122,11 +122,11 @@ final class NewSizeDialog {
     }
 
     private void followPointer(int pointerX, int pointerY, boolean onRow, int row) {
-        if (pointerX == hoverX && pointerY == hoverY) {
+        if (pointerX == lastPointerX && pointerY == lastPointerY) {
             return;
         }
-        hoverX = pointerX;
-        hoverY = pointerY;
+        lastPointerX = pointerX;
+        lastPointerY = pointerY;
         if (onRow) {
             prompt.hover(row);
         }

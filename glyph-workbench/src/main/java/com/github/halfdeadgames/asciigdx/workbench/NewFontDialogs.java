@@ -42,9 +42,9 @@ final class NewFontDialogs {
     private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::chooseSize, this::backToName);
     private final KeyRepeat repeatBackspace = new KeyRepeat();
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private boolean sizeHoverKnown;
-    private int sizeHoverX;
-    private int sizeHoverY;
+    private boolean lastPointerKnown;
+    private int lastPointerX;
+    private int lastPointerY;
     private int swallowFrames;
 
     /**
@@ -140,7 +140,7 @@ final class NewFontDialogs {
 
     private void openSize(String name) {
         sizePage.open(name);
-        sizeHoverKnown = false;
+        lastPointerKnown = false;
     }
 
     private void continueToSize(String name) {
@@ -224,17 +224,17 @@ final class NewFontDialogs {
     }
 
     private void trackSizeHover(int pointerX, int pointerY, SizeListHit hit) {
-        if (!sizeHoverKnown) {
-            sizeHoverKnown = true;
-            sizeHoverX = pointerX;
-            sizeHoverY = pointerY;
+        if (!lastPointerKnown) {
+            lastPointerKnown = true;
+            lastPointerX = pointerX;
+            lastPointerY = pointerY;
             return;
         }
-        if (pointerX == sizeHoverX && pointerY == sizeHoverY) {
+        if (pointerX == lastPointerX && pointerY == lastPointerY) {
             return;
         }
-        sizeHoverX = pointerX;
-        sizeHoverY = pointerY;
+        lastPointerX = pointerX;
+        lastPointerY = pointerY;
         sizePage.hover(hit.row());
     }
 

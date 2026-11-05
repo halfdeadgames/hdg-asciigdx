@@ -17,7 +17,7 @@ final class PaintMenuInput {
         /** The current bar. A menu action can swap it mid-frame, so read it again after running one. */
         MenuBar<PaintMenu.Action> menuBar();
 
-        void updatePointerCell();
+        void updatePointerPosition();
 
         int pointerX();
 
@@ -32,7 +32,7 @@ final class PaintMenuInput {
         boolean leftClicked();
 
         /** True while a pixel stroke or a column bar drag holds the mouse. */
-        boolean mouseHeldByPainting();
+        boolean pointerBusy();
 
         boolean renamingGuide();
 
@@ -47,7 +47,7 @@ final class PaintMenuInput {
     private final ArrowRepeats arrowRepeats;
     // A menu state requested by the dev hook stays as set until the pointer moves, a click lands, or Esc is pressed.
     private boolean menuPinned;
-    private boolean menuPinCellKnown;
+    private boolean menuPinPositionKnown;
     private int menuPinX;
     private int menuPinY;
     // Alt as the input events saw it, because typed characters arrive before this frame's polling can say so.
@@ -80,13 +80,13 @@ final class PaintMenuInput {
 
     // Runs before everything else. While the menu owns the frame, nothing below it may read input.
     boolean handle(float delta) {
-        host.updatePointerCell();
+        host.updatePointerPosition();
         forgetAltWhenReleased();
         MenuBar<PaintMenu.Action> menuBar = host.menuBar();
         int pointerX = host.pointerX();
         int pointerY = host.pointerY();
         if (menuPinned) {
-            rememberPinCell(pointerX, pointerY);
+            rememberPinPosition(pointerX, pointerY);
             if (pinHolds(pointerX, pointerY)) {
                 return menuBar.isOpen();
             }
@@ -110,11 +110,11 @@ final class PaintMenuInput {
         }
     }
 
-    private void rememberPinCell(int pointerX, int pointerY) {
-        if (menuPinCellKnown) {
+    private void rememberPinPosition(int pointerX, int pointerY) {
+        if (menuPinPositionKnown) {
             return;
         }
-        menuPinCellKnown = true;
+        menuPinPositionKnown = true;
         menuPinX = pointerX;
         menuPinY = pointerY;
     }
@@ -132,7 +132,7 @@ final class PaintMenuInput {
         int totalColumns = host.worldWidth() / cell;
         boolean pressStarted = host.leftClicked();
         boolean buttonDown = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
-        boolean pointerBusy = host.mouseHeldByPainting();
+        boolean pointerBusy = host.pointerBusy();
         return menuPointer.update(menuBar, menuAvailability,
             new MenuPointerInput(column, row, totalColumns, escape, pressStarted, buttonDown, pointerBusy));
     }

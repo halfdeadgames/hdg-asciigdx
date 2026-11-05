@@ -11,8 +11,8 @@ final class PointerTargets {
         this.targets = targets;
     }
 
-    void dispatch(int x, int y, boolean clicked, boolean pressed) {
-        if (clicked) {
+    void dispatch(int x, int y, boolean pressStarted, boolean buttonDown) {
+        if (pressStarted) {
             dispatchClick(x, y);
             return;
         }
@@ -20,7 +20,7 @@ final class PointerTargets {
         if (captured == null) {
             return;
         }
-        if (pressed) {
+        if (buttonDown) {
             captured.drag(x, y);
         } else {
             captured.release();

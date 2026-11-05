@@ -19,8 +19,8 @@ class PaintLayoutTest {
         assertEquals(PaintLayout.TOP_ROWS, result.preview().y());
         assertEquals(41 - 1, result.messages().bottom());
         assertEquals(result.messages().y(), result.grid().bottom());
-        assertEquals(result.messages().y(), result.note().bottom());
-        assertEquals(result.preview().bottom(), result.note().y());
+        assertEquals(result.messages().y(), result.belowPreview().bottom());
+        assertEquals(result.preview().bottom(), result.belowPreview().y());
         assertEquals(79, result.preview().x() + result.preview().width());
         assertTrue(result.grid().x() + result.grid().width() < result.preview().x());
         assertEquals(result.grid().x(), result.messages().x());
@@ -42,7 +42,7 @@ class PaintLayoutTest {
         PaintLayout.Result result = PaintLayout.compute(79, 41, 18, 24, new GlyphSize(32, 32), 24, true);
         int columnHeight = result.messages().y() - result.preview().y();
         assertTrue(result.preview().height() <= columnHeight * 40 / 100);
-        assertTrue(result.note().height() >= 6);
+        assertTrue(result.belowPreview().height() >= 6);
     }
 
     @Test
@@ -57,7 +57,7 @@ class PaintLayoutTest {
         PaintLayout.Result result = PaintLayout.compute(1000 / 24, 30, split.sheetCells(), split.rightCells(), new GlyphSize(8, 8), 24, true);
         assertEquals(split.editorCells(), result.grid().width());
         assertTrue(result.grid().x() + result.grid().width() < result.preview().x());
-        assertTrue(result.note().height() >= 6);
+        assertTrue(result.belowPreview().height() >= 6);
     }
 
     @Test
@@ -67,7 +67,7 @@ class PaintLayoutTest {
         assertEquals(27 * 24, PaintLayout.minimumHeight(32, 24));
         int minimumRows = PaintLayout.minimumHeight(8, 24) / 24;
         PaintLayout.Result result = PaintLayout.compute(60, minimumRows, 10, 16, new GlyphSize(8, 8), 24, true);
-        assertTrue(result.note().bottom() <= result.messages().y());
+        assertTrue(result.belowPreview().bottom() <= result.messages().y());
         assertEquals(minimumRows - 1, result.messages().bottom());
     }
 
@@ -79,7 +79,7 @@ class PaintLayoutTest {
                 PaintLayout.Result hidden = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cell, false);
                 assertEquals(shown.grid(), hidden.grid());
                 assertEquals(shown.preview(), hidden.preview());
-                assertEquals(shown.note(), hidden.note());
+                assertEquals(shown.belowPreview(), hidden.belowPreview());
                 assertEquals(PaintLayout.helpArea(shown, true), PaintLayout.helpArea(hidden, true));
                 assertEquals(PaintLayout.noteArea(shown), PaintLayout.noteArea(hidden));
                 assertEquals(shown.messages().x(), hidden.messages().x());
@@ -112,7 +112,7 @@ class PaintLayoutTest {
                 int minimum = PaintLayout.minimumHeight(glyphHeight, cell);
                 int rows = minimum / cell;
                 PaintLayout.Result result = PaintLayout.compute(60, rows, 10, 16, new GlyphSize(8, glyphHeight), cell, true);
-                assertTrue(result.note().bottom() <= result.messages().y());
+                assertTrue(result.belowPreview().bottom() <= result.messages().y());
                 assertEquals(rows - 1, result.messages().bottom());
                 assertEquals(PaintLayout.MESSAGES_HEIGHT, result.messages().height());
                 assertTrue(PaintLayout.sheetRows(minimum, cell, true) >= 3);
@@ -162,10 +162,10 @@ class PaintLayoutTest {
             assertEquals(PaintLayout.TOP_ROWS, result.grid().y());
             assertEquals(41 - 1, result.messages().bottom());
             assertEquals(result.messages().y(), result.grid().bottom());
-            assertEquals(result.preview().bottom(), result.note().y());
+            assertEquals(result.preview().bottom(), result.belowPreview().y());
             assertEquals(79, result.preview().x() + result.preview().width());
             assertTrue(result.grid().x() + result.grid().width() < result.preview().x());
-            assertTrue(result.note().height() >= 6);
+            assertTrue(result.belowPreview().height() >= 6);
         }
     }
 }

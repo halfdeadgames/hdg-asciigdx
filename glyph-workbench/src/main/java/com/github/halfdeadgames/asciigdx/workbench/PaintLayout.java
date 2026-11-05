@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench;
 /** Where the panels of the paint screen go, in text cells: the sheet on the left, the grid in the middle, the previews on the right. */
 final class PaintLayout {
 
-    record Result(ReviewLayout.Rect grid, ReviewLayout.Rect preview, ReviewLayout.Rect note, ReviewLayout.Rect messages) {
+    record Result(ReviewLayout.Rect grid, ReviewLayout.Rect preview, ReviewLayout.Rect belowPreview, ReviewLayout.Rect messages) {
     }
 
     static final int MESSAGES_HEIGHT = 6;
@@ -38,13 +38,13 @@ final class PaintLayout {
 
     /** The area under the preview: the help panel alone, or the help over the review note when there is one. */
     static ReviewLayout.Rect helpArea(Result result, boolean withNote) {
-        ReviewLayout.Rect area = result.note();
+        ReviewLayout.Rect area = result.belowPreview();
         return withNote ? new ReviewLayout.Rect(area.x(), area.y(), area.width(), area.height() - noteHeight(area)) : area;
     }
 
     /** The note panel when it shares the area under the preview with the help. */
     static ReviewLayout.Rect noteArea(Result result) {
-        ReviewLayout.Rect area = result.note();
+        ReviewLayout.Rect area = result.belowPreview();
         int height = noteHeight(area);
         return new ReviewLayout.Rect(area.x(), area.bottom() - height, area.width(), height);
     }

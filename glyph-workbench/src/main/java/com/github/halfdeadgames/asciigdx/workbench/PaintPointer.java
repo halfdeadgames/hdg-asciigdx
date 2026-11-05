@@ -39,14 +39,14 @@ final class PaintPointer {
         return (int) Math.floor(viewport.getWorldHeight() - pointer.y);
     }
 
-    void updateCell() {
+    void updatePosition() {
         unprojectInput();
         pointerX = unprojectedPixelX();
         pointerY = unprojectedPixelY();
     }
 
-    void track() {
-        updateCell();
+    void updateAndRouteWheel() {
+        updatePosition();
         scrollRouting.routeVerticalWheel(pointerX, pointerY);
     }
 }

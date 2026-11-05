@@ -51,7 +51,7 @@ final class PaintDerive {
         void rememberProblem(String problem);
 
         /** Tracks the pointer's pixel position and routes the mouse wheel to the panel under it. */
-        void trackPointer();
+        void updateAndRouteWheel();
 
         /** Highlights the row under a click on the menu and returns whether the click chose an operation. */
         boolean menuClicked(PaintDeriveMenu menu);
@@ -205,7 +205,7 @@ final class PaintDerive {
         if (flow.mode() != DeriveFlow.Mode.MENU) {
             return;
         }
-        host.trackPointer();
+        host.updateAndRouteWheel();
         boolean choseByClick = host.menuClicked(deriveMenu);
         if (choseByKey || choseByClick) {
             beginPick();
