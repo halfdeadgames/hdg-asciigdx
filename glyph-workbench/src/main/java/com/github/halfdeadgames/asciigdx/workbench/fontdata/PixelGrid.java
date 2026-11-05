@@ -63,12 +63,10 @@ public final class PixelGrid {
         return new PixelGrid(width, rows.size(), lit);
     }
 
-    /** Returns the number of columns. */
     public int getWidth() {
         return width;
     }
 
-    /** Returns the number of rows. */
     public int getHeight() {
         return height;
     }
@@ -100,7 +98,6 @@ public final class PixelGrid {
         return new PixelGrid(width, height, copy);
     }
 
-    /** Returns whether at least one pixel is lit. */
     public boolean hasLitPixel() {
         return !lit.isEmpty();
     }

@@ -30,7 +30,6 @@ public record GlyphOp(Kind kind, List<Source> sources) {
     public record Source(int codePoint, int shift) {
     }
 
-    /** Creates an operation. */
     public GlyphOp {
         sources = List.copyOf(sources);
         boolean overlay = kind == Kind.OVERLAY;

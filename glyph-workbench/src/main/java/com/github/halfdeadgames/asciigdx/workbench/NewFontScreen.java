@@ -113,7 +113,6 @@ final class NewFontScreen implements WorkbenchScreen {
         return Math.round(viewport.getWorldHeight()) / CELL;
     }
 
-    // Everything below the breadcrumb row.
     private ReviewLayout.Rect dialogArea() {
         return new ReviewLayout.Rect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
     }

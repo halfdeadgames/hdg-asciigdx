@@ -81,7 +81,6 @@ final class NewFontDialogs {
         openName("");
     }
 
-    /** Closes both pages. */
     void close() {
         namePage.close();
         sizePage.close();

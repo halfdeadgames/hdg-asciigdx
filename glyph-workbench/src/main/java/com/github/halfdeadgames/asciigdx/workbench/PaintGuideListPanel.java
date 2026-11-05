@@ -54,7 +54,6 @@ final class PaintGuideListPanel {
         /** Ends a pixel stroke in progress when the list opens. */
         void endStroke();
 
-        /** Drops the wheel ticks the screen has queued. */
         void clearWheelTicks();
 
         /** Whether the pointer is over the area the list is drawn in. */

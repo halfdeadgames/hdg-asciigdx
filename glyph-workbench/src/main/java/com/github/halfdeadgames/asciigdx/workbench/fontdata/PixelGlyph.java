@@ -12,7 +12,6 @@ import java.util.Objects;
  */
 public record PixelGlyph(int codePoint, boolean full, PixelGrid pixels) implements GlyphEntry {
 
-    /** Creates a glyph. */
     public PixelGlyph {
         Objects.requireNonNull(pixels, "pixels must not be null");
     }

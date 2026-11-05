@@ -191,7 +191,6 @@ final class DeriveFlow {
         sourceSlot = slot;
     }
 
-    /** Asks for confirmation before replacing a drawing. */
     void askReplace() {
         if (mode == Mode.PICK_SOURCE) {
             mode = Mode.CONFIRM_REPLACE;

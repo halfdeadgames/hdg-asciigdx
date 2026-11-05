@@ -36,7 +36,6 @@ final class PaintDerive {
 
         void setCursor(int slot);
 
-        /** Ends a pixel stroke in progress. */
         void endStroke();
 
         /** Scrolls the sheet so the slot is shown. */
@@ -51,7 +50,7 @@ final class PaintDerive {
         /** Stores the edit problem the screen compares against to spot a newly rejected edit. */
         void rememberProblem(String problem);
 
-        /** Follows the pointer to its current cell. */
+        /** Tracks the pointer's pixel position and routes the mouse wheel to the panel under it. */
         void trackPointer();
 
         /** Highlights the row under a click on the menu and returns whether the click chose an operation. */
@@ -177,7 +176,6 @@ final class PaintDerive {
         return true;
     }
 
-    /** D opens the derive menu, U unlocks a derived glyph, G jumps to the source of a derived glyph. */
     void handleShortcutKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             openDerive();
@@ -221,7 +219,6 @@ final class PaintDerive {
         derivePick.begin(host.codePoints(), host.cursor());
     }
 
-    // Overlay keys: [ and ] shift the pending part, Backspace removes the last part, F finishes.
     void handleOverlayKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
             messages.nextAction();
@@ -247,7 +244,6 @@ final class PaintDerive {
         }
     }
 
-    // Runs only when the source changes.
     void refreshPick() {
         derivePick.refresh(host.codePoints(), host.cursor());
     }

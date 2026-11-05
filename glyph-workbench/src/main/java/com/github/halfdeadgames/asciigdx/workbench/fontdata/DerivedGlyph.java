@@ -10,7 +10,6 @@ import java.util.Objects;
  */
 public record DerivedGlyph(int codePoint, GlyphOp op) implements GlyphEntry {
 
-    /** Creates a derived glyph. */
     public DerivedGlyph {
         Objects.requireNonNull(op, "op must not be null");
     }

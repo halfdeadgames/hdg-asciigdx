@@ -34,7 +34,7 @@ import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 
-/** Paint screen: edits one font data file glyph by glyph (step 1: toggle and drag pixels, save). */
+/** Paint screen: edits one font data file glyph by glyph. */
 public final class PaintApp implements WorkbenchScreen {
 
     private static final String TAG = "Paint";
@@ -1099,7 +1099,7 @@ public final class PaintApp implements WorkbenchScreen {
         return control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (shift && Gdx.input.isKeyPressed(Input.Keys.Z)));
     }
 
-    // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active.
+    // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active or a derive is in progress.
     private void handleUndoKeys(boolean control, float delta) {
         boolean shift = shiftDown();
         int undos = repeatUndo.update(undoHeld(control, shift), delta);
@@ -1183,7 +1183,6 @@ public final class PaintApp implements WorkbenchScreen {
         return Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
     }
 
-    // N opens the new glyph prompt; other derive shortcuts go to PaintDerive.
     private void handleDeriveKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.N) && !altDown() && !shiftDown()) {
             openNewGlyph();
@@ -1478,7 +1477,8 @@ public final class PaintApp implements WorkbenchScreen {
         return flow.isOverlay() ? OVERLAY_PICK_KEYS : PICK_KEYS;
     }
 
-    // Read-only: the note and pick the upscale review recorded for this glyph, if it has a note.
+    // Draws a glyph's side panels: the guide list when open; otherwise the help panel,
+    // plus the read-only review note and pick if the glyph has a note.
     private void drawReviewNote(int codePoint) {
         if (shownNoteFor != codePoint) {
             shownNoteFor = codePoint;

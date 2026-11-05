@@ -53,8 +53,6 @@ public final class MenuBar<A> {
         this.menus = List.copyOf(menus);
     }
 
-    // ---- state ----
-
     public int menuCount() {
         return menus.size();
     }
@@ -92,8 +90,6 @@ public final class MenuBar<A> {
         return inspectedTitle;
     }
 
-    // ---- availability ----
-
     public boolean isItemAvailable(int menu, int item, Predicate<A> availability) {
         return availability.test(menus.get(menu).items().get(item).action());
     }
@@ -111,8 +107,6 @@ public final class MenuBar<A> {
         }
         return -1;
     }
-
-    // ---- layout ----
 
     public int titleColumn(int menu) {
         int column = FIRST_TITLE_COLUMN;
@@ -192,8 +186,6 @@ public final class MenuBar<A> {
         return column >= start && column < start + dropDownWidth(openMenu)
             && rowOffset >= -1 && rowOffset <= menus.get(openMenu).items().size();
     }
-
-    // ---- keyboard ----
 
     /**
      * Opens the first menu with this access key (any case) that is not locked. Does nothing when the
@@ -307,8 +299,6 @@ public final class MenuBar<A> {
         return choose(openMenu, highlightedItem, availability);
     }
 
-    // ---- pointer ----
-
     /**
      * Updates hover state for a pointer cell.
      *
@@ -367,8 +357,6 @@ public final class MenuBar<A> {
         }
         return choose(openMenu, item, availability);
     }
-
-    // ---- internals ----
 
     private boolean open(int menu, Predicate<A> availability) {
         if (menu < 0 || menu >= menus.size()) {
