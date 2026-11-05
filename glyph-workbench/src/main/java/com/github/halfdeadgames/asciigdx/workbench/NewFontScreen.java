@@ -99,7 +99,8 @@ final class NewFontScreen implements WorkbenchScreen {
         boolean clicked = Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
         int wheel = wheelTicks;
         wheelTicks = 0;
-        dialogs.handleInput(Gdx.graphics.getDeltaTime(), wheel, clicked, pointerX, pointerY, CELL, dialogArea());
+        dialogs.handleInput(Gdx.graphics.getDeltaTime(), new NewFontPointer(wheel, clicked, pointerX, pointerY, CELL),
+            dialogArea());
         draw();
         devCapture.afterRender();
     }

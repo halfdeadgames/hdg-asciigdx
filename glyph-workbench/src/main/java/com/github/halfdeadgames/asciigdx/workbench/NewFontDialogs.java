@@ -163,17 +163,15 @@ final class NewFontDialogs {
      * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also act on
      * what lies beneath in the same frame.
      *
-     * @param pointerX pointer position in pixels from the left
-     * @param pointerY pointer position in pixels from the top
+     * @param pointer this frame's wheel, click, and pointer position (pixels from the left and top)
      * @param area the cell rectangle the dialog is centred in
      */
-    void handleInput(float delta, int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
-                     ReviewLayout.Rect area) {
+    void handleInput(float delta, NewFontPointer pointer, ReviewLayout.Rect area) {
         swallowFrames = Math.max(0, swallowFrames - 1);
         if (namePage.isOpen()) {
             handleName(delta);
         } else if (sizePage.isOpen()) {
-            handleSize(wheelTicks, clicked, pointerX, pointerY, cell, area);
+            handleSize(pointer, area);
         }
     }
 
@@ -192,18 +190,17 @@ final class NewFontDialogs {
         }
     }
 
-    private void handleSize(int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
-                            ReviewLayout.Rect area) {
+    private void handleSize(NewFontPointer pointer, ReviewLayout.Rect area) {
         if (handleSizeKeys()) {
             return;
         }
         Dialog.Layout layout = sizeLayout(area);
-        sizePage.wheel(wheelTicks);
+        sizePage.wheel(pointer.wheelTicks());
         int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-        SizeListHit hit = SizeListHit.of(layout, pointerX, pointerY, cell, listTop, sizePage.shownRows(),
-            sizePage.window().offset(), sizePage.scrolls());
-        trackSizeHover(pointerX, pointerY, hit);
-        if (clicked) {
+        SizeListHit hit = SizeListHit.of(layout, pointer.pointerX(), pointer.pointerY(), pointer.cell(), listTop,
+            sizePage.shownRows(), sizePage.window().offset(), sizePage.scrolls());
+        trackSizeHover(pointer.pointerX(), pointer.pointerY(), hit);
+        if (pointer.clicked()) {
             handleSizeClick(hit, listTop);
         }
     }

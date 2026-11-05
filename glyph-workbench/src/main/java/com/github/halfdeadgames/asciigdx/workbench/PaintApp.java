@@ -877,7 +877,8 @@ public final class PaintApp implements WorkbenchScreen {
             }
             int wheel = wheelTicks.vertical();
             wheelTicks.clear();
-            newFont.handleInput(delta, wheel, leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell(),
+            newFont.handleInput(delta,
+                new NewFontPointer(wheel, leftClicked(), pointerInput.pixelX(), pointerInput.pixelY(), cell()),
                 rects.grid());
             return true;
         }

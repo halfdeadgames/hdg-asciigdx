@@ -55,9 +55,8 @@ final class PaintNewFont {
         dialogs.type(character);
     }
 
-    void handleInput(float delta, int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell,
-                     ReviewLayout.Rect area) {
-        dialogs.handleInput(delta, wheelTicks, clicked, pointerX, pointerY, cell, area);
+    void handleInput(float delta, NewFontPointer pointer, ReviewLayout.Rect area) {
+        dialogs.handleInput(delta, pointer, area);
     }
 
     void draw(Painter painter, int columns, int rows, ReviewLayout.Rect area) {
