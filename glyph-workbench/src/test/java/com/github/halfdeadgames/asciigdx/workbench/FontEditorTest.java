@@ -251,7 +251,7 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.markSaved();
 
-        PixelGlyph preview = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        PixelGlyph preview = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41)).glyph();
 
         assertNotNull(preview);
         assertTrue(preview.full());
@@ -260,6 +260,25 @@ class FontEditorTest {
         assertNull(editor.glyph(0x44));
         assertFalse(editor.isModified());
         assertFalse(editor.canUndo());
+    }
+
+    @Test
+    void previewLeavesTheEditorProblemUnchanged() {
+        FontEditor editor = editor();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
+        String standingProblem = editor.problem();
+        assertFalse(standingProblem.isEmpty());
+
+        FontEditor.DerivePreview allowed = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        assertNotNull(allowed.glyph());
+        assertEquals("", allowed.problem());
+        assertEquals(standingProblem, editor.problem());
+
+        FontEditor.DerivePreview refused = editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x46));
+        assertNull(refused.glyph());
+        assertFalse(refused.problem().isEmpty());
+        assertEquals(standingProblem, editor.problem());
     }
 
     @Test
@@ -316,11 +335,12 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.markSaved();
 
-        assertNull(editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45)));
-        assertTrue(editor.problem().contains("U+0045"));
-        assertTrue(editor.problem().contains("empty"));
+        FontEditor.DerivePreview refused = editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
+        assertNull(refused.glyph());
+        assertTrue(refused.problem().contains("U+0045"));
+        assertTrue(refused.problem().contains("empty"));
         editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
-        assertFalse(editor.problem().isEmpty());
+        assertTrue(editor.problem().contains("U+0045"));
 
         editor.derive(0x41, op(GlyphOp.Kind.MIRROR, 0x43));
         assertTrue(editor.problem().contains("cycle"));

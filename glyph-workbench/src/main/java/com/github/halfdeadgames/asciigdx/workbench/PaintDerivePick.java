@@ -16,8 +16,6 @@ final class PaintDerivePick {
     private boolean valid;
     private String promptText = "";
     private String problemText = "";
-    private boolean previewed;
-    private String previewProblem = "";
 
     PaintDerivePick(FontEditor editor, DeriveFlow flow) {
         this.editor = editor;
@@ -42,16 +40,6 @@ final class PaintDerivePick {
         return problemText;
     }
 
-    /** Whether the last {@link #refresh} asked the editor for a preview. */
-    boolean didPreview() {
-        return previewed;
-    }
-
-    /** The editor's problem right after the last preview; only meaningful when {@link #didPreview()}. */
-    String previewProblem() {
-        return previewProblem;
-    }
-
     void begin(int[] codePoints, int cursor) {
         blank = new PixelGlyph(codePoints[cursor], false, PixelGrid.blank(editor.bodyWidth(), editor.cellHeight()));
         resetToNoSource(codePoints, cursor);
@@ -64,7 +52,6 @@ final class PaintDerivePick {
 
     /** Runs only when the source changes. With the source on the target there is nothing to preview yet. */
     void refresh(int[] codePoints, int cursor) {
-        previewed = false;
         if (flow.operation() == GlyphOp.Kind.OVERLAY) {
             refreshOverlay(codePoints, cursor);
             return;
@@ -73,16 +60,15 @@ final class PaintDerivePick {
             resetToNoSource(codePoints, cursor);
             return;
         }
-        PixelGlyph result = editor.previewDerived(codePoints[cursor], currentOp(codePoints));
-        recordPreviewProblem();
-        valid = result != null;
+        FontEditor.DerivePreview preview = editor.previewDerived(codePoints[cursor], currentOp(codePoints));
+        valid = preview.glyph() != null;
         promptText = prompt(codePoints, cursor, valid);
         if (valid) {
-            shown = result;
+            shown = preview.glyph();
             problemText = "";
         } else {
             shown = blank;
-            problemText = editor.problem();
+            problemText = preview.problem();
         }
     }
 
@@ -119,11 +105,6 @@ final class PaintDerivePick {
         problemText = "";
     }
 
-    private void recordPreviewProblem() {
-        previewed = true;
-        previewProblem = editor.problem();
-    }
-
     // Previews the committed parts plus the pending one; if the pending one is refused, the valid parts still show.
     private void refreshOverlay(int[] codePoints, int cursor) {
         int target = codePoints[cursor];
@@ -132,13 +113,13 @@ final class PaintDerivePick {
         valid = false;
         problemText = "";
         if (!all.isEmpty()) {
-            PixelGlyph result = editor.previewDerived(target, DeriveFlow.overlayOp(all, codePoints));
-            problemText = editor.problem();
-            if (result != null) {
+            FontEditor.DerivePreview preview = editor.previewDerived(target, DeriveFlow.overlayOp(all, codePoints));
+            problemText = preview.problem();
+            if (preview.glyph() != null) {
                 valid = true;
-                shown = result;
+                shown = preview.glyph();
             } else if (!flow.parts().isEmpty()) {
-                shown = editor.previewDerived(target, DeriveFlow.overlayOp(flow.parts(), codePoints));
+                shown = editor.previewDerived(target, DeriveFlow.overlayOp(flow.parts(), codePoints)).glyph();
             }
             OverlayCheck.Result check = overlayCheck(codePoints);
             if (check.hasWarning() && check.problem() != OverlayCheck.Problem.SAME_AS_TARGET) {
@@ -148,7 +129,6 @@ final class PaintDerivePick {
             if (shown == null) {
                 shown = blank;
             }
-            recordPreviewProblem();
         }
         promptText = prompt(codePoints, cursor, !flow.sourceIsTarget());
     }

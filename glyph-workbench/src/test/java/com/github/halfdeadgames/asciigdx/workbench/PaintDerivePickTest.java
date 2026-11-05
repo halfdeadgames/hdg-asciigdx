@@ -71,7 +71,6 @@ class PaintDerivePickTest {
         pick.refresh(codePoints, targetSlot);
         assertNull(pick.shown());
         assertFalse(pick.isValid());
-        assertFalse(pick.didPreview());
         assertTrue(pick.promptText().endsWith(": PICK SOURCE"));
         assertEquals("", pick.problemText());
     }
@@ -82,7 +81,6 @@ class PaintDerivePickTest {
         pickSource(DRAWN_SOURCE);
         assertNotNull(pick.shown());
         assertTrue(pick.isValid());
-        assertTrue(pick.didPreview());
         assertTrue(pick.promptText().contains(" FROM U+0100 "));
         assertEquals("", pick.problemText());
     }
@@ -94,7 +92,6 @@ class PaintDerivePickTest {
         assertNotNull(pick.shown());
         assertFalse(pick.isValid());
         assertTrue(pick.problemText().contains("empty"));
-        assertEquals(pick.problemText(), pick.previewProblem());
         assertFalse(pick.shown().pixels().hasLitPixel());
     }
 
@@ -104,7 +101,6 @@ class PaintDerivePickTest {
         pick.refresh(codePoints, targetSlot);
         assertNull(pick.shown());
         assertFalse(pick.isValid());
-        assertFalse(pick.didPreview());
         assertTrue(pick.promptText().endsWith("PICK A PART  SHIFT 0  PARTS 0"));
     }
 
@@ -115,7 +111,6 @@ class PaintDerivePickTest {
         pickSource(DRAWN_SOURCE);
         assertNotNull(pick.shown());
         assertTrue(pick.isValid());
-        assertTrue(pick.didPreview());
         assertTrue(pick.promptText().contains(" PART FROM U+0100 "));
     }
 

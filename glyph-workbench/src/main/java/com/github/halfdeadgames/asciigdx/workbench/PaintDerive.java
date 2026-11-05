@@ -246,9 +246,6 @@ final class PaintDerive {
     // Runs only when the source changes.
     void refreshPick() {
         derivePick.refresh(host.codePoints(), host.cursor());
-        if (derivePick.didPreview()) {
-            host.rememberProblem(derivePick.previewProblem());
-        }
     }
 
     // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.

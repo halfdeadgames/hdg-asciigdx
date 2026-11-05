@@ -277,14 +277,22 @@ final class FontEditor {
         return new PixelGlyph(codePoint, full, base);
     }
 
+    /** What {@link #previewDerived} found: the glyph (null when refused) and the reason, empty when allowed. */
+    record DerivePreview(PixelGlyph glyph, String problem) { }
+
+    // The resolved font (null when refused) and the refusal reason, empty when allowed.
+    private record Resolution(Map<Integer, PixelGlyph> glyphs, String problem) { }
+
     /**
-     * Shows what {@link #derive} would produce without changing anything.
-     *
-     * @return the resolved glyph, or null when the derivation is refused; {@link #problem()} says why
+     * Shows what {@link #derive} would produce. Changes nothing, including {@link #problem()}; a refusal is
+     * explained by the returned {@link DerivePreview#problem()}.
      */
-    PixelGlyph previewDerived(int targetCodePoint, GlyphOp op) {
-        Map<Integer, PixelGlyph> outcome = resolveWithDerived(targetCodePoint, op);
-        return outcome == null ? null : outcome.get(targetCodePoint);
+    DerivePreview previewDerived(int targetCodePoint, GlyphOp op) {
+        Resolution resolution = resolveWithDerived(targetCodePoint, op);
+        if (resolution.glyphs() == null) {
+            return new DerivePreview(null, resolution.problem());
+        }
+        return new DerivePreview(resolution.glyphs().get(targetCodePoint), "");
     }
 
     /**
@@ -292,13 +300,14 @@ final class FontEditor {
      * (see {@link #wouldReplaceDrawing}). A refusal changes nothing and is explained by {@link #problem()}.
      */
     void derive(int targetCodePoint, GlyphOp op) {
-        Map<Integer, PixelGlyph> outcome = resolveWithDerived(targetCodePoint, op);
-        if (outcome == null) {
+        Resolution resolution = resolveWithDerived(targetCodePoint, op);
+        problem = resolution.problem();
+        if (resolution.glyphs() == null) {
             return;
         }
         changeAsOneStep(() -> {
             entries.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
-            resolved = outcome;
+            resolved = resolution.glyphs();
         });
     }
 
@@ -319,28 +328,27 @@ final class FontEditor {
         return entries.get(codePoint) instanceof PixelGlyph drawn && drawn.pixels().hasLitPixel();
     }
 
-    // Resolves the font as if the target were derived; null (with a problem) when that is refused.
-    private Map<Integer, PixelGlyph> resolveWithDerived(int targetCodePoint, GlyphOp op) {
+    // Resolves the font as if the target were derived; no glyphs (with a problem) when that is refused.
+    private Resolution resolveWithDerived(int targetCodePoint, GlyphOp op) {
         if (!isSlotCodePoint(targetCodePoint)) {
-            problem = String.format("U+%04X is not a glyph slot", targetCodePoint);
-            return null;
+            return refused(String.format("U+%04X is not a glyph slot", targetCodePoint));
         }
         for (GlyphOp.Source source : op.sources()) {
             if (!entries.containsKey(source.codePoint())) {
-                problem = String.format("source U+%04X is empty; draw it first", source.codePoint());
-                return null;
+                return refused(String.format("source U+%04X is empty; draw it first", source.codePoint()));
             }
         }
         Map<Integer, GlyphEntry> trial = new TreeMap<>(entries);
         trial.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
         try {
-            Map<Integer, PixelGlyph> outcome = GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial));
-            problem = "";
-            return outcome;
+            return new Resolution(GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial)), "");
         } catch (FontDataException e) {
-            problem = e.getMessage();
-            return null;
+            return refused(e.getMessage());
         }
+    }
+
+    private static Resolution refused(String reason) {
+        return new Resolution(null, reason);
     }
 
     private boolean isSlotCodePoint(int codePoint) {
