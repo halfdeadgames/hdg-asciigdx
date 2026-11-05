@@ -33,8 +33,7 @@ final class PaintGuideListPanel {
     private final PaintGuidesFile guidesFile;
     private final FontEditor editor;
     private final Host host;
-    private final KeyRepeat repeatUp;
-    private final KeyRepeat repeatDown;
+    private final ArrowRepeats arrowRepeats;
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
 
     private GuideListModel guideList;
@@ -63,13 +62,12 @@ final class PaintGuideListPanel {
     }
 
     PaintGuideListPanel(Painter painter, MessageStrip messages, PaintGuidesFile guidesFile, FontEditor editor,
-                        KeyRepeat repeatUp, KeyRepeat repeatDown, Host host) {
+                        ArrowRepeats arrowRepeats, Host host) {
         this.painter = painter;
         this.messages = messages;
         this.guidesFile = guidesFile;
         this.editor = editor;
-        this.repeatUp = repeatUp;
-        this.repeatDown = repeatDown;
+        this.arrowRepeats = arrowRepeats;
         this.host = host;
         this.guideList = newModel();
     }
@@ -136,8 +134,8 @@ final class PaintGuideListPanel {
             save();
             return;
         }
-        int step = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta)
-            - repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
+        int step = arrowRepeats.down().update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta)
+            - arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
         if (wheelTicks != 0) {
             if (host.pointerOverList()) {
                 step += wheelTicks;

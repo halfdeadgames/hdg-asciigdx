@@ -94,8 +94,9 @@ public final class PaintApp implements WorkbenchScreen {
     private final KeyRepeat repeatDown = new KeyRepeat();
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
+    private final ArrowRepeats arrowRepeats = new ArrowRepeats(repeatLeft, repeatRight, repeatUp, repeatDown);
     private final PaintMenuInput menuInput = new PaintMenuInput(new MenuHost(), menuPointer, menuKeys,
-        menuAvailability, repeatLeft, repeatRight, repeatUp, repeatDown);
+        menuAvailability, arrowRepeats);
     private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
     private final PaintNewFont newFont;
@@ -232,7 +233,7 @@ public final class PaintApp implements WorkbenchScreen {
         applyMinimumWindowSize();
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
-        guideListPanel = new PaintGuideListPanel(painter, messages, guidesFile, editor, repeatUp, repeatDown,
+        guideListPanel = new PaintGuideListPanel(painter, messages, guidesFile, editor, arrowRepeats,
             new GuideListHost());
         preview = new PaintPreview(painter, editor);
         PreviewTabs.Tab requestedTab = DevCapture.requestedTab();

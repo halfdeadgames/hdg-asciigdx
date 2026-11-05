@@ -44,10 +44,7 @@ final class PaintMenuInput {
     private final MenuPointer<PaintMenu.Action> menuPointer;
     private final MenuKeys<PaintMenu.Action> menuKeys;
     private final Predicate<PaintMenu.Action> menuAvailability;
-    private final KeyRepeat repeatLeft;
-    private final KeyRepeat repeatRight;
-    private final KeyRepeat repeatUp;
-    private final KeyRepeat repeatDown;
+    private final ArrowRepeats arrowRepeats;
     // A menu state requested by the dev hook stays as set until the pointer moves, a click lands, or Esc is pressed.
     private boolean menuPinned;
     private boolean menuPinCellKnown;
@@ -57,16 +54,12 @@ final class PaintMenuInput {
     private boolean altSeenDown;
 
     PaintMenuInput(Host host, MenuPointer<PaintMenu.Action> menuPointer, MenuKeys<PaintMenu.Action> menuKeys,
-                   Predicate<PaintMenu.Action> menuAvailability, KeyRepeat repeatLeft, KeyRepeat repeatRight,
-                   KeyRepeat repeatUp, KeyRepeat repeatDown) {
+                   Predicate<PaintMenu.Action> menuAvailability, ArrowRepeats arrowRepeats) {
         this.host = host;
         this.menuPointer = menuPointer;
         this.menuKeys = menuKeys;
         this.menuAvailability = menuAvailability;
-        this.repeatLeft = repeatLeft;
-        this.repeatRight = repeatRight;
-        this.repeatUp = repeatUp;
-        this.repeatDown = repeatDown;
+        this.arrowRepeats = arrowRepeats;
     }
 
     void pin() {
@@ -155,20 +148,20 @@ final class PaintMenuInput {
     }
 
     private void holdArrowRepeats() {
-        repeatLeft.hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
-        repeatRight.hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
-        repeatUp.hold(Gdx.input.isKeyPressed(Input.Keys.UP));
-        repeatDown.hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
+        arrowRepeats.left().hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
+        arrowRepeats.right().hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
+        arrowRepeats.up().hold(Gdx.input.isKeyPressed(Input.Keys.UP));
+        arrowRepeats.down().hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
     }
 
     // Arrow repeats are read only while a menu is open, so a closed menu leaves them to the cursor.
     private PaintMenu.Action routeMenuKeys(MenuBar<PaintMenu.Action> menuBar, float delta) {
         boolean alt = host.altDown();
         boolean steering = menuBar.isOpen() && !alt;
-        int lefts = steering ? repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
-        int rights = steering ? repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
-        int ups = steering ? repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
-        int downs = steering ? repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
+        int lefts = steering ? arrowRepeats.left().update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
+        int rights = steering ? arrowRepeats.right().update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
+        int ups = steering ? arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
+        int downs = steering ? arrowRepeats.down().update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
         boolean enter = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
             || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
         boolean enabled = !host.renamingGuide();
