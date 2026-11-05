@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
+import com.github.halfdeadgames.asciigdx.workbench.paint.PaintApp;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleReviewScreen;
 import java.io.IOException;

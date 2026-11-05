@@ -47,7 +47,7 @@ public final class DevCapture {
     }
 
     /** The preview tab named by {@code workbench.tab}, or null when unset or unknown. */
-    static PreviewTabs.Tab requestedTab() {
+    public static PreviewTabs.Tab requestedTab() {
         return parseTab(System.getProperty(TAB_PROPERTY));
     }
 
@@ -80,12 +80,12 @@ public final class DevCapture {
     }
 
     /** The raw {@code workbench.menu} value, or null when unset. */
-    static String menuRequest() {
+    public static String menuRequest() {
         return System.getProperty(MENU_PROPERTY);
     }
 
     /** The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or null to leave it closed. */
-    static String newGlyphRequest() {
+    public static String newGlyphRequest() {
         return System.getProperty(NEW_GLYPH_PROPERTY);
     }
 
@@ -127,7 +127,7 @@ public final class DevCapture {
     }
 
     /** Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave it closed. */
-    static int newSizeRequest() {
+    public static int newSizeRequest() {
         return parseNewSizeRequest(System.getProperty(NEW_SIZE_PROPERTY));
     }
 
@@ -144,18 +144,18 @@ public final class DevCapture {
     }
 
     /** True for the request {@code controls}, which opens the Controls panel instead of a menu. */
-    static boolean opensControls(String request) {
+    public static boolean opensControls(String request) {
         return request != null && "controls".equalsIgnoreCase(request.trim());
     }
 
     /** A parsed menu request; {@code item} is -1 for the first available item. */
-    record MenuRequest(String title, boolean hoverOnly, int item, boolean inspect) { }
+    public record MenuRequest(String title, boolean hoverOnly, int item, boolean inspect) { }
 
     /**
      * Parses {@code edit}, {@code edit:1}, {@code hover:view}, {@code inspect:file} (hover a title), or
      * {@code inspect:glyph:0} (open that menu and hover that item); null for anything else.
      */
-    static MenuRequest parseMenuRequest(String request) {
+    public static MenuRequest parseMenuRequest(String request) {
         if (request == null) {
             return null;
         }
@@ -207,15 +207,15 @@ public final class DevCapture {
     }
 
     /** The raw {@code workbench.derive} value, or null when unset. */
-    static String deriveRequest() {
+    public static String deriveRequest() {
         return System.getProperty(DERIVE_PROPERTY);
     }
 
     /** A parsed {@code overlay:<code point>[:<shift>]} request. */
-    record OverlayRequest(int codePoint, int shift) { }
+    public record OverlayRequest(int codePoint, int shift) { }
 
     /** Parses a derive request such as {@code overlay:U+0021} or {@code overlay:U+0021:5}; null for anything else. */
-    static OverlayRequest parseOverlayRequest(String request) {
+    public static OverlayRequest parseOverlayRequest(String request) {
         if (request == null) {
             return null;
         }
@@ -238,7 +238,7 @@ public final class DevCapture {
         return new OverlayRequest(codePoint, shift);
     }
 
-    static int parseCodePoint(String text) {
+    public static int parseCodePoint(String text) {
         if (text == null) {
             return -1;
         }
