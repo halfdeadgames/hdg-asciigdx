@@ -289,20 +289,17 @@ final class FontEditor {
 
     /**
      * Replaces the glyph in a slot with a derived one, as one undo step. Whatever was drawn there is lost
-     * (see {@link #wouldReplaceDrawing}).
-     *
-     * @return whether the glyph was replaced; when false nothing changed and {@link #problem()} says why
+     * (see {@link #wouldReplaceDrawing}). A refusal changes nothing and is explained by {@link #problem()}.
      */
-    boolean derive(int targetCodePoint, GlyphOp op) {
+    void derive(int targetCodePoint, GlyphOp op) {
         Map<Integer, PixelGlyph> outcome = resolveWithDerived(targetCodePoint, op);
         if (outcome == null) {
-            return false;
+            return;
         }
         changeAsOneStep(() -> {
             entries.put(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
             resolved = outcome;
         });
-        return true;
     }
 
     /**
@@ -402,29 +399,44 @@ final class FontEditor {
         return !redoSteps.isEmpty();
     }
 
-    /** Undoes the latest step; returns the code point of the glyph that changed, or {@link #NO_GLYPH} if there was nothing to undo. */
-    int undo() {
-        return travel(undoSteps, redoSteps);
+    /** Undoes the latest step; does nothing while an edit is open or when there is nothing to undo. */
+    void undo() {
+        travel(undoSteps, redoSteps);
     }
 
-    /** Redoes the latest undone step; returns the code point of the glyph that changed, or {@link #NO_GLYPH}. */
-    int redo() {
-        return travel(redoSteps, undoSteps);
+    /** Redoes the latest undone step; does nothing while an edit is open or when there is nothing to redo. */
+    void redo() {
+        travel(redoSteps, undoSteps);
     }
 
-    private int travel(Deque<State> from, Deque<State> to) {
+    /** The code point of the glyph {@link #undo()} would change, or {@link #NO_GLYPH} if it would do nothing. */
+    int undoTarget() {
+        return travelTarget(undoSteps);
+    }
+
+    /** The code point of the glyph {@link #redo()} would change, or {@link #NO_GLYPH} if it would do nothing. */
+    int redoTarget() {
+        return travelTarget(redoSteps);
+    }
+
+    private int travelTarget(Deque<State> from) {
         if (openEdit != null || from.isEmpty()) {
             return NO_GLYPH;
         }
+        return firstDifference(entries, from.peek().entries());
+    }
+
+    private void travel(Deque<State> from, Deque<State> to) {
+        if (openEdit != null || from.isEmpty()) {
+            return;
+        }
         State target = from.pop();
         to.push(capture());
-        int changed = firstDifference(entries, target.entries());
         entries.clear();
         entries.putAll(target.entries());
         resolved = GlyphResolver.resolveAll(data());
         revision = target.revision();
         problem = "";
-        return changed;
     }
 
     private State capture() {

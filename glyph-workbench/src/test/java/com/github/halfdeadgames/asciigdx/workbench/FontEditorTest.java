@@ -268,17 +268,20 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.markSaved();
 
-        assertTrue(editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41)));
+        editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        assertTrue(editor.problem().isEmpty());
         assertTrue(editor.isDerived(0x44));
         assertTrue(editor.isLit(0x44, 7, 0));
         assertTrue(editor.isModified());
 
-        assertEquals(0x44, editor.undo());
+        assertEquals(0x44, editor.undoTarget());
+        editor.undo();
         assertFalse(editor.hasGlyph(0x44));
         assertNull(editor.glyph(0x44));
         assertFalse(editor.isModified());
         assertTrue(editor.canRedo());
-        assertEquals(0x44, editor.redo());
+        assertEquals(0x44, editor.redoTarget());
+        editor.redo();
         assertTrue(editor.isDerived(0x44));
         assertTrue(editor.isModified());
     }
@@ -290,7 +293,8 @@ class FontEditorTest {
         editor.setPixel(0x44, 3, 3, true);
         assertTrue(editor.wouldReplaceDrawing(0x44));
 
-        assertTrue(editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x41)));
+        editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x41));
+        assertTrue(editor.problem().isEmpty());
         assertFalse(editor.wouldReplaceDrawing(0x44));
         editor.undo();
 
@@ -315,12 +319,13 @@ class FontEditorTest {
         assertNull(editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45)));
         assertTrue(editor.problem().contains("U+0045"));
         assertTrue(editor.problem().contains("empty"));
-        assertFalse(editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x45)));
+        editor.derive(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
+        assertFalse(editor.problem().isEmpty());
 
-        assertFalse(editor.derive(0x41, op(GlyphOp.Kind.MIRROR, 0x43)));
+        editor.derive(0x41, op(GlyphOp.Kind.MIRROR, 0x43));
         assertTrue(editor.problem().contains("cycle"));
 
-        assertFalse(editor.derive(0x1234, op(GlyphOp.Kind.MIRROR, 0x41)));
+        editor.derive(0x1234, op(GlyphOp.Kind.MIRROR, 0x41));
         assertFalse(editor.problem().isEmpty());
 
         assertFalse(editor.isDerived(0x41));
@@ -494,9 +499,35 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.addSlot(0x2603);
         int slot = slotOf(editor, 0x2603);
-        assertTrue(editor.derive(0x2603, op(GlyphOp.Kind.MIRROR, 0x41)));
+        editor.derive(0x2603, op(GlyphOp.Kind.MIRROR, 0x41));
+        assertTrue(editor.problem().isEmpty());
         assertTrue(editor.isDerived(0x2603));
         assertEquals(0x2603, editor.codePointAtSlot(slot));
+    }
+
+    @Test
+    void undoAndRedoTargetsDoNotChangeStateAndAreNoGlyphWhileAnEditIsOpen() {
+        FontEditor editor = editor();
+        editor.beginEdit();
+        editor.setPixel(0x41, 0, 0, true);
+        editor.commitEdit();
+        editor.beginEdit();
+        editor.setPixel(0x42, 1, 1, true);
+        editor.commitEdit();
+        editor.undo();
+        assertTrue(editor.canUndo());
+        assertTrue(editor.canRedo());
+
+        assertEquals(editor.undoTarget(), editor.undoTarget());
+        assertEquals(editor.redoTarget(), editor.redoTarget());
+        assertEquals(0x41, editor.undoTarget());
+        assertEquals(0x42, editor.redoTarget());
+        assertTrue(editor.canUndo());
+        assertTrue(editor.canRedo());
+
+        editor.beginEdit();
+        assertEquals(FontEditor.NO_GLYPH, editor.undoTarget());
+        assertEquals(FontEditor.NO_GLYPH, editor.redoTarget());
     }
 
     @Test

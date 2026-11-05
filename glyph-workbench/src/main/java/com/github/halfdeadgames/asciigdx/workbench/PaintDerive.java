@@ -322,7 +322,8 @@ final class PaintDerive {
         int target = codePoints[host.cursor()];
         String summary = derivePick.summary(codePoints, target);
         messages.nextAction();
-        if (editor.derive(target, derivePick.currentOp(codePoints))) {
+        editor.derive(target, derivePick.currentOp(codePoints));
+        if (editor.problem().isEmpty()) {
             host.rememberProblem("");
             flow.finish();
             derivePick.clear();

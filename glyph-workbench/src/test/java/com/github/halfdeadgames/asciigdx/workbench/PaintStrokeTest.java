@@ -122,12 +122,14 @@ class PaintStrokeTest {
     void dragIsUndoneInOneStepAndRedone() {
         FontEditor editor = editor();
         paintStroke(editor, 0x41, 0, 3, 0);
-        assertEquals(0x41, editor.undo());
+        assertEquals(0x41, editor.undoTarget());
+        editor.undo();
         for (int x = 0; x <= 3; x++) {
             assertFalse(editor.isLit(0x41, x, 0));
         }
         assertFalse(editor.canUndo());
-        assertEquals(0x41, editor.redo());
+        assertEquals(0x41, editor.redoTarget());
+        editor.redo();
         for (int x = 0; x <= 3; x++) {
             assertTrue(editor.isLit(0x41, x, 0));
         }
@@ -173,18 +175,20 @@ class PaintStrokeTest {
         FontEditor editor = editor();
         paintStroke(editor, 0x44, 1, 1, 1);
         assertTrue(editor.hasGlyph(0x44));
-        assertEquals(0x44, editor.undo());
+        assertEquals(0x44, editor.undoTarget());
+        editor.undo();
         assertFalse(editor.hasGlyph(0x44));
         assertNull(editor.glyph(0x44));
-        assertEquals(0x44, editor.redo());
+        assertEquals(0x44, editor.redoTarget());
+        editor.redo();
         assertTrue(editor.isLit(0x44, 1, 1));
     }
 
     @Test
-    void undoWithNothingToUndoReturnsNoGlyph() {
+    void undoWithNothingToUndoTargetsNoGlyph() {
         FontEditor editor = editor();
-        assertEquals(FontEditor.NO_GLYPH, editor.undo());
-        assertEquals(FontEditor.NO_GLYPH, editor.redo());
+        assertEquals(FontEditor.NO_GLYPH, editor.undoTarget());
+        assertEquals(FontEditor.NO_GLYPH, editor.redoTarget());
     }
 
     @Test

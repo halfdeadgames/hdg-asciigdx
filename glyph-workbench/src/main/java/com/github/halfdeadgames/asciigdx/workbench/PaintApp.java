@@ -1104,11 +1104,15 @@ public final class PaintApp implements WorkbenchScreen {
     }
 
     private void undoOnce() {
-        showChangedGlyph(editor.undo(), "Undid change to ");
+        int changed = editor.undoTarget();
+        editor.undo();
+        showChangedGlyph(changed, "Undid change to ");
     }
 
     private void redoOnce() {
-        showChangedGlyph(editor.redo(), "Redid change to ");
+        int changed = editor.redoTarget();
+        editor.redo();
+        showChangedGlyph(changed, "Redid change to ");
     }
 
     private void showChangedGlyph(int codePoint, String notice) {
