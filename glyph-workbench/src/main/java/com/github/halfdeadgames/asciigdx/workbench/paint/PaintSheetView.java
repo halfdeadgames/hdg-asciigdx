@@ -12,7 +12,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 
 /** The scrollable sheet of all slots on the left of the paint screen. */
-public final class PaintSheetView {
+final class PaintSheetView {
 
     static final int COLUMNS = 16;
     static final int GAP = 1;

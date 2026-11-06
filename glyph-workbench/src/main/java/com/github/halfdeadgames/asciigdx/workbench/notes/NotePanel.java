@@ -8,8 +8,8 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.Locale;
 
 /**
- * The review note in a UI kit panel: read-only (pick line, then scrolling text) or with the note
- * editor. Text starts two cells in; the last text column holds the shared scrollbar.
+ * The review note in a UI kit panel: a pick line, then scrolling text. Text starts two cells in;
+ * the last text column holds the shared scrollbar.
  */
 public final class NotePanel {
 
@@ -28,11 +28,6 @@ public final class NotePanel {
     /** Characters per row for a panel width in cells. */
     static int textChars(int panelWidth) {
         return Math.max(1, panelWidth - 5);
-    }
-
-    /** Editor rows for a panel height in cells. */
-    static int editorRows(int panelHeight) {
-        return Math.max(1, panelHeight - 2);
     }
 
     public void resetDisplayScroll() {
@@ -68,31 +63,6 @@ public final class NotePanel {
         display.setText(note, textChars(rect.width()));
         display.draw(painter, new CellRect(rect.x() + 2, rect.y() + 2, rect.width() - 4, rect.height() - 3),
             UiPalette.TEXT);
-    }
-
-    void drawEditor(CellRect rect, NoteEditor editor) {
-        remember(rect);
-        Panel.draw(painter, rect, "NOTE", true);
-        int chars = textChars(rect.width());
-        int rows = editorRows(rect.height());
-        int cell = painter.cell();
-        int textX = (rect.x() + 2) * cell;
-        int textY = rect.y() + 1;
-        int first = editor.viewTop(chars, rows);
-        int total = editor.rowCount(chars);
-        int last = Math.min(total, first + rows);
-        for (int i = first; i < last; i++) {
-            painter.text(editor.row(i, chars), textX, (textY + i - first) * cell, UiPalette.TEXT);
-        }
-        int caretRow = editor.caretRow(chars) - first;
-        if (caretRow >= 0 && caretRow < rows) {
-            int caretThickness = painter.scale().px(1);
-            painter.fill(UiPalette.ACCENT, textX + editor.caretColumn(chars) * cell,
-                (textY + caretRow + 1) * cell - caretThickness, cell, caretThickness);
-        }
-        if (total > rows) {
-            ScrollText.drawBar(painter, new CellRect(rect.x() + rect.width() - 3, textY, 1, rows), total, rows, first);
-        }
     }
 
     private void remember(CellRect rect) {
