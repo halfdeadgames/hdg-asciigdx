@@ -75,6 +75,19 @@ class PaintHelpTest {
     }
 
     @Test
+    void upscalePickingReplacesThePaintControls() {
+        List<PaintHelp.Row> rows = PaintHelp.rows(PaintHelp.State.upscalePicking(), 40);
+        List<String> keys = new ArrayList<>();
+        for (PaintHelp.Row row : rows) {
+            if (row.kind() == PaintHelp.Kind.CONTROL) {
+                keys.add(row.key());
+            }
+        }
+        assertEquals(List.of("ARROWS", "CLICK", "CLICK AGAIN", "ENTER", "WHEEL", "ESC"), keys);
+        assertEquals("Pick the glyph to upscale from.", rows.get(0).action());
+    }
+
+    @Test
     void theFullListKeepsEveryControlAndAddsTheMenuKeys() {
         List<PaintHelp.Row> rows = PaintHelp.allControlRows();
         List<String> lines = plain(rows);

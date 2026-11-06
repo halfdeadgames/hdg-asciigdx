@@ -19,13 +19,27 @@ public final class PaintHelp {
      * @param operation the highlighted operation in the menu, or the chosen one while picking
      * @param committedParts overlay parts already added, in order
      * @param pending the overlay part being picked, or null when the source is the target
+     * @param upscalePick whether an upscale source glyph is being picked, which replaces the derive and paint help
      */
     public record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
-                        OverlayCheck.Result check) {
+                        OverlayCheck.Result check, boolean upscalePick) {
 
-        /** A state with no overlay check. */
+        /** A derive or paint state. */
+        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
+                     OverlayCheck.Result check) {
+            this(mode, operation, committedParts, pending, check, false);
+        }
+
+        /** A derive or paint state with no overlay check. */
         public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending) {
             this(mode, operation, committedParts, pending, null);
+        }
+
+        private static final State UPSCALE_PICKING = new State(DeriveFlow.Mode.IDLE, null, List.of(), null, null, true);
+
+        /** The state while an upscale source glyph is picked. */
+        public static State upscalePicking() {
+            return UPSCALE_PICKING;
         }
     }
 
@@ -78,6 +92,9 @@ public final class PaintHelp {
         {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"ENTER", "ADD PART"},
         {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] REPLACE_CONTROLS = {{"R", "REPLACE"}, {"ESC", "BACK"}};
+    private static final String[][] UPSCALE_PICK_CONTROLS = {
+        {"ARROWS", "MOVE"}, {"CLICK", "SELECT"}, {"CLICK AGAIN", "CHOOSE"}, {"ENTER", "CHOOSE"},
+        {"WHEEL", "SCROLL"}, {"ESC", "BACK"}};
 
     private PaintHelp() {
     }
@@ -85,6 +102,12 @@ public final class PaintHelp {
     /** The help rows for a state; prose is wrapped to {@code width} characters, table rows never are. */
     static List<Row> rows(State state, int width) {
         List<Row> out = new ArrayList<>();
+        if (state.upscalePick()) {
+            addText(out, "Pick the glyph to upscale from.", width);
+            addBlank(out);
+            addControls(out, UPSCALE_PICK_CONTROLS);
+            return out;
+        }
         switch (state.mode()) {
             case IDLE -> addControls(out, IDLE_CONTROLS);
             case MENU -> {

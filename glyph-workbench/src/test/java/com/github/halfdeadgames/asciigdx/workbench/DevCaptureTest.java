@@ -1,7 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,27 @@ class DevCaptureTest {
         assertEquals(0, DevCapture.parseUpscaleSourceRequest("down:-1"));
         assertEquals(-1, DevCapture.parseUpscaleSourceRequest("1"));
         assertEquals(-1, DevCapture.parseUpscaleSourceRequest("sideways"));
+    }
+
+    @Test
+    void upscaleSourcePickRequestOpensAndMovesLikeDownThenChooses() {
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest("pick"));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest(" PICK "));
+        assertEquals(3, DevCapture.parseUpscaleSourceRequest("pick:down:3"));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest("pick:down:-1"));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("pick:sideways"));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("pickle"));
+    }
+
+    @Test
+    void onlyPickRequestsChooseTheFont() {
+        assertTrue(DevCapture.parseUpscaleSourcePick("pick"));
+        assertTrue(DevCapture.parseUpscaleSourcePick(" Pick:down:2 "));
+        assertFalse(DevCapture.parseUpscaleSourcePick(null));
+        assertFalse(DevCapture.parseUpscaleSourcePick(""));
+        assertFalse(DevCapture.parseUpscaleSourcePick("open"));
+        assertFalse(DevCapture.parseUpscaleSourcePick("down:2"));
+        assertFalse(DevCapture.parseUpscaleSourcePick("pickle"));
     }
 
     @Test

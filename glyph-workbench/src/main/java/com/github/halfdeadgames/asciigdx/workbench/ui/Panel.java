@@ -26,12 +26,17 @@ public final class Panel {
         return edge.toString();
     }
 
+    /** How many title characters fit in a panel this many cells wide before the title is cut. */
+    public static int titleRoom(int width) {
+        return width - 2 * TITLE_INSET - 2;
+    }
+
     /** The title as drawn, with a space on each side; empty when there is none or the panel is too narrow. */
     public static String titleLabel(int width, String title) {
         if (title == null || title.isEmpty() || width < MIN_WIDTH_FOR_TITLE) {
             return "";
         }
-        int room = width - 2 * TITLE_INSET - 2;
+        int room = titleRoom(width);
         String shown = title.length() > room ? title.substring(0, room) : title;
         return " " + shown + " ";
     }

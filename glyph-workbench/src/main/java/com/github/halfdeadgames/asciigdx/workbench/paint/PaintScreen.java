@@ -27,6 +27,7 @@ import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuideListPanel;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuidesFile;
 import com.github.halfdeadgames.asciigdx.workbench.help.ControlsScreen;
+import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelp;
 import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelpPanel;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontPointer;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewGlyphDialog;
@@ -60,7 +61,6 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
 import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.ReviewFile;
-import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceDialog;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceFonts;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSources;
 import java.nio.file.Path;
@@ -133,7 +133,6 @@ public final class PaintScreen implements WorkbenchScreen {
         menuAvailability, arrowRepeats);
     private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
-    private final UpscaleSourceDialog upscaleSource = new UpscaleSourceDialog(this::chooseUpscaleSource);
     private final PaintNewFont newFont;
     private PaintGuideListPanel guideListPanel;
 
@@ -155,6 +154,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private final GlyphTitle glyphTitle = new GlyphTitle();
     private final MessageStrip messages = new MessageStrip();
     private final PaintDeriveMenu deriveMenu = new PaintDeriveMenu(flow, messages);
+    private final PaintUpscale upscale = new PaintUpscale(messages, arrowRepeats, new PaintUpscaleHost());
     // Static so a paint screen opened later in the same run does not open the capture dialog again.
     private static boolean newFontCaptureOpened;
     private PaintLayout.Result rects;
@@ -391,35 +391,83 @@ public final class PaintScreen implements WorkbenchScreen {
             || newSize.isOpen()) {
             return;
         }
-        openUpscaleSource();
-        upscaleSource.moveForCapture(moves);
+        upscale.open();
+        upscale.moveListForCapture(moves);
+        if (DevCapture.upscaleSourcePickRequested()) {
+            upscale.chooseSelectedForCapture();
+        }
     }
 
-    private void openUpscaleSource() {
-        stroke.end();
-        String targetFolder = Path.of(fontDir).getFileName().toString();
-        upscaleSource.open(new UpscaleSources.Font(targetFolder, editor.cellWidth(), editor.cellHeight()),
-            UpscaleSourceFonts.discover(fontsRoot()));
-    }
-
-    private void handleUpscaleSource() {
-        int wheel = wheelTicks.vertical();
+    private void handleUpscale(float delta) {
+        int vertical = wheelTicks.vertical();
+        int sideways = wheelTicks.sideways();
         wheelTicks.clear();
         pointer.updatePosition();
-        upscaleSource.handleInput(wheel, leftClicked(), pointer.pixelX(), pointer.pixelY(), cell(), rects.grid());
+        upscale.handleInput(delta, vertical, sideways);
     }
 
-    // The next stages will pick a glyph from the chosen font; for now the choice is only reported.
-    private void chooseUpscaleSource(UpscaleSources.Option chosen) {
-        UpscaleSources.Font font = chosen.font();
-        messages.nextAction();
-        messages.ok("Would pick a glyph from " + font.folderName().toUpperCase(java.util.Locale.ROOT) + " "
-            + font.cellWidth() + "X" + font.cellHeight() + " at " + chosen.factor() + "X");
+    private final class PaintUpscaleHost implements PaintUpscale.Host {
+
+        @Override
+        public PaintSheetView createSheetView(FontEditor sourceEditor) {
+            return new PaintSheetView(painter, sourceEditor, 0, PaintLayout.TOP_ROWS);
+        }
+
+        @Override
+        public UpscaleSources.Font targetFont() {
+            String targetFolder = Path.of(fontDir).getFileName().toString();
+            return new UpscaleSources.Font(targetFolder, editor.cellWidth(), editor.cellHeight());
+        }
+
+        @Override
+        public List<UpscaleSources.Font> sourceFonts() {
+            return UpscaleSourceFonts.discover(fontsRoot());
+        }
+
+        @Override
+        public Path fontsRoot() {
+            return PaintScreen.this.fontsRoot();
+        }
+
+        @Override
+        public int targetCodePoint() {
+            return codePoints[cursor];
+        }
+
+        @Override
+        public void endStroke() {
+            stroke.end();
+        }
+
+        @Override
+        public int pointerX() {
+            return pointer.pixelX();
+        }
+
+        @Override
+        public int pointerY() {
+            return pointer.pixelY();
+        }
+
+        @Override
+        public boolean leftClicked() {
+            return PaintScreen.this.leftClicked();
+        }
+
+        @Override
+        public int cell() {
+            return PaintScreen.this.cell();
+        }
+
+        @Override
+        public CellRect dialogArea() {
+            return rects.grid();
+        }
     }
 
     private void openNewFontForCapture() {
         if (newFontCaptureOpened || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()
-            || newSize.isOpen() || upscaleSource.isOpen()) {
+            || newSize.isOpen() || upscale.isActive()) {
             return;
         }
         stroke.end();
@@ -810,7 +858,7 @@ public final class PaintScreen implements WorkbenchScreen {
             return PaintMenu.Context.RULES_OPEN;
         }
         if (confirmingUnsaved || guideListPanel.isOpen() || newGlyph.isOpen() || newSize.isOpen()
-            || upscaleSource.isOpen() || newFont.isOpen()) {
+            || upscale.isActive() || newFont.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -826,7 +874,7 @@ public final class PaintScreen implements WorkbenchScreen {
             case NEW_FONT -> openNewFont();
             case NEW_GLYPH -> openNewGlyph();
             case DERIVE -> derive.openDerive();
-            case UPSCALE -> openUpscaleSource();
+            case UPSCALE -> upscale.open();
             case UNLOCK_DERIVED -> derive.unlockDerived();
             case GO_TO_SOURCE -> derive.goToSource();
             case CANCEL_DERIVE -> derive.cancelDerive();
@@ -923,7 +971,7 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private boolean newItemDialogOpen() {
-        return newGlyph.isOpen() || newSize.isOpen() || upscaleSource.isOpen() || newFont.isOpen();
+        return newGlyph.isOpen() || newSize.isOpen() || upscale.isActive() || newFont.isOpen();
     }
 
     private void handleControlsPanel(float delta) {
@@ -945,10 +993,10 @@ public final class PaintScreen implements WorkbenchScreen {
             handleNewSize();
             return true;
         }
-        if (upscaleSource.isOpen()) {
+        if (upscale.isActive()) {
             stroke.end();
             updateConditions();
-            handleUpscaleSource();
+            handleUpscale(delta);
             return true;
         }
         if (newFont.isOpen()) {
@@ -1064,6 +1112,7 @@ public final class PaintScreen implements WorkbenchScreen {
             worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cell());
         sheet.setVisibleColumns(split.sheetColumns());
         sheet.fitToHeight(worldHeight(), layoutBarShown, cursor, revealCursor);
+        upscale.layoutSheet(split.sheetColumns(), sheet.frameCells(), worldHeight(), layoutBarShown, revealCursor);
         revealCursor = false;
         rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
             sheet.frameRight() / cell(), split.rightCells(), new GlyphSize(editor.cellWidth(), editor.cellHeight()),
@@ -1440,7 +1489,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void draw() {
         // Input this frame may have started or ended derive or the guide list after the layout was made.
-        if (statusBarShown() != layoutBarShown) {
+        if (statusBarShown() != layoutBarShown || upscale.needsLayout()) {
             layoutPanels();
         }
         ScreenUtils.clear(UiPalette.BG);
@@ -1462,7 +1511,7 @@ public final class PaintScreen implements WorkbenchScreen {
             List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
             new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
-        sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
+        drawSheet(choosingSource);
         CellRect panel = rects.grid();
         glyphTitle.draw(painter, panel, codePoint, Gdx.graphics.getDeltaTime());
         ghostSeconds += Gdx.graphics.getDeltaTime();
@@ -1479,10 +1528,19 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
+    // The source sheet takes the main sheet's place while a glyph is picked for upscale.
+    private void drawSheet(boolean choosingSource) {
+        if (upscale.isPicking()) {
+            upscale.drawSheet();
+            return;
+        }
+        sheet.draw(cursor, choosingSource ? flow.sourceSlot() : -1);
+    }
+
     private void refreshLayers() {
         boolean newGlyphOpen = newGlyph.isOpen();
         boolean newSizeOpen = newSize.isOpen();
-        boolean upscaleSourceOpen = upscaleSource.isOpen();
+        boolean upscaleSourceOpen = upscale.isChoosingFont();
         boolean newFontOpen = newFont.isOpen();
         boolean deriveDims = deriveDimsScreen();
         boolean controlsOpen = controls.isOpen();
@@ -1511,13 +1569,13 @@ public final class PaintScreen implements WorkbenchScreen {
             newSize.draw(painter, columns, rows, rects.grid());
         }
         if (layers.upscaleSourceShown()) {
-            upscaleSource.draw(painter, columns, rows, rects.grid());
+            upscale.drawDialog(painter, columns, rows, rects.grid());
         }
         if (layers.deriveDialogAllowed()) {
             derive.drawDialog(painter, columns, rows, rects.grid(), codePoint);
         }
         if (layers.redrawsDeriveHelp()) {
-            helpPanel.redraw(derive.helpState(), cell());
+            helpPanel.redraw(helpState(), cell());
         }
     }
 
@@ -1532,6 +1590,10 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
+    private PaintHelp.State helpState() {
+        return upscale.isPicking() ? PaintHelp.State.upscalePicking() : derive.helpState();
+    }
+
     private boolean deriveDimsScreen() {
         return derive.dialogShown();
     }
@@ -1539,7 +1601,7 @@ public final class PaintScreen implements WorkbenchScreen {
     // Input runs before the frame's layers are refreshed, so it calls the static check directly.
     private boolean dialogDimsScreen() {
         return PaintLayers.dialogDimsScreen(confirmingUnsaved, newGlyph.isOpen(), newSize.isOpen(),
-            upscaleSource.isOpen(), newFont.isOpen(), deriveDimsScreen());
+            upscale.isChoosingFont(), newFont.isOpen(), deriveDimsScreen());
     }
 
     private List<StatusBar.Key> statusKeys(boolean choosingSource) {
@@ -1573,7 +1635,7 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         ReviewFile.Answer answer = review.get(codePoint);
         boolean hasNote = answer != null && !answer.note().isEmpty();
-        helpPanel.draw(PaintLayout.helpArea(rects, hasNote), derive.helpState(), cell());
+        helpPanel.draw(PaintLayout.helpArea(rects, hasNote), helpState(), cell());
         if (hasNote) {
             notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
         } else {

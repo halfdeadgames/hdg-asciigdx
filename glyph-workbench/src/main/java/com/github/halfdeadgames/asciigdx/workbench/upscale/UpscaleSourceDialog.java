@@ -50,6 +50,13 @@ public final class UpscaleSourceDialog {
         }
     }
 
+    /** Chooses the selected row as Enter would. */
+    public void chooseSelectedForCapture() {
+        if (isOpen()) {
+            chooseSelected();
+        }
+    }
+
     /**
      * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also act on
      * what lies beneath in the same frame.

@@ -48,6 +48,9 @@ public final class PaintSheetView {
     private Color[] marks;
     private int visibleColumns;
     private int frameCellsWide;
+    private int minimumFrameCells;
+    private String title;
+    private String shortTitle;
     private int frameCellsHigh;
     private int barLeft;
     private int barCells;
@@ -103,11 +106,40 @@ public final class PaintSheetView {
         layoutCell = cell();
         columnScroll.setVisibleRows(visibleColumns);
         columnsChanged = true;
-        frameCellsWide = PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP, cell());
+        frameCellsWide = Math.max(minimumFrameCells,
+            PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP, cell()));
         int inset = PaintColumns.panelInset(frameCellsWide, visibleColumns * (slotWidth() + GAP) + GAP, cell());
         layout = new SheetGridLayout(frameLeft + cell() + inset, frameTop() + cell(),
             new GlyphSize(slotWidth(), editor.cellHeight() * pixelScale()), GAP, COLUMNS, visibleColumns, rows);
         barLeft = frameLeft + (frameCellsWide - 2) * cell();
+    }
+
+    /** Keeps the frame at least this many cells wide; the glyph grid stays centred in it. */
+    void setMinimumFrameCells(int cells) {
+        if (cells == minimumFrameCells) {
+            return;
+        }
+        minimumFrameCells = cells;
+        layoutCell = -1;
+        setVisibleColumns(visibleColumns);
+    }
+
+    /** Replaces the default "SHEET" frame title; {@code shortTitle} is shown when the frame is too narrow for it. */
+    void setTitle(String title, String shortTitle) {
+        this.title = title;
+        this.shortTitle = shortTitle;
+    }
+
+    /** Width of the whole frame in cells. */
+    int frameCells() {
+        return frameCellsWide;
+    }
+
+    private String frameTitle() {
+        if (title == null) {
+            return PaintColumns.sheetTitle(frameCellsWide);
+        }
+        return title.length() <= Panel.titleRoom(frameCellsWide) ? title : shortTitle;
     }
 
     /**
@@ -253,7 +285,7 @@ public final class PaintSheetView {
     /** @param sourceSlot slot of the derive source cursor, or -1 for none */
     void draw(int cursorSlot, int sourceSlot) {
         Panel.draw(painter, new CellRect(frameLeft / cell(), topRows, frameCellsWide, frameCellsHigh),
-            PaintColumns.sheetTitle(frameCellsWide), false);
+            frameTitle(), false);
         drawBar();
         if (columnBarShown()) {
             drawColumnBar();
