@@ -17,3 +17,6 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - 0 has a center dot.
 - 1 has a flag at the top and a base slab.
 - 4 keeps its bar low, on row 5.
+
+## Punctuation
+- Comma (,) and semicolon (;) put their tail on row 7, the descender row, so they never read as a period or colon.
