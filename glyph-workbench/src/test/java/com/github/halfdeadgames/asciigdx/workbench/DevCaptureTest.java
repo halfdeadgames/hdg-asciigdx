@@ -69,6 +69,28 @@ class DevCaptureTest {
     }
 
     @Test
+    void candidateRequestOpensAndChoosesTheFontLikePick() {
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest("cand"));
+        assertEquals(0, DevCapture.parseUpscaleSourceRequest(" CAND:3 "));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("cand:x"));
+        assertEquals(-1, DevCapture.parseUpscaleSourceRequest("candle"));
+        assertTrue(DevCapture.parseUpscaleSourcePick("cand"));
+        assertTrue(DevCapture.parseUpscaleSourcePick("cand:2"));
+        assertFalse(DevCapture.parseUpscaleSourcePick("cand:x"));
+    }
+
+    @Test
+    void candidateRequestNamesTheOneBasedCandidate() {
+        assertEquals(1, DevCapture.parseUpscaleCandidate("cand"));
+        assertEquals(1, DevCapture.parseUpscaleCandidate("cand:1"));
+        assertEquals(3, DevCapture.parseUpscaleCandidate(" Cand:3 "));
+        assertEquals(1, DevCapture.parseUpscaleCandidate("cand:0"));
+        assertEquals(-1, DevCapture.parseUpscaleCandidate("cand:x"));
+        assertEquals(-1, DevCapture.parseUpscaleCandidate("pick"));
+        assertEquals(-1, DevCapture.parseUpscaleCandidate(null));
+    }
+
+    @Test
     void newSizeRequestOpensTheDialogAndMayMoveDown() {
         assertEquals(-1, DevCapture.parseNewSizeRequest(null));
         assertEquals(0, DevCapture.parseNewSizeRequest("1"));

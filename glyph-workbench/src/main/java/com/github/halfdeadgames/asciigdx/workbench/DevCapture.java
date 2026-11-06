@@ -12,7 +12,8 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
  * {@code workbench.newsize} opens the New size dialog (optionally {@code down:N} rows into the list).
  * {@code workbench.upscalesource} opens the Upscale from dialog (optionally {@code down:N} rows into the list);
- * {@code pick} or {@code pick:down:N} also chooses the selected font and lands in the glyph pick.
+ * {@code pick} or {@code pick:down:N} also chooses the selected font and lands in the glyph pick;
+ * {@code cand} or {@code cand:N} goes on to confirm the selected source glyph and select candidate N (default 1).
  * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
  * {@code workbench.newfontsize} opens the New font size page for a name (optionally {@code :down:N} sizes in).
  * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
@@ -31,6 +32,7 @@ public final class DevCapture {
     static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
     static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final String PICK_REQUEST = "pick";
+    private static final String CANDIDATE_REQUEST = "cand";
     private static final int CAPTURE_FRAME = 60;
 
     private final String capturePath = System.getProperty(CAPTURE_PROPERTY);
@@ -157,24 +159,53 @@ public final class DevCapture {
         return parseUpscaleSourcePick(System.getProperty(UPSCALE_SOURCE_PROPERTY));
     }
 
-    /** True for {@code pick} and {@code pick:down:N}. */
+    /** The 1-based candidate to select after confirming the source glyph, or -1 when not requested. */
+    public static int upscaleCandidateRequest() {
+        return parseUpscaleCandidate(System.getProperty(UPSCALE_SOURCE_PROPERTY));
+    }
+
+    /** {@code cand} means candidate 1, {@code cand:N} candidate N (at least 1); anything else is -1. */
+    static int parseUpscaleCandidate(String request) {
+        if (request == null) {
+            return -1;
+        }
+        String trimmed = request.trim().toLowerCase(java.util.Locale.ROOT);
+        if (trimmed.equals(CANDIDATE_REQUEST)) {
+            return 1;
+        }
+        if (!trimmed.startsWith(CANDIDATE_REQUEST + ":")) {
+            return -1;
+        }
+        try {
+            return Math.max(1, Integer.parseInt(trimmed.substring(CANDIDATE_REQUEST.length() + 1).trim()));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /** True for {@code pick}, {@code pick:down:N}, {@code cand}, and {@code cand:N}. */
     static boolean parseUpscaleSourcePick(String request) {
         if (request == null) {
             return false;
         }
         String trimmed = request.trim().toLowerCase(java.util.Locale.ROOT);
-        return trimmed.equals(PICK_REQUEST) || trimmed.startsWith(PICK_REQUEST + ":");
+        return trimmed.equals(PICK_REQUEST) || trimmed.startsWith(PICK_REQUEST + ":")
+            || parseUpscaleCandidate(trimmed) > 0;
     }
 
     /**
-     * Only a blank value, {@code open}, {@code down:N}, {@code pick}, or {@code pick:down:N} opens the dialog;
-     * {@code down:N} also moves the cursor N rows, and a pick request chooses the selected font afterwards.
+     * Only a blank value, {@code open}, {@code down:N}, {@code pick}, {@code pick:down:N}, {@code cand}, or
+     * {@code cand:N} opens the dialog; {@code down:N} also moves the cursor N rows, and a pick or candidate request
+     * chooses the selected font afterwards.
      */
     static int parseUpscaleSourceRequest(String request) {
         if (request == null) {
             return -1;
         }
         String trimmed = request.trim();
+        if (parseUpscaleCandidate(trimmed) > 0) {
+            return 0;
+        }
         if (parseUpscaleSourcePick(trimmed)) {
             return parseUpscaleSourceRequest(trimmed.substring(PICK_REQUEST.length()).replaceFirst("^:", ""));
         }

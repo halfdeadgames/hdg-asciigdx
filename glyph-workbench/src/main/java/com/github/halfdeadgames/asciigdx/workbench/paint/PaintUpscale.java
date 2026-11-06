@@ -4,11 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelp;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.upscale.GlyphCandidates;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePick;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceDialog;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceSheet;
@@ -20,14 +23,15 @@ import java.util.Locale;
 
 /**
  * The upscale mode of the paint screen: first the source font dialog, then a pick of one glyph on that font's
- * sheet, which takes the place of the main sheet. While either stage runs, nothing reaches painting.
+ * sheet, which takes the place of the main sheet, then a choice between the upscaled versions of that glyph.
+ * While any stage runs, nothing reaches painting.
  */
 final class PaintUpscale {
 
     private static final int WHEEL_ROWS = 3;
 
     /** What the upscale mode needs from the screen it is shown on. */
-    interface Host {
+    interface Host extends PaintUpscaleCandidates.Host {
 
         /** A sheet view over another font's editor, placed like the main sheet. */
         PaintSheetView createSheetView(FontEditor sourceEditor);
@@ -58,10 +62,10 @@ final class PaintUpscale {
     }
 
     private final UpscaleSourceDialog dialog = new UpscaleSourceDialog(this::chooseSource);
-    private final StringBuilder line = new StringBuilder();
     private final MessageStrip messages;
     private final ArrowRepeats arrowRepeats;
     private final Host host;
+    private final PaintUpscaleCandidates candidates;
 
     private UpscaleSources.Font target;
     private List<UpscaleSources.Font> fonts = List.of();
@@ -76,6 +80,7 @@ final class PaintUpscale {
         this.messages = messages;
         this.arrowRepeats = arrowRepeats;
         this.host = host;
+        this.candidates = new PaintUpscaleCandidates(messages, host, this::backToSourcePick, this::end);
     }
 
     boolean isActive() {
@@ -86,8 +91,18 @@ final class PaintUpscale {
         return dialog.isOpen();
     }
 
+    /** True from choosing the source glyph until the mode ends, including the candidate stage. */
     boolean isPicking() {
         return pick != null;
+    }
+
+    boolean isChoosingCandidate() {
+        return candidates.isChoosing();
+    }
+
+    /** Whether a dialog of this mode dims the screen: the source font list or the replace confirmation. */
+    boolean isDialogShown() {
+        return isChoosingFont() || candidates.isConfirmingReplace();
     }
 
     /** True until the source sheet has been fitted to the window once. */
@@ -96,6 +111,11 @@ final class PaintUpscale {
     }
 
     void open() {
+        if (host.targetEditor().isDerived(host.targetCodePoint())) {
+            messages.nextAction();
+            messages.warn("Derived glyph; unlock it first (U)");
+            return;
+        }
         host.endStroke();
         target = host.targetFont();
         fonts = host.sourceFonts();
@@ -117,6 +137,10 @@ final class PaintUpscale {
                 host.dialogArea());
             return;
         }
+        if (isChoosingCandidate()) {
+            candidates.handleInput();
+            return;
+        }
         if (isPicking()) {
             handlePicking(delta, verticalTicks, sidewaysTicks);
         }
@@ -125,6 +149,28 @@ final class PaintUpscale {
     void drawDialog(Painter painter, int columns, int rows, CellRect area) {
         if (isChoosingFont()) {
             dialog.draw(painter, columns, rows, area);
+        }
+        candidates.drawReplaceDialog(painter, columns, rows, area);
+    }
+
+    /** The upscaled version to show in place of the painted glyph, or null when none is being chosen. */
+    PixelGlyph previewGlyph() {
+        return candidates.previewGlyph();
+    }
+
+    /** The help for the stage that is running; only valid while {@link #isPicking()}. */
+    PaintHelp.State helpState() {
+        return isChoosingCandidate() ? candidates.helpState() : PaintHelp.State.upscalePicking();
+    }
+
+    /** Confirms the selected source glyph, then selects candidate {@code number}, for the capture hook. */
+    void chooseCandidateForCapture(int number) {
+        if (!isPicking() || isChoosingCandidate()) {
+            return;
+        }
+        confirm();
+        if (isChoosingCandidate()) {
+            candidates.selectNumber(number);
         }
     }
 
@@ -251,20 +297,27 @@ final class PaintUpscale {
         dialog.open(target, fonts);
     }
 
-    // Stage 5 replaces this message with the candidate step.
     private void confirm() {
         messages.nextAction();
-        line.setLength(0);
-        line.append("Would upscale U+");
-        GlyphLabel.appendHex(line, host.targetCodePoint());
-        line.append(" from ").append(label(chosen.font())).append(" U+");
-        GlyphLabel.appendHex(line, pick.codePoint());
-        line.append(" at ").append(chosen.factor()).append('X');
-        messages.ok(line.toString());
-        end();
+        List<GlyphCandidates.Candidate> found = GlyphCandidates.forGlyph(pick.sheet().glyphAt(pick.cursor()),
+            chosen.factor(), host.targetEditor().cellWidth());
+        if (found.isEmpty()) {
+            messages.warn("No upscaled version of this glyph");
+            return;
+        }
+        candidates.begin(label(chosen.font()), found);
+        messages.ok("Pick how to upscale. Enter to apply, Esc to go back.");
+    }
+
+    private void backToSourcePick() {
+        candidates.clear();
+        messages.ok("Pick a glyph from " + label(chosen.font())
+            + ". Enter or click it again to choose, Esc to go back.");
+        holdHeldArrows();
     }
 
     private void end() {
+        candidates.clear();
         pick = null;
         view = null;
         pointerTargets = null;

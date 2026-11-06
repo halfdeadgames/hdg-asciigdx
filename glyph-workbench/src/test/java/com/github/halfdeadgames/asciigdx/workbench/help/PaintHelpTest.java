@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -85,6 +86,36 @@ class PaintHelpTest {
         }
         assertEquals(List.of("ARROWS", "CLICK", "CLICK AGAIN", "ENTER", "WHEEL", "ESC"), keys);
         assertEquals("Pick the glyph to upscale from.", rows.get(0).action());
+    }
+
+    @Test
+    void upscaleChoosingListsTheCandidatesAndMarksTheSelectedOne() {
+        List<PaintHelp.Row> rows = PaintHelp.rows(
+            PaintHelp.State.upscaleChoosing(List.of("NEAREST 2X", "SMOOTH"), 1), 40);
+        assertEquals("Pick how to upscale.", rows.get(0).action());
+        List<PaintHelp.Row> candidates = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
+        for (PaintHelp.Row row : rows) {
+            if (row.kind() == PaintHelp.Kind.PART || row.kind() == PaintHelp.Kind.PENDING_PART) {
+                candidates.add(row);
+            }
+            if (row.kind() == PaintHelp.Kind.CONTROL) {
+                keys.add(row.key());
+            }
+        }
+        assertEquals(2, candidates.size());
+        assertEquals("1  NEAREST 2X", candidates.get(0).plain());
+        assertEquals(PaintHelp.Kind.PART, candidates.get(0).kind());
+        assertEquals("2  SMOOTH", candidates.get(1).plain());
+        assertEquals(PaintHelp.Kind.PENDING_PART, candidates.get(1).kind());
+        assertEquals(List.of("1-9", "ARROWS", "ENTER", "ESC"), keys);
+    }
+
+    @Test
+    void upscaleStagesAreDifferentStates() {
+        assertNotEquals(PaintHelp.State.upscalePicking(), PaintHelp.State.upscaleChoosing(List.of("A"), 0));
+        assertNotEquals(PaintHelp.State.upscaleChoosing(List.of("A", "B"), 0),
+            PaintHelp.State.upscaleChoosing(List.of("A", "B"), 1));
     }
 
     @Test

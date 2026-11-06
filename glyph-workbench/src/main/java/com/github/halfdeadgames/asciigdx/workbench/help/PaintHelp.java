@@ -19,15 +19,15 @@ public final class PaintHelp {
      * @param operation the highlighted operation in the menu, or the chosen one while picking
      * @param committedParts overlay parts already added, in order
      * @param pending the overlay part being picked, or null when the source is the target
-     * @param upscalePick whether an upscale source glyph is being picked, which replaces the derive and paint help
+     * @param upscale the upscale stage being shown, or null; it replaces the derive and paint help
      */
     public record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
-                        OverlayCheck.Result check, boolean upscalePick) {
+                        OverlayCheck.Result check, UpscaleHelp upscale) {
 
         /** A derive or paint state. */
         public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
                      OverlayCheck.Result check) {
-            this(mode, operation, committedParts, pending, check, false);
+            this(mode, operation, committedParts, pending, check, null);
         }
 
         /** A derive or paint state with no overlay check. */
@@ -35,12 +35,35 @@ public final class PaintHelp {
             this(mode, operation, committedParts, pending, null);
         }
 
-        private static final State UPSCALE_PICKING = new State(DeriveFlow.Mode.IDLE, null, List.of(), null, null, true);
+        private static final State UPSCALE_PICKING = upscaleState(
+            new UpscaleHelp(UpscaleHelp.Stage.PICK_SOURCE, List.of(), 0));
 
         /** The state while an upscale source glyph is picked. */
         public static State upscalePicking() {
             return UPSCALE_PICKING;
         }
+
+        /** The state while one upscaled version is chosen; {@code selected} is the 0-based index of the marked label. */
+        public static State upscaleChoosing(List<String> labels, int selected) {
+            return upscaleState(new UpscaleHelp(UpscaleHelp.Stage.CHOOSE_CANDIDATE, List.copyOf(labels), selected));
+        }
+
+        private static State upscaleState(UpscaleHelp upscale) {
+            return new State(DeriveFlow.Mode.IDLE, null, List.of(), null, null, upscale);
+        }
+    }
+
+    /**
+     * The upscale part of the help.
+     *
+     * @param stage which upscale step is shown
+     * @param labels the candidate names, empty while picking the source glyph
+     * @param selected index of the marked label
+     */
+    public record UpscaleHelp(Stage stage, List<String> labels, int selected) {
+
+        /** The upscale steps that have their own help. */
+        public enum Stage { PICK_SOURCE, CHOOSE_CANDIDATE }
     }
 
     /**
@@ -95,6 +118,8 @@ public final class PaintHelp {
     private static final String[][] UPSCALE_PICK_CONTROLS = {
         {"ARROWS", "MOVE"}, {"CLICK", "SELECT"}, {"CLICK AGAIN", "CHOOSE"}, {"ENTER", "CHOOSE"},
         {"WHEEL", "SCROLL"}, {"ESC", "BACK"}};
+    private static final String[][] UPSCALE_CANDIDATE_CONTROLS = {
+        {"1-9", "PICK"}, {"ARROWS", "NEXT"}, {"ENTER", "APPLY"}, {"ESC", "BACK"}};
 
     private PaintHelp() {
     }
@@ -102,10 +127,8 @@ public final class PaintHelp {
     /** The help rows for a state; prose is wrapped to {@code width} characters, table rows never are. */
     static List<Row> rows(State state, int width) {
         List<Row> out = new ArrayList<>();
-        if (state.upscalePick()) {
-            addText(out, "Pick the glyph to upscale from.", width);
-            addBlank(out);
-            addControls(out, UPSCALE_PICK_CONTROLS);
+        if (state.upscale() != null) {
+            addUpscaleRows(out, state.upscale(), width);
             return out;
         }
         switch (state.mode()) {
@@ -142,6 +165,29 @@ public final class PaintHelp {
         List<Row> out = new ArrayList<>();
         addControls(out, ALL_CONTROLS);
         return out;
+    }
+
+    private static void addUpscaleRows(List<Row> out, UpscaleHelp upscale, int width) {
+        if (upscale.stage() == UpscaleHelp.Stage.PICK_SOURCE) {
+            addText(out, "Pick the glyph to upscale from.", width);
+            addBlank(out);
+            addControls(out, UPSCALE_PICK_CONTROLS);
+            return;
+        }
+        addText(out, "Pick how to upscale.", width);
+        addBlank(out);
+        addCandidateList(out, upscale);
+        addBlank(out);
+        addControls(out, UPSCALE_CANDIDATE_CONTROLS);
+    }
+
+    private static void addCandidateList(List<Row> out, UpscaleHelp upscale) {
+        List<String> labels = upscale.labels();
+        int actionColumn = String.valueOf(labels.size()).length() + PART_KEY_GAP + 1;
+        for (int i = 0; i < labels.size(); i++) {
+            Kind kind = i == upscale.selected() ? Kind.PENDING_PART : Kind.PART;
+            out.add(new Row(kind, String.valueOf(i + 1), labels.get(i), actionColumn));
+        }
     }
 
     private static void addBlank(List<Row> out) {

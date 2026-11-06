@@ -385,6 +385,13 @@ public final class PaintScreen implements WorkbenchScreen {
         newSize.moveForCapture(moves);
     }
 
+    private void chooseUpscaleCandidateForCapture() {
+        int candidate = DevCapture.upscaleCandidateRequest();
+        if (candidate > 0) {
+            upscale.chooseCandidateForCapture(candidate);
+        }
+    }
+
     private void openUpscaleSourceForCapture() {
         int moves = DevCapture.upscaleSourceRequest();
         if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()
@@ -395,6 +402,7 @@ public final class PaintScreen implements WorkbenchScreen {
         upscale.moveListForCapture(moves);
         if (DevCapture.upscaleSourcePickRequested()) {
             upscale.chooseSelectedForCapture();
+            chooseUpscaleCandidateForCapture();
         }
     }
 
@@ -427,6 +435,21 @@ public final class PaintScreen implements WorkbenchScreen {
         @Override
         public Path fontsRoot() {
             return PaintScreen.this.fontsRoot();
+        }
+
+        @Override
+        public FontEditor targetEditor() {
+            return editor;
+        }
+
+        @Override
+        public void rememberProblem(String problem) {
+            lastProblem = problem;
+        }
+
+        @Override
+        public void keepTargetVisible() {
+            sheet.keepVisible(cursor);
         }
 
         @Override
@@ -1516,8 +1539,9 @@ public final class PaintScreen implements WorkbenchScreen {
         glyphTitle.draw(painter, panel, codePoint, Gdx.graphics.getDeltaTime());
         ghostSeconds += Gdx.graphics.getDeltaTime();
         grid.setHighlight(guideListPanel.highlightedGuide());
-        grid.draw(codePoint, derivePick.shown(), derive.pendingGhost(), ghostSeconds);
-        preview.draw(rects.preview(), codePoint, derivePick.shown());
+        PixelGlyph previewGlyph = previewGlyph();
+        grid.draw(codePoint, previewGlyph, derive.pendingGhost(), ghostSeconds);
+        preview.draw(rects.preview(), codePoint, previewGlyph);
         drawBelowPreviewPanels(codePoint);
         CellRect strip = rects.messages();
         messages.draw(painter, strip,
@@ -1540,7 +1564,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private void refreshLayers() {
         boolean newGlyphOpen = newGlyph.isOpen();
         boolean newSizeOpen = newSize.isOpen();
-        boolean upscaleSourceOpen = upscale.isChoosingFont();
+        boolean upscaleSourceOpen = upscale.isDialogShown();
         boolean newFontOpen = newFont.isOpen();
         boolean deriveDims = deriveDimsScreen();
         boolean controlsOpen = controls.isOpen();
@@ -1591,7 +1615,13 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private PaintHelp.State helpState() {
-        return upscale.isPicking() ? PaintHelp.State.upscalePicking() : derive.helpState();
+        return upscale.isPicking() ? upscale.helpState() : derive.helpState();
+    }
+
+    // The upscale choice and the derive pick never run together.
+    private PixelGlyph previewGlyph() {
+        PixelGlyph upscaled = upscale.previewGlyph();
+        return upscaled != null ? upscaled : derivePick.shown();
     }
 
     private boolean deriveDimsScreen() {
@@ -1601,7 +1631,7 @@ public final class PaintScreen implements WorkbenchScreen {
     // Input runs before the frame's layers are refreshed, so it calls the static check directly.
     private boolean dialogDimsScreen() {
         return PaintLayers.dialogDimsScreen(confirmingUnsaved, newGlyph.isOpen(), newSize.isOpen(),
-            upscale.isChoosingFont(), newFont.isOpen(), deriveDimsScreen());
+            upscale.isDialogShown(), newFont.isOpen(), deriveDimsScreen());
     }
 
     private List<StatusBar.Key> statusKeys(boolean choosingSource) {
