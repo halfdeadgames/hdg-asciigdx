@@ -3,14 +3,14 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
-import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * A menu list: the selectable items, the lines to show, and the selection. There are two menus: the
- * list of fonts, and the actions for one font (paint each size, upscale to the next size).
+ * A menu list: the selectable items, the lines to show, and the selection. There are three menus: the
+ * list of fonts, the actions for one font (paint each size, add a new size), and the sizes a font can
+ * still get.
  */
 final class MenuModel {
 
@@ -18,7 +18,6 @@ final class MenuModel {
         /** Opens the action menu of a font. */
         FONT,
         PAINT,
-        UPSCALE,
         /** Opens the list of sizes a font can still get. */
         NEW_SIZE,
         /** One size in that list; {@code size} is its height. */
@@ -27,10 +26,8 @@ final class MenuModel {
         NEW_FONT
     }
 
-    /**
-     * A selectable entry. {@code size} is set for paint and create-size entries and {@code upscale} for upscale entries.
-     */
-    record Item(Kind kind, String label, String folderName, int size, UpscalePlan.Choice upscale) {
+    /** A selectable entry. {@code size} is set for paint and create-size entries. */
+    record Item(Kind kind, String label, String folderName, int size) {
     }
 
     /**
@@ -43,7 +40,6 @@ final class MenuModel {
     private static final int MAX_NUMBERED = 9;
     // Each indent step is two cells: the arrow column plus the "N " number prefix.
     private static final int TAKEN_INDENT = 2;
-    private static final String NO_SOURCE_NOTE = " (NO EVEN SOURCE)";
 
     private final List<Item> items = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
@@ -68,13 +64,13 @@ final class MenuModel {
             model.lines.add(new Line("NO FONTS FOUND", -1, 1, true));
         }
         for (String folder : folders) {
-            model.addItem(Kind.FONT, folder.toUpperCase(Locale.ROOT), folder, 0, null, 1);
+            model.addItem(Kind.FONT, folder.toUpperCase(Locale.ROOT), folder, 0, 1);
         }
-        model.addItem(Kind.NEW_FONT, "NEW FONT", "", 0, null, 1);
+        model.addItem(Kind.NEW_FONT, "NEW FONT", "", 0, 1);
         return model;
     }
 
-    /** The actions of one font: paint every existing size, then the upscale to the next size. */
+    /** The actions of one font: paint every existing size, then the new size entry. */
     static MenuModel fontActions(String folderName, List<FontChoice> fonts) {
         MenuModel model = new MenuModel();
         List<FontChoice> sizes = new ArrayList<>();
@@ -84,17 +80,10 @@ final class MenuModel {
             }
         }
         for (FontChoice font : sizes) {
-            model.addItem(Kind.PAINT, "PAINT " + font.size(), folderName, font.size(), null, 0);
+            model.addItem(Kind.PAINT, "PAINT " + font.size(), folderName, font.size(), 0);
         }
         if (!sizes.isEmpty()) {
-            UpscalePlan.Choice choice = UpscalePlan.plan(sizes).get(0);
-            String text = "UPSCALE " + choice.largest() + " -> " + choice.target();
-            if (choice.hasSource()) {
-                model.addItem(Kind.UPSCALE, text, folderName, choice.target(), choice, 0);
-            } else {
-                model.lines.add(new Line("  " + text + NO_SOURCE_NOTE, -1, 0, true));
-            }
-            model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, 0, null, 0);
+            model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, 0, 0);
         } else {
             model.lines.add(new Line("NO SIZE FILES FOUND", -1, 0, true));
         }
@@ -113,7 +102,7 @@ final class MenuModel {
                 // MenuScreen strips the text, so the indent lines the label up with numbered items (arrow, number).
                 model.lines.add(new Line(label + "  (EXISTS)", -1, TAKEN_INDENT, true));
             } else {
-                model.addItem(Kind.CREATE_SIZE, label, folderName, option.height(), null, 0);
+                model.addItem(Kind.CREATE_SIZE, label, folderName, option.height(), 0);
             }
         }
         if (model.items.isEmpty()) {
@@ -123,10 +112,10 @@ final class MenuModel {
         return model;
     }
 
-    private void addItem(Kind kind, String label, String folderName, int size, UpscalePlan.Choice upscale, int indent) {
+    private void addItem(Kind kind, String label, String folderName, int size, int indent) {
         int index = items.size();
         String number = index < MAX_NUMBERED ? (index + 1) + " " : "  ";
-        items.add(new Item(kind, number + label, folderName, size, upscale));
+        items.add(new Item(kind, number + label, folderName, size));
         lines.add(new Line(number + label, index, indent, false));
     }
 

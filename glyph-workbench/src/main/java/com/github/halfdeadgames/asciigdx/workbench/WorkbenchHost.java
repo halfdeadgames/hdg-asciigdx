@@ -10,8 +10,6 @@ import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.paint.PaintScreen;
-import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePlan;
-import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleReviewScreen;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,13 +21,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * Hosts one {@link WorkbenchScreen} at a time. The flow is font list, then the actions of one font,
- * then a tool; Esc goes back one step and quits from the font list. With mode {@code paint} or
- * {@code upscale} (dev shortcuts for captures) that tool opens directly and Esc quits. A screen
- * switch asked for during a frame happens after that frame, so a screen is never disposed mid-render.
+ * then a tool; Esc goes back one step and quits from the font list. With mode {@code paint} (a dev
+ * shortcut for captures) the paint screen opens directly and Esc quits. A screen switch asked for
+ * during a frame happens after that frame, so a screen is never disposed mid-render.
  */
 public final class WorkbenchHost extends ApplicationAdapter {
 
@@ -41,7 +38,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     private Supplier<WorkbenchScreen> pending;
     private ScriptSession scriptSession;
 
-    /** @param mode {@code paint}, {@code upscale}, or anything else (including null) for the menus */
+    /** @param mode {@code paint} or anything else (including null) for the menus */
     public WorkbenchHost(String mode) {
         this.mode = mode;
     }
@@ -55,8 +52,6 @@ public final class WorkbenchHost extends ApplicationAdapter {
         if ("paint".equals(mode)) {
             switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
                 System.getProperty("workbench.fontSize", DEFAULT_FONT_SIZE)));
-        } else if ("upscale".equals(mode)) {
-            switchTo(directUpscaleScreen());
         } else if (DevCapture.newFontRequest() != null || DevCapture.newFontSizeRequest() != null) {
             switchTo(newFontScreen());
         } else {
@@ -138,15 +133,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     private WorkbenchScreen fontMenuScreen(String folderName, String notice, MenuModel.Kind selectKind) {
         String name = folderName.toUpperCase(Locale.ROOT);
         String motto = mottoOf(folderName);
-        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> {
-            List<String> lines = new ArrayList<>();
-            if (item != null && item.upscale() != null) {
-                lines.add(item.upscale().target() + " FROM " + item.upscale().sources().stream()
-                    .map(size -> size + " AT " + item.upscale().factorFrom(size) + "X")
-                    .collect(Collectors.joining(", ")));
-            }
-            return new MenuScreen.Detail(name, motto, lines);
-        };
+        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> new MenuScreen.Detail(name, motto, List.of());
         MenuModel actions = MenuModel.fontActions(folderName, fonts());
         if (selectKind != null) {
             actions.select(actions.indexOfKind(selectKind));
@@ -159,9 +146,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     private void chooseAction(String folderName, MenuModel.Item item) {
         String fontDir = Path.of(fontsRoot(), folderName).toString();
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
-        if (item.kind() == MenuModel.Kind.UPSCALE) {
-            pending = () -> new UpscaleReviewScreen(backToFontMenu, fontDir, item.upscale());
-        } else if (item.kind() == MenuModel.Kind.NEW_SIZE) {
+        if (item.kind() == MenuModel.Kind.NEW_SIZE) {
             pending = () -> newSizeScreen(folderName);
         } else {
             pending = () -> paintScreen(backToFontMenu, fontDir, String.valueOf(item.size()));
@@ -210,21 +195,6 @@ public final class WorkbenchHost extends ApplicationAdapter {
 
     private static String limited(String notice) {
         return notice.length() > 100 ? notice.substring(0, 100) : notice;
-    }
-
-    // Dev shortcut for captures: -Pmode=upscale reviews the next upscale of the -PfontDir font.
-    private WorkbenchScreen directUpscaleScreen() {
-        String fontDir = System.getProperty("workbench.fontDir");
-        if (fontDir == null) {
-            throw new GdxRuntimeException("workbench.fontDir is not set");
-        }
-        Path folder = Path.of(fontDir);
-        for (UpscalePlan.Choice choice : UpscalePlan.plan(FontDiscovery.discover(folder.getParent()))) {
-            if (choice.folderName().equals(folder.getFileName().toString()) && choice.hasSource()) {
-                return new UpscaleReviewScreen(Gdx.app::exit, fontDir, choice);
-            }
-        }
-        throw new GdxRuntimeException("No even upscale source for " + fontDir);
     }
 
     private void switchTo(WorkbenchScreen next) {

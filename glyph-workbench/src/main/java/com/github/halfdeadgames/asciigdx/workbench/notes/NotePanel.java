@@ -26,12 +26,12 @@ public final class NotePanel {
     }
 
     /** Characters per row for a panel width in cells. */
-    public static int textChars(int panelWidth) {
+    static int textChars(int panelWidth) {
         return Math.max(1, panelWidth - 5);
     }
 
     /** Editor rows for a panel height in cells. */
-    public static int editorRows(int panelHeight) {
+    static int editorRows(int panelHeight) {
         return Math.max(1, panelHeight - 2);
     }
 
@@ -70,7 +70,7 @@ public final class NotePanel {
             UiPalette.TEXT);
     }
 
-    public void drawEditor(CellRect rect, NoteEditor editor) {
+    void drawEditor(CellRect rect, NoteEditor editor) {
         remember(rect);
         Panel.draw(painter, rect, "NOTE", true);
         int chars = textChars(rect.width());

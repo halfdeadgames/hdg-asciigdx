@@ -16,7 +16,7 @@ public final class NoteEditor {
     private boolean followCaret = true;
 
     /** Starts editing; the caret goes to the end of {@code initial}. */
-    public void begin(String initial, boolean editingExistingNote) {
+    void begin(String initial, boolean editingExistingNote) {
         text.setLength(0);
         text.append(initial);
         caret = text.length();
@@ -26,11 +26,11 @@ public final class NoteEditor {
         active = true;
     }
 
-    public void end() {
+    void end() {
         active = false;
     }
 
-    public boolean isActive() {
+    boolean isActive() {
         return active;
     }
 
@@ -38,12 +38,12 @@ public final class NoteEditor {
         return editingExisting;
     }
 
-    public String value() {
+    String value() {
         return text.toString();
     }
 
     /** Inserts a printable character at the caret; control characters are ignored. */
-    public void type(char character) {
+    void type(char character) {
         if (!active || Character.isISOControl(character)) {
             return;
         }
@@ -52,7 +52,7 @@ public final class NoteEditor {
         followCaret = true;
     }
 
-    public void backspace() {
+    void backspace() {
         if (active && caret > 0) {
             text.deleteCharAt(caret - 1);
             caret--;
@@ -60,35 +60,35 @@ public final class NoteEditor {
         }
     }
 
-    public void deleteForward() {
+    void deleteForward() {
         if (active && caret < text.length()) {
             text.deleteCharAt(caret);
             followCaret = true;
         }
     }
 
-    public void caretLeft() {
+    void caretLeft() {
         caret = Math.max(0, caret - 1);
         followCaret = true;
     }
 
-    public void caretRight() {
+    void caretRight() {
         caret = Math.min(text.length(), caret + 1);
         followCaret = true;
     }
 
-    public void caretToStart() {
+    void caretToStart() {
         caret = 0;
         followCaret = true;
     }
 
-    public void caretToEnd() {
+    void caretToEnd() {
         caret = text.length();
         followCaret = true;
     }
 
     /** Moves the caret by whole rows at a wrap width, keeping its column where the row is long enough. */
-    public void caretRows(int rows, int width) {
+    void caretRows(int rows, int width) {
         List<String> lines = NoteText.wrap(text.toString(), width);
         int[] starts = lineStarts(lines);
         int[] location = locateCaret(lines, starts, width);
@@ -103,7 +103,7 @@ public final class NoteEditor {
     }
 
     /** Scrolls the shown rows without moving the caret; typing or moving the caret brings it back into view. */
-    public void scrollView(int rows) {
+    void scrollView(int rows) {
         viewTop += rows;
         followCaret = false;
     }
