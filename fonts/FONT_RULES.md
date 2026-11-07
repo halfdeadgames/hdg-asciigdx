@@ -49,6 +49,6 @@ Rules shared by every font in this project. Each font adds its own rules in `fon
 The export builds this order. Nobody orders the sheet by hand.
 
 ## Coverage tiers
-1. CP437 and WGL4.
-2. Project extras (meters, game pieces, symbols), arrows, math, and geometric shapes.
-3. More Latin Extended and symbol blocks, as needed.
+1. CP437.
+2. Drawing and pictorial glyphs: the rest of box drawing, block elements, geometric shapes, arrows, and symbols. Each set is picked by hand, and a glyph that would look the same as another at the font's size is left out. Braille and quadrant glyphs are left out too.
+3. Built-in fonts stop there. Accented letters and other scripts beyond CP437 belong in custom fonts.
