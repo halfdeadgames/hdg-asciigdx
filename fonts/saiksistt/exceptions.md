@@ -20,3 +20,5 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 
 ## Punctuation
 - Comma (,) and semicolon (;) put their tail on row 7, the descender row, so they never read as a period or colon.
+- Parentheses, square brackets, curly braces, and the bar (|) span rows 1 to 7, so they enclose descenders like g and y.
+- Underscore (_) is a full-width line on row 7, the descender row, so it stays clear of letters on the baseline.
