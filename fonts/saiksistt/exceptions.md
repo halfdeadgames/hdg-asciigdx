@@ -32,7 +32,7 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - The ring (˚) is an open arch on rows 0-1. å is drawn by hand: its ring is a small diamond on rows 0-2, with the corners cut so it reads as round, resting on the short a.
 - Accented letters are built on short base letters stored at U+E8xx, where xx is the last two hex digits of the plain letter (short a is U+E861, short ı is U+E831, and short A is U+E841). These are drawing helpers, not meant to be typed.
 - Ö, Ü, and Ñ sit on 6-pixel-wide capitals, centered between columns 2 and 3, so an odd-width mark cannot sit centered over them. They take even-width marks stored at U+E8xx, where xx is the last two hex digits of the plain mark: diaeresis U+E8A8 (dots on columns 1 and 4) and tilde U+E8DC (full letter width).
-- Å is the ring (˚) over the short A. The open arch and the top of the A close into a ring.
+- Å is drawn by hand, like å: the same diamond ring on rows 0-2 rests on a capital A shortened to rows 3-6, with legs one pixel tall. A ring on the usual rows 2-6 capital would close into a box with the top of the A.
 - Letters with a cedilla (ç, Ç) keep the full-height letter. The cedilla is centered under the letter.
 
 ## Box drawing
