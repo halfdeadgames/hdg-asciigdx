@@ -5,6 +5,8 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 ## Uppercase
 - I has slabs at top and bottom.
 - Q has a tail on row 7.
+- Đ and Ł move one column right, so their stroke can cross the stem.
+- Ħ is narrowed to columns 1 to 5, so its stroke on row 2 reaches past both stems. Its crossbar moves down to row 4, because on row 3 it would merge with the stroke.
 
 ## Lowercase
 - a has a small tail at the bottom right so it never reads as o.
