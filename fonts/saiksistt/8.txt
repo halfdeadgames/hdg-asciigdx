@@ -1745,3 +1745,23 @@ U+017A ź = overlay U+E87A shift 0, U+00B4 shift 0
 U+017C ż = overlay U+E87A shift 0, U+02D9 shift 0
 
 U+017E ž = overlay U+E87A shift 0, U+02C7 shift 0
+
+U+0105 ą = overlay U+0061 shift 0, U+02DB shift 0
+
+U+0119 ę = overlay U+0065 shift 0, U+02DB shift 0
+
+U+012F į = overlay U+0069 shift 0, U+02DB shift -1
+
+U+0173 ų = overlay U+0075 shift 0, U+02DB shift 0
+
+U+0137 ķ = overlay U+006B shift 0, U+00B8 shift 0
+
+U+013C ļ = overlay U+006C shift 0, U+00B8 shift 0
+
+U+0146 ņ = overlay U+006E shift 0, U+00B8 shift 0
+
+U+0157 ŗ = overlay U+0072 shift 0, U+00B8 shift -1
+
+U+015F ş = overlay U+0073 shift 0, U+00B8 shift 0
+
+U+0163 ţ = overlay U+0074 shift 0, U+00B8 shift 0
