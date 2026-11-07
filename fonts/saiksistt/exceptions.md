@@ -22,3 +22,5 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - Comma (,) and semicolon (;) put their tail on row 7, the descender row, so they never read as a period or colon.
 - Parentheses, square brackets, curly braces, and the bar (|) span rows 1 to 7, so they enclose descenders like g and y.
 - Underscore (_) is a full-width line on row 7, the descender row, so it stays clear of letters on the baseline.
+- The dollar sign ($) extends its stem onto rows 0 and 7, above and below its S-shaped body, so it never reads as S.
+- The at sign (@) spans rows 1 to 7, like the brackets, so its open bowl has room for the small a inside.
