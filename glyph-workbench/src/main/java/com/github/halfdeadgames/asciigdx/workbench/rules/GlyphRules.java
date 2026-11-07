@@ -26,12 +26,12 @@ public final class GlyphRules {
      * @param bodyWidth columns before the gap columns
      * @param accentRowCount rows at the top reserved for accents; empty skips the accent check
      * @param descenderFirstRow first row of the descender band; empty skips the descender check
-     * @return the warnings, empty when the glyph is fine
+     * @return the warnings, empty when the glyph is fine or is a tiling glyph
      */
     public static List<RuleWarning> check(int codePoint, PixelGlyph glyph, int bodyWidth,
                                    OptionalInt accentRowCount, OptionalInt descenderFirstRow) {
         List<RuleWarning> warnings = new ArrayList<>();
-        if (glyph == null) {
+        if (glyph == null || TilingGlyphs.isTiling(codePoint)) {
             return warnings;
         }
         PixelGrid pixels = glyph.pixels();

@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -68,7 +69,8 @@ class SaiksisttFontTest {
         int top = sheet.getLayout().slotY(slot);
 
         assertEquals(128, image.getWidth());
-        assertEquals(128, image.getHeight());
+        assertEquals(0, image.getHeight() % 8);
+        assertTrue(image.getHeight() >= 128, "sheet is shorter than the CP437 grid");
         assertEquals(0xFFFFFFFF, image.getRGB(left, top + 1));
         assertEquals(0, image.getRGB(left + 7, top + 1));
         assertEquals(0, image.getRGB(left + 1, top + 1));

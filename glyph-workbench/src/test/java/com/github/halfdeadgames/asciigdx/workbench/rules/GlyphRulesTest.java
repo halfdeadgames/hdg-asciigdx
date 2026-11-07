@@ -138,6 +138,27 @@ class GlyphRulesTest {
         assertEquals("U+0041 " + GlyphName.fullName('A') + " has ink in the gap column", warnings.get(0).message());
     }
 
+    private static final List<String> FULL_INK_ROWS = List.of(
+        "########", "########", "########", "########", "########", "########", "########", "########");
+
+    private static List<RuleWarning> checkFullInkAs(int codePoint) {
+        PixelGlyph glyph = new PixelGlyph(codePoint, true, PixelGrid.ofRows(FULL_INK_ROWS));
+        return GlyphRules.check(codePoint, glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW);
+    }
+
+    @Test
+    void tilingGlyphsFillingTheWholeCellHaveNoWarnings() {
+        assertTrue(checkFullInkAs(0x256C).isEmpty());
+        assertTrue(checkFullInkAs(0x2591).isEmpty());
+    }
+
+    @Test
+    void sameFullInkOutsideTheTilingBlocksStillWarns() {
+        assertEquals(
+            List.of(GlyphRules.KEY_GAP, GlyphRules.KEY_ACCENT_INK, GlyphRules.KEY_DESCENDER_INK),
+            keys(checkFullInkAs(0x25A0)));
+    }
+
     @Test
     void emptyGlyphAndEmptySlotHaveNoWarnings() {
         assertTrue(check(true, List.of(
