@@ -11,6 +11,8 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - f is shorter and starts on row 1. Its bar sits on row 3, leaving a blank row under its hook.
 - t has its bar on row 2, its top.
 - l has a tail curving right and a slab on row 0, which is accepted.
+- ß starts on row 1, like f, because its round top has no room on row 0. It also stands in for the Greek beta, as in code page 437.
+- æ uses a two-story a. A one-story a next to the e would read as an o.
 
 ## Digits
 - 0 has a center dot.
