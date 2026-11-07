@@ -11,7 +11,7 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - f is shorter and starts on row 1. Its bar sits on row 3, leaving a blank row under its hook.
 - t has its bar on row 2, its top.
 - l has a tail curving right and a slab on row 0, which is accepted.
-- Accented ascender letters (such as ĥ) are drawn by hand: ascender, a blank row, then the accent.
+- Accented ascender letters (such as ĥ) are drawn by hand. See Accents for where the accent goes.
 
 ## Digits
 - 0 has a center dot.
@@ -33,6 +33,11 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - Ÿ uses the short Y with a blank row under the dots, because on the full Y the dots merge into its arms.
 - Å is the ring (˚) over the short A. The open arch and the top of the A close into a ring.
 - Letters with a mark below, such as ç, keep the full-height letter.
+- Marks below sit where most fonts put them. The cedilla is centered under the letter or under its stem, and the ogonek hangs from the bottom right, or from the stem on į.
+- On letters with an ascender, the accent sits beside the ascender, because there is no room above it. ĥ puts its circumflex to the right of the ascender, over a short bowl, and ĺ puts its acute at the upper right.
+- ď, ľ, and ť write the caron as a short apostrophe to the right of the stem, as Czech and Slovak do. ď moves one column left so the apostrophe stays out of the gap column.
+- ĵ is a dotless short j under the circumflex.
+- ģ has a turned comma, a small 6 shape, above the short g, as Latvian does.
 
 ## Box drawing
 - Single lines sit on column 3 and row 4, in line with |, +, -, and =. Each single-line glyph is an overlay of the four half-line stubs (╴ ╵ ╶ ╷), because mirroring or rotating in an 8-pixel cell moves the line by one pixel.
