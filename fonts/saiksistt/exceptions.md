@@ -29,7 +29,7 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - The backtick (`) sits on rows 0-1, one row above the quote ('), because it doubles as the grave accent.
 - The ring (˚) is an open arch on rows 0-1. å is drawn by hand: its ring is a small diamond on rows 0-2, with the corners cut so it reads as round, resting on the short a.
 - Accented letters are built on short base letters stored at U+E8xx, where xx is the last two hex digits of the plain letter (short a is U+E861, short ı is U+E831, and short A is U+E841). These are drawing helpers, not meant to be typed.
-- Capitals 6 pixels wide (E, O, U) take a narrow diaeresis stored at U+E8A8, with its dots on columns 1 and 4, so it stays centered over them.
+- Capitals 6 pixels wide (C, E, G, N, O, R, S, U, Z) are centered between columns 2 and 3, so an odd-width mark cannot sit centered over them. They take even-width marks stored at U+E8xx, where xx is the last two hex digits of the plain mark: diaeresis U+E8A8 (dots on columns 1 and 4), macron U+E8AF (columns 1 to 4), circumflex U+E8C6, caron U+E8C7, breve U+E8D8, and tilde U+E8DC (both full letter width). The double acute is already 4 pixels wide, so those capitals shift it one column left instead. The dot above stays a single pixel, half a pixel off center.
 - Ÿ uses the short Y with a blank row under the dots, because on the full Y the dots merge into its arms.
 - Å is the ring (˚) over the short A. The open arch and the top of the A close into a ring.
 - Letters with a mark below, such as ç, keep the full-height letter.
