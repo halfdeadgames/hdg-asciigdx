@@ -12,6 +12,7 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - t has its bar on row 2, its top.
 - l has a tail curving right and a slab on row 0, which is accepted.
 - ß starts on row 1, like f, because its round top has no room on row 0. It also stands in for the Greek beta, as in code page 437.
+- δ starts on row 1, like ß, because its hook has no room on row 0. The neck sits on column 2 and the hook runs straight right, so it never reads as a 6.
 - æ uses a two-story a. A one-story a next to the e would read as an o.
 
 ## Digits
