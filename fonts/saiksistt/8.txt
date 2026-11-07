@@ -1606,6 +1606,62 @@ U+0178 Ÿ = overlay U+E859 shift 0, U+00A8 shift 0
 
 U+00C7 Ç = overlay U+0043 shift 0, U+00B8 shift 0
 
+U+0100 Ā = overlay U+E841 shift 0, U+00AF shift 0
+
+U+0112 Ē = overlay U+E845 shift 0, U+00AF shift 0
+
+U+012A Ī = overlay U+E849 shift 0, U+00AF shift 0
+
+U+014C Ō = overlay U+E84F shift 0, U+00AF shift 0
+
+U+016A Ū = overlay U+E855 shift 0, U+00AF shift 0
+
+U+010A Ċ = overlay U+0043 shift 0, U+02D9 shift 0
+
+U+0116 Ė = overlay U+0045 shift 0, U+02D9 shift 0
+
+U+0120 Ġ = overlay U+0047 shift 0, U+02D9 shift 0
+
+U+0130 İ = overlay U+0049 shift 0, U+02D9 shift 0
+
+U+017B Ż = overlay U+005A shift 0, U+02D9 shift 0
+
+U+0102 Ă = overlay U+E841 shift 0, U+02D8 shift 0
+
+U+0114 Ĕ = overlay U+E845 shift 0, U+02D8 shift 0
+
+U+011A Ě = overlay U+E845 shift 0, U+02C7 shift 0
+
+U+0128 Ĩ = overlay U+E849 shift 0, U+02DC shift 0
+
+U+012C Ĭ = overlay U+E849 shift 0, U+02D8 shift 0
+
+U+0143 Ń = overlay U+E84E shift 0, U+00B4 shift 0
+
+U+0147 Ň = overlay U+E84E shift 0, U+02C7 shift 0
+
+U+014E Ŏ = overlay U+E84F shift 0, U+02D8 shift 0
+
+U+0150 Ő = overlay U+E84F shift 0, U+02DD shift 0
+
+U+0168 Ũ = overlay U+E855 shift 0, U+02DC shift 0
+
+U+016C Ŭ = overlay U+E855 shift 0, U+02D8 shift 0
+
+U+016E Ů
+...#...
+..#.#..
+#..#.#.
+#....#.
+#....#.
+#....#.
+.####..
+.......
+
+U+0170 Ű = overlay U+E855 shift 0, U+02DD shift 0
+
+U+0176 Ŷ = overlay U+E859 shift 0, U+02C6 shift 0
+
 U+0101 ā = overlay U+E861 shift 0, U+00AF shift 0
 
 U+0103 ă = overlay U+E861 shift 0, U+02D8 shift 0
