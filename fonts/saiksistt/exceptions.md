@@ -27,7 +27,9 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 
 ## Accents
 - The backtick (`) sits on rows 0-1, one row above the quote ('), because it doubles as the grave accent.
-- The ring (˚) is an open arch on rows 0-1. On å, the top of the letter closes it.
+- The ring (˚) is an open arch on rows 0-1. å is drawn by hand: its ring is a small diamond on rows 0-2, with the corners cut so it reads as round, resting on the short a.
+- Accented lowercase letters are built on short base letters stored at U+E8xx, where xx is the last two hex digits of the plain letter (short a is U+E861, short ı is U+E831). These are drawing helpers, not meant to be typed.
+- Letters with a mark below, such as ç, keep the full-height letter.
 
 ## Box drawing
 - Single lines sit on column 3 and row 4, in line with |, +, -, and =. Each single-line glyph is an overlay of the four half-line stubs (╴ ╵ ╶ ╷), because mirroring or rotating in an 8-pixel cell moves the line by one pixel.
