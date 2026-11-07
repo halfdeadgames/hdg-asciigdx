@@ -26,6 +26,7 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - Underscore (_) is a full-width line on row 7, the descender row, so it stays clear of letters on the baseline.
 - The dollar sign ($) extends its stem onto rows 0 and 7, above and below its S-shaped body, so it never reads as S.
 - The at sign (@) spans rows 1 to 7, like the brackets, so its open bowl has room for the small a inside.
+- The degree sign (°) is a 3×3 square ring on rows 1-3. Cutting its corners, the usual rule for round shapes, would leave a small diamond that reads as the ring in å.
 
 ## Accents
 - The backtick (`) sits on rows 0-1, one row above the quote ('), because it doubles as the grave accent.
