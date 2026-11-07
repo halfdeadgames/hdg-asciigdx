@@ -24,6 +24,10 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  implementation "org.lwjgl:lwjgl-nfd:$lwjgl3Version"
+  ['natives-windows', 'natives-linux', 'natives-macos', 'natives-macos-arm64'].each { platform ->
+    runtimeOnly "org.lwjgl:lwjgl-nfd:$lwjgl3Version:$platform"
+  }
   constraints {
     implementation("org.lwjgl:lwjgl:$lwjgl3Version")
     implementation("org.lwjgl:lwjgl-glfw:$lwjgl3Version")

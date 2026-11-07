@@ -22,10 +22,11 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 
 ## Development tools
 
-Used only by the `sandbox` demo modules and, for Checkstyle, the glyph workbench. Not part of any release artifact.
+Used only by the `sandbox` demo modules and the glyph workbench (Checkstyle and the native folder dialog). Not part of any release artifact.
 
 | Library | Author | License | Used for |
 |---|---|---|---|
 | [anim8-gdx](https://github.com/tommyettinger/anim8-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Recording GIF captures of the demo |
 | [sjInGameConsole](https://github.com/tommyettinger/sjInGameConsole) | StrongJoshua, Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | In-game debug console |
 | [Checkstyle](https://checkstyle.org/) | Checkstyle contributors | [LGPL 2.1 or later](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt) | Code size and nesting reports for the glyph workbench; runs at build time only |
+| [LWJGL NFD bindings](https://www.lwjgl.org/) (`org.lwjgl:lwjgl-nfd`) | Ioannis Tsakpinis and LWJGL contributors; bundled native library [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended) by Bernard Teo | [BSD 3-Clause](https://www.lwjgl.org/license); bundled native library under the [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE) | Folder dialog behind the glyph workbench's File > Export command |

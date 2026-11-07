@@ -19,6 +19,8 @@ import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
+import com.github.halfdeadgames.asciigdx.workbench.export.PaintExport;
+import com.github.halfdeadgames.asciigdx.workbench.export.PaintExports;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -75,6 +77,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final String TAG = "Paint";
     private static final String LEAVE_QUESTION = "before leaving?";
     private static final String SWITCH_SIZE_QUESTION = "before switching size?";
+    private static final String EXPORT_QUESTION = "Save, then export?";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final List<String> RULE_KEYS = List.of(
@@ -107,6 +110,8 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final List<Dialog.Button> UNSAVED_BUTTONS = List.of(
         new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
         new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> SAVE_ONLY_BUTTONS = List.of(
+        new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final DeriveFlow flow = new DeriveFlow();
     private final PaintLayers layers = new PaintLayers();
@@ -193,6 +198,9 @@ public final class PaintScreen implements WorkbenchScreen {
     // What the unsaved-changes prompt continues with once the changes are saved or discarded.
     private Runnable afterUnsavedPrompt = () -> { };
     private String unsavedQuestion = LEAVE_QUESTION;
+    private List<Dialog.Button> unsavedButtons = UNSAVED_BUTTONS;
+    // Built in show(): the folder memory needs preferences, which need the running app.
+    private PaintExport paintExport;
 
     /**
      * @param onExit called when the user leaves the screen with Esc (after the unsaved prompt)
@@ -217,6 +225,7 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         FileHandle directory = Gdx.files.absolute(fontDir);
         loadFont(directory);
+        paintExport = PaintExports.create(directory.file(), Integer.parseInt(fontSize.trim()), new ExportMessages());
         pickStartCursor();
         createPainters();
         setUpScale();
@@ -890,6 +899,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private void runMenuAction(PaintMenu.Action action) {
         switch (action) {
             case SAVE -> save();
+            case EXPORT -> exportFont();
             case BACK -> leave();
             case UNDO -> undoOnce();
             case REDO -> redoOnce();
@@ -1069,6 +1079,9 @@ public final class PaintScreen implements WorkbenchScreen {
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
         }
+        if (control && Gdx.input.isKeyJustPressed(Input.Keys.E) && !flow.isActive()) {
+            exportFont();
+        }
         if (derive.handleModalKeys()) {
             wheelTicks.clearVertical();
             return true;
@@ -1225,10 +1238,20 @@ public final class PaintScreen implements WorkbenchScreen {
 
     // Runs the action now, or after the user saves or discards when there are unsaved changes.
     private void runAfterUnsavedCheck(Runnable action, String question) {
+        runAfterUnsavedCheck(action, question, UNSAVED_BUTTONS);
+    }
+
+    private void exportFont() {
+        stroke.end();
+        runAfterUnsavedCheck(paintExport::run, EXPORT_QUESTION, SAVE_ONLY_BUTTONS);
+    }
+
+    private void runAfterUnsavedCheck(Runnable action, String question, List<Dialog.Button> buttons) {
         if (editor.isModified()) {
             messages.nextAction();
             afterUnsavedPrompt = action;
             unsavedQuestion = question;
+            unsavedButtons = buttons;
             confirmingUnsaved = true;
             stroke.end();
         } else {
@@ -1489,12 +1512,30 @@ public final class PaintScreen implements WorkbenchScreen {
             if (!editor.isModified()) {
                 afterUnsavedPrompt.run();
             }
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+        } else if (unsavedButtons == UNSAVED_BUTTONS && Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             confirmingUnsaved = false;
             afterUnsavedPrompt.run();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             messages.nextAction();
             confirmingUnsaved = false;
+        }
+    }
+
+    private final class ExportMessages implements PaintExport.Messages {
+
+        @Override
+        public void startAction() {
+            messages.nextAction();
+        }
+
+        @Override
+        public void ok(String text) {
+            messages.ok(text);
+        }
+
+        @Override
+        public void warn(String text) {
+            messages.warn(text);
         }
     }
 
@@ -1581,7 +1622,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (layers.unsavedPromptShown()) {
             Dialog.draw(painter, new CellRect(0, 0, columns, rows),
                 DialogContent.of("UNSAVED CHANGES",
-                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), UNSAVED_BUTTONS));
+                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), unsavedButtons));
         }
         if (layers.newGlyphShown()) {
             newGlyph.draw(painter, columns, rows, rects.grid());

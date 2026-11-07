@@ -56,16 +56,32 @@ class PaintMenuTest {
     }
 
     @Test
-    void newSizeAndNewFontSitInTheFileMenuBetweenSaveAndBack() {
+    void exportFollowsSaveInTheFileMenuWithCtrlE() {
+        MenuBar.Item<Action> item = PaintMenu.create(true).menu(0).items().get(1);
+        assertEquals(Action.EXPORT, item.action());
+        assertEquals("EXPORT", item.label());
+        assertEquals("CTRL+E", item.shortcut());
+    }
+
+    @Test
+    void exportIsAvailableWhereverSaveIs() {
+        for (Context context : Context.values()) {
+            assertEquals(PaintMenu.isAvailable(Action.SAVE, context), PaintMenu.isAvailable(Action.EXPORT, context),
+                context.name());
+        }
+    }
+
+    @Test
+    void newSizeAndNewFontSitInTheFileMenuBetweenExportAndBack() {
         MenuBar<Action> bar = PaintMenu.create(true);
         assertEquals("FILE", bar.menu(0).title());
-        assertEquals(4, bar.menu(0).items().size());
+        assertEquals(5, bar.menu(0).items().size());
         assertEquals(Action.SAVE, bar.menu(0).items().get(0).action());
-        assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(1).action());
-        assertEquals("NEW SIZE", bar.menu(0).items().get(1).label());
-        assertEquals(Action.NEW_FONT, bar.menu(0).items().get(2).action());
-        assertEquals("NEW FONT", bar.menu(0).items().get(2).label());
-        assertEquals(Action.BACK, bar.menu(0).items().get(3).action());
+        assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(2).action());
+        assertEquals("NEW SIZE", bar.menu(0).items().get(2).label());
+        assertEquals(Action.NEW_FONT, bar.menu(0).items().get(3).action());
+        assertEquals("NEW FONT", bar.menu(0).items().get(3).label());
+        assertEquals(Action.BACK, bar.menu(0).items().get(4).action());
     }
 
     @Test
