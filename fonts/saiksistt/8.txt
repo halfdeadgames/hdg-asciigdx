@@ -2137,3 +2137,25 @@ U+0167 ŧ
 ...#...
 ....##.
 .......
+
+U+0104 Ą = overlay U+0041 shift 0, U+02DB shift 0
+
+U+0118 Ę = overlay U+0045 shift 0, U+02DB shift 0
+
+U+012E Į = overlay U+0049 shift 0, U+02DB shift -1
+
+U+0172 Ų = overlay U+0055 shift 0, U+02DB shift 0
+
+U+0136 Ķ = overlay U+004B shift 0, U+00B8 shift 0
+
+U+013B Ļ = overlay U+004C shift 0, U+00B8 shift 0
+
+U+0145 Ņ = overlay U+004E shift 0, U+00B8 shift 0
+
+U+0156 Ŗ = overlay U+0052 shift 0, U+00B8 shift 0
+
+U+015E Ş = overlay U+0053 shift 0, U+00B8 shift 0
+
+U+0162 Ţ = overlay U+0054 shift 0, U+00B8 shift 0
+
+U+0122 Ģ = overlay U+0047 shift 0, U+00B8 shift 0
