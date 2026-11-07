@@ -25,6 +25,10 @@ Deliberate breaks and letter-specific details. The workbench rules panel does no
 - The dollar sign ($) extends its stem onto rows 0 and 7, above and below its S-shaped body, so it never reads as S.
 - The at sign (@) spans rows 1 to 7, like the brackets, so its open bowl has room for the small a inside.
 
+## Accents
+- The backtick (`) sits on rows 0-1, one row above the quote ('), because it doubles as the grave accent.
+- The ring (˚) is an open arch on rows 0-1. On å, the top of the letter closes it.
+
 ## Box drawing
 - Single lines sit on column 3 and row 4, in line with |, +, -, and =. Each single-line glyph is an overlay of the four half-line stubs (╴ ╵ ╶ ╷), because mirroring or rotating in an 8-pixel cell moves the line by one pixel.
 - Double-line corners and junctions (╔ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬) are mirror images of each other but are each drawn by hand, for the same reason. Their lines sit on columns 2 and 4 and rows 3 and 5.

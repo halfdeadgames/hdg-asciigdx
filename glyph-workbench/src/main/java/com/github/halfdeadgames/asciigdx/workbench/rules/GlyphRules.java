@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -14,6 +15,9 @@ public final class GlyphRules {
     public static final String KEY_GAP = "gap";
     public static final String KEY_ACCENT_INK = "accentInk";
     public static final String KEY_DESCENDER_INK = "descenderInk";
+
+    private static final int FIRST_ABOVE_MARK = 0x0300;
+    private static final int LAST_ABOVE_MARK = 0x0315;
 
     private GlyphRules() {
     }
@@ -61,13 +65,30 @@ public final class GlyphRules {
         return false;
     }
 
-    /** A lowercase glyph may put a single pixel in the accent rows (ascender tip or dot); anything else is a violation. */
+    /**
+     * A lowercase glyph may put a single pixel in the accent rows (ascender tip or dot); anything else is a violation.
+     * Accent marks and letters with an accent above are exempt.
+     */
     private static boolean breaksAccentRowRule(int codePoint, PixelGrid grid, int accentRowCount) {
+        if (isAccentMark(codePoint) || hasAccentAbove(codePoint)) {
+            return false;
+        }
         int inkedPixels = countInkInRows(grid, 0, accentRowCount);
         if (Character.isLowerCase(codePoint)) {
             return inkedPixels > 1;
         }
         return inkedPixels > 0;
+    }
+
+    private static boolean isAccentMark(int codePoint) {
+        return Character.getType(codePoint) == Character.MODIFIER_SYMBOL
+            || Character.UnicodeBlock.of(codePoint) == Character.UnicodeBlock.SPACING_MODIFIER_LETTERS;
+    }
+
+    /** Whether the decomposed letter carries a combining mark that sits above it (U+0300..U+0315). */
+    private static boolean hasAccentAbove(int codePoint) {
+        String decomposed = Normalizer.normalize(new String(Character.toChars(codePoint)), Normalizer.Form.NFD);
+        return decomposed.codePoints().anyMatch(part -> part >= FIRST_ABOVE_MARK && part <= LAST_ABOVE_MARK);
     }
 
     private static int countInkInRows(PixelGrid grid, int firstRow, int endRow) {

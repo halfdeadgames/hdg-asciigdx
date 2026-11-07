@@ -7,14 +7,14 @@ Square cells. Clinical, modern terminal style. Shared rules: `fonts/FONT_RULES.m
 ## Core
 - Sizes: 8 first, then 16. Later 24, 32, 40.
 - Metrics at 8 (rows 0-7 top to bottom, columns 0-7 left to right):
-  - Row 0: accents, the dots of i and j, and lowercase ascenders.
+  - Rows 0-1: accents. Row 0 also holds the dots of i and j and the start of lowercase ascenders.
   - Capitals: rows 1-6 (rows 2-6 when accented).
   - Lowercase x-height: rows 2-6.
   - Baseline: bottom of row 6.
   - Descenders: row 7.
   - Body: columns 0-6. Gap: column 7.
 - Sans serif. Small slabs only where a narrow letter needs them.
-- Accents sit on row 0, on capitals and lowercase alike. Accented capitals shrink to rows 2-6, so row 1 stays blank under the accent. Each accent keeps one shape across the font.
+- Accents use rows 0-1, on capitals and lowercase alike. One-row accents (¨ ˙ ¯) sit on row 0. Accented capitals shrink to rows 2-6, so the accent sits right on top of them. Cedilla and ogonek sit on row 7. Each accent keeps one shape across the font.
 - Round shapes have their corners cut by 1 pixel.
 - No stroke contrast: all strokes are 1 unit.
 

@@ -74,6 +74,34 @@ class GlyphRulesTest {
             keys(GlyphRules.check('H', glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW)));
     }
 
+    private static List<String> accentRowKeys(int codePoint, String accentRow) {
+        List<String> rows = List.of(
+            accentRow, ".......", ".......", ".......", ".......", ".......", ".......", ".......");
+        PixelGlyph glyph = new PixelGlyph(codePoint, false, PixelGrid.ofRows(rows));
+        return keys(GlyphRules.check(codePoint, glyph, BODY_WIDTH, ACCENT_ROWS, DESCENDER_FIRST_ROW));
+    }
+
+    @Test
+    void accentMarksHaveNoAccentWarning() {
+        assertTrue(accentRowKeys(0x00B4, ".##....").isEmpty());
+        assertTrue(accentRowKeys(0x02C7, "#.#.#..").isEmpty());
+        assertTrue(accentRowKeys(0x0060, ".##....").isEmpty());
+    }
+
+    @Test
+    void lettersWithAnAccentAboveHaveNoAccentWarning() {
+        assertTrue(accentRowKeys(0x00E9, ".###...").isEmpty());
+        assertTrue(accentRowKeys(0x00C1, ".##....").isEmpty());
+    }
+
+    @Test
+    void cedillaLowercaseAndPlainLettersStillWarn() {
+        List<String> accentInk = List.of(GlyphRules.KEY_ACCENT_INK);
+        assertEquals(accentInk, accentRowKeys(0x00E7, ".##...."));
+        assertEquals(accentInk, accentRowKeys(0x006E, ".##...."));
+        assertEquals(accentInk, accentRowKeys(0x0041, ".#....."));
+    }
+
     @Test
     void inkInTheDescenderRowWarns() {
         List<String> rows = List.of(
