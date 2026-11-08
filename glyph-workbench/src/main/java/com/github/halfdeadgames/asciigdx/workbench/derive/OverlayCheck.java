@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.derive;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
 
 /** Judges the overlay part being picked and words the warning for it. It holds no drawing or input code. */
 public final class OverlayCheck {
@@ -70,9 +71,6 @@ public final class OverlayCheck {
 
     public enum OffGrid { NONE, LEFT, RIGHT }
 
-    static final float BLINK_ON_SECONDS = 0.25f;
-    static final float BLINK_OFF_SECONDS = 0.25f;
-
     /**
      * Which side of the grid all shifted ink lies beyond, or NONE when some ink is still inside it.
      *
@@ -93,12 +91,7 @@ public final class OverlayCheck {
 
     /** Whether a blinking marker is lit at the given time. */
     public static boolean blinkOn(float seconds) {
-        float cycle = BLINK_ON_SECONDS + BLINK_OFF_SECONDS;
-        float phase = seconds % cycle;
-        if (phase < 0) {
-            phase += cycle;
-        }
-        return phase < BLINK_ON_SECONDS;
+        return Blink.isOnAt(seconds);
     }
 
     static String signed(int value) {

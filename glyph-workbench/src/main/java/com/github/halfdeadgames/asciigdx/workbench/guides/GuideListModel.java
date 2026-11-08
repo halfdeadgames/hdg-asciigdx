@@ -17,6 +17,7 @@ final class GuideListModel {
 
     private static final int GROUP_ABBREVIATION = 3;
     private static final String RENAME_CURSOR = "_";
+    private static final String HIDDEN_CURSOR = " ";
     private static final String EMPTY_LABEL_PLACEHOLDER = "_";
 
     private final LabelField label = new LabelField();
@@ -144,9 +145,15 @@ final class GuideListModel {
 
     /** While renaming, the selected row shows the typed text followed by a cursor. */
     Row row(int index) {
+        return row(index, true);
+    }
+
+    /** A hidden cursor leaves a blank, so the row keeps its length. */
+    Row row(int index, boolean cursorVisible) {
         Row row = rows.get(index);
         if (label.isActive() && index == selected) {
-            return new Row(guideText(row.guide(), label.value() + RENAME_CURSOR), row.guide());
+            String cursor = cursorVisible ? RENAME_CURSOR : HIDDEN_CURSOR;
+            return new Row(guideText(row.guide(), label.value() + cursor), row.guide());
         }
         return row;
     }

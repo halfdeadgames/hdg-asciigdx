@@ -19,7 +19,6 @@ public final class MessageStrip {
     /** Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll button column. */
     public static final int RESERVED_COLUMNS = 7;
 
-    private static final float BLINK_HALF_CYCLE_SECONDS = 0.25f;
     private int firstIndex;
     private int viewRows;
     private int totalCount;
@@ -209,7 +208,7 @@ public final class MessageStrip {
     }
 
     private boolean blinkOn() {
-        return (int) (clockSeconds / BLINK_HALF_CYCLE_SECONDS) % 2 == 0;
+        return Blink.isOnAt(clockSeconds);
     }
 
     private void drawScrollIndicators(Painter painter) {

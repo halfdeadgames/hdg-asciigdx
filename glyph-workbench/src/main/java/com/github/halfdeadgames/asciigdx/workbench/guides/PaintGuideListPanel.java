@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
@@ -53,6 +54,8 @@ public final class PaintGuideListPanel {
     private float seconds;
     private String title = "GUIDES";
     private int renameKeySwallowFrames;
+    private final Blink cursorBlink = new Blink();
+    private String labelBeforeRename;
 
     /** What the panel needs from the screen it is shown on. */
     public interface Host {
@@ -154,9 +157,11 @@ public final class PaintGuideListPanel {
     }
 
     private void showTypedLabel() {
-        if (guideList.isRenaming()) {
-            host.showGuides(guideList.guidesForDisplay());
+        if (!guideList.isRenaming()) {
+            return;
         }
+        cursorBlink.restart();
+        host.showGuides(guideList.guidesForDisplay());
     }
 
     // Esc and F2 cancel the edits here, so Esc never reaches the unsaved-changes prompt.
@@ -199,6 +204,7 @@ public final class PaintGuideListPanel {
     public void draw(CellRect area, int cell) {
         Panel.draw(painter, area, title, true);
         seconds += Gdx.graphics.getDeltaTime();
+        cursorBlink.advance(Gdx.graphics.getDeltaTime());
         int visible = visibleRows(area);
         int chars = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
         if (legendShown(area) && !guideList.isRenaming()) {
@@ -208,7 +214,7 @@ public final class PaintGuideListPanel {
         int shown = Math.min(visible, guideList.size() - first);
         for (int i = 0; i < shown; i++) {
             int index = first + i;
-            String text = guideList.row(index).text();
+            String text = guideList.row(index, cursorBlink.isOn()).text();
             int top = (area.y() + 1 + i) * cell;
             int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
             if (index == guideList.selectedIndex()) {
@@ -291,13 +297,27 @@ public final class PaintGuideListPanel {
         addFlow.pick(kind);
         messages.nextAction();
         renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;
+        cursorBlink.restart();
         host.showGuides(guideList.guidesForDisplay());
         refreshTitle();
     }
 
     private void refreshTitle() {
-        title = titleFor(guideList.selectedIndex(), guideList.size());
+        boolean renamingExisting = guideList.isRenaming() && !addFlow.isNaming();
+        title = titleFor(addFlow.isNaming(), renamingExisting ? labelBeforeRename : null,
+            guideList.selectedIndex(), guideList.size());
         seconds = 0f;
+    }
+
+    /** The title while typing a label wins over the list title; {@code renamedLabel} is null when no rename is going on. */
+    static String titleFor(boolean namingNewGuide, String renamedLabel, int selectedIndex, int guideCount) {
+        if (namingNewGuide) {
+            return "NAME NEW GUIDE";
+        }
+        if (renamedLabel != null) {
+            return "RENAME " + renamedLabel;
+        }
+        return titleFor(selectedIndex, guideCount);
     }
 
     static String titleFor(int selectedIndex, int guideCount) {
@@ -366,9 +386,12 @@ public final class PaintGuideListPanel {
             edited = toggleGroup(pressedGroupKey());
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
             if (guideList.canRename()) {
+                labelBeforeRename = guideList.selectedGuide().label();
                 guideList.beginRename();
                 messages.nextAction();
                 renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;
+                cursorBlink.restart();
+                refreshTitle();
             }
             edited = false;
         } else {
