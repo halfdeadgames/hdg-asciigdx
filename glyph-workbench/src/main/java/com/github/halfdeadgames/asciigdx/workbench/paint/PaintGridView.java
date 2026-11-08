@@ -40,6 +40,12 @@ final class PaintGridView {
 
     private static final Color HIGHLIGHT_COLOR = new Color(1f, 0.95f, 0.15f, 1f);
 
+    private static final float BAND_TINT_ALPHA = 0.14f;
+    private static final Color BAR_TINT_COLOR = new Color(
+        BAR_GUIDE_COLOR.r, BAR_GUIDE_COLOR.g, BAR_GUIDE_COLOR.b, BAND_TINT_ALPHA);
+    private static final Color HIGHLIGHT_TINT_COLOR = new Color(
+        HIGHLIGHT_COLOR.r, HIGHLIGHT_COLOR.g, HIGHLIGHT_COLOR.b, BAND_TINT_ALPHA);
+
     private final Painter painter;
     private PaintGuides.Listed highlighted;
     private String shownGroup = "";
@@ -125,12 +131,13 @@ final class PaintGridView {
         if (ghost != null) {
             drawGhost(ghost, seconds);
         }
-        drawGridLines();
-        drawMarkers(codePoint);
         selectGuides(FontRules.groupNameFor(codePoint));
         if (layoutDirty) {
             layoutLabels();
         }
+        drawBandTints();
+        drawGridLines();
+        drawMarkers(codePoint);
         drawGuides();
         drawWidthGuides();
         drawBarGuides();
@@ -156,6 +163,59 @@ final class PaintGridView {
         for (int y = 0; y <= editor.cellHeight(); y++) {
             painter.fill(LINE_COLOR, left, top + y * pixelSize, editor.cellWidth() * pixelSize, 1);
         }
+    }
+
+    private void drawBandTints() {
+        drawShownBarTints();
+        drawShownColumnBarTints();
+        drawSelectedBandTint();
+    }
+
+    private void drawShownBarTints() {
+        List<PaintGuides.BarGuide> bars = shown.bars();
+        boolean selectedVisible = highlightVisible();
+        for (int i = 0; i < bars.size(); i++) {
+            PaintGuides.BarGuide bar = bars.get(i);
+            if (selectedVisible && GuideBands.isSelected(highlighted, PaintGuides.ListedKind.BAR,
+                bar.label(), bar.firstRow(), bar.rowCount())) {
+                continue;
+            }
+            tintRows(BAR_TINT_COLOR, bar.firstRow(), bar.rowCount());
+        }
+    }
+
+    private void drawShownColumnBarTints() {
+        List<PaintGuides.ColumnBarGuide> columnBars = shown.columnBars();
+        boolean selectedVisible = highlightVisible();
+        for (int i = 0; i < columnBars.size(); i++) {
+            PaintGuides.ColumnBarGuide bar = columnBars.get(i);
+            if (selectedVisible && GuideBands.isSelected(highlighted, PaintGuides.ListedKind.COLUMN_BAR,
+                bar.label(), bar.firstColumn(), bar.columnCount())) {
+                continue;
+            }
+            tintColumns(BAR_TINT_COLOR, bar.firstColumn(), bar.columnCount());
+        }
+    }
+
+    private void drawSelectedBandTint() {
+        if (!highlightVisible()) {
+            return;
+        }
+        if (highlighted.kind() == PaintGuides.ListedKind.BAR) {
+            tintRows(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.rowCount());
+        } else if (highlighted.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
+            tintColumns(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.rowCount());
+        }
+    }
+
+    private void tintRows(Color tint, int firstRow, int rowCount) {
+        painter.fill(tint, left, GuideBands.bandStart(top, firstRow, pixelSize),
+            editor.cellWidth() * pixelSize, GuideBands.bandLength(rowCount, pixelSize));
+    }
+
+    private void tintColumns(Color tint, int firstColumn, int columnCount) {
+        painter.fill(tint, GuideBands.bandStart(left, firstColumn, pixelSize), top,
+            GuideBands.bandLength(columnCount, pixelSize), height());
     }
 
     private void drawBarGuides() {
