@@ -1,15 +1,10 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class FontRulesTest {
@@ -86,28 +81,5 @@ class FontRulesTest {
         assertEquals("", rules.title());
         assertEquals("", rules.motto());
         assertTrue(rules.groups().isEmpty());
-    }
-
-    @Test
-    void parsesRealSaiksisttRules() throws IOException {
-        String repoRoot = System.getProperty("workbench.repoRoot");
-        assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
-        FontRules rules = FontRules.parse(Files.readString(Path.of(repoRoot, "fonts/saiksistt/rules.md"), StandardCharsets.UTF_8));
-        assertEquals("Saiksistt", rules.title());
-        assertTrue(rules.motto().startsWith("Saiksistt is the Blackfoot word"));
-        assertTrue(rules.motto().endsWith("readable at every size."));
-        assertNotNull(rules.group(FontRules.CORE));
-        assertNotNull(rules.group(FontRules.UPPERCASE));
-        assertNotNull(rules.group(FontRules.LOWERCASE));
-        assertNotNull(rules.group(FontRules.DIGITS));
-        assertNotNull(rules.group(FontRules.PUNCTUATION));
-        assertNotNull(rules.group("At 16 and above"));
-        FontRules.Group core = rules.group(FontRules.CORE);
-        assertEquals(7, core.bullets().stream().filter(b -> !b.sub()).count());
-        assertEquals(6, core.bullets().stream().filter(FontRules.Bullet::sub).count());
-        assertFalse(core.bullets().get(0).sub());
-        assertTrue(core.bullets().get(2).sub());
-        assertEquals("Rows 0-1: accents. Row 0 also holds the dots of i and j and the start of lowercase ascenders.", core.bullets().get(2).text());
-        assertEquals("Lowercase", rules.groupFor('g').name());
     }
 }

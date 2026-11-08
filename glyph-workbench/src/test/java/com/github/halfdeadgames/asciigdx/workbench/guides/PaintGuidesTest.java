@@ -147,17 +147,18 @@ class PaintGuidesTest {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
         PaintGuides guides = PaintGuides.parse(
-            Files.readString(Path.of(repoRoot, "fonts/saiksistt/8.guides.txt"), StandardCharsets.UTF_8));
-        assertEquals(OptionalInt.of(1), guides.accentRows());
-        assertEquals(OptionalInt.of(7), guides.descenderFirstRow());
-        PaintGuides.Shown upper = guides.forGroup(FontRules.UPPERCASE, 8, 8);
-        assertEquals(List.of(1, 2, 7), upper.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
-        assertEquals(List.of(1, 6, 7), columns(upper));
-        assertEquals(List.of("5", "5/6", "7"), upper.widths().stream().map(PaintGuides.WidthGuide::label).toList());
-        assertEquals(3.5f, upper.bars().get(0).centerRow());
-        assertEquals(List.of(1, 6), columns(guides.forGroup(FontRules.DIGITS, 8, 8)));
-        assertEquals(4.5f, guides.forGroup(FontRules.LOWERCASE, 8, 8).bars().get(0).centerRow());
-        assertTrue(guides.forGroup(FontRules.PUNCTUATION, 8, 8).bars().isEmpty());
+            Files.readString(Path.of(repoRoot, "fonts/saiksistt/16.guides.txt"), StandardCharsets.UTF_8));
+        assertEquals(OptionalInt.empty(), guides.accentRows());
+        assertEquals(OptionalInt.empty(), guides.descenderFirstRow());
+        PaintGuides.Shown upper = guides.forGroup(FontRules.UPPERCASE, 16, 16);
+        assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
+        assertTrue(upper.widths().isEmpty());
+        assertEquals(6.5f, upper.bars().get(0).centerRow());
+        PaintGuides.Shown lower = guides.forGroup(FontRules.LOWERCASE, 16, 16);
+        assertEquals(List.of(1, 2, 6, 12), lower.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
+        assertEquals(8.5f, lower.bars().get(0).centerRow());
+        assertEquals(6.5f, guides.forGroup(FontRules.DIGITS, 16, 16).bars().get(0).centerRow());
+        assertTrue(guides.forGroup(FontRules.PUNCTUATION, 16, 16).bars().isEmpty());
     }
 
     private static final List<String> EVERY_GROUP =
@@ -181,7 +182,7 @@ class PaintGuidesTest {
     void realSaiksisttGuidesWriteBackIdentically() throws IOException {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
-        String fileText = Files.readString(Path.of(repoRoot, "fonts/saiksistt/8.guides.txt"), StandardCharsets.UTF_8)
+        String fileText = Files.readString(Path.of(repoRoot, "fonts/saiksistt/16.guides.txt"), StandardCharsets.UTF_8)
             .replace("\r\n", "\n");
         assertEquals(fileText, PaintGuides.parse(fileText).toText());
         assertRoundTrips(fileText);

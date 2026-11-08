@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 public final class WorkbenchHost extends ApplicationAdapter {
 
     private static final String TAG = "Workbench";
-    private static final String DEFAULT_FONT_SIZE = "8";
+    private static final String DEFAULT_FONT_SIZE = "16";
 
     private final String mode;
     private WorkbenchScreen active;
