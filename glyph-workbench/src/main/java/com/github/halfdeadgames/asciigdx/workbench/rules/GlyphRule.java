@@ -8,13 +8,15 @@ import java.util.List;
  * @param name the unique name shown in warnings
  * @param check the check to run
  * @param appliesTo every glyph the rule covers
+ * @param appliesToNames the group names of {@code appliesTo}, as written in the file
  * @param settings the rows, columns, or ring size the check uses
  * @param exceptions glyphs the rule skips
  */
 public record GlyphRule(String name, RuleCheck check, CheckSettings settings, GlyphSet appliesTo,
-        List<RuleException> exceptions) {
+        List<String> appliesToNames, List<RuleException> exceptions) {
 
     public GlyphRule {
+        appliesToNames = List.copyOf(appliesToNames);
         exceptions = List.copyOf(exceptions);
     }
 

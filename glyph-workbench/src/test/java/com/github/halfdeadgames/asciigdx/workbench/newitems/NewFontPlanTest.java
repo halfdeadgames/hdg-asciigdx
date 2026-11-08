@@ -42,7 +42,7 @@ class NewFontPlanTest {
     @Test
     void onlyTheSizeFileIsCreated() throws IOException {
         Path folder = NewFontPlan.create(root, "demo", Shape.SQUARE, 8);
-        assertFalse(Files.exists(folder.resolve("rules.md")));
+        assertFalse(Files.exists(folder.resolve("notes.md")));
         try (Stream<Path> children = Files.list(folder)) {
             assertEquals(List.of(folder.resolve("8.txt")), children.toList());
         }

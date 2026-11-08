@@ -2,21 +2,20 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.util.HashSet;
+import java.util.List;
 
 /**
- * The F1 rules page as a slide-in overlay: loads the rules file of the font directory, owns the
+ * The F1 rules page as a slide-in overlay: shows the rules and notes it is given, owns the
  * open state and slide animation, and takes over the keyboard and wheel while it is open.
  */
 public final class RulesScreen {
 
-    private static final String TAG = "RulesScreen";
     private static final float SLIDE_SECONDS = 0.15f;
     private static final float DIM_ALPHA = 0.7f;
     private static final int WHEEL_ROWS = 3;
@@ -33,33 +32,36 @@ public final class RulesScreen {
     private boolean open;
     private float slide;
 
-    /** @param fontDir absolute path of the font folder holding rules.md, or null for none */
-    public RulesScreen(Painter painter, String fontDir) {
+    public RulesScreen(Painter painter) {
         this.painter = painter;
-        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR);
-        loadRules(fontDir);
+        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR, UiPalette.WARN);
         if (Boolean.getBoolean("workbench.rulesOpen")) {
             open = true;
             slide = 1f;
         }
     }
 
-    private void loadRules(String fontDir) {
-        if (fontDir == null) {
-            panel.setMissing("NO RULES FILE: NO FONT DIRECTORY SET");
-            return;
+    /**
+     * Replaces what the page shows.
+     *
+     * @param rules what reading the rules file gave
+     * @param notesMarkdownOrNull the font's notes, or null if it has none
+     */
+    public void show(RulesLoadResult rules, String notesMarkdownOrNull) {
+        panel.show(rules, notesMarkdownOrNull);
+    }
+
+    /**
+     * Sets which rules the current glyph breaks, so the page can flag them.
+     *
+     * @param warnings the glyph's current rule warnings; each key is a rule name
+     */
+    public void showBrokenRules(List<RuleWarning> warnings) {
+        var names = new HashSet<String>();
+        for (RuleWarning warning : warnings) {
+            names.add(warning.key());
         }
-        FileHandle file = Gdx.files.absolute(fontDir).child(FontRules.FILE_NAME);
-        if (!file.exists()) {
-            panel.setMissing("NO RULES FILE: " + file.path());
-            return;
-        }
-        try {
-            panel.setRules(FontRules.parse(file.readString("UTF-8")));
-        } catch (GdxRuntimeException e) {
-            panel.setMissing("NO RULES FILE: " + file.path());
-            Gdx.app.error(TAG, "Cannot read " + file.path() + ": " + e.getMessage());
-        }
+        panel.setBrokenRuleNames(names);
     }
 
     public boolean isOpen() {

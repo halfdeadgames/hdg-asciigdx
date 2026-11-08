@@ -294,7 +294,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (requestedTab != null) {
             preview.selectTab(requestedTab);
         }
-        rules = new RulesScreen(rulesPainter, fontDir);
+        rules = new RulesScreen(rulesPainter);
         notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
@@ -905,7 +905,7 @@ public final class PaintScreen implements WorkbenchScreen {
         loadRules(directory);
         reloadGuides(directory);
         if (!rulesFileBad && !guidesFile.isUnreadable()) {
-            messages.ok("Reloaded rules and guides");
+            messages.ok("Reloaded rules, guides, and notes");
         }
     }
 
@@ -925,6 +925,21 @@ public final class PaintScreen implements WorkbenchScreen {
         ruleRevision = -1;
         refreshBrokenGuideWarnings();
         showRulesLoadState(result);
+        rules.show(result, readFontNotes(directory));
+    }
+
+    // Notes belong to the font, not to a size; a missing or unreadable file means no notes.
+    private String readFontNotes(FileHandle directory) {
+        FileHandle notesFile = directory.child("notes.md");
+        if (!notesFile.exists()) {
+            return null;
+        }
+        try {
+            return notesFile.readString("UTF-8");
+        } catch (GdxRuntimeException e) {
+            Gdx.app.error(TAG, "Cannot read " + notesFile.path() + ": " + e.getMessage());
+            return null;
+        }
     }
 
     private void showRulesLoadState(RulesLoadResult result) {
@@ -1297,6 +1312,7 @@ public final class PaintScreen implements WorkbenchScreen {
         ruleRevision = editor.revision();
         PixelGlyph glyph = editor.isDerived(codePoint) ? null : editor.glyph(codePoint);
         ruleWarnings = RuleChecker.check(rulesFile, codePoint, glyph);
+        rules.showBrokenRules(ruleWarnings);
         clearShownRuleWarnings();
         for (RuleWarning warning : ruleWarnings) {
             String messageKey = RULE_KEY_PREFIX + warning.key();

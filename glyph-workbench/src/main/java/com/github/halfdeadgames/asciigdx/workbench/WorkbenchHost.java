@@ -5,14 +5,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.paint.PaintScreen;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,16 +66,6 @@ public final class WorkbenchHost extends ApplicationAdapter {
         return root == null ? List.of() : FontDiscovery.discover(Path.of(root));
     }
 
-    // First paragraph of the font's rules.md, or empty. Cached per folder by the caller.
-    private String mottoOf(String folderName) {
-        Path file = Path.of(fontsRoot(), folderName, FontRules.FILE_NAME);
-        try {
-            return Files.exists(file) ? FontRules.parse(Files.readString(file, StandardCharsets.UTF_8)).motto() : "";
-        } catch (IOException | RuntimeException e) {
-            return "";
-        }
-    }
-
     private WorkbenchScreen fontListScreen(String notice) {
         List<FontChoice> all = fonts();
         Map<String, MenuScreen.Detail> cache = new HashMap<>();
@@ -89,14 +76,14 @@ public final class WorkbenchHost extends ApplicationAdapter {
                 for (MenuModel.Line line : MenuModel.fontActions(folder, all).lines()) {
                     actions.add(line.text().strip());
                 }
-                return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), mottoOf(folder), actions);
+                return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), actions);
             });
         MenuScreen.Text text = MenuScreen.Text.opening("FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice);
         return new MenuScreen(MenuModel.fontList(all), text, detail, this::chooseFont, Gdx.app::exit);
     }
 
     private static MenuScreen.Detail newFontDetail() {
-        return new MenuScreen.Detail("NEW FONT", "", List.of("MAKES A FONT FOLDER", "WITH ITS FIRST SIZE FILE"));
+        return new MenuScreen.Detail("NEW FONT", List.of("MAKES A FONT FOLDER", "WITH ITS FIRST SIZE FILE"));
     }
 
     private void chooseFont(MenuModel.Item item) {
@@ -132,8 +119,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
     // The cursor starts on the first item of selectKind, or on the first item when that is null or absent.
     private WorkbenchScreen fontMenuScreen(String folderName, String notice, MenuModel.Kind selectKind) {
         String name = folderName.toUpperCase(Locale.ROOT);
-        String motto = mottoOf(folderName);
-        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> new MenuScreen.Detail(name, motto, List.of());
+        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> new MenuScreen.Detail(name, List.of());
         MenuModel actions = MenuModel.fontActions(folderName, fonts());
         if (selectKind != null) {
             actions.select(actions.indexOfKind(selectKind));
@@ -172,7 +158,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
         String name = folderName.toUpperCase(Locale.ROOT);
         Runnable backToNewSize = () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE);
         Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
-            : new MenuScreen.Detail(name, "", List.of("CREATES " + item.size() + ".TXT"));
+            : new MenuScreen.Detail(name, List.of("CREATES " + item.size() + ".TXT"));
         MenuScreen.Text text = new MenuScreen.Text("NEW SIZE", List.of("GLYPH WORKBENCH", name, "NEW SIZE"),
             "CREATE", "BACK", "");
         return new MenuScreen(MenuModel.newSizes(folderName, options), text, detail,

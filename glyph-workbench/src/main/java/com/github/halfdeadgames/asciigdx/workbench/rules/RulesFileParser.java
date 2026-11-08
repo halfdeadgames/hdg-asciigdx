@@ -89,6 +89,10 @@ final class RulesFileParser {
 
     private static GlyphSet readGlyphTokens(JsonValue tokenArray, String label) {
         List<String> tokens = readStrings(tokenArray, label, "every glyph token must be a quoted string");
+        return parseGlyphTokens(tokens, label);
+    }
+
+    private static GlyphSet parseGlyphTokens(List<String> tokens, String label) {
         try {
             return GlyphSet.parse(tokens);
         } catch (IllegalArgumentException badToken) {
@@ -135,8 +139,9 @@ final class RulesFileParser {
         }
         RuleCheck check = readCheck(rule, label);
         CheckSettings settings = settingsParser.read(rule, check, label);
-        GlyphSet appliesTo = readAppliesTo(rule, label);
-        return new GlyphRule(name, check, settings, appliesTo, readExceptions(rule, label));
+        List<String> appliesToNames = readAppliesToNames(rule, label);
+        GlyphSet appliesTo = resolveGroups(appliesToNames, label + ": \"appliesTo\"");
+        return new GlyphRule(name, check, settings, appliesTo, appliesToNames, readExceptions(rule, label));
     }
 
     private static String ruleLabel(JsonValue rule, int number) {
@@ -169,7 +174,7 @@ final class RulesFileParser {
         return String.join(", ", names);
     }
 
-    private GlyphSet readAppliesTo(JsonValue rule, String label) {
+    private static List<String> readAppliesToNames(JsonValue rule, String label) {
         JsonValue appliesTo = rule.get("appliesTo");
         if (appliesTo == null) {
             throw new RulesFileException(label + ": missing \"appliesTo\"");
@@ -180,12 +185,12 @@ final class RulesFileParser {
         if (appliesTo.child == null) {
             throw new RulesFileException(label + ": appliesTo is empty, so the rule would never check anything");
         }
-        return resolveGroups(appliesTo, label + ": \"appliesTo\"");
+        return readStrings(appliesTo, label + ": \"appliesTo\"", "every entry must be a group name");
     }
 
-    private GlyphSet resolveGroups(JsonValue groupNames, String label) {
+    private GlyphSet resolveGroups(List<String> groupNames, String label) {
         var sets = new ArrayList<GlyphSet>();
-        for (String groupName : readStrings(groupNames, label, "every entry must be a group name")) {
+        for (String groupName : groupNames) {
             sets.add(resolveGroup(groupName, label));
         }
         return GlyphSet.union(sets);
@@ -225,23 +230,31 @@ final class RulesFileParser {
             throw new RulesFileException(label + " must be an object with \"group\" or \"glyphs\", and \"why\"");
         }
         checkKnownKeys(entry, EXCEPTION_KEYS, label);
-        GlyphSet glyphs = readExceptionGlyphs(entry, label);
-        return new RuleException(glyphs, readWhy(entry, label));
-    }
-
-    private GlyphSet readExceptionGlyphs(JsonValue entry, String label) {
         JsonValue group = entry.get("group");
         JsonValue glyphs = entry.get("glyphs");
         if ((group == null) == (glyphs == null)) {
             throw new RulesFileException(label + " needs exactly one of \"group\" or \"glyphs\"");
         }
         if (group != null) {
-            return resolveGroup(requireString(entry, "group", label), label + ": \"group\"");
+            return readGroupException(entry, label);
         }
+        return readGlyphsException(entry, label);
+    }
+
+    private RuleException readGroupException(JsonValue entry, String label) {
+        String groupName = requireString(entry, "group", label);
+        GlyphSet glyphs = resolveGroup(groupName, label + ": \"group\"");
+        return new RuleException(glyphs, groupName, readWhy(entry, label));
+    }
+
+    private static RuleException readGlyphsException(JsonValue entry, String label) {
+        JsonValue glyphs = entry.get("glyphs");
         if (!glyphs.isArray()) {
             throw new RulesFileException(label + ": \"glyphs\" must be an array of glyph tokens");
         }
-        return readGlyphTokens(glyphs, label);
+        List<String> tokens = readStrings(glyphs, label, "every glyph token must be a quoted string");
+        return new RuleException(parseGlyphTokens(tokens, label), String.join(", ", tokens),
+                readWhy(entry, label));
     }
 
     private static String readWhy(JsonValue entry, String label) {

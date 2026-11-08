@@ -312,6 +312,28 @@ class RulesFileTest {
     }
 
     @Test
+    void appliesToNamesKeepFileOrderAndAll() {
+        var rule = onlyRule("{ groups: { a: [\"A\"], b: [\"b\"] }, rules: "
+                + "[ { name: r, check: centeredX, appliesTo: [ b, all, a ] } ] }");
+        assertEquals(java.util.List.of("b", "all", "a"), rule.appliesToNames());
+    }
+
+    @Test
+    void exceptionByGroupKeepsGroupNameAsSource() {
+        var rule = onlyRule("{ groups: { odd: [\"Q\"] }, rules: [ { name: r, check: centeredX, "
+                + "appliesTo: [ all ], except: [ { group: odd, why: \"tail\" } ] } ] }");
+        assertEquals("odd", rule.exceptions().get(0).source());
+    }
+
+    @Test
+    void exceptionByGlyphsKeepsTokensAsWritten() {
+        var rule = onlyRule("{ rules: [ { name: r, check: centeredX, appliesTo: [ all ], except: ["
+                + "{ glyphs: [ \"U+00B7\" ], why: \"narrow\" }, { glyphs: [ \"g\", \"j\" ], why: \"tails\" } ] } ] }");
+        assertEquals("U+00B7", rule.exceptions().get(0).source());
+        assertEquals("g, j", rule.exceptions().get(1).source());
+    }
+
+    @Test
     void syntaxErrorIsRewrapped() {
         assertTrue(errorOf("{ rules: [ { name: \"x\" ").contains("not valid JSON"));
     }

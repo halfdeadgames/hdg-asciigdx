@@ -2,7 +2,7 @@
 
 The workbench checks each glyph against rules that the font declares in its own files. No rule lives in the app code.
 
-Status: work in progress. The workbench reads the whole file, including the check settings (`rows`, `columns`, `size`). It does not yet run any checks or use the file in the app. The rest of this page describes the format the workbench is moving to.
+Status: work in progress. The workbench checks the selected glyph against the rules file as you draw and lists the rules in the rules panel (F1). FILE > RELOAD FONT FILES (F5) reads the rules, guides, and notes again after you edit them outside the workbench.
 
 ## Files
 
@@ -13,20 +13,31 @@ Each font folder holds:
 | `<size>.txt` | The glyphs, for example `16.txt`. |
 | `<size>.guides.txt` | Guide lines shown on the paint grid. |
 | `<size>.rules.json` | Rules for this size, checked as you draw. |
-| `notes.txt` | Design notes for every size of the font. Never checked. |
+| `notes.md` | Design notes for every size of the font. Never checked. |
 
 Rules are per size because row and column numbers differ between sizes. Notes are per font because style applies to every size.
 
-## notes.txt
+## The rules panel
 
-Plain text, one note per line. The workbench shows the notes in the rules panel (F1) and never checks them. They are reminders for the designer.
+F1 opens the rules panel for the selected glyph. It lists, in order:
 
-The first line describes the font in a few words. The start screen shows it under the font's name.
+1. Rules that check this glyph. A rule the glyph breaks right now is shown in red.
+2. Rules that skip this glyph through an exception, with the reason.
+3. All other rules.
+4. The notes.
 
-```
-Terminal feel with nostalgia, max readability, vaguely boxy with a little roundness.
-Straight letters stay sharp; round shapes get soft corners.
-Judge glyphs at 1x, in words, code, and maps.
+## notes.md
+
+Markdown, shown whole at the bottom of the rules panel. The workbench never checks it. The notes are reminders for the designer.
+
+The panel understands a small part of Markdown: a line starting with `#` is a heading, a line starting with `- ` or `* ` is a bullet, and a blank line separates paragraphs. Everything else, such as bold text or links, shows exactly as typed.
+
+```markdown
+# Style
+Terminal feel, easy to read, boxy with a little roundness.
+
+- Straight letters stay sharp; round shapes get soft corners.
+- Judge glyphs at 1x, in words, code, and maps.
 ```
 
 ## The rules file

@@ -14,7 +14,6 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 final class MenuScreen implements WorkbenchScreen {
 
     /** The right panel: its title, a short description in dim text, and extra lines such as the actions. */
-    record Detail(String title, String motto, List<String> lines) {
+    record Detail(String title, List<String> lines) {
     }
 
     /** The words on screen: panel title, breadcrumb, one-word Enter and Esc labels, and a notice (empty for none). */
@@ -226,16 +225,6 @@ final class MenuScreen implements WorkbenchScreen {
         Panel.draw(painter, new CellRect(DETAIL_X, PANEL_TOP, width, height), detail.title(), false);
         int y = LIST_TOP;
         int bottom = PANEL_TOP + height - 1;
-        if (!detail.motto().isEmpty()) {
-            for (String line : ScrollText.wrap(detail.motto(), width - 4)) {
-                if (y >= bottom) {
-                    break;
-                }
-                painter.text(line, (DETAIL_X + 2) * CELL, y * CELL, UiPalette.DIM);
-                y++;
-            }
-            y++;
-        }
         for (String line : detail.lines()) {
             if (y >= bottom) {
                 break;
