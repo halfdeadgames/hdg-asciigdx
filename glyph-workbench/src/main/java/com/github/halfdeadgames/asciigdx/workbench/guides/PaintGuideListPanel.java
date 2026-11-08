@@ -23,9 +23,13 @@ public final class PaintGuideListPanel {
         new StatusBar.Key("ENTER", "SAVE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> RENAME_KEYS = List.of(
         new StatusBar.Key("ENTER", "OK"), new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<StatusBar.Key> PICK_KIND_KEYS = List.of(
+        new StatusBar.Key("1-4", "PICK"), new StatusBar.Key("ESC", "CANCEL"));
+    private static final List<StatusBar.Key> NEW_GUIDE_NAME_KEYS = List.of(
+        new StatusBar.Key("ENTER", "ADD GUIDE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<String[]> EDIT_LEGEND = List.of(
         new String[] {"ARROWS", "PICK"}, new String[] {"[ ]", "MOVE"},
-        new String[] {"A C B", "ADD"}, new String[] {"DEL", "REMOVE"},
+        new String[] {"A", "ADD"}, new String[] {"DEL", "REMOVE"},
         new String[] {"1-4", "GROUPS"}, new String[] {"L", "RENAME"});
     private static final int LEGEND_ACTION_COLUMN = 8;
     private static final int LEGEND_MIN_LIST_ROWS = 8;
@@ -44,6 +48,7 @@ public final class PaintGuideListPanel {
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
 
     private GuideListModel guideList;
+    private GuideAddFlow addFlow;
     private boolean open;
     private float seconds;
     private String title = "GUIDES";
@@ -98,11 +103,28 @@ public final class PaintGuideListPanel {
     }
 
     public PaintGuides.Listed highlightedGuide() {
-        return open ? guideList.selectedGuide() : null;
+        return open ? guideList.selectedGuideForDisplay() : null;
+    }
+
+    public boolean isPicking() {
+        return open && addFlow.isPicking();
     }
 
     public List<StatusBar.Key> statusKeys() {
+        if (addFlow.isPicking()) {
+            return PICK_KIND_KEYS;
+        }
+        if (addFlow.isNaming()) {
+            return NEW_GUIDE_NAME_KEYS;
+        }
         return guideList.isRenaming() ? RENAME_KEYS : LIST_KEYS;
+    }
+
+    /** Draws the guide kind picker over the screen while it is open. */
+    public void drawPicker(int columns, int rows, CellRect area) {
+        if (isPicking()) {
+            GuideKindPicker.draw(painter, columns, rows, area);
+        }
     }
 
     public void open() {
@@ -123,15 +145,26 @@ public final class PaintGuideListPanel {
 
     // Reads the typed character only while a label is being renamed; the caller decides whether the input is free.
     public void typeChar(char character) {
-        boolean startingKey = character == 'l' || character == 'L';
+        boolean startingKey = character == 'l' || character == 'L' || (character >= '1' && character <= '4');
         if (renameKeySwallowFrames > 0 && startingKey) {
             return;
         }
         guideList.typeChar(character);
+        showTypedLabel();
+    }
+
+    private void showTypedLabel() {
+        if (guideList.isRenaming()) {
+            host.showGuides(guideList.guidesForDisplay());
+        }
     }
 
     // Esc and F2 cancel the edits here, so Esc never reaches the unsaved-changes prompt.
     public void handle(float delta, int wheelTicks) {
+        if (addFlow.isPicking()) {
+            handlePicker();
+            return;
+        }
         if (guideList.isRenaming()) {
             handleRename(delta);
             return;
@@ -166,13 +199,10 @@ public final class PaintGuideListPanel {
     public void draw(CellRect area, int cell) {
         Panel.draw(painter, area, title, true);
         seconds += Gdx.graphics.getDeltaTime();
-        int visible = area.height() - 2;
+        int visible = visibleRows(area);
         int chars = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
-        if (visible - EDIT_LEGEND.size() >= LEGEND_MIN_LIST_ROWS) {
-            visible -= EDIT_LEGEND.size();
-            if (!guideList.isRenaming()) {
-                drawLegend(area, visible, cell);
-            }
+        if (legendShown(area) && !guideList.isRenaming()) {
+            drawLegend(area, visible, cell);
         }
         int first = guideList.firstVisible(visible);
         int shown = Math.min(visible, guideList.size() - first);
@@ -191,6 +221,34 @@ public final class PaintGuideListPanel {
         }
     }
 
+    /** Selects the guide whose row is at the clicked cell, like arrowing there; other clicks change nothing. */
+    public void click(CellRect area, CellRect pickerArea, int cellX, int cellY) {
+        if (!open) {
+            return;
+        }
+        if (addFlow.isPicking()) {
+            pickKind(GuideKindPicker.kindAt(pickerArea, cellX, cellY));
+            return;
+        }
+        if (guideList.isRenaming()) {
+            return;
+        }
+        int visible = visibleRows(area);
+        int index = GuideListRows.indexAt(area, visible, guideList.firstVisible(visible), guideList.size(), cellX, cellY);
+        if (index == GuideListRows.NONE) {
+            return;
+        }
+        moveSelection(index - guideList.selectedIndex());
+    }
+
+    private boolean legendShown(CellRect area) {
+        return GuideListRows.visibleRows(area, EDIT_LEGEND.size()) >= LEGEND_MIN_LIST_ROWS;
+    }
+
+    private int visibleRows(CellRect area) {
+        return GuideListRows.visibleRows(area, legendShown(area) ? EDIT_LEGEND.size() : 0);
+    }
+
     private void drawLegend(CellRect area, int rowsAbove, int cell) {
         int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
         for (int i = 0; i < EDIT_LEGEND.size(); i++) {
@@ -202,7 +260,39 @@ public final class PaintGuideListPanel {
     }
 
     private GuideListModel newModel() {
-        return new GuideListModel(host.currentGuides(),editor.cellWidth(), editor.cellHeight());
+        GuideListModel model = new GuideListModel(host.currentGuides(), editor.cellWidth(), editor.cellHeight());
+        addFlow = new GuideAddFlow(model);
+        return model;
+    }
+
+    private void handlePicker() {
+        host.clearWheelTicks();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            addFlow.cancel();
+            return;
+        }
+        pickKind(GuideKindPicker.kindForNumber(pressedNumber()));
+    }
+
+    // 1-based number of the digit key (top row or numpad) just pressed, or 0.
+    private static int pressedNumber() {
+        int group = pressedGroupKey();
+        return group + 1;
+    }
+
+    private void pickKind(GuideAddFlow.Kind kind) {
+        if (kind == null) {
+            return;
+        }
+        if (!kind.isEnabled()) {
+            messages.warn("Dotted down guides are not ready yet");
+            return;
+        }
+        addFlow.pick(kind);
+        messages.nextAction();
+        renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;
+        host.showGuides(guideList.guidesForDisplay());
+        refreshTitle();
     }
 
     private void refreshTitle() {
@@ -267,11 +357,9 @@ public final class PaintGuideListPanel {
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
             guideList.adjust(1);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-            guideList.addRow();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
-            guideList.addColumn();
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.B)) {
-            guideList.addBar();
+            addFlow.start();
+            messages.nextAction();
+            edited = false;
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL)) {
             guideList.deleteSelected();
         } else if (pressedGroupKey() >= 0) {
@@ -314,7 +402,7 @@ public final class PaintGuideListPanel {
         host.clearWheelTicks();
         renameKeySwallowFrames = Math.max(0, renameKeySwallowFrames - 1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            guideList.cancelRename();
+            cancelNaming();
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
@@ -325,6 +413,19 @@ public final class PaintGuideListPanel {
         for (int i = 0; i < backspaces; i++) {
             guideList.backspace();
         }
+        if (backspaces > 0) {
+            showTypedLabel();
+        }
+    }
+
+    private void cancelNaming() {
+        boolean wasAdding = addFlow.isNaming();
+        addFlow.cancel();
+        if (!wasAdding) {
+            guideList.cancelRename();
+        }
+        host.showGuides(guideList.guides());
+        refreshTitle();
     }
 
     private void acceptRename() {
@@ -332,7 +433,11 @@ public final class PaintGuideListPanel {
             messages.warn("A label needs at least one character");
             return;
         }
-        guideList.acceptRename();
+        if (addFlow.isNaming()) {
+            addFlow.accept();
+        } else {
+            guideList.acceptRename();
+        }
         messages.nextAction();
         host.showGuides(guideList.guides());
         refreshTitle();

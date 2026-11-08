@@ -195,6 +195,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private PaintScrollRouting scrollRouting;
     private PaintPointer pointer;
     private PointerTargets pointerTargets;
+    private PointerTargets guideListPointerTargets;
 
     private final Runnable onExit;
     private final String fontDir;
@@ -295,6 +296,8 @@ public final class PaintScreen implements WorkbenchScreen {
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
         pointer = new PaintPointer(viewport, scrollRouting);
+        guideListPointerTargets = new PointerTargets(List.of(
+            new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cell)));
         pointerTargets = new PointerTargets(List.of(
             new PreviewPointerTarget(preview, () -> rects.preview(), this::cell),
             new SheetBarPointerTarget(sheet),
@@ -1111,6 +1114,9 @@ public final class PaintScreen implements WorkbenchScreen {
             return true;
         }
         if (guideListPanel.isOpen()) {
+            pointer.updatePosition();
+            guideListPointerTargets.dispatch(pointer.pixelX(), pointer.pixelY(), leftClicked(),
+                Gdx.input.isButtonPressed(Input.Buttons.LEFT));
             guideListPanel.handle(delta, wheelTicks.vertical());
             return true;
         }
@@ -1692,6 +1698,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (layers.redrawsDeriveHelp()) {
             helpPanel.redraw(helpState(), cell());
         }
+        guideListPanel.drawPicker(columns, rows, rects.grid());
     }
 
     private void drawTopLayers(int codePoint, int columns, int rows) {

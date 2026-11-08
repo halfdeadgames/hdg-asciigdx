@@ -17,6 +17,7 @@ final class GuideListModel {
 
     private static final int GROUP_ABBREVIATION = 3;
     private static final String RENAME_CURSOR = "_";
+    private static final String EMPTY_LABEL_PLACEHOLDER = "_";
 
     private final LabelField label = new LabelField();
 
@@ -27,6 +28,9 @@ final class GuideListModel {
     private List<Row> rows;
     private int selected;
     private int firstVisible;
+    private boolean adding;
+    private PaintGuides guidesBeforeAdd;
+    private int selectionBeforeAdd;
 
     GuideListModel(PaintGuides guides, int cellWidth, int cellHeight) {
         this.original = guides;
@@ -47,6 +51,22 @@ final class GuideListModel {
     /** The guides as edited so far. */
     PaintGuides guides() {
         return current;
+    }
+
+    /** The guides as the grid should show them: while a label is typed, the selected guide carries the typed text. */
+    PaintGuides guidesForDisplay() {
+        if (!label.isActive()) {
+            return current;
+        }
+        return current.withGuideRelabeled(selected, label.isEmpty() ? EMPTY_LABEL_PLACEHOLDER : label.value());
+    }
+
+    /** The selected guide with the typed text as its label while renaming; null when the list is empty. */
+    PaintGuides.Listed selectedGuideForDisplay() {
+        if (rows.isEmpty()) {
+            return null;
+        }
+        return guidesForDisplay().allGuides().get(selected);
     }
 
     /** The guides the list was opened with, untouched by any edit. */
@@ -190,6 +210,7 @@ final class GuideListModel {
         }
         current = current.withGuideRelabeled(selected, label.value());
         label.end();
+        adding = false;
         rows = buildRows();
     }
 
@@ -198,9 +219,25 @@ final class GuideListModel {
         return label.isActive() && !label.isEmpty();
     }
 
-    /** Ends the rename and keeps the old label. */
+    /** Ends the rename and keeps the old label; a guide that was being added is dropped and the old selection returns. */
     void cancelRename() {
         label.end();
+        if (!adding) {
+            return;
+        }
+        adding = false;
+        current = guidesBeforeAdd;
+        rows = buildRows();
+        select(selectionBeforeAdd);
+    }
+
+    /** Runs {@code add}, which must add one guide and select it, then asks for its label starting empty. */
+    void beginAdding(Runnable add) {
+        guidesBeforeAdd = current;
+        selectionBeforeAdd = selected;
+        add.run();
+        label.begin("");
+        adding = true;
     }
 
     int selectedIndex() {
