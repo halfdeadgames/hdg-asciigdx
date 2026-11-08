@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 import com.github.halfdeadgames.asciigdx.workbench.ui.LabelField;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * The rows of the guide list and which one is selected. Row i is guide i in file order, and rows are rebuilt after
@@ -15,7 +14,6 @@ final class GuideListModel {
     record Row(String text, PaintGuides.Listed guide) {
     }
 
-    private static final int GROUP_ABBREVIATION = 3;
     private static final String RENAME_CURSOR = "_";
     private static final String HIDDEN_CURSOR = " ";
     private static final String EMPTY_LABEL_PLACEHOLDER = "_";
@@ -135,7 +133,7 @@ final class GuideListModel {
         select(guideIndex);
     }
 
-    // Bars show first row plus row count, such as 6+1; groups are cut to three letters each.
+    // Bars show first row plus row count, such as 6+1.
     private static String guideText(PaintGuides.Listed guide) {
         return guideText(guide, guide.label());
     }
@@ -145,15 +143,6 @@ final class GuideListModel {
             .append(guide.position());
         if (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
             text.append('+').append(guide.rowCount());
-        }
-        text.append(' ');
-        String[] names = guide.groups().split(",");
-        for (int i = 0; i < names.length; i++) {
-            if (i > 0) {
-                text.append(',');
-            }
-            String name = names[i].toUpperCase(Locale.ROOT);
-            text.append(name.equals("ALL") ? name : name.substring(0, Math.min(GROUP_ABBREVIATION, name.length())));
         }
         return text.toString();
     }
@@ -181,25 +170,22 @@ final class GuideListModel {
         return row;
     }
 
-    /** What happened to a request to switch a group on or off. */
-    enum GroupToggle { TOGGLED, LAST_GROUP, NOT_A_GUIDE }
-
     /**
-     * Switches a rules group (0 uppercase, 1 lowercase, 2 digits, 3 punctuation) on or off for the selected guide.
-     * A guide keeps at least one group, so switching off the last one changes nothing. An empty list and renaming
-     * ignore it.
+     * Switches a group name on or off for the selected guide, storing its names in {@code definedGroups} order; an
+     * empty list and renaming ignore it.
      */
-    GroupToggle toggleGroup(int groupIndex) {
-        if (selectedGuide() == null || label.isActive() || groupIndex < 0 || groupIndex >= PaintGuides.groupCount()) {
-            return GroupToggle.NOT_A_GUIDE;
+    void toggleGroup(String groupName, List<String> definedGroups) {
+        if (selectedGuide() == null || label.isActive()) {
+            return;
         }
-        PaintGuides toggled = current.withGroupToggled(selected, groupIndex);
-        if (toggled == current) {
-            return GroupToggle.LAST_GROUP;
-        }
-        current = toggled;
+        current = current.withGroupToggled(selected, groupName, definedGroups);
         rows = buildRows();
-        return GroupToggle.TOGGLED;
+    }
+
+    /** Goes back to an earlier state of the edited guides, such as the one taken when the group list opened. */
+    void restoreGuides(PaintGuides snapshot) {
+        current = snapshot;
+        rows = buildRows();
     }
 
     /** Starts renaming the selected guide from its current label; does nothing when the list is empty. */
@@ -294,13 +280,7 @@ final class GuideListModel {
 
     /** Index of the first row to draw when {@code visibleRows} fit; scrolls only as far as keeping the selection in view. */
     int firstVisible(int visibleRows) {
-        int fit = Math.max(1, visibleRows);
-        if (selected < firstVisible) {
-            firstVisible = selected;
-        } else if (selected >= firstVisible + fit) {
-            firstVisible = selected - fit + 1;
-        }
-        firstVisible = Math.max(0, Math.min(firstVisible, Math.max(0, rows.size() - fit)));
+        firstVisible = GuideListRows.scrolledFirst(firstVisible, selected, rows.size(), visibleRows);
         return firstVisible;
     }
 }

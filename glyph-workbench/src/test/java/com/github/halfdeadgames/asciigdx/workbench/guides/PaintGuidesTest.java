@@ -8,6 +8,7 @@ import static com.github.halfdeadgames.asciigdx.workbench.guides.FourGroupRules.
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,6 +21,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PaintGuidesTest {
+
+    private static final List<String> DEFINED_GROUPS = List.of("uppercase", "lowercase", "digits", "punctuation");
 
     private static final String SAMPLE = """
         # Saiksistt-like
@@ -223,21 +226,41 @@ class PaintGuidesTest {
     }
 
     @Test
-    void togglingFromAllSpellsOutTheFourNames() {
+    void togglingFromAllReplacesAllWithThatName() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 all\n");
-        assertEquals("uppercase,digits,punctuation", guides.withGroupToggled(0, 1).allGuides().get(0).groups());
+        assertEquals("lowercase", guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0).groups());
     }
 
     @Test
-    void togglingTheFourthNameBackCollapsesToAll() {
-        PaintGuides guides = PaintGuides.parse("row CAP 1 uppercase,lowercase,digits\n");
-        assertEquals("all", guides.withGroupToggled(0, 3).allGuides().get(0).groups());
-    }
-
-    @Test
-    void togglingKeepsKeyOrder() {
+    void togglingOffTheLastNameGoesBackToAll() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 digits\n");
-        assertEquals("uppercase,digits", guides.withGroupToggled(0, 0).allGuides().get(0).groups());
+        assertEquals("all", guides.withGroupToggled(0, "digits", DEFINED_GROUPS).allGuides().get(0).groups());
+    }
+
+    @Test
+    void togglingPlacesANewNameInRulesFileOrder() {
+        PaintGuides guides = PaintGuides.parse("row CAP 1 digits\n");
+        assertEquals("uppercase,digits",
+            guides.withGroupToggled(0, "uppercase", DEFINED_GROUPS).allGuides().get(0).groups());
+    }
+
+    @Test
+    void togglingKeepsUnknownNamesAfterDefinedOnesInTheirOrder() {
+        PaintGuides guides = PaintGuides.parse("row CAP 1 zeta,alpha\n");
+        assertEquals("lowercase,zeta,alpha",
+            guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0).groups());
+    }
+
+    @Test
+    void anUntouchedOutOfOrderGuideRoundTripsUnchanged() {
+        String text = "row CAP 1 digits,uppercase\ncolumn B 2 zeta,lowercase\n";
+        assertEquals(text, PaintGuides.parse(text).toText());
+    }
+
+    @Test
+    void togglingAnIndexOutOfRangeChangesNothing() {
+        PaintGuides guides = PaintGuides.parse("row CAP 1 digits\n");
+        assertSame(guides, guides.withGroupToggled(1, "digits", DEFINED_GROUPS));
     }
 
     @Test

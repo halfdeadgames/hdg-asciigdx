@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /** What the group names of a guide mean for a glyph, given the groups a rules file defines. */
@@ -54,27 +56,60 @@ final class GuideGroups {
         return String.join(",", groups);
     }
 
-    /** The groups with {@code all} replaced by the four names the keys 1-4 toggle. */
-    static Set<String> spelledOut(Set<String> groups) {
-        if (groups.contains(ALL)) {
-            return new LinkedHashSet<>(PaintGuides.KEY_TOGGLE_GROUPS);
-        }
-        return groups;
-    }
-
-    /** The groups in key order followed by other names; exactly the four key names become {@code all}. */
-    static Set<String> collapsed(Set<String> groups) {
-        if (groups.size() == PaintGuides.KEY_TOGGLE_GROUPS.size()
-            && groups.containsAll(PaintGuides.KEY_TOGGLE_GROUPS)) {
-            return EVERY_GLYPH;
-        }
-        Set<String> ordered = new LinkedHashSet<>();
-        for (String group : PaintGuides.KEY_TOGGLE_GROUPS) {
-            if (groups.contains(group)) {
-                ordered.add(group);
+    /** The group names written in a groups text, in order; empty for {@code all}. */
+    static Set<String> namesIn(String groupsText) {
+        Set<String> names = new LinkedHashSet<>();
+        for (String name : groupsText.split(",")) {
+            if (!name.isBlank()) {
+                names.add(name);
             }
         }
-        ordered.addAll(groups);
+        if (names.isEmpty() || containsAll(names)) {
+            return new LinkedHashSet<>();
+        }
+        return names;
+    }
+
+    private static boolean containsAll(Set<String> names) {
+        for (String name : names) {
+            if (name.equalsIgnoreCase(ALL)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The groups after switching one name on or off. A guide for {@code all} gets just that name; switching off the
+     * last name goes back to {@code all}. The names are then stored in the rules file's group order, with names the
+     * file does not define after them in their existing order.
+     */
+    static Set<String> toggled(Set<String> groups, String name, List<String> definedGroups) {
+        if (groups.isEmpty() || groups.contains(ALL)) {
+            return new LinkedHashSet<>(Set.of(name));
+        }
+        Set<String> edited = new LinkedHashSet<>(groups);
+        if (!edited.remove(name)) {
+            edited.add(name);
+        }
+        return edited.isEmpty() ? EVERY_GLYPH : inRulesFileOrder(edited, definedGroups);
+    }
+
+    private static Set<String> inRulesFileOrder(Set<String> names, List<String> definedGroups) {
+        Set<String> ordered = new LinkedHashSet<>();
+        for (String defined : definedGroups) {
+            if (names.contains(defined)) {
+                ordered.add(defined);
+            }
+        }
+        ordered.addAll(names);
         return ordered;
+    }
+
+    /** The line the message area shows for a guide, such as {@code CAP: ALL GLYPHS} or {@code BAR: UPPERCASE, DIGITS}. */
+    static String summary(String label, String groupsText) {
+        Set<String> names = namesIn(groupsText);
+        String shown = names.isEmpty() ? "ALL GLYPHS" : String.join(", ", names).toUpperCase(Locale.ROOT);
+        return label + ": " + shown;
     }
 }

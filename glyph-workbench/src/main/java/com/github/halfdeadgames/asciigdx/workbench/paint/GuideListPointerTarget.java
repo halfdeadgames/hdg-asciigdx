@@ -5,7 +5,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
-/** Selects the guide under a press while the guide list is open. */
+/** Passes a press to the guide list panel while it is open, to select a guide or toggle a group. */
 final class GuideListPointerTarget implements PointerTarget {
 
     private final PaintGuideListPanel panel;

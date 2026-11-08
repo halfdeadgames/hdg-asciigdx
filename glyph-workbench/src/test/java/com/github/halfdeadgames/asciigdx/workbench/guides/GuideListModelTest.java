@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class GuideListModelTest {
 
+    private static final List<String> DEFINED = List.of("uppercase", "lowercase", "digits", "punctuation");
     private static final String FILE = """
         row CAP 1 all
         column C 7 uppercase,digits
@@ -33,9 +35,14 @@ class GuideListModelTest {
     void rowsAreTheGuidesInFileOrder() {
         GuideListModel model = model(FILE);
         assertEquals(3, model.size());
-        assertEquals("ROW CAP 1 ALL", model.row(0).text());
-        assertEquals("COLUMN C 7 UPP,DIG", model.row(1).text());
-        assertEquals("BAR MID 6+1 LOW", model.row(2).text());
+        assertEquals("ROW CAP 1", model.row(0).text());
+        assertEquals("COLUMN C 7", model.row(1).text());
+        assertEquals("BAR MID 6+1", model.row(2).text());
+    }
+
+    @Test
+    void aColumnBarRowShowsItsFirstColumnAndWidth() {
+        assertEquals("COLBAR STEM 7+2", model("colbar STEM 7 2 digits\n").row(0).text());
     }
 
     @Test
@@ -100,13 +107,13 @@ class GuideListModelTest {
         GuideListModel model = model(FILE);
         model.select(0);
         model.adjust(1);
-        assertEquals("ROW CAP 2 ALL", model.row(0).text());
+        assertEquals("ROW CAP 2", model.row(0).text());
         model.select(1);
         model.adjust(-1);
-        assertEquals("COLUMN C 6 UPP,DIG", model.row(1).text());
+        assertEquals("COLUMN C 6", model.row(1).text());
         model.select(2);
         model.adjust(-1);
-        assertEquals("BAR MID 5+1 LOW", model.row(2).text());
+        assertEquals("BAR MID 5+1", model.row(2).text());
         assertEquals(5, model.selectedGuide().position());
     }
 
@@ -142,14 +149,14 @@ class GuideListModelTest {
         model.addRow();
         assertEquals(4, model.size());
         assertEquals(1, model.selectedIndex());
-        assertEquals("ROW NEW 0 ALL", model.row(1).text());
+        assertEquals("ROW NEW 0", model.row(1).text());
         model.addColumn();
         assertEquals(3, model.selectedIndex());
-        assertEquals("COLUMN NEW 0 ALL", model.row(3).text());
+        assertEquals("COLUMN NEW 0", model.row(3).text());
         model.addBar();
         assertEquals(6, model.size());
         assertEquals(5, model.selectedIndex());
-        assertEquals("BAR NEW 0+1 ALL", model.row(5).text());
+        assertEquals("BAR NEW 0+1", model.row(5).text());
         assertEquals(PaintGuides.ListedKind.BAR, model.selectedGuide().kind());
     }
 
@@ -206,63 +213,87 @@ class GuideListModelTest {
     }
 
     @Test
-    void togglingAGroupOffAndOnChangesTheRowAndTheWrittenText() {
+    void togglingAGroupOffAndOnChangesTheWrittenText() {
         GuideListModel model = model(FILE);
         model.select(1);
-        assertEquals(GuideListModel.GroupToggle.TOGGLED, model.toggleGroup(0));
-        assertEquals("COLUMN C 7 DIG", model.row(1).text());
+        model.toggleGroup("uppercase", DEFINED);
         assertEquals("digits", model.selectedGuide().groups());
         assertTrue(model.guides().toText().contains("column C 7 digits\n"));
-        assertEquals(GuideListModel.GroupToggle.TOGGLED, model.toggleGroup(3));
-        assertEquals("COLUMN C 7 DIG,PUN", model.row(1).text());
-        assertEquals(GuideListModel.GroupToggle.TOGGLED, model.toggleGroup(0));
-        assertEquals("uppercase,digits,punctuation", model.selectedGuide().groups());
+        model.toggleGroup("punctuation", DEFINED);
+        assertEquals("digits,punctuation", model.selectedGuide().groups());
     }
 
     @Test
-    void theLastGroupCannotBeSwitchedOff() {
+    void togglingOnAnAllGuideReplacesAllWithThatName() {
+        GuideListModel model = model(FILE);
+        model.select(0);
+        model.toggleGroup("digits", DEFINED);
+        assertEquals("digits", model.selectedGuide().groups());
+        assertTrue(model.isChanged());
+    }
+
+    @Test
+    void uncheckingTheLastNameStoresAllAgain() {
         GuideListModel model = model(FILE);
         model.select(2);
-        assertEquals(GuideListModel.GroupToggle.LAST_GROUP, model.toggleGroup(1));
-        assertEquals("lowercase", model.selectedGuide().groups());
-        assertFalse(model.isChanged());
-        assertEquals(GuideListModel.GroupToggle.TOGGLED, model.toggleGroup(2));
-        assertEquals(GuideListModel.GroupToggle.TOGGLED, model.toggleGroup(1));
-        assertEquals("digits", model.selectedGuide().groups());
-        assertEquals(GuideListModel.GroupToggle.LAST_GROUP, model.toggleGroup(2));
-    }
-
-    @Test
-    void anAllGuideLosesOneGroupAndWritesTheOtherThree() {
-        GuideListModel model = model(FILE);
-        model.select(0);
-        model.toggleGroup(2);
-        assertEquals("uppercase,lowercase,punctuation", model.selectedGuide().groups());
-        model.toggleGroup(2);
+        model.toggleGroup("lowercase", DEFINED);
         assertEquals("all", model.selectedGuide().groups());
-        assertEquals("ROW CAP 1 ALL", model.row(0).text());
-        assertFalse(model.isChanged());
+        assertTrue(model.guides().toText().contains("bar MID 6 1 all\n"));
     }
 
     @Test
-    void allRoundTripsThroughToTextAndParse() {
+    void checkingEveryGroupStoresTheNamesNotAll() {
         GuideListModel model = model(FILE);
         model.select(0);
-        model.toggleGroup(0);
-        model.toggleGroup(0);
-        String text = model.guides().toText();
-        assertTrue(text.contains("row CAP 1 all\n"));
-        assertEquals(text, PaintGuides.parse(text).toText());
-        model.toggleGroup(3);
-        GuideListModel reread = model(model.guides().toText());
-        assertEquals("uppercase,lowercase,digits", reread.row(0).guide().groups());
-        assertEquals(model.row(0).text(), reread.row(0).text());
+        for (String group : DEFINED) {
+            model.toggleGroup(group, DEFINED);
+        }
+        assertEquals("uppercase,lowercase,digits,punctuation", model.selectedGuide().groups());
+    }
+
+    @Test
+    void clickingInAShuffledOrderStoresTheRulesFileOrder() {
+        GuideListModel model = model(FILE);
+        model.select(0);
+        model.toggleGroup("punctuation", DEFINED);
+        model.toggleGroup("lowercase", DEFINED);
+        model.toggleGroup("uppercase", DEFINED);
+        assertEquals("uppercase,lowercase,punctuation", model.selectedGuide().groups());
+    }
+
+    @Test
+    void anUnknownNameStaysAfterTheDefinedOnesInItsOwnOrder() {
+        GuideListModel model = model("row CAP 1 zeta,digits,alpha\n");
+        model.toggleGroup("uppercase", DEFINED);
+        assertEquals("uppercase,digits,zeta,alpha", model.selectedGuide().groups());
+    }
+
+    @Test
+    void anOutOfOrderGuideKeepsItsTextUntilItIsToggled() {
+        String text = "row CAP 1 digits,uppercase\n";
+        GuideListModel model = model(text);
+        assertEquals(text, model.guides().toText());
+        assertFalse(model.isChanged());
+        model.toggleGroup("lowercase", DEFINED);
+        assertEquals("uppercase,lowercase,digits", model.selectedGuide().groups());
+    }
+
+    @Test
+    void restoringTheGuidesTakenBeforeTheEditsBringsBackTheGroups() {
+        GuideListModel model = model(FILE);
+        model.select(1);
+        PaintGuides atOpen = model.guides();
+        model.toggleGroup("lowercase", DEFINED);
+        model.restoreGuides(atOpen);
+        assertEquals("uppercase,digits", model.selectedGuide().groups());
+        assertFalse(model.isChanged());
     }
 
     @Test
     void anEmptyListIgnoresGroupsAndRenaming() {
         GuideListModel model = model("");
-        assertEquals(GuideListModel.GroupToggle.NOT_A_GUIDE, model.toggleGroup(0));
+        model.toggleGroup("uppercase", DEFINED);
+        assertEquals(0, model.size());
         assertFalse(model.canRename());
         model.beginRename();
         assertFalse(model.isRenaming());
@@ -278,10 +309,10 @@ class GuideListModelTest {
         assertTrue(model.canRename());
         model.beginRename();
         assertEquals("C", model.renameText());
-        assertEquals("COLUMN C_ 7 UPP,DIG", model.row(1).text());
+        assertEquals("COLUMN C_ 7", model.row(1).text());
         type(model, "ab");
-        assertEquals("COLUMN CAB_ 7 UPP,DIG", model.row(1).text());
-        assertEquals("ROW CAP 1 ALL", model.row(0).text());
+        assertEquals("COLUMN CAB_ 7", model.row(1).text());
+        assertEquals("ROW CAP 1", model.row(0).text());
         assertEquals("C", model.selectedGuide().label());
     }
 
@@ -297,7 +328,7 @@ class GuideListModelTest {
         assertTrue(model.canAcceptRename());
         model.acceptRename();
         assertFalse(model.isRenaming());
-        assertEquals("BAR XLINE 6+1 LOW", model.row(2).text());
+        assertEquals("BAR XLINE 6+1", model.row(2).text());
         assertTrue(model.guides().toText().contains("bar XLINE 6 1 lowercase\n"));
         assertEquals(model.row(2).text(), model(model.guides().toText()).row(2).text());
     }
@@ -316,19 +347,20 @@ class GuideListModelTest {
         type(model, "q");
         assertTrue(model.canAcceptRename());
         model.acceptRename();
-        assertEquals("ROW Q 1 ALL", model.row(0).text());
+        assertEquals("ROW Q 1", model.row(0).text());
     }
 
     @Test
     void cancellingARenameKeepsTheOldLabelAndEarlierEdits() {
         GuideListModel model = model(FILE);
         model.select(1);
-        model.toggleGroup(1);
+        model.toggleGroup("lowercase", DEFINED);
         model.beginRename();
         type(model, "zzz");
         model.cancelRename();
         assertFalse(model.isRenaming());
-        assertEquals("COLUMN C 7 UPP,LOW,DIG", model.row(1).text());
+        assertEquals("COLUMN C 7", model.row(1).text());
+        assertEquals("uppercase,lowercase,digits", model.selectedGuide().groups());
         assertTrue(model.isChanged());
     }
 
@@ -337,7 +369,7 @@ class GuideListModelTest {
         GuideListModel model = model(FILE);
         model.select(1);
         model.beginRename();
-        assertEquals(GuideListModel.GroupToggle.NOT_A_GUIDE, model.toggleGroup(0));
+        model.toggleGroup("lowercase", DEFINED);
         assertFalse(model.canRename());
         assertEquals("uppercase,digits", model.selectedGuide().groups());
     }
@@ -357,7 +389,7 @@ class GuideListModelTest {
         GuideListModel model = model(FILE);
         String before = model.original().toText();
         model.select(0);
-        model.toggleGroup(1);
+        model.toggleGroup("lowercase", DEFINED);
         model.beginRename();
         type(model, "x");
         model.acceptRename();
@@ -382,6 +414,6 @@ class GuideListModelTest {
         for (int i = 0; i < model.size(); i++) {
             assertEquals(model.row(i).text(), reread.row(i).text());
         }
-        assertEquals("ROW CAP 3 ALL", reread.row(0).text());
+        assertEquals("ROW CAP 3", reread.row(0).text());
     }
 }

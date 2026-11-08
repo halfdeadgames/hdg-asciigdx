@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -74,9 +73,6 @@ public final class PaintGuides {
             return GuideGroups.showsOnGlyph(groups, codePoint, rules);
         }
     }
-
-    /** The group names the keys 1-4 toggle, in key order. */
-    static final List<String> KEY_TOGGLE_GROUPS = List.of("uppercase", "lowercase", "digits", "punctuation");
 
     public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), List.of());
 
@@ -245,29 +241,15 @@ public final class PaintGuides {
         return new PaintGuides(rows, columns, bars, edited);
     }
 
-    /** How many rules groups a guide can be set for. */
-    static int groupCount() {
-        return KEY_TOGGLE_GROUPS.size();
-    }
-
     /**
-     * A copy with one group switched on or off for the guide at {@code index} of {@link #allGuides()};
-     * {@code groupIndex} counts uppercase, lowercase, digits, punctuation from 0. A guide for {@code all} is first
-     * spelled out as the four names, and four names collapse back to {@code all}. Returns this same object when
-     * nothing changes: an index out of range, or switching off the last remaining group.
+     * A copy with one group name switched on or off for the guide at {@code index} of {@link #allGuides()}; see
+     * {@link GuideGroups#toggled}. An index out of range changes nothing.
      */
-    PaintGuides withGroupToggled(int index, int groupIndex) {
-        if (isOutOfRange(index) || groupIndex < 0 || groupIndex >= KEY_TOGGLE_GROUPS.size()) {
+    PaintGuides withGroupToggled(int index, String groupName, List<String> definedGroups) {
+        if (isOutOfRange(index)) {
             return this;
         }
-        Set<String> toggled = new LinkedHashSet<>(GuideGroups.spelledOut(groupsAt(index)));
-        String group = KEY_TOGGLE_GROUPS.get(groupIndex);
-        if (!toggled.remove(group)) {
-            toggled.add(group);
-        } else if (toggled.isEmpty()) {
-            return this;
-        }
-        return withGuideEdited(index, null, GuideGroups.collapsed(toggled));
+        return withGuideEdited(index, null, GuideGroups.toggled(groupsAt(index), groupName, definedGroups));
     }
 
     /** A copy with the label of the guide at {@code index} of {@link #allGuides()} replaced. */

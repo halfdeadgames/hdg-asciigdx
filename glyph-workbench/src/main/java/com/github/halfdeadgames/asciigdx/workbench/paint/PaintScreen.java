@@ -757,6 +757,11 @@ public final class PaintScreen implements WorkbenchScreen {
         public boolean pointerOverList() {
             return pointerOverGuideList();
         }
+
+        @Override
+        public RulesFile currentRules() {
+            return rulesFile;
+        }
     }
 
     private final class PaintDeriveHost implements PaintDerive.Host {
