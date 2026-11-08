@@ -30,6 +30,7 @@ public final class PaintGuideListPanel {
         new StatusBar.Key("ENTER", "ADD GUIDE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<String[]> EDIT_LEGEND = List.of(
         new String[] {"ARROWS", "PICK"}, new String[] {"[ ]", "MOVE"},
+        new String[] {"SH+[ ]", "SIZE"},
         new String[] {"A", "ADD"}, new String[] {"DEL", "REMOVE"},
         new String[] {"1-4", "GROUPS"}, new String[] {"L", "RENAME"});
     private static final int LEGEND_ACTION_COLUMN = 8;
@@ -368,10 +369,11 @@ public final class PaintGuideListPanel {
             return false;
         }
         boolean edited = true;
+        boolean shift = shiftDown();
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            guideList.adjust(-1);
+            edited = shift ? resizeSelected(-1) : moveSelected(-1);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            guideList.adjust(1);
+            edited = shift ? resizeSelected(1) : moveSelected(1);
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
             addFlow.start();
             messages.nextAction();
@@ -394,6 +396,26 @@ public final class PaintGuideListPanel {
             edited = false;
         }
         return edited;
+    }
+
+    private static boolean shiftDown() {
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+    }
+
+    private boolean moveSelected(int delta) {
+        guideList.adjust(delta);
+        return true;
+    }
+
+    // Returns whether the size changed; a solid guide shows a warning, and a size limit changes nothing silently.
+    private boolean resizeSelected(int delta) {
+        if (!guideList.canResizeSelected()) {
+            messages.warn("Only dotted guides have a size");
+            return false;
+        }
+        PaintGuides before = guideList.guides();
+        guideList.resizeSelected(delta);
+        return guideList.guides() != before;
     }
 
     // Index of the group whose key (top row or numpad) was just pressed, or -1.

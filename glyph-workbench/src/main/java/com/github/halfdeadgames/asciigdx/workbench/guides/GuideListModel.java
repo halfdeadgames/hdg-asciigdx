@@ -86,6 +86,19 @@ final class GuideListModel {
         rows = buildRows();
     }
 
+    /** Whether the selected guide is a dotted band, which is the only kind that has a size. */
+    boolean canResizeSelected() {
+        PaintGuides.Listed guide = selectedGuide();
+        return guide != null
+            && (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR);
+    }
+
+    /** Grows or shrinks the selected dotted band by {@code delta}; at a size limit or on a solid guide nothing changes. */
+    void resizeSelected(int delta) {
+        current = current.withGuideResized(selected, delta, cellWidth, cellHeight);
+        rows = buildRows();
+    }
+
     /** Removes the selected guide. */
     void deleteSelected() {
         current = current.withoutGuide(selected);

@@ -202,6 +202,49 @@ public final class PaintGuides {
         return new PaintGuides(editedRows, editedColumns, editedBars, editedColumnBars);
     }
 
+    /**
+     * A copy with the band of the bar or column bar at {@code index} of {@link #allGuides()} resized by
+     * {@code delta}, its first row or column kept. The size stays at least 1 and the band inside the cell. Returns
+     * this same object when nothing changes: a solid guide, an index out of range, or a size limit reached.
+     */
+    PaintGuides withGuideResized(int index, int delta, int cellWidth, int cellHeight) {
+        if (isOutOfRange(index)) {
+            return this;
+        }
+        int barStart = rows.size() + columns.size();
+        int columnBarStart = barStart + bars.size();
+        if (index >= columnBarStart) {
+            return withColumnBarResized(index - columnBarStart, delta, cellWidth);
+        }
+        if (index >= barStart) {
+            return withBarResized(index - barStart, delta, cellHeight);
+        }
+        return this;
+    }
+
+    private PaintGuides withBarResized(int at, int delta, int cellHeight) {
+        Scoped<BarGuide> bar = bars.get(at);
+        int resized = bar.guide().rowCount() + delta;
+        if (resized < 1 || bar.guide().firstRow() + resized > cellHeight) {
+            return this;
+        }
+        List<Scoped<BarGuide>> edited = new ArrayList<>(bars);
+        edited.set(at, new Scoped<>(new BarGuide(bar.guide().label(), bar.guide().firstRow(), resized), bar.groups()));
+        return new PaintGuides(rows, columns, edited, columnBars);
+    }
+
+    private PaintGuides withColumnBarResized(int at, int delta, int cellWidth) {
+        Scoped<ColumnBarGuide> columnBar = columnBars.get(at);
+        int resized = columnBar.guide().columnCount() + delta;
+        if (resized < 1 || columnBar.guide().firstColumn() + resized > cellWidth) {
+            return this;
+        }
+        List<Scoped<ColumnBarGuide>> edited = new ArrayList<>(columnBars);
+        edited.set(at, new Scoped<>(new ColumnBarGuide(columnBar.guide().label(), columnBar.guide().firstColumn(),
+            resized, columnBar.guide().tier()), columnBar.groups()));
+        return new PaintGuides(rows, columns, bars, edited);
+    }
+
     /** How many rules groups a guide can be set for. */
     static int groupCount() {
         return ALL_GROUPS.size();
