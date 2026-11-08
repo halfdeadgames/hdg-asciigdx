@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 class UpscaleCandidatePickTest {
 
     private static GlyphCandidates.Candidate candidate(String label) {
-        return new GlyphCandidates.Candidate(label, false, PixelGrid.blank(2, 2));
+        return new GlyphCandidates.Candidate(label, PixelGrid.blank(2, 2));
     }
 
     private static UpscaleCandidatePick threeCandidates() {

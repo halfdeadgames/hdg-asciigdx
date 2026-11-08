@@ -1,9 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
-import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.bodyGlyph;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.file;
-import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.fullGlyph;
+import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class FontDataParserTest {
 
-    private static final String P = bodyGlyph("U+0050 P", "#......", "##.....");
+    private static final String P = glyph("U+0050 P", "#.......", "##......");
 
     private static FontDataException parseError(String text) {
         return assertThrows(FontDataException.class, () -> FontDataParser.parse(text));
@@ -32,14 +32,27 @@ class FontDataParserTest {
     }
 
     @Test
-    void parsesPixelAndFullGlyphs() {
-        FontData data = FontDataParser.parse(file(P, fullGlyph("U+0051 Q full", "#.......")));
+    void parsesPixelGlyphsAsWholeCells() {
+        FontData data = FontDataParser.parse(file(P));
 
         assertEquals(8, data.cellWidth());
-        assertEquals(7, data.bodyWidth());
-        assertEquals(7, pixelGlyph(data, 'P').pixels().getWidth());
-        assertEquals(8, pixelGlyph(data, 'Q').pixels().getWidth());
-        assertTrue(pixelGlyph(data, 'Q').full());
+        assertEquals(8, pixelGlyph(data, 'P').pixels().getWidth());
+    }
+
+    @Test
+    void acceptsAndIgnoresTheLegacyFullKeyword() {
+        FontData withKeyword = FontDataParser.parse(file(glyph("U+0051 Q full", "#.......")));
+        FontData without = FontDataParser.parse(file(glyph("U+0051 Q", "#.......")));
+
+        assertEquals(without, withKeyword);
+    }
+
+    @Test
+    void writerNeverWritesTheFullKeyword() {
+        String written = FontDataWriter.write(FontDataParser.parse(file(glyph("U+0051 Q full", "#......."))));
+
+        assertFalse(written.contains("full"));
+        assertTrue(written.contains("U+0051 Q\n"));
     }
 
     @Test
@@ -53,10 +66,10 @@ class FontDataParserTest {
     void roundTripsThroughWriter() {
         String text = file(
             P,
-            fullGlyph("U+0051 Q full", "#......."),
-            bodyGlyph("U+0020 \\u{20}", ".#....."),
-            bodyGlyph("U+E000 \\u{E000}", "..#...."),
-            bodyGlyph("U+0391 Α", "...#..."),
+            glyph("U+0051 Q", "#......."),
+            glyph("U+0020 \\u{20}", ".#......"),
+            glyph("U+E000 \\u{E000}", "..#....."),
+            glyph("U+0391 Α", "...#...."),
             "U+0052 R = mirror U+0050",
             "U+0053 S = invert U+0050",
             "U+0054 T = rotate90 U+0051",
@@ -74,7 +87,7 @@ class FontDataParserTest {
     @Test
     void writerKeepsDerivedGlyphsAsRecipesInSheetOrder() {
         String written = FontDataWriter.write(FontDataParser.parse(file(
-            P, "U+0052 R = mirror U+0050", bodyGlyph("U+263A ☺", "#......"))));
+            P, "U+0052 R = mirror U+0050", glyph("U+263A ☺", "#......."))));
 
         assertTrue(written.contains("U+0052 R = mirror U+0050"));
         assertTrue(written.indexOf("U+263A") < written.indexOf("U+0050"), "CP437 slot 1 comes before 'P'");
@@ -88,14 +101,14 @@ class FontDataParserTest {
 
     @Test
     void reportsTooFewRows() {
-        String text = "cell 8x8\n\nU+0041 A\n.......\n.......\n\n" + P + "\n";
+        String text = "cell 8x8\n\nU+0041 A\n........\n........\n\n" + P + "\n";
 
         assertEquals(6, parseError(text).getLine());
     }
 
     @Test
     void reportsTooManyRows() {
-        String text = file(bodyGlyph("U+0041 A")) + ".......\n";
+        String text = file(glyph("U+0041 A")) + "........\n";
 
         FontDataException error = parseError(text);
 
@@ -108,18 +121,13 @@ class FontDataParserTest {
     }
 
     @Test
-    void reportsFullGlyphRowOfBodyWidth() {
-        assertEquals(4, parseError("cell 8x8\n\nU+0041 A full\n.......\n").getLine());
-    }
-
-    @Test
     void reportsBadPixelCharacter() {
-        assertEquals(4, parseError("cell 8x8\n\nU+0041 A\n......x\n").getLine());
+        assertEquals(4, parseError("cell 8x8\n\nU+0041 A\n.......x\n").getLine());
     }
 
     @Test
     void reportsDuplicateCodePoint() {
-        String text = file(bodyGlyph("U+0041 A"), bodyGlyph("U+0041 A"));
+        String text = file(glyph("U+0041 A"), glyph("U+0041 A"));
 
         assertEquals(13, parseError(text).getLine());
     }
@@ -154,7 +162,7 @@ class FontDataParserTest {
 
     @Test
     void reportsRotateOfNonSquareBodyInNonSquareCell() {
-        String tallCell = "cell 8x9\n\nU+0050 P\n" + String.join("\n", Collections.nCopies(9, ".......")) + "\n\n"
+        String tallCell = "cell 8x9\n\nU+0050 P\n" + String.join("\n", Collections.nCopies(9, "........")) + "\n\n"
             + "U+0051 Q = rotate90 U+0050\n";
 
         FontDataException error = parseError(tallCell);
@@ -164,30 +172,27 @@ class FontDataParserTest {
     }
 
     @Test
-    void rotatesBodyGlyphOfSquareCellAsFullGlyph() {
+    void rotatesQuarterTurnsOfSquareCell() {
         PixelGlyph rotated90 = resolvedGlyph(file(P, "U+0052 R = rotate90 U+0050"), 'R');
         PixelGlyph rotated270 = resolvedGlyph(file(P, "U+0052 R = rotate270 U+0050"), 'R');
 
-        assertTrue(rotated90.full());
         assertEquals(List.of("......##", "......#.", "........", "........", "........", "........", "........",
             "........"), rotated90.pixels().toRows());
-        assertTrue(rotated270.full());
         assertEquals(List.of("........", "........", "........", "........", "........", "........", ".#......",
             "##......"), rotated270.pixels().toRows());
     }
 
     @Test
-    void rotating90Then270RestoresTheExpandedOriginal() {
+    void rotating90Then270RestoresTheOriginal() {
         String text = file(P, "U+0052 R = rotate90 U+0050", "U+0053 S = rotate270 U+0052");
 
         PixelGlyph restored = resolvedGlyph(text, 'S');
 
-        assertTrue(restored.full());
-        assertEquals(pixelGlyph(FontDataParser.parse(text), 'P').toCell(8), restored.pixels());
+        assertEquals(pixelGlyph(FontDataParser.parse(text), 'P').pixels(), restored.pixels());
     }
 
     @Test
-    void invertsWholeCellIntoFullGlyph() {
+    void invertsWholeCell() {
         List<String> rows = resolvedRows(file(P, "U+0052 R = invert U+0050"), 'R');
 
         assertEquals(".#######", rows.get(0));
@@ -200,31 +205,31 @@ class FontDataParserTest {
     void mirrorsBody() {
         List<String> rows = resolvedRows(file(P, "U+0052 R = mirror U+0050"), 'R');
 
-        assertEquals("......#", rows.get(0));
-        assertEquals(".....##", rows.get(1));
+        assertEquals(".......#", rows.get(0));
+        assertEquals("......##", rows.get(1));
     }
 
     @Test
     void flipsBody() {
         List<String> rows = resolvedRows(file(P, "U+0052 R = flip U+0050"), 'R');
 
-        assertEquals(".......", rows.get(0));
-        assertEquals("##.....", rows.get(6));
-        assertEquals("#......", rows.get(7));
+        assertEquals("........", rows.get(0));
+        assertEquals("##......", rows.get(6));
+        assertEquals("#.......", rows.get(7));
     }
 
     @Test
     void rotatesBody180() {
         List<String> rows = resolvedRows(file(P, "U+0052 R = rotate180 U+0050"), 'R');
 
-        assertEquals(".....##", rows.get(6));
-        assertEquals("......#", rows.get(7));
-        assertEquals(".......", rows.get(0));
+        assertEquals("......##", rows.get(6));
+        assertEquals(".......#", rows.get(7));
+        assertEquals("........", rows.get(0));
     }
 
     @Test
-    void rotatesFullGlyphQuarterTurns() {
-        String source = fullGlyph("U+0051 Q full", "#.......");
+    void rotatesCornerPixelThroughQuarterTurns() {
+        String source = glyph("U+0051 Q", "#.......");
 
         assertEquals(".......#", resolvedRows(file(source, "U+0052 R = rotate90 U+0051"), 'R').get(0));
         assertEquals("#.......", resolvedRows(file(source, "U+0052 R = rotate270 U+0051"), 'R').get(7));
@@ -232,24 +237,16 @@ class FontDataParserTest {
     }
 
     @Test
-    void rotatesBodyWhenCellHeightEqualsBodyWidth() {
-        String text = "cell 8x7\n\nU+0041 A\n#......\n.......\n.......\n.......\n.......\n.......\n.......\n\n"
-            + "U+0042 B = rotate90 U+0041\n";
-
-        assertEquals("......#", resolvedRows(text, 'B').get(0));
-    }
-
-    @Test
     void overlaysShiftedCopies() {
-        String text = file(P, bodyGlyph("U+0051 Q", "..#...."), "U+0052 R = overlay U+0050 shift 0, U+0051 shift 1");
+        String text = file(P, glyph("U+0051 Q", "..#....."), "U+0052 R = overlay U+0050 shift 0, U+0051 shift 1");
 
-        assertEquals("#..#...", resolvedRows(text, 'R').get(0));
-        assertEquals("##.....", resolvedRows(text, 'R').get(1));
+        assertEquals("#..#....", resolvedRows(text, 'R').get(0));
+        assertEquals("##......", resolvedRows(text, 'R').get(1));
     }
 
     @Test
-    void reportsOverlayShiftedOutsideTheBody() {
-        String text = file(bodyGlyph("U+0050 P", "......#"), "U+0051 Q = overlay U+0050 shift 1");
+    void reportsOverlayShiftedOutsideTheCell() {
+        String text = file(glyph("U+0050 P", ".......#"), "U+0051 Q = overlay U+0050 shift 1");
 
         assertEquals(13, parseError(text).getLine());
     }

@@ -26,7 +26,6 @@ public final class FontDataParser {
     private final Map<Integer, Integer> linesByCodePoint = new HashMap<>();
     private int cellWidth;
     private int cellHeight;
-    private int bodyWidth;
     private int next;
 
     private FontDataParser(String text) {
@@ -69,10 +68,9 @@ public final class FontDataParser {
         } catch (NumberFormatException e) {
             throw error(next, "cell size is too large");
         }
-        if (cellWidth < 8 || cellHeight < 1) {
-            throw error(next, "cell must be at least 8 wide and 1 high");
+        if (cellWidth < 1 || cellHeight < 1) {
+            throw error(next, "cell must be at least 1 wide and 1 high");
         }
-        bodyWidth = cellWidth - cellWidth / 8;
         next++;
     }
 
@@ -103,13 +101,14 @@ public final class FontDataParser {
         }
         String rest = line.substring(characterEnd).strip();
         GlyphEntry entry;
+        // 'full' is a legacy keyword from files that had a letter gap; it is accepted and ignored.
         if (rest.isEmpty() || rest.equals("full")) {
-            entry = readPixelGlyph(codePoint, rest.equals("full"), headerIndex);
+            entry = readPixelGlyph(codePoint, headerIndex);
         } else if (rest.startsWith("=")) {
             entry = new DerivedGlyph(codePoint, parseOp(rest.substring(1).strip(), headerIndex));
             next++;
         } else {
-            throw error(headerIndex, "after the character expected 'full' or '= <operation>' but found: " + rest);
+            throw error(headerIndex, "after the character expected '= <operation>' but found: " + rest);
         }
         entries.put(codePoint, entry);
         linesByCodePoint.put(codePoint, headerIndex + 1);
@@ -155,8 +154,7 @@ public final class FontDataParser {
         return decoded.codePointAt(0);
     }
 
-    private GlyphEntry readPixelGlyph(int codePoint, boolean full, int headerIndex) {
-        int width = full ? cellWidth : bodyWidth;
+    private GlyphEntry readPixelGlyph(int codePoint, int headerIndex) {
         List<String> rows = new ArrayList<>();
         for (int row = 1; row <= cellHeight; row++) {
             int rowIndex = headerIndex + row;
@@ -164,20 +162,20 @@ public final class FontDataParser {
                 throw error(Math.min(rowIndex, lines.length - 1), label(codePoint) + " needs " + cellHeight
                     + " rows but has " + (row - 1));
             }
-            rows.add(checkedRow(lines[rowIndex], width, rowIndex));
+            rows.add(checkedRow(lines[rowIndex], cellWidth, rowIndex));
         }
         next = headerIndex + cellHeight + 1;
         if (next < lines.length && !lines[next].isBlank()) {
             throw error(next, label(codePoint) + " has more than " + cellHeight
                 + " rows (separate glyphs with a blank line)");
         }
-        return new PixelGlyph(codePoint, full, PixelGrid.ofRows(rows));
+        return new PixelGlyph(codePoint, PixelGrid.ofRows(rows));
     }
 
     private String checkedRow(String row, int width, int rowIndex) {
         if (row.length() != width) {
             throw error(rowIndex, "row is " + row.length() + " wide but must be " + width
-                + (width == bodyWidth ? " (cell width minus the letter gap)" : " (full cell width)"));
+                + " (the cell width)");
         }
         for (int column = 0; column < row.length(); column++) {
             char pixel = row.charAt(column);

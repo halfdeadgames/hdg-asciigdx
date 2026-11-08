@@ -11,7 +11,6 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
-import com.github.halfdeadgames.asciigdx.workbench.rules.GlyphRules;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
@@ -22,8 +21,7 @@ import java.util.TreeSet;
 
 /**
  * The editable state of one font: its glyphs, the sheet slots, and the unsaved flag. Derived
- * glyphs are shown but cannot be painted. Painting a gap column of a normal glyph turns it into a full
- * glyph; erasing the last gap ink of a full glyph turns it back into a normal one.
+ * glyphs are shown but cannot be painted. Every glyph covers the whole cell.
  */
 public final class FontEditor {
 
@@ -84,10 +82,6 @@ public final class FontEditor {
 
     public int cellHeight() {
         return cellHeight;
-    }
-
-    public int bodyWidth() {
-        return cellWidth - cellWidth / 8;
     }
 
     public int slotCount() {
@@ -176,12 +170,6 @@ public final class FontEditor {
         return withInk;
     }
 
-    /** Columns that hold drawn pixels: the whole cell for full glyphs, otherwise the body. */
-    int drawnWidth(int codePoint) {
-        PixelGlyph glyph = resolved.get(codePoint);
-        return glyph != null && glyph.full() ? cellWidth : bodyWidth();
-    }
-
     public boolean isLit(int codePoint, int x, int y) {
         PixelGlyph glyph = resolved.get(codePoint);
         return glyph != null && x >= 0 && y >= 0
@@ -207,31 +195,13 @@ public final class FontEditor {
             && x >= 0 && y >= 0 && x < cellWidth && y < cellHeight;
     }
 
-    /** Whether a full glyph has a lit pixel in the gap columns. */
-    boolean hasGapInk(int codePoint) {
-        return entries.get(codePoint) instanceof PixelGlyph glyph && glyph.full() && gapHasInk(glyph.pixels());
-    }
-
-    private boolean gapHasInk(PixelGrid grid) {
-        return GlyphRules.hasGapInk(grid, bodyWidth());
-    }
-
     /** Identifies the current state; it changes with every edit, undo, redo, and derive. */
     public int revision() {
         return revision;
     }
 
-    private PixelGrid croppedToBody(PixelGrid grid) {
-        java.util.List<String> bodyRows = new java.util.ArrayList<>();
-        for (String row : grid.toRows()) {
-            bodyRows.add(row.substring(0, bodyWidth()));
-        }
-        return PixelGrid.ofRows(bodyRows);
-    }
-
     /**
-     * Sets a pixel, creating the glyph first if the slot is empty. Lighting a gap column makes the glyph
-     * full; erasing the last gap ink of a full glyph makes it normal again.
+     * Sets a pixel, creating the glyph first if the slot is empty.
      * An edit that would break a derived glyph is undone and explained by {@link #problem()}.
      */
     public void setPixel(int codePoint, int x, int y, boolean on) {
@@ -263,19 +233,8 @@ public final class FontEditor {
     }
 
     private PixelGlyph glyphWithPixel(int codePoint, int x, int y, boolean on, PixelGlyph current) {
-        PixelGrid base = current == null ? PixelGrid.blank(bodyWidth(), cellHeight) : current.pixels();
-        boolean full = current != null && current.full();
-        boolean inGap = x >= bodyWidth();
-        if (inGap && !full) {
-            base = base.paddedRight(cellWidth);
-            full = true;
-        }
-        base = base.withPixel(x, y, on);
-        if (full && inGap && !on && !gapHasInk(base)) {
-            base = croppedToBody(base);
-            full = false;
-        }
-        return new PixelGlyph(codePoint, full, base);
+        PixelGrid base = current == null ? PixelGrid.blank(cellWidth, cellHeight) : current.pixels();
+        return new PixelGlyph(codePoint, base.withPixel(x, y, on));
     }
 
     /** What {@link #previewDerived} found: the glyph (null when refused) and the reason, empty when allowed. */
@@ -321,15 +280,15 @@ public final class FontEditor {
             return;
         }
         PixelGlyph current = resolved.get(codePoint);
-        changeAsOneStep(() -> entries.put(codePoint, new PixelGlyph(codePoint, current.full(), current.pixels())));
+        changeAsOneStep(() -> entries.put(codePoint, new PixelGlyph(codePoint, current.pixels())));
     }
 
     /**
-     * Replaces a slot's glyph with the given whole cell, as one undo step. A normal glyph keeps only the body
-     * columns of the cell. Refuses when the code point is not a slot, the cell is the wrong size, the glyph is
-     * derived, or a derived glyph would break; {@link #problem()} then says why and nothing else changes.
+     * Replaces a slot's glyph with the given whole cell, as one undo step. Refuses when the code point is not
+     * a slot, the cell is the wrong size, the glyph is derived, or a derived glyph would break;
+     * {@link #problem()} then says why and nothing else changes.
      */
-    public void replaceGlyph(int codePoint, boolean full, PixelGrid cell) {
+    public void replaceGlyph(int codePoint, PixelGrid cell) {
         if (!isSlotCodePoint(codePoint)) {
             problem = String.format("U+%04X is not a glyph slot", codePoint);
             return;
@@ -343,7 +302,7 @@ public final class FontEditor {
             problem = "derived glyph; unlock it first (U)";
             return;
         }
-        PixelGlyph replacement = new PixelGlyph(codePoint, full, full ? cell : croppedToBody(cell));
+        PixelGlyph replacement = new PixelGlyph(codePoint, cell);
         Resolution resolution = resolveWithEntry(codePoint, replacement);
         problem = resolution.problem();
         if (resolution.glyphs() == null) {

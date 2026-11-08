@@ -25,8 +25,8 @@ class PaintDerivePickTest {
     }
 
     private static final String FONT = "cell 8x8\n\n"
-        + "U+0041 A\n" + rows(".......") + "\n\n"
-        + "U+0100 \\u{100}\n" + rows(".......") + "\n";
+        + "U+0041 A\n" + rows("........") + "\n\n"
+        + "U+0100 \\u{100}\n" + rows("........") + "\n";
 
     private FontEditor editor;
     private DeriveFlow flow;
@@ -44,7 +44,7 @@ class PaintDerivePickTest {
             codePoints[slot] = editor.codePointAtSlot(slot);
         }
         targetSlot = slotOf(TARGET);
-        flow.openMenu(targetSlot);
+        flow.openMenu(targetSlot, true);
     }
 
     private int slotOf(int codePoint) {
@@ -57,7 +57,7 @@ class PaintDerivePickTest {
     }
 
     private void startPicking(GlyphOp.Kind kind) {
-        flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(kind));
+        flow.highlightMenuRow(flow.operations().indexOf(kind));
         flow.chooseOperation();
         pick.begin(codePoints, targetSlot);
     }

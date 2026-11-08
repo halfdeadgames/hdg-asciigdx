@@ -21,8 +21,8 @@ import org.junit.jupiter.api.io.TempDir;
 class UpscaleSourceSheetTest {
 
     private static final UpscaleSources.Font FONT = new UpscaleSources.Font("classic", 8, 8);
-    private static final String BLANK_ROW = ".......";
-    private static final String INK_ROW = "#######";
+    private static final String BLANK_ROW = "........";
+    private static final String INK_ROW = "########";
 
     private static String rows(String row) {
         return String.join("\n", Collections.nCopies(8, row));

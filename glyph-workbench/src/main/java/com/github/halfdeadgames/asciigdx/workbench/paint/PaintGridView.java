@@ -13,7 +13,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 import java.util.Objects;
 
-/** The big pixel grid of the selected glyph, with shaded gap columns (lit gap ink shows as lit) and labelled guide lines. */
+/** The big pixel grid of the selected glyph, with labelled guide lines. */
 final class PaintGridView {
 
     static final int LABEL_CELLS = 5;
@@ -27,7 +27,6 @@ final class PaintGridView {
     private static final Color UNLIT_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
     private static final Color LIT_FILL = Color.WHITE;
     private static final Color DERIVED_LIT_FILL = UiPalette.DERIVED;
-    private static final Color GAP_FILL = new Color(0.05f, 0.05f, 0.06f, 1f);
     private static final Color LINE_COLOR = new Color(0.22f, 0.24f, 0.3f, 1f);
     private static final Color GUIDE_COLOR = new Color(0.3f, 0.85f, 0.9f, 1f);
 
@@ -109,7 +108,7 @@ final class PaintGridView {
         return Math.floorDiv(pixelY - top, pixelSize);
     }
 
-    /** A pending overlay part drawn faded at its shifted position; pixels past the part's own width are outside the body. */
+    /** A pending overlay part drawn faded at its shifted position; pixels past the part's own width are outside the cell. */
     record Ghost(PixelGrid pixels, int shift) { }
 
     void draw(int codePoint) {
@@ -139,12 +138,11 @@ final class PaintGridView {
     }
 
     private void drawPixels(int codePoint, PixelGlyph previewGlyph) {
-        int bodyWidth = editor.bodyWidth();
         Color lit = previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
                 boolean on = previewGlyph == null ? editor.isLit(codePoint, x, y) : isLit(previewGlyph, x, y);
-                Color fill = on ? lit : x >= bodyWidth ? GAP_FILL : UNLIT_FILL;
+                Color fill = on ? lit : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
         }

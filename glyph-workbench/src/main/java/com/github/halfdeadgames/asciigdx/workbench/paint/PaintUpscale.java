@@ -300,7 +300,7 @@ final class PaintUpscale {
     private void confirm() {
         messages.nextAction();
         List<GlyphCandidates.Candidate> found = GlyphCandidates.forGlyph(pick.sheet().glyphAt(pick.cursor()),
-            chosen.factor(), host.targetEditor().cellWidth());
+            chosen.factor());
         if (found.isEmpty()) {
             messages.warn("No upscaled version of this glyph");
             return;

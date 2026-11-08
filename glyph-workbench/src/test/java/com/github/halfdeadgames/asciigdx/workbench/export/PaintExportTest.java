@@ -17,8 +17,8 @@ import org.junit.jupiter.api.io.TempDir;
 class PaintExportTest {
 
     private static final int FONT_SIZE = 8;
-    private static final String TINY_FONT = "cell 8x8\n\nU+0041 A\n#......\n##.....\n"
-        + ".......\n.......\n.......\n.......\n.......\n.......\n";
+    private static final String TINY_FONT = "cell 8x8\n\nU+0041 A\n#.......\n##......\n"
+        + "........\n........\n........\n........\n........\n........\n";
 
     @TempDir
     File workDirectory;

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class PaintStrokeTest {
 
-    private static final String BLANK_ROWS = String.join("\n", Collections.nCopies(8, "......."));
+    private static final String BLANK_ROWS = String.join("\n", Collections.nCopies(8, "........"));
 
     private static FontEditor editor() {
         return new FontEditor(FontDataParser.parse(
@@ -54,7 +54,7 @@ class PaintStrokeTest {
     }
 
     @Test
-    void dragFromTheBodyIntoTheGapIsOneUndoStepAndMakesTheGlyphFull() {
+    void dragToTheLastColumnIsOneUndoStep() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
         stroke.begin(0x41, 5, 0);
@@ -62,34 +62,10 @@ class PaintStrokeTest {
         stroke.end();
         assertTrue(editor.isLit(0x41, 6, 0));
         assertTrue(editor.isLit(0x41, 7, 0));
-        assertTrue(editor.glyph(0x41).full());
         assertEquals(8, editor.glyph(0x41).pixels().getWidth());
         editor.undo();
         assertFalse(editor.canUndo());
-        assertFalse(editor.glyph(0x41).full());
-        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
         assertFalse(editor.isLit(0x41, 5, 0));
-    }
-
-    @Test
-    void strokeStartingInTheGapWorksOnNormalGlyphs() {
-        FontEditor editor = editor();
-        PaintStroke stroke = new PaintStroke(editor);
-        stroke.begin(0x41, 7, 0);
-        assertTrue(stroke.isActive());
-        stroke.drag(7, 2);
-        stroke.end();
-        assertTrue(editor.isLit(0x41, 7, 2));
-        assertTrue(editor.glyph(0x41).full());
-    }
-
-    @Test
-    void eraseStrokeOverTheGapInkReturnsToANormalGlyph() {
-        FontEditor editor = editor();
-        paintStroke(editor, 0x41, 7, 7, 0);
-        paintStroke(editor, 0x41, 7, 7, 0);
-        assertFalse(editor.glyph(0x41).full());
-        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
     }
 
     @Test
@@ -236,10 +212,10 @@ class PaintStrokeTest {
     void derivedGlyphFollowsItsSourceThroughUndo() {
         FontEditor editor = editor();
         paintStroke(editor, 0x41, 1, 1, 2);
-        assertTrue(editor.isLit(0x43, 5, 2));
+        assertTrue(editor.isLit(0x43, 6, 2));
         editor.undo();
-        assertFalse(editor.isLit(0x43, 5, 2));
+        assertFalse(editor.isLit(0x43, 6, 2));
         editor.redo();
-        assertTrue(editor.isLit(0x43, 5, 2));
+        assertTrue(editor.isLit(0x43, 6, 2));
     }
 }

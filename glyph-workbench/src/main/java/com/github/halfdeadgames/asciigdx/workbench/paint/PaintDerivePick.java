@@ -44,7 +44,7 @@ final class PaintDerivePick {
     }
 
     void begin(int[] codePoints, int cursor) {
-        blank = new PixelGlyph(codePoints[cursor], false, PixelGrid.blank(editor.bodyWidth(), editor.cellHeight()));
+        blank = new PixelGlyph(codePoints[cursor], PixelGrid.blank(editor.cellWidth(),editor.cellHeight()));
         resetToNoSource(codePoints, cursor);
     }
 
@@ -96,9 +96,7 @@ final class PaintDerivePick {
 
     OverlayCheck.Result overlayCheck(int[] codePoints) {
         PixelGlyph pendingSource = editor.glyph(codePoints[flow.sourceSlot()]);
-        List<DeriveFlow.Part> committed = flow.parts();
-        PixelGlyph firstPart = committed.isEmpty() ? null : editor.glyph(codePoints[committed.get(0).slot()]);
-        return OverlayCheck.check(flow.sourceIsTarget(), pendingSource, firstPart, flow.pendingShift());
+        return OverlayCheck.check(flow.sourceIsTarget(), pendingSource, flow.pendingShift());
     }
 
     private void resetToNoSource(int[] codePoints, int cursor) {

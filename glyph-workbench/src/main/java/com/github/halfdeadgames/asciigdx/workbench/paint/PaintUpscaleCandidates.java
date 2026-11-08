@@ -157,7 +157,7 @@ final class PaintUpscaleCandidates {
     }
 
     private void refreshShown() {
-        shown = new PixelGlyph(host.targetCodePoint(), true, pick.selected().cell());
+        shown = new PixelGlyph(host.targetCodePoint(), pick.selected().cell());
     }
 
     private void apply() {
@@ -174,7 +174,7 @@ final class PaintUpscaleCandidates {
         confirmingReplace = false;
         FontEditor editor = host.targetEditor();
         GlyphCandidates.Candidate candidate = pick.selected();
-        editor.replaceGlyph(host.targetCodePoint(), candidate.full(), candidate.cell());
+        editor.replaceGlyph(host.targetCodePoint(), candidate.cell());
         if (!editor.problem().isEmpty()) {
             host.rememberProblem(editor.problem());
             messages.warn(editor.problem());

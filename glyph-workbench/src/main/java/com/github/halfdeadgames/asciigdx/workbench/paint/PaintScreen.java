@@ -81,7 +81,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final List<String> RULE_KEYS = List.of(
-        GlyphRules.KEY_GAP, GlyphRules.KEY_ACCENT_INK, GlyphRules.KEY_DESCENDER_INK);
+        GlyphRules.KEY_ACCENT_INK, GlyphRules.KEY_DESCENDER_INK);
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
     private static final String KEY_REVIEW = "review";
@@ -173,8 +173,6 @@ public final class PaintScreen implements WorkbenchScreen {
     private List<RuleWarning> ruleWarnings = List.of();
     private int ruleGlyph = -1;
     private int ruleRevision = -1;
-    private int gapWatchGlyph = -1;
-    private boolean gapWatchInk;
     private ReviewFile review = new ReviewFile();
     private PaintGuides guides = PaintGuides.NONE;
     private PaintGuidesFile guidesFile;
@@ -808,13 +806,13 @@ public final class PaintScreen implements WorkbenchScreen {
         if (request == null) {
             return;
         }
-        flow.openMenu(cursor);
+        flow.openMenu(cursor, editor.cellWidth() == editor.cellHeight());
         if ("menu".equals(request.trim())) {
             return;
         }
         DevCapture.OverlayRequest overlay = DevCapture.parseOverlayRequest(request);
         if (overlay != null) {
-            flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(GlyphOp.Kind.OVERLAY));
+            flow.highlightMenuRow(flow.operations().indexOf(GlyphOp.Kind.OVERLAY));
             derive.beginPick();
             int overlaySlot = slotOf(overlay.codePoint());
             if (overlaySlot >= 0 && !unselectable[overlaySlot]) {
@@ -1208,21 +1206,13 @@ public final class PaintScreen implements WorkbenchScreen {
         ruleGlyph = codePoint;
         ruleRevision = editor.revision();
         PixelGlyph glyph = editor.isDerived(codePoint) ? null : editor.glyph(codePoint);
-        ruleWarnings = GlyphRules.check(codePoint, glyph, editor.bodyWidth(),
-            guides.accentRows(), guides.descenderFirstRow());
-        boolean ink = false;
+        ruleWarnings = GlyphRules.check(codePoint, glyph, guides.accentRows(), guides.descenderFirstRow());
         for (String key : RULE_KEYS) {
             messages.clearCondition(key);
         }
         for (RuleWarning warning : ruleWarnings) {
             messages.setCondition(warning.key(), true, warning.message());
-            ink |= warning.key().equals(GlyphRules.KEY_GAP);
         }
-        if (gapWatchGlyph == codePoint && gapWatchInk && !ink) {
-            messages.ok(describeGlyph(codePoint).append(" gap column is empty: back to normal width").toString());
-        }
-        gapWatchGlyph = codePoint;
-        gapWatchInk = ink;
     }
 
     private void handlePreviewTabKey() {

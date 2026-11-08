@@ -207,7 +207,7 @@ public final class PaintPreview {
             if (glyph == null) {
                 return null;
             }
-            cell = glyph.toCell(editor.cellWidth());
+            cell = glyph.pixels();
             tickerCells.put(codePoint, cell);
         }
         return cell;
@@ -273,7 +273,7 @@ public final class PaintPreview {
         painter.text(label, left, top, UiPalette.DIM);
         painter.fill(BACKDROP, left, blockTop, cellWidth * blockSize, cellHeight * blockSize);
         if (glyph != null) {
-            PixelGrid cell = glyph.toCell(cellWidth);
+            PixelGrid cell = glyph.pixels();
             for (int row = 0; row < count; row++) {
                 for (int column = 0; column < count; column++) {
                     painter.pixels(cell, left + column * cellWidth * scale, blockTop + row * cellHeight * scale,
@@ -294,7 +294,7 @@ public final class PaintPreview {
             painter.text(SCALE_LABELS[i], blockLeft, top, UiPalette.DIM);
             painter.fill(BACKDROP, blockLeft, blockTop, cellWidth * scale, cellHeight * scale);
             if (glyph != null) {
-                painter.pixels(glyph.toCell(cellWidth), blockLeft, blockTop, scale, Color.WHITE);
+                painter.pixels(glyph.pixels(), blockLeft, blockTop, scale, Color.WHITE);
             }
             int labelWidth = SCALE_LABELS[i].length() * cell();
             blockLeft += Math.max(labelWidth, cellWidth * scale) + sectionGap();

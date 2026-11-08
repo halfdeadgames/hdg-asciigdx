@@ -142,19 +142,6 @@ public final class PixelGrid {
     }
 
     /**
-     * Returns the grid widened with unlit columns on the right.
-     *
-     * @param newWidth at least the current width
-     * @return the widened grid
-     */
-    public PixelGrid paddedRight(int newWidth) {
-        if (newWidth < width) {
-            throw new IllegalArgumentException("Cannot pad width " + width + " down to " + newWidth);
-        }
-        return remap(newWidth, height, (x, y) -> x < width && isLit(x, y));
-    }
-
-    /**
      * Returns this grid with another grid's pixels added, the other moved sideways first.
      *
      * @param other grid of the same size
@@ -176,7 +163,7 @@ public final class PixelGrid {
                 int target = x + shift;
                 if (target < 0 || target >= width) {
                     throw new IllegalArgumentException("Shift " + shift + " moves a pixel from column " + x
-                        + " outside the " + width + " column body");
+                        + " outside the " + width + " column cell");
                 }
                 combined.set(y * width + target);
             }

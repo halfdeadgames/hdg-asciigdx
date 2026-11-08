@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Upscales one glyph by a whole factor. Only the drawn part is scaled: a normal glyph's body grows
- * by the factor and its letter gap stays empty and grows with the cell; a full glyph scales the whole
- * cell. The smoothing methods exist for factor 2 only.
+ * Upscales one glyph by a whole factor. The whole cell is scaled. The smoothing methods exist for
+ * factor 2 only.
  */
 final class Upscaler {
 
@@ -50,11 +49,9 @@ final class Upscaler {
     }
 
     /**
-     * Returns the whole target cell: the scaled drawn part, plus the empty gap on the right for a normal glyph.
-     *
-     * @param targetCellWidth cell width after scaling; a normal glyph's body times the factor plus the gap must equal it
+     * Returns the whole target cell: the source cell scaled by the factor.
      */
-    static PixelGrid upscale(PixelGlyph glyph, int factor, Method method, int targetCellWidth) {
+    static PixelGrid upscale(PixelGlyph glyph, int factor, Method method) {
         if (factor < 1 || (factor != 2 && method != Method.NEAREST)) {
             throw new IllegalArgumentException(method + " needs factor 2, but the factor is " + factor);
         }
@@ -68,8 +65,7 @@ final class Upscaler {
             }
         }
         int[] scaled = scale(packed, width, height, factor, method, PixelScaler.isScale2xLocked(glyph.codePoint()));
-        PixelGrid scaledGrid = toGrid(scaled, width * factor, height * factor);
-        return new PixelGlyph(glyph.codePoint(), glyph.full(), scaledGrid).toCell(targetCellWidth);
+        return toGrid(scaled, width * factor, height * factor);
     }
 
     private static int[] scale(int[] packed, int width, int height, int factor, Method method, boolean locked) {

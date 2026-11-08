@@ -21,10 +21,11 @@ final class PaintDeriveMenu {
     private static final int MENU_WIDTH = 26;
     private static final List<Dialog.Button> MENU_BUTTONS = List.of(
         new Dialog.Button("ENTER", "SELECT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-    // Blank dialog lines reserve the room the select list is drawn into, two cells per operation.
-    private static final List<String> MENU_LINES = Collections.nCopies(
-        DeriveFlow.OPERATIONS.size() * SelectList.PITCH - 1, " ".repeat(MENU_WIDTH));
-    private static final List<SelectList.Row> MENU_ROWS = menuRows();
+    private static final Content SQUARE_CONTENT = contentOf(DeriveFlow.operationsFor(true));
+    private static final Content NON_SQUARE_CONTENT = contentOf(DeriveFlow.operationsFor(false));
+
+    /** The dialog lines and select rows for one operation list; the lines are the room the rows are drawn into. */
+    private record Content(List<String> lines, List<SelectList.Row> rows) { }
 
     private final DeriveFlow flow;
     private final MessageStrip messages;
@@ -59,7 +60,7 @@ final class PaintDeriveMenu {
         }
         Dialog.Layout layout = layout(grid);
         int column = pointerX / cell;
-        int row = SelectList.rowAt(pointerY / cell, layout.textY(), DeriveFlow.OPERATIONS.size());
+        int row = SelectList.rowAt(pointerY / cell, layout.textY(), flow.operations().size());
         if (row < 0 || column < layout.x() || column >= layout.x() + layout.width()) {
             return false;
         }
@@ -68,25 +69,31 @@ final class PaintDeriveMenu {
     }
 
     void draw(Painter painter, int columns, int rows, CellRect grid) {
+        Content content = content();
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
+            DialogContent.of(MENU_TITLE, content.lines(), MENU_BUTTONS),
             grid);
         Dialog.Layout menu = layout(grid);
         SelectList.draw(painter,
-            SelectList.areaOf(menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()), MENU_ROWS.size()),
-            MENU_ROWS, flow.menuIndex());
+            SelectList.areaOf(menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
+                content.rows().size()),
+            content.rows(), flow.menuIndex());
     }
 
-    private static Dialog.Layout layout(CellRect area) {
-        return Dialog.layout(DialogContent.of(MENU_TITLE, MENU_LINES, MENU_BUTTONS),
-            area);
+    private Content content() {
+        return flow.operations().equals(DeriveFlow.operationsFor(true)) ? SQUARE_CONTENT : NON_SQUARE_CONTENT;
     }
 
-    private static List<SelectList.Row> menuRows() {
+    private Dialog.Layout layout(CellRect area) {
+        return Dialog.layout(DialogContent.of(MENU_TITLE, content().lines(), MENU_BUTTONS), area);
+    }
+
+    private static Content contentOf(List<GlyphOp.Kind> operations) {
         List<SelectList.Row> rows = new ArrayList<>();
-        for (GlyphOp.Kind kind : DeriveFlow.OPERATIONS) {
+        for (GlyphOp.Kind kind : operations) {
             rows.add(new SelectList.Row(DeriveFlow.label(kind), true, false, 0));
         }
-        return List.copyOf(rows);
+        return new Content(Collections.nCopies(operations.size() * SelectList.PITCH - 1, " ".repeat(MENU_WIDTH)),
+            List.copyOf(rows));
     }
 }

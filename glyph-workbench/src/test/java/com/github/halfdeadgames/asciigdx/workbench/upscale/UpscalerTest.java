@@ -13,21 +13,13 @@ import org.junit.jupiter.api.Test;
 
 class UpscalerTest {
 
-    // A 7-wide body whose last column is lit in every row, so any leak into the gap would show.
-    private static PixelGlyph bodyGlyph() {
+    // An 8-wide glyph whose last column is lit in every row, so the right edge of the scaled cell is checked.
+    private static PixelGlyph edgeGlyph() {
         List<String> rows = new ArrayList<>();
         for (int y = 0; y < 8; y++) {
-            rows.add(y == 3 ? "#######" : "......#");
+            rows.add(y == 3 ? "########" : ".......#");
         }
-        return new PixelGlyph('A', false, PixelGrid.ofRows(rows));
-    }
-
-    private static PixelGlyph fullGlyph() {
-        List<String> rows = new ArrayList<>();
-        for (int y = 0; y < 8; y++) {
-            rows.add("#.......");
-        }
-        return new PixelGlyph(0x2588, true, PixelGrid.ofRows(rows));
+        return new PixelGlyph('A', PixelGrid.ofRows(rows));
     }
 
     private static boolean columnIsEmpty(PixelGrid cell, int column) {
@@ -40,42 +32,30 @@ class UpscalerTest {
     }
 
     @Test
-    void nearestDoublesTheBodyAndAddsAnEmptyGapOfTwo() {
-        PixelGrid cell = Upscaler.upscale(bodyGlyph(), 2, Upscaler.Method.NEAREST, 16);
+    void nearestDoublesTheWholeCell() {
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, Upscaler.Method.NEAREST);
         assertEquals(16, cell.getWidth());
         assertEquals(16, cell.getHeight());
-        assertTrue(cell.isLit(13, 0));
-        assertTrue(columnIsEmpty(cell, 14));
-        assertTrue(columnIsEmpty(cell, 15));
+        assertTrue(cell.isLit(15, 0));
+        assertFalse(columnIsEmpty(cell, 14));
+        assertFalse(columnIsEmpty(cell, 15));
     }
 
     @Test
-    void nearestTriplesTheBodyAndAddsAnEmptyGapOfThree() {
-        PixelGrid cell = Upscaler.upscale(bodyGlyph(), 3, Upscaler.Method.NEAREST, 24);
+    void nearestTriplesTheWholeCell() {
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 3, Upscaler.Method.NEAREST);
         assertEquals(24, cell.getWidth());
         assertEquals(24, cell.getHeight());
-        assertTrue(cell.isLit(20, 0));
-        for (int gap = 21; gap < 24; gap++) {
-            assertTrue(columnIsEmpty(cell, gap), "gap column " + gap);
-        }
+        assertTrue(cell.isLit(23, 0));
+        assertFalse(columnIsEmpty(cell, 21));
     }
 
     @Test
-    void fullGlyphsScaleTheWholeCell() {
-        PixelGrid cell = Upscaler.upscale(fullGlyph(), 2, Upscaler.Method.NEAREST, 16);
-        assertEquals(16, cell.getWidth());
-        assertTrue(cell.isLit(0, 0));
-        assertTrue(cell.isLit(1, 15));
-        assertFalse(cell.isLit(2, 0));
-    }
-
-    @Test
-    void everyFactorTwoMethodKeepsTheGapEmpty() {
+    void everyFactorTwoMethodFillsTheTargetCellSize() {
         for (Upscaler.Method method : Upscaler.methodsFor(2)) {
-            PixelGrid cell = Upscaler.upscale(bodyGlyph(), 2, method, 16);
+            PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, method);
             assertEquals(16, cell.getWidth(), method.label);
-            assertTrue(columnIsEmpty(cell, 14), method.label);
-            assertTrue(columnIsEmpty(cell, 15), method.label);
+            assertEquals(16, cell.getHeight(), method.label);
         }
     }
 
@@ -85,6 +65,6 @@ class UpscalerTest {
         assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(3));
         assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(4));
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(bodyGlyph(), 3, Upscaler.Method.MMPX, 24));
+            () -> Upscaler.upscale(edgeGlyph(), 3, Upscaler.Method.MMPX));
     }
 }

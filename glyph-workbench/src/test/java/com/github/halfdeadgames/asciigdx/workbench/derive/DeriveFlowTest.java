@@ -20,7 +20,7 @@ class DeriveFlowTest {
     @Test
     void menuWrapsBothWays() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(5);
+        flow.openMenu(5, true);
         flow.moveMenu(-1);
         assertEquals(DeriveFlow.OPERATIONS.size() - 1, flow.menuIndex());
         flow.moveMenu(1);
@@ -30,7 +30,7 @@ class DeriveFlowTest {
     @Test
     void choosingStartsPickingOnTheTarget() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(7);
+        flow.openMenu(7, true);
         flow.highlightMenuRow(5);
         flow.chooseOperation();
         assertTrue(flow.isPicking());
@@ -42,7 +42,7 @@ class DeriveFlowTest {
     @Test
     void highlightIgnoresOutOfRangeRows() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(0);
+        flow.openMenu(0, true);
         flow.highlightMenuRow(99);
         assertEquals(0, flow.menuIndex());
     }
@@ -50,7 +50,7 @@ class DeriveFlowTest {
     @Test
     void sourceMovesOnlyWhilePicking() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(3);
+        flow.openMenu(3, true);
         flow.moveSource(4);
         assertEquals(3, flow.sourceSlot());
         flow.chooseOperation();
@@ -64,7 +64,7 @@ class DeriveFlowTest {
     @Test
     void clickMovesFirstThenConfirmsOnTheSameSlot() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(3);
+        flow.openMenu(3, true);
         flow.chooseOperation();
         assertFalse(flow.isConfirmingClick(9));
         flow.clickSource(9);
@@ -78,7 +78,7 @@ class DeriveFlowTest {
     void clickConfirmsNothingOutsideSourcePicking() {
         DeriveFlow flow = new DeriveFlow();
         assertFalse(flow.isConfirmingClick(0));
-        flow.openMenu(3);
+        flow.openMenu(3, true);
         assertFalse(flow.isConfirmingClick(3));
         flow.clickSource(9);
         assertEquals(3, flow.sourceSlot());
@@ -87,10 +87,10 @@ class DeriveFlowTest {
     @Test
     void cancelInMenuOrPickingEndsTheFlow() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.cancel();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.chooseOperation();
         flow.cancel();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
@@ -99,7 +99,7 @@ class DeriveFlowTest {
     @Test
     void cancellingTheReplaceQuestionReturnsToPicking() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.chooseOperation();
         flow.moveSource(2);
         flow.askReplace();
@@ -112,16 +112,16 @@ class DeriveFlowTest {
     @Test
     void cancelAllEndsTheFlowFromEveryMode() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.cancelAll();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
 
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.chooseOperation();
         flow.cancelAll();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
 
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.chooseOperation();
         flow.moveSource(2);
         flow.askReplace();
@@ -150,7 +150,7 @@ class DeriveFlowTest {
     @Test
     void finishEndsTheFlow() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(1);
+        flow.openMenu(1, true);
         flow.chooseOperation();
         flow.askReplace();
         flow.finish();
@@ -159,10 +159,39 @@ class DeriveFlowTest {
 
     private static DeriveFlow overlayPicking(int targetSlot) {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(targetSlot);
-        flow.highlightMenuRow(DeriveFlow.OPERATIONS.indexOf(GlyphOp.Kind.OVERLAY));
+        flow.openMenu(targetSlot, true);
+        flow.highlightMenuRow(flow.operations().indexOf(GlyphOp.Kind.OVERLAY));
         flow.chooseOperation();
         return flow;
+    }
+
+    @Test
+    void tallCellMenuLeavesOutTheQuarterTurnsAndKeepsOrder() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(0, false);
+        assertEquals(List.of(GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE180,
+            GlyphOp.Kind.INVERT, GlyphOp.Kind.OVERLAY), flow.operations());
+        assertFalse(flow.operations().contains(GlyphOp.Kind.ROTATE90));
+        assertFalse(flow.operations().contains(GlyphOp.Kind.ROTATE270));
+    }
+
+    @Test
+    void squareCellMenuOffersEveryOperation() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(0, true);
+        assertEquals(DeriveFlow.OPERATIONS, flow.operations());
+    }
+
+    @Test
+    void menuWrapsOverTheShorterTallCellList() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(0, false);
+        flow.moveMenu(-1);
+        assertEquals(DeriveFlow.operationsFor(false).size() - 1, flow.menuIndex());
+        flow.moveMenu(1);
+        assertEquals(0, flow.menuIndex());
+        flow.highlightMenuRow(DeriveFlow.OPERATIONS.size() - 1);
+        assertEquals(0, flow.menuIndex());
     }
 
     @Test
@@ -175,7 +204,7 @@ class DeriveFlowTest {
     @Test
     void menuWrapsForwardFromOverlayToFirstRow() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(0);
+        flow.openMenu(0, true);
         flow.highlightMenuRow(DeriveFlow.OPERATIONS.size() - 1);
         flow.moveMenu(1);
         assertEquals(0, flow.menuIndex());
@@ -232,7 +261,7 @@ class DeriveFlowTest {
     @Test
     void shiftAndPartsAreIgnoredForOtherOperations() {
         DeriveFlow flow = new DeriveFlow();
-        flow.openMenu(2);
+        flow.openMenu(2, true);
         flow.chooseOperation();
         flow.moveSource(5);
         flow.shiftSource(3);
@@ -250,7 +279,7 @@ class DeriveFlowTest {
         flow.shiftSource(1);
         flow.addPart();
         flow.shiftSource(2);
-        flow.openMenu(2);
+        flow.openMenu(2, true);
         assertTrue(flow.parts().isEmpty());
         assertEquals(0, flow.pendingShift());
     }

@@ -47,7 +47,7 @@ public final class FontSheet {
     }
 
     /**
-     * Returns the pixels of a slot's whole cell, letter gap included.
+     * Returns the pixels of a slot's whole cell.
      *
      * @param slot slot index
      * @return the cell, blank for an empty slot
@@ -56,7 +56,7 @@ public final class FontSheet {
         PixelGlyph glyph = glyphs.get(slots[slot]);
         return glyph == null
             ? PixelGrid.blank(data.cellWidth(), data.cellHeight())
-            : glyph.toCell(data.cellWidth());
+            : glyph.pixels();
     }
 
     /** Returns the slot order as a character list, ready for the sheet's {@code .txt} file. */

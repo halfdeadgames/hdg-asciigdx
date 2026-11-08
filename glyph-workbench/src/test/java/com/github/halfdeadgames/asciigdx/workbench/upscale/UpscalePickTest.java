@@ -18,9 +18,9 @@ class UpscalePickTest {
     }
 
     private static final String FONT_TEXT = "cell 8x8\n\n"
-        + "U+0041 A\n" + rows("#######") + "\n\n"
-        + "U+0042 B\n" + rows(".......") + "\n\n"
-        + "U+0043 C\n" + rows("#######") + "\n";
+        + "U+0041 A\n" + rows("########") + "\n\n"
+        + "U+0042 B\n" + rows("........") + "\n\n"
+        + "U+0043 C\n" + rows("########") + "\n";
 
     private static UpscaleSourceSheet sheet() {
         return UpscaleSourceSheet.of(FontDataParser.parse(FONT_TEXT), FONT);

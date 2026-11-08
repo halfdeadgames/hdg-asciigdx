@@ -24,8 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class FontEditorTest {
 
-    private static final String BLANK_BODY_ROW = ".......";
-    private static final String BLANK_FULL_ROW = "........";
+    private static final String BLANK_ROW = "........";
 
     private static String rows(String row) {
         return String.join("\n", java.util.Collections.nCopies(8, row));
@@ -33,17 +32,17 @@ class FontEditorTest {
 
     private static final String FONT = "# a comment\n"
         + "cell 8x8\n\n"
-        + "U+0041 A\n" + rows(BLANK_BODY_ROW) + "\n\n"
-        + "U+0042 B full\n" + rows(BLANK_FULL_ROW) + "\n\n"
+        + "U+0041 A\n" + rows(BLANK_ROW) + "\n\n"
+        + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
         + "U+0043 C = mirror U+0041\n\n"
-        + "U+0100 \\u{100}\n" + rows(BLANK_BODY_ROW) + "\n";
+        + "U+0100 \\u{100}\n" + rows(BLANK_ROW) + "\n";
 
     private static FontEditor editor() {
         return new FontEditor(FontDataParser.parse(FONT));
     }
 
     @Test
-    void gapColumnIsPaintableOnNormalGlyphs() {
+    void wholeCellIsPaintable() {
         FontEditor editor = editor();
         assertTrue(editor.isPaintable(0x41, 6, 0));
         assertTrue(editor.isPaintable(0x41, 7, 0));
@@ -52,92 +51,31 @@ class FontEditorTest {
     }
 
     @Test
-    void paintingTheGapTurnsAGlyphFullAndKeepsItsInk() {
+    void paintingTheLastColumnKeepsTheGlyphAtCellWidth() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 2, 3, true);
         editor.setPixel(0x41, 7, 0, true);
-        assertTrue(editor.glyph(0x41).full());
         assertEquals(8, editor.glyph(0x41).pixels().getWidth());
         assertTrue(editor.isLit(0x41, 2, 3));
         assertTrue(editor.isLit(0x41, 7, 0));
-        assertTrue(editor.hasGapInk(0x41));
     }
 
     @Test
-    void paintingTheGapOfAnEmptySlotCreatesAFullGlyph() {
+    void erasingAnUnlitPixelChangesNothing() {
         FontEditor editor = editor();
-        editor.setPixel(0x44, 7, 4, true);
-        assertTrue(editor.glyph(0x44).full());
-        assertEquals(8, editor.glyph(0x44).pixels().getWidth());
-        assertTrue(editor.isLit(0x44, 7, 4));
-    }
-
-    @Test
-    void erasingTheLastGapInkReturnsToANormalGlyph() {
-        FontEditor editor = editor();
-        editor.setPixel(0x41, 2, 3, true);
-        editor.setPixel(0x41, 7, 0, true);
-        editor.setPixel(0x41, 7, 1, true);
-        editor.setPixel(0x41, 7, 0, false);
-        assertFalse(editor.isLit(0x41, 7, 0));
-        assertTrue(editor.glyph(0x41).full());
-        editor.setPixel(0x41, 7, 1, false);
-        assertFalse(editor.glyph(0x41).full());
-        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
-        assertTrue(editor.isLit(0x41, 2, 3));
-        assertFalse(editor.hasGapInk(0x41));
-    }
-
-    @Test
-    void loadedFullGlyphWithEmptyGapStaysFullWhenPaintingTheBody() {
-        FontEditor editor = editor();
-        assertTrue(editor.glyph(0x42).full());
         editor.setPixel(0x42, 3, 3, true);
-        assertTrue(editor.glyph(0x42).full());
         int revisionBefore = editor.revision();
         editor.setPixel(0x42, 7, 3, false);
         assertEquals(revisionBefore, editor.revision());
-        assertTrue(editor.glyph(0x42).full());
         assertEquals(8, editor.glyph(0x42).pixels().getWidth());
     }
 
     @Test
-    void undoAndRedoRestoreTheFullFlagAndWidth() {
-        FontEditor editor = editor();
-        editor.beginEdit();
-        editor.setPixel(0x41, 7, 0, true);
-        editor.commitEdit();
-        editor.undo();
-        assertFalse(editor.glyph(0x41).full());
-        assertEquals(7, editor.glyph(0x41).pixels().getWidth());
-        editor.redo();
-        assertTrue(editor.glyph(0x41).full());
-        assertEquals(8, editor.glyph(0x41).pixels().getWidth());
-        assertTrue(editor.isLit(0x41, 7, 0));
-    }
-
-    @Test
-    void derivedGlyphGapIsStillRejected() {
+    void derivedGlyphsAreNotPaintable() {
         FontEditor editor = editor();
         assertFalse(editor.isPaintable(0x43, 7, 0));
         editor.setPixel(0x43, 7, 0, true);
         assertFalse(editor.isModified());
-    }
-
-    @Test
-    void fullGlyphWithGapInkRoundTripsThroughWriterAndParser() {
-        FontEditor editor = editor();
-        editor.setPixel(0x41, 7, 2, true);
-        FontData reparsed = FontDataParser.parse(editor.toText());
-        assertEquals(editor.data(), reparsed);
-        assertTrue(((PixelGlyph) reparsed.entries().get(0x41)).full());
-    }
-
-    @Test
-    void fullGlyphsAreFullyPaintable() {
-        FontEditor editor = editor();
-        editor.setPixel(0x42, 7, 3, true);
-        assertTrue(editor.isLit(0x42, 7, 3));
     }
 
     @Test
@@ -153,7 +91,7 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         assertTrue(editor.isDerived(0x43));
         assertEquals(0x41, editor.derivedFrom(0x43));
-        assertTrue(editor.isLit(0x43, 6, 0));
+        assertTrue(editor.isLit(0x43, 7, 0));
         int revisionBefore = editor.revision();
         editor.setPixel(0x43, 0, 0, true);
         assertEquals(revisionBefore, editor.revision());
@@ -163,17 +101,16 @@ class FontEditorTest {
     void editingASourceUpdatesItsDerivedGlyph() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 1, 2, true);
-        assertTrue(editor.isLit(0x43, 5, 2));
+        assertTrue(editor.isLit(0x43, 6, 2));
     }
 
     @Test
-    void paintingAnEmptySlotCreatesABodyGlyph() {
+    void paintingAnEmptySlotCreatesAGlyphOfCellWidth() {
         FontEditor editor = editor();
         assertFalse(editor.hasGlyph(0x44));
         editor.setPixel(0x44, 2, 3, true);
         assertTrue(editor.hasGlyph(0x44));
-        assertEquals(7, editor.glyph(0x44).pixels().getWidth());
-        assertFalse(editor.glyph(0x44).full());
+        assertEquals(8, editor.glyph(0x44).pixels().getWidth());
         assertTrue(editor.isLit(0x44, 2, 3));
         assertTrue(editor.isModified());
     }
@@ -217,7 +154,7 @@ class FontEditorTest {
     @Test
     void savedPixelsAreRememberedUntilTheNextSave() {
         FontEditor editor = new FontEditor(FontDataParser.parse(
-            "cell 8x8\n\nU+0041 A\n#......\n" + String.join("\n", java.util.Collections.nCopies(7, BLANK_BODY_ROW)) + "\n"));
+            "cell 8x8\n\nU+0041 A\n#.......\n" + String.join("\n", java.util.Collections.nCopies(7, BLANK_ROW)) + "\n"));
         assertTrue(editor.hasSavedGlyph(0x41));
         assertTrue(editor.wasLitWhenSaved(0x41, 0, 0));
         editor.setPixel(0x41, 0, 0, false);
@@ -255,7 +192,6 @@ class FontEditorTest {
         PixelGlyph preview = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41)).glyph();
 
         assertNotNull(preview);
-        assertTrue(preview.full());
         assertTrue(preview.pixels().isLit(7, 0));
         assertFalse(editor.hasGlyph(0x44));
         assertNull(editor.glyph(0x44));
@@ -369,7 +305,6 @@ class FontEditorTest {
 
         assertFalse(editor.isDerived(0x44));
         assertEquals(before.pixels(), editor.glyph(0x44).pixels());
-        assertTrue(editor.glyph(0x44).full());
         assertTrue(editor.isDerived(0x100));
         assertEquals(dependentBefore.pixels(), editor.glyph(0x100).pixels());
         assertTrue(editor.isPaintable(0x44, 7, 0));
@@ -403,7 +338,7 @@ class FontEditorTest {
     }
 
     @Test
-    void unlockedFullGlyphRoundTripsWithItsFullFlag() {
+    void unlockedGlyphRoundTripsThroughWriterAndParser() {
         FontEditor editor = editor();
         editor.setPixel(0x41, 1, 2, true);
         editor.derive(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
@@ -412,7 +347,6 @@ class FontEditorTest {
         FontData reparsed = FontDataParser.parse(editor.toText());
 
         PixelGlyph reloaded = (PixelGlyph) reparsed.entries().get(0x44);
-        assertTrue(reloaded.full());
         assertEquals(editor.glyph(0x44).pixels(), reloaded.pixels());
     }
 
@@ -601,7 +535,7 @@ class FontEditorTest {
         FontEditor editor = editor();
         editor.setPixel(0x41, 0, 0, true);
 
-        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 3, 4));
+        editor.replaceGlyph(0x41, cellWithPixels(8, 8, 3, 4));
 
         assertEquals("", editor.problem());
         assertTrue(editor.isLit(0x41, 3, 4));
@@ -615,7 +549,7 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.markSaved();
 
-        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 3, 4));
+        editor.replaceGlyph(0x41, cellWithPixels(8, 8, 3, 4));
         editor.undo();
 
         assertTrue(editor.isLit(0x41, 0, 0));
@@ -625,25 +559,13 @@ class FontEditorTest {
     }
 
     @Test
-    void replaceGlyphKeepsOnlyTheBodyOfANormalGlyph() {
+    void replaceGlyphKeepsTheWholeCell() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x44, false, cellWithPixels(8, 8, 1, 1, 7, 0));
+        editor.replaceGlyph(0x44, cellWithPixels(8, 8, 1, 1, 7, 0));
 
-        assertFalse(editor.glyph(0x44).full());
-        assertEquals(7, editor.glyph(0x44).pixels().getWidth());
-        assertTrue(editor.isLit(0x44, 1, 1));
-        assertFalse(editor.isLit(0x44, 7, 0));
-    }
-
-    @Test
-    void replaceGlyphKeepsTheGapOfAFullGlyph() {
-        FontEditor editor = editor();
-
-        editor.replaceGlyph(0x44, true, cellWithPixels(8, 8, 1, 1, 7, 0));
-
-        assertTrue(editor.glyph(0x44).full());
         assertEquals(8, editor.glyph(0x44).pixels().getWidth());
+        assertTrue(editor.isLit(0x44, 1, 1));
         assertTrue(editor.isLit(0x44, 7, 0));
     }
 
@@ -651,7 +573,7 @@ class FontEditorTest {
     void replaceGlyphRefusesADerivedTarget() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x43, false, cellWithPixels(8, 8, 1, 1));
+        editor.replaceGlyph(0x43,cellWithPixels(8, 8, 1, 1));
 
         assertTrue(editor.problem().contains("unlock"));
         assertTrue(editor.isDerived(0x43));
@@ -663,7 +585,7 @@ class FontEditorTest {
     void replaceGlyphRefusesACodePointThatIsNotASlot() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x1234, false, cellWithPixels(8, 8, 1, 1));
+        editor.replaceGlyph(0x1234,cellWithPixels(8, 8, 1, 1));
 
         assertEquals("U+1234 is not a glyph slot", editor.problem());
         assertFalse(editor.hasGlyph(0x1234));
@@ -674,7 +596,7 @@ class FontEditorTest {
     void replaceGlyphRefusesACellOfTheWrongSize() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x41, false, cellWithPixels(16, 16, 1, 1));
+        editor.replaceGlyph(0x41, cellWithPixels(16,16, 1, 1));
 
         assertTrue(editor.problem().contains("16x16"));
         assertTrue(editor.problem().contains("8x8"));
@@ -686,10 +608,10 @@ class FontEditorTest {
     void glyphsDerivedFromAReplacedGlyphFollowTheNewPixels() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x41, false, cellWithPixels(8, 8, 1, 2));
+        editor.replaceGlyph(0x41, cellWithPixels(8, 8, 1, 2));
 
         assertTrue(editor.isDerived(0x43));
-        assertTrue(editor.isLit(0x43, 5, 2));
+        assertTrue(editor.isLit(0x43, 6, 2));
     }
 
     @Test

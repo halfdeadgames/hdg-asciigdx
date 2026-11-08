@@ -11,16 +11,14 @@ import org.junit.jupiter.api.Test;
 
 class OverlayCheckTest {
 
-    // Ink in columns 1 and 3 of a 6 wide body.
-    private static final PixelGlyph BODY = new PixelGlyph(0x41, false, PixelGrid.ofRows(List.of(
+    // Ink in columns 1 and 3 of a 6 wide cell.
+    private static final PixelGlyph INKED = new PixelGlyph(0x41, PixelGrid.ofRows(List.of(
         ".#.#..", "......")));
-    private static final PixelGlyph FULL = new PixelGlyph(0x42, true, PixelGrid.ofRows(List.of(
-        ".#.#..", "......")));
-    private static final PixelGlyph BLANK = new PixelGlyph(0x43, false, PixelGrid.blank(6, 2));
+    private static final PixelGlyph BLANK = new PixelGlyph(0x43, PixelGrid.blank(6, 2));
 
     @Test
     void validShiftHasNoWarningAndReportsTheRange() {
-        OverlayCheck.Result result = OverlayCheck.check(false, BODY, null, 2);
+        OverlayCheck.Result result = OverlayCheck.check(false, INKED, 2);
         assertEquals(OverlayCheck.Problem.NONE, result.problem());
         assertFalse(result.hasWarning());
         assertTrue(result.hasRange());
@@ -30,44 +28,27 @@ class OverlayCheckTest {
     }
 
     @Test
-    void shiftOutsideTheBodyNamesTheAllowedRangeAndBlocksFinish() {
-        OverlayCheck.Result tooFar = OverlayCheck.check(false, BODY, null, 3);
+    void shiftOutsideTheCellNamesTheAllowedRangeAndBlocksFinish() {
+        OverlayCheck.Result tooFar = OverlayCheck.check(false, INKED, 3);
         assertEquals(OverlayCheck.Problem.OUTSIDE, tooFar.problem());
-        assertEquals("SHIFT +3 PUTS INK OUTSIDE THE BODY: ALLOWED -1..+2", tooFar.message());
+        assertEquals("SHIFT +3 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2", tooFar.message());
         assertTrue(tooFar.blocksAdd());
         assertTrue(tooFar.blocksFinish());
-        OverlayCheck.Result tooLeft = OverlayCheck.check(false, BODY, null, -2);
-        assertEquals("SHIFT -2 PUTS INK OUTSIDE THE BODY: ALLOWED -1..+2", tooLeft.message());
-        assertEquals(OverlayCheck.Problem.NONE, OverlayCheck.check(false, BODY, null, -1).problem());
-    }
-
-    @Test
-    void fullGlyphsTalkAboutTheCell() {
-        assertTrue(OverlayCheck.check(false, FULL, null, 5).message().contains("OUTSIDE THE CELL"));
+        OverlayCheck.Result tooLeft = OverlayCheck.check(false, INKED, -2);
+        assertEquals("SHIFT -2 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2", tooLeft.message());
+        assertEquals(OverlayCheck.Problem.NONE, OverlayCheck.check(false, INKED, -1).problem());
     }
 
     @Test
     void sourceWithoutInkHasNoRangeAndAnyShiftPasses() {
-        OverlayCheck.Result result = OverlayCheck.check(false, BLANK, null, 4);
+        OverlayCheck.Result result = OverlayCheck.check(false, BLANK, 4);
         assertEquals(OverlayCheck.Problem.NONE, result.problem());
         assertFalse(result.hasRange());
     }
 
     @Test
-    void mixingFullAndBodyGlyphsIsExplainedBothWays() {
-        OverlayCheck.Result fullOverBody = OverlayCheck.check(false, FULL, BODY, 0);
-        assertEquals(OverlayCheck.Problem.MIXED, fullOverBody.problem());
-        assertTrue(fullOverBody.message().contains("CANNOT BE MIXED"));
-        assertTrue(fullOverBody.message().startsWith("THIS IS A FULL GLYPH"));
-        assertTrue(fullOverBody.blocksFinish());
-        OverlayCheck.Result bodyOverFull = OverlayCheck.check(false, BODY, FULL, 0);
-        assertTrue(bodyOverFull.message().startsWith("THIS IS A BODY GLYPH"));
-        assertEquals(OverlayCheck.Problem.NONE, OverlayCheck.check(false, BODY, BODY, 0).problem());
-    }
-
-    @Test
     void sourceOnTheTargetBlocksAddingButNotFinishing() {
-        OverlayCheck.Result result = OverlayCheck.check(true, BODY, null, 0);
+        OverlayCheck.Result result = OverlayCheck.check(true, INKED, 0);
         assertEquals(OverlayCheck.Problem.SAME_AS_TARGET, result.problem());
         assertEquals("PICK A DIFFERENT GLYPH", result.message());
         assertTrue(result.blocksAdd());
@@ -76,7 +57,7 @@ class OverlayCheckTest {
 
     @Test
     void emptySourceSlotBlocksAddingWithAMessage() {
-        OverlayCheck.Result result = OverlayCheck.check(false, null, null, 0);
+        OverlayCheck.Result result = OverlayCheck.check(false, null, 0);
         assertEquals(OverlayCheck.Problem.EMPTY, result.problem());
         assertEquals("SOURCE SLOT IS EMPTY: DRAW IT FIRST", result.message());
         assertTrue(result.blocksAdd());
@@ -107,8 +88,8 @@ class OverlayCheckTest {
     @Test
     void warningsUseOnlyUppercaseAsciiAndPunctuationTheFontDraws() {
         for (OverlayCheck.Result result : List.of(
-            OverlayCheck.check(false, BODY, null, 9), OverlayCheck.check(false, FULL, BODY, 0),
-            OverlayCheck.check(true, BODY, null, 0), OverlayCheck.check(false, null, null, 0))) {
+            OverlayCheck.check(false, INKED, 9),
+            OverlayCheck.check(true, INKED, 0), OverlayCheck.check(false, null, 0))) {
             assertTrue(result.message().matches("[A-Z0-9 :.+\\-]+"), result.message());
         }
     }

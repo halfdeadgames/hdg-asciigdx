@@ -92,7 +92,7 @@ final class PaintDerive {
     PaintHelp.State helpState() {
         int[] codePoints = host.codePoints();
         DeriveFlow.Mode mode = flow.mode();
-        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? DeriveFlow.OPERATIONS.get(flow.menuIndex()) : flow.operation();
+        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? flow.operations().get(flow.menuIndex()) : flow.operation();
         if (!flow.isOverlayOperation() || mode != DeriveFlow.Mode.PICK_SOURCE) {
             return new PaintHelp.State(mode, operation, List.of(), null);
         }
@@ -105,7 +105,7 @@ final class PaintDerive {
         return new PaintHelp.State(mode, operation, committed, pending, overlayCheck());
     }
 
-    // The pending overlay part shows as a ghost only while its shift puts ink outside the body.
+    // The pending overlay part shows as a ghost only while its shift puts ink outside the cell.
     PaintGridView.Ghost pendingGhost() {
         if (!flow.isOverlayOperation() || !flow.isPicking() || flow.sourceIsTarget()
             || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
@@ -128,7 +128,7 @@ final class PaintDerive {
     void openDerive() {
         messages.nextAction();
         host.endStroke();
-        flow.openMenu(host.cursorSlot());
+        flow.openMenu(host.cursorSlot(), editor.cellWidth() == editor.cellHeight());
     }
 
     void unlockDerived() {

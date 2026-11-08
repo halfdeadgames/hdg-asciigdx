@@ -1,18 +1,15 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
-import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.OptionalInt;
 
 /** Checks one glyph's pixels against the font's design rules; no drawing, no libGDX. */
 public final class GlyphRules {
 
-    public static final String KEY_GAP = "gap";
     public static final String KEY_ACCENT_INK = "accentInk";
     public static final String KEY_DESCENDER_INK = "descenderInk";
 
@@ -25,24 +22,19 @@ public final class GlyphRules {
     /**
      * Lists the rules a glyph breaks.
      *
-     * @param codePoint the glyph's code point, used in the gap message
+     * @param codePoint the glyph's code point
      * @param glyph the glyph, or null for an empty slot
-     * @param bodyWidth columns before the gap columns
      * @param accentRowCount rows at the top reserved for accents; empty skips the accent check
      * @param descenderFirstRow first row of the descender band; empty skips the descender check
      * @return the warnings, empty when the glyph is fine or is a tiling glyph
      */
-    public static List<RuleWarning> check(int codePoint, PixelGlyph glyph, int bodyWidth,
+    public static List<RuleWarning> check(int codePoint, PixelGlyph glyph,
                                    OptionalInt accentRowCount, OptionalInt descenderFirstRow) {
         List<RuleWarning> warnings = new ArrayList<>();
         if (glyph == null || TilingGlyphs.isTiling(codePoint)) {
             return warnings;
         }
         PixelGrid pixels = glyph.pixels();
-        if (glyph.full() && hasGapInk(pixels, bodyWidth)) {
-            warnings.add(new RuleWarning(KEY_GAP,
-                String.format(Locale.ROOT, "U+%04X %s has ink in the gap column", codePoint, GlyphName.fullName(codePoint))));
-        }
         if (accentRowCount.isPresent() && breaksAccentRowRule(codePoint, pixels, accentRowCount.getAsInt())) {
             warnings.add(new RuleWarning(KEY_ACCENT_INK, "INK IN ACCENT ROW"));
         }
@@ -51,18 +43,6 @@ public final class GlyphRules {
             warnings.add(new RuleWarning(KEY_DESCENDER_INK, "INK IN DESCENDER ROW"));
         }
         return warnings;
-    }
-
-    /** Whether any pixel from column {@code bodyWidth} on is lit. */
-    public static boolean hasGapInk(PixelGrid grid, int bodyWidth) {
-        for (int y = 0; y < grid.getHeight(); y++) {
-            for (int x = bodyWidth; x < grid.getWidth(); x++) {
-                if (grid.isLit(x, y)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**

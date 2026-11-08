@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
-import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.bodyGlyph;
+import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.file;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -31,7 +31,7 @@ class FontExporterTest {
         fontDirectory = new File(workDirectory, "tiny");
         outputDirectory = new File(workDirectory, "out");
         assertTrue(fontDirectory.mkdirs());
-        String text = file(bodyGlyph("U+0041 A", "#......", "##....."));
+        String text = file(glyph("U+0041 A", "#.......", "##......"));
         Files.write(new File(fontDirectory, FONT_SIZE + ".txt").toPath(), text.getBytes(StandardCharsets.UTF_8));
     }
 

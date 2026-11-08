@@ -82,28 +82,23 @@ public final class GlyphResolver {
         PixelGlyph source = resolve(op.sources().get(0).codePoint(), line);
         PixelGrid pixels = source.pixels();
         return switch (op.kind()) {
-            case INVERT -> new PixelGlyph(codePoint, true, source.toCell(data.cellWidth()).inverted());
-            case ROTATE90 -> new PixelGlyph(codePoint, source.full() || hasSquareCell(), rotate(source, 1));
-            case ROTATE180 -> new PixelGlyph(codePoint, source.full(), pixels.rotated180());
-            case ROTATE270 -> new PixelGlyph(codePoint, source.full() || hasSquareCell(), rotate(source, 3));
-            case MIRROR -> new PixelGlyph(codePoint, source.full(), pixels.mirrored());
-            case FLIP -> new PixelGlyph(codePoint, source.full(), pixels.flipped());
+            case INVERT -> new PixelGlyph(codePoint, pixels.inverted());
+            case ROTATE90 -> new PixelGlyph(codePoint, rotate(source, 1));
+            case ROTATE180 -> new PixelGlyph(codePoint, pixels.rotated180());
+            case ROTATE270 -> new PixelGlyph(codePoint, rotate(source, 3));
+            case MIRROR -> new PixelGlyph(codePoint, pixels.mirrored());
+            case FLIP -> new PixelGlyph(codePoint, pixels.flipped());
             case OVERLAY -> overlay(codePoint, op, line);
         };
     }
 
-    private boolean hasSquareCell() {
-        return data.cellWidth() == data.cellHeight();
-    }
-
-    // In a square cell the gap column turns into a row, so the whole cell is rotated.
     private PixelGrid rotate(PixelGlyph source, int clockwiseQuarterTurns) {
-        PixelGrid pixels = hasSquareCell() ? source.toCell(data.cellWidth()) : source.pixels();
-        if (pixels.getWidth() != pixels.getHeight()) {
+        if (data.cellWidth() != data.cellHeight()) {
             throw new IllegalArgumentException("rotate90 and rotate270 need a square glyph, but "
-                + name(source.codePoint()) + " is " + pixels.getWidth() + "x" + pixels.getHeight()
-                + "; use a full glyph or a font whose cell height equals its body width");
+                + name(source.codePoint()) + " is " + data.cellWidth() + "x" + data.cellHeight()
+                + "; use a font whose cell height equals its cell width");
         }
+        PixelGrid pixels = source.pixels();
         for (int turn = 0; turn < clockwiseQuarterTurns; turn++) {
             pixels = pixels.rotatedClockwise();
         }
@@ -115,13 +110,9 @@ public final class GlyphResolver {
         PixelGrid combined = PixelGrid.blank(first.pixels().getWidth(), first.pixels().getHeight());
         for (GlyphOp.Source part : op.sources()) {
             PixelGlyph source = resolve(part.codePoint(), line);
-            if (source.full() != first.full()) {
-                throw new IllegalArgumentException("overlay cannot mix full glyphs and body glyphs: "
-                    + name(first.codePoint()) + " and " + name(source.codePoint()));
-            }
             combined = combined.withOverlay(source.pixels(), part.shift());
         }
-        return new PixelGlyph(codePoint, first.full(), combined);
+        return new PixelGlyph(codePoint, combined);
     }
 
     private String cyclePath(int codePoint) {

@@ -6,7 +6,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 /** Judges the overlay part being picked and words the warning for it. It holds no drawing or input code. */
 public final class OverlayCheck {
 
-    public enum Problem { NONE, SAME_AS_TARGET, EMPTY, MIXED, OUTSIDE }
+    public enum Problem { NONE, SAME_AS_TARGET, EMPTY, OUTSIDE }
 
     /**
      * @param problem what is wrong with the pending part, or NONE
@@ -28,7 +28,7 @@ public final class OverlayCheck {
 
         /** Whether finishing is refused too: the pending part would make the file fail to load. */
         public boolean blocksFinish() {
-            return problem == Problem.MIXED || problem == Problem.OUTSIDE;
+            return problem == Problem.OUTSIDE;
         }
 
         /** The allowed shifts as text, for example {@code -2..+3}. */
@@ -46,10 +46,9 @@ public final class OverlayCheck {
     /**
      * @param sourceIsTarget whether the source cursor is on the glyph being derived
      * @param source the source glyph, or null when its slot is empty
-     * @param firstPart the first part already added, or null when there is none
      * @param shift the pending shift
      */
-    public static Result check(boolean sourceIsTarget, PixelGlyph source, PixelGlyph firstPart, int shift) {
+    public static Result check(boolean sourceIsTarget, PixelGlyph source, int shift) {
         if (sourceIsTarget) {
             return new Result(Problem.SAME_AS_TARGET, SAME_AS_TARGET_MESSAGE, false, 0, 0);
         }
@@ -61,15 +60,8 @@ public final class OverlayCheck {
         boolean hasRange = left >= 0;
         int min = hasRange ? -left : 0;
         int max = hasRange ? pixels.getWidth() - 1 - rightmostInk(pixels) : 0;
-        if (firstPart != null && firstPart.full() != source.full()) {
-            String message = source.full()
-                ? "THIS IS A FULL GLYPH BUT EARLIER PARTS ARE BODY GLYPHS: FULL AND BODY GLYPHS CANNOT BE MIXED"
-                : "THIS IS A BODY GLYPH BUT EARLIER PARTS ARE FULL GLYPHS: FULL AND BODY GLYPHS CANNOT BE MIXED";
-            return new Result(Problem.MIXED, message, hasRange, min, max);
-        }
         if (hasRange && (shift < min || shift > max)) {
-            String area = source.full() ? "THE CELL" : "THE BODY";
-            String message = "SHIFT " + signed(shift) + " PUTS INK OUTSIDE " + area + ": ALLOWED "
+            String message = "SHIFT " + signed(shift) + " PUTS INK OUTSIDE THE CELL: ALLOWED "
                 + signed(min) + ".." + signed(max);
             return new Result(Problem.OUTSIDE, message, true, min, max);
         }

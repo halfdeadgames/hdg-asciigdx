@@ -216,7 +216,7 @@ class PaintHelpTest {
 
     @Test
     void overlayShowsTheShiftRangeAndTheWarningUnderTheParts() {
-        String message = "SHIFT +9 PUTS INK OUTSIDE THE BODY: ALLOWED -1..+2";
+        String message = "SHIFT +9 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2";
         OverlayCheck.Result check = new OverlayCheck.Result(OverlayCheck.Problem.OUTSIDE, message, true, -1, 2);
         List<PaintHelp.Row> rows = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
             List.of(new PaintHelp.PartView(0x21, 0)), new PaintHelp.PartView(0x22, 9), check), WIDTH);
@@ -235,7 +235,7 @@ class PaintHelpTest {
         }
         assertTrue(firstWarning > pendingIndex);
         assertTrue(rows.indexOf(range) > pendingIndex && rows.indexOf(range) < firstWarning);
-        assertTrue(warning.toString().contains("OUTSIDE THE BODY"));
+        assertTrue(warning.toString().contains("OUTSIDE THE CELL"));
         assertTrue(warning.toString().contains("ALLOWED -1..+2"));
         assertNoOnce(rows);
         assertProseFits(rows);

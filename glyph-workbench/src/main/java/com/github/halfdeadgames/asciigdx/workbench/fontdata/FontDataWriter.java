@@ -31,8 +31,7 @@ public final class FontDataWriter {
     private static String writeEntry(GlyphEntry entry) {
         String header = codePointLabel(entry.codePoint());
         if (entry instanceof PixelGlyph pixelGlyph) {
-            String title = pixelGlyph.full() ? header + " full" : header;
-            return title + "\n" + String.join("\n", pixelGlyph.pixels().toRows());
+            return header + "\n" + String.join("\n", pixelGlyph.pixels().toRows());
         }
         return header + " = " + writeOp(((DerivedGlyph) entry).op());
     }

@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The state of deriving one glyph from another: choosing the operation in a menu, picking the source
@@ -18,6 +19,10 @@ public final class DeriveFlow {
         GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE90,
         GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT, GlyphOp.Kind.OVERLAY);
 
+    private static final List<GlyphOp.Kind> NON_SQUARE_OPERATIONS = OPERATIONS.stream()
+        .filter(kind -> kind != GlyphOp.Kind.ROTATE90 && kind != GlyphOp.Kind.ROTATE270)
+        .collect(Collectors.toUnmodifiableList());
+
     /** One committed overlay source: the slot it comes from and how far it is shifted. */
     public record Part(int slot, int shift) { }
 
@@ -28,8 +33,19 @@ public final class DeriveFlow {
     private int targetSlot;
     private int sourceSlot;
     private GlyphOp.Kind operation = OPERATIONS.get(0);
+    private List<GlyphOp.Kind> menuOperations = OPERATIONS;
 
     public DeriveFlow() {
+    }
+
+    /** The operations a font offers: the quarter turns need a square cell. Same instance on every call. */
+    public static List<GlyphOp.Kind> operationsFor(boolean squareCell) {
+        return squareCell ? OPERATIONS : NON_SQUARE_OPERATIONS;
+    }
+
+    /** The operations of the current menu, in menu order. */
+    public List<GlyphOp.Kind> operations() {
+        return menuOperations;
     }
 
     public static String label(GlyphOp.Kind kind) {
@@ -69,7 +85,8 @@ public final class DeriveFlow {
         return operation;
     }
 
-    public void openMenu(int targetSlot) {
+    public void openMenu(int targetSlot, boolean squareCell) {
+        menuOperations = operationsFor(squareCell);
         this.targetSlot = targetSlot;
         sourceSlot = targetSlot;
         menuIndex = 0;
@@ -153,12 +170,11 @@ public final class DeriveFlow {
         if (mode != Mode.MENU) {
             return;
         }
-        int count = OPERATIONS.size();
-        menuIndex = Math.floorMod(menuIndex + delta, count);
+        menuIndex = Math.floorMod(menuIndex + delta, menuOperations.size());
     }
 
     public void highlightMenuRow(int index) {
-        if (mode == Mode.MENU && index >= 0 && index < OPERATIONS.size()) {
+        if (mode == Mode.MENU && index >= 0 && index < menuOperations.size()) {
             menuIndex = index;
         }
     }
@@ -168,7 +184,7 @@ public final class DeriveFlow {
         if (mode != Mode.MENU) {
             return;
         }
-        operation = OPERATIONS.get(menuIndex);
+        operation = menuOperations.get(menuIndex);
         sourceSlot = targetSlot;
         clearOverlayState();
         mode = Mode.PICK_SOURCE;
