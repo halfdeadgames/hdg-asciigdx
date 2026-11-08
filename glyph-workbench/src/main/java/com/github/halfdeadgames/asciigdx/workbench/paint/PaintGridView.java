@@ -134,6 +134,7 @@ final class PaintGridView {
         drawGuides();
         drawWidthGuides();
         drawBarGuides();
+        drawColumnBarGuides();
         drawHighlight();
     }
 
@@ -277,6 +278,7 @@ final class PaintGridView {
             case ROW -> guide.position() <= editor.cellHeight();
             case COLUMN -> guide.position() <= editor.cellWidth();
             case BAR -> guide.position() + guide.rowCount() <= editor.cellHeight();
+            case COLUMN_BAR -> guide.position() + guide.rowCount() <= editor.cellWidth();
         };
     }
 
@@ -335,11 +337,55 @@ final class PaintGridView {
     }
 
     private void drawDashedLine(Color color, int lineY, int thickness) {
-        int end = left + editor.cellWidth() * pixelSize + overhang();
+        drawDashes(color, left - overhang(), left + editor.cellWidth() * pixelSize + overhang(),
+            lineY - thickness / 2, thickness, false);
+    }
+
+    private void drawDashedColumn(Color color, int lineX, int thickness) {
+        drawDashes(color, top - overhang(), top + height() + overhang(), lineX - thickness / 2, thickness, true);
+    }
+
+    // Dashes run from start to end along the line; crossStart is the line's near edge on the other axis.
+    private void drawDashes(Color color, int start, int end, int crossStart, int thickness, boolean vertical) {
         int dash = scaled(BAR_DASH);
-        for (int x = left - overhang(); x < end; x += 2 * dash) {
-            painter.fill(color, x, lineY - thickness / 2, Math.min(dash, end - x), thickness);
+        for (int at = start; at < end; at += 2 * dash) {
+            int length = Math.min(dash, end - at);
+            if (vertical) {
+                painter.fill(color, crossStart, at, thickness, length);
+            } else {
+                painter.fill(color, at, crossStart, length, thickness);
+            }
         }
+    }
+
+    private void drawColumnBarGuides() {
+        List<PaintGuides.ColumnBarGuide> columnBars = shown.columnBars();
+        for (int i = 0; i < columnBars.size(); i++) {
+            int slot = shown.widths().size() + i;
+            drawColumnBarGuide(columnBars.get(i), labels.widthLabelX(slot),
+                slot == labels.highlightWidthSlot() ? HIGHLIGHT_COLOR : BAR_GUIDE_COLOR);
+        }
+    }
+
+    // Dashed so the lit pixels under it stay visible.
+    private void drawColumnBarGuide(PaintGuides.ColumnBarGuide bar, int labelX, Color labelColor) {
+        int lineX = left + Math.round(bar.centerColumn() * pixelSize);
+        drawDashedColumn(BAR_GUIDE_COLOR, lineX, scaled(BAR_THICKNESS));
+        drawWidthLabel(bar.label(), labelColor, lineX, labelX, bar.tier());
+    }
+
+    private void drawColumnBarHighlight(PaintGuides.Listed guide, int thickness) {
+        int lineX = left + Math.round(guide.centerColumn() * pixelSize);
+        drawDashedColumn(HIGHLIGHT_COLOR, lineX, thickness);
+        if (highlightNeedsOwnWidthLabel()) {
+            drawWidthLabel(guide.label(), HIGHLIGHT_COLOR, lineX,
+                labels.widthLabelX(labels.highlightWidthSlot()), 0);
+        }
+    }
+
+    // A highlight that is also a shown guide had its label drawn in the highlight colour with that guide.
+    private boolean highlightNeedsOwnWidthLabel() {
+        return labels.highlightWidthSlot() >= shown.widths().size() + shown.columnBars().size();
     }
 
     /** Guide to draw thick and bright whatever its groups; null for none. Guides beyond the cell are not drawn. */
@@ -360,6 +406,7 @@ final class PaintGridView {
             case ROW -> drawRowHighlight(guide, thickness);
             case COLUMN -> drawColumnHighlight(guide, thickness);
             case BAR -> drawBarHighlight(guide, thickness);
+            case COLUMN_BAR -> drawColumnBarHighlight(guide, thickness);
         }
     }
 
@@ -382,7 +429,7 @@ final class PaintGridView {
         int lineX = left + guide.position() * pixelSize;
         painter.fill(HIGHLIGHT_COLOR, lineX - thickness / 2, top - overhang(),
             thickness, height() + 2 * overhang());
-        if (labels.highlightWidthSlot() >= shown.widths().size()) {
+        if (highlightNeedsOwnWidthLabel()) {
             drawWidthLabel(guide.label(), HIGHLIGHT_COLOR, lineX,
                 labels.widthLabelX(labels.highlightWidthSlot()), 0);
         }

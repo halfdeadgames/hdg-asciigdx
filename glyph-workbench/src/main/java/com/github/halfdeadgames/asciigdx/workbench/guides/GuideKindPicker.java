@@ -53,7 +53,7 @@ final class GuideKindPicker {
         for (int i = 0; i < GuideAddFlow.Kind.values().length; i++) {
             GuideAddFlow.Kind kind = GuideAddFlow.Kind.values()[i];
             String key = String.valueOf(i + 1);
-            buttons.add(new Dialog.Button(key, kind.label(), kind.isEnabled() ? Dialog.Tone.OK : Dialog.Tone.DIM));
+            buttons.add(new Dialog.Button(key, kind.label(), Dialog.Tone.OK));
         }
         return List.copyOf(buttons);
     }

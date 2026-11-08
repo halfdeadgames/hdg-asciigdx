@@ -15,6 +15,7 @@ import java.util.Set;
  * row    label boundaryRow groups
  * column label boundaryColumn groups
  * bar    label firstRow rowCount groups
+ * colbar label firstColumn columnCount groups
  * </pre>
  * {@code groups} is {@code all} or a comma list of rules group names (case-insensitive). Labels contain no spaces.
  */
@@ -40,8 +41,31 @@ public final class PaintGuides {
         }
     }
 
+    /**
+     * A band of columns to fill, the sideways twin of {@link BarGuide}.
+     * The band is {@code columnCount} columns starting at {@code firstColumn}. Its label sits above the grid on
+     * {@code tier}, shared with the width guide labels.
+     */
+    public record ColumnBarGuide(String label, int firstColumn, int columnCount, int tier) {
+
+        public ColumnBarGuide(String label, int firstColumn, int columnCount) {
+            this(label, firstColumn, columnCount, 0);
+        }
+
+        /** Middle of the band in columns from the left of the grid. */
+        public float centerColumn() {
+            return firstColumn + columnCount / 2f;
+        }
+    }
+
     /** The guides to draw for one rules group in one cell size. */
-    public record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
+    public record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars,
+                        List<ColumnBarGuide> columnBars) {
+
+        /** Shown guides without column bars. */
+        public Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
+            this(rows, widths, bars, List.of());
+        }
     }
 
     record Scoped<T>(T guide, Set<String> groups) {
@@ -54,71 +78,104 @@ public final class PaintGuides {
     static final List<String> ALL_GROUPS = List.of(
         FontRules.UPPERCASE, FontRules.LOWERCASE, FontRules.DIGITS, FontRules.PUNCTUATION);
 
-    public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of());
+    public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), List.of());
 
     private final List<Scoped<Guide>> rows;
     private final List<Scoped<WidthGuide>> columns;
     private final List<Scoped<BarGuide>> bars;
+    private final List<Scoped<ColumnBarGuide>> columnBars;
 
-    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars) {
+    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
+                List<Scoped<ColumnBarGuide>> columnBars) {
         this.rows = List.copyOf(rows);
         this.columns = List.copyOf(columns);
         this.bars = List.copyOf(bars);
+        this.columnBars = List.copyOf(columnBars);
+    }
+
+    /** Guides without column bars. */
+    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars) {
+        this(rows, columns, bars, List.of());
     }
 
     private static final String NEW_LABEL = "NEW";
+
+    private int guideTotal() {
+        return rows.size() + columns.size() + bars.size() + columnBars.size();
+    }
+
+    private boolean isOutOfRange(int index) {
+        return index < 0 || index >= guideTotal();
+    }
 
     /** A copy with a row guide labelled NEW at position 0 for every group, last among the rows. */
     PaintGuides withRowAdded() {
         List<Scoped<Guide>> edited = new ArrayList<>(rows);
         edited.add(new Scoped<>(new Guide(NEW_LABEL, 0), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(edited, columns, bars);
+        return new PaintGuides(edited, columns, bars, columnBars);
     }
 
     /** A copy with a column guide labelled NEW at position 0 for every group, last among the columns. */
     PaintGuides withColumnAdded() {
         List<Scoped<WidthGuide>> edited = new ArrayList<>(columns);
         edited.add(new Scoped<>(new WidthGuide(NEW_LABEL, 0, 0), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(rows, edited, bars);
+        return new PaintGuides(rows, edited, bars, columnBars);
     }
 
     /** A copy with a one-row bar labelled NEW at row 0 for every group, last among the bars. */
     PaintGuides withBarAdded() {
         List<Scoped<BarGuide>> edited = new ArrayList<>(bars);
         edited.add(new Scoped<>(new BarGuide(NEW_LABEL, 0, 1), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(rows, columns, edited);
+        return new PaintGuides(rows, columns, edited, columnBars);
+    }
+
+    /**
+     * A copy with a column bar labelled NEW for every group, last among the column bars. It starts centered and two
+     * columns wide: first column {@code cellWidth / 2 - 1}, so 7-8 in a 16-wide cell and 3-4 in a 9-wide one
+     * (one column left of the exact middle). A cell under 2 wide gets a one-column bar at column 0.
+     */
+    PaintGuides withColumnBarAdded(int cellWidth) {
+        int columnCount = cellWidth < 2 ? 1 : 2;
+        int firstColumn = cellWidth < 2 ? 0 : cellWidth / 2 - 1;
+        List<Scoped<ColumnBarGuide>> edited = new ArrayList<>(columnBars);
+        edited.add(new Scoped<>(new ColumnBarGuide(NEW_LABEL, firstColumn, columnCount), Set.copyOf(ALL_GROUPS)));
+        return new PaintGuides(rows, columns, bars, edited);
     }
 
     /** A copy without the guide at {@code index} of {@link #allGuides()}; an index out of range changes nothing. */
     PaintGuides withoutGuide(int index) {
-        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+        if (isOutOfRange(index)) {
             return this;
         }
         List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
         List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
         List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        List<Scoped<ColumnBarGuide>> editedColumnBars = new ArrayList<>(columnBars);
         if (index < rows.size()) {
             editedRows.remove(index);
         } else if (index < rows.size() + columns.size()) {
             editedColumns.remove(index - rows.size());
-        } else {
+        } else if (index < rows.size() + columns.size() + bars.size()) {
             editedBars.remove(index - rows.size() - columns.size());
+        } else {
+            editedColumnBars.remove(index - rows.size() - columns.size() - bars.size());
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars);
+        return new PaintGuides(editedRows, editedColumns, editedBars, editedColumnBars);
     }
 
     /**
      * A copy with the position of the guide at {@code index} of {@link #allGuides()} moved by {@code delta}, kept
      * inside the cell: rows and bars to 0..cellHeight (a bar so it still ends within the cell), columns to
-     * 0..cellWidth.
+     * 0..cellWidth, column bars so the whole band stays within 0..cellWidth.
      */
     PaintGuides withGuideMoved(int index, int delta, int cellWidth, int cellHeight) {
-        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+        if (isOutOfRange(index)) {
             return this;
         }
         List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
         List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
         List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        List<Scoped<ColumnBarGuide>> editedColumnBars = new ArrayList<>(columnBars);
         if (index < rows.size()) {
             Scoped<Guide> row = rows.get(index);
             editedRows.set(index, new Scoped<>(new Guide(row.guide().label(),
@@ -128,14 +185,21 @@ public final class PaintGuides {
             Scoped<WidthGuide> column = columns.get(at);
             editedColumns.set(at, new Scoped<>(new WidthGuide(column.guide().label(),
                 clamp(column.guide().boundaryColumn() + delta, cellWidth), column.guide().tier()), column.groups()));
-        } else {
+        } else if (index < rows.size() + columns.size() + bars.size()) {
             int at = index - rows.size() - columns.size();
             Scoped<BarGuide> bar = bars.get(at);
             int rowCount = bar.guide().rowCount();
             editedBars.set(at, new Scoped<>(new BarGuide(bar.guide().label(),
                 clamp(bar.guide().firstRow() + delta, cellHeight - rowCount), rowCount), bar.groups()));
+        } else {
+            int at = index - rows.size() - columns.size() - bars.size();
+            Scoped<ColumnBarGuide> columnBar = columnBars.get(at);
+            int columnCount = columnBar.guide().columnCount();
+            editedColumnBars.set(at, new Scoped<>(new ColumnBarGuide(columnBar.guide().label(),
+                clamp(columnBar.guide().firstColumn() + delta, cellWidth - columnCount), columnCount),
+                columnBar.groups()));
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars);
+        return new PaintGuides(editedRows, editedColumns, editedBars, editedColumnBars);
     }
 
     /** How many rules groups a guide can be set for. */
@@ -149,8 +213,7 @@ public final class PaintGuides {
      * nothing changes: an index out of range, or switching off the last remaining group.
      */
     PaintGuides withGroupToggled(int index, int groupIndex) {
-        if (index < 0 || index >= rows.size() + columns.size() + bars.size()
-            || groupIndex < 0 || groupIndex >= ALL_GROUPS.size()) {
+        if (isOutOfRange(index) || groupIndex < 0 || groupIndex >= ALL_GROUPS.size()) {
             return this;
         }
         Set<String> toggled = new LinkedHashSet<>(groupsAt(index));
@@ -165,7 +228,7 @@ public final class PaintGuides {
 
     /** A copy with the label of the guide at {@code index} of {@link #allGuides()} replaced. */
     PaintGuides withGuideRelabeled(int index, String label) {
-        if (index < 0 || index >= rows.size() + columns.size() + bars.size()) {
+        if (isOutOfRange(index)) {
             return this;
         }
         return withGuideEdited(index, label, groupsAt(index));
@@ -178,7 +241,10 @@ public final class PaintGuides {
         if (index < rows.size() + columns.size()) {
             return columns.get(index - rows.size()).groups();
         }
-        return bars.get(index - rows.size() - columns.size()).groups();
+        if (index < rows.size() + columns.size() + bars.size()) {
+            return bars.get(index - rows.size() - columns.size()).groups();
+        }
+        return columnBars.get(index - rows.size() - columns.size() - bars.size()).groups();
     }
 
     // A null label keeps the current one.
@@ -186,6 +252,7 @@ public final class PaintGuides {
         List<Scoped<Guide>> editedRows = new ArrayList<>(rows);
         List<Scoped<WidthGuide>> editedColumns = new ArrayList<>(columns);
         List<Scoped<BarGuide>> editedBars = new ArrayList<>(bars);
+        List<Scoped<ColumnBarGuide>> editedColumnBars = new ArrayList<>(columnBars);
         if (index < rows.size()) {
             Guide row = rows.get(index).guide();
             editedRows.set(index, new Scoped<>(
@@ -195,13 +262,18 @@ public final class PaintGuides {
             WidthGuide column = columns.get(at).guide();
             editedColumns.set(at, new Scoped<>(
                 new WidthGuide(label != null ? label : column.label(), column.boundaryColumn(), column.tier()), groups));
-        } else {
+        } else if (index < rows.size() + columns.size() + bars.size()) {
             int at = index - rows.size() - columns.size();
             BarGuide bar = bars.get(at).guide();
             editedBars.set(at, new Scoped<>(
                 new BarGuide(label != null ? label : bar.label(), bar.firstRow(), bar.rowCount()), groups));
+        } else {
+            int at = index - rows.size() - columns.size() - bars.size();
+            ColumnBarGuide columnBar = columnBars.get(at).guide();
+            editedColumnBars.set(at, new Scoped<>(new ColumnBarGuide(label != null ? label : columnBar.label(),
+                columnBar.firstColumn(), columnBar.columnCount()), groups));
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars);
+        return new PaintGuides(editedRows, editedColumns, editedBars, editedColumnBars);
     }
 
     private static int clamp(int value, int maximum) {
@@ -220,13 +292,17 @@ public final class PaintGuides {
         return bars.size();
     }
 
+    int columnBarCount() {
+        return columnBars.size();
+    }
+
     /** Reads the file text. Throws {@link IllegalArgumentException} naming the line on a bad line. */
     static PaintGuides parse(String text) {
         return PaintGuidesText.parse(text);
     }
 
     /**
-     * The file text that {@link #parse} reads back as the same guides: rows, columns, and bars, each kind in its
+     * The file text that {@link #parse} reads back as the same guides: rows, columns, bars, and column bars, each kind in its
      * stored order. Comments and blank lines are not kept.
      */
     String toText() {
@@ -249,19 +325,24 @@ public final class PaintGuides {
         return names.toString();
     }
 
-    public enum ListedKind { ROW, COLUMN, BAR }
+    public enum ListedKind { ROW, COLUMN, BAR, COLUMN_BAR }
 
     /**
      * One guide as the guide list shows it, whatever its kind.
      *
-     * @param position boundary row, boundary column, or first row of a bar
-     * @param rowCount rows in a bar, 0 for the other kinds
+     * @param position boundary row, boundary column, first row of a bar, or first column of a column bar
+     * @param rowCount the band size: rows in a bar, columns in a column bar, 0 for the other kinds
      * @param groups the groups text as {@link #toText} writes it, such as {@code all} or {@code lowercase,digits}
      */
     public record Listed(ListedKind kind, String label, int position, int rowCount, String groups) {
 
         /** Middle of a bar's band in rows from the top of the grid. */
         public float centerRow() {
+            return position + rowCount / 2f;
+        }
+
+        /** Middle of a column bar's band in columns from the left of the grid. */
+        public float centerColumn() {
             return position + rowCount / 2f;
         }
     }
@@ -281,23 +362,40 @@ public final class PaintGuides {
             all.add(new Listed(ListedKind.BAR, bar.guide().label(), bar.guide().firstRow(), bar.guide().rowCount(),
                 groupsText(bar.groups())));
         }
+        for (Scoped<ColumnBarGuide> columnBar : columnBars) {
+            all.add(new Listed(ListedKind.COLUMN_BAR, columnBar.guide().label(), columnBar.guide().firstColumn(),
+                columnBar.guide().columnCount(), groupsText(columnBar.groups())));
+        }
         return List.copyOf(all);
     }
 
     /** Whether there are no drawing guides. */
     boolean isEmpty() {
-        return rows.isEmpty() && columns.isEmpty() && bars.isEmpty();
+        return guideTotal() == 0;
     }
 
     /**
      * The guides of a rules group (see {@code FontRules.groupNameFor}) that fit the cell. Width guides are sorted
-     * by column and alternate label tiers 0, 1, 0, ... so neighbouring labels never overlap.
+     * by column. Width guides and column bars together are ordered by position and alternate label tiers
+     * 0, 1, 0, ... so neighbouring labels never overlap.
      */
     public Shown forGroup(String groupName, int cellWidth, int cellHeight) {
         List<Guide> shownRows = fittingRows(groupName, cellHeight);
-        List<WidthGuide> shownWidths = withAlternatingTiers(fittingColumns(groupName, cellWidth));
+        LabelTiers.Tiered tiered = LabelTiers.assign(fittingColumns(groupName, cellWidth),
+            fittingColumnBars(groupName, cellWidth));
         List<BarGuide> shownBars = fittingBars(groupName, cellHeight);
-        return new Shown(List.copyOf(shownRows), List.copyOf(shownWidths), List.copyOf(shownBars));
+        return new Shown(List.copyOf(shownRows), tiered.widths(), List.copyOf(shownBars), tiered.columnBars());
+    }
+
+    private List<ColumnBarGuide> fittingColumnBars(String groupName, int cellWidth) {
+        List<ColumnBarGuide> shownColumnBars = new ArrayList<>();
+        for (Scoped<ColumnBarGuide> columnBar : columnBars) {
+            if (columnBar.appliesTo(groupName)
+                && columnBar.guide().firstColumn() + columnBar.guide().columnCount() <= cellWidth) {
+                shownColumnBars.add(columnBar.guide());
+            }
+        }
+        return shownColumnBars;
     }
 
     private List<Guide> fittingRows(String groupName, int cellHeight) {
@@ -319,15 +417,6 @@ public final class PaintGuides {
         }
         fitting.sort(Comparator.comparingInt(WidthGuide::boundaryColumn));
         return fitting;
-    }
-
-    private static List<WidthGuide> withAlternatingTiers(List<WidthGuide> sortedGuides) {
-        List<WidthGuide> shownWidths = new ArrayList<>();
-        for (int i = 0; i < sortedGuides.size(); i++) {
-            WidthGuide guide = sortedGuides.get(i);
-            shownWidths.add(new WidthGuide(guide.label(), guide.boundaryColumn(), i % 2));
-        }
-        return shownWidths;
     }
 
     private List<BarGuide> fittingBars(String groupName, int cellHeight) {

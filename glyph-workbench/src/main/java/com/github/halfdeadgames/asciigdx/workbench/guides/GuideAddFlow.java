@@ -5,12 +5,12 @@ import java.util.function.Consumer;
 /** Adding a guide to the list in two steps: pick the kind, then type its label. Nothing is kept until the label is accepted. */
 final class GuideAddFlow {
 
-    /** The kinds the picker offers, in button order. A kind with no adder is shown but cannot be chosen yet. */
+    /** The kinds the picker offers, in button order. */
     enum Kind {
         SOLID_ACROSS("SOLID ACROSS", GuideListModel::addRow),
         SOLID_DOWN("SOLID DOWN", GuideListModel::addColumn),
         DOTTED_ACROSS("DOTTED ACROSS", GuideListModel::addBar),
-        DOTTED_DOWN("DOTTED DOWN", null);
+        DOTTED_DOWN("DOTTED DOWN", GuideListModel::addColumnBar);
 
         private final String label;
         private final Consumer<GuideListModel> adder;
@@ -22,10 +22,6 @@ final class GuideAddFlow {
 
         String label() {
             return label;
-        }
-
-        boolean isEnabled() {
-            return adder != null;
         }
     }
 
@@ -57,9 +53,9 @@ final class GuideAddFlow {
         }
     }
 
-    /** Adds the chosen kind and starts its label; a kind that is not enabled, or any call outside the picker, does nothing. */
+    /** Adds the chosen kind and starts its label; a call outside the picker does nothing. */
     void pick(Kind kind) {
-        if (state != State.PICKING || !kind.isEnabled()) {
+        if (state != State.PICKING) {
             return;
         }
         model.beginAdding(() -> kind.adder.accept(model));

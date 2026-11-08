@@ -290,10 +290,6 @@ public final class PaintGuideListPanel {
         if (kind == null) {
             return;
         }
-        if (!kind.isEnabled()) {
-            messages.warn("Dotted down guides are not ready yet");
-            return;
-        }
         addFlow.pick(kind);
         messages.nextAction();
         renameKeySwallowFrames = RENAME_KEY_SWALLOW_FRAMES;

@@ -150,6 +150,58 @@ class PaintGridLabelsTest {
         assertEquals(52, labels.widthLabelX(1));
     }
 
+    private static PaintGuides.Shown withColumnBars(List<PaintGuides.WidthGuide> widths,
+                                                    List<PaintGuides.ColumnBarGuide> columnBars) {
+        return new PaintGuides.Shown(List.of(), widths, List.of(), columnBars);
+    }
+
+    @Test
+    void aColumnBarLabelIsCenteredOnTheMiddleOfItsBand() {
+        labels.layout(withColumnBars(List.of(), List.of(new PaintGuides.ColumnBarGuide("W", 4, 2, 0))), null, FRAME);
+        assertEquals(46, labels.widthLabelX(0));
+    }
+
+    @Test
+    void columnBarLabelSlotsFollowTheWidthSlots() {
+        labels.layout(withColumnBars(List.of(new PaintGuides.WidthGuide("AA", 2, 0)),
+            List.of(new PaintGuides.ColumnBarGuide("BB", 8, 2, 1))), null, FRAME);
+        assertEquals(12, labels.widthLabelX(0));
+        assertEquals(82, labels.widthLabelX(1));
+    }
+
+    @Test
+    void aColumnBarAndAWidthLabelOfOneTierSeparate() {
+        labels.layout(withColumnBars(List.of(new PaintGuides.WidthGuide("AA", 5, 0)),
+            List.of(new PaintGuides.ColumnBarGuide("BB", 4, 2, 0))), null, FRAME);
+        assertEquals(32, labels.widthLabelX(0));
+        assertEquals(52, labels.widthLabelX(1));
+    }
+
+    @Test
+    void aHighlightMatchingAShownColumnBarReusesItsSlotAfterTheWidths() {
+        PaintGuides.Listed mark = new PaintGuides.Listed(PaintGuides.ListedKind.COLUMN_BAR, "BB", 4, 2, "");
+        labels.layout(withColumnBars(List.of(new PaintGuides.WidthGuide("AA", 5, 0)),
+            List.of(new PaintGuides.ColumnBarGuide("BB", 4, 2, 1))), mark, FRAME);
+        assertEquals(1, labels.highlightWidthSlot());
+        assertEquals(-1, labels.highlightRowSlot());
+    }
+
+    @Test
+    void aColumnBarHighlightNotShownGetsAnExtraSlotAtTheMiddleOfItsBand() {
+        PaintGuides.Listed mark = new PaintGuides.Listed(PaintGuides.ListedKind.COLUMN_BAR, "C", 4, 2, "");
+        labels.layout(empty(), mark, FRAME);
+        assertEquals(0, labels.highlightWidthSlot());
+        assertEquals(46, labels.widthLabelX(0));
+        assertEquals(-1, labels.highlightRowSlot());
+    }
+
+    @Test
+    void aHighlightWithOtherBandSizeIsNotTakenForAShownColumnBar() {
+        PaintGuides.Listed mark = new PaintGuides.Listed(PaintGuides.ListedKind.COLUMN_BAR, "BB", 4, 3, "");
+        labels.layout(withColumnBars(List.of(), List.of(new PaintGuides.ColumnBarGuide("BB", 4, 2, 0))), mark, FRAME);
+        assertEquals(1, labels.highlightWidthSlot());
+    }
+
     @Test
     void layingOutAgainReplacesTheEarlierSlots() {
         PaintGuides.Listed mark = new PaintGuides.Listed(PaintGuides.ListedKind.COLUMN, "C", 5, 0, "");

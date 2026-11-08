@@ -111,6 +111,12 @@ final class GuideListModel {
         selectAdded(current.rowCount() + current.columnCount() + current.barCount() - 1);
     }
 
+    /** Adds a centered two-column bar after the last column bar and selects it. */
+    void addColumnBar() {
+        current = current.withColumnBarAdded(cellWidth);
+        selectAdded(current.rowCount() + current.columnCount() + current.barCount() + current.columnBarCount() - 1);
+    }
+
     private void selectAdded(int guideIndex) {
         rows = buildRows();
         select(guideIndex);
@@ -122,9 +128,9 @@ final class GuideListModel {
     }
 
     private static String guideText(PaintGuides.Listed guide, String label) {
-        StringBuilder text = new StringBuilder(guide.kind().name()).append(' ').append(label).append(' ')
+        StringBuilder text = new StringBuilder(kindWord(guide.kind())).append(' ').append(label).append(' ')
             .append(guide.position());
-        if (guide.kind() == PaintGuides.ListedKind.BAR) {
+        if (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
             text.append('+').append(guide.rowCount());
         }
         text.append(' ');
@@ -137,6 +143,10 @@ final class GuideListModel {
             text.append(name.equals("ALL") ? name : name.substring(0, Math.min(GROUP_ABBREVIATION, name.length())));
         }
         return text.toString();
+    }
+
+    private static String kindWord(PaintGuides.ListedKind kind) {
+        return kind == PaintGuides.ListedKind.COLUMN_BAR ? "COLBAR" : kind.name();
     }
 
     int size() {

@@ -38,7 +38,7 @@ public final class PaintGridLabels {
         return rowLabelY[slot];
     }
 
-    /** Left of the label in a width slot: shown widths first, then the highlight's extra slot. */
+    /** Left of the label in a width slot: shown widths first, then shown column bars, then the highlight's extra slot. */
     public int widthLabelX(int slot) {
         return widthLabelX[slot];
     }
@@ -48,7 +48,7 @@ public final class PaintGridLabels {
         return highlightRowSlot;
     }
 
-    /** Width slot of the highlight, or -1 when the highlight is not a column. */
+    /** Width slot of the highlight, or -1 when the highlight is not a column or column bar. */
     public int highlightWidthSlot() {
         return highlightWidthSlot;
     }
@@ -56,7 +56,7 @@ public final class PaintGridLabels {
     /** @param mark the highlight to give a slot, or null for none */
     public void layout(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
         layoutRowLabels(shown, mark, frame);
-        layoutWidthLabels(shown.widths(), mark, frame);
+        layoutWidthLabels(shown, mark, frame);
     }
 
     private void layoutRowLabels(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
@@ -76,7 +76,8 @@ public final class PaintGridLabels {
     }
 
     private static int findHighlightRowSlot(PaintGuides.Shown shown, PaintGuides.Listed mark) {
-        if (mark == null || mark.kind() == PaintGuides.ListedKind.COLUMN) {
+        if (mark == null || mark.kind() == PaintGuides.ListedKind.COLUMN
+            || mark.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
             return -1;
         }
         int found = mark.kind() == PaintGuides.ListedKind.ROW
@@ -123,41 +124,79 @@ public final class PaintGridLabels {
         return guide.kind() == PaintGuides.ListedKind.BAR ? guide.centerRow() : guide.position();
     }
 
-    private void layoutWidthLabels(List<PaintGuides.WidthGuide> widths, PaintGuides.Listed mark, Frame frame) {
-        highlightWidthSlot = findHighlightWidthSlot(widths, mark);
-        int widthCount = highlightWidthSlot >= widths.size() ? widths.size() + 1 : widths.size();
-        int[] columns = new int[widthCount];
-        int[] tiers = new int[widthCount];
-        String[] labels = new String[widthCount];
+    private void layoutWidthLabels(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
+        List<PaintGuides.WidthGuide> widths = shown.widths();
+        List<PaintGuides.ColumnBarGuide> columnBars = shown.columnBars();
+        int shownSlots = widths.size() + columnBars.size();
+        highlightWidthSlot = findHighlightWidthSlot(shown, mark);
+        int slotCount = highlightWidthSlot >= shownSlots ? shownSlots + 1 : shownSlots;
+        int[] centers = new int[slotCount];
+        int[] tiers = new int[slotCount];
+        String[] labels = new String[slotCount];
         for (int i = 0; i < widths.size(); i++) {
-            columns[i] = widths.get(i).boundaryColumn();
+            centers[i] = widths.get(i).boundaryColumn() * frame.pixelSize();
             tiers[i] = widths.get(i).tier();
             labels[i] = widths.get(i).label();
         }
-        if (widthCount > widths.size()) {
-            columns[widthCount - 1] = mark.position();
-            labels[widthCount - 1] = mark.label();
+        for (int i = 0; i < columnBars.size(); i++) {
+            centers[widths.size() + i] = Math.round(columnBars.get(i).centerColumn() * frame.pixelSize());
+            tiers[widths.size() + i] = columnBars.get(i).tier();
+            labels[widths.size() + i] = columnBars.get(i).label();
         }
-        widthLabelX = new int[widthCount];
+        if (slotCount > shownSlots) {
+            centers[shownSlots] = Math.round(highlightLineColumn(mark) * frame.pixelSize());
+            labels[shownSlots] = mark.label();
+        }
+        widthLabelX = new int[slotCount];
         for (int tier = 0; tier < WIDTH_TIERS; tier++) {
-            placeTier(tier, columns, tiers, labels, frame);
+            placeTier(tier, centers, tiers, labels, frame);
         }
     }
 
-    private static int findHighlightWidthSlot(List<PaintGuides.WidthGuide> widths, PaintGuides.Listed mark) {
-        if (mark == null || mark.kind() != PaintGuides.ListedKind.COLUMN) {
+    private static float highlightLineColumn(PaintGuides.Listed guide) {
+        return guide.kind() == PaintGuides.ListedKind.COLUMN_BAR ? guide.centerColumn() : guide.position();
+    }
+
+    private static int findHighlightWidthSlot(PaintGuides.Shown shown, PaintGuides.Listed mark) {
+        if (mark == null) {
             return -1;
         }
+        int shownSlots = shown.widths().size() + shown.columnBars().size();
+        return switch (mark.kind()) {
+            case COLUMN -> orElse(findShownWidth(shown.widths(), mark), shownSlots);
+            case COLUMN_BAR -> orElse(findShownColumnBar(shown.columnBars(), mark, shown.widths().size()), shownSlots);
+            case ROW, BAR -> -1;
+        };
+    }
+
+    private static int orElse(int found, int fallback) {
+        return found >= 0 ? found : fallback;
+    }
+
+    private static int findShownWidth(List<PaintGuides.WidthGuide> widths, PaintGuides.Listed mark) {
         int found = -1;
         for (int i = 0; i < widths.size(); i++) {
             if (widths.get(i).boundaryColumn() == mark.position() && widths.get(i).label().equals(mark.label())) {
                 found = i;
             }
         }
-        return found >= 0 ? found : widths.size();
+        return found;
     }
 
-    private void placeTier(int tier, int[] columns, int[] tiers, String[] labels, Frame frame) {
+    private static int findShownColumnBar(List<PaintGuides.ColumnBarGuide> columnBars, PaintGuides.Listed mark,
+                                          int widthCount) {
+        int found = -1;
+        for (int i = 0; i < columnBars.size(); i++) {
+            PaintGuides.ColumnBarGuide bar = columnBars.get(i);
+            if (bar.firstColumn() == mark.position() && bar.columnCount() == mark.rowCount()
+                && bar.label().equals(mark.label())) {
+                found = widthCount + i;
+            }
+        }
+        return found;
+    }
+
+    private void placeTier(int tier, int[] centers, int[] tiers, String[] labels, Frame frame) {
         int inTier = countInTier(tier, tiers);
         int[] tierWanted = new int[inTier];
         int[] tierSizes = new int[inTier];
@@ -165,7 +204,7 @@ public final class PaintGridLabels {
         for (int i = 0; i < tiers.length; i++) {
             if (tiers[i] == tier) {
                 tierSizes[slot] = labels[i].length() * frame.cell();
-                tierWanted[slot] = frame.left() + columns[i] * frame.pixelSize() - tierSizes[slot] / 2;
+                tierWanted[slot] = frame.left() + centers[i] - tierSizes[slot] / 2;
                 slot++;
             }
         }

@@ -34,6 +34,7 @@ class GuideAddFlowTest {
         assertAdds(GuideAddFlow.Kind.SOLID_ACROSS, PaintGuides.ListedKind.ROW);
         assertAdds(GuideAddFlow.Kind.SOLID_DOWN, PaintGuides.ListedKind.COLUMN);
         assertAdds(GuideAddFlow.Kind.DOTTED_ACROSS, PaintGuides.ListedKind.BAR);
+        assertAdds(GuideAddFlow.Kind.DOTTED_DOWN, PaintGuides.ListedKind.COLUMN_BAR);
     }
 
     private void assertAdds(GuideAddFlow.Kind kind, PaintGuides.ListedKind expected) {
@@ -47,12 +48,26 @@ class GuideAddFlowTest {
     }
 
     @Test
-    void dottedDownIsRefused() {
-        assertFalse(GuideAddFlow.Kind.DOTTED_DOWN.isEnabled());
+    void dottedDownAddsAColumnBarNamedLikeTheOthers() {
         flow.start();
         flow.pick(GuideAddFlow.Kind.DOTTED_DOWN);
-        assertEquals(GuideAddFlow.State.PICKING, flow.state());
+        type("band");
+        flow.accept();
+        assertEquals(GuideAddFlow.State.CLOSED, flow.state());
+        assertEquals(4, model.size());
+        assertEquals(PaintGuides.ListedKind.COLUMN_BAR, model.selectedGuide().kind());
+        assertEquals("BAND", model.selectedGuide().label());
+    }
+
+    @Test
+    void escapeWhileNamingAColumnBarRemovesIt() {
+        flow.start();
+        flow.pick(GuideAddFlow.Kind.DOTTED_DOWN);
+        assertEquals(4, model.size());
+        flow.cancel();
+        assertEquals(GuideAddFlow.State.CLOSED, flow.state());
         assertEquals(3, model.size());
+        assertFalse(model.isChanged());
     }
 
     @Test
