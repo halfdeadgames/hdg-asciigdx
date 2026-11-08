@@ -106,7 +106,7 @@ public final class PaintHelp {
         {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}, {"N", "NEW GLYPH"}, {"D", "DERIVE"},
         {"U", "UNLOCK DERIVED"}, {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+E", "EXPORT"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
         {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
-        {"F1", "RULES"}, {"F2", "GUIDES"}, {"ALT+LETTER", "OPEN MENU"}, {"F10", "MENU BAR"}, {"ESC", "BACK"}};
+        {"F1", "RULES"}, {"F2", "GUIDES"}, {"F5", "RELOAD FILES"}, {"ALT+LETTER", "OPEN MENU"}, {"F10", "MENU BAR"}, {"ESC", "BACK"}};
     private static final String[][] MENU_CONTROLS = {
         {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
     private static final String[][] PICK_CONTROLS = {

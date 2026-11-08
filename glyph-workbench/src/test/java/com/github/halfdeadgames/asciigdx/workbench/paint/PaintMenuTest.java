@@ -75,13 +75,29 @@ class PaintMenuTest {
     void newSizeAndNewFontSitInTheFileMenuBetweenExportAndBack() {
         MenuBar<Action> bar = PaintMenu.create(true);
         assertEquals("FILE", bar.menu(0).title());
-        assertEquals(5, bar.menu(0).items().size());
+        assertEquals(6, bar.menu(0).items().size());
         assertEquals(Action.SAVE, bar.menu(0).items().get(0).action());
-        assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(2).action());
-        assertEquals("NEW SIZE", bar.menu(0).items().get(2).label());
-        assertEquals(Action.NEW_FONT, bar.menu(0).items().get(3).action());
-        assertEquals("NEW FONT", bar.menu(0).items().get(3).label());
-        assertEquals(Action.BACK, bar.menu(0).items().get(4).action());
+        assertEquals(Action.NEW_SIZE, bar.menu(0).items().get(3).action());
+        assertEquals("NEW SIZE", bar.menu(0).items().get(3).label());
+        assertEquals(Action.NEW_FONT, bar.menu(0).items().get(4).action());
+        assertEquals("NEW FONT", bar.menu(0).items().get(4).label());
+        assertEquals(Action.BACK, bar.menu(0).items().get(5).action());
+    }
+
+    @Test
+    void reloadFontFilesFollowsExportWithF5() {
+        MenuBar.Item<Action> item = PaintMenu.create(true).menu(0).items().get(2);
+        assertEquals(Action.RELOAD_FILES, item.action());
+        assertEquals("RELOAD FONT FILES", item.label());
+        assertEquals("F5", item.shortcut());
+    }
+
+    @Test
+    void reloadFontFilesIsAvailableOnlyWhenIdle() {
+        for (Context context : Context.values()) {
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.RELOAD_FILES, context),
+                context.name());
+        }
     }
 
     @Test

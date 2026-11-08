@@ -37,7 +37,7 @@ public final class PaintGuideListPanel {
 
     private final Painter painter;
     private final MessageStrip messages;
-    private final PaintGuidesFile guidesFile;
+    private PaintGuidesFile guidesFile;
     private final FontEditor editor;
     private final Host host;
     private final ArrowRepeats arrowRepeats;
@@ -76,6 +76,12 @@ public final class PaintGuideListPanel {
         this.arrowRepeats = arrowRepeats;
         this.host = host;
         this.guideList = newModel();
+    }
+
+    /** Saves to the given file from now on; call after the host shows the guides that file holds. */
+    public void useFile(PaintGuidesFile reloadedFile) {
+        guidesFile = reloadedFile;
+        guideList = newModel();
     }
 
     // Keeps the backspace repeater tracking the real key without producing deletions.
@@ -200,8 +206,15 @@ public final class PaintGuideListPanel {
     }
 
     private void refreshTitle() {
-        title = "GUIDES " + (guideList.selectedIndex() + 1) + "/" + guideList.size();
+        title = titleFor(guideList.selectedIndex(), guideList.size());
         seconds = 0f;
+    }
+
+    static String titleFor(int selectedIndex, int guideCount) {
+        if (guideCount == 0) {
+            return "GUIDES (NONE)";
+        }
+        return "GUIDES " + (selectedIndex + 1) + "/" + guideCount;
     }
 
     private void close() {

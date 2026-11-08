@@ -40,7 +40,10 @@ import com.github.halfdeadgames.asciigdx.workbench.newitems.PaintNewFont;
 import com.github.halfdeadgames.asciigdx.workbench.notes.NotePanel;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PaintPreview;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
-import com.github.halfdeadgames.asciigdx.workbench.rules.GlyphRules;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RuleChecker;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFileLoad;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RulesLoadResult;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RuleWarning;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesScreen;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
@@ -66,6 +69,7 @@ import com.github.halfdeadgames.asciigdx.workbench.upscale.ReviewFile;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceFonts;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSources;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
@@ -80,8 +84,8 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final String EXPORT_QUESTION = "Save, then export?";
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
-    private static final List<String> RULE_KEYS = List.of(
-        GlyphRules.KEY_ACCENT_INK, GlyphRules.KEY_DESCENDER_INK);
+    private static final String RULE_KEY_PREFIX = "rule:";
+    private static final String KEY_RULES = "rules";
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
     private static final String KEY_REVIEW = "review";
@@ -171,11 +175,14 @@ public final class PaintScreen implements WorkbenchScreen {
     private int derivedTextSource = -1;
     private String derivedText = "";
     private List<RuleWarning> ruleWarnings = List.of();
+    private RulesFile rulesFile;
+    private final List<String> shownRuleKeys = new ArrayList<>();
     private int ruleGlyph = -1;
     private int ruleRevision = -1;
     private ReviewFile review = new ReviewFile();
     private PaintGuides guides = PaintGuides.NONE;
     private PaintGuidesFile guidesFile;
+    private boolean rulesFileBad;
     private int shownNoteFor = -1;
     private final ScrollState helpScroll = new ScrollState(0);
     private PaintHelpPanel helpPanel;
@@ -295,6 +302,7 @@ public final class PaintScreen implements WorkbenchScreen {
             new SheetSlotPointerTarget(sheet, flow, derive, messages, new CursorSlotSelection()),
             new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new CursorStrokeStart())));
         loadReviewNotes(directory);
+        loadRules(directory);
     }
 
     private void installInputProcessor() {
@@ -851,10 +859,50 @@ public final class PaintScreen implements WorkbenchScreen {
         guidesFile = PaintGuidesFile.open(directory.file().toPath(), fontSize);
         guides = guidesFile.guides();
         if (!guidesFile.isUnreadable()) {
+            messages.clearCondition(KEY_GUIDES);
             return;
         }
         messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
         Gdx.app.error(TAG, "Cannot read " + guidesFile.displayPath() + ": " + guidesFile.readError());
+    }
+
+    // The glyph data file is left alone: it holds unsaved edits and the undo history.
+    private void reloadFontFiles() {
+        messages.nextAction();
+        FileHandle directory = dataFile.parent();
+        loadRules(directory);
+        reloadGuides(directory);
+        if (!rulesFileBad && !guidesFile.isUnreadable()) {
+            messages.ok("Reloaded rules and guides");
+        }
+    }
+
+    private void reloadGuides(FileHandle directory) {
+        loadGuides(directory);
+        showGuides(guides);
+        guideListPanel.useFile(guidesFile);
+    }
+
+    // Run again to reload; the next frame checks the current glyph afresh.
+    private void loadRules(FileHandle directory) {
+        RulesLoadResult result = RulesFileLoad.load(
+            directory.file().toPath(), fontSize, editor.cellWidth(), editor.cellHeight());
+        rulesFile = result.rulesFile();
+        ruleGlyph = -1;
+        ruleRevision = -1;
+        showRulesLoadState(result);
+    }
+
+    private void showRulesLoadState(RulesLoadResult result) {
+        rulesFileBad = result.status() == RulesLoadResult.Status.BAD;
+        switch (result.status()) {
+            case MISSING -> messages.setCondition(KEY_RULES, false, "No rules file");
+            case LOADED -> messages.clearCondition(KEY_RULES);
+            case BAD -> {
+                messages.setCondition(KEY_RULES, true, "Rules file is bad: " + result.errorText());
+                Gdx.app.error(TAG, "Cannot read " + result.path() + ": " + result.errorText());
+            }
+        }
     }
 
     @Override
@@ -898,6 +946,7 @@ public final class PaintScreen implements WorkbenchScreen {
         switch (action) {
             case SAVE -> save();
             case EXPORT -> exportFont();
+            case RELOAD_FILES -> reloadFontFiles();
             case BACK -> leave();
             case UNDO -> undoOnce();
             case REDO -> redoOnce();
@@ -1069,6 +1118,10 @@ public final class PaintScreen implements WorkbenchScreen {
             guideListPanel.open();
             return true;
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F5) && flow.mode() == DeriveFlow.Mode.IDLE) {
+            reloadFontFiles();
+            return true;
+        }
         return false;
     }
 
@@ -1206,13 +1259,20 @@ public final class PaintScreen implements WorkbenchScreen {
         ruleGlyph = codePoint;
         ruleRevision = editor.revision();
         PixelGlyph glyph = editor.isDerived(codePoint) ? null : editor.glyph(codePoint);
-        ruleWarnings = GlyphRules.check(codePoint, glyph, guides.accentRows(), guides.descenderFirstRow());
-        for (String key : RULE_KEYS) {
-            messages.clearCondition(key);
-        }
+        ruleWarnings = RuleChecker.check(rulesFile, codePoint, glyph);
+        clearShownRuleWarnings();
         for (RuleWarning warning : ruleWarnings) {
-            messages.setCondition(warning.key(), true, warning.message());
+            String messageKey = RULE_KEY_PREFIX + warning.key();
+            messages.setCondition(messageKey, true, warning.message());
+            shownRuleKeys.add(messageKey);
         }
+    }
+
+    private void clearShownRuleWarnings() {
+        for (String messageKey : shownRuleKeys) {
+            messages.clearCondition(messageKey);
+        }
+        shownRuleKeys.clear();
     }
 
     private void handlePreviewTabKey() {

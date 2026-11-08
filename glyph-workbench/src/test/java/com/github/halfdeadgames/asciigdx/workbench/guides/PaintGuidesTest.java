@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
 class PaintGuidesTest {
@@ -111,45 +110,11 @@ class PaintGuidesTest {
     }
 
     @Test
-    void warnSettingsAreRead() {
-        PaintGuides guides = PaintGuides.parse("warn accent-rows 2\nrow CAP 1 all\nwarn descender-from 0\n");
-        assertEquals(OptionalInt.of(2), guides.accentRows());
-        assertEquals(OptionalInt.of(0), guides.descenderFirstRow());
-        assertEquals(1, guides.forGroup(FontRules.UPPERCASE, 8, 8).rows().size());
-    }
-
-    @Test
-    void absentWarnSettingsAreEmpty() {
-        PaintGuides guides = PaintGuides.parse(SAMPLE);
-        assertTrue(guides.accentRows().isEmpty());
-        assertTrue(guides.descenderFirstRow().isEmpty());
-        assertTrue(PaintGuides.NONE.accentRows().isEmpty());
-        assertTrue(PaintGuides.NONE.descenderFirstRow().isEmpty());
-        assertEquals(OptionalInt.of(3), PaintGuides.parse("warn accent-rows 3").accentRows());
-        assertTrue(PaintGuides.parse("warn accent-rows 3").descenderFirstRow().isEmpty());
-    }
-
-    @Test
-    void badWarnLinesNameTheirLineNumber() {
-        assertTrue(badLineMessage("row CAP 1 all\nwarn bogus 1").startsWith("Line 2:"));
-        assertTrue(badLineMessage("warn bogus 1").contains("bogus"));
-        assertTrue(badLineMessage("warn accent-rows").startsWith("Line 1:"));
-        assertTrue(badLineMessage("warn accent-rows 1 2").startsWith("Line 1:"));
-        assertTrue(badLineMessage("warn accent-rows one").startsWith("Line 1:"));
-        assertTrue(badLineMessage("warn accent-rows -1").startsWith("Line 1:"));
-        assertTrue(badLineMessage("warn descender-from -2").startsWith("Line 1:"));
-        assertTrue(badLineMessage("warn accent-rows 1\n# c\nwarn accent-rows 2").startsWith("Line 3:"));
-        assertTrue(badLineMessage("warn descender-from 7\nwarn descender-from 7").startsWith("Line 2:"));
-    }
-
-    @Test
     void realSaiksisttGuidesParse() throws IOException {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
         PaintGuides guides = PaintGuides.parse(
             Files.readString(Path.of(repoRoot, "fonts/saiksistt/16.guides.txt"), StandardCharsets.UTF_8));
-        assertEquals(OptionalInt.empty(), guides.accentRows());
-        assertEquals(OptionalInt.empty(), guides.descenderFirstRow());
         PaintGuides.Shown upper = guides.forGroup(FontRules.UPPERCASE, 16, 16);
         assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
         assertTrue(upper.widths().isEmpty());
@@ -169,8 +134,6 @@ class PaintGuidesTest {
         String written = original.toText();
         PaintGuides reread = PaintGuides.parse(written);
         assertEquals(written, reread.toText());
-        assertEquals(original.accentRows(), reread.accentRows());
-        assertEquals(original.descenderFirstRow(), reread.descenderFirstRow());
         assertEquals(original.isEmpty(), reread.isEmpty());
         for (String group : EVERY_GROUP) {
             assertEquals(original.forGroup(group, 8, 8), reread.forGroup(group, 8, 8));
@@ -191,20 +154,14 @@ class PaintGuidesTest {
     @Test
     void allKindsSampleRoundTrips() {
         assertRoundTrips(SAMPLE);
-        assertRoundTrips("warn descender-from 6\nwarn accent-rows 2\n" + SAMPLE);
     }
 
     @Test
-    void emptyAndWarnOnlyTextRoundTrip() {
+    void emptyAndCommentOnlyTextRoundTrip() {
         assertEquals("", PaintGuides.parse("").toText());
         assertEquals("", PaintGuides.parse("# only a comment\n\n").toText());
         assertEquals("", PaintGuides.NONE.toText());
         assertRoundTrips("");
-        assertEquals("warn accent-rows 2\nwarn descender-from 7\n",
-            PaintGuides.parse("warn descender-from 7\nwarn accent-rows 2\n").toText());
-        assertEquals("warn descender-from 0\n", PaintGuides.parse("warn descender-from 0").toText());
-        assertRoundTrips("warn accent-rows 2\nwarn descender-from 7\n");
-        assertRoundTrips("warn descender-from 0\n");
     }
 
     @Test

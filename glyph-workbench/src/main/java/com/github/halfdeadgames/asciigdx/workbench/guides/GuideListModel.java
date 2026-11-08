@@ -6,20 +6,16 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * The rows of the guide list and which one is selected. Rows are the two warning settings first, then every guide
- * in file order, and are rebuilt after each edit. A warning row selects no guide. Edits work on a copy; the guides
- * the list was opened with stay available through {@link #original()}.
+ * The rows of the guide list and which one is selected. Row i is guide i in file order, and rows are rebuilt after
+ * each edit. Edits work on a copy; the guides the list was opened with stay available through {@link #original()}.
  */
 final class GuideListModel {
 
-    /** @param guide the guide this row stands for, or null for a warning setting */
+    /** @param guide the guide this row stands for */
     record Row(String text, PaintGuides.Listed guide) {
     }
 
     private static final int GROUP_ABBREVIATION = 3;
-    private static final String NOT_SET = "NOT SET";
-    private static final int WARNING_ROWS = 2;
-    private static final int ACCENT_ROW = 0;
     private static final String RENAME_CURSOR = "_";
 
     private final LabelField label = new LabelField();
@@ -42,10 +38,6 @@ final class GuideListModel {
 
     private List<Row> buildRows() {
         List<Row> built = new ArrayList<>();
-        built.add(new Row("WARN ACCENT ROWS " + valueText(current.accentRows().isPresent(),
-            current.accentRows().orElse(0)), null));
-        built.add(new Row("WARN DESC FROM " + valueText(current.descenderFirstRow().isPresent(),
-            current.descenderFirstRow().orElse(0)), null));
         for (PaintGuides.Listed guide : current.allGuides()) {
             built.add(new Row(guideText(guide), guide));
         }
@@ -67,25 +59,15 @@ final class GuideListModel {
         return !current.toText().equals(original.toText());
     }
 
-    /** Changes the selected row's value by {@code delta}: a guide's position or a warning setting. */
+    /** Moves the selected guide's position by {@code delta}. */
     void adjust(int delta) {
-        if (selected < WARNING_ROWS) {
-            current = selected == ACCENT_ROW
-                ? current.withAccentRowsMoved(delta, cellHeight)
-                : current.withDescenderFirstRowMoved(delta, cellHeight);
-        } else {
-            current = current.withGuideMoved(selected - WARNING_ROWS, delta, cellWidth, cellHeight);
-        }
+        current = current.withGuideMoved(selected, delta, cellWidth, cellHeight);
         rows = buildRows();
     }
 
-    /** Removes the selected guide, or turns the selected warning setting off. */
+    /** Removes the selected guide. */
     void deleteSelected() {
-        if (selected < WARNING_ROWS) {
-            current = selected == ACCENT_ROW ? current.withoutAccentRows() : current.withoutDescenderFirstRow();
-        } else {
-            current = current.withoutGuide(selected - WARNING_ROWS);
-        }
+        current = current.withoutGuide(selected);
         rows = buildRows();
         select(selected);
     }
@@ -110,11 +92,7 @@ final class GuideListModel {
 
     private void selectAdded(int guideIndex) {
         rows = buildRows();
-        select(WARNING_ROWS + guideIndex);
-    }
-
-    private static String valueText(boolean present, int value) {
-        return present ? String.valueOf(value) : NOT_SET;
+        select(guideIndex);
     }
 
     // Bars show first row plus row count, such as 6+1; groups are cut to three letters each.
@@ -158,14 +136,14 @@ final class GuideListModel {
 
     /**
      * Switches a rules group (0 uppercase, 1 lowercase, 2 digits, 3 punctuation) on or off for the selected guide.
-     * A guide keeps at least one group, so switching off the last one changes nothing. Warning rows and renaming
+     * A guide keeps at least one group, so switching off the last one changes nothing. An empty list and renaming
      * ignore it.
      */
     GroupToggle toggleGroup(int groupIndex) {
         if (selectedGuide() == null || label.isActive() || groupIndex < 0 || groupIndex >= PaintGuides.groupCount()) {
             return GroupToggle.NOT_A_GUIDE;
         }
-        PaintGuides toggled = current.withGroupToggled(selected - WARNING_ROWS, groupIndex);
+        PaintGuides toggled = current.withGroupToggled(selected, groupIndex);
         if (toggled == current) {
             return GroupToggle.LAST_GROUP;
         }
@@ -174,7 +152,7 @@ final class GuideListModel {
         return GroupToggle.TOGGLED;
     }
 
-    /** Starts renaming the selected guide from its current label; a warning row cannot be renamed. */
+    /** Starts renaming the selected guide from its current label; does nothing when the list is empty. */
     void beginRename() {
         if (!canRename()) {
             return;
@@ -210,7 +188,7 @@ final class GuideListModel {
         if (!canAcceptRename()) {
             return;
         }
-        current = current.withGuideRelabeled(selected - WARNING_ROWS, label.value());
+        current = current.withGuideRelabeled(selected, label.value());
         label.end();
         rows = buildRows();
     }
@@ -239,8 +217,11 @@ final class GuideListModel {
         select(selected + delta);
     }
 
-    /** The selected guide, or null when a warning row is selected. */
+    /** The selected guide, or null when the list is empty. */
     PaintGuides.Listed selectedGuide() {
+        if (rows.isEmpty()) {
+            return null;
+        }
         return rows.get(selected).guide();
     }
 

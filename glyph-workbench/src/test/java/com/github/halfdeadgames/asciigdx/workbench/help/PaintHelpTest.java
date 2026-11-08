@@ -132,7 +132,7 @@ class PaintHelpTest {
         assertTrue(lines.contains(String.format("%-12s%s", "ESC", "BACK")));
         assertTrue(lines.contains(String.format("%-12s%s", "ALT+LETTER", "OPEN MENU")));
         assertTrue(lines.contains(String.format("%-12s%s", "F10", "MENU BAR")));
-        assertEquals(26, rows.size());
+        assertEquals(27, rows.size());
         for (PaintHelp.Row row : rows) {
             assertEquals(PaintHelp.Kind.CONTROL, row.kind());
             assertEquals(12, row.actionColumn());

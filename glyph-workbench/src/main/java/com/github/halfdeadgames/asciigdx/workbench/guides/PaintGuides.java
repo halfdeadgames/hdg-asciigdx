@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -16,10 +15,7 @@ import java.util.Set;
  * row    label boundaryRow groups
  * column label boundaryColumn groups
  * bar    label firstRow rowCount groups
- * warn   accent-rows count
- * warn   descender-from row
  * </pre>
- * The two {@code warn} lines are optional, each at most once; a check without its line is off.
  * {@code groups} is {@code all} or a comma list of rules group names (case-insensitive). Labels contain no spaces.
  */
 public final class PaintGuides {
@@ -58,32 +54,16 @@ public final class PaintGuides {
     static final List<String> ALL_GROUPS = List.of(
         FontRules.UPPERCASE, FontRules.LOWERCASE, FontRules.DIGITS, FontRules.PUNCTUATION);
 
-    /** The optional {@code warn} settings; an empty value means the file leaves that check off. */
-    static final class WarnSettings {
-        OptionalInt accentRows = OptionalInt.empty();
-        OptionalInt descenderFirstRow = OptionalInt.empty();
-    }
-
-    public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of(), new WarnSettings());
+    public static final PaintGuides NONE = new PaintGuides(List.of(), List.of(), List.of());
 
     private final List<Scoped<Guide>> rows;
     private final List<Scoped<WidthGuide>> columns;
     private final List<Scoped<BarGuide>> bars;
-    private final OptionalInt accentRows;
-    private final OptionalInt descenderFirstRow;
 
-    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
-                WarnSettings warnSettings) {
-        this(rows, columns, bars, warnSettings.accentRows, warnSettings.descenderFirstRow);
-    }
-
-    private PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars,
-                        OptionalInt accentRows, OptionalInt descenderFirstRow) {
+    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars) {
         this.rows = List.copyOf(rows);
         this.columns = List.copyOf(columns);
         this.bars = List.copyOf(bars);
-        this.accentRows = accentRows;
-        this.descenderFirstRow = descenderFirstRow;
     }
 
     private static final String NEW_LABEL = "NEW";
@@ -92,21 +72,21 @@ public final class PaintGuides {
     PaintGuides withRowAdded() {
         List<Scoped<Guide>> edited = new ArrayList<>(rows);
         edited.add(new Scoped<>(new Guide(NEW_LABEL, 0), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(edited, columns, bars, accentRows, descenderFirstRow);
+        return new PaintGuides(edited, columns, bars);
     }
 
     /** A copy with a column guide labelled NEW at position 0 for every group, last among the columns. */
     PaintGuides withColumnAdded() {
         List<Scoped<WidthGuide>> edited = new ArrayList<>(columns);
         edited.add(new Scoped<>(new WidthGuide(NEW_LABEL, 0, 0), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(rows, edited, bars, accentRows, descenderFirstRow);
+        return new PaintGuides(rows, edited, bars);
     }
 
     /** A copy with a one-row bar labelled NEW at row 0 for every group, last among the bars. */
     PaintGuides withBarAdded() {
         List<Scoped<BarGuide>> edited = new ArrayList<>(bars);
         edited.add(new Scoped<>(new BarGuide(NEW_LABEL, 0, 1), Set.copyOf(ALL_GROUPS)));
-        return new PaintGuides(rows, columns, edited, accentRows, descenderFirstRow);
+        return new PaintGuides(rows, columns, edited);
     }
 
     /** A copy without the guide at {@code index} of {@link #allGuides()}; an index out of range changes nothing. */
@@ -124,7 +104,7 @@ public final class PaintGuides {
         } else {
             editedBars.remove(index - rows.size() - columns.size());
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+        return new PaintGuides(editedRows, editedColumns, editedBars);
     }
 
     /**
@@ -155,7 +135,7 @@ public final class PaintGuides {
             editedBars.set(at, new Scoped<>(new BarGuide(bar.guide().label(),
                 clamp(bar.guide().firstRow() + delta, cellHeight - rowCount), rowCount), bar.groups()));
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+        return new PaintGuides(editedRows, editedColumns, editedBars);
     }
 
     /** How many rules groups a guide can be set for. */
@@ -221,7 +201,7 @@ public final class PaintGuides {
             editedBars.set(at, new Scoped<>(
                 new BarGuide(label != null ? label : bar.label(), bar.firstRow(), bar.rowCount()), groups));
         }
-        return new PaintGuides(editedRows, editedColumns, editedBars, accentRows, descenderFirstRow);
+        return new PaintGuides(editedRows, editedColumns, editedBars);
     }
 
     private static int clamp(int value, int maximum) {
@@ -240,41 +220,14 @@ public final class PaintGuides {
         return bars.size();
     }
 
-    /** A copy with the accent-rows setting changed by {@code delta} within 0..cellHeight; an unset one becomes 0 on a rise and stays unset on a fall. */
-    PaintGuides withAccentRowsMoved(int delta, int cellHeight) {
-        return new PaintGuides(rows, columns, bars, movedSetting(accentRows, delta, cellHeight), descenderFirstRow);
-    }
-
-    /** A copy with the descender first row changed by {@code delta}, with the same rules as the accent rows. */
-    PaintGuides withDescenderFirstRowMoved(int delta, int cellHeight) {
-        return new PaintGuides(rows, columns, bars, accentRows, movedSetting(descenderFirstRow, delta, cellHeight));
-    }
-
-    private static OptionalInt movedSetting(OptionalInt setting, int delta, int cellHeight) {
-        if (setting.isEmpty()) {
-            return delta > 0 ? OptionalInt.of(0) : setting;
-        }
-        return OptionalInt.of(clamp(setting.getAsInt() + delta, cellHeight));
-    }
-
-    /** A copy with the accent-rows warn setting off. */
-    PaintGuides withoutAccentRows() {
-        return new PaintGuides(rows, columns, bars, OptionalInt.empty(), descenderFirstRow);
-    }
-
-    /** A copy with the descender warn setting off. */
-    PaintGuides withoutDescenderFirstRow() {
-        return new PaintGuides(rows, columns, bars, accentRows, OptionalInt.empty());
-    }
-
     /** Reads the file text. Throws {@link IllegalArgumentException} naming the line on a bad line. */
     static PaintGuides parse(String text) {
         return PaintGuidesText.parse(text);
     }
 
     /**
-     * The file text that {@link #parse} reads back as the same guides and warn settings: warn lines, then rows,
-     * columns, and bars, each kind in its stored order. Comments and blank lines are not kept.
+     * The file text that {@link #parse} reads back as the same guides: rows, columns, and bars, each kind in its
+     * stored order. Comments and blank lines are not kept.
      */
     String toText() {
         return PaintGuidesText.toText(this);
@@ -331,17 +284,7 @@ public final class PaintGuides {
         return List.copyOf(all);
     }
 
-    /** Rows at the top reserved for accents, or empty when the file leaves the accent check off. */
-    public OptionalInt accentRows() {
-        return accentRows;
-    }
-
-    /** First row of the descender band, or empty when the file leaves the descender check off. */
-    public OptionalInt descenderFirstRow() {
-        return descenderFirstRow;
-    }
-
-    /** Whether there are no drawing guides; the warn settings are not guides. */
+    /** Whether there are no drawing guides. */
     boolean isEmpty() {
         return rows.isEmpty() && columns.isEmpty() && bars.isEmpty();
     }

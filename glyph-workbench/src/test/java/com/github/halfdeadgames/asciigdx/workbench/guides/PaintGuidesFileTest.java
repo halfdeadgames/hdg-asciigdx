@@ -19,8 +19,6 @@ import org.junit.jupiter.api.io.TempDir;
 class PaintGuidesFileTest {
 
     private static final String VALID_TEXT = """
-        warn accent-rows 1
-        warn descender-from 7
         row CAP 1 all
         row X-HT 2 all
         row BASE 7 all
@@ -52,7 +50,6 @@ class PaintGuidesFileTest {
         assertEquals(3, file.guides().rowCount());
         assertEquals(5, file.guides().columnCount());
         assertEquals(2, file.guides().barCount());
-        assertEquals(1, file.guides().accentRows().getAsInt());
         assertEquals(VALID_TEXT, file.guides().toText());
     }
 
