@@ -4,8 +4,8 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.SerializationException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,14 +15,14 @@ import java.util.regex.Pattern;
 /** Turns rules file text into a {@link RulesFile}, checking every key and reference on the way. */
 final class RulesFileParser {
 
-    private static final String ALL_GROUP = "all";
+    private static final String ALL_GROUP = RulesFile.ALL_GROUP;
     private static final Pattern LINE_IN_MESSAGE = Pattern.compile("line (\\d+)");
     private static final List<String> TOP_LEVEL_KEYS = List.of("groups", "rules");
     private static final List<String> RULE_KEYS =
             concat(List.of("name", "check", "appliesTo", "except"), CheckSettingsParser.SETTING_KEYS);
     private static final List<String> EXCEPTION_KEYS = List.of("group", "glyphs", "why");
 
-    private final Map<String, GlyphSet> groups = new HashMap<>();
+    private final Map<String, GlyphSet> groups = new LinkedHashMap<>();
     private final Set<String> ruleNames = new HashSet<>();
 
     private final CheckSettingsParser settingsParser;
@@ -36,7 +36,7 @@ final class RulesFileParser {
         var parser = new RulesFileParser(cellWidth, cellHeight);
         checkKnownKeys(root, TOP_LEVEL_KEYS, "The file");
         parser.readGroups(root.get("groups"));
-        return new RulesFile(parser.readRules(root.get("rules")));
+        return new RulesFile(parser.readRules(root.get("rules")), parser.groups);
     }
 
     private static JsonValue readRoot(String json) {

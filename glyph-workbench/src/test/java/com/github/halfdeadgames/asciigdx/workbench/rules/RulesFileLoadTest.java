@@ -27,6 +27,7 @@ class RulesFileLoadTest {
         RulesLoadResult result = RulesFileLoad.load(directory, "16", CELL, CELL);
         assertEquals(RulesLoadResult.Status.MISSING, result.status());
         assertTrue(result.rulesFile().rules().isEmpty());
+        assertTrue(result.rulesFile().groupNames().isEmpty());
     }
 
     @Test
@@ -44,6 +45,7 @@ class RulesFileLoadTest {
         RulesLoadResult result = loadWith("{ rules: [ { name: ");
         assertEquals(RulesLoadResult.Status.BAD, result.status());
         assertTrue(result.rulesFile().rules().isEmpty());
+        assertTrue(result.rulesFile().groupNames().isEmpty());
         assertFalse(result.errorText().isBlank());
     }
 

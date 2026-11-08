@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -58,12 +57,12 @@ class LabelTiersTest {
     }
 
     @Test
-    void forGroupSharesTheTiersBetweenColumnGuidesAndColumnBars() {
+    void forGlyphSharesTheTiersBetweenColumnGuidesAndColumnBars() {
         PaintGuides guides = PaintGuides.parse("""
             column W 4 all
             colbar BAND 3 2 all
             """);
-        PaintGuides.Shown shown = guides.forGroup(FontRules.UPPERCASE, 8, 8);
+        PaintGuides.Shown shown = guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 8, 8);
         assertEquals(0, shown.widths().get(0).tier());
         assertEquals(1, shown.columnBars().get(0).tier());
     }

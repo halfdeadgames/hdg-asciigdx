@@ -891,6 +891,7 @@ public final class PaintScreen implements WorkbenchScreen {
         RulesLoadResult result = RulesFileLoad.load(
             directory.file().toPath(), fontSize, editor.cellWidth(), editor.cellHeight());
         rulesFile = result.rulesFile();
+        grid.setRules(rulesFile);
         ruleGlyph = -1;
         ruleRevision = -1;
         showRulesLoadState(result);

@@ -81,23 +81,21 @@ final class PaintGuidesText {
     }
 
     private static Set<String> groups(String word) {
-        if (word.equalsIgnoreCase("all")) {
-            return Set.copyOf(PaintGuides.ALL_GROUPS);
+        if (word.equalsIgnoreCase(GuideGroups.ALL)) {
+            return GuideGroups.EVERY_GLYPH;
         }
         Set<String> found = new LinkedHashSet<>();
         for (String name : word.split(",", -1)) {
-            found.add(canonicalGroup(name));
+            found.add(groupName(name));
         }
         return found;
     }
 
-    private static String canonicalGroup(String name) {
-        for (String group : PaintGuides.ALL_GROUPS) {
-            if (group.equalsIgnoreCase(name)) {
-                return group;
-            }
+    private static String groupName(String name) {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("empty group name in the groups list");
         }
-        throw new IllegalArgumentException("unknown group '" + name + "'");
+        return name.equalsIgnoreCase(GuideGroups.ALL) ? GuideGroups.ALL : name;
     }
 
     static String toText(PaintGuides guides) {

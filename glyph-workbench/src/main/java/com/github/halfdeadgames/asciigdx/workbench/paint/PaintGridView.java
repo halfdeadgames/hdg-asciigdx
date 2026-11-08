@@ -3,11 +3,11 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
@@ -48,7 +48,9 @@ final class PaintGridView {
 
     private final Painter painter;
     private PaintGuides.Listed highlighted;
-    private String shownGroup = "";
+    private static final int NO_GLYPH = -1;
+    private int shownCodePoint = NO_GLYPH;
+    private RulesFile rules = RulesFile.empty();
     private PaintGuides.Shown shown = new PaintGuides.Shown(List.of(), List.of(), List.of());
     private final FontEditor editor;
     private PaintGuides guides;
@@ -86,7 +88,13 @@ final class PaintGridView {
     /** Switches to other guides; the next draw filters them again. */
     void setGuides(PaintGuides newGuides) {
         guides = newGuides;
-        shownGroup = "";
+        shownCodePoint = NO_GLYPH;
+    }
+
+    /** Switches to other rules, whose groups decide which guides show; the next draw filters them again. */
+    void setRules(RulesFile newRules) {
+        rules = newRules;
+        shownCodePoint = NO_GLYPH;
     }
 
     /** Picks the largest pixel size that fits the area, leaving room on the right for guide labels. */
@@ -131,7 +139,7 @@ final class PaintGridView {
         if (ghost != null) {
             drawGhost(ghost, seconds);
         }
-        selectGuides(FontRules.groupNameFor(codePoint));
+        selectGuides(codePoint);
         if (layoutDirty) {
             layoutLabels();
         }
@@ -227,13 +235,14 @@ final class PaintGridView {
         }
     }
 
-    // Guides are filtered once per group change, not per frame.
-    private void selectGuides(String groupName) {
-        if (!groupName.equals(shownGroup)) {
-            shownGroup = groupName;
-            shown = guides.forGroup(groupName, editor.cellWidth(), editor.cellHeight());
-            layoutDirty = true;
+    // Guides are filtered once per glyph, guides, or rules change, not per frame.
+    private void selectGuides(int codePoint) {
+        if (codePoint == shownCodePoint) {
+            return;
         }
+        shownCodePoint = codePoint;
+        shown = guides.forGlyph(codePoint, rules, editor.cellWidth(), editor.cellHeight());
+        layoutDirty = true;
     }
 
     // Only pixels inside the visible grid are drawn; ink wholly beyond one side gets a blinking arrow on that edge.

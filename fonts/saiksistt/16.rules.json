@@ -1,0 +1,9 @@
+{
+  "groups": {
+    "uppercase": ["A-Z"],
+    "lowercase": ["a-z"],
+    "digits": ["0-9"],
+    "punctuation": ["!-/", ":-@", "[-`", "{-~"]
+  },
+  "rules": []
+}

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontRules;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -170,16 +169,16 @@ class ColumnBarGuideTest {
     @Test
     void shownKeepsOnlyColumnBarsOfTheGroupThatFitTheCellWidth() {
         PaintGuides guides = PaintGuides.parse(ALL_KINDS);
-        List<String> upper = guides.forGroup(FontRules.UPPERCASE, 8, 8).columnBars().stream()
+        List<String> upper = guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 8, 8).columnBars().stream()
             .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("STEM", "WIDE"), upper);
-        List<String> lower = guides.forGroup(FontRules.LOWERCASE, 8, 8).columnBars().stream()
+        List<String> lower = guides.forGlyph(FourGroupRules.LOWER, FourGroupRules.RULES, 8, 8).columnBars().stream()
             .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("WIDE"), lower);
-        List<String> narrow = guides.forGroup(FontRules.UPPERCASE, 4, 8).columnBars().stream()
+        List<String> narrow = guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 4, 8).columnBars().stream()
             .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("WIDE"), narrow);
-        assertTrue(guides.forGroup(FontRules.UPPERCASE, 3, 8).columnBars().isEmpty());
+        assertTrue(guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 3, 8).columnBars().isEmpty());
         assertFalse(guides.isEmpty());
     }
 }

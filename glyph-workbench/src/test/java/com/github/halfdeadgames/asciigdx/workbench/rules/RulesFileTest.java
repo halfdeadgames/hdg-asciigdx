@@ -74,6 +74,53 @@ class RulesFileTest {
     }
 
     @Test
+    void groupNamesFollowFileOrder() {
+        var names = java.util.List.of("zulu", "alpha", "mike", "bravo", "yankee", "charlie", "x1", "b2", "q9", "k");
+        var body = new StringBuilder();
+        for (String name : names) {
+            body.append(name).append(": [ \"A\" ], ");
+        }
+        var file = RulesFile.parse("{ groups: { " + body + " } }", CELL, CELL);
+        assertEquals(names, file.groupNames());
+    }
+
+    @Test
+    void allIsBuiltInAndNotListed() {
+        var file = RulesFile.parse("{ groups: { caps: [ \"A-Z\" ] } }", CELL, CELL);
+        assertEquals(java.util.List.of("caps"), file.groupNames());
+        assertTrue(file.hasGroup("all"));
+        assertTrue(file.isInGroup("all", 'a'));
+        assertTrue(file.isInGroup("all", 0x2588));
+    }
+
+    @Test
+    void definedGroupMatchesOnlyItsGlyphs() {
+        var file = RulesFile.parse("{ groups: { caps: [ \"A-Z\" ] } }", CELL, CELL);
+        assertTrue(file.hasGroup("caps"));
+        assertTrue(file.isInGroup("caps", 'Q'));
+        assertFalse(file.isInGroup("caps", 'q'));
+    }
+
+    @Test
+    void unknownGroupIsFalseForBothQueries() {
+        var file = RulesFile.parse("{ groups: { caps: [ \"A-Z\" ] } }", CELL, CELL);
+        assertFalse(file.hasGroup("nope"));
+        assertFalse(file.isInGroup("nope", 'A'));
+    }
+
+    @Test
+    void fileWithoutGroupsHasNoGroupNames() {
+        assertTrue(RulesFile.parse("{}", CELL, CELL).groupNames().isEmpty());
+    }
+
+    @Test
+    void groupNamesCannotBeModified() {
+        var names = RulesFile.parse("{ groups: { caps: [ \"A-Z\" ] } }", CELL, CELL).groupNames();
+        assertThrows(UnsupportedOperationException.class, () -> names.add("extra"));
+        assertThrows(UnsupportedOperationException.class, () -> names.remove(0));
+    }
+
+    @Test
     void emptyObjectHasNoRules() {
         assertTrue(RulesFile.parse("{}", CELL, CELL).rules().isEmpty());
     }
