@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +38,28 @@ final class GuideGroups {
             }
         }
         return false;
+    }
+
+    /**
+     * The group names a guide uses that the rules file does not define, in the guide's order. Empty when the rules
+     * file defines no groups, because then every guide applies to all glyphs and no name counts as broken.
+     */
+    static List<String> undefinedNames(Set<String> groups, RulesFile rules) {
+        List<String> undefined = new ArrayList<>();
+        if (rules.groupNames().isEmpty()) {
+            return undefined;
+        }
+        for (String group : groups) {
+            if (!rules.hasGroup(group)) {
+                undefined.add(group);
+            }
+        }
+        return undefined;
+    }
+
+    /** Whether a guide is broken: it names a group that a rules file with groups does not define. */
+    static boolean isBroken(Set<String> groups, RulesFile rules) {
+        return !undefinedNames(groups, rules).isEmpty();
     }
 
     private static boolean isInAnyGroup(Set<String> groups, int codePoint, RulesFile rules) {

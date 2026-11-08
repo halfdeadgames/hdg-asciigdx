@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -57,13 +58,93 @@ public final class PaintGuides {
         }
     }
 
+    /**
+     * Which shown guides name a group the rules file does not define, one flag per shown guide of each kind in the
+     * same order as the {@link Shown} lists. A position past the end of a kind counts as not broken.
+     */
+    public record BrokenFlags(BitSet rows, BitSet widths, BitSet bars, BitSet columnBars) {
+
+        public static final BrokenFlags NONE = new BrokenFlags(new BitSet(), new BitSet(), new BitSet(),
+            new BitSet());
+
+        /** Keeps private copies, so the flags stay unchanged and compare by value. */
+        public BrokenFlags {
+            rows = (BitSet) rows.clone();
+            widths = (BitSet) widths.clone();
+            bars = (BitSet) bars.clone();
+            columnBars = (BitSet) columnBars.clone();
+        }
+
+        @Override
+        public BitSet rows() {
+            return (BitSet) rows.clone();
+        }
+
+        @Override
+        public BitSet widths() {
+            return (BitSet) widths.clone();
+        }
+
+        @Override
+        public BitSet bars() {
+            return (BitSet) bars.clone();
+        }
+
+        @Override
+        public BitSet columnBars() {
+            return (BitSet) columnBars.clone();
+        }
+
+        boolean isRow(int index) {
+            return at(rows, index);
+        }
+
+        boolean isWidth(int index) {
+            return at(widths, index);
+        }
+
+        boolean isBar(int index) {
+            return at(bars, index);
+        }
+
+        boolean isColumnBar(int index) {
+            return at(columnBars, index);
+        }
+
+        private static boolean at(BitSet flags, int index) {
+            return index >= 0 && flags.get(index);
+        }
+    }
+
     /** The guides to draw for one rules group in one cell size. */
     public record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars,
-                        List<ColumnBarGuide> columnBars) {
+                        List<ColumnBarGuide> columnBars, BrokenFlags broken) {
+
+        /** Shown guides with no broken ones. */
+        public Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars,
+                     List<ColumnBarGuide> columnBars) {
+            this(rows, widths, bars, columnBars, BrokenFlags.NONE);
+        }
 
         /** Shown guides without column bars. */
         public Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars) {
             this(rows, widths, bars, List.of());
+        }
+
+        public boolean isRowBroken(int index) {
+            return broken.isRow(index);
+        }
+
+        public boolean isWidthBroken(int index) {
+            return broken.isWidth(index);
+        }
+
+        public boolean isBarBroken(int index) {
+            return broken.isBar(index);
+        }
+
+        public boolean isColumnBarBroken(int index) {
+            return broken.isColumnBar(index);
         }
     }
 
@@ -390,50 +471,69 @@ public final class PaintGuides {
      * 0, 1, 0, ... so neighbouring labels never overlap.
      */
     public Shown forGlyph(int codePoint, RulesFile rules, int cellWidth, int cellHeight) {
-        List<Guide> shownRows = fittingRows(codePoint, rules, cellHeight);
-        LabelTiers.Tiered tiered = LabelTiers.assign(fittingColumns(codePoint, rules, cellWidth),
-            fittingColumnBars(codePoint, rules, cellWidth));
-        List<BarGuide> shownBars = fittingBars(codePoint, rules, cellHeight);
-        return new Shown(List.copyOf(shownRows), tiered.widths(), List.copyOf(shownBars), tiered.columnBars());
+        List<Scoped<Guide>> shownRows = fittingRows(codePoint, rules, cellHeight);
+        List<Scoped<WidthGuide>> shownColumns = fittingColumns(codePoint, rules, cellWidth);
+        List<Scoped<ColumnBarGuide>> shownColumnBars = fittingColumnBars(codePoint, rules, cellWidth);
+        List<Scoped<BarGuide>> shownBars = fittingBars(codePoint, rules, cellHeight);
+        LabelTiers.Tiered tiered = LabelTiers.assign(guidesOf(shownColumns), guidesOf(shownColumnBars));
+        BrokenFlags broken = new BrokenFlags(brokenFlags(shownRows, rules), brokenFlags(shownColumns, rules),
+            brokenFlags(shownBars, rules), brokenFlags(shownColumnBars, rules));
+        return new Shown(guidesOf(shownRows), tiered.widths(), guidesOf(shownBars), tiered.columnBars(), broken);
     }
 
-    private List<ColumnBarGuide> fittingColumnBars(int codePoint, RulesFile rules, int cellWidth) {
-        List<ColumnBarGuide> shownColumnBars = new ArrayList<>();
+    private static <T> List<T> guidesOf(List<Scoped<T>> scoped) {
+        List<T> guides = new ArrayList<>(scoped.size());
+        for (Scoped<T> entry : scoped) {
+            guides.add(entry.guide());
+        }
+        return List.copyOf(guides);
+    }
+
+    private static <T> BitSet brokenFlags(List<Scoped<T>> scoped, RulesFile rules) {
+        BitSet flags = new BitSet(scoped.size());
+        for (int i = 0; i < scoped.size(); i++) {
+            flags.set(i, GuideGroups.isBroken(scoped.get(i).groups(), rules));
+        }
+        return flags;
+    }
+
+    private List<Scoped<ColumnBarGuide>> fittingColumnBars(int codePoint, RulesFile rules, int cellWidth) {
+        List<Scoped<ColumnBarGuide>> shownColumnBars = new ArrayList<>();
         for (Scoped<ColumnBarGuide> columnBar : columnBars) {
             if (columnBar.appliesTo(codePoint, rules)
                 && columnBar.guide().firstColumn() + columnBar.guide().columnCount() <= cellWidth) {
-                shownColumnBars.add(columnBar.guide());
+                shownColumnBars.add(columnBar);
             }
         }
         return shownColumnBars;
     }
 
-    private List<Guide> fittingRows(int codePoint, RulesFile rules, int cellHeight) {
-        List<Guide> shownRows = new ArrayList<>();
+    private List<Scoped<Guide>> fittingRows(int codePoint, RulesFile rules, int cellHeight) {
+        List<Scoped<Guide>> shownRows = new ArrayList<>();
         for (Scoped<Guide> row : rows) {
             if (row.appliesTo(codePoint, rules) && row.guide().boundaryRow() <= cellHeight) {
-                shownRows.add(row.guide());
+                shownRows.add(row);
             }
         }
         return shownRows;
     }
 
-    private List<WidthGuide> fittingColumns(int codePoint, RulesFile rules, int cellWidth) {
-        List<WidthGuide> fitting = new ArrayList<>();
+    private List<Scoped<WidthGuide>> fittingColumns(int codePoint, RulesFile rules, int cellWidth) {
+        List<Scoped<WidthGuide>> fitting = new ArrayList<>();
         for (Scoped<WidthGuide> column : columns) {
             if (column.appliesTo(codePoint, rules) && column.guide().boundaryColumn() <= cellWidth) {
-                fitting.add(column.guide());
+                fitting.add(column);
             }
         }
-        fitting.sort(Comparator.comparingInt(WidthGuide::boundaryColumn));
+        fitting.sort(Comparator.comparingInt(column -> column.guide().boundaryColumn()));
         return fitting;
     }
 
-    private List<BarGuide> fittingBars(int codePoint, RulesFile rules, int cellHeight) {
-        List<BarGuide> shownBars = new ArrayList<>();
+    private List<Scoped<BarGuide>> fittingBars(int codePoint, RulesFile rules, int cellHeight) {
+        List<Scoped<BarGuide>> shownBars = new ArrayList<>();
         for (Scoped<BarGuide> bar : bars) {
             if (bar.appliesTo(codePoint, rules) && bar.guide().firstRow() + bar.guide().rowCount() <= cellHeight) {
-                shownBars.add(bar.guide());
+                shownBars.add(bar);
             }
         }
         return shownBars;

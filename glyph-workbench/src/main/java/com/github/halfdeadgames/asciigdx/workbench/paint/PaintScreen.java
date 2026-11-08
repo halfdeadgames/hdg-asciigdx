@@ -24,6 +24,7 @@ import com.github.halfdeadgames.asciigdx.workbench.export.PaintExports;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
+import com.github.halfdeadgames.asciigdx.workbench.guides.BrokenGuides;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuideListPanel;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
@@ -85,6 +86,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final String KEY_DERIVED = "derived";
     private static final String KEY_EMPTY = "empty";
     private static final String RULE_KEY_PREFIX = "rule:";
+    private static final String BROKEN_GUIDE_KEY_PREFIX = "brokenGuide:";
     private static final String KEY_RULES = "rules";
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
@@ -177,6 +179,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private List<RuleWarning> ruleWarnings = List.of();
     private RulesFile rulesFile;
     private final List<String> shownRuleKeys = new ArrayList<>();
+    private final List<String> shownBrokenGuideKeys = new ArrayList<>();
     private int ruleGlyph = -1;
     private int ruleRevision = -1;
     private ReviewFile review = new ReviewFile();
@@ -721,6 +724,27 @@ public final class PaintScreen implements WorkbenchScreen {
         guides = shownGuides;
         grid.setGuides(shownGuides);
         ruleRevision = -1;
+        refreshBrokenGuideWarnings();
+    }
+
+    private void refreshBrokenGuideWarnings() {
+        if (rulesFile == null) {
+            return;
+        }
+        clearShownBrokenGuideWarnings();
+        List<BrokenGuides.Broken> broken = BrokenGuides.find(guides, rulesFile);
+        for (int i = 0; i < broken.size(); i++) {
+            String messageKey = BROKEN_GUIDE_KEY_PREFIX + i;
+            messages.setCondition(messageKey, true, broken.get(i).message());
+            shownBrokenGuideKeys.add(messageKey);
+        }
+    }
+
+    private void clearShownBrokenGuideWarnings() {
+        for (String messageKey : shownBrokenGuideKeys) {
+            messages.clearCondition(messageKey);
+        }
+        shownBrokenGuideKeys.clear();
     }
 
     private boolean pointerOverGuideList() {
@@ -899,6 +923,7 @@ public final class PaintScreen implements WorkbenchScreen {
         grid.setRules(rulesFile);
         ruleGlyph = -1;
         ruleRevision = -1;
+        refreshBrokenGuideWarnings();
         showRulesLoadState(result);
     }
 

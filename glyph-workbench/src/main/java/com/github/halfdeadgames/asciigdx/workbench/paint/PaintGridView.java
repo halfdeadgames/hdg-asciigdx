@@ -8,6 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGridLabels;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
@@ -60,6 +61,7 @@ final class PaintGridView {
     private int areaWidth;
     private int areaHeight;
     private boolean layoutDirty = true;
+    private boolean blinkOn = true;
     private final PaintGridLabels labels = new PaintGridLabels();
     private int ghostFirstInk;
     private int ghostLastInk;
@@ -135,6 +137,7 @@ final class PaintGridView {
      * @param seconds running clock that drives the off-grid arrow blink
      */
     void draw(int codePoint, PixelGlyph previewGlyph, Ghost ghost, float seconds) {
+        blinkOn = Blink.isOnAt(seconds);
         drawPixels(codePoint, previewGlyph);
         if (ghost != null) {
             drawGhost(ghost, seconds);
@@ -188,8 +191,16 @@ final class PaintGridView {
                 bar.label(), bar.firstRow(), bar.rowCount())) {
                 continue;
             }
+            if (isBlinkedOut(shown.isBarBroken(i), false)) {
+                continue;
+            }
             tintRows(BAR_TINT_COLOR, bar.firstRow(), bar.rowCount());
         }
+    }
+
+    // A broken guide alternates; the selected one stays solid so it can be edited.
+    private boolean isBlinkedOut(boolean broken, boolean selected) {
+        return broken && !selected && !blinkOn;
     }
 
     private void drawShownColumnBarTints() {
@@ -199,6 +210,9 @@ final class PaintGridView {
             PaintGuides.ColumnBarGuide bar = columnBars.get(i);
             if (selectedVisible && GuideBands.isSelected(highlighted, PaintGuides.ListedKind.COLUMN_BAR,
                 bar.label(), bar.firstColumn(), bar.columnCount())) {
+                continue;
+            }
+            if (isBlinkedOut(shown.isColumnBarBroken(i), false)) {
                 continue;
             }
             tintColumns(BAR_TINT_COLOR, bar.firstColumn(), bar.columnCount());
@@ -230,6 +244,9 @@ final class PaintGridView {
         List<PaintGuides.BarGuide> bars = shown.bars();
         for (int i = 0; i < bars.size(); i++) {
             int slot = shown.rows().size() + i;
+            if (isBlinkedOut(shown.isBarBroken(i), slot == labels.highlightRowSlot())) {
+                continue;
+            }
             drawBarGuide(bars.get(i), labels.rowLabelY(slot),
                 slot == labels.highlightRowSlot() ? HIGHLIGHT_COLOR : BAR_GUIDE_COLOR);
         }
@@ -358,6 +375,9 @@ final class PaintGridView {
         List<PaintGuides.WidthGuide> widths = shown.widths();
         for (int i = 0; i < widths.size(); i++) {
             PaintGuides.WidthGuide guide = widths.get(i);
+            if (isBlinkedOut(shown.isWidthBroken(i), i == labels.highlightWidthSlot())) {
+                continue;
+            }
             int lineX = left + guide.boundaryColumn() * pixelSize;
             painter.fill(WIDTH_GUIDE_COLOR, lineX - thickness / 2, top - overhang,
                 thickness, height + 2 * overhang);
@@ -431,6 +451,9 @@ final class PaintGridView {
         List<PaintGuides.ColumnBarGuide> columnBars = shown.columnBars();
         for (int i = 0; i < columnBars.size(); i++) {
             int slot = shown.widths().size() + i;
+            if (isBlinkedOut(shown.isColumnBarBroken(i), slot == labels.highlightWidthSlot())) {
+                continue;
+            }
             drawColumnBarGuide(columnBars.get(i), labels.widthLabelX(slot),
                 slot == labels.highlightWidthSlot() ? HIGHLIGHT_COLOR : BAR_GUIDE_COLOR);
         }
@@ -519,6 +542,9 @@ final class PaintGridView {
         List<PaintGuides.Guide> rows = shown.rows();
         for (int i = 0; i < rows.size(); i++) {
             PaintGuides.Guide guide = rows.get(i);
+            if (isBlinkedOut(shown.isRowBroken(i), i == labels.highlightRowSlot())) {
+                continue;
+            }
             int lineY = top + guide.boundaryRow() * pixelSize;
             painter.fill(GUIDE_COLOR, left - overhang, lineY - thickness / 2,
                 width + 2 * overhang, thickness);
