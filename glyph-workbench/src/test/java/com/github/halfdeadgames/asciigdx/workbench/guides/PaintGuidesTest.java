@@ -178,8 +178,8 @@ class PaintGuidesTest {
     @Test
     void realRulesFileParsesAndSortsGlyphsIntoGroups() throws IOException {
         RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16.rules.json"), 16, 16);
-        assertEquals(List.of("uppercase", "lowercase", "digits", "punctuation"), rules.groupNames());
-        assertTrue(rules.rules().isEmpty());
+        assertEquals(List.of("uppercase", "lowercase", "digits", "punctuation"),
+            rules.groupNames().subList(0, 4));
         assertTrue(rules.isInGroup("uppercase", 'A'));
         assertTrue(rules.isInGroup("lowercase", 'a'));
         assertTrue(rules.isInGroup("digits", '5'));

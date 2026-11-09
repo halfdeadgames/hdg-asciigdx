@@ -1,9 +1,52 @@
 {
-  "groups": {
-    "uppercase": ["A-Z"],
-    "lowercase": ["a-z"],
-    "digits": ["0-9"],
-    "punctuation": ["!-/", ":-@", "[-`", "{-~"]
+  groups: {
+    uppercase:   [ "A-Z" ],
+    lowercase:   [ "a-z" ],
+    digits:      [ "0-9" ],
+    punctuation: [ "!-/", ":-@", "[-`", "{-~" ],
+    descenders:  [ "g", "j", "p", "q", "y" ],
+    ascenders:   [ "b", "d", "f", "h", "k", "l" ],
+    tallStems:   [ "i", "j", "t" ],
+    tiling:      [ "U+2500-U+259F" ]
   },
-  "rules": []
+  rules: [
+    {
+      name: "Blank ring",
+      check: ring,
+      size: 1,
+      appliesTo: [ all ],
+      except: [ { group: tiling, why: "joins its neighbours" } ]
+    },
+    {
+      name: "Centered across",
+      check: centeredX,
+      appliesTo: [ uppercase, lowercase, digits, punctuation ]
+    },
+    {
+      name: "Capitals start at the cap line",
+      check: noInkRows,
+      rows: [ 1 ],
+      appliesTo: [ uppercase, digits ]
+    },
+    {
+      name: "Nothing below the baseline",
+      check: noInkRows,
+      rows: [ "12-14" ],
+      appliesTo: [ uppercase, lowercase, digits ],
+      except: [
+        { group: descenders, why: "tails drop into rows 12-14" },
+        { glyphs: [ "Q" ], why: "tail reaches row 12" }
+      ]
+    },
+    {
+      name: "Lowercase stays under the x-height",
+      check: noInkRows,
+      rows: [ "1-5" ],
+      appliesTo: [ lowercase ],
+      except: [
+        { group: ascenders, why: "ascenders rise to row 1" },
+        { group: tallStems, why: "dot or stem starts at row 3" }
+      ]
+    }
+  ]
 }
