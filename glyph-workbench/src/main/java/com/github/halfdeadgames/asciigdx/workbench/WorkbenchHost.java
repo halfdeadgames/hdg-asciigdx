@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeScreen;
 import com.github.halfdeadgames.asciigdx.workbench.paint.PaintScreen;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -51,6 +52,8 @@ public final class WorkbenchHost extends ApplicationAdapter {
             switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"), launchFontSize()));
         } else if (DevCapture.newFontRequest() != null || DevCapture.newFontSizeRequest() != null) {
             switchTo(newFontScreen());
+        } else if (DevCapture.newSizeRequest() >= 0) {
+            switchTo(newSizeScreen(Path.of(System.getProperty("workbench.fontDir"))));
         } else {
             switchTo(fontListScreen(""));
         }
@@ -139,7 +142,7 @@ public final class WorkbenchHost extends ApplicationAdapter {
         String fontDir = Path.of(fontsRoot(), folderName).toString();
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
         if (item.kind() == MenuModel.Kind.NEW_SIZE) {
-            pending = () -> newSizeScreen(folderName);
+            pending = () -> newSizeScreen(Path.of(fontsRoot(), folderName));
         } else {
             pending = () -> paintScreen(backToFontMenu, fontDir, item.size());
         }
@@ -152,29 +155,20 @@ public final class WorkbenchHost extends ApplicationAdapter {
             (folder, firstSize) -> pending = () -> paintCreatedFont(folder, firstSize));
     }
 
-    // The size list is a menu of its own; choosing a free size creates the file and paints it.
-    private WorkbenchScreen newSizeScreen(String folderName) {
-        Path folder = Path.of(fontsRoot(), folderName);
-        List<NewSizePlan.SizeOption> options;
-        try {
-            options = NewSizePlan.options(folder);
-        } catch (IOException | IllegalStateException e) {
-            return fontMenuScreen(folderName, limited("CANNOT LIST SIZES: " + e.getMessage()), MenuModel.Kind.NEW_SIZE);
-        }
-        String name = folderName.toUpperCase(Locale.ROOT);
-        Runnable backToNewSize = () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE);
-        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
-            : new MenuScreen.Detail(name, List.of("CREATES " + item.size().dataFileName().toUpperCase(Locale.ROOT)));
-        MenuScreen.Text text = new MenuScreen.Text("NEW SIZE", List.of("GLYPH WORKBENCH", name, "NEW SIZE"),
-            "CREATE", "BACK", "");
-        return new MenuScreen(MenuModel.newSizes(folderName, options), text, detail,
-            item -> createSize(folder, item.size()), backToNewSize);
+    // Choosing a size creates the file and paints it; closing the dialog or failing to list sizes returns to the font menu.
+    private WorkbenchScreen newSizeScreen(Path folder) {
+        String folderName = folder.getFileName().toString();
+        return new NewSizeScreen(folder,
+            () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE),
+            size -> createSize(folder, size),
+            reason -> pending = () -> fontMenuScreen(folderName, limited("CANNOT LIST SIZES: " + reason),
+                MenuModel.Kind.NEW_SIZE));
     }
 
     private void createSize(Path folder, CellSize size) {
         String folderName = folder.getFileName().toString();
         try {
-            NewSizePlan.create(folder, size.height());
+            NewSizePlan.create(folder, size);
         } catch (IOException | RuntimeException e) {
             Gdx.app.error(TAG, "Cannot create size " + size + ": " + e.getMessage());
             pending = () -> fontMenuScreen(folderName, limited("CANNOT CREATE " + size + ": " + e.getMessage()),

@@ -214,10 +214,13 @@ final class NewFontDialogs {
 
     // The dialog draws line text in one colour, so the grey example is laid over the blank field after it.
     private void drawSizeHint(Painter painter, CellRect area) {
-        if (!sizePage.showsHint()) {
+        drawSizeHint(painter, sizePage, Dialog.layout(sizeContent(), area));
+    }
+
+    static void drawSizeHint(Painter painter, NewFontSizePrompt page, Dialog.Layout layout) {
+        if (!page.showsHint()) {
             return;
         }
-        Dialog.Layout layout = Dialog.layout(sizeContent(), area);
         int cell = painter.cell();
         painter.text(NewFontSizePrompt.HINT, (layout.textX() + HINT_COLUMN) * cell,
             (layout.textY() + NewFontSizePrompt.INPUT_LINE) * cell, UiPalette.INACTIVE);

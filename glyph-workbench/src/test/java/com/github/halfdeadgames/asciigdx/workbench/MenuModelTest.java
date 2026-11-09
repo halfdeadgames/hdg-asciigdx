@@ -1,13 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -83,25 +79,6 @@ class MenuModelTest {
     }
 
     @Test
-    void newSizesListFreeSizesAsItemsAndTakenOnesAsDimmedLines() {
-        MenuModel model = MenuModel.newSizes("alpha", List.of(
-            new NewSizePlan.SizeOption(8, 8, true), new NewSizePlan.SizeOption(16, 16, false),
-            new NewSizePlan.SizeOption(24, 24, false)));
-        assertEquals(2, model.itemCount());
-        assertEquals(MenuModel.Kind.CREATE_SIZE, model.item(0).kind());
-        assertEquals(new CellSize(16, 16), model.item(0).size());
-        assertEquals("1 16X16", model.item(0).label());
-        assertEquals("alpha", model.item(0).folderName());
-        MenuModel.Line taken = model.lines().get(0);
-        assertEquals("8X8  (EXISTS)", taken.text());
-        assertEquals(2, taken.indent());
-        assertEquals(-1, taken.itemIndex());
-        assertTrue(taken.dimmed());
-        assertEquals(0, model.lines().get(1).itemIndex());
-        assertEquals(1, model.lines().get(2).itemIndex());
-    }
-
-    @Test
     void indexOfKindFindsTheFirstItemOfThatKind() {
         MenuModel model = MenuModel.fontActions("saiksistt", FONTS);
         assertEquals(2, model.indexOfKind(MenuModel.Kind.NEW_SIZE));
@@ -110,16 +87,6 @@ class MenuModelTest {
         assertEquals(MenuModel.Kind.NEW_SIZE, model.selectedItem().kind());
         model.select(model.indexOfKind(MenuModel.Kind.FONT));
         assertEquals(2, model.selectedIndex());
-    }
-
-    @Test
-    void newSizesSaysWhyWhenNothingCanBeChosen() {
-        MenuModel allTaken = MenuModel.newSizes("alpha", List.of(new NewSizePlan.SizeOption(8, 8, true)));
-        assertEquals(0, allTaken.itemCount());
-        assertEquals(NewSizePrompt.ALL_TAKEN_MESSAGE, allTaken.lines().get(1).text());
-        MenuModel none = MenuModel.newSizes("alpha", List.of());
-        assertEquals(NewSizePrompt.NO_SIZES_MESSAGE, none.lines().get(0).text());
-        assertNull(none.selectedItem());
     }
 
     @Test

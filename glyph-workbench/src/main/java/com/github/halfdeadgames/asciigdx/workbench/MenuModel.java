@@ -2,16 +2,13 @@ package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
  * A menu list: the selectable items, the lines to show, and the selection. There are three menus: the
- * list of fonts, the actions for one font (paint each size, add a new size), and the sizes a font can
- * still get.
+ * list of fonts and the actions for one font (paint each size, add a new size).
  */
 final class MenuModel {
 
@@ -19,15 +16,13 @@ final class MenuModel {
         /** Opens the action menu of a font. */
         FONT,
         PAINT,
-        /** Opens the list of sizes a font can still get. */
+        /** Opens the New size dialog. */
         NEW_SIZE,
-        /** One size in that list; {@code size} is its cell size. */
-        CREATE_SIZE,
         /** Opens the dialog that makes a font folder; the last entry of the font list. */
         NEW_FONT
     }
 
-    /** A selectable entry. {@code size} is set for paint and create-size entries, and null for the others. */
+    /** A selectable entry. {@code size} is set for paint entries, and null for the others. */
     record Item(Kind kind, String label, String folderName, CellSize size) {
     }
 
@@ -39,8 +34,6 @@ final class MenuModel {
     }
 
     private static final int MAX_NUMBERED = 9;
-    // Each indent step is two cells: the arrow column plus the "N " number prefix.
-    private static final int TAKEN_INDENT = 2;
 
     private final List<Item> items = new ArrayList<>();
     private final List<Line> lines = new ArrayList<>();
@@ -88,28 +81,6 @@ final class MenuModel {
             model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, null, 0);
         } else {
             model.lines.add(new Line("NO SIZE FILES FOUND", -1, 0, true));
-        }
-        return model;
-    }
-
-    /**
-     * The sizes a font can get: free sizes are items, taken sizes are dimmed lines, and a dimmed note
-     * says why when nothing can be chosen.
-     */
-    static MenuModel newSizes(String folderName, List<NewSizePlan.SizeOption> options) {
-        MenuModel model = new MenuModel();
-        for (NewSizePlan.SizeOption option : options) {
-            String label = NewSizePrompt.label(option);
-            if (option.taken()) {
-                // MenuScreen strips the text, so the indent lines the label up with numbered items (arrow, number).
-                model.lines.add(new Line(label + "  (EXISTS)", -1, TAKEN_INDENT, true));
-            } else {
-                model.addItem(Kind.CREATE_SIZE, label, folderName, new CellSize(option.cellWidth(), option.height()), 0);
-            }
-        }
-        if (model.items.isEmpty()) {
-            model.lines.add(new Line(options.isEmpty() ? NewSizePrompt.NO_SIZES_MESSAGE : NewSizePrompt.ALL_TAKEN_MESSAGE,
-                -1, 0, true));
         }
         return model;
     }

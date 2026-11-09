@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontHeader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -9,144 +8,95 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * The "New size" rules for one font folder: which sizes can be offered, and creating the size file.
- * The folder's shape is taken from its existing {@code <width>x<height>.txt} files; {@code .guides.txt}
- * files are not size files.
+ * The "New size" rules for one font folder: which sizes are suggested, and creating the size file.
+ * Any size within the cell limits is allowed. Suggestions are the half (when both sides are even) and the
+ * double of each existing {@code <width>x<height>.txt} size; {@code .guides.txt} and other sidecar files
+ * are not size files.
  */
 public final class NewSizePlan {
 
-    /** One entry of the size pick list. Taken sizes are listed so they can be shown greyed. */
-    public record SizeOption(int height, int cellWidth, boolean taken) {
+    /**
+     * One entry of the size pick list. Taken sizes are listed so they can be shown greyed.
+     *
+     * @param size the cell size
+     * @param taken whether the font already has a file for this size
+     */
+    public record SizeOption(CellSize size, boolean taken) {
     }
 
-    /** Cell proportions: square is W x W, tall is W x 2W. */
-    enum Shape { SQUARE, TALL }
-
-    private static final int STEP = 8;
-    private static final int MAX_HEIGHT = 64;
+    private static final Comparator<CellSize> BY_HEIGHT_THEN_WIDTH =
+        Comparator.comparingInt(CellSize::height).thenComparingInt(CellSize::width);
 
     private NewSizePlan() {
     }
 
     /**
-     * Checks a cell height for the chosen shape.
-     *
-     * @param height the height the font file is named after
-     * @param shape the cell proportions
-     * @return null when the size is fine, otherwise a user-facing message
-     */
-    static String sizeError(int height, Shape shape) {
-        if (shape == Shape.SQUARE) {
-            boolean valid = height >= STEP && height <= MAX_HEIGHT && height % STEP == 0;
-            return valid ? null : "Square heights are 8, 16, 24, up to 64";
-        }
-        boolean valid = height >= 2 * STEP && height <= MAX_HEIGHT && height % (2 * STEP) == 0;
-        return valid ? null : "Tall heights are 16, 32, 48, or 64";
-    }
-
-    /** Returns the cell width: the height for square cells, half of it for tall cells. */
-    static int cellWidth(int height, Shape shape) {
-        return shape == Shape.SQUARE ? height : height / 2;
-    }
-
-    /** Returns SQUARE when the cell is as wide as it is high, otherwise TALL. */
-    static Shape shapeOf(int cellWidth, int cellHeight) {
-        return cellWidth == cellHeight ? Shape.SQUARE : Shape.TALL;
-    }
-
-    /**
-     * Lists every size the folder's shape allows, in ascending height order.
+     * Lists the folder's existing sizes and the sizes suggested from them, ascending by height then width.
      *
      * @param fontFolder a font folder holding {@code <width>x<height>.txt} files
-     * @return the options, or an empty list when the folder has no readable size file to take the shape from
-     * @throws IllegalStateException if the size files disagree about the shape
+     * @return the options, or an empty list when the folder has no size file
      * @throws IOException if the folder cannot be read
      */
     public static List<SizeOption> options(Path fontFolder) throws IOException {
-        Shape shape = shapeOfFolder(fontFolder);
+        Set<CellSize> existing = existingSizes(fontFolder);
+        Set<CellSize> suggested = new LinkedHashSet<>();
+        for (CellSize size : existing) {
+            suggested.addAll(suggestionsFor(size));
+        }
+        suggested.removeAll(existing);
+
         List<SizeOption> options = new ArrayList<>();
-        if (shape == null) {
-            return options;
-        }
-        Set<CellSize> takenSizes = takenSizes(fontFolder);
-        for (int height = STEP; height <= MAX_HEIGHT; height += STEP) {
-            if (sizeError(height, shape) == null) {
-                int cellWidth = cellWidth(height, shape);
-                options.add(new SizeOption(height, cellWidth, takenSizes.contains(new CellSize(cellWidth, height))));
-            }
-        }
+        existing.forEach(size -> options.add(new SizeOption(size, true)));
+        suggested.forEach(size -> options.add(new SizeOption(size, false)));
+        options.sort(Comparator.comparing(SizeOption::size, BY_HEIGHT_THEN_WIDTH));
         return options;
     }
 
     /**
      * Creates {@code <width>x<height>.txt} containing {@code cell WxH}. An existing file is never touched.
      *
-     * @param fontFolder a font folder holding at least one readable size file
-     * @param height the new size's height, which with the folder's shape gives the file name
-     * @throws IllegalArgumentException if the height does not fit the folder's shape
-     * @throws IllegalStateException if the folder has no readable size file, or the files disagree about the shape
+     * @param fontFolder the font folder
+     * @param size the new cell size
+     * @throws IllegalArgumentException if the size is outside the allowed range
      * @throws java.nio.file.FileAlreadyExistsException if the size is already taken
      * @throws IOException if the file cannot be written
      */
-    public static void create(Path fontFolder, int height) throws IOException {
-        Shape shape = shapeOfFolder(fontFolder);
-        if (shape == null) {
-            throw new IllegalStateException("The folder has no size file to take the shape from");
-        }
-        String problem = sizeError(height, shape);
+    public static void create(Path fontFolder, CellSize size) throws IOException {
+        String problem = NewFontInput.sizeError(size);
         if (problem != null) {
             throw new IllegalArgumentException(problem);
         }
-        CellSize size = new CellSize(cellWidth(height, shape), height);
         Path target = fontFolder.resolve(size.dataFileName());
         String content = "cell " + size + "\n";
         Files.writeString(target, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
     }
 
-    // Null when no size file has a readable cell line.
-    private static Shape shapeOfFolder(Path fontFolder) throws IOException {
-        Shape found = null;
-        for (Path file : sizeFiles(fontFolder)) {
-            Shape shape = shapeOfFile(file);
-            if (shape == null) {
-                continue;
-            }
-            if (found != null && found != shape) {
-                throw new IllegalStateException("The folder mixes square and tall sizes");
-            }
-            found = shape;
+    private static List<CellSize> suggestionsFor(CellSize size) {
+        List<CellSize> suggestions = new ArrayList<>();
+        if (size.width() % 2 == 0 && size.height() % 2 == 0) {
+            suggestions.add(new CellSize(size.width() / 2, size.height() / 2));
         }
-        return found;
+        suggestions.add(new CellSize(size.width() * 2, size.height() * 2));
+        suggestions.removeIf(suggestion -> NewFontInput.sizeError(suggestion) != null);
+        return suggestions;
     }
 
-    private static Set<CellSize> takenSizes(Path fontFolder) throws IOException {
-        Set<CellSize> sizes = new HashSet<>();
-        for (Path file : sizeFiles(fontFolder)) {
-            sizes.add(CellSize.ofDataFileName(file.getFileName().toString()));
-        }
-        return sizes;
-    }
-
-    private static List<Path> sizeFiles(Path fontFolder) throws IOException {
-        List<Path> sizeFiles = new ArrayList<>();
+    private static Set<CellSize> existingSizes(Path fontFolder) throws IOException {
+        Set<CellSize> sizes = new LinkedHashSet<>();
         try (DirectoryStream<Path> children = Files.newDirectoryStream(fontFolder)) {
             for (Path child : children) {
-                if (Files.isRegularFile(child) && CellSize.ofDataFileName(child.getFileName().toString()) != null) {
-                    sizeFiles.add(child);
+                CellSize size = CellSize.ofDataFileName(child.getFileName().toString());
+                if (size != null && Files.isRegularFile(child)) {
+                    sizes.add(size);
                 }
             }
         }
-        return sizeFiles;
-    }
-
-    // Null when the file has no valid cell line.
-    private static Shape shapeOfFile(Path file) throws IOException {
-        CellSize cell = FontHeader.read(file);
-        return cell == null ? null : shapeOf(cell.width(), cell.height());
+        return sizes;
     }
 }

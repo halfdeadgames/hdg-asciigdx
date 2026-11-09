@@ -10,13 +10,15 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
  * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
  * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
- * {@code workbench.newsize} opens the New size dialog (optionally {@code down:N} rows into the list).
+ * {@code workbench.newsize} opens the New size dialog: {@code list} (or any other value) just opens the list,
+ * {@code down:N} moves N rows into it, and {@code other:<typed>} goes to OTHER SIZE... and types the text.
  * {@code workbench.upscalesource} opens the Upscale from dialog (optionally {@code down:N} rows into the list);
  * {@code pick} or {@code pick:down:N} also chooses the selected font and lands in the glyph pick;
  * {@code cand} or {@code cand:N} goes on to confirm the selected source glyph and select candidate N (default 1).
  * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
  * {@code workbench.newfontsize} opens the New font size page for a name with optional text typed into the size field ({@code name:64x128}).
- * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
+ * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow, and
+ * {@code workbench.newsize} opens on the New size screen of the font in {@code workbench.fontDir}.
  */
 public final class DevCapture {
 
@@ -142,6 +144,28 @@ public final class DevCapture {
             return Math.max(0, parseRowIndex(fields[1]));
         }
         return 0;
+    }
+
+    /**
+     * The text to type on the typed page of the New size dialog when {@code workbench.newsize} is {@code other} or
+     * {@code other:<typed>}, or null when the hook asks for the list.
+     */
+    public static String newSizeOtherRequest() {
+        return parseNewSizeOther(System.getProperty(NEW_SIZE_PROPERTY));
+    }
+
+    static String parseNewSizeOther(String request) {
+        if (request == null) {
+            return null;
+        }
+        String trimmed = request.trim();
+        if ("other".equalsIgnoreCase(trimmed)) {
+            return "";
+        }
+        if (!trimmed.regionMatches(true, 0, "other:", 0, "other:".length())) {
+            return null;
+        }
+        return trimmed.substring("other:".length()).trim();
     }
 
     /** Rows to move down in the Upscale from dialog opened by {@code workbench.upscalesource}, or -1 to leave it closed. */

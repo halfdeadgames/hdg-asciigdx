@@ -356,6 +356,10 @@ public final class PaintScreen implements WorkbenchScreen {
                 newFont.type(character);
                 return true;
             }
+            if (newSize.isOpen()) {
+                newSize.type(character);
+                return true;
+            }
             if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
                 return false;
             }
@@ -399,11 +403,11 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         try {
             openNewSize(NewSizePlan.options(java.nio.file.Path.of(fontDir)));
-        } catch (java.io.IOException | IllegalStateException e) {
+        } catch (java.io.IOException e) {
             Gdx.app.error(TAG, "Cannot list sizes: " + e.getMessage());
             return;
         }
-        newSize.moveForCapture(moves);
+        newSize.applyCaptureRequest(moves, DevCapture.newSizeOtherRequest());
     }
 
     private void chooseUpscaleCandidateForCapture() {
@@ -531,12 +535,13 @@ public final class PaintScreen implements WorkbenchScreen {
     private void openNewSize(List<NewSizePlan.SizeOption> options) {
         stroke.end();
         pointer.updatePosition();
-        newSize.open(options, pointer.pixelX(), pointer.pixelY());
+        String folderName = java.nio.file.Path.of(fontDir).getFileName().toString();
+        newSize.open(options, folderName, pointer.pixelX(), pointer.pixelY());
     }
 
-    private void handleNewSize() {
+    private void handleNewSize(float delta) {
         wheelTicks.clear();
-        if (newSize.handleKeys()) {
+        if (newSize.handleKeys(delta)) {
             return;
         }
         pointer.updatePosition();
@@ -546,7 +551,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private void openNewSizeFromMenu() {
         try {
             openNewSize(NewSizePlan.options(java.nio.file.Path.of(fontDir)));
-        } catch (java.io.IOException | IllegalStateException e) {
+        } catch (java.io.IOException e) {
             Gdx.app.error(TAG, "Cannot list sizes: " + e.getMessage());
             messages.nextAction();
             messages.warn("Cannot list sizes: " + e.getMessage());
@@ -554,23 +559,23 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     // Unsaved changes are asked about after the pick, so cancelling the prompt loses nothing and creates nothing.
-    private void confirmNewSize(NewSizePlan.SizeOption chosen) {
+    private void confirmNewSize(CellSize chosen) {
         runAfterUnsavedCheck(() -> createSize(chosen), SWITCH_SIZE_QUESTION);
     }
 
-    private void createSize(NewSizePlan.SizeOption chosen) {
+    private void createSize(CellSize chosen) {
         messages.nextAction();
         try {
-            NewSizePlan.create(java.nio.file.Path.of(fontDir), chosen.height());
+            NewSizePlan.create(java.nio.file.Path.of(fontDir), chosen);
         } catch (java.nio.file.FileAlreadyExistsException e) {
             messages.warn("Size " + NewSizePrompt.label(chosen) + " already exists");
             return;
         } catch (java.io.IOException | RuntimeException e) {
-            Gdx.app.error(TAG, "Cannot create size " + chosen.height() + ": " + e.getMessage());
+            Gdx.app.error(TAG, "Cannot create size " + chosen + ": " + e.getMessage());
             messages.warn("Cannot create " + NewSizePrompt.label(chosen) + ": " + e.getMessage());
             return;
         }
-        openSize.accept(new CellSize(chosen.cellWidth(), chosen.height()));
+        openSize.accept(chosen);
     }
 
     private void openNewGlyph() {
@@ -1119,7 +1124,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (newSize.isOpen()) {
             stroke.end();
             updateConditions();
-            handleNewSize();
+            handleNewSize(delta);
             return true;
         }
         if (upscale.isActive()) {

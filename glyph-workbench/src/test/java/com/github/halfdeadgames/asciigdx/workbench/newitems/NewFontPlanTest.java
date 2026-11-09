@@ -52,7 +52,8 @@ class NewFontPlanTest {
     void createdFolderIsReadableBySizePlan() throws IOException {
         Path folder = NewFontPlan.create(root, "demo", new CellSize(16, 32));
         List<SizeOption> options = NewSizePlan.options(folder);
-        assertEquals(List.of(16, 32, 48, 64), options.stream().map(SizeOption::height).toList());
+        assertEquals(List.of(new CellSize(8, 16), new CellSize(16, 32), new CellSize(32, 64)),
+            options.stream().map(SizeOption::size).toList());
         assertFalse(options.get(0).taken());
         assertTrue(options.get(1).taken());
     }

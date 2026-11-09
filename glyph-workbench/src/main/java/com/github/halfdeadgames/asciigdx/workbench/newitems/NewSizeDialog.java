@@ -2,64 +2,109 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
+import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The "new size" dialog: a list of sizes to add, with its input handling and drawing. */
+/** The "new size" dialog: a list of sizes to add plus a typed page for any other size, with input handling and drawing. */
 public final class NewSizeDialog {
 
     private static final String TITLE = "NEW SIZE";
-    private static final List<Dialog.Button> BUTTONS = List.of(
+    // Typed characters of the key that opened the dialog can arrive a frame or two after it.
+    private static final int OPENING_SWALLOW_FRAMES = 2;
+    private static final List<Dialog.Button> LIST_BUTTONS = List.of(
         new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
-    private static final List<Dialog.Button> CLOSE_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CLOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> TYPED_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "CREATE", Dialog.Tone.OK), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
 
-    private final NewSizePrompt prompt = new NewSizePrompt();
-    private final Consumer<NewSizePlan.SizeOption> onChoose;
+    private final NewSizePrompt prompt;
+    private final KeyRepeat repeatBackspace = new KeyRepeat();
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
     private int lastPointerX;
     private int lastPointerY;
+    private int swallowFrames;
 
     /** @param onChoose called with the chosen size after the dialog closes */
-    public NewSizeDialog(Consumer<NewSizePlan.SizeOption> onChoose) {
-        this.onChoose = onChoose;
+    public NewSizeDialog(Consumer<CellSize> onChoose) {
+        prompt = new NewSizePrompt(onChoose);
+    }
+
+    /**
+     * @param onChoose called with the chosen size after the dialog closes
+     * @param onDismiss called after the dialog closes without a size being chosen
+     */
+    public NewSizeDialog(Consumer<CellSize> onChoose, Runnable onDismiss) {
+        prompt = new NewSizePrompt(onChoose, onDismiss);
     }
 
     public boolean isOpen() {
         return prompt.isOpen();
     }
 
-    public void open(List<NewSizePlan.SizeOption> options, int pointerX, int pointerY) {
+    /**
+     * Opens the list, or straight on the typed page when the font has no sizes.
+     *
+     * @param folderName the font folder name shown on the typed page
+     */
+    public void open(List<NewSizePlan.SizeOption> options, String folderName, int pointerX, int pointerY) {
         lastPointerX = pointerX;
         lastPointerY = pointerY;
-        prompt.open(options);
+        swallowFrames = OPENING_SWALLOW_FRAMES;
+        prompt.open(options, folderName);
+        repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
-    public void moveForCapture(int moves) {
-        for (int i = 0; i < moves; i++) {
+    /** Applies the {@code workbench.newsize} hook: moves down the list, or goes to OTHER SIZE... and types the text. */
+    public void applyCaptureRequest(int moves, String otherTyped) {
+        swallowFrames = 0;
+        if (otherTyped == null) {
+            for (int i = 0; i < moves; i++) {
+                prompt.move(1);
+            }
+            return;
+        }
+        while (prompt.selectedIndex() < prompt.rowCount() - 1) {
             prompt.move(1);
         }
+        prompt.chooseSelected();
+        for (int i = 0; i < otherTyped.length(); i++) {
+            prompt.type(otherTyped.charAt(i));
+        }
+    }
+
+    /** Typed characters go to the typed page; the list ignores them. */
+    public void type(char character) {
+        if (swallowFrames > 0) {
+            return;
+        }
+        prompt.type(character);
     }
 
     /**
-     * Handles Esc, Enter, and the arrow keys. Enter or Esc returns right away so the key does not also act on the
-     * screen beneath in the same frame.
+     * Handles Esc, Enter, the arrow keys, and Backspace. Enter or Esc returns right away so the key does not also
+     * act on the screen beneath in the same frame.
      *
      * @return whether Esc or Enter consumed the frame
      */
-    public boolean handleKeys() {
+    public boolean handleKeys(float delta) {
+        swallowFrames = Math.max(0, swallowFrames - 1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            prompt.close();
+            prompt.cancel();
             return true;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-            chooseSelected();
+            prompt.enter();
             return true;
+        }
+        if (prompt.isTyping()) {
+            repeatBackspaces(delta);
+            return false;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             prompt.move(-1);
@@ -81,11 +126,11 @@ public final class NewSizeDialog {
     public void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
         Dialog.Layout layout = layout(area);
         boolean inside = isInside(layout, pointerX, pointerY, cell);
-        if (!prompt.hasChoices()) {
+        if (prompt.isTyping()) {
             closeOnOutsideClick(clicked, inside);
             return;
         }
-        int row = SelectList.rowAt(Math.floorDiv(pointerY, cell), layout.textY(), prompt.optionCount());
+        int row = SelectList.rowAt(Math.floorDiv(pointerY, cell), layout.textY(), prompt.rowCount());
         boolean onRow = row >= 0 && inside;
         followPointer(pointerX, pointerY, onRow, row);
         if (clicked) {
@@ -94,31 +139,28 @@ public final class NewSizeDialog {
     }
 
     public void draw(Painter painter, int columns, int rows, CellRect area) {
-        Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            DialogContent.of(TITLE, prompt.lines(), buttons()),
-            area);
-        if (!prompt.hasChoices()) {
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows), content(), area);
+        Dialog.Layout layout = layout(area);
+        if (prompt.isTyping()) {
+            NewFontDialogs.drawSizeHint(painter, prompt.typedPage(), layout);
             return;
         }
-        Dialog.Layout list = layout(area);
         List<SelectList.Row> sizeRows = prompt.rows();
         SelectList.draw(painter,
-            SelectList.areaOf(list.textX(), list.textY(), Math.min(prompt.listWidth(), list.textWidth()), sizeRows.size()),
+            SelectList.areaOf(layout.textX(), layout.textY(), Math.min(prompt.listWidth(), layout.textWidth()), sizeRows.size()),
             sizeRows, prompt.selectedIndex());
     }
 
-    private void chooseSelected() {
-        NewSizePlan.SizeOption chosen = prompt.selected();
-        prompt.close();
-        if (chosen == null) {
-            return;
+    private void repeatBackspaces(float delta) {
+        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            prompt.backspace();
         }
-        onChoose.accept(chosen);
     }
 
     private void closeOnOutsideClick(boolean clicked, boolean inside) {
         if (clicked && !inside) {
-            prompt.close();
+            prompt.dismiss();
         }
     }
 
@@ -135,7 +177,7 @@ public final class NewSizeDialog {
 
     private void handleClick(boolean inside, boolean onRow, int row) {
         if (!inside) {
-            prompt.close();
+            prompt.dismiss();
             return;
         }
         if (!onRow) {
@@ -143,17 +185,20 @@ public final class NewSizeDialog {
         }
         prompt.hover(row);
         if (prompt.rows().get(row).selectable()) {
-            chooseSelected();
+            prompt.chooseSelected();
         }
     }
 
     private Dialog.Layout layout(CellRect area) {
-        return Dialog.layout(DialogContent.of(TITLE, prompt.lines(), buttons()),
-            area);
+        return Dialog.layout(content(), area);
     }
 
-    private List<Dialog.Button> buttons() {
-        return prompt.hasChoices() ? BUTTONS : CLOSE_BUTTONS;
+    private DialogContent content() {
+        if (prompt.isTyping()) {
+            return new DialogContent(TITLE, prompt.lines(), TYPED_BUTTONS,
+                NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
+        }
+        return DialogContent.of(TITLE, prompt.lines(), LIST_BUTTONS);
     }
 
     private static boolean isInside(Dialog.Layout layout, int pointerX, int pointerY, int cell) {

@@ -102,6 +102,18 @@ class DevCaptureTest {
     }
 
     @Test
+    void newSizeOtherRequestIsTheTypedTextOrNullForTheList() {
+        assertNull(DevCapture.parseNewSizeOther(null));
+        assertNull(DevCapture.parseNewSizeOther("list"));
+        assertNull(DevCapture.parseNewSizeOther("down:2"));
+        assertEquals("", DevCapture.parseNewSizeOther("other"));
+        assertEquals("", DevCapture.parseNewSizeOther("other:"));
+        assertEquals("24x32", DevCapture.parseNewSizeOther(" Other: 24x32 "));
+        assertEquals(0, DevCapture.parseNewSizeRequest("other:24x32"));
+        assertEquals(0, DevCapture.parseNewSizeRequest("list"));
+    }
+
+    @Test
     void newFontRequestIsTheTypedTextOrNullWhenUnset() {
         assertNull(DevCapture.parseNewFontRequest(null));
         assertEquals("", DevCapture.parseNewFontRequest(""));
