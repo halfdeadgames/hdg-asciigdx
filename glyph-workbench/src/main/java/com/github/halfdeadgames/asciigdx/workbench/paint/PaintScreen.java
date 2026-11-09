@@ -33,7 +33,6 @@ import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuidesFile;
 import com.github.halfdeadgames.asciigdx.workbench.help.ControlsScreen;
 import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelp;
 import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelpPanel;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontPointer;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewGlyphDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
@@ -1137,11 +1136,8 @@ public final class PaintScreen implements WorkbenchScreen {
                 wheelTicks.clear();
                 return true;
             }
-            int wheel = wheelTicks.vertical();
             wheelTicks.clear();
-            newFont.handleInput(delta,
-                new NewFontPointer(wheel, leftClicked(), pointer.pixelX(), pointer.pixelY(), cell()),
-                rects.grid());
+            newFont.handleInput(delta);
             return true;
         }
         return false;

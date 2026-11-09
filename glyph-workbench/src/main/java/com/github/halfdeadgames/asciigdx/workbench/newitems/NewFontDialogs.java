@@ -3,16 +3,13 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
-import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer;
-import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer.Click;
-import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ListHit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -26,13 +23,15 @@ final class NewFontDialogs {
 
     /** Called when Enter is pressed on a size. The host creates the font, then closes this or reports a problem. */
     interface Creator {
-        void create(String name, Shape shape, int height);
+        void create(String name, CellSize size);
     }
 
     private static final String TAG = "NewFont";
     private static final String TITLE = "NEW FONT";
     // Typed characters of the key that opened the dialog can arrive a frame or two after it.
     private static final int OPENING_SWALLOW_FRAMES = 2;
+    // The hint starts after the cursor cell of the empty field.
+    private static final int HINT_COLUMN = 1;
     private static final List<Dialog.Button> NAME_BUTTONS = List.of(
         new Dialog.Button("ENTER", "NEXT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> NAME_BLOCKED_BUTTONS = List.of(
@@ -46,7 +45,6 @@ final class NewFontDialogs {
     private final NewFontNamePrompt namePage = new NewFontNamePrompt(this::continueToSize, this::cancel);
     private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::chooseSize, this::backToName);
     private final KeyRepeat repeatBackspace = new KeyRepeat();
-    private final GroupedPickListPointer sizePointer = new GroupedPickListPointer();
     private int swallowFrames;
 
     /**
@@ -101,11 +99,13 @@ final class NewFontDialogs {
         sizePage.showProblem(message);
     }
 
-    /** Typed characters go to the name page only. */
+    /** Typed characters go to whichever page is open. */
     void type(char character) {
-        if (swallowFrames == 0) {
-            namePage.type(character);
+        if (swallowFrames > 0) {
+            return;
         }
+        namePage.type(character);
+        sizePage.type(character);
     }
 
     /**
@@ -124,8 +124,8 @@ final class NewFontDialogs {
         }
         if (sizeRequest != null) {
             openSize(sizeRequest.name());
-            for (int i = 0; i < sizeRequest.moves(); i++) {
-                sizePage.move(1);
+            for (int i = 0; i < sizeRequest.typed().length(); i++) {
+                sizePage.type(sizeRequest.typed().charAt(i));
             }
         }
     }
@@ -142,12 +142,11 @@ final class NewFontDialogs {
 
     private void openSize(String name) {
         sizePage.open(name);
-        sizePointer.reset();
+        repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
     private void continueToSize(String name) {
         namePage.close();
-        repeatBackspace.update(false, 0f);
         openSize(name);
     }
 
@@ -156,23 +155,20 @@ final class NewFontDialogs {
         onCancel.run();
     }
 
-    private void chooseSize(Shape shape, int height) {
-        onCreate.create(sizePage.name(), shape, height);
+    private void chooseSize(CellSize size) {
+        onCreate.create(sizePage.name(), size);
     }
 
     /**
-     * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also act on
+     * Handles this frame's keys. Enter and Esc return right away so the key does not also act on
      * what lies beneath in the same frame.
-     *
-     * @param pointer this frame's wheel, click, and pointer position (pixels from the left and top)
-     * @param area the cell rectangle the dialog is centred in
      */
-    void handleInput(float delta, NewFontPointer pointer, CellRect area) {
+    void handleInput(float delta) {
         swallowFrames = Math.max(0, swallowFrames - 1);
         if (namePage.isOpen()) {
             handleName(delta);
         } else if (sizePage.isOpen()) {
-            handleSize(pointer, area);
+            handleSize(delta);
         }
     }
 
@@ -181,57 +177,50 @@ final class NewFontDialogs {
             namePage.cancel();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (isEnterJustPressed()) {
             namePage.enter();
             return;
         }
-        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            namePage.backspace();
-        }
+        repeatBackspaces(delta, namePage::backspace);
     }
 
-    private void handleSize(NewFontPointer pointer, CellRect area) {
-        if (handleSizeKeys()) {
-            return;
-        }
-        Dialog.Layout layout = sizeLayout(area);
-        sizePage.wheel(pointer.wheelTicks());
-        int listTop = layout.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-        ListHit hit = ListHit.of(layout, pointer.pointerX(), pointer.pointerY(), pointer.cell(), listTop,
-            sizePage.shownRows(), sizePage.window().offset(), sizePage.scrolls());
-        Click click = sizePointer.handle(sizePage.list(), hit, pointer.pointerX(), pointer.pointerY(),
-            pointer.clicked(), listTop);
-        if (click == Click.OUTSIDE) {
-            sizePage.back();
-        } else if (click == Click.PICK) {
-            sizePage.enter();
-        }
-    }
-
-    /** @return whether Esc or Enter consumed the frame */
-    private boolean handleSizeKeys() {
+    private void handleSize(float delta) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             sizePage.back();
-            return true;
+            return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (isEnterJustPressed()) {
             sizePage.enter();
-            return true;
+            return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            sizePage.move(-1);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            sizePage.move(1);
-        }
-        return false;
+        repeatBackspaces(delta, sizePage::backspace);
     }
 
-    private Dialog.Layout sizeLayout(CellRect area) {
-        sizePage.fitTo(area.height());
-        return Dialog.layout(DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
-            area);
+    private static boolean isEnterJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
+    }
+
+    private void repeatBackspaces(float delta, Runnable backspace) {
+        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
+        for (int i = 0; i < backspaces; i++) {
+            backspace.run();
+        }
+    }
+
+    private DialogContent sizeContent() {
+        return new DialogContent(TITLE, sizePage.lines(), SIZE_BUTTONS,
+            NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
+    }
+
+    // The dialog draws line text in one colour, so the grey example is laid over the blank field after it.
+    private void drawSizeHint(Painter painter, CellRect area) {
+        if (!sizePage.showsHint()) {
+            return;
+        }
+        Dialog.Layout layout = Dialog.layout(sizeContent(), area);
+        int cell = painter.cell();
+        painter.text(NewFontSizePrompt.HINT, (layout.textX() + HINT_COLUMN) * cell,
+            (layout.textY() + NewFontSizePrompt.INPUT_LINE) * cell, UiPalette.INACTIVE);
     }
 
     /** Draws the open page, dimming the whole screen first. */
@@ -243,12 +232,8 @@ final class NewFontDialogs {
                     0, NewFontNamePrompt.LINE_CELLS),
                 area);
         } else if (sizePage.isOpen()) {
-            Dialog.Layout list = sizeLayout(area);
-            Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-                DialogContent.of(TITLE, sizePage.lines(), SIZE_BUTTONS),
-                area);
-            int listTop = list.textY() + NewFontSizePrompt.LINES_ABOVE_LIST;
-            GroupedPickListView.draw(painter, sizePage.list(), list.textX(), listTop, list.textWidth());
+            Dialog.draw(painter, new CellRect(0, 0, columns, rows), sizeContent(), area);
+            drawSizeHint(painter, area);
         }
     }
 }

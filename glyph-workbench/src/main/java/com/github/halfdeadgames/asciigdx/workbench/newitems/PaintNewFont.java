@@ -58,8 +58,8 @@ public final class PaintNewFont {
         dialogs.type(character);
     }
 
-    public void handleInput(float delta, NewFontPointer pointer, CellRect area) {
-        dialogs.handleInput(delta, pointer, area);
+    public void handleInput(float delta) {
+        dialogs.handleInput(delta);
     }
 
     public void draw(Painter painter, int columns, int rows, CellRect area) {
@@ -73,18 +73,18 @@ public final class PaintNewFont {
 
     // Unsaved changes are asked about after the size is chosen. The dialog stays open (and hidden) under the
     // prompt, so cancelling it returns to the size page with the selection kept.
-    private void createNewFont(String name, NewFontInput.Shape shape, int height) {
-        runAfterUnsavedCheck.accept(() -> finishNewFont(name, shape, height), NEW_FONT_QUESTION);
+    private void createNewFont(String name, CellSize size) {
+        runAfterUnsavedCheck.accept(() -> finishNewFont(name, size), NEW_FONT_QUESTION);
     }
 
     // On success the host opens a fresh paint screen on the new font. A name problem (for example a folder made
     // since the name page opened) goes back to the name page, which shows it; anything else is shown on the size page.
-    private void finishNewFont(String name, NewFontInput.Shape shape, int height) {
+    private void finishNewFont(String name, CellSize size) {
         messages.nextAction();
-        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, shape, height);
+        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, size);
         if (outcome.created()) {
             dialogs.close();
-            openFont.accept(outcome.folder(), NewFontPlan.cellSize(shape, height));
+            openFont.accept(outcome.folder(), size);
             return;
         }
         if (outcome.nameProblem()) {

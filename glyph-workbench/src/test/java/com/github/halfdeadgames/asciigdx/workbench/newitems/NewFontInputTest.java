@@ -3,8 +3,9 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -61,39 +62,47 @@ class NewFontInputTest {
     }
 
     @Test
-    void squareHeightsAreMultiplesOfEightUpToSixtyFour() {
-        for (int height = 8; height <= 64; height += 8) {
-            assertNull(NewFontInput.sizeError(height, Shape.SQUARE), "height " + height);
-        }
-        assertNotNull(NewFontInput.sizeError(0, Shape.SQUARE));
-        assertNotNull(NewFontInput.sizeError(-8, Shape.SQUARE));
-        assertNotNull(NewFontInput.sizeError(12, Shape.SQUARE));
-        assertNotNull(NewFontInput.sizeError(72, Shape.SQUARE));
+    void anyCellSizeUpToTheLimitIsAccepted() {
+        assertNull(NewFontInput.sizeError(new CellSize(1, 1)));
+        assertNull(NewFontInput.sizeError(new CellSize(128, 128)));
+        assertNull(NewFontInput.sizeError(new CellSize(64, 128)));
+        assertNull(NewFontInput.sizeError(new CellSize(7, 13)));
     }
 
     @Test
-    void tallHeightsAreSixteenThirtyTwoFortyEightSixtyFour() {
-        for (int height : new int[] {16, 32, 48, 64}) {
-            assertNull(NewFontInput.sizeError(height, Shape.TALL), "height " + height);
-        }
-        assertNotNull(NewFontInput.sizeError(8, Shape.TALL));
-        assertNotNull(NewFontInput.sizeError(24, Shape.TALL));
-        assertNotNull(NewFontInput.sizeError(0, Shape.TALL));
-        assertNotNull(NewFontInput.sizeError(80, Shape.TALL));
+    void cellSidesAboveTheLimitAreRefused() {
+        assertEquals("Width and height go up to 128", NewFontInput.sizeError(new CellSize(129, 16)));
+        assertEquals("Width and height go up to 128", NewFontInput.sizeError(new CellSize(16, 129)));
     }
 
     @Test
-    void cellWidthFollowsShape() {
-        assertEquals(8, NewFontInput.cellWidth(8, Shape.SQUARE));
-        assertEquals(24, NewFontInput.cellWidth(24, Shape.SQUARE));
-        assertEquals(8, NewFontInput.cellWidth(16, Shape.TALL));
-        assertEquals(32, NewFontInput.cellWidth(64, Shape.TALL));
+    void typedSizeAcceptsCapitalXAndSurroundingSpaces() {
+        assertNull(NewFontInput.typedSizeError(" 16X32 "));
+        assertEquals(new CellSize(16, 32), NewFontInput.typedSize(" 16X32 "));
+        assertEquals(new CellSize(7, 13), NewFontInput.typedSize("7x13"));
     }
 
     @Test
-    void shapeIsDerivedFromCellSize() {
-        assertEquals(Shape.SQUARE, NewFontInput.shapeOf(8, 8));
-        assertEquals(Shape.TALL, NewFontInput.shapeOf(8, 16));
-        assertEquals(Shape.TALL, NewFontInput.shapeOf(16, 32));
+    void typedSizeExplainsWhatIsWrong() {
+        assertEquals("Type a size like 16x16", NewFontInput.typedSizeError(""));
+        assertEquals("Type a size like 16x16", NewFontInput.typedSizeError("   "));
+        assertEquals("Write the size as WxH, e.g. 16x16", NewFontInput.typedSizeError("16"));
+        assertEquals("Write the size as WxH, e.g. 16x16", NewFontInput.typedSizeError("16x"));
+        assertEquals("Write the size as WxH, e.g. 16x16", NewFontInput.typedSizeError("axb"));
+        assertEquals("Width and height go up to 128", NewFontInput.typedSizeError("200x16"));
+    }
+
+    @Test
+    void typedSizeRefusesWhatTheErrorCheckRefuses() {
+        assertThrows(IllegalArgumentException.class, () -> NewFontInput.typedSize("200x16"));
+        assertThrows(IllegalArgumentException.class, () -> NewFontInput.typedSize("axb"));
+        assertThrows(IllegalArgumentException.class, () -> NewFontInput.typedSize(""));
+    }
+
+    @Test
+    void zeroSidesAreNotASize() {
+        assertEquals("Width and height start at 1", NewFontInput.typedSizeError("0x16"));
+        assertEquals("Width and height start at 1", NewFontInput.typedSizeError("16x00"));
+        assertEquals("Width and height go up to 128", NewFontInput.typedSizeError("12345x16"));
     }
 }

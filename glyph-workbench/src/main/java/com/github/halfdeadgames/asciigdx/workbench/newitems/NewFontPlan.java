@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -30,12 +29,12 @@ final class NewFontPlan {
     }
 
     /** Like {@link #create}, but every failure becomes an {@link Outcome} the dialog can show. */
-    static Outcome tryCreate(Path fontsRoot, String name, Shape shape, int height) {
+    static Outcome tryCreate(Path fontsRoot, String name, CellSize size) {
         if (fontsRoot == null) {
             return new Outcome(null, "No fonts folder is set", false);
         }
         try {
-            return new Outcome(create(fontsRoot, name, shape, height), "", false);
+            return new Outcome(create(fontsRoot, name, size), "", false);
         } catch (FileAlreadyExistsException e) {
             return new Outcome(null, "A font named " + name + " already exists", true);
         } catch (IllegalArgumentException e) {
@@ -51,25 +50,23 @@ final class NewFontPlan {
      *
      * @param fontsRoot the existing folder that holds all font folders
      * @param name the font folder name
-     * @param shape the cell proportions
-     * @param height the first size's height, which with the shape gives the file name
+     * @param size the first size's cell, which gives the file name
      * @return the created font folder
      * @throws IllegalArgumentException if the name or the size is not acceptable
      * @throws java.nio.file.NoSuchFileException if the fonts root does not exist
      * @throws java.nio.file.FileAlreadyExistsException if something already has that name
      * @throws IOException if the folder or file cannot be written
      */
-    static Path create(Path fontsRoot, String name, Shape shape, int height) throws IOException {
+    static Path create(Path fontsRoot, String name, CellSize size) throws IOException {
         String nameProblem = NewFontInput.nameError(name, folderNames(fontsRoot));
         if (nameProblem != null) {
             throw new IllegalArgumentException(nameProblem);
         }
-        String sizeProblem = NewFontInput.sizeError(height, shape);
+        String sizeProblem = NewFontInput.sizeError(size);
         if (sizeProblem != null) {
             throw new IllegalArgumentException(sizeProblem);
         }
         Path folder = Files.createDirectory(fontsRoot.resolve(name));
-        CellSize size = cellSize(shape, height);
         Path sizeFile = folder.resolve(size.dataFileName());
         String content = "cell " + size + "\n";
         try {
@@ -84,11 +81,6 @@ final class NewFontPlan {
             throw failure;
         }
         return folder;
-    }
-
-    /** The cell size a shape gives at a height. */
-    static CellSize cellSize(Shape shape, int height) {
-        return new CellSize(NewFontInput.cellWidth(height, shape), height);
     }
 
     /** The names of everything directly inside {@code fontsRoot}; a plain file blocks a name as much as a folder. */

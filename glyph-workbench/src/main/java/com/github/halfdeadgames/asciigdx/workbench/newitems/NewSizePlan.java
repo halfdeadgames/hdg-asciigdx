@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontHeader;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -25,10 +24,39 @@ public final class NewSizePlan {
     public record SizeOption(int height, int cellWidth, boolean taken) {
     }
 
+    /** Cell proportions: square is W x W, tall is W x 2W. */
+    enum Shape { SQUARE, TALL }
+
     private static final int STEP = 8;
     private static final int MAX_HEIGHT = 64;
 
     private NewSizePlan() {
+    }
+
+    /**
+     * Checks a cell height for the chosen shape.
+     *
+     * @param height the height the font file is named after
+     * @param shape the cell proportions
+     * @return null when the size is fine, otherwise a user-facing message
+     */
+    static String sizeError(int height, Shape shape) {
+        if (shape == Shape.SQUARE) {
+            boolean valid = height >= STEP && height <= MAX_HEIGHT && height % STEP == 0;
+            return valid ? null : "Square heights are 8, 16, 24, up to 64";
+        }
+        boolean valid = height >= 2 * STEP && height <= MAX_HEIGHT && height % (2 * STEP) == 0;
+        return valid ? null : "Tall heights are 16, 32, 48, or 64";
+    }
+
+    /** Returns the cell width: the height for square cells, half of it for tall cells. */
+    static int cellWidth(int height, Shape shape) {
+        return shape == Shape.SQUARE ? height : height / 2;
+    }
+
+    /** Returns SQUARE when the cell is as wide as it is high, otherwise TALL. */
+    static Shape shapeOf(int cellWidth, int cellHeight) {
+        return cellWidth == cellHeight ? Shape.SQUARE : Shape.TALL;
     }
 
     /**
@@ -47,8 +75,8 @@ public final class NewSizePlan {
         }
         Set<CellSize> takenSizes = takenSizes(fontFolder);
         for (int height = STEP; height <= MAX_HEIGHT; height += STEP) {
-            if (NewFontInput.sizeError(height, shape) == null) {
-                int cellWidth = NewFontInput.cellWidth(height, shape);
+            if (sizeError(height, shape) == null) {
+                int cellWidth = cellWidth(height, shape);
                 options.add(new SizeOption(height, cellWidth, takenSizes.contains(new CellSize(cellWidth, height))));
             }
         }
@@ -70,11 +98,11 @@ public final class NewSizePlan {
         if (shape == null) {
             throw new IllegalStateException("The folder has no size file to take the shape from");
         }
-        String problem = NewFontInput.sizeError(height, shape);
+        String problem = sizeError(height, shape);
         if (problem != null) {
             throw new IllegalArgumentException(problem);
         }
-        CellSize size = NewFontPlan.cellSize(shape, height);
+        CellSize size = new CellSize(cellWidth(height, shape), height);
         Path target = fontFolder.resolve(size.dataFileName());
         String content = "cell " + size + "\n";
         Files.writeString(target, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
@@ -119,6 +147,6 @@ public final class NewSizePlan {
     // Null when the file has no valid cell line.
     private static Shape shapeOfFile(Path file) throws IOException {
         CellSize cell = FontHeader.read(file);
-        return cell == null ? null : NewFontInput.shapeOf(cell.width(), cell.height());
+        return cell == null ? null : shapeOf(cell.width(), cell.height());
     }
 }

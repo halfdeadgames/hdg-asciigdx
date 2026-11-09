@@ -1,142 +1,54 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
-import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
-import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
-import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.util.List;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
-/** The size page of the "new font" dialog: sizes grouped under SQUARE and TALL headings, with the cursor on sizes only. */
+/** The size typed into the size page of the "new font" dialog, and the lines the dialog shows for it. */
 final class NewFontSizePrompt {
 
     static final int LINE_CELLS = 26;
-    /** Dialog text lines above the list: the "Size for" line and a blank one. */
-    static final int LINES_ABOVE_LIST = 2;
+    /** Index of the typed-size line among {@link #lines()}. */
+    static final int INPUT_LINE = 2;
+    static final int MAX_TYPED = 9;
+    static final String HINT = "e.g. 16x16";
 
-    private static final String SQUARE_HEADING = "SQUARE";
-    private static final String TALL_HEADING = "TALL";
-    private static final int FIRST_HEIGHT = 8;
-    private static final int LAST_HEIGHT = 64;
-    private static final int HEIGHT_STEP = 8;
-    // Room for a heading and its first size at least.
-    private static final int MIN_SHOWN_ROWS = 2;
+    private static final char CURSOR = '_';
     private static final String ELLIPSIS = "..";
 
-    /** A chooseable size; headings have no entry. */
-    record Entry(Shape shape, int height) {
-        int cellWidth() {
-            return NewFontInput.cellWidth(height, shape);
-        }
-    }
-
-    private final BiConsumer<Shape, Integer> onCreate;
+    private final StringBuilder text = new StringBuilder(MAX_TYPED);
+    private final Consumer<CellSize> onCreate;
     private final Runnable onBack;
-    // Entries are null for headings.
-    private final GroupedPickList<Entry> list = new GroupedPickList<>();
     private String name = "";
-    // Shown on the blank line under the "Size for" line; cleared when the cursor moves.
     private String problem = "";
     private boolean open;
 
     /**
-     * @param onCreate receives the shape and cell height when Enter is pressed
+     * @param onCreate receives the typed cell size when Enter is pressed on a valid size
      * @param onBack called when Esc is pressed, to return to the name page
      */
-    NewFontSizePrompt(BiConsumer<Shape, Integer> onCreate, Runnable onBack) {
+    NewFontSizePrompt(Consumer<CellSize> onCreate, Runnable onBack) {
         this.onCreate = onCreate;
         this.onBack = onBack;
-    }
-
-    GroupedPickList<Entry> list() {
-        return list;
     }
 
     boolean isOpen() {
         return open;
     }
 
-    /** Opens the page for the given font name with the cursor on the first size. */
+    /** Opens the page for the given font name with nothing typed. */
     void open(String fontName) {
         name = fontName;
+        text.setLength(0);
         problem = "";
-        List<SelectList.Row> builtRows = new ArrayList<>();
-        List<Entry> builtEntries = new ArrayList<>();
-        for (Shape shape : Shape.values()) {
-            builtRows.add(new SelectList.Row(shape == Shape.SQUARE ? SQUARE_HEADING : TALL_HEADING, false, false, 0));
-            builtEntries.add(null);
-            for (int height = FIRST_HEIGHT; height <= LAST_HEIGHT; height += HEIGHT_STEP) {
-                if (NewFontInput.sizeError(height, shape) == null) {
-                    Entry entry = new Entry(shape, height);
-                    builtRows.add(new SelectList.Row(label(entry), true, false, 0));
-                    builtEntries.add(entry);
-                }
-            }
-        }
-        list.setRows(builtRows, builtEntries);
-        move(1);
         open = true;
     }
 
     void close() {
-        list.clear();
         name = "";
+        text.setLength(0);
         problem = "";
         open = false;
-    }
-
-    /**
-     * Sizes the visible window for a dialog drawn in an area this many cells tall. Rows that do not fit are
-     * scrolled; the title, the "Size for" line, the blank line, and the buttons always stay.
-     */
-    void fitTo(int areaHeight) {
-        int fitting = Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) - LINES_ABOVE_LIST + 1) / SelectList.PITCH);
-        list.setCapacity(fitting);
-    }
-
-    /** Rows drawn: all of them when they fit. */
-    int shownRows() {
-        return list.shownRows();
-    }
-
-    /** Whether some rows are out of view. */
-    boolean scrolls() {
-        return list.scrolls();
-    }
-
-    ScrollState window() {
-        return list.window();
-    }
-
-    /** The rows currently in view, top first. */
-    List<SelectList.Row> visibleRows() {
-        return list.visibleRows();
-    }
-
-    /** The cursor's place in {@link #visibleRows()}, or -1 when it has been scrolled out of view. */
-    int visibleSelectedIndex() {
-        return list.visibleSelectedIndex();
-    }
-
-    /** Scrolls the window by whole rows; the cursor stays where it is. */
-    void wheel(int ticks) {
-        list.wheel(ticks);
-    }
-
-    /** Highlights the size at a row of {@link #rows()}; headings and out-of-range rows are ignored. */
-    void hover(int rowIndex) {
-        list.hover(rowIndex);
-    }
-
-    /** Hands over the size at a row of {@link #rows()} as if it were highlighted and Enter pressed. */
-    void pick(int rowIndex) {
-        hover(rowIndex);
-        if (list.isChoosable(rowIndex)) {
-            enter();
-        }
     }
 
     /** The name the page was opened with, so Back can hand it to the name page. */
@@ -144,55 +56,69 @@ final class NewFontSizePrompt {
         return name;
     }
 
-    /** The cell as {@code WxH}, for example {@code 16X32}. */
-    static String label(Entry entry) {
-        return entry.cellWidth() + "X" + entry.height();
+    /** The text typed so far, lowercase. */
+    String typed() {
+        return text.toString();
     }
 
-    List<SelectList.Row> rows() {
-        return list.rows();
-    }
-
-    int selectedIndex() {
-        return list.selectedIndex();
-    }
-
-    /** The highlighted size, or null when closed. */
-    Entry selected() {
-        return list.selected();
-    }
-
-    /** Moves to the next size in the direction of {@code step}, skipping headings; stays put at either end. */
-    void move(int step) {
-        if (Integer.signum(step) == 0) {
+    /** Appends a digit or an x (a capital X is stored as x) while open; anything else, or a full field, is ignored. */
+    void type(char character) {
+        if (!open || text.length() >= MAX_TYPED || !isSizeCharacter(character)) {
             return;
         }
         problem = "";
-        list.move(step);
+        text.append(Character.toLowerCase(character));
     }
 
-    /** Cells the rows need, including the selection marker. */
-    int listWidth() {
-        return list.listWidth();
+    void backspace() {
+        if (!open || text.isEmpty()) {
+            return;
+        }
+        problem = "";
+        text.setLength(text.length() - 1);
     }
 
-    /** Shows why creating failed on the line under the "Size for" line; cut to the line width. */
+    /** Shows why creating failed under the typed size. */
     void showProblem(String message) {
-        problem = message.length() > LINE_CELLS ? message.substring(0, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS : message;
+        problem = message;
     }
 
-    /** The problem line, or an empty string. */
+    /** The problem message, or an empty string. */
     String problem() {
         return problem;
     }
 
-    /** Dialog text lines: the "Size for" line, a blank line (or the problem), then blank lines reserving the room the list is drawn into. */
+    /** Whether the grey example should be drawn in place of the (empty) typed text. */
+    boolean showsHint() {
+        return open && text.isEmpty();
+    }
+
+    /** Hands a valid size to the create callback; otherwise shows what is wrong and stays. */
+    void enter() {
+        if (!open) {
+            return;
+        }
+        String sizeError = NewFontInput.typedSizeError(text.toString());
+        if (sizeError != null) {
+            problem = sizeError;
+            return;
+        }
+        onCreate.accept(NewFontInput.typedSize(text.toString()));
+    }
+
+    void back() {
+        if (open) {
+            onBack.run();
+        }
+    }
+
+    /**
+     * Exactly five lines: the "Size for" line, a blank line (the input box is drawn a little above its line),
+     * the typed text with a cursor, then the problem over two lines.
+     */
     List<String> lines() {
-        List<String> lines = new ArrayList<>();
-        lines.add(sizeForLine());
-        lines.add(problem);
-        lines.addAll(Collections.nCopies(shownRows() * SelectList.PITCH - 1, " ".repeat(listWidth())));
-        return lines;
+        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem);
+        return List.of(sizeForLine(), "", typedLine(), problemLines.get(0), problemLines.get(1));
     }
 
     private String sizeForLine() {
@@ -200,17 +126,15 @@ final class NewFontSizePrompt {
         return line.length() > LINE_CELLS ? line.substring(0, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS : line;
     }
 
-    /** Hands the highlighted size to the create callback. */
-    void enter() {
-        Entry chosen = selected();
-        if (open && chosen != null) {
-            onCreate.accept(chosen.shape(), chosen.height());
+    private String typedLine() {
+        StringBuilder shown = new StringBuilder(LINE_CELLS).append(text).append(CURSOR);
+        while (shown.length() < LINE_CELLS) {
+            shown.append(' ');
         }
+        return shown.toString();
     }
 
-    void back() {
-        if (open) {
-            onBack.run();
-        }
+    private static boolean isSizeCharacter(char character) {
+        return (character >= '0' && character <= '9') || character == 'x' || character == 'X';
     }
 }

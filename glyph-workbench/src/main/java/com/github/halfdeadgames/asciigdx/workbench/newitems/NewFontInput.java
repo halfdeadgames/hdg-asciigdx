@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -7,12 +8,10 @@ import java.util.Locale;
 /** Validation and sizing rules for the "new font" prompt. */
 final class NewFontInput {
 
-    /** Cell proportions: square is W x W, tall is W x 2W. */
-    enum Shape { SQUARE, TALL }
+    /** The largest width or height of a cell, in pixels. */
+    static final int MAX_CELL_SIDE = 128;
 
     private static final int MAX_NAME_LENGTH = 32;
-    private static final int STEP = 8;
-    private static final int MAX_HEIGHT = 64;
     private static final List<String> RESERVED_NAMES = List.of(
         "con", "prn", "aux", "nul",
         "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
@@ -50,29 +49,75 @@ final class NewFontInput {
     }
 
     /**
-     * Checks a cell height for the chosen shape.
+     * Checks a cell size against the largest side allowed. {@link CellSize} itself already refuses sides below 1.
      *
-     * @param height the height the font file is named after
-     * @param shape the cell proportions
+     * @param size the cell size
      * @return null when the size is fine, otherwise a user-facing message
      */
-    static String sizeError(int height, Shape shape) {
-        if (shape == Shape.SQUARE) {
-            boolean valid = height >= STEP && height <= MAX_HEIGHT && height % STEP == 0;
-            return valid ? null : "Square heights are 8, 16, 24, up to 64";
+    static String sizeError(CellSize size) {
+        if (size.width() > MAX_CELL_SIDE || size.height() > MAX_CELL_SIDE) {
+            return "Width and height go up to " + MAX_CELL_SIDE;
         }
-        boolean valid = height >= 2 * STEP && height <= MAX_HEIGHT && height % (2 * STEP) == 0;
-        return valid ? null : "Tall heights are 16, 32, 48, or 64";
+        return null;
     }
 
-    /** Returns the cell width: the height for square cells, half of it for tall cells. */
-    static int cellWidth(int height, Shape shape) {
-        return shape == Shape.SQUARE ? height : height / 2;
+    /**
+     * Checks a size typed as {@code WxH}. Surrounding spaces and a capital X are accepted.
+     *
+     * @param typed the typed text
+     * @return null when the size is fine, otherwise a user-facing message
+     */
+    static String typedSizeError(String typed) {
+        String normalized = normalizeTypedSize(typed);
+        if (normalized.isEmpty()) {
+            return "Type a size like 16x16";
+        }
+        CellSize parsed = parseOrNull(normalized);
+        if (parsed == null) {
+            return unparsedSizeError(normalized);
+        }
+        return sizeError(parsed);
     }
 
-    /** Returns SQUARE when the cell is as wide as it is high, otherwise TALL. */
-    static Shape shapeOf(int cellWidth, int cellHeight) {
-        return cellWidth == cellHeight ? Shape.SQUARE : Shape.TALL;
+    /**
+     * Reads a size typed as {@code WxH}, with the same leniency as {@link #typedSizeError}.
+     *
+     * @param typed text that {@link #typedSizeError} accepts
+     * @return the parsed size
+     * @throws IllegalArgumentException if the text is not an acceptable size
+     */
+    static CellSize typedSize(String typed) {
+        String problem = typedSizeError(typed);
+        if (problem != null) {
+            throw new IllegalArgumentException(problem);
+        }
+        return CellSize.parse(normalizeTypedSize(typed));
+    }
+
+    private static String normalizeTypedSize(String typed) {
+        if (typed == null) {
+            return "";
+        }
+        return typed.trim().replace('X', 'x');
+    }
+
+    // Digits-x-digits that CellSize still refused: a zero side, or a side too long to be a sane number.
+    private static String unparsedSizeError(String normalized) {
+        if (!normalized.matches("\\d+x\\d+")) {
+            return "Write the size as WxH, e.g. 16x16";
+        }
+        if (normalized.matches("0+x\\d+|\\d+x0+")) {
+            return "Width and height start at 1";
+        }
+        return "Width and height go up to " + MAX_CELL_SIDE;
+    }
+
+    private static CellSize parseOrNull(String normalized) {
+        try {
+            return CellSize.parse(normalized);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static boolean isAllowedName(String name) {

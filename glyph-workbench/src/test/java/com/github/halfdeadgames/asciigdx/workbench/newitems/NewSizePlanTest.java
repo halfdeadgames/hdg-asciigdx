@@ -2,9 +2,12 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
@@ -132,6 +135,43 @@ class NewSizePlanTest {
         FontData data = FontDataParser.parseSizeFile(new CellSize(24, 24), read(folder.resolve("24x24.txt")));
         assertEquals(24, data.cellWidth());
         assertEquals(24, data.cellHeight());
+    }
+
+    @Test
+    void squareHeightsAreMultiplesOfEightUpToSixtyFour() {
+        for (int height = 8; height <= 64; height += 8) {
+            assertNull(NewSizePlan.sizeError(height, Shape.SQUARE), "height " + height);
+        }
+        assertNotNull(NewSizePlan.sizeError(0, Shape.SQUARE));
+        assertNotNull(NewSizePlan.sizeError(-8, Shape.SQUARE));
+        assertNotNull(NewSizePlan.sizeError(12, Shape.SQUARE));
+        assertNotNull(NewSizePlan.sizeError(72, Shape.SQUARE));
+    }
+
+    @Test
+    void tallHeightsAreSixteenThirtyTwoFortyEightSixtyFour() {
+        for (int height : new int[] {16, 32, 48, 64}) {
+            assertNull(NewSizePlan.sizeError(height, Shape.TALL), "height " + height);
+        }
+        assertNotNull(NewSizePlan.sizeError(8, Shape.TALL));
+        assertNotNull(NewSizePlan.sizeError(24, Shape.TALL));
+        assertNotNull(NewSizePlan.sizeError(0, Shape.TALL));
+        assertNotNull(NewSizePlan.sizeError(80, Shape.TALL));
+    }
+
+    @Test
+    void cellWidthFollowsShape() {
+        assertEquals(8, NewSizePlan.cellWidth(8, Shape.SQUARE));
+        assertEquals(24, NewSizePlan.cellWidth(24, Shape.SQUARE));
+        assertEquals(8, NewSizePlan.cellWidth(16, Shape.TALL));
+        assertEquals(32, NewSizePlan.cellWidth(64, Shape.TALL));
+    }
+
+    @Test
+    void shapeIsDerivedFromCellSize() {
+        assertEquals(Shape.SQUARE, NewSizePlan.shapeOf(8, 8));
+        assertEquals(Shape.TALL, NewSizePlan.shapeOf(8, 16));
+        assertEquals(Shape.TALL, NewSizePlan.shapeOf(16, 32));
     }
 
     private Path folderWith(String fileName, String content) throws IOException {

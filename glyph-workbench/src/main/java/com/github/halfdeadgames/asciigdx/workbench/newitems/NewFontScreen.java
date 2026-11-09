@@ -1,20 +1,17 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -38,14 +35,12 @@ public final class NewFontScreen implements WorkbenchScreen {
     private final BiConsumer<Path, CellSize> onCreated;
     private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFolders, this::create, this::cancel);
     private final ScreenViewport viewport = new ScreenViewport();
-    private final Vector2 pointer = new Vector2();
     private final DevCapture devCapture = new DevCapture();
 
     private SpriteBatch batch;
     private Texture whitePixel;
     private TextureGlyphSource source;
     private Painter painter;
-    private int wheelTicks;
     private String notice = "";
 
     /**
@@ -71,12 +66,6 @@ public final class NewFontScreen implements WorkbenchScreen {
         painter = new Painter(batch, whitePixel, source, viewport);
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
-            public boolean scrolled(float amountX, float amountY) {
-                wheelTicks += amountY > 0 ? 1 : amountY < 0 ? -1 : 0;
-                return true;
-            }
-
-            @Override
             public boolean keyTyped(char character) {
                 notice = "";
                 dialogs.type(character);
@@ -97,15 +86,7 @@ public final class NewFontScreen implements WorkbenchScreen {
 
     @Override
     public void render() {
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
-        int pointerX = (int) Math.floor(pointer.x);
-        int pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-        boolean clicked = Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
-        int wheel = wheelTicks;
-        wheelTicks = 0;
-        dialogs.handleInput(Gdx.graphics.getDeltaTime(), new NewFontPointer(wheel, clicked, pointerX, pointerY, CELL),
-            dialogArea());
+        dialogs.handleInput(Gdx.graphics.getDeltaTime());
         draw();
         devCapture.afterRender();
     }
@@ -122,12 +103,12 @@ public final class NewFontScreen implements WorkbenchScreen {
         return new CellRect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
     }
 
-    private void create(String name, Shape shape, int height) {
+    private void create(String name, CellSize size) {
         notice = "";
-        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot, name, shape, height);
+        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot, name, size);
         if (outcome.created()) {
             dialogs.close();
-            onCreated.accept(outcome.folder(), NewFontPlan.cellSize(shape, height));
+            onCreated.accept(outcome.folder(), size);
             return;
         }
         notice = outcome.problem();

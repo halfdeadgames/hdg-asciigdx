@@ -102,17 +102,20 @@ final class NewFontNamePrompt {
     }
 
     private List<String> wrapped(String message) {
-        String first = message;
-        String second = "";
-        if (message.length() > LINE_CELLS) {
-            int split = message.lastIndexOf(' ', LINE_CELLS);
-            if (split <= 0) {
-                split = LINE_CELLS;
-            }
-            first = message.substring(0, split).stripTrailing();
-            second = cut(message.substring(split).strip());
+        List<String> messageLines = wrapToTwoLines(message);
+        return List.of(typedLine(), "", messageLines.get(0), messageLines.get(1));
+    }
+
+    /** Splits a message over two lines of {@link #LINE_CELLS}, at a space when there is one; the rest is cut. */
+    static List<String> wrapToTwoLines(String message) {
+        if (message.length() <= LINE_CELLS) {
+            return List.of(message, "");
         }
-        return List.of(typedLine(), "", first, second);
+        int split = message.lastIndexOf(' ', LINE_CELLS);
+        if (split <= 0) {
+            split = LINE_CELLS;
+        }
+        return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
     }
 
     private static String cut(String value) {

@@ -109,14 +109,14 @@ class DevCaptureTest {
     }
 
     @Test
-    void newFontSizeRequestHasANameAndOptionalMoves() {
+    void newFontSizeRequestHasANameAndOptionalTypedText() {
         assertNull(DevCapture.parseNewFontSizeRequest(null));
-        assertEquals(new DevCapture.NewFontSizeRequest("my-font", 0), DevCapture.parseNewFontSizeRequest(""));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny"));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 3), DevCapture.parseNewFontSizeRequest("tiny:down:3"));
-        assertEquals(new DevCapture.NewFontSizeRequest("my-font", 2), DevCapture.parseNewFontSizeRequest("down:2"));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny:down:x"));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", 0), DevCapture.parseNewFontSizeRequest("tiny:down:-1"));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", ""), DevCapture.parseNewFontSizeRequest(""));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""), DevCapture.parseNewFontSizeRequest("tiny"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", "64x128"),
+            DevCapture.parseNewFontSizeRequest("tiny:64x128"));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", "7x13"), DevCapture.parseNewFontSizeRequest(":7x13"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""), DevCapture.parseNewFontSizeRequest("tiny:"));
     }
 
     @Test

@@ -15,7 +15,7 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  * {@code pick} or {@code pick:down:N} also chooses the selected font and lands in the glyph pick;
  * {@code cand} or {@code cand:N} goes on to confirm the selected source glyph and select candidate N (default 1).
  * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
- * {@code workbench.newfontsize} opens the New font size page for a name (optionally {@code :down:N} sizes in).
+ * {@code workbench.newfontsize} opens the New font size page for a name with optional text typed into the size field ({@code name:64x128}).
  * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow.
  */
 public final class DevCapture {
@@ -105,8 +105,8 @@ public final class DevCapture {
         return request;
     }
 
-    /** A parsed {@code workbench.newfontsize} request: the font name and how many sizes to move down. */
-    public record NewFontSizeRequest(String name, int moves) { }
+    /** A parsed {@code workbench.newfontsize} request: the font name and the text to type into the size field. */
+    public record NewFontSizeRequest(String name, String typed) { }
 
     static final String DEFAULT_FONT_NAME = "my-font";
 
@@ -115,21 +115,16 @@ public final class DevCapture {
         return parseNewFontSizeRequest(System.getProperty(NEW_FONT_SIZE_PROPERTY));
     }
 
-    /** Parses {@code <name>}, {@code <name>:down:N}, {@code down:N}, or a blank value; null when unset. */
+    /** Parses {@code <name>}, {@code <name>:<typed>}, {@code :<typed>}, or a blank value; null when unset. */
     static NewFontSizeRequest parseNewFontSizeRequest(String request) {
         if (request == null) {
             return null;
         }
-        String[] fields = request.trim().split(":", -1);
-        String name = fields[0].trim();
-        int moves = 0;
-        if (fields.length == 2 && "down".equalsIgnoreCase(name)) {
-            name = "";
-            moves = Math.max(0, parseRowIndex(fields[1]));
-        } else if (fields.length == 3 && "down".equalsIgnoreCase(fields[1].trim())) {
-            moves = Math.max(0, parseRowIndex(fields[2]));
-        }
-        return new NewFontSizeRequest(name.isEmpty() ? DEFAULT_FONT_NAME : name, moves);
+        String trimmed = request.trim();
+        int separator = trimmed.indexOf(':');
+        String name = separator < 0 ? trimmed : trimmed.substring(0, separator).trim();
+        String typed = separator < 0 ? "" : trimmed.substring(separator + 1).trim();
+        return new NewFontSizeRequest(name.isEmpty() ? DEFAULT_FONT_NAME : name, typed);
     }
 
     /** Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave it closed. */
