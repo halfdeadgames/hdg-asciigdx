@@ -110,10 +110,10 @@ class UpscaleSourceSheetTest {
     }
 
     @Test
-    void loadReadsTheFileForTheFontHeight(@TempDir Path root) throws IOException {
+    void loadReadsTheFileForTheFontCellSize(@TempDir Path root) throws IOException {
         Path folder = Files.createDirectories(root.resolve("classic"));
-        Files.writeString(folder.resolve("8.txt"), FONT_TEXT, StandardCharsets.UTF_8);
-        Files.writeString(folder.resolve("16.txt"), "broken", StandardCharsets.UTF_8);
+        Files.writeString(folder.resolve("8x8.txt"), FONT_TEXT, StandardCharsets.UTF_8);
+        Files.writeString(folder.resolve("16x16.txt"), "broken", StandardCharsets.UTF_8);
         UpscaleSourceSheet sheet = UpscaleSourceSheet.load(root, FONT);
         assertEquals(FONT, sheet.font());
         assertTrue(sheet.isPickable(slotOf(sheet, 0x41)));
@@ -122,7 +122,15 @@ class UpscaleSourceSheetTest {
     @Test
     void loadPropagatesBrokenFiles(@TempDir Path root) throws IOException {
         Path folder = Files.createDirectories(root.resolve("classic"));
-        Files.writeString(folder.resolve("8.txt"), "not font data", StandardCharsets.UTF_8);
+        Files.writeString(folder.resolve("8x8.txt"), "not font data", StandardCharsets.UTF_8);
         assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
+    }
+
+    @Test
+    void loadRefusesAFileWhoseCellLineDisagreesWithItsName(@TempDir Path root) throws IOException {
+        Path folder = Files.createDirectories(root.resolve("classic"));
+        Files.writeString(folder.resolve("8x8.txt"), "cell 8x16\n", StandardCharsets.UTF_8);
+        FontDataException problem = assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
+        assertEquals("8x8.txt declares cell 8x16; the file name must match the cell line", problem.getMessage());
     }
 }

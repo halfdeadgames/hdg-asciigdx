@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -8,27 +9,23 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-/** Finds the paintable fonts: every {@code <fontsRoot>/<folder>/<size>.txt}. */
+/** Finds the paintable fonts: every {@code <fontsRoot>/<folder>/<width>x<height>.txt}. */
 public final class FontDiscovery {
 
     /** One font data file; the name is the folder name and the size is the file name without {@code .txt}. */
-    public record FontChoice(String folderName, int size) {
+    public record FontChoice(String folderName, CellSize size) {
 
-        /** Menu text such as {@code SAIKSISTT 8}. */
+        /** Menu text such as {@code SAIKSISTT 8X8}. */
         String label() {
-            return folderName.toUpperCase(Locale.ROOT) + " " + size;
+            return folderName.toUpperCase(Locale.ROOT) + " " + size.toString().toUpperCase(Locale.ROOT);
         }
     }
-
-    private static final Pattern SIZE_FILE = Pattern.compile("(\\d{1,4})\\.txt");
 
     private FontDiscovery() {
     }
 
-    /** Fonts sorted by folder name, then size. A missing or unreadable root gives an empty list. */
+    /** Fonts sorted by folder name, then cell height, then cell width. A missing or unreadable root gives an empty list. */
     public static List<FontChoice> discover(Path fontsRoot) {
         List<FontChoice> found = new ArrayList<>();
         if (!Files.isDirectory(fontsRoot)) {
@@ -42,16 +39,17 @@ public final class FontDiscovery {
             return new ArrayList<>();
         }
         found.sort(Comparator.comparing((FontChoice choice) -> choice.folderName().toLowerCase(Locale.ROOT))
-            .thenComparingInt(FontChoice::size));
+            .thenComparingInt((FontChoice choice) -> choice.size().height())
+            .thenComparingInt((FontChoice choice) -> choice.size().width()));
         return found;
     }
 
     private static void addSizes(List<FontChoice> found, Path folder) throws IOException {
         try (DirectoryStream<Path> files = Files.newDirectoryStream(folder, Files::isRegularFile)) {
             for (Path file : files) {
-                Matcher matcher = SIZE_FILE.matcher(file.getFileName().toString());
-                if (matcher.matches()) {
-                    found.add(new FontChoice(folder.getFileName().toString(), Integer.parseInt(matcher.group(1))));
+                CellSize size = CellSize.ofDataFileName(file.getFileName().toString());
+                if (size != null) {
+                    found.add(new FontChoice(folder.getFileName().toString(), size));
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,22 +9,20 @@ import java.nio.file.Path;
 /** Finds and reads the rules file of one font size. */
 public final class RulesFileLoad {
 
-    private static final String FILE_SUFFIX = ".rules.json";
-
     private RulesFileLoad() {
     }
 
     /**
-     * Reads {@code <sizeName>.rules.json} from a font directory. Safe to call again to reload.
+     * Reads {@code <width>x<height>.rules.json} from a font directory. Safe to call again to reload.
      *
      * @param fontDirectory the directory holding the font files
-     * @param sizeName the font size name, such as 16
+     * @param size the font size, which names the file, such as 16x16
      * @param cellWidth glyph width in pixels
      * @param cellHeight glyph height in pixels
      * @return missing, loaded with its rules, or bad with the reason
      */
-    public static RulesLoadResult load(Path fontDirectory, String sizeName, int cellWidth, int cellHeight) {
-        Path file = fontDirectory.resolve(sizeName + FILE_SUFFIX);
+    public static RulesLoadResult load(Path fontDirectory, CellSize size, int cellWidth, int cellHeight) {
+        Path file = fontDirectory.resolve(size.rulesFileName());
         if (!Files.isRegularFile(file)) {
             return RulesLoadResult.missing(file);
         }

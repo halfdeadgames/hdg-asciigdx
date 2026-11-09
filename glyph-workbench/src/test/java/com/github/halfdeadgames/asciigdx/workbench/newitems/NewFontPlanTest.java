@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,13 +31,13 @@ class NewFontPlanTest {
         Path folder = NewFontPlan.create(root, "demo", Shape.SQUARE, 16);
         assertEquals(root.resolve("demo"), folder);
         assertTrue(Files.isDirectory(folder));
-        assertEquals("cell 16x16\n", read(folder.resolve("16.txt")));
+        assertEquals("cell 16x16\n", read(folder.resolve("16x16.txt")));
     }
 
     @Test
     void tallFontGetsHalfWidthCell() throws IOException {
         Path folder = NewFontPlan.create(root, "demo", Shape.TALL, 32);
-        assertEquals("cell 16x32\n", read(folder.resolve("32.txt")));
+        assertEquals("cell 16x32\n", read(folder.resolve("16x32.txt")));
     }
 
     @Test
@@ -44,7 +45,7 @@ class NewFontPlanTest {
         Path folder = NewFontPlan.create(root, "demo", Shape.SQUARE, 8);
         assertFalse(Files.exists(folder.resolve("notes.md")));
         try (Stream<Path> children = Files.list(folder)) {
-            assertEquals(List.of(folder.resolve("8.txt")), children.toList());
+            assertEquals(List.of(folder.resolve("8x8.txt")), children.toList());
         }
     }
 
@@ -71,15 +72,15 @@ class NewFontPlanTest {
     void duplicateNameIsRefusedAndKeepsTheFolder() throws IOException {
         NewFontPlan.create(root, "demo", Shape.SQUARE, 8);
         assertThrows(IllegalArgumentException.class, () -> NewFontPlan.create(root, "demo", Shape.TALL, 16));
-        assertEquals("cell 8x8\n", read(root.resolve("demo").resolve("8.txt")));
-        assertFalse(Files.exists(root.resolve("demo").resolve("16.txt")));
+        assertEquals("cell 8x8\n", read(root.resolve("demo").resolve("8x8.txt")));
+        assertFalse(Files.exists(root.resolve("demo").resolve("8x16.txt")));
     }
 
     @Test
     void existingFolderDifferingOnlyInCaseCountsAsDuplicate() throws IOException {
         Files.createDirectory(root.resolve("Foo"));
         assertThrows(IllegalArgumentException.class, () -> NewFontPlan.create(root, "foo", Shape.SQUARE, 8));
-        assertFalse(Files.exists(root.resolve("Foo").resolve("8.txt")));
+        assertFalse(Files.exists(root.resolve("Foo").resolve("8x8.txt")));
     }
 
     @Test
@@ -112,7 +113,7 @@ class NewFontPlanTest {
         assertTrue(outcome.created());
         assertEquals(root.resolve("demo"), outcome.folder());
         assertEquals("", outcome.problem());
-        assertEquals("cell 16x16\n", read(root.resolve("demo").resolve("16.txt")));
+        assertEquals("cell 16x16\n", read(root.resolve("demo").resolve("16x16.txt")));
     }
 
     @Test
@@ -164,13 +165,14 @@ class NewFontPlanTest {
     @Test
     void aNewFontIsListedByFontDiscoveryWithoutRulesOrGuides() throws IOException {
         NewFontPlan.create(root, "demo", Shape.TALL, 16);
-        assertEquals(List.of(new FontDiscovery.FontChoice("demo", 16)), FontDiscovery.discover(root));
+        assertEquals(List.of(new FontDiscovery.FontChoice("demo", new CellSize(8, 16))), FontDiscovery.discover(root));
     }
 
     @Test
     void theCreatedSizeFileOpensAsAnEmptyFont() throws IOException {
         Path folder = NewFontPlan.create(root, "demo", Shape.TALL, 16);
-        assertDoesNotThrow(() -> FontDataParser.parse(read(folder.resolve("16.txt"))));
+        CellSize size = new CellSize(8, 16);
+        assertDoesNotThrow(() -> FontDataParser.parseSizeFile(size, read(folder.resolve("8x16.txt"))));
     }
 
     private static void write(Path file, String content) throws IOException {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import java.util.List;
@@ -13,9 +14,9 @@ import org.junit.jupiter.api.Test;
 class MenuModelTest {
 
     private static final List<FontChoice> FONTS = List.of(
-        new FontChoice("alpha", 8),
-        new FontChoice("saiksistt", 8),
-        new FontChoice("saiksistt", 16));
+        new FontChoice("alpha", new CellSize(8, 8)),
+        new FontChoice("saiksistt", new CellSize(8, 8)),
+        new FontChoice("saiksistt", new CellSize(16, 16)));
 
     @Test
     void fontListHasOneItemPerFolderThenNewFont() {
@@ -47,7 +48,7 @@ class MenuModelTest {
     void newFontStaysReachableAmongManyFonts() {
         List<FontChoice> many = new java.util.ArrayList<>();
         for (int i = 0; i < 11; i++) {
-            many.add(new FontChoice("font" + i, 8));
+            many.add(new FontChoice("font" + i, new CellSize(8, 8)));
         }
         MenuModel model = MenuModel.fontList(many);
         assertEquals(12, model.itemCount());
@@ -64,9 +65,9 @@ class MenuModelTest {
         assertEquals(MenuModel.Kind.NEW_SIZE, model.item(2).kind());
         assertEquals("3 NEW SIZE", model.item(2).label());
         assertEquals("saiksistt", model.item(2).folderName());
-        assertEquals("1 PAINT 8", model.item(0).label());
-        assertEquals(8, model.item(0).size());
-        assertEquals("2 PAINT 16", model.item(1).label());
+        assertEquals("1 PAINT 8X8", model.item(0).label());
+        assertEquals(new CellSize(8, 8), model.item(0).size());
+        assertEquals("2 PAINT 16X16", model.item(1).label());
     }
 
     @Test
@@ -88,7 +89,7 @@ class MenuModelTest {
             new NewSizePlan.SizeOption(24, 24, false)));
         assertEquals(2, model.itemCount());
         assertEquals(MenuModel.Kind.CREATE_SIZE, model.item(0).kind());
-        assertEquals(16, model.item(0).size());
+        assertEquals(new CellSize(16, 16), model.item(0).size());
         assertEquals("1 16X16", model.item(0).label());
         assertEquals("alpha", model.item(0).folderName());
         MenuModel.Line taken = model.lines().get(0);
@@ -137,7 +138,7 @@ class MenuModelTest {
         model.select(7);
         model.select(-1);
         assertEquals(1, model.selectedIndex());
-        assertEquals("2 PAINT 16", model.selectedItem().label());
+        assertEquals("2 PAINT 16X16", model.selectedItem().label());
     }
 
     @Test

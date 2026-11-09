@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import java.io.IOException;
@@ -26,15 +27,24 @@ class NewSizePlanTest {
 
     @Test
     void squareFolderOffersEightSquareSizes() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
         List<SizeOption> options = NewSizePlan.options(folder);
         assertEquals(List.of(8, 16, 24, 32, 40, 48, 56, 64), heights(options));
         assertEquals(24, options.get(2).cellWidth());
     }
 
     @Test
+    void heightOnlyFileNamesAreNotSizeFiles() throws IOException {
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
+        write(folder.resolve("16.txt"), "cell 8x16\n");
+        List<SizeOption> options = NewSizePlan.options(folder);
+        assertEquals(8, options.size());
+        assertFalse(options.get(1).taken());
+    }
+
+    @Test
     void tallFolderOffersFourTallSizes() throws IOException {
-        Path folder = folderWith("16.txt", "cell 8x16\n");
+        Path folder = folderWith("8x16.txt", "cell 8x16\n");
         List<SizeOption> options = NewSizePlan.options(folder);
         assertEquals(List.of(16, 32, 48, 64), heights(options));
         assertEquals(List.of(8, 16, 24, 32), options.stream().map(SizeOption::cellWidth).toList());
@@ -42,8 +52,8 @@ class NewSizePlanTest {
 
     @Test
     void takenSizesAreListedAndMarked() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
-        write(folder.resolve("24.txt"), "cell 24x24\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
+        write(folder.resolve("24x24.txt"), "cell 24x24\n");
         List<SizeOption> options = NewSizePlan.options(folder);
         assertEquals(8, options.size());
         assertTrue(options.get(0).taken());
@@ -53,8 +63,8 @@ class NewSizePlanTest {
 
     @Test
     void guidesFilesAreIgnored() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
-        write(folder.resolve("16.guides.txt"), "cell 8x16\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
+        write(folder.resolve("16x16.guides.txt"), "cell 16x16\n");
         List<SizeOption> options = NewSizePlan.options(folder);
         assertEquals(8, options.size());
         assertFalse(options.get(1).taken());
@@ -68,41 +78,41 @@ class NewSizePlanTest {
 
     @Test
     void mixedShapesAreRejected() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
-        write(folder.resolve("16.txt"), "cell 8x16\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
+        write(folder.resolve("8x16.txt"), "cell 8x16\n");
         assertThrows(IllegalStateException.class, () -> NewSizePlan.options(folder));
         assertThrows(IllegalStateException.class, () -> NewSizePlan.create(folder, 32));
     }
 
     @Test
     void createWritesExactContent() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
         NewSizePlan.create(folder, 16);
-        assertEquals("cell 16x16\n", read(folder.resolve("16.txt")));
+        assertEquals("cell 16x16\n", read(folder.resolve("16x16.txt")));
     }
 
     @Test
     void createWritesTallCell() throws IOException {
-        Path folder = folderWith("16.txt", "cell 8x16\n");
+        Path folder = folderWith("8x16.txt", "cell 8x16\n");
         NewSizePlan.create(folder, 32);
-        assertEquals("cell 16x32\n", read(folder.resolve("32.txt")));
+        assertEquals("cell 16x32\n", read(folder.resolve("16x32.txt")));
     }
 
     @Test
     void createRefusesTakenSizeAndKeepsTheFile() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
-        write(folder.resolve("16.txt"), "cell 16x16\nU+0041 A\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
+        write(folder.resolve("16x16.txt"), "cell 16x16\nU+0041 A\n");
         assertThrows(FileAlreadyExistsException.class, () -> NewSizePlan.create(folder, 16));
-        assertEquals("cell 16x16\nU+0041 A\n", read(folder.resolve("16.txt")));
+        assertEquals("cell 16x16\nU+0041 A\n", read(folder.resolve("16x16.txt")));
     }
 
     @Test
     void createRefusesSizesOutsideTheShape() throws IOException {
-        Path tall = folderWith("16.txt", "cell 8x16\n");
+        Path tall = folderWith("8x16.txt", "cell 8x16\n");
         assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(tall, 8));
         assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(tall, 24));
         assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(tall, 80));
-        assertFalse(Files.exists(tall.resolve("24.txt")));
+        assertFalse(Files.exists(tall.resolve("12x24.txt")));
     }
 
     @Test
@@ -113,13 +123,13 @@ class NewSizePlanTest {
 
     @Test
     void createdFileIsDiscoveredAndParses() throws IOException {
-        Path folder = folderWith("8.txt", "cell 8x8\n");
+        Path folder = folderWith("8x8.txt", "cell 8x8\n");
         NewSizePlan.create(folder, 24);
 
         List<FontChoice> found = FontDiscovery.discover(root);
-        assertTrue(found.contains(new FontChoice("demo", 24)));
+        assertTrue(found.contains(new FontChoice("demo", new CellSize(24, 24))));
 
-        FontData data = FontDataParser.parse(read(folder.resolve("24.txt")));
+        FontData data = FontDataParser.parseSizeFile(new CellSize(24, 24), read(folder.resolve("24x24.txt")));
         assertEquals(24, data.cellWidth());
         assertEquals(24, data.cellHeight());
     }

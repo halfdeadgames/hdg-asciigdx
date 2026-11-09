@@ -1,13 +1,14 @@
 package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.AtomicFiles;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * The {@code <size>.guides.txt} file of one font size. A missing file means no guides; a file that cannot be read or
+ * The {@code <width>x<height>.guides.txt} file of one font size. A missing file means no guides; a file that cannot be read or
  * parsed also means no guides, but is marked unreadable so it is never overwritten by mistake.
  */
 public final class PaintGuidesFile {
@@ -22,8 +23,8 @@ public final class PaintGuidesFile {
         this.readError = readError;
     }
 
-    public static PaintGuidesFile open(Path directory, String fontSize) {
-        Path path = directory.resolve(fontSize + ".guides.txt");
+    public static PaintGuidesFile open(Path directory, CellSize fontSize) {
+        Path path = directory.resolve(fontSize.guidesFileName());
         if (!Files.exists(path)) {
             return new PaintGuidesFile(path, PaintGuides.NONE, null);
         }

@@ -15,22 +15,27 @@ class FontHeaderTest {
     Path folder;
 
     private Path file(String content) throws IOException {
-        return Files.writeString(folder.resolve("8.txt"), content);
+        return Files.writeString(folder.resolve("8x8.txt"), content);
     }
 
     @Test
     void readsAPlainCellLine() throws IOException {
-        assertEquals(new FontHeader.CellSize(8, 16), FontHeader.read(file("cell 8x16\n#...\n")));
+        assertEquals(new CellSize(8, 16), FontHeader.read(file("cell 8x16\n#...\n")));
     }
 
     @Test
     void skipsAByteOrderMark() throws IOException {
-        assertEquals(new FontHeader.CellSize(8, 8), FontHeader.read(file("﻿cell 8x8\n")));
+        assertEquals(new CellSize(8, 8), FontHeader.read(file("﻿cell 8x8\n")));
     }
 
     @Test
     void skipsLeadingCommentsAndBlankLines() throws IOException {
-        assertEquals(new FontHeader.CellSize(16, 32), FontHeader.read(file("# note\n\n#\n   \ncell 16x32\n")));
+        assertEquals(new CellSize(16, 32), FontHeader.read(file("# note\n\n#\n   \ncell 16x32\n")));
+    }
+
+    @Test
+    void zeroSizedCellGivesNull() throws IOException {
+        assertNull(FontHeader.read(file("cell 0x8\n")));
     }
 
     @Test

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,21 +22,39 @@ class FontDiscoveryTest {
 
     @Test
     void findsSizeFilesSortedByFolderThenSize(@TempDir Path root) throws IOException {
-        touch(root, "saiksistt/16.txt");
-        touch(root, "saiksistt/8.txt");
-        touch(root, "alpha/8.txt");
+        touch(root, "saiksistt/16x16.txt");
+        touch(root, "saiksistt/8x8.txt");
+        touch(root, "alpha/8x8.txt");
         assertEquals(
-            List.of(new FontChoice("alpha", 8), new FontChoice("saiksistt", 8), new FontChoice("saiksistt", 16)),
+            List.of(new FontChoice("alpha", new CellSize(8, 8)), new FontChoice("saiksistt", new CellSize(8, 8)),
+                new FontChoice("saiksistt", new CellSize(16, 16))),
             FontDiscovery.discover(root));
+    }
+
+    @Test
+    void sizesWithTheSameHeightAreSeparateAndSortByWidth(@TempDir Path root) throws IOException {
+        touch(root, "tall/16x16.txt");
+        touch(root, "tall/8x16.txt");
+        assertEquals(
+            List.of(new FontChoice("tall", new CellSize(8, 16)), new FontChoice("tall", new CellSize(16, 16))),
+            FontDiscovery.discover(root));
+    }
+
+    @Test
+    void ignoresHeightOnlyNames(@TempDir Path root) throws IOException {
+        touch(root, "saiksistt/16.txt");
+        touch(root, "saiksistt/8x8.txt");
+        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))), FontDiscovery.discover(root));
     }
 
     @Test
     void ignoresOtherFilesAndLooseFiles(@TempDir Path root) throws IOException {
         touch(root, "saiksistt/notes.md");
-        touch(root, "saiksistt/8-old.txt");
-        touch(root, "saiksistt/8.txt.tmp");
-        touch(root, "saiksistt/8.guides.txt");
-        touch(root, "saiksistt/8.review.txt");
+        touch(root, "saiksistt/8x8-old.txt");
+        touch(root, "saiksistt/8x8.txt.tmp");
+        touch(root, "saiksistt/8x8.guides.txt");
+        touch(root, "saiksistt/8x8.review.txt");
+        touch(root, "saiksistt/0x8.txt");
         touch(root, "FONT_RULES.md");
         touch(root, "empty/notes.md");
         assertTrue(FontDiscovery.discover(root).isEmpty());
@@ -48,6 +67,6 @@ class FontDiscoveryTest {
 
     @Test
     void labelIsUppercaseFolderAndSize() {
-        assertEquals("SAIKSISTT 8", new FontChoice("saiksistt", 8).label());
+        assertEquals("SAIKSISTT 8X16", new FontChoice("saiksistt", new CellSize(8, 16)).label());
     }
 }

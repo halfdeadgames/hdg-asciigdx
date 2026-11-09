@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.export;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontExporter;
 import java.io.File;
 import java.io.IOException;
@@ -21,10 +22,10 @@ public final class PaintExport {
     private final FolderPicker picker;
     private final ExportFolderMemory memory;
     private final File fontDirectory;
-    private final int fontSize;
+    private final CellSize fontSize;
     private final Messages messages;
 
-    public PaintExport(FolderPicker picker, ExportFolderMemory memory, File fontDirectory, int fontSize,
+    public PaintExport(FolderPicker picker, ExportFolderMemory memory, File fontDirectory, CellSize fontSize,
                        Messages messages) {
         this.picker = picker;
         this.memory = memory;

@@ -44,6 +44,24 @@ public final class FontDataParser {
         return new FontDataParser(text).parseAll();
     }
 
+    /**
+     * Parses the text of a size file such as {@code 16x16.txt}, which must declare the size its name says.
+     *
+     * @param fileSize the size the file name gives
+     * @param text the file contents
+     * @return the font
+     * @throws FontDataException if the text is invalid, or its cell line disagrees with the file name
+     */
+    public static FontData parseSizeFile(CellSize fileSize, String text) {
+        FontData data = parse(text);
+        CellSize declared = new CellSize(data.cellWidth(), data.cellHeight());
+        if (!declared.equals(fileSize)) {
+            throw new FontDataException(0, fileSize.dataFileName() + " declares cell " + declared
+                + "; the file name must match the cell line");
+        }
+        return data;
+    }
+
     private FontData parseAll() {
         readCell();
         while (skipToContent()) {

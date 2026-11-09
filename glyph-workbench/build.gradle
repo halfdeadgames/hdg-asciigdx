@@ -56,7 +56,7 @@ tasks.register('exportFont', JavaExec) {
     systemProperty 'workbench.export.output', exportDirectory.absolutePath
     def fontDir = commandLineProperties.getOrDefault('fontDir', 'fonts/saiksistt')
     systemProperty 'workbench.export.fontDir', rootProject.file(fontDir).absolutePath
-    systemProperty 'workbench.export.fontSize', commandLineProperties.getOrDefault('fontSize', '16')
+    systemProperty 'workbench.export.fontSize', commandLineProperties.getOrDefault('fontSize', '16x16')
   }
 }
 
@@ -73,7 +73,7 @@ run {
   if (commandLineProperties.containsKey('mode')) systemProperty 'workbench.mode', commandLineProperties['mode']
   if (commandLineProperties.containsKey('scale')) systemProperty 'workbench.scale', commandLineProperties['scale']
   systemProperty 'workbench.fontsRoot', rootProject.file(commandLineProperties['fontsRoot'] ?: 'fonts').absolutePath
-  systemProperty 'workbench.fontSize', commandLineProperties.getOrDefault('fontSize', '16')
+  systemProperty 'workbench.fontSize', commandLineProperties.getOrDefault('fontSize', '16x16')
   if (commandLineProperties.containsKey('rulesOpen')) systemProperty 'workbench.rulesOpen', 'true'
   if (commandLineProperties.containsKey('derive')) systemProperty 'workbench.derive', commandLineProperties['derive']
   if (commandLineProperties.containsKey('guides')) systemProperty 'workbench.guides', commandLineProperties['guides']

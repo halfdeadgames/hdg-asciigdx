@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.export;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import java.io.File;
 
@@ -12,7 +13,7 @@ public final class PaintExports {
     }
 
     /** Call after the application has started, because the folder memory uses libGDX preferences. */
-    public static PaintExport create(File fontDirectory, int fontSize, PaintExport.Messages messages) {
+    public static PaintExport create(File fontDirectory, CellSize fontSize, PaintExport.Messages messages) {
         File defaultFolder = new File(repoRoot(), "build/exports");
         if (isAutomated()) {
             ExportFolderMemory memory = new ExportFolderMemory(new RunOnlyExportFolderStore(), defaultFolder);

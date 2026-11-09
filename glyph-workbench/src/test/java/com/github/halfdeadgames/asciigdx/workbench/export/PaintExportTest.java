@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.export;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +17,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class PaintExportTest {
 
-    private static final int FONT_SIZE = 8;
+    private static final CellSize FONT_SIZE = new CellSize(8, 8);
     private static final String TINY_FONT = "cell 8x8\n\nU+0041 A\n#.......\n##......\n"
         + "........\n........\n........\n........\n........\n........\n";
 
@@ -36,7 +37,7 @@ class PaintExportTest {
         defaultFolder = new File(workDirectory, "default");
         assertTrue(fontDirectory.mkdirs());
         String text = TINY_FONT;
-        Files.write(new File(fontDirectory, FONT_SIZE + ".txt").toPath(), text.getBytes(StandardCharsets.UTF_8));
+        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(), text.getBytes(StandardCharsets.UTF_8));
         store = new MemoryStore();
         messages = new RecordingMessages();
     }
@@ -50,10 +51,10 @@ class PaintExportTest {
     void successWritesBothFilesRemembersFolderAndNamesFiles() {
         exportWith(new FixedFolderPicker(outputDirectory)).run();
 
-        assertTrue(new File(outputDirectory, "tiny-8.png").isFile());
-        assertTrue(new File(outputDirectory, "tiny-8.txt").isFile());
+        assertTrue(new File(outputDirectory, "tiny-8x8.png").isFile());
+        assertTrue(new File(outputDirectory, "tiny-8x8.txt").isFile());
         assertEquals(outputDirectory.getAbsolutePath(), store.path);
-        assertEquals(List.of("ok:Exported tiny-8.png and tiny-8.txt to:", "ok:" + outputDirectory.getAbsolutePath()),
+        assertEquals(List.of("ok:Exported tiny-8x8.png and tiny-8x8.txt to:", "ok:" + outputDirectory.getAbsolutePath()),
             messages.entries);
     }
 
@@ -68,7 +69,7 @@ class PaintExportTest {
 
     @Test
     void missingFontFileWarnsAndRemembersNothing() {
-        assertTrue(new File(fontDirectory, FONT_SIZE + ".txt").delete());
+        assertTrue(new File(fontDirectory, FONT_SIZE.dataFileName()).delete());
 
         exportWith(new FixedFolderPicker(outputDirectory)).run();
 

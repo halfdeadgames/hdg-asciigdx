@@ -133,7 +133,7 @@ class PaintGuidesTest {
 
     @Test
     void realSaiksisttGuidesParse() throws IOException {
-        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16.guides.txt"));
+        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16x16.guides.txt"));
         PaintGuides.Shown upper = shown(guides, UPPER, 16, 16);
         assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
         assertTrue(upper.widths().isEmpty());
@@ -147,8 +147,8 @@ class PaintGuidesTest {
 
     @Test
     void realRulesAndGuidesShowTheRightGuidesOnA() throws IOException {
-        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16.rules.json"), 16, 16);
-        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16.guides.txt"));
+        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16x16.rules.json"), 16, 16);
+        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16x16.guides.txt"));
         PaintGuides.Shown shownOnA = guides.forGlyph('A', rules, 16, 16);
         assertEquals(List.of("CAP", "X-HT", "BASE"), rowLabels(shownOnA));
         assertEquals(1, shownOnA.bars().size());
@@ -170,14 +170,14 @@ class PaintGuidesTest {
 
     @Test
     void realSaiksisttGuidesWriteBackIdentically() throws IOException {
-        String fileText = readRepoFile("fonts/saiksistt/16.guides.txt").replace("\r\n", "\n");
+        String fileText = readRepoFile("fonts/saiksistt/16x16.guides.txt").replace("\r\n", "\n");
         assertEquals(fileText, PaintGuides.parse(fileText).toText());
         assertRoundTrips(fileText);
     }
 
     @Test
     void realRulesFileParsesAndSortsGlyphsIntoGroups() throws IOException {
-        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16.rules.json"), 16, 16);
+        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16x16.rules.json"), 16, 16);
         assertEquals(List.of("uppercase", "lowercase", "digits", "punctuation"),
             rules.groupNames().subList(0, 4));
         assertTrue(rules.isInGroup("uppercase", 'A'));

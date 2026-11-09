@@ -11,10 +11,6 @@ import java.util.regex.Pattern;
 /** Reads the {@code cell WxH} line at the top of a font data file. */
 public final class FontHeader {
 
-    /** The cell size a font data file declares. */
-    public record CellSize(int width, int height) {
-    }
-
     private static final Pattern CELL = Pattern.compile("cell (\\d{1,4})x(\\d{1,4})");
     private static final int BYTE_ORDER_MARK = 0xFEFF;
 
@@ -40,7 +36,12 @@ public final class FontHeader {
             if (!matcher.matches()) {
                 return null;
             }
-            return new CellSize(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+            int width = Integer.parseInt(matcher.group(1));
+            int height = Integer.parseInt(matcher.group(2));
+            if (width < 1 || height < 1) {
+                return null;
+            }
+            return new CellSize(width, height);
         }
     }
 

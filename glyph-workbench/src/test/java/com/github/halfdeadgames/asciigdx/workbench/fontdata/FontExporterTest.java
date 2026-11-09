@@ -3,7 +3,9 @@ package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.file;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
@@ -18,7 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class FontExporterTest {
 
-    private static final int FONT_SIZE = 8;
+    private static final CellSize FONT_SIZE = new CellSize(8, 8);
 
     @TempDir
     File workDirectory;
@@ -32,7 +34,7 @@ class FontExporterTest {
         outputDirectory = new File(workDirectory, "out");
         assertTrue(fontDirectory.mkdirs());
         String text = file(glyph("U+0041 A", "#.......", "##......"));
-        Files.write(new File(fontDirectory, FONT_SIZE + ".txt").toPath(), text.getBytes(StandardCharsets.UTF_8));
+        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(), text.getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -41,8 +43,8 @@ class FontExporterTest {
 
         File png = FontExporter.pngFile(fontDirectory, FONT_SIZE, outputDirectory);
         File chars = FontExporter.charsFile(fontDirectory, FONT_SIZE, outputDirectory);
-        assertEquals("tiny-8.png", png.getName());
-        assertEquals("tiny-8.txt", chars.getName());
+        assertEquals("tiny-8x8.png", png.getName());
+        assertEquals("tiny-8x8.txt", chars.getName());
         assertTrue(png.isFile());
         assertTrue(chars.isFile());
     }
@@ -73,5 +75,18 @@ class FontExporterTest {
         FontExporter.export(fontDirectory, FONT_SIZE, nestedOutput);
 
         assertTrue(nestedOutput.isDirectory());
+    }
+
+    @Test
+    void exportRefusesAFileWhoseCellLineDisagreesWithItsName() {
+        CellSize wrongName = new CellSize(8, 16);
+        File misnamed = new File(fontDirectory, wrongName.dataFileName());
+        assertTrue(new File(fontDirectory, FONT_SIZE.dataFileName()).renameTo(misnamed));
+
+        FontDataException problem = assertThrows(FontDataException.class,
+            () -> FontExporter.export(fontDirectory, wrongName, outputDirectory));
+
+        assertEquals("8x16.txt declares cell 8x8; the file name must match the cell line", problem.getMessage());
+        assertFalse(outputDirectory.exists());
     }
 }

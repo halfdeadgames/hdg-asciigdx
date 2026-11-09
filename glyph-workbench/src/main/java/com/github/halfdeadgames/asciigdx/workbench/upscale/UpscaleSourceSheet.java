@@ -30,15 +30,16 @@ public final class UpscaleSourceSheet {
     }
 
     /**
-     * Reads {@code <fontsRoot>/<folderName>/<cellHeight>.txt} as UTF-8.
+     * Reads {@code <fontsRoot>/<folderName>/<cellWidth>x<cellHeight>.txt} as UTF-8.
      *
      * @throws IOException if the file cannot be read
-     * @throws com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException if the file is not valid font data
+     * @throws com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException if the file is not valid font
+     *         data, or its cell line disagrees with its name
      */
     public static UpscaleSourceSheet load(Path fontsRoot, UpscaleSources.Font font) throws IOException {
-        Path file = fontsRoot.resolve(font.folderName()).resolve(font.cellHeight() + ".txt");
+        Path file = fontsRoot.resolve(font.folderName()).resolve(font.size().dataFileName());
         String text = Files.readString(file, StandardCharsets.UTF_8);
-        return of(FontDataParser.parse(text), font);
+        return of(FontDataParser.parseSizeFile(font.size(), text), font);
     }
 
     public static UpscaleSourceSheet of(FontData data, UpscaleSources.Font font) {

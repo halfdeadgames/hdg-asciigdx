@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The guide lines of one font size, read from {@code <size>.guides.txt}. One guide per line, whitespace separated;
+ * The guide lines of one font size, read from {@code <width>x<height>.guides.txt}. One guide per line, whitespace separated;
  * blank lines and lines starting with {@code #} are skipped:
  * <pre>
  * row    label boundaryRow groups

@@ -40,6 +40,17 @@ class FontDataParserTest {
     }
 
     @Test
+    void sizeFileMustDeclareTheCellItsNameSays() {
+        assertEquals(FontDataParser.parse(file(P)), FontDataParser.parseSizeFile(new CellSize(8, 8), file(P)));
+
+        FontDataException problem = assertThrows(FontDataException.class,
+            () -> FontDataParser.parseSizeFile(new CellSize(16, 16), file(P)));
+
+        assertEquals("16x16.txt declares cell 8x8; the file name must match the cell line", problem.getMessage());
+        assertEquals(0, problem.getLine());
+    }
+
+    @Test
     void acceptsAndIgnoresTheLegacyFullKeyword() {
         FontData withKeyword = FontDataParser.parse(file(glyph("U+0051 Q full", "#.......")));
         FontData without = FontDataParser.parse(file(glyph("U+0051 Q", "#.......")));

@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
@@ -28,7 +29,7 @@ import java.util.function.Supplier;
 public final class WorkbenchHost extends ApplicationAdapter {
 
     private static final String TAG = "Workbench";
-    private static final String DEFAULT_FONT_SIZE = "16";
+    private static final CellSize DEFAULT_FONT_SIZE = new CellSize(16, 16);
 
     private final String mode;
     private WorkbenchScreen active;
@@ -47,13 +48,18 @@ public final class WorkbenchHost extends ApplicationAdapter {
             scriptSession = new ScriptSession(scriptPath);
         }
         if ("paint".equals(mode)) {
-            switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
-                System.getProperty("workbench.fontSize", DEFAULT_FONT_SIZE)));
+            switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"), launchFontSize()));
         } else if (DevCapture.newFontRequest() != null || DevCapture.newFontSizeRequest() != null) {
             switchTo(newFontScreen());
         } else {
             switchTo(fontListScreen(""));
         }
+    }
+
+    // The property is always width x height, like 16x16.
+    private static CellSize launchFontSize() {
+        String text = System.getProperty("workbench.fontSize");
+        return text == null ? DEFAULT_FONT_SIZE : CellSize.parse(text.trim());
     }
 
     private String fontsRoot() {
@@ -98,14 +104,14 @@ public final class WorkbenchHost extends ApplicationAdapter {
     private WorkbenchScreen newFontScreen() {
         String root = fontsRoot();
         return new NewFontScreen(root == null ? null : Path.of(root), () -> pending = () -> fontListScreen(""),
-            (folder, height) -> pending = () -> paintCreatedFont(folder, height));
+            (folder, size) -> pending = () -> paintCreatedFont(folder, size));
     }
 
     // Esc from the new font's first paint screen goes to that font's own menu, then to the (refreshed) font list.
-    private WorkbenchScreen paintCreatedFont(Path folder, int height) {
+    private WorkbenchScreen paintCreatedFont(Path folder, CellSize size) {
         String folderName = folder.getFileName().toString();
         Runnable back = fontsRoot() == null ? Gdx.app::exit : () -> pending = () -> fontMenuScreen(folderName);
-        return paintScreen(back, folder.toString(), String.valueOf(height));
+        return paintScreen(back, folder.toString(), size);
     }
 
     private WorkbenchScreen fontMenuScreen(String folderName) {
@@ -135,15 +141,15 @@ public final class WorkbenchHost extends ApplicationAdapter {
         if (item.kind() == MenuModel.Kind.NEW_SIZE) {
             pending = () -> newSizeScreen(folderName);
         } else {
-            pending = () -> paintScreen(backToFontMenu, fontDir, String.valueOf(item.size()));
+            pending = () -> paintScreen(backToFontMenu, fontDir, item.size());
         }
     }
 
     // A paint screen that can switch to a size file or a font it creates; Esc there goes back as given.
-    private PaintScreen paintScreen(Runnable back, String fontDir, String size) {
+    private PaintScreen paintScreen(Runnable back, String fontDir, CellSize size) {
         return new PaintScreen(back, fontDir, size,
-            height -> pending = () -> paintScreen(back, fontDir, String.valueOf(height)),
-            (folder, height) -> pending = () -> paintCreatedFont(folder, height));
+            newSize -> pending = () -> paintScreen(back, fontDir, newSize),
+            (folder, firstSize) -> pending = () -> paintCreatedFont(folder, firstSize));
     }
 
     // The size list is a menu of its own; choosing a free size creates the file and paints it.
@@ -158,25 +164,25 @@ public final class WorkbenchHost extends ApplicationAdapter {
         String name = folderName.toUpperCase(Locale.ROOT);
         Runnable backToNewSize = () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE);
         Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
-            : new MenuScreen.Detail(name, List.of("CREATES " + item.size() + ".TXT"));
+            : new MenuScreen.Detail(name, List.of("CREATES " + item.size().dataFileName().toUpperCase(Locale.ROOT)));
         MenuScreen.Text text = new MenuScreen.Text("NEW SIZE", List.of("GLYPH WORKBENCH", name, "NEW SIZE"),
             "CREATE", "BACK", "");
         return new MenuScreen(MenuModel.newSizes(folderName, options), text, detail,
             item -> createSize(folder, item.size()), backToNewSize);
     }
 
-    private void createSize(Path folder, int height) {
+    private void createSize(Path folder, CellSize size) {
         String folderName = folder.getFileName().toString();
         try {
-            NewSizePlan.create(folder, height);
+            NewSizePlan.create(folder, size.height());
         } catch (IOException | RuntimeException e) {
-            Gdx.app.error(TAG, "Cannot create size " + height + ": " + e.getMessage());
-            pending = () -> fontMenuScreen(folderName, limited("CANNOT CREATE " + height + ": " + e.getMessage()),
+            Gdx.app.error(TAG, "Cannot create size " + size + ": " + e.getMessage());
+            pending = () -> fontMenuScreen(folderName, limited("CANNOT CREATE " + size + ": " + e.getMessage()),
                 MenuModel.Kind.NEW_SIZE);
             return;
         }
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
-        pending = () -> paintScreen(backToFontMenu, folder.toString(), String.valueOf(height));
+        pending = () -> paintScreen(backToFontMenu, folder.toString(), size);
     }
 
     private static String limited(String notice) {

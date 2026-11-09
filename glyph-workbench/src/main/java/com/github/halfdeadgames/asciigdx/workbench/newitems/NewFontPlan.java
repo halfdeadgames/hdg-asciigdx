@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -45,13 +46,13 @@ final class NewFontPlan {
     }
 
     /**
-     * Creates {@code <fontsRoot>/<name>/<height>.txt} containing {@code cell WxH}. Nothing existing is
+     * Creates {@code <fontsRoot>/<name>/<width>x<height>.txt} containing {@code cell WxH}. Nothing existing is
      * overwritten, and a failed write leaves no new folder behind.
      *
      * @param fontsRoot the existing folder that holds all font folders
      * @param name the font folder name
      * @param shape the cell proportions
-     * @param height the first size, which names the file
+     * @param height the first size's height, which with the shape gives the file name
      * @return the created font folder
      * @throws IllegalArgumentException if the name or the size is not acceptable
      * @throws java.nio.file.NoSuchFileException if the fonts root does not exist
@@ -68,8 +69,9 @@ final class NewFontPlan {
             throw new IllegalArgumentException(sizeProblem);
         }
         Path folder = Files.createDirectory(fontsRoot.resolve(name));
-        Path sizeFile = folder.resolve(height + ".txt");
-        String content = "cell " + NewFontInput.cellWidth(height, shape) + "x" + height + "\n";
+        CellSize size = cellSize(shape, height);
+        Path sizeFile = folder.resolve(size.dataFileName());
+        String content = "cell " + size + "\n";
         try {
             Files.writeString(sizeFile, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         } catch (IOException | RuntimeException failure) {
@@ -82,6 +84,11 @@ final class NewFontPlan {
             throw failure;
         }
         return folder;
+    }
+
+    /** The cell size a shape gives at a height. */
+    static CellSize cellSize(Shape shape, int height) {
+        return new CellSize(NewFontInput.cellWidth(height, shape), height);
     }
 
     /** The names of everything directly inside {@code fontsRoot}; a plain file blocks a name as much as a folder. */

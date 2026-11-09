@@ -138,7 +138,7 @@ class FontEditorTest {
         FontEditor editor = editor();
         editor.setPixel(0x41, 3, 3, true);
         editor.setPixel(0x44, 0, 0, true);
-        Path file = directory.resolve("8.txt");
+        Path file = directory.resolve("8x8.txt");
         Files.writeString(file, editor.toText(), StandardCharsets.UTF_8);
         FontData reread = FontDataParser.parse(Files.readString(file, StandardCharsets.UTF_8));
         assertEquals(editor.data(), reread);

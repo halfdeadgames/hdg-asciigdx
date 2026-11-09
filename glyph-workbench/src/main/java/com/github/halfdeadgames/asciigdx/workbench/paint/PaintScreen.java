@@ -21,6 +21,7 @@ import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.export.PaintExport;
 import com.github.halfdeadgames.asciigdx.workbench.export.PaintExports;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -73,7 +74,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.IntConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Paint screen: edits one font data file glyph by glyph. */
@@ -202,8 +203,8 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private final Runnable onExit;
     private final String fontDir;
-    private final String fontSize;
-    private final IntConsumer openSize;
+    private final CellSize fontSize;
+    private final Consumer<CellSize> openSize;
     // What the unsaved-changes prompt continues with once the changes are saved or discarded.
     private Runnable afterUnsavedPrompt = () -> { };
     private String unsavedQuestion = LEAVE_QUESTION;
@@ -214,12 +215,12 @@ public final class PaintScreen implements WorkbenchScreen {
     /**
      * @param onExit called when the user leaves the screen with Esc (after the unsaved prompt)
      * @param fontDir absolute path of the font folder
-     * @param fontSize size name, which is also the data file name without {@code .txt}
-     * @param openSize called with the height of a size file this screen just created, to paint it next
-     * @param openFont called with the folder and first size height of a font this screen just created, to paint it next
+     * @param fontSize cell size, which is also the data file name without {@code .txt}
+     * @param openSize called with the size of a size file this screen just created, to paint it next
+     * @param openFont called with the folder and first size of a font this screen just created, to paint it next
      */
-    public PaintScreen(Runnable onExit, String fontDir, String fontSize, IntConsumer openSize,
-                    BiConsumer<Path, Integer> openFont) {
+    public PaintScreen(Runnable onExit, String fontDir, CellSize fontSize, Consumer<CellSize> openSize,
+                    BiConsumer<Path, CellSize> openFont) {
         this.onExit = onExit;
         this.fontDir = fontDir;
         this.fontSize = fontSize;
@@ -234,7 +235,7 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         FileHandle directory = Gdx.files.absolute(fontDir);
         loadFont(directory);
-        paintExport = PaintExports.create(directory.file(), Integer.parseInt(fontSize.trim()), new ExportMessages());
+        paintExport = PaintExports.create(directory.file(), fontSize, new ExportMessages());
         pickStartCursor();
         createPainters();
         setUpScale();
@@ -244,9 +245,9 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private void loadFont(FileHandle directory) {
-        dataFile = directory.child(fontSize + ".txt");
+        dataFile = directory.child(fontSize.dataFileName());
         folderName = directory.name().toUpperCase(java.util.Locale.ROOT);
-        editor = new FontEditor(FontDataParser.parse(dataFile.readString("UTF-8")));
+        editor = new FontEditor(FontDataParser.parseSizeFile(fontSize, dataFile.readString("UTF-8")));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
         derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new PaintDeriveHost());
@@ -570,7 +571,7 @@ public final class PaintScreen implements WorkbenchScreen {
             messages.warn("Cannot create " + NewSizePrompt.label(chosen) + ": " + e.getMessage());
             return;
         }
-        openSize.accept(chosen.height());
+        openSize.accept(new CellSize(chosen.cellWidth(), chosen.height()));
     }
 
     private void openNewGlyph() {
@@ -874,7 +875,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
     // A review file of this size is read once; its notes are shown read-only next to the grid.
     private void loadReviewNotes(FileHandle directory) {
-        FileHandle reviewFile = directory.child(fontSize + ".review.txt");
+        FileHandle reviewFile = directory.child(fontSize.reviewFileName());
         if (!reviewFile.exists()) {
             return;
         }
@@ -1675,7 +1676,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void drawBase(int codePoint, int columns, int rows) {
         TopBar.draw(painter, columns, CRUMB_ROW,
-            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize),
+            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize.toString().toUpperCase(java.util.Locale.ROOT)),
             new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         drawSheet(choosingSource);

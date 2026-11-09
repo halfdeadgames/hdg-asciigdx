@@ -10,9 +10,9 @@ Each font folder holds:
 
 | File | Purpose |
 | --- | --- |
-| `<size>.txt` | The glyphs, for example `16.txt`. |
-| `<size>.guides.txt` | Guide lines shown on the paint grid. |
-| `<size>.rules.json` | Rules for this size, checked as you draw. |
+| `<width>x<height>.txt` | The glyphs, for example `16x16.txt`. The name must match the `cell` line inside the file. |
+| `<width>x<height>.guides.txt` | Guide lines shown on the paint grid. |
+| `<width>x<height>.rules.json` | Rules for this size, checked as you draw. |
 | `notes.md` | Design notes for every size of the font. Never checked. |
 
 Rules are per size because row and column numbers differ between sizes. Notes are per font because style applies to every size.

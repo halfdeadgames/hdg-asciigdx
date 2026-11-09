@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
  * Exports a font data file to a glyph sheet PNG plus its character list, without opening a window.
  * Call {@link #export} from code, or run {@link #main}. The {@code exportFont} Gradle task runs
  * {@link #main}, which reads the {@code workbench.export.output}, {@code workbench.export.fontDir},
- * and {@code workbench.export.fontSize} system properties.
+ * and {@code workbench.export.fontSize} system properties; the last one is a size like {@code 16x16}.
  */
 public final class FontExporter {
 
@@ -22,15 +22,16 @@ public final class FontExporter {
     }
 
     /**
-     * Reads {@code <fontDirectory>/<fontSize>.txt} and writes the sheet PNG and character list to
+     * Reads {@code <fontDirectory>/<width>x<height>.txt} and writes the sheet PNG and character list to
      * the output directory, creating it if missing. See {@link #pngFile} and {@link #charsFile}.
      *
      * @param fontDirectory   folder holding the font data files; its name prefixes the output names
-     * @param fontSize        font size, which selects the data file
+     * @param fontSize        cell size, which selects the data file
      * @param outputDirectory folder that receives the exported files
      * @throws IOException if a file cannot be read or written, or the folder cannot be created
+     * @throws FontDataException if the data file is invalid or its cell line disagrees with its name
      */
-    public static void export(File fontDirectory, int fontSize, File outputDirectory) throws IOException {
+    public static void export(File fontDirectory, CellSize fontSize, File outputDirectory) throws IOException {
         FontSheet sheet = loadSheet(fontDirectory, fontSize);
         if (!outputDirectory.isDirectory() && !outputDirectory.mkdirs()) {
             throw new IOException("Cannot create output directory " + outputDirectory);
@@ -43,11 +44,11 @@ public final class FontExporter {
      * Returns where {@link #export} writes the sheet image.
      *
      * @param fontDirectory   folder holding the font data files
-     * @param fontSize        font size
+     * @param fontSize        cell size
      * @param outputDirectory folder that receives the exported files
-     * @return {@code <outputDirectory>/<fontFolderName>-<fontSize>.png}
+     * @return {@code <outputDirectory>/<fontFolderName>-<width>x<height>.png}
      */
-    public static File pngFile(File fontDirectory, int fontSize, File outputDirectory) {
+    public static File pngFile(File fontDirectory, CellSize fontSize, File outputDirectory) {
         return new File(outputDirectory, exportName(fontDirectory, fontSize) + ".png");
     }
 
@@ -55,11 +56,11 @@ public final class FontExporter {
      * Returns where {@link #export} writes the character list.
      *
      * @param fontDirectory   folder holding the font data files
-     * @param fontSize        font size
+     * @param fontSize        cell size
      * @param outputDirectory folder that receives the exported files
-     * @return {@code <outputDirectory>/<fontFolderName>-<fontSize>.txt}
+     * @return {@code <outputDirectory>/<fontFolderName>-<width>x<height>.txt}
      */
-    public static File charsFile(File fontDirectory, int fontSize, File outputDirectory) {
+    public static File charsFile(File fontDirectory, CellSize fontSize, File outputDirectory) {
         return new File(outputDirectory, exportName(fontDirectory, fontSize) + ".txt");
     }
 
@@ -72,7 +73,7 @@ public final class FontExporter {
     public static void main(String[] args) throws IOException {
         File outputDirectory = new File(requiredProperty("workbench.export.output"));
         File fontDirectory = new File(requiredProperty("workbench.export.fontDir"));
-        int fontSize = Integer.parseInt(requiredProperty("workbench.export.fontSize").trim());
+        CellSize fontSize = CellSize.parse(requiredProperty("workbench.export.fontSize").trim());
 
         export(fontDirectory, fontSize, outputDirectory);
 
@@ -83,13 +84,13 @@ public final class FontExporter {
         System.out.println("  " + charsFile(fontDirectory, fontSize, outputDirectory).getAbsolutePath());
     }
 
-    private static String exportName(File fontDirectory, int fontSize) {
-        return fontDirectory.getName() + "-" + fontSize;
+    private static String exportName(File fontDirectory, CellSize fontSize) {
+        return fontDirectory.getName() + "-" + fontSize.fileStem();
     }
 
-    private static FontSheet loadSheet(File fontDirectory, int fontSize) throws IOException {
-        File source = new File(fontDirectory, fontSize + ".txt");
-        return FontSheet.of(FontDataParser.parse(readText(source)));
+    private static FontSheet loadSheet(File fontDirectory, CellSize fontSize) throws IOException {
+        File source = new File(fontDirectory, fontSize.dataFileName());
+        return FontSheet.of(FontDataParser.parseSizeFile(fontSize, readText(source)));
     }
 
     private static String requiredProperty(String key) {

@@ -10,7 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Reads and writes the {@code <size>.guides.txt} format of {@link PaintGuides}. */
+/** Reads and writes the {@code <width>x<height>.guides.txt} format of {@link PaintGuides}. */
 final class PaintGuidesText {
 
     private PaintGuidesText() {

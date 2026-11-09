@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 class SaiksisttSixteenRulesTest {
 
     private static final int CELL = 16;
+    private static final CellSize SIZE = new CellSize(CELL, CELL);
 
     private static File fontDirectory;
 
@@ -54,11 +56,11 @@ class SaiksisttSixteenRulesTest {
     }
 
     private static RulesLoadResult loadRules() {
-        return RulesFileLoad.load(fontDirectory.toPath(), "16", CELL, CELL);
+        return RulesFileLoad.load(fontDirectory.toPath(), SIZE, CELL, CELL);
     }
 
     private static FontData parseFont() throws IOException {
-        return FontDataParser.parse(readText(new File(fontDirectory, "16.txt")));
+        return FontDataParser.parseSizeFile(SIZE, readText(new File(fontDirectory, SIZE.dataFileName())));
     }
 
     private static List<String> describeWarnings(RulesFile rules, int codePoint, PixelGlyph glyph) {

@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,11 @@ public final class UpscaleSources {
 
     /** One font data file. */
     public record Font(String folderName, int cellWidth, int cellHeight) {
+
+        /** The cell size, which names the font's data file. */
+        public CellSize size() {
+            return new CellSize(cellWidth, cellHeight);
+        }
     }
 
     /**

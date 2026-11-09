@@ -24,7 +24,8 @@ class SaiksisttSixteenFontTest {
     static void loadRealFont() throws IOException {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
-        data = FontDataParser.parse(readText(new File(repoRoot, "fonts/saiksistt/16.txt")));
+        data = FontDataParser.parseSizeFile(new CellSize(16, 16),
+            readText(new File(repoRoot, "fonts/saiksistt/16x16.txt")));
     }
 
     private static String readText(File file) throws IOException {

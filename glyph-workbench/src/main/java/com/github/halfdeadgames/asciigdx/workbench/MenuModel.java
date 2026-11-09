@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import java.util.ArrayList;
@@ -20,14 +21,14 @@ final class MenuModel {
         PAINT,
         /** Opens the list of sizes a font can still get. */
         NEW_SIZE,
-        /** One size in that list; {@code size} is its height. */
+        /** One size in that list; {@code size} is its cell size. */
         CREATE_SIZE,
         /** Opens the dialog that makes a font folder; the last entry of the font list. */
         NEW_FONT
     }
 
-    /** A selectable entry. {@code size} is set for paint and create-size entries. */
-    record Item(Kind kind, String label, String folderName, int size) {
+    /** A selectable entry. {@code size} is set for paint and create-size entries, and null for the others. */
+    record Item(Kind kind, String label, String folderName, CellSize size) {
     }
 
     /**
@@ -64,9 +65,9 @@ final class MenuModel {
             model.lines.add(new Line("NO FONTS FOUND", -1, 1, true));
         }
         for (String folder : folders) {
-            model.addItem(Kind.FONT, folder.toUpperCase(Locale.ROOT), folder, 0, 1);
+            model.addItem(Kind.FONT, folder.toUpperCase(Locale.ROOT), folder, null, 1);
         }
-        model.addItem(Kind.NEW_FONT, "NEW FONT", "", 0, 1);
+        model.addItem(Kind.NEW_FONT, "NEW FONT", "", null, 1);
         return model;
     }
 
@@ -80,10 +81,11 @@ final class MenuModel {
             }
         }
         for (FontChoice font : sizes) {
-            model.addItem(Kind.PAINT, "PAINT " + font.size(), folderName, font.size(), 0);
+            model.addItem(Kind.PAINT, "PAINT " + font.size().toString().toUpperCase(Locale.ROOT), folderName,
+                font.size(), 0);
         }
         if (!sizes.isEmpty()) {
-            model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, 0, 0);
+            model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, null, 0);
         } else {
             model.lines.add(new Line("NO SIZE FILES FOUND", -1, 0, true));
         }
@@ -102,7 +104,7 @@ final class MenuModel {
                 // MenuScreen strips the text, so the indent lines the label up with numbered items (arrow, number).
                 model.lines.add(new Line(label + "  (EXISTS)", -1, TAKEN_INDENT, true));
             } else {
-                model.addItem(Kind.CREATE_SIZE, label, folderName, option.height(), 0);
+                model.addItem(Kind.CREATE_SIZE, label, folderName, new CellSize(option.cellWidth(), option.height()), 0);
             }
         }
         if (model.items.isEmpty()) {
@@ -112,7 +114,7 @@ final class MenuModel {
         return model;
     }
 
-    private void addItem(Kind kind, String label, String folderName, int size, int indent) {
+    private void addItem(Kind kind, String label, String folderName, CellSize size, int indent) {
         int index = items.size();
         String number = index < MAX_NUMBERED ? (index + 1) + " " : "  ";
         items.add(new Item(kind, number + label, folderName, size));

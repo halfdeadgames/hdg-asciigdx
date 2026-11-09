@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -18,17 +19,17 @@ public final class PaintNewFont {
     private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
     private final Supplier<Path> fontsRoot;
     private final BiConsumer<Runnable, String> runAfterUnsavedCheck;
-    private final BiConsumer<Path, Integer> openFont;
+    private final BiConsumer<Path, CellSize> openFont;
     private final MessageStrip messages;
 
     /**
      * @param fontsRoot the folder that holds the font folders, read each time it is needed
      * @param runAfterUnsavedCheck runs the action now, or after the unsaved-changes prompt with the given question
-     * @param openFont called with the folder and first size height of the font just created
+     * @param openFont called with the folder and first cell size of the font just created
      * @param messages the strip that shows warnings
      */
     public PaintNewFont(Supplier<Path> fontsRoot, BiConsumer<Runnable, String> runAfterUnsavedCheck,
-                        BiConsumer<Path, Integer> openFont, MessageStrip messages) {
+                        BiConsumer<Path, CellSize> openFont, MessageStrip messages) {
         this.fontsRoot = fontsRoot;
         this.runAfterUnsavedCheck = runAfterUnsavedCheck;
         this.openFont = openFont;
@@ -83,7 +84,7 @@ public final class PaintNewFont {
         NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, shape, height);
         if (outcome.created()) {
             dialogs.close();
-            openFont.accept(outcome.folder(), height);
+            openFont.accept(outcome.folder(), NewFontPlan.cellSize(shape, height));
             return;
         }
         if (outcome.nameProblem()) {

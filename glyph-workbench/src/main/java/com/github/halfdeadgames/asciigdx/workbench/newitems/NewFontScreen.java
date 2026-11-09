@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontInput.Shape;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -34,7 +35,7 @@ public final class NewFontScreen implements WorkbenchScreen {
 
     private final Path fontsRoot;
     private final Runnable onBack;
-    private final BiConsumer<Path, Integer> onCreated;
+    private final BiConsumer<Path, CellSize> onCreated;
     private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFolders, this::create, this::cancel);
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
@@ -50,9 +51,9 @@ public final class NewFontScreen implements WorkbenchScreen {
     /**
      * @param fontsRoot the folder that holds all font folders, or null when none is set
      * @param onBack called when the user cancels on the name page
-     * @param onCreated called with the new font folder and the height of its first size file
+     * @param onCreated called with the new font folder and the cell size of its first size file
      */
-    public NewFontScreen(Path fontsRoot, Runnable onBack, BiConsumer<Path, Integer> onCreated) {
+    public NewFontScreen(Path fontsRoot, Runnable onBack, BiConsumer<Path, CellSize> onCreated) {
         this.fontsRoot = fontsRoot;
         this.onBack = onBack;
         this.onCreated = onCreated;
@@ -126,7 +127,7 @@ public final class NewFontScreen implements WorkbenchScreen {
         NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot, name, shape, height);
         if (outcome.created()) {
             dialogs.close();
-            onCreated.accept(outcome.folder(), height);
+            onCreated.accept(outcome.folder(), NewFontPlan.cellSize(shape, height));
             return;
         }
         notice = outcome.problem();
