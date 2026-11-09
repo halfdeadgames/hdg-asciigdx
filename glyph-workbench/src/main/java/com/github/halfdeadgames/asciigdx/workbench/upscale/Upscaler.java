@@ -5,6 +5,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /**
  * Upscales one glyph by a whole factor. The whole cell is scaled. The smoothing methods exist for
@@ -39,6 +40,7 @@ final class Upscaler {
 
     private static final int ON = 0xFFFFFFFF;
     private static final int OFF = 0;
+    private static final IntPredicate NO_LOCKED_SLOTS = slot -> false;
 
     private Upscaler() {
     }
@@ -64,26 +66,27 @@ final class Upscaler {
                 packed[y * width + x] = pixels.isLit(x, y) ? ON : OFF;
             }
         }
-        int[] scaled = scale(packed, width, height, factor, method, PixelScaler.isScale2xLocked(glyph.codePoint()));
+        int[] scaled = scale(packed, width, height, factor, method);
         return toGrid(scaled, width * factor, height * factor);
     }
 
-    private static int[] scale(int[] packed, int width, int height, int factor, Method method, boolean locked) {
+    private static int[] scale(int[] packed, int width, int height, int factor, Method method) {
         switch (method) {
             case SCALE2X:
-                return PixelScaler.scale2x(packed, width, height, width, height, slot -> locked,
+                return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
                     PixelScaler.Scale2xMode.FULL, pixel -> pixel == OFF);
             case FILL:
-                return PixelScaler.scale2x(packed, width, height, width, height, slot -> locked,
+                return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
                     PixelScaler.Scale2xMode.FILL_ONLY, pixel -> pixel == OFF);
             case TRIM:
-                return PixelScaler.scale2x(packed, width, height, width, height, slot -> locked,
+                return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
                     PixelScaler.Scale2xMode.TRIM_ONLY, pixel -> pixel == OFF);
             case MMPX:
-                return PixelScaler.mmpx(packed, width, height, width, height, slot -> locked,
+                return PixelScaler.mmpx(packed, width, height, width, height, NO_LOCKED_SLOTS,
                     PixelScaler::lumaRgba8888);
             case LIGHT:
-                return PixelScaler.light(packed, width, height, width, height, slot -> locked, pixel -> pixel == OFF);
+                return PixelScaler.light(packed, width, height, width, height, NO_LOCKED_SLOTS,
+                    pixel -> pixel == OFF);
             default:
                 return PixelScaler.scale(packed, width, height, factor);
         }

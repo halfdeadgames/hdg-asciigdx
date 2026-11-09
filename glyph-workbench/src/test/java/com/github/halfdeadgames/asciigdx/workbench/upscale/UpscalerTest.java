@@ -59,6 +59,41 @@ class UpscalerTest {
         }
     }
 
+    private static PixelGlyph staircaseGlyph(int codePoint) {
+        return new PixelGlyph(codePoint, PixelGrid.ofRows(List.of(
+            "#.......",
+            "##......",
+            "###.....",
+            "####....",
+            "#####...",
+            "######..",
+            "#######.",
+            "########")));
+    }
+
+    private static void assertCodePointDoesNotChangeSmoothing(int codePoint) {
+        boolean someMethodSmooths = false;
+        for (Upscaler.Method method : Upscaler.methodsFor(2)) {
+            PixelGrid ordinary = Upscaler.upscale(staircaseGlyph('A'), 2, method);
+            PixelGrid special = Upscaler.upscale(staircaseGlyph(codePoint), 2, method);
+            assertEquals(ordinary, special, method.label);
+            someMethodSmooths |= !ordinary.equals(
+                Upscaler.upscale(staircaseGlyph('A'), 2, Upscaler.Method.NEAREST));
+        }
+        assertTrue(someMethodSmooths, "the staircase must differ from nearest under some method");
+    }
+
+    @Test
+    void boxDrawingGlyphsAreSmoothedLikeOrdinaryGlyphs() {
+        assertCodePointDoesNotChangeSmoothing(0x2500);
+        assertCodePointDoesNotChangeSmoothing(0x2514);
+    }
+
+    @Test
+    void privateUseGlyphsAreSmoothedLikeOrdinaryGlyphs() {
+        assertCodePointDoesNotChangeSmoothing(0xE000);
+    }
+
     @Test
     void smoothingMethodsOnlyExistAtFactorTwo() {
         assertEquals(6, Upscaler.methodsFor(2).size());
