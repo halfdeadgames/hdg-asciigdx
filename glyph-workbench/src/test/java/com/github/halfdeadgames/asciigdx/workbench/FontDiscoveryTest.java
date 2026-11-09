@@ -61,6 +61,13 @@ class FontDiscoveryTest {
     }
 
     @Test
+    void theGlyphListIsNotASize(@TempDir Path root) throws IOException {
+        touch(root, "saiksistt/glyphs.txt");
+        touch(root, "saiksistt/8x8.txt");
+        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))), FontDiscovery.discover(root));
+    }
+
+    @Test
     void missingRootGivesNoFonts(@TempDir Path root) {
         assertTrue(FontDiscovery.discover(root.resolve("nothing")).isEmpty());
     }

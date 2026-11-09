@@ -24,7 +24,7 @@ final class NewFontSizePrompt {
     private boolean open;
 
     /**
-     * @param onCreate receives the typed cell size when Enter is pressed on a valid size
+     * @param onCreate receives the typed cell size when Enter is pressed on a valid size, to go on to the glyph page
      * @param onBack called when Esc is pressed, to return to the name page
      */
     NewFontSizePrompt(Consumer<CellSize> onCreate, Runnable onBack) {
@@ -38,10 +38,18 @@ final class NewFontSizePrompt {
 
     /** Opens the page for the given font name with nothing typed. */
     void open(String fontName) {
+        open(fontName, "");
+    }
+
+    /** Opens the page for the given font name with {@code initialText} already typed, for coming back from a later page. */
+    void open(String fontName, String initialText) {
         name = fontName;
         text.setLength(0);
         problem = "";
         open = true;
+        for (int i = 0; i < initialText.length(); i++) {
+            type(initialText.charAt(i));
+        }
     }
 
     void close() {

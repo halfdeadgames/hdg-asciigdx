@@ -103,20 +103,21 @@ public final class NewFontScreen implements WorkbenchScreen {
         return new CellRect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
     }
 
-    private void create(String name, CellSize size) {
+    private void create(String name, CellSize size, NewFontGlyphs glyphs) {
         notice = "";
-        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot, name, size);
+        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot, name, size, glyphs);
         if (outcome.created()) {
             dialogs.close();
             onCreated.accept(outcome.folder(), size);
             return;
         }
-        notice = outcome.problem();
         if (outcome.nameProblem()) {
+            notice = outcome.problem();
             dialogs.backToName();
-        } else {
-            Gdx.app.error(TAG, outcome.problem());
+            return;
         }
+        Gdx.app.error(TAG, outcome.problem());
+        dialogs.showGlyphsProblem(outcome.problem());
     }
 
     private List<String> existingFolders() {

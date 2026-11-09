@@ -28,12 +28,13 @@ public final class FontSheet {
      * Resolves a font and lays it out.
      *
      * @param data the font
+     * @param list the font's glyph list; only the cp437 preset is used, so planned code points get no slot
      * @return the sheet
      * @throws FontDataException if a derived glyph cannot be resolved
      */
-    public static FontSheet of(FontData data) {
+    public static FontSheet of(FontData data, GlyphList list) {
         Map<Integer, PixelGlyph> glyphs = GlyphResolver.resolveAll(data);
-        return new FontSheet(data, glyphs, SheetOrder.slotsFor(glyphs.keySet()));
+        return new FontSheet(data, glyphs, SheetOrder.slotsFor(glyphs.keySet(), list.usesCp437()));
     }
 
     /** Returns the sheet layout: cells of the font's size, 16 per row. */

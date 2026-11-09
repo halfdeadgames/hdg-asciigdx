@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 class UpscaleSourceSheetTest {
 
     private static final UpscaleSources.Font FONT = new UpscaleSources.Font("classic", 8, 8);
+    private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final String BLANK_ROW = "........";
     private static final String INK_ROW = "########";
 
@@ -34,7 +36,7 @@ class UpscaleSourceSheetTest {
         + "U+0043 C = mirror U+0041\n";
 
     private static UpscaleSourceSheet sheet(String text) {
-        return UpscaleSourceSheet.of(FontDataParser.parse(text), FONT);
+        return UpscaleSourceSheet.of(FontDataParser.parse(text), CP437, FONT);
     }
 
     private static int slotOf(UpscaleSourceSheet sheet, int codePoint) {
@@ -117,6 +119,24 @@ class UpscaleSourceSheetTest {
         UpscaleSourceSheet sheet = UpscaleSourceSheet.load(root, FONT);
         assertEquals(FONT, sheet.font());
         assertTrue(sheet.isPickable(slotOf(sheet, 0x41)));
+    }
+
+    @Test
+    void loadFollowsTheFontsGlyphList(@TempDir Path root) throws IOException {
+        Path folder = Files.createDirectories(root.resolve("classic"));
+        Files.writeString(folder.resolve("8x8.txt"), FONT_TEXT, StandardCharsets.UTF_8);
+        assertEquals(16, UpscaleSourceSheet.load(root, FONT).editor().slotCount());
+        Files.writeString(folder.resolve("glyphs.txt"), "cp437\n", StandardCharsets.UTF_8);
+        assertEquals(256, UpscaleSourceSheet.load(root, FONT).editor().slotCount());
+    }
+
+    @Test
+    void loadShowsABrokenGlyphListAsFontDataProblem(@TempDir Path root) throws IOException {
+        Path folder = Files.createDirectories(root.resolve("classic"));
+        Files.writeString(folder.resolve("8x8.txt"), FONT_TEXT, StandardCharsets.UTF_8);
+        Files.writeString(folder.resolve("glyphs.txt"), "nonsense\n", StandardCharsets.UTF_8);
+        FontDataException problem = assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
+        assertTrue(problem.getMessage().startsWith("glyphs.txt: "));
     }
 
     @Test

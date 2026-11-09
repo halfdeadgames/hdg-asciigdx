@@ -69,6 +69,31 @@ class FontExporterTest {
     }
 
     @Test
+    void exportFollowsTheFontsGlyphList() throws IOException {
+        FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory);
+        File png = FontExporter.pngFile(fontDirectory, FONT_SIZE, outputDirectory);
+        assertEquals(8, ImageIO.read(png).getHeight());
+
+        Files.write(new File(fontDirectory, GlyphListFile.FILE_NAME).toPath(),
+            "cp437\nU+2603\n".getBytes(StandardCharsets.UTF_8));
+        FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory);
+
+        assertEquals(16 * 8, ImageIO.read(png).getHeight());
+    }
+
+    @Test
+    void exportRefusesABrokenGlyphList() throws IOException {
+        Files.write(new File(fontDirectory, GlyphListFile.FILE_NAME).toPath(),
+            "nonsense\n".getBytes(StandardCharsets.UTF_8));
+
+        FontDataException problem = assertThrows(FontDataException.class,
+            () -> FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory));
+
+        assertTrue(problem.getMessage().startsWith("glyphs.txt: "));
+        assertFalse(outputDirectory.exists());
+    }
+
+    @Test
     void exportCreatesMissingOutputDirectory() throws IOException {
         File nestedOutput = new File(outputDirectory, "nested/deeper");
 

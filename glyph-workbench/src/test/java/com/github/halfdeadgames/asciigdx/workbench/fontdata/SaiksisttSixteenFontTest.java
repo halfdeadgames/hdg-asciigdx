@@ -19,13 +19,20 @@ class SaiksisttSixteenFontTest {
     private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
     private static FontData data;
+    private static GlyphList glyphList;
 
     @BeforeAll
     static void loadRealFont() throws IOException {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
-        data = FontDataParser.parseSizeFile(new CellSize(16, 16),
-            readText(new File(repoRoot, "fonts/saiksistt/16x16.txt")));
+        File fontFolder = new File(repoRoot, "fonts/saiksistt");
+        data = FontDataParser.parseSizeFile(new CellSize(16, 16), readText(new File(fontFolder, "16x16.txt")));
+        glyphList = GlyphListFile.load(fontFolder);
+    }
+
+    @Test
+    void usesTheCp437Preset() {
+        assertTrue(glyphList.usesCp437());
     }
 
     private static String readText(File file) throws IOException {
@@ -43,7 +50,7 @@ class SaiksisttSixteenFontTest {
 
     @Test
     void exportedSheetIsOpaqueWhiteOnTransparent() {
-        BufferedImage image = FontSheet.of(data).toImage();
+        BufferedImage image = FontSheet.of(data, glyphList).toImage();
 
         int litPixels = 0;
         for (int y = 0; y < image.getHeight(); y++) {
@@ -61,7 +68,7 @@ class SaiksisttSixteenFontTest {
 
     @Test
     void unlitPixelsOfAGlyphCellHaveNoAlpha() {
-        FontSheet sheet = FontSheet.of(data);
+        FontSheet sheet = FontSheet.of(data, glyphList);
         BufferedImage image = sheet.toImage();
         int slot = indexOfSlot(sheet, '0');
         PixelGrid cell = sheet.cellAt(slot);

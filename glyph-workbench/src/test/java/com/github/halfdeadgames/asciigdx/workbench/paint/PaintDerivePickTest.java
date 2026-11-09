@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 class PaintDerivePickTest {
 
+    private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final int TARGET = 0x41;
     private static final int DRAWN_SOURCE = 0x100;
     private static final int EMPTY_SOURCE = 0x44;
@@ -36,7 +38,7 @@ class PaintDerivePickTest {
 
     @BeforeEach
     void openFlowOnTarget() {
-        editor = new FontEditor(FontDataParser.parse(FONT));
+        editor = new FontEditor(FontDataParser.parse(FONT), CP437);
         flow = new DeriveFlow();
         pick = new PaintDerivePick(editor, flow);
         codePoints = new int[editor.slotCount()];

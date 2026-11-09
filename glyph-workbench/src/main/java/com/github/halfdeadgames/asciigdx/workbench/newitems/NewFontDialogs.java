@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,14 +17,14 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * The two pages of the "new font" dialog (name, then first size) with their input handling and drawing.
+ * The three pages of the "new font" dialog (name, first size, glyph slots) with their input handling and drawing.
  * The paint screen and the start screen both host it; the host decides what creating the font means.
  */
 final class NewFontDialogs {
 
-    /** Called when Enter is pressed on a size. The host creates the font, then closes this or reports a problem. */
+    /** Called when Enter is pressed on the glyph page. The host creates the font, then closes this or reports a problem. */
     interface Creator {
-        void create(String name, CellSize size);
+        void create(String name, CellSize size, NewFontGlyphs glyphs);
     }
 
     private static final String TAG = "NewFont";
@@ -37,19 +38,25 @@ final class NewFontDialogs {
     private static final List<Dialog.Button> NAME_BLOCKED_BUTTONS = List.of(
         new Dialog.Button("ENTER", "NEXT", Dialog.Tone.DIM), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> SIZE_BUTTONS = List.of(
+        new Dialog.Button("ENTER", "NEXT", Dialog.Tone.OK), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
+    private static final List<Dialog.Button> GLYPH_BUTTONS = List.of(
         new Dialog.Button("ENTER", "CREATE", Dialog.Tone.OK), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
 
     private final Supplier<List<String>> existingFolders;
     private final Creator onCreate;
     private final Runnable onCancel;
     private final NewFontNamePrompt namePage = new NewFontNamePrompt(this::continueToSize, this::cancel);
-    private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::chooseSize, this::backToName);
+    private final NewFontSizePrompt sizePage = new NewFontSizePrompt(this::continueToGlyphs, this::backToName);
+    private final NewFontGlyphsPrompt glyphsPage = new NewFontGlyphsPrompt(this::chooseGlyphs, this::backToSize);
     private final KeyRepeat repeatBackspace = new KeyRepeat();
+    private CellSize chosenSize;
+    // The size page is closed while the glyph page shows; this lets Esc reopen it as it was.
+    private String chosenSizeText = "";
     private int swallowFrames;
 
     /**
      * @param existingFolders the font folder names already taken, read each time the name page opens
-     * @param onCreate called when a size is chosen
+     * @param onCreate called when the glyph slots are chosen
      * @param onCancel called after Esc closed the name page
      */
     NewFontDialogs(Supplier<List<String>> existingFolders, Creator onCreate, Runnable onCancel) {
@@ -72,7 +79,7 @@ final class NewFontDialogs {
     }
 
     boolean isOpen() {
-        return namePage.isOpen() || sizePage.isOpen();
+        return namePage.isOpen() || sizePage.isOpen() || glyphsPage.isOpen();
     }
 
     /** Opens the name page empty and ignores typed characters for the first frames. */
@@ -84,19 +91,23 @@ final class NewFontDialogs {
     void close() {
         namePage.close();
         sizePage.close();
+        glyphsPage.close();
+        chosenSize = null;
+        chosenSizeText = "";
         repeatBackspace.update(false, 0f);
     }
 
-    /** Returns from the size page to the name page with the name kept, and re-reads the taken names. */
+    /** Returns from the size or glyph page to the name page with the name kept, and re-reads the taken names. */
     void backToName() {
-        String name = sizePage.name();
+        String name = glyphsPage.isOpen() ? glyphsPage.name() : sizePage.name();
         sizePage.close();
+        glyphsPage.close();
         openName(name);
     }
 
-    /** Shows a creation problem inside the size page. */
-    void showSizeProblem(String message) {
-        sizePage.showProblem(message);
+    /** Shows a creation problem inside the glyph page. */
+    void showGlyphsProblem(String message) {
+        glyphsPage.showProblem(message);
     }
 
     /** Typed characters go to whichever page is open. */
@@ -123,7 +134,7 @@ final class NewFontDialogs {
             return;
         }
         if (sizeRequest != null) {
-            openSize(sizeRequest.name());
+            openSize(sizeRequest.name(), "");
             for (int i = 0; i < sizeRequest.typed().length(); i++) {
                 sizePage.type(sizeRequest.typed().charAt(i));
             }
@@ -140,14 +151,14 @@ final class NewFontDialogs {
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
-    private void openSize(String name) {
-        sizePage.open(name);
+    private void openSize(String name, String initialText) {
+        sizePage.open(name, initialText);
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
     private void continueToSize(String name) {
         namePage.close();
-        openSize(name);
+        openSize(name, "");
     }
 
     private void cancel() {
@@ -155,8 +166,22 @@ final class NewFontDialogs {
         onCancel.run();
     }
 
-    private void chooseSize(CellSize size) {
-        onCreate.create(sizePage.name(), size);
+    private void continueToGlyphs(CellSize size) {
+        chosenSize = size;
+        chosenSizeText = sizePage.typed();
+        String name = sizePage.name();
+        sizePage.close();
+        glyphsPage.open(name);
+    }
+
+    private void backToSize() {
+        String name = glyphsPage.name();
+        glyphsPage.close();
+        openSize(name, chosenSizeText);
+    }
+
+    private void chooseGlyphs(NewFontGlyphs glyphs) {
+        onCreate.create(glyphsPage.name(), chosenSize, glyphs);
     }
 
     /**
@@ -169,6 +194,25 @@ final class NewFontDialogs {
             handleName(delta);
         } else if (sizePage.isOpen()) {
             handleSize(delta);
+        } else if (glyphsPage.isOpen()) {
+            handleGlyphs();
+        }
+    }
+
+    private void handleGlyphs() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            glyphsPage.back();
+            return;
+        }
+        if (isEnterJustPressed()) {
+            glyphsPage.enter();
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            glyphsPage.move(-1);
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+            glyphsPage.move(1);
         }
     }
 
@@ -237,6 +281,18 @@ final class NewFontDialogs {
         } else if (sizePage.isOpen()) {
             Dialog.draw(painter, new CellRect(0, 0, columns, rows), sizeContent(), area);
             drawSizeHint(painter, area);
+        } else if (glyphsPage.isOpen()) {
+            drawGlyphs(painter, columns, rows, area);
         }
+    }
+
+    private void drawGlyphs(Painter painter, int columns, int rows, CellRect area) {
+        DialogContent content = DialogContent.of(TITLE, glyphsPage.lines(), GLYPH_BUTTONS);
+        Dialog.draw(painter, new CellRect(0, 0, columns, rows), content, area);
+        Dialog.Layout layout = Dialog.layout(content, area);
+        SelectList.draw(painter,
+            SelectList.areaOf(layout.textX(), layout.textY() + NewFontGlyphsPrompt.LIST_TOP_LINE,
+                Math.min(glyphsPage.listWidth(), layout.textWidth()), glyphsPage.rows().size()),
+            glyphsPage.rows(), glyphsPage.selectedIndex());
     }
 }

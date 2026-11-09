@@ -6,6 +6,7 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataWriter;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphEntry;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -32,6 +33,7 @@ public final class FontEditor {
 
     private final int cellWidth;
     private final int cellHeight;
+    private final boolean reserveCp437;
     private final Map<Integer, GlyphEntry> entries = new TreeMap<>();
     // Every code point the sheet has ever had a slot for; only grows, so undo never removes a slot.
     private final Set<Integer> knownCodePoints = new TreeSet<>();
@@ -52,22 +54,31 @@ public final class FontEditor {
     private record State(Map<Integer, GlyphEntry> entries, int revision) {
     }
 
-    public FontEditor(FontData data) {
+    /**
+     * Creates the editor.
+     *
+     * @param data the font
+     * @param glyphList the font's glyph list; its planned code points get empty, selectable slots, and the
+     *        cp437 preset reserves the first 256 slots
+     */
+    public FontEditor(FontData data, GlyphList glyphList) {
         cellWidth = data.cellWidth();
         cellHeight = data.cellHeight();
         entries.putAll(data.entries());
         resolved = GlyphResolver.resolveAll(data);
         savedGlyphs = resolved;
+        reserveCp437 = glyphList.usesCp437();
         knownCodePoints.addAll(data.entries().keySet());
-        slots = buildSlots(knownCodePoints);
+        knownCodePoints.addAll(glyphList.plannedCodePoints());
+        slots = buildSlots(knownCodePoints, reserveCp437);
     }
 
-    // Empty CP437 slots keep their own code point so they stay selectable; other padding is not selectable.
-    // Slots are only added during a session (see addSlot), never removed, so a slot survives undo.
-    private static int[] buildSlots(Set<Integer> codePoints) {
-        int[] ordered = SheetOrder.slotsFor(codePoints);
+    // With the cp437 preset, empty CP437 slots keep their own code point so they stay selectable. Other padding
+    // is not selectable. Slots are only added during a session (see addSlot), never removed, so a slot survives undo.
+    private static int[] buildSlots(Set<Integer> codePoints, boolean reserveCp437) {
+        int[] ordered = SheetOrder.slotsFor(codePoints, reserveCp437);
         for (int slot = 0; slot < ordered.length; slot++) {
-            if (slot < GlyphOrder.CP437.size()) {
+            if (reserveCp437 && slot < GlyphOrder.CP437.size()) {
                 ordered[slot] = GlyphOrder.CP437.codePointAt(slot);
             } else if (ordered[slot] == SheetOrder.FILLER) {
                 ordered[slot] = NO_GLYPH;
@@ -127,7 +138,7 @@ public final class FontEditor {
             return;
         }
         knownCodePoints.add(codePoint);
-        slots = buildSlots(knownCodePoints);
+        slots = buildSlots(knownCodePoints, reserveCp437);
     }
 
     private int slotOf(int codePoint) {

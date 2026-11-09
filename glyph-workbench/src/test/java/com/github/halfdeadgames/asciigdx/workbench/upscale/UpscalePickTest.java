@@ -5,12 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 class UpscalePickTest {
 
     private static final UpscaleSources.Font FONT = new UpscaleSources.Font("classic", 8, 8);
+    private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final int COLUMNS = 16;
 
     private static String rows(String row) {
@@ -23,7 +25,7 @@ class UpscalePickTest {
         + "U+0043 C\n" + rows("########") + "\n";
 
     private static UpscaleSourceSheet sheet() {
-        return UpscaleSourceSheet.of(FontDataParser.parse(FONT_TEXT), FONT);
+        return UpscaleSourceSheet.of(FontDataParser.parse(FONT_TEXT), CP437, FONT);
     }
 
     private static int slotOf(UpscaleSourceSheet sheet, int codePoint) {

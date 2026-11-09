@@ -19,7 +19,8 @@ public final class FontDataWriter {
     public static String write(FontData data) {
         List<String> blocks = new ArrayList<>();
         blocks.add("cell " + data.cellWidth() + "x" + data.cellHeight());
-        for (int codePoint : SheetOrder.slotsFor(data.entries().keySet())) {
+        // Always the CP437 order, so toggling a font's glyph list never reorders its data file.
+        for (int codePoint : SheetOrder.slotsFor(data.entries().keySet(), true)) {
             GlyphEntry entry = data.entries().get(codePoint);
             if (entry != null) {
                 blocks.add(writeEntry(entry));

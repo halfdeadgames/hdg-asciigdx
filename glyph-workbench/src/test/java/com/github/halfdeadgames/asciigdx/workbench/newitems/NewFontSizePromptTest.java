@@ -166,6 +166,19 @@ class NewFontSizePromptTest {
     }
 
     @Test
+    void reopeningWithTextKeepsTheTypedSize() {
+        var prompt = openPrompt("a");
+        typeAll(prompt, "16x32");
+        prompt.close();
+        prompt.open("a", "16x32");
+        assertEquals("16x32", prompt.typed());
+        assertEquals("", prompt.problem());
+        assertFalse(prompt.showsHint());
+        prompt.enter();
+        assertEquals(List.of(new CellSize(16, 32)), created);
+    }
+
+    @Test
     void reopeningStartsFresh() {
         var prompt = openPrompt("a");
         typeAll(prompt, "16");

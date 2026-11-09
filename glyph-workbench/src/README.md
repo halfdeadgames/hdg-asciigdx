@@ -13,9 +13,27 @@ Each font folder holds:
 | `<width>x<height>.txt` | The glyphs, for example `16x16.txt`. The name must match the `cell` line inside the file. |
 | `<width>x<height>.guides.txt` | Guide lines shown on the paint grid. |
 | `<width>x<height>.rules.json` | Rules for this size, checked as you draw. |
+| `glyphs.txt` | Optional. The glyph slots planned for every size of the font. |
 | `notes.md` | Design notes for every size of the font. Never checked. |
 
-Rules are per size because row and column numbers differ between sizes. Notes are per font because style applies to every size.
+Rules are per size because row and column numbers differ between sizes. Notes and the glyph list are per font because they apply to every size.
+
+## glyphs.txt
+
+One entry per line. Blank lines are skipped.
+
+```text
+cp437
+U+2588
+U+2190..U+2193
+```
+
+- `cp437` reserves the 256 Code Page 437 slots, in their standard positions, in the editor and in exported sheets.
+- A code point or a range adds empty slots in the editor. They are exported once drawn.
+- Without this file, the font has slots only for the glyphs drawn so far.
+- A drawn glyph always has a slot, even if the list leaves it out.
+
+GLYPH > NEW GLYPH adds its code point to this file as soon as you confirm, creating the file if needed. A font with no slots at all opens that prompt first. The file is read when a font opens, so reopen the font after editing it by hand.
 
 ## The rules panel
 

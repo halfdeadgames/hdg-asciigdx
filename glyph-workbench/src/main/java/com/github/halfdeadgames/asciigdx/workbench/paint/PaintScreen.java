@@ -23,6 +23,7 @@ import com.github.halfdeadgames.asciigdx.workbench.export.PaintExport;
 import com.github.halfdeadgames.asciigdx.workbench.export.PaintExports;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphListFile;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.guides.BrokenGuides;
@@ -246,7 +247,9 @@ public final class PaintScreen implements WorkbenchScreen {
     private void loadFont(FileHandle directory) {
         dataFile = directory.child(fontSize.dataFileName());
         folderName = directory.name().toUpperCase(java.util.Locale.ROOT);
-        editor = new FontEditor(FontDataParser.parseSizeFile(fontSize, dataFile.readString("UTF-8")));
+        editor = new FontEditor(
+            FontDataParser.parseSizeFile(fontSize, dataFile.readString("UTF-8")),
+            GlyphListFile.load(directory.file()));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
         derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new PaintDeriveHost());
@@ -604,8 +607,27 @@ public final class PaintScreen implements WorkbenchScreen {
         messages.nextAction();
         line.setLength(0);
         GlyphLabel.appendCodeAndName(line, codePoint);
+        if (!existed) {
+            String saveProblem = saveSlotToGlyphList(codePoint);
+            if (saveProblem != null) {
+                line.append(" was added but could not be saved to glyphs.txt: ").append(saveProblem);
+                messages.warn(line.toString());
+                return;
+            }
+        }
         line.append(existed ? " already has a slot" : " added");
         messages.ok(line.toString());
+    }
+
+    /** Returns null when the code point was listed, otherwise the reason it was not. */
+    private String saveSlotToGlyphList(int codePoint) {
+        try {
+            GlyphListFile.append(dataFile.parent().file(), codePoint);
+            return null;
+        } catch (java.io.IOException e) {
+            Gdx.app.error(TAG, "Cannot update glyphs.txt: " + e.getMessage());
+            return e.getMessage();
+        }
     }
 
     private void openMenuForCapture() {

@@ -11,7 +11,7 @@ class SheetOrderTest {
     private static final int FILLER = SheetOrder.FILLER;
 
     private final int[] slots = SheetOrder.slotsFor(
-        Set.of(0x41, 0x263A, 0xE9, 0x391, 0x392, 0x410, 0xE000));
+        Set.of(0x41, 0x263A, 0xE9, 0x391, 0x392, 0x410, 0xE000), true);
 
     @Test
     void cp437GlyphsKeepTheirStandardSlots() {
@@ -42,9 +42,46 @@ class SheetOrderTest {
 
     @Test
     void privateUseStaysAfterHigherCodePoints() {
-        int[] order = SheetOrder.slotsFor(Set.of(0xE000, 0xFF21));
+        int[] order = SheetOrder.slotsFor(Set.of(0xE000, 0xFF21), true);
 
         assertEquals(0xFF21, order[256]);
         assertEquals(0xE000, order[272]);
+    }
+
+    @Test
+    void withoutReservationThereIsNoCp437Prefix() {
+        int[] order = SheetOrder.slotsFor(Set.of(0x41, 0x263A), false);
+
+        assertEquals(0x41, order[0]);
+        assertEquals(FILLER, order[1]);
+        assertEquals(32, order.length);
+    }
+
+    @Test
+    void withoutReservationCp437CodePointsGoByBlockAndBlocksStartNewRows() {
+        int[] order = SheetOrder.slotsFor(Set.of(0x41, 0x42, 0xE9, 0x263A, 0x391), false);
+
+        assertEquals(0x41, order[0]);
+        assertEquals(0x42, order[1]);
+        assertEquals(FILLER, order[2]);
+        assertEquals(0xE9, order[16]);
+        assertEquals(0x391, order[32]);
+        assertEquals(0x263A, order[48]);
+        assertEquals(64, order.length);
+    }
+
+    @Test
+    void withoutReservationPrivateUseStillComesLast() {
+        int[] order = SheetOrder.slotsFor(Set.of(0xE000, 0xFF21, 0x41), false);
+
+        assertEquals(0x41, order[0]);
+        assertEquals(0xFF21, order[16]);
+        assertEquals(0xE000, order[32]);
+        assertEquals(48, order.length);
+    }
+
+    @Test
+    void withoutReservationNoGlyphsMeansNoSlots() {
+        assertEquals(0, SheetOrder.slotsFor(Set.of(), false).length);
     }
 }

@@ -4,6 +4,8 @@ import com.github.halfdeadgames.asciigdx.workbench.CursorNavigator;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphListFile;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,16 +36,17 @@ public final class UpscaleSourceSheet {
      *
      * @throws IOException if the file cannot be read
      * @throws com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException if the file is not valid font
-     *         data, or its cell line disagrees with its name
+     *         data, its cell line disagrees with its name, or the font's glyph list is unreadable or invalid
      */
     public static UpscaleSourceSheet load(Path fontsRoot, UpscaleSources.Font font) throws IOException {
-        Path file = fontsRoot.resolve(font.folderName()).resolve(font.size().dataFileName());
-        String text = Files.readString(file, StandardCharsets.UTF_8);
-        return of(FontDataParser.parseSizeFile(font.size(), text), font);
+        Path folder = fontsRoot.resolve(font.folderName());
+        String text = Files.readString(folder.resolve(font.size().dataFileName()), StandardCharsets.UTF_8);
+        GlyphList glyphList = GlyphListFile.load(folder.toFile());
+        return of(FontDataParser.parseSizeFile(font.size(), text), glyphList, font);
     }
 
-    public static UpscaleSourceSheet of(FontData data, UpscaleSources.Font font) {
-        return new UpscaleSourceSheet(new FontEditor(data), font);
+    public static UpscaleSourceSheet of(FontData data, GlyphList glyphList, UpscaleSources.Font font) {
+        return new UpscaleSourceSheet(new FontEditor(data, glyphList), font);
     }
 
     private static int[] readCodePoints(FontEditor editor) {

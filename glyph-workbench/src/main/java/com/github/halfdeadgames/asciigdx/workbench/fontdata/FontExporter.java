@@ -90,7 +90,8 @@ public final class FontExporter {
 
     private static FontSheet loadSheet(File fontDirectory, CellSize fontSize) throws IOException {
         File source = new File(fontDirectory, fontSize.dataFileName());
-        return FontSheet.of(FontDataParser.parseSizeFile(fontSize, readText(source)));
+        GlyphList list = GlyphListFile.load(fontDirectory);
+        return FontSheet.of(FontDataParser.parseSizeFile(fontSize, readText(source)), list);
     }
 
     private static String requiredProperty(String key) {

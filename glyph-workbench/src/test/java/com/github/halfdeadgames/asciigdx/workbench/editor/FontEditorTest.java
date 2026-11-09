@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.editor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.DerivedGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphResolver;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -37,8 +39,14 @@ class FontEditorTest {
         + "U+0043 C = mirror U+0041\n\n"
         + "U+0100 \\u{100}\n" + rows(BLANK_ROW) + "\n";
 
+    private static final GlyphList CP437 = GlyphList.parse("cp437");
+
     private static FontEditor editor() {
-        return new FontEditor(FontDataParser.parse(FONT));
+        return new FontEditor(FontDataParser.parse(FONT), CP437);
+    }
+
+    private static FontEditor editorWith(String fontText, GlyphList list) {
+        return new FontEditor(FontDataParser.parse(fontText), list);
     }
 
     @Test
@@ -153,8 +161,9 @@ class FontEditorTest {
 
     @Test
     void savedPixelsAreRememberedUntilTheNextSave() {
-        FontEditor editor = new FontEditor(FontDataParser.parse(
-            "cell 8x8\n\nU+0041 A\n#.......\n" + String.join("\n", java.util.Collections.nCopies(7, BLANK_ROW)) + "\n"));
+        FontEditor editor = editorWith(
+            "cell 8x8\n\nU+0041 A\n#.......\n" + String.join("\n", java.util.Collections.nCopies(7, BLANK_ROW)) + "\n",
+            CP437);
         assertTrue(editor.hasSavedGlyph(0x41));
         assertTrue(editor.wasLitWhenSaved(0x41, 0, 0));
         editor.setPixel(0x41, 0, 0, false);
@@ -487,7 +496,7 @@ class FontEditorTest {
 
     @Test
     void startSlotOfAnEmptyFontIsTheExclamationMarkSlot() {
-        FontEditor empty = new FontEditor(FontDataParser.parse("cell 8x8\n"));
+        FontEditor empty = editorWith("cell 8x8\n", CP437);
         assertEquals(GlyphOrder.CP437.slotOf(0x21), empty.startSlot());
         assertEquals(0x21, empty.codePointAtSlot(empty.startSlot()));
     }
@@ -501,12 +510,84 @@ class FontEditorTest {
 
     @Test
     void emptyFontSavesBackUnchanged() {
-        assertEquals("cell 8x8\n", new FontEditor(FontDataParser.parse("cell 8x8\n")).toText());
+        assertEquals("cell 8x8\n", editorWith("cell 8x8\n", CP437).toText());
+    }
+
+    @Test
+    void withoutAGlyphListOnlyDrawnGlyphsHaveSlots() {
+        FontEditor editor = editorWith(FONT, GlyphList.NONE);
+        assertEquals(32, editor.slotCount());
+        assertEquals(0x41, editor.codePointAtSlot(0));
+        assertEquals(0x42, editor.codePointAtSlot(1));
+        assertEquals(0x43, editor.codePointAtSlot(2));
+        assertEquals(0x100, editor.codePointAtSlot(16));
+        assertEquals(FontEditor.NO_GLYPH, editor.codePointAtSlot(3));
+        assertEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x44));
+    }
+
+    @Test
+    void withoutAGlyphListAnEmptyFontHasNoSlots() {
+        FontEditor empty = editorWith("cell 8x8\n", GlyphList.NONE);
+        assertEquals(0, empty.slotCount());
+        assertEquals(0, empty.startSlot());
+    }
+
+    @Test
+    void plannedCodePointsGetEmptySelectableSlots() {
+        FontEditor editor = editorWith("cell 8x8\n", GlyphList.parse("U+0041..U+0043\nU+2603"));
+        assertEquals(0x41, editor.codePointAtSlot(slotOf(editor, 0x41)));
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x42));
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x43));
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x2603));
+        assertFalse(editor.hasGlyph(0x42));
+        assertNull(editor.glyph(0x42));
+        assertEquals(0, editor.slotCount() % 16);
+    }
+
+    @Test
+    void plannedSlotsCanBePaintedAndThenSaved() {
+        FontEditor editor = editorWith("cell 8x8\n", GlyphList.parse("U+0041"));
+        editor.setPixel(0x41, 1, 1, true);
+        assertTrue(editor.isModified());
+        assertTrue(editor.toText().contains("U+0041"));
+    }
+
+    @Test
+    void aDrawnGlyphMissingFromTheListStillHasASlot() {
+        FontEditor editor = editorWith(FONT, GlyphList.parse("U+0041"));
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x42));
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x100));
+    }
+
+    @Test
+    void theCp437PresetKeepsTheFullCp437Layout() {
+        FontEditor editor = editorWith("cell 8x8\n", CP437);
+        assertEquals(256, editor.slotCount());
+        for (int slot = 0; slot < 256; slot++) {
+            assertEquals(GlyphOrder.CP437.codePointAt(slot), editor.codePointAtSlot(slot));
+        }
+    }
+
+    @Test
+    void plannedOnlySlotsAreNotAChangeAndAreNotSaved() {
+        FontEditor editor = editorWith("cell 8x8\n", GlyphList.parse("U+0041..U+0043"));
+        assertFalse(editor.isModified());
+        assertFalse(editor.canUndo());
+        assertEquals("cell 8x8\n", editor.toText());
+    }
+
+    @Test
+    void addSlotKeepsWorkingWithoutTheCp437Preset() {
+        FontEditor editor = editorWith(FONT, GlyphList.NONE);
+        editor.addSlot(0x2603);
+        assertNotEquals(FontEditor.NO_GLYPH, slotOf(editor, 0x2603));
+        assertEquals(0, slotOf(editor, 0x41));
+        assertFalse(editor.isModified());
     }
 
     @Test
     void paintingOnePixelInAnEmptyFontSavesOneGlyphEntry() {
-        FontEditor editor = new FontEditor(FontDataParser.parse("cell 8x8\n"));
+        FontEditor editor = editorWith("cell 8x8\n", CP437);
         editor.setPixel(0x21, 2, 3, true);
 
         String saved = editor.toText();

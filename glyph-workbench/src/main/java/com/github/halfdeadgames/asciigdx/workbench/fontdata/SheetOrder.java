@@ -8,8 +8,8 @@ import java.util.Objects;
 import java.util.TreeSet;
 
 /**
- * Decides which glyph goes in which sheet slot. The first 256 slots follow Code Page 437;
- * then come the other glyphs by code point, each Unicode block starting on a new row; then
+ * Decides which glyph goes in which sheet slot. When Code Page 437 is reserved, the first 256 slots
+ * follow it; then come the other glyphs by code point, each Unicode block starting on a new row; then
  * the private use glyphs, laid out the same way.
  *
  * <p>The character list file cannot leave a slot out, so empty slots hold {@link #FILLER}.
@@ -29,18 +29,22 @@ public final class SheetOrder {
      * Returns the slots for a set of glyphs.
      *
      * @param codePoints the glyphs the font has
+     * @param reserveCp437 whether the first 256 slots are reserved for Code Page 437; when false, CP437
+     *        code points are placed with the others by code point and Unicode block
      * @return code points by slot, with {@link #FILLER} in empty slots
      */
-    public static int[] slotsFor(Collection<Integer> codePoints) {
+    public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437) {
         List<Integer> slots = new ArrayList<>();
-        for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
-            int codePoint = GlyphOrder.CP437.codePointAt(slot);
-            slots.add(codePoints.contains(codePoint) ? codePoint : FILLER);
+        if (reserveCp437) {
+            for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
+                int codePoint = GlyphOrder.CP437.codePointAt(slot);
+                slots.add(codePoints.contains(codePoint) ? codePoint : FILLER);
+            }
         }
         TreeSet<Integer> others = new TreeSet<>();
         TreeSet<Integer> privateUse = new TreeSet<>();
         for (int codePoint : codePoints) {
-            if (GlyphOrder.CP437.contains(codePoint)) {
+            if (reserveCp437 && GlyphOrder.CP437.contains(codePoint)) {
                 continue;
             }
             (isPrivateUse(codePoint) ? privateUse : others).add(codePoint);

@@ -71,17 +71,17 @@ public final class PaintNewFont {
         return NewFontDialogs.foldersIn(fontsRoot.get());
     }
 
-    // Unsaved changes are asked about after the size is chosen. The dialog stays open (and hidden) under the
-    // prompt, so cancelling it returns to the size page with the selection kept.
-    private void createNewFont(String name, CellSize size) {
-        runAfterUnsavedCheck.accept(() -> finishNewFont(name, size), NEW_FONT_QUESTION);
+    // Unsaved changes are asked about after the glyph slots are chosen. The dialog stays open (and hidden) under the
+    // prompt, so cancelling it returns to the glyph page with the selection kept.
+    private void createNewFont(String name, CellSize size, NewFontGlyphs glyphs) {
+        runAfterUnsavedCheck.accept(() -> finishNewFont(name, size, glyphs), NEW_FONT_QUESTION);
     }
 
     // On success the host opens a fresh paint screen on the new font. A name problem (for example a folder made
-    // since the name page opened) goes back to the name page, which shows it; anything else is shown on the size page.
-    private void finishNewFont(String name, CellSize size) {
+    // since the name page opened) goes back to the name page, which shows it; anything else is shown on the glyph page.
+    private void finishNewFont(String name, CellSize size, NewFontGlyphs glyphs) {
         messages.nextAction();
-        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, size);
+        NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, size, glyphs);
         if (outcome.created()) {
             dialogs.close();
             openFont.accept(outcome.folder(), size);
@@ -92,7 +92,7 @@ public final class PaintNewFont {
             messages.warn(outcome.problem());
         } else {
             Gdx.app.error(TAG, outcome.problem());
-            dialogs.showSizeProblem(outcome.problem());
+            dialogs.showGlyphsProblem(outcome.problem());
         }
     }
 }

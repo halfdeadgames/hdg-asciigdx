@@ -7,6 +7,8 @@ import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.FirstGlyphPlan;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.FirstGlyphScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeScreen;
@@ -148,8 +150,14 @@ public final class WorkbenchHost extends ApplicationAdapter {
         }
     }
 
-    // A paint screen that can switch to a size file or a font it creates; Esc there goes back as given.
-    private PaintScreen paintScreen(Runnable back, String fontDir, CellSize size) {
+    // Returns the paint screen, or the first-glyph page for a font with no glyph slots. That page opens the paint
+    // screen once a glyph is listed. The paint screen can switch to a size file or a font it creates; Esc goes back
+    // as given.
+    private WorkbenchScreen paintScreen(Runnable back, String fontDir, CellSize size) {
+        if (FirstGlyphPlan.isNeeded(Path.of(fontDir), size)) {
+            return new FirstGlyphScreen(Path.of(fontDir), size, back,
+                () -> pending = () -> paintScreen(back, fontDir, size));
+        }
         return new PaintScreen(back, fontDir, size,
             newSize -> pending = () -> paintScreen(back, fontDir, newSize),
             (folder, firstSize) -> pending = () -> paintCreatedFont(folder, firstSize));
