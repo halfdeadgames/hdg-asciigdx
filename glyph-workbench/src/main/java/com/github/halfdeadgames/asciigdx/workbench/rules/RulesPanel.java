@@ -19,6 +19,7 @@ final class RulesPanel {
     private final Color textColor;
     private final Color headingColor;
     private final Color warningColor;
+    private final Color inactiveColor;
     private List<RulesPageLines.PageLine> lines = List.of();
     private RulesLoadResult rules = RulesLoadResult.missing(Path.of(""));
     private String notes;
@@ -31,13 +32,14 @@ final class RulesPanel {
     private int offset;
 
     RulesPanel(Painter painter, Color frameColor, Color fillColor, Color textColor, Color headingColor,
-            Color warningColor) {
+            Color warningColor, Color inactiveColor) {
         this.painter = painter;
         this.frameColor = frameColor;
         this.fillColor = fillColor;
         this.textColor = textColor;
         this.headingColor = headingColor;
         this.warningColor = warningColor;
+        this.inactiveColor = inactiveColor;
     }
 
     /** Width in text cells for a window width: comfortable reading, never wider than the window. */
@@ -119,6 +121,7 @@ final class RulesPanel {
             case TEXT -> textColor;
             case HEADING -> headingColor;
             case WARNING -> warningColor;
+            case INACTIVE -> inactiveColor;
         };
     }
 }

@@ -10,7 +10,7 @@ import java.util.Set;
 public final class RulesPageLines {
 
     /** How a line is colored. */
-    public enum Role { TEXT, HEADING, WARNING }
+    public enum Role { TEXT, HEADING, WARNING, INACTIVE }
 
     /**
      * One line of the page.
@@ -75,9 +75,9 @@ public final class RulesPageLines {
         for (GlyphRule rule : allRules) {
             sortRule(rule, codePoint, applying, skipped, other);
         }
-        addSection("RULES FOR " + glyphLabel(codePoint), applying, brokenRuleNames);
-        addSection("SKIPPED HERE", skipped, Set.of());
-        addSection("OTHER RULES", other, Set.of());
+        addSection("RULES FOR " + glyphLabel(codePoint), applying, brokenRuleNames, Role.TEXT);
+        addSection("SKIPPED HERE", skipped, Set.of(), Role.TEXT);
+        addSection("NOT FOR " + glyphLabel(codePoint), other, Set.of(), Role.INACTIVE);
     }
 
     private static void sortRule(GlyphRule rule, int codePoint, List<GlyphRule> applying,
@@ -91,7 +91,8 @@ public final class RulesPageLines {
         }
     }
 
-    private void addSection(String heading, List<GlyphRule> sectionRules, Set<String> brokenRuleNames) {
+    private void addSection(String heading, List<GlyphRule> sectionRules, Set<String> brokenRuleNames,
+            Role normalRole) {
         if (sectionRules.isEmpty()) {
             return;
         }
@@ -102,7 +103,7 @@ public final class RulesPageLines {
             if (i > 0) {
                 addBlank();
             }
-            Role role = brokenRuleNames.contains(rule.name()) ? Role.WARNING : Role.TEXT;
+            Role role = brokenRuleNames.contains(rule.name()) ? Role.WARNING : normalRole;
             for (String ruleLine : RuleText.describe(rule)) {
                 addHanging(ruleLine, role);
             }

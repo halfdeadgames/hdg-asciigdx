@@ -77,7 +77,7 @@ class RulesPageLinesTest {
         var lines = build(loaded(applying, skipped, other), null, Set.of());
         int applyingHeading = indexOf(lines, "RULES FOR A");
         int skippedHeading = indexOf(lines, "SKIPPED HERE");
-        int otherHeading = indexOf(lines, "OTHER RULES");
+        int otherHeading = indexOf(lines, "NOT FOR A");
         assertEquals(0, applyingHeading);
         assertTrue(indexOf(lines, "APPLYING") > applyingHeading);
         assertTrue(indexOf(lines, "APPLYING") < skippedHeading);
@@ -90,7 +90,17 @@ class RulesPageLinesTest {
     void emptySectionsAreOmitted() {
         var lines = build(loaded(rule("Applying", GlyphSet.all(), List.of())), null, Set.of());
         assertEquals(-1, indexOf(lines, "SKIPPED HERE"));
-        assertEquals(-1, indexOf(lines, "OTHER RULES"));
+        assertEquals(-1, indexOf(lines, "NOT FOR A"));
+    }
+
+    @Test
+    void notForSectionLinesAreInactiveUnderAHeading() {
+        var other = rule("Other", GlyphSet.parse(List.of("z")), List.of());
+        var lines = build(loaded(other), null, Set.of());
+        int heading = indexOf(lines, "NOT FOR A");
+        assertEquals(Role.HEADING, lines.get(heading).role());
+        assertEquals(Role.INACTIVE, lines.get(indexOf(lines, "OTHER")).role());
+        assertEquals(Role.INACTIVE, lines.get(indexOf(lines, "OTHER") + 1).role());
     }
 
     @Test

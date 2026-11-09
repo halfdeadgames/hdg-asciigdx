@@ -34,7 +34,8 @@ public final class RulesScreen {
 
     public RulesScreen(Painter painter) {
         this.painter = painter;
-        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR, UiPalette.WARN);
+        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR, UiPalette.WARN,
+            UiPalette.INACTIVE);
         if (Boolean.getBoolean("workbench.rulesOpen")) {
             open = true;
             slide = 1f;
