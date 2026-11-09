@@ -7,6 +7,7 @@
     descenders:  [ "g", "j", "p", "q", "y" ],
     ascenders:   [ "b", "d", "f", "h", "k", "l" ],
     tallStems:   [ "i", "j", "t" ],
+    symbols:     [ "@" ],
     tiling:      [ "U+2500-U+259F" ]
   },
   rules: [
@@ -15,12 +16,20 @@
       check: ring,
       size: 1,
       appliesTo: [ all ],
-      except: [ { group: tiling, why: "joins its neighbours" } ]
+      except: [
+        { group: tiling, why: "joins its neighbours" },
+        { glyphs: [ "_" ], why: "joins its neighbours into one line" }
+      ]
     },
     {
       name: "Centered across",
       check: centeredX,
       appliesTo: [ uppercase, lowercase, digits, punctuation ]
+    },
+    {
+      name: "Symbols centered both ways",
+      check: centeredBoth,
+      appliesTo: [ symbols ]
     },
     {
       name: "Capitals start at the cap line",
