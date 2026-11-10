@@ -15,7 +15,7 @@ import java.util.Set;
 
 /**
  * The "New size" rules for one font folder: which sizes are suggested, and creating the size file.
- * Any size within the cell limits is allowed. Suggestions are the half (when both sides are even) and the
+ * Sizes must be square or twice as tall, within the cell limits. Suggestions are the half (when both sides are even) and the
  * double of each existing {@code <width>x<height>.txt} size; {@code .guides.txt} and other sidecar files
  * are not size files.
  */

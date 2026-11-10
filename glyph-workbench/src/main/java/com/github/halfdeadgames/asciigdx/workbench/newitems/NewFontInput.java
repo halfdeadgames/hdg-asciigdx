@@ -49,7 +49,8 @@ final class NewFontInput {
     }
 
     /**
-     * Checks a cell size against the largest side allowed. {@link CellSize} itself already refuses sides below 1.
+     * Checks a cell size against the largest side allowed, then against the allowed shapes (square or twice as
+     * tall). {@link CellSize} itself already refuses sides below 1.
      *
      * @param size the cell size
      * @return null when the size is fine, otherwise a user-facing message
@@ -57,6 +58,9 @@ final class NewFontInput {
     static String sizeError(CellSize size) {
         if (size.width() > MAX_CELL_SIDE || size.height() > MAX_CELL_SIDE) {
             return "Width and height go up to " + MAX_CELL_SIDE;
+        }
+        if (!size.isSquareOrTall()) {
+            return "Must be square or 2x tall";
         }
         return null;
     }

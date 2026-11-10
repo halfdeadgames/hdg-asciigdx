@@ -41,6 +41,16 @@ class FontDiscoveryTest {
     }
 
     @Test
+    void skipsSizesThatAreNeitherSquareNorTwiceAsTall(@TempDir Path root) throws IOException {
+        touch(root, "shapes/16x16.txt");
+        touch(root, "shapes/8x16.txt");
+        touch(root, "shapes/16x8.txt");
+        assertEquals(
+            List.of(new FontChoice("shapes", new CellSize(8, 16)), new FontChoice("shapes", new CellSize(16, 16))),
+            FontDiscovery.discover(root));
+    }
+
+    @Test
     void ignoresHeightOnlyNames(@TempDir Path root) throws IOException {
         touch(root, "saiksistt/16.txt");
         touch(root, "saiksistt/8x8.txt");

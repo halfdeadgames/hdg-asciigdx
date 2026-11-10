@@ -58,6 +58,11 @@ public record CellSize(int width, int height) {
         }
     }
 
+    /** Whether the cell is square or exactly twice as tall as wide. */
+    public boolean isSquareOrTall() {
+        return height == width || height == 2 * width;
+    }
+
     /** Returns the size as {@code <width>x<height>}, the stem of font file names. */
     public String fileStem() {
         return width + "x" + height;

@@ -35,8 +35,8 @@ class NewSizePlanTest {
 
     @Test
     void sizeWithOneOddSideSuggestsOnlyDouble() throws IOException {
-        addSizeFile("8x15.txt");
-        assertEquals(List.of(option(8, 15, true), option(16, 30, false)), NewSizePlan.options(folder));
+        addSizeFile("7x14.txt");
+        assertEquals(List.of(option(7, 14, true), option(14, 28, false)), NewSizePlan.options(folder));
     }
 
     @Test
@@ -68,11 +68,11 @@ class NewSizePlanTest {
 
     @Test
     void optionsAreSortedByHeightThenWidth() throws IOException {
-        addSizeFile("16x8.txt");
+        addSizeFile("8x16.txt");
         addSizeFile("8x8.txt");
         List<CellSize> sizes = NewSizePlan.options(folder).stream().map(SizeOption::size).toList();
-        assertEquals(List.of(new CellSize(4, 4), new CellSize(8, 4), new CellSize(8, 8), new CellSize(16, 8),
-            new CellSize(16, 16), new CellSize(32, 16)), sizes);
+        assertEquals(List.of(new CellSize(4, 4), new CellSize(4, 8), new CellSize(8, 8), new CellSize(8, 16),
+            new CellSize(16, 16), new CellSize(16, 32)), sizes);
     }
 
     @Test
@@ -97,8 +97,8 @@ class NewSizePlanTest {
 
     @Test
     void createWorksInAnEmptyFolder() throws IOException {
-        NewSizePlan.create(folder, new CellSize(5, 7));
-        assertEquals("cell 5x7\n", Files.readString(folder.resolve("5x7.txt"), StandardCharsets.UTF_8));
+        NewSizePlan.create(folder, new CellSize(5, 5));
+        assertEquals("cell 5x5\n", Files.readString(folder.resolve("5x5.txt"), StandardCharsets.UTF_8));
     }
 
     @Test
@@ -107,6 +107,13 @@ class NewSizePlanTest {
         assertTrue(tooSmall.getMessage().length() > 0);
         var tooBig = assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(folder, new CellSize(129, 8)));
         assertEquals("Width and height go up to 128", tooBig.getMessage());
+        assertTrue(folderIsEmpty());
+    }
+
+    @Test
+    void createRefusesShapesThatAreNeitherSquareNorTwiceAsTall() {
+        var wide = assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(folder, new CellSize(16, 8)));
+        assertEquals("Must be square or 2x tall", wide.getMessage());
         assertTrue(folderIsEmpty());
     }
 

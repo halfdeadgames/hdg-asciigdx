@@ -10,7 +10,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/** Finds the paintable fonts: every {@code <fontsRoot>/<folder>/<width>x<height>.txt}. */
+/**
+ * Finds the paintable fonts: every {@code <fontsRoot>/<folder>/<width>x<height>.txt} whose size is square or
+ * twice as tall.
+ */
 public final class FontDiscovery {
 
     /** One font data file; the name is the folder name and the size is the file name without {@code .txt}. */
@@ -48,7 +51,7 @@ public final class FontDiscovery {
         try (DirectoryStream<Path> files = Files.newDirectoryStream(folder, Files::isRegularFile)) {
             for (Path file : files) {
                 CellSize size = CellSize.ofDataFileName(file.getFileName().toString());
-                if (size != null) {
+                if (size != null && size.isSquareOrTall()) {
                     found.add(new FontChoice(folder.getFileName().toString(), size));
                 }
             }

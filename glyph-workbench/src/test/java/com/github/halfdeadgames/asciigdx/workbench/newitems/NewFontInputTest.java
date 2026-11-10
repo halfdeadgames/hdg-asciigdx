@@ -62,11 +62,27 @@ class NewFontInputTest {
     }
 
     @Test
-    void anyCellSizeUpToTheLimitIsAccepted() {
+    void squareAndTallCellSizesUpToTheLimitAreAccepted() {
         assertNull(NewFontInput.sizeError(new CellSize(1, 1)));
         assertNull(NewFontInput.sizeError(new CellSize(128, 128)));
         assertNull(NewFontInput.sizeError(new CellSize(64, 128)));
-        assertNull(NewFontInput.sizeError(new CellSize(7, 13)));
+        assertNull(NewFontInput.sizeError(new CellSize(16, 16)));
+        assertNull(NewFontInput.sizeError(new CellSize(8, 16)));
+        assertNull(NewFontInput.sizeError(new CellSize(5, 10)));
+        assertNull(NewFontInput.sizeError(new CellSize(7, 7)));
+    }
+
+    @Test
+    void otherShapesAreRefused() {
+        assertEquals("Must be square or 2x tall", NewFontInput.sizeError(new CellSize(16, 8)));
+        assertEquals("Must be square or 2x tall", NewFontInput.sizeError(new CellSize(8, 12)));
+        assertEquals("Must be square or 2x tall", NewFontInput.sizeError(new CellSize(7, 13)));
+        assertEquals("Must be square or 2x tall", NewFontInput.typedSizeError("7x13"));
+    }
+
+    @Test
+    void theLimitIsCheckedBeforeTheShape() {
+        assertEquals("Width and height go up to 128", NewFontInput.sizeError(new CellSize(129, 16)));
     }
 
     @Test
@@ -79,7 +95,7 @@ class NewFontInputTest {
     void typedSizeAcceptsCapitalXAndSurroundingSpaces() {
         assertNull(NewFontInput.typedSizeError(" 16X32 "));
         assertEquals(new CellSize(16, 32), NewFontInput.typedSize(" 16X32 "));
-        assertEquals(new CellSize(7, 13), NewFontInput.typedSize("7x13"));
+        assertEquals(new CellSize(7, 14), NewFontInput.typedSize("7x14"));
     }
 
     @Test

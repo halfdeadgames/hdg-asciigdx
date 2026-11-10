@@ -101,9 +101,9 @@ class NewFontSizePromptTest {
     @Test
     void enterOnAValidSizeHandsOverTheCellSize() {
         var prompt = openPrompt("a");
-        typeAll(prompt, "7x13");
+        typeAll(prompt, "7x14");
         prompt.enter();
-        assertEquals(List.of(new CellSize(7, 13)), created);
+        assertEquals(List.of(new CellSize(7, 14)), created);
     }
 
     @Test

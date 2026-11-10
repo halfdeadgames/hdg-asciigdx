@@ -154,9 +154,9 @@ class NewSizePromptTest {
     void aValidTypedSizeClosesAndIsHandedOn() {
         var prompt = openWith(SQUARE_8);
         prompt.chooseSelected();
-        typeText(prompt, "24X32");
+        typeText(prompt, "24X48");
         prompt.enter();
-        assertEquals(List.of(new CellSize(24, 32)), chosen);
+        assertEquals(List.of(new CellSize(24, 48)), chosen);
         assertFalse(prompt.isOpen());
     }
 

@@ -141,8 +141,8 @@ class NewFontPlanTest {
 
     @Test
     void aSizeOutsideTheOldLadderGetsItsOwnFileName() throws IOException {
-        Path folder = NewFontPlan.create(root, "odd", new CellSize(7, 13), CP437);
-        assertEquals("cell 7x13\n", read(folder.resolve("7x13.txt")));
+        Path folder = NewFontPlan.create(root, "odd", new CellSize(7, 14), CP437);
+        assertEquals("cell 7x14\n", read(folder.resolve("7x14.txt")));
     }
 
     @Test

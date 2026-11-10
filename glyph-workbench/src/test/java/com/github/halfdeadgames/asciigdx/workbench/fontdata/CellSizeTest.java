@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,20 @@ class CellSizeTest {
         assertEquals(new CellSize(8, 16), CellSize.parse("8x16"));
         assertEquals(new CellSize(16, 8), CellSize.parse("16x8"));
         assertEquals(new CellSize(12, 20), CellSize.parse("12x20"));
+    }
+
+    @Test
+    void squareAndTwiceAsTallSizesAreAllowedShapes() {
+        assertTrue(new CellSize(16, 16).isSquareOrTall());
+        assertTrue(new CellSize(8, 16).isSquareOrTall());
+        assertTrue(new CellSize(7, 14).isSquareOrTall());
+    }
+
+    @Test
+    void otherShapesAreNotAllowedShapes() {
+        assertFalse(new CellSize(8, 4).isSquareOrTall());
+        assertFalse(new CellSize(16, 24).isSquareOrTall());
+        assertFalse(new CellSize(7, 13).isSquareOrTall());
     }
 
     @Test
