@@ -251,6 +251,56 @@ class DeriveFlowTest {
     }
 
     @Test
+    void downAccumulatesAndResetsAfterAdd() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.shiftSource(1);
+        flow.shiftSourceDown(3);
+        flow.shiftSourceDown(-1);
+        assertEquals(2, flow.pendingDown());
+        flow.addPart();
+        assertEquals(0, flow.pendingDown());
+        assertEquals(new DeriveFlow.Part(5, 1, 2), flow.parts().get(0));
+    }
+
+    @Test
+    void downIsIgnoredOutsideOverlayPicking() {
+        DeriveFlow flow = new DeriveFlow();
+        flow.openMenu(2, true);
+        flow.shiftSourceDown(2);
+        assertEquals(0, flow.pendingDown());
+        flow.chooseOperation();
+        flow.moveSource(5);
+        flow.shiftSourceDown(2);
+        assertEquals(0, flow.pendingDown());
+    }
+
+    @Test
+    void pendingDownIsCarriedByPartsWithPendingAndTheOverlayOp() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.shiftSourceDown(-2);
+        flow.addPart();
+        flow.moveSource(6);
+        flow.shiftSourceDown(1);
+        List<DeriveFlow.Part> all = flow.partsWithPending();
+        assertEquals(List.of(new DeriveFlow.Part(5, 0, -2), new DeriveFlow.Part(6, 0, 1)), all);
+        int[] codePoints = {0, 0, 0, 0, 0, 'A', 'B'};
+        List<GlyphOp.Source> sources = DeriveFlow.overlayOp(all, codePoints).sources();
+        assertEquals(new GlyphOp.Source('A', 0, -2), sources.get(0));
+        assertEquals(new GlyphOp.Source('B', 0, 1), sources.get(1));
+    }
+
+    @Test
+    void cancellingClearsPendingDown() {
+        DeriveFlow flow = overlayPicking(2);
+        flow.moveSource(5);
+        flow.shiftSourceDown(3);
+        flow.cancel();
+        assertEquals(0, flow.pendingDown());
+    }
+
+    @Test
     void refusesThePartOnTheTargetSlot() {
         DeriveFlow flow = overlayPicking(2);
         assertTrue(flow.sourceIsTarget());

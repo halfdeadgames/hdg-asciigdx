@@ -96,7 +96,7 @@ final class PaintDerivePick {
 
     OverlayCheck.Result overlayCheck(int[] codePoints) {
         PixelGlyph pendingSource = editor.glyph(codePoints[flow.sourceSlot()]);
-        return OverlayCheck.check(flow.sourceIsTarget(), pendingSource, flow.pendingShift());
+        return OverlayCheck.check(flow.sourceIsTarget(), pendingSource, flow.pendingShift(), flow.pendingDown());
     }
 
     private void resetToNoSource(int[] codePoints, int cursor) {
@@ -138,7 +138,13 @@ final class PaintDerivePick {
         boolean overlay = flow.operation() == GlyphOp.Kind.OVERLAY;
         text.setLength(0);
         text.append(DeriveFlow.label(flow.operation())).append(' ');
-        GlyphLabel.appendCodeAndName(text, codePoints[cursor]);
+        // The overlay line also carries its offsets, so the target, already named in the panel title, stays short.
+        if (overlay) {
+            text.append("U+");
+            GlyphLabel.appendHex(text, codePoints[cursor]);
+        } else {
+            GlyphLabel.appendCodeAndName(text, codePoints[cursor]);
+        }
         text.append(':');
         if (withSource) {
             text.append(overlay ? " PART FROM " : " FROM ");
@@ -147,10 +153,16 @@ final class PaintDerivePick {
             text.append(overlay ? " PICK A PART" : " PICK SOURCE");
         }
         if (overlay) {
-            int shift = flow.pendingShift();
-            text.append("  SHIFT ").append(shift > 0 ? "+" : "").append(shift)
-                .append("  PARTS ").append(flow.parts().size());
+            appendSigned(text.append("  SHIFT "), flow.pendingShift());
+            if (flow.pendingDown() != 0) {
+                appendSigned(text.append("  DOWN "), flow.pendingDown());
+            }
+            text.append("  PARTS ").append(flow.parts().size());
         }
         return text.toString();
+    }
+
+    private static void appendSigned(StringBuilder target, int value) {
+        target.append(value > 0 ? "+" : "").append(value);
     }
 }

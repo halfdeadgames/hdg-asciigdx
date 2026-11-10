@@ -227,17 +227,33 @@ public final class FontDataParser {
     private List<GlyphOp.Source> parseOverlaySources(String text, int lineIndex) {
         List<GlyphOp.Source> sources = new ArrayList<>();
         for (String part : text.split(",", -1)) {
-            String[] words = part.strip().split("\\s+");
-            if (words.length != 3 || !words[1].equals("shift")) {
-                throw error(lineIndex, "overlay parts look like 'U+0041 shift 1' but found: '" + part.strip() + "'");
-            }
-            try {
-                sources.add(new GlyphOp.Source(parseCodePoint(words[0], lineIndex), Integer.parseInt(words[2])));
-            } catch (NumberFormatException e) {
-                throw error(lineIndex, "shift must be a whole number but was '" + words[2] + "'");
-            }
+            sources.add(parseOverlayPart(part.strip(), lineIndex));
         }
         return sources;
+    }
+
+    private GlyphOp.Source parseOverlayPart(String part, int lineIndex) {
+        String[] words = part.split("\\s+");
+        boolean hasDown = words.length == 5;
+        boolean wellFormed = (words.length == 3 || hasDown)
+            && words[1].equals("shift")
+            && (!hasDown || words[3].equals("down"));
+        if (!wellFormed) {
+            throw error(lineIndex, "overlay parts look like 'U+0041 shift 1' or 'U+0041 shift 1 down 2'"
+                + " but found: '" + part + "'");
+        }
+        int codePoint = parseCodePoint(words[0], lineIndex);
+        int shift = parseWholeNumber("shift", words[2], lineIndex);
+        int down = hasDown ? parseWholeNumber("down", words[4], lineIndex) : 0;
+        return new GlyphOp.Source(codePoint, shift, down);
+    }
+
+    private int parseWholeNumber(String name, String text, int lineIndex) {
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            throw error(lineIndex, name + " must be a whole number but was '" + text + "'");
+        }
     }
 
     private int parseCodePoint(String text, int lineIndex) {

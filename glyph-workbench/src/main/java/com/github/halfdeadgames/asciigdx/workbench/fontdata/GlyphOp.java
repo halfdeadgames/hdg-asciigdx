@@ -26,8 +26,14 @@ public record GlyphOp(Kind kind, List<Source> sources) {
      *
      * @param codePoint the glyph's code point
      * @param shift columns to move it right before combining; 0 except for overlays
+     * @param down rows to move it down before combining (negative moves up); 0 except for overlays
      */
-    public record Source(int codePoint, int shift) {
+    public record Source(int codePoint, int shift, int down) {
+
+        /** Creates a part that is not moved down. */
+        public Source(int codePoint, int shift) {
+            this(codePoint, shift, 0);
+        }
     }
 
     public GlyphOp {

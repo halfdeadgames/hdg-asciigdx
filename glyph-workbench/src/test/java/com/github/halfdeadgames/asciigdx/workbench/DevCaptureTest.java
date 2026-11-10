@@ -11,10 +11,19 @@ import org.junit.jupiter.api.Test;
 class DevCaptureTest {
 
     @Test
-    void overlayRequestHasACodePointAndAnOptionalShift() {
-        assertEquals(new DevCapture.OverlayRequest(0x21, 0), DevCapture.parseOverlayRequest("overlay:U+0021"));
-        assertEquals(new DevCapture.OverlayRequest(0x21, 5), DevCapture.parseOverlayRequest("overlay:U+0021:5"));
-        assertEquals(new DevCapture.OverlayRequest(0x41, -2), DevCapture.parseOverlayRequest(" OVERLAY:A:-2 "));
+    void overlayRequestHasACodePointAndAnOptionalShiftAndDown() {
+        assertEquals(new DevCapture.OverlayRequest(0x21, 0, 0), DevCapture.parseOverlayRequest("overlay:U+0021"));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 0), DevCapture.parseOverlayRequest("overlay:U+0021:5"));
+        assertEquals(new DevCapture.OverlayRequest(0x41, -2, 0), DevCapture.parseOverlayRequest(" OVERLAY:A:-2 "));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 2), DevCapture.parseOverlayRequest("overlay:U+0021:5:2"));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 0, -1), DevCapture.parseOverlayRequest("overlay:U+0021:0:-1"));
+    }
+
+    @Test
+    void overlayRequestWithABadDownIsRejected() {
+        assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:5:x"));
+        assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:5:"));
+        assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:5:2:1"));
     }
 
     @Test
@@ -138,6 +147,6 @@ class DevCaptureTest {
         assertNull(DevCapture.parseOverlayRequest("U+0021"));
         assertNull(DevCapture.parseOverlayRequest("overlay:"));
         assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:x"));
-        assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:1:2"));
+        assertNull(DevCapture.parseOverlayRequest("overlay:U+0021:1:2:3"));
     }
 }

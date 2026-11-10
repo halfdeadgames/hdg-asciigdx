@@ -15,6 +15,9 @@ class FontDataParserTest {
 
     private static final String P = glyph("U+0050 P", "#.......", "##......");
 
+    // Ink on row 4, so overlay parts can move up as well as down.
+    private static final String LOW_INK = glyph("U+0044 D", "........", "........", "........", "........", "#.......");
+
     private static FontDataException parseError(String text) {
         return assertThrows(FontDataException.class, () -> FontDataParser.parse(text));
     }
@@ -260,6 +263,105 @@ class FontDataParserTest {
         String text = file(glyph("U+0050 P", ".......#"), "U+0051 Q = overlay U+0050 shift 1");
 
         assertEquals(13, parseError(text).getLine());
+    }
+
+    private static GlyphOp.Source firstOverlayPart(String overlayLine) {
+        String text = file(P, "U+0052 R = " + overlayLine);
+        return ((DerivedGlyph) FontDataParser.parse(text).entries().get((int) 'R')).op().sources().get(0);
+    }
+
+    @Test
+    void parsesOverlayPartWithDown() {
+        assertEquals(new GlyphOp.Source('P', 1, 2), firstOverlayPart("overlay U+0050 shift 1 down 2"));
+    }
+
+    @Test
+    void overlayPartWithoutDownMovesNothingDown() {
+        assertEquals(new GlyphOp.Source('P', 1, 0), firstOverlayPart("overlay U+0050 shift 1"));
+    }
+
+    @Test
+    void parsesNegativeDown() {
+        String text = file(LOW_INK, "U+0052 R = overlay U+0044 shift 0 down -3");
+        GlyphOp.Source part = ((DerivedGlyph) FontDataParser.parse(text).entries().get((int) 'R'))
+            .op().sources().get(0);
+
+        assertEquals(new GlyphOp.Source('D', 0, -3), part);
+    }
+
+    @Test
+    void rejectsWrongWordInPlaceOfDown() {
+        String text = file(P, "U+0052 R = overlay U+0050 shift 1 up 2");
+
+        assertTrue(parseError(text).getMessage().endsWith("overlay parts look like 'U+0041 shift 1'"
+            + " or 'U+0041 shift 1 down 2' but found: 'U+0050 shift 1 up 2'"));
+    }
+
+    @Test
+    void rejectsDownWithoutNumber() {
+        String text = file(P, "U+0052 R = overlay U+0050 shift 1 down");
+
+        assertTrue(parseError(text).getMessage().endsWith("overlay parts look like 'U+0041 shift 1'"
+            + " or 'U+0041 shift 1 down 2' but found: 'U+0050 shift 1 down'"));
+    }
+
+    @Test
+    void rejectsDownThatIsNotANumber() {
+        String text = file(P, "U+0052 R = overlay U+0050 shift 1 down two");
+
+        assertTrue(parseError(text).getMessage().endsWith("down must be a whole number but was 'two'"));
+    }
+
+    @Test
+    void writerOmitsDownAtZeroAndWritesItOtherwise() {
+        String written = FontDataWriter.write(FontDataParser.parse(file(LOW_INK,
+            "U+0052 R = overlay U+0044 shift 1 down 0, U+0044 shift 0 down 2, U+0044 shift 0 down -1")));
+
+        assertTrue(written.contains("U+0052 R = overlay U+0044 shift 1, U+0044 shift 0 down 2,"
+            + " U+0044 shift 0 down -1"), written);
+    }
+
+    @Test
+    void roundTripKeepsDownValues() {
+        FontData parsed = FontDataParser.parse(file(LOW_INK,
+            "U+0052 R = overlay U+0044 shift 1 down 2, U+0044 shift 0 down -1, U+0044 shift 0"));
+
+        assertEquals(parsed, FontDataParser.parse(FontDataWriter.write(parsed)));
+    }
+
+    @Test
+    void overlaysCopiesMovedDownAndUp() {
+        String text = file(glyph("U+0051 Q", "........", "........", "........", "#......."),
+            "U+0052 R = overlay U+0051 shift 1 down 2, U+0051 shift 0 down -2");
+
+        assertEquals(".#......", resolvedRows(text, 'R').get(5));
+        assertEquals("#.......", resolvedRows(text, 'R').get(1));
+    }
+
+    @Test
+    void reportsOverlayMovedDownOutsideTheCell() {
+        String text = file(glyph("U+0051 Q", "........", "........", "........", "........",
+            "........", "........", "........", "#......."), "U+0052 R = overlay U+0051 shift 0 down 1");
+
+        assertEquals(13, parseError(text).getLine());
+    }
+
+    @Test
+    void withOverlayMovesInkDownAndUp() {
+        PixelGrid base = PixelGrid.blank(3, 3);
+        PixelGrid ink = PixelGrid.ofRows(List.of("...", "#..", "..."));
+
+        assertEquals(List.of("...", "...", "#.."), base.withOverlay(ink, 0, 1).toRows());
+        assertEquals(List.of("#..", "...", "..."), base.withOverlay(ink, 0, -1).toRows());
+    }
+
+    @Test
+    void withOverlayRejectsInkLeavingThroughTopOrBottom() {
+        PixelGrid base = PixelGrid.blank(3, 3);
+        PixelGrid ink = PixelGrid.ofRows(List.of("...", "#..", "..."));
+
+        assertThrows(IllegalArgumentException.class, () -> base.withOverlay(ink, 0, 2));
+        assertThrows(IllegalArgumentException.class, () -> base.withOverlay(ink, 0, -2));
     }
 
     @Test

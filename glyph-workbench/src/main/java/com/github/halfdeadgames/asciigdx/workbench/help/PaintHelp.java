@@ -10,7 +10,13 @@ import java.util.List;
 public final class PaintHelp {
 
     /** One overlay part as the help shows it. */
-    public record PartView(int codePoint, int shift) { }
+    public record PartView(int codePoint, int shift, int down) {
+
+        /** Creates a part that is not moved down. */
+        public PartView(int codePoint, int shift) {
+            this(codePoint, shift, 0);
+        }
+    }
 
     /**
      * What the help depends on.
@@ -112,7 +118,7 @@ public final class PaintHelp {
     private static final String[][] PICK_CONTROLS = {
         {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] OVERLAY_CONTROLS = {
-        {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"ENTER", "ADD PART"},
+        {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"; '", "MOVE 1 ROW"}, {"ENTER", "ADD PART"},
         {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] REPLACE_CONTROLS = {{"R", "REPLACE"}, {"ESC", "BACK"}};
     private static final String[][] UPSCALE_PICK_CONTROLS = {
@@ -140,7 +146,7 @@ public final class PaintHelp {
             }
             case PICK_SOURCE -> {
                 if (state.operation() == GlyphOp.Kind.OVERLAY) {
-                    addText(out, "Add glyph parts, each shifted sideways, then finish.", width);
+                    addText(out, "Add glyph parts, each moved into place, then finish.", width);
                     addBlank(out);
                     addControls(out, OVERLAY_CONTROLS);
                     addBlank(out);
@@ -218,7 +224,7 @@ public final class PaintHelp {
             case ROTATE180 -> "Copy a glyph turned 180 degrees clockwise.";
             case ROTATE270 -> "Copy a glyph turned 270 degrees clockwise.";
             case INVERT -> "Copy a glyph with ink and blank swapped.";
-            case OVERLAY -> "Stack copies of other glyphs, each shifted sideways.";
+            case OVERLAY -> "Stack copies of other glyphs, each moved into place.";
         };
     }
 
@@ -230,7 +236,9 @@ public final class PaintHelp {
         }
         if (state.pending() != null && check.hasRange()) {
             String key = "SHIFT RANGE";
-            out.add(new Row(Kind.INFO, key, check.rangeText(), key.length() + PART_KEY_GAP));
+            int valueColumn = key.length() + PART_KEY_GAP;
+            out.add(new Row(Kind.INFO, key, check.rangeText(), valueColumn));
+            out.add(new Row(Kind.INFO, "DOWN RANGE", check.downRangeText(), valueColumn));
         }
         if (check.hasWarning()) {
             addBlank(out);
@@ -265,7 +273,11 @@ public final class PaintHelp {
         if (part.codePoint() > ' ' && part.codePoint() < 0x7F) {
             out.append((char) part.codePoint()).append(' ');
         }
-        return out.append("SHIFT ").append(part.shift() > 0 ? "+" : "").append(part.shift()).toString();
+        out.append("SHIFT ").append(part.shift() > 0 ? "+" : "").append(part.shift());
+        if (part.down() != 0) {
+            out.append(" DOWN ").append(part.down() > 0 ? "+" : "").append(part.down());
+        }
+        return out.toString();
     }
 
     /** Breaks prose lines longer than {@code width} at spaces; continuation lines are indented. */

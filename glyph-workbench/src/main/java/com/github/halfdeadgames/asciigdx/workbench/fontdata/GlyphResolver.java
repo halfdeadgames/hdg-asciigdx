@@ -110,7 +110,7 @@ public final class GlyphResolver {
         PixelGrid combined = PixelGrid.blank(first.pixels().getWidth(), first.pixels().getHeight());
         for (GlyphOp.Source part : op.sources()) {
             PixelGlyph source = resolve(part.codePoint(), line);
-            combined = combined.withOverlay(source.pixels(), part.shift());
+            combined = combined.withOverlay(source.pixels(), part.shift(), part.down());
         }
         return new PixelGlyph(codePoint, combined);
     }

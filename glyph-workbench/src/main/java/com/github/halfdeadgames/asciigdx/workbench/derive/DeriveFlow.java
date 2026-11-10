@@ -23,11 +23,18 @@ public final class DeriveFlow {
         .filter(kind -> kind != GlyphOp.Kind.ROTATE90 && kind != GlyphOp.Kind.ROTATE270)
         .collect(Collectors.toUnmodifiableList());
 
-    /** One committed overlay source: the slot it comes from and how far it is shifted. */
-    public record Part(int slot, int shift) { }
+    /** One committed overlay source: the slot it comes from, how far it is shifted right, and how far down. */
+    public record Part(int slot, int shift, int down) {
+
+        /** Creates a part that is not moved down. */
+        public Part(int slot, int shift) {
+            this(slot, shift, 0);
+        }
+    }
 
     private final List<Part> parts = new ArrayList<>();
     private int pendingShift;
+    private int pendingDown;
     private Mode mode = Mode.IDLE;
     private int menuIndex;
     private int targetSlot;
@@ -114,12 +121,24 @@ public final class DeriveFlow {
         }
     }
 
+    public int pendingDown() {
+        return pendingDown;
+    }
+
+    /** Adds to the down offset of the source being picked (negative moves up); only overlay picking uses it. */
+    public void shiftSourceDown(int delta) {
+        if (isOverlayPicking()) {
+            pendingDown += delta;
+        }
+    }
+
     public void addPart() {
         if (!isOverlayPicking() || sourceIsTarget()) {
             return;
         }
-        parts.add(new Part(sourceSlot, pendingShift));
+        parts.add(new Part(sourceSlot, pendingShift, pendingDown));
         pendingShift = 0;
+        pendingDown = 0;
     }
 
     /** Whether an overlay is being picked and has a committed part that {@link #removeLastPart} would remove. */
@@ -142,7 +161,7 @@ public final class DeriveFlow {
     public List<Part> partsWithPending() {
         List<Part> all = new ArrayList<>(parts);
         if (isOverlayPicking() && !sourceIsTarget()) {
-            all.add(new Part(sourceSlot, pendingShift));
+            all.add(new Part(sourceSlot, pendingShift, pendingDown));
         }
         return all;
     }
@@ -151,7 +170,7 @@ public final class DeriveFlow {
     public static GlyphOp overlayOp(List<Part> parts, int[] codePoints) {
         List<GlyphOp.Source> sources = new ArrayList<>(parts.size());
         for (Part part : parts) {
-            sources.add(new GlyphOp.Source(codePoints[part.slot()], part.shift()));
+            sources.add(new GlyphOp.Source(codePoints[part.slot()], part.shift(), part.down()));
         }
         return new GlyphOp(GlyphOp.Kind.OVERLAY, sources);
     }
@@ -163,6 +182,7 @@ public final class DeriveFlow {
     private void clearOverlayState() {
         parts.clear();
         pendingShift = 0;
+        pendingDown = 0;
     }
 
     /** Moves the highlighted menu row, wrapping at both ends. */

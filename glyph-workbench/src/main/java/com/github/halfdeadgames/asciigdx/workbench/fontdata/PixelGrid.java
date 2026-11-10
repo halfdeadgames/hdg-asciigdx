@@ -142,14 +142,15 @@ public final class PixelGrid {
     }
 
     /**
-     * Returns this grid with another grid's pixels added, the other moved sideways first.
+     * Returns this grid with another grid's pixels moved, then added.
      *
      * @param other grid of the same size
      * @param shift columns to move {@code other} right (negative moves left)
+     * @param down rows to move {@code other} down (negative moves up)
      * @return the combined grid
      * @throws IllegalArgumentException if sizes differ or a lit pixel of {@code other} leaves the grid
      */
-    public PixelGrid withOverlay(PixelGrid other, int shift) {
+    public PixelGrid withOverlay(PixelGrid other, int shift, int down) {
         if (other.width != width || other.height != height) {
             throw new IllegalArgumentException("Overlay is " + other.width + "x" + other.height
                 + " but the grid is " + width + "x" + height);
@@ -160,12 +161,17 @@ public final class PixelGrid {
                 if (!other.isLit(x, y)) {
                     continue;
                 }
-                int target = x + shift;
-                if (target < 0 || target >= width) {
+                int targetColumn = x + shift;
+                if (targetColumn < 0 || targetColumn >= width) {
                     throw new IllegalArgumentException("Shift " + shift + " moves a pixel from column " + x
                         + " outside the " + width + " column cell");
                 }
-                combined.set(y * width + target);
+                int targetRow = y + down;
+                if (targetRow < 0 || targetRow >= height) {
+                    throw new IllegalArgumentException("Down " + down + " moves a pixel from row " + y
+                        + " outside the " + height + " row cell");
+                }
+                combined.set(targetRow * width + targetColumn);
             }
         }
         return new PixelGrid(width, height, combined);

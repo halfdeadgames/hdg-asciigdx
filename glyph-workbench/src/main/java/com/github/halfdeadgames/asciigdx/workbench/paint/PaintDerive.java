@@ -98,10 +98,10 @@ final class PaintDerive {
         }
         List<PaintHelp.PartView> committed = new ArrayList<>();
         for (DeriveFlow.Part part : flow.parts()) {
-            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift()));
+            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift(), part.down()));
         }
         PaintHelp.PartView pending = flow.sourceIsTarget()
-            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift());
+            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift(), flow.pendingDown());
         return new PaintHelp.State(mode, operation, committed, pending, overlayCheck());
     }
 
@@ -111,7 +111,8 @@ final class PaintDerive {
             || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
             return null;
         }
-        return new PaintGridView.Ghost(editor.glyph(host.codePoints()[flow.sourceSlot()]).pixels(), flow.pendingShift());
+        return new PaintGridView.Ghost(editor.glyph(host.codePoints()[flow.sourceSlot()]).pixels(),
+            flow.pendingShift(), flow.pendingDown());
     }
 
     private void drawReplaceDialog(Painter painter, int columns, int rows, CellRect area, int codePoint) {
@@ -233,6 +234,16 @@ final class PaintDerive {
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
             messages.nextAction();
             flow.shiftSource(1);
+            refreshPick();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SEMICOLON)) {
+            messages.nextAction();
+            flow.shiftSourceDown(-1);
+            refreshPick();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.APOSTROPHE)) {
+            messages.nextAction();
+            flow.shiftSourceDown(1);
             refreshPick();
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {

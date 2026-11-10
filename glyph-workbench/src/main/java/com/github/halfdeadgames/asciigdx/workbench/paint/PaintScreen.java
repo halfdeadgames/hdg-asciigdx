@@ -111,7 +111,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final List<StatusBar.Key> REPLACE_KEYS = List.of(
         new StatusBar.Key("R", "REPLACE"), new StatusBar.Key("ESC", "BACK"));
     private static final List<StatusBar.Key> OVERLAY_PICK_KEYS = List.of(
-        new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("ENTER", "ADD"),
+        new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("; '", "UP/DOWN"),new StatusBar.Key("ENTER", "ADD"),
         new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
         new StatusBar.Key("ESC", "CANCEL"));
     private static final List<Dialog.Button> UNSAVED_BUTTONS = List.of(
@@ -887,6 +887,7 @@ public final class PaintScreen implements WorkbenchScreen {
                 sheet.keepVisible(overlaySlot);
             }
             flow.shiftSource(overlay.shift());
+            flow.shiftSourceDown(overlay.down());
             derive.refreshPick();
             return;
         }

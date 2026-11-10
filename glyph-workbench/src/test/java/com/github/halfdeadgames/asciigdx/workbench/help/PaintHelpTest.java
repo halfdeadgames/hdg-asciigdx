@@ -200,6 +200,7 @@ class PaintHelpTest {
             new PaintHelp.PartView(0x21, 2), WIDTH);
         List<String> lines = plain(rows);
         assertTrue(lines.contains("[ ]     SHIFT 1 COLUMN"));
+        assertTrue(lines.contains("; '     MOVE 1 ROW"));
         assertTrue(lines.contains("BKSP    REMOVE LAST"));
         assertTrue(lines.contains("F       FINISH"));
         assertTrue(lines.contains("PARTS"));
@@ -239,6 +240,32 @@ class PaintHelpTest {
         assertTrue(warning.toString().contains("ALLOWED -1..+2"));
         assertNoOnce(rows);
         assertProseFits(rows);
+    }
+
+    @Test
+    void partTextShowsDownOnlyWhenNotZero() {
+        List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
+            List.of(new PaintHelp.PartView(0x21, 1, 2), new PaintHelp.PartView(0x22, 0, -1),
+                new PaintHelp.PartView(0x23, 0, 0)),
+            new PaintHelp.PartView(0x24, 1, 3), WIDTH);
+        List<String> lines = plain(rows);
+        assertTrue(lines.contains("1 U+0021 ! SHIFT +1 DOWN +2"));
+        assertTrue(lines.contains("2 U+0022 \" SHIFT 0 DOWN -1"));
+        assertTrue(lines.contains("3 U+0023 # SHIFT 0"));
+        assertTrue(lines.contains("> U+0024 $ SHIFT +1 DOWN +3"));
+    }
+
+    @Test
+    void overlayShowsTheDownRangeLinedUpWithTheShiftRange() {
+        OverlayCheck.Result check = new OverlayCheck.Result(OverlayCheck.Problem.NONE, "", true, -1, 2, -3, 4);
+        List<PaintHelp.Row> rows = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
+            List.of(), new PaintHelp.PartView(0x22, 1), check), WIDTH);
+        PaintHelp.Row shiftRange = find(rows, "SHIFT RANGE");
+        PaintHelp.Row downRange = find(rows, "DOWN RANGE");
+        assertEquals("DOWN RANGE  -3..+4", downRange.plain());
+        assertEquals(PaintHelp.Kind.INFO, downRange.kind());
+        assertEquals(shiftRange.actionColumn(), downRange.actionColumn());
+        assertEquals(rows.indexOf(shiftRange) + 1, rows.indexOf(downRange));
     }
 
     @Test

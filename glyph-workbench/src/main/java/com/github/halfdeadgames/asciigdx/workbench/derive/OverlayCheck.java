@@ -15,8 +15,16 @@ public final class OverlayCheck {
      * @param hasRange whether {@code minShift} and {@code maxShift} are meaningful (the source has ink)
      * @param minShift the most negative shift that keeps all ink inside
      * @param maxShift the most positive shift that keeps all ink inside
+     * @param minDown the most negative down that keeps all ink inside (meaningful when {@code hasRange})
+     * @param maxDown the most positive down that keeps all ink inside (meaningful when {@code hasRange})
      */
-    public record Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift) {
+    public record Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift,
+                         int minDown, int maxDown) {
+
+        /** Creates a result whose down range is empty (0..0). */
+        public Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift) {
+            this(problem, message, hasRange, minShift, maxShift, 0, 0);
+        }
 
         public boolean hasWarning() {
             return problem != Problem.NONE;
@@ -36,6 +44,11 @@ public final class OverlayCheck {
         public String rangeText() {
             return signed(minShift) + ".." + signed(maxShift);
         }
+
+        /** The allowed down values as text, for example {@code -1..+2}. */
+        public String downRangeText() {
+            return signed(minDown) + ".." + signed(maxDown);
+        }
     }
 
     public static final String SAME_AS_TARGET_MESSAGE = "PICK A DIFFERENT GLYPH";
@@ -48,8 +61,9 @@ public final class OverlayCheck {
      * @param sourceIsTarget whether the source cursor is on the glyph being derived
      * @param source the source glyph, or null when its slot is empty
      * @param shift the pending shift
+     * @param down the pending down (negative is up)
      */
-    public static Result check(boolean sourceIsTarget, PixelGlyph source, int shift) {
+    public static Result check(boolean sourceIsTarget, PixelGlyph source, int shift, int down) {
         if (sourceIsTarget) {
             return new Result(Problem.SAME_AS_TARGET, SAME_AS_TARGET_MESSAGE, false, 0, 0);
         }
@@ -61,15 +75,43 @@ public final class OverlayCheck {
         boolean hasRange = left >= 0;
         int min = hasRange ? -left : 0;
         int max = hasRange ? pixels.getWidth() - 1 - rightmostInk(pixels) : 0;
+        int minDown = hasRange ? -topmostInk(pixels) : 0;
+        int maxDown = hasRange ? pixels.getHeight() - 1 - bottommostInk(pixels) : 0;
         if (hasRange && (shift < min || shift > max)) {
-            String message = "SHIFT " + signed(shift) + " PUTS INK OUTSIDE THE CELL: ALLOWED "
-                + signed(min) + ".." + signed(max);
-            return new Result(Problem.OUTSIDE, message, true, min, max);
+            return outside("SHIFT", shift, min, max, min, max, minDown, maxDown);
         }
-        return new Result(Problem.NONE, "", hasRange, min, max);
+        if (hasRange && (down < minDown || down > maxDown)) {
+            return outside("DOWN", down, minDown, maxDown, min, max, minDown, maxDown);
+        }
+        return new Result(Problem.NONE, "", hasRange, min, max, minDown, maxDown);
     }
 
-    public enum OffGrid { NONE, LEFT, RIGHT }
+    private static Result outside(String axis, int value, int allowedMin, int allowedMax,
+                                  int minShift, int maxShift, int minDown, int maxDown) {
+        String message = axis + " " + signed(value) + " PUTS INK OUTSIDE THE CELL: ALLOWED "
+            + signed(allowedMin) + ".." + signed(allowedMax);
+        return new Result(Problem.OUTSIDE, message, true, minShift, maxShift, minDown, maxDown);
+    }
+
+    public enum OffGrid { NONE, LEFT, RIGHT, UP, DOWN }
+
+    /**
+     * Which edge all moved ink lies beyond vertically, or NONE when some ink is still inside the grid.
+     *
+     * @param firstInkRow topmost row holding ink
+     * @param lastInkRow bottommost row holding ink
+     * @param down rows the ink moves down (negative moves up)
+     * @param gridHeight height of the visible grid
+     */
+    public static OffGrid offGridRows(int firstInkRow, int lastInkRow, int down, int gridHeight) {
+        if (lastInkRow + down < 0) {
+            return OffGrid.UP;
+        }
+        if (firstInkRow + down >= gridHeight) {
+            return OffGrid.DOWN;
+        }
+        return OffGrid.NONE;
+    }
 
     /**
      * Which side of the grid all shifted ink lies beyond, or NONE when some ink is still inside it.
@@ -115,6 +157,34 @@ public final class OverlayCheck {
             }
         }
         return -1;
+    }
+
+    /** First row holding ink, or -1 when the grid has none. */
+    private static int topmostInk(PixelGrid grid) {
+        for (int y = 0; y < grid.getHeight(); y++) {
+            if (rowHasInk(grid, y)) {
+                return y;
+            }
+        }
+        return -1;
+    }
+
+    private static int bottommostInk(PixelGrid grid) {
+        for (int y = grid.getHeight() - 1; y >= 0; y--) {
+            if (rowHasInk(grid, y)) {
+                return y;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean rowHasInk(PixelGrid grid, int y) {
+        for (int x = 0; x < grid.getWidth(); x++) {
+            if (grid.isLit(x, y)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean columnHasInk(PixelGrid grid, int x) {

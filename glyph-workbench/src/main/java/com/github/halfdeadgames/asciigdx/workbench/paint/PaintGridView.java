@@ -125,7 +125,7 @@ final class PaintGridView {
     }
 
     /** A pending overlay part drawn faded at its shifted position; pixels past the part's own width are outside the cell. */
-    record Ghost(PixelGrid pixels, int shift) { }
+    record Ghost(PixelGrid pixels, int shift, int down) { }
 
     void draw(int codePoint) {
         draw(codePoint, null, null, 0f);
@@ -277,10 +277,11 @@ final class PaintGridView {
                     continue;
                 }
                 int column = x + ghost.shift();
-                if (column >= 0 && column < editor.cellWidth() && y < editor.cellHeight()) {
-                    boolean inside = column < pixels.getWidth();
+                int row = y + ghost.down();
+                if (column >= 0 && column < editor.cellWidth() && row >= 0 && row < editor.cellHeight()) {
+                    boolean inside = column < pixels.getWidth() && row < pixels.getHeight();
                     painter.fill(inside ? UiPalette.GHOST : UiPalette.GHOST_OUTSIDE,
-                        left + column * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
+                        left + column * pixelSize, top + row * pixelSize, pixelSize, pixelSize);
                 }
             }
         }
@@ -311,15 +312,28 @@ final class PaintGridView {
         OverlayCheck.OffGrid side =
             OverlayCheck.offGrid(ghostFirstInk, ghostLastInk, ghost.shift(), editor.cellWidth());
         if (side == OverlayCheck.OffGrid.NONE) {
+            side = OverlayCheck.offGridRows(ghostFirstRow, ghostLastRow, ghost.down(), editor.cellHeight());
+        }
+        if (side == OverlayCheck.OffGrid.NONE) {
             return;
         }
-        int arrowTop = top + (ghostFirstRow + ghostLastRow + 1) * pixelSize / 2 - painter.cell() / 2;
         int gridRight = left + editor.cellWidth() * pixelSize;
-        if (side == OverlayCheck.OffGrid.RIGHT) {
-            painter.text(">", gridRight - painter.cell(), arrowTop, UiPalette.WARN);
-        } else {
-            painter.text("<", left, arrowTop, UiPalette.WARN);
+        int gridBottom = top + editor.cellHeight() * pixelSize;
+        int arrowTop = clamp(top + (ghostFirstRow + ghostLastRow + 1 + 2 * ghost.down()) * pixelSize / 2
+            - painter.cell() / 2, top, gridBottom - painter.cell());
+        int arrowLeft = clamp(left + (ghostFirstInk + ghostLastInk + 1 + 2 * ghost.shift()) * pixelSize / 2
+            - painter.cell() / 2, left, gridRight - painter.cell());
+        switch (side) {
+            case RIGHT -> painter.text(">", gridRight - painter.cell(), arrowTop, UiPalette.WARN);
+            case LEFT -> painter.text("<", left, arrowTop, UiPalette.WARN);
+            case UP -> painter.text("^", arrowLeft, top, UiPalette.WARN);
+            case DOWN -> painter.text("v", arrowLeft, gridBottom - painter.cell(), UiPalette.WARN);
+            default -> { }
         }
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static boolean isLit(PixelGlyph glyph, int x, int y) {

@@ -41,9 +41,14 @@ public final class FontDataWriter {
         List<String> sources = new ArrayList<>();
         for (GlyphOp.Source source : op.sources()) {
             String reference = String.format("U+%04X", source.codePoint());
-            sources.add(op.kind() == GlyphOp.Kind.OVERLAY ? reference + " shift " + source.shift() : reference);
+            sources.add(op.kind() == GlyphOp.Kind.OVERLAY ? writeOverlayPart(reference, source) : reference);
         }
         return op.kind().keyword() + " " + String.join(", ", sources);
+    }
+
+    private static String writeOverlayPart(String reference, GlyphOp.Source source) {
+        String text = reference + " shift " + source.shift();
+        return source.down() == 0 ? text : text + " down " + source.down();
     }
 
     private static String codePointLabel(int codePoint) {

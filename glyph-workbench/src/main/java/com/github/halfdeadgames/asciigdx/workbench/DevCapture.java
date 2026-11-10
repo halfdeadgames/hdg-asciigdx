@@ -306,31 +306,40 @@ public final class DevCapture {
         return System.getProperty(DERIVE_PROPERTY);
     }
 
-    /** A parsed {@code overlay:<code point>[:<shift>]} request. */
-    public record OverlayRequest(int codePoint, int shift) { }
+    /** A parsed {@code overlay:<code point>[:<shift>[:<down>]]} request. */
+    public record OverlayRequest(int codePoint, int shift, int down) { }
 
-    /** Parses a derive request such as {@code overlay:U+0021} or {@code overlay:U+0021:5}; null for anything else. */
+    /**
+     * Parses a derive request such as {@code overlay:U+0021}, {@code overlay:U+0021:5}, or
+     * {@code overlay:U+0021:5:2} (shift 5, down 2); null for anything else.
+     */
     public static OverlayRequest parseOverlayRequest(String request) {
         if (request == null) {
             return null;
         }
         String[] fields = request.trim().split(":", -1);
-        if (fields.length < 2 || fields.length > 3 || !"overlay".equalsIgnoreCase(fields[0].trim())) {
+        if (fields.length < 2 || fields.length > 4 || !"overlay".equalsIgnoreCase(fields[0].trim())) {
             return null;
         }
         int codePoint = parseCodePoint(fields[1]);
-        if (codePoint < 0) {
+        Integer shift = optionalNumber(fields, 2);
+        Integer down = optionalNumber(fields, 3);
+        if (codePoint < 0 || shift == null || down == null) {
             return null;
         }
-        int shift = 0;
-        if (fields.length == 3) {
-            try {
-                shift = Integer.parseInt(fields[2].trim());
-            } catch (NumberFormatException e) {
-                return null;
-            }
+        return new OverlayRequest(codePoint, shift, down);
+    }
+
+    /** The whole number in the field, 0 when the field is absent, or null when it is not a number. */
+    private static Integer optionalNumber(String[] fields, int index) {
+        if (index >= fields.length) {
+            return 0;
         }
-        return new OverlayRequest(codePoint, shift);
+        try {
+            return Integer.parseInt(fields[index].trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public static int parseCodePoint(String text) {
