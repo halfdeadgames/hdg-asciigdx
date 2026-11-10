@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.github.halfdeadgames.asciigdx.workbench.notes.NotePanel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
@@ -29,16 +28,14 @@ final class PaintScrollRouting {
     }
 
     private final MessageStrip messages;
-    private final NotePanel notePanel;
     private final ScrollState helpScroll;
     private final PaintSheetView sheet;
     private final WheelTicks wheelTicks;
     private final Host host;
 
-    PaintScrollRouting(MessageStrip messages, NotePanel notePanel, ScrollState helpScroll, PaintSheetView sheet,
+    PaintScrollRouting(MessageStrip messages, ScrollState helpScroll, PaintSheetView sheet,
                        WheelTicks wheelTicks, Host host) {
         this.messages = messages;
-        this.notePanel = notePanel;
         this.helpScroll = helpScroll;
         this.sheet = sheet;
         this.wheelTicks = wheelTicks;
@@ -62,10 +59,10 @@ final class PaintScrollRouting {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            scrollNoteOrHelp(-1);
+            scrollHelp(-1);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            scrollNoteOrHelp(1);
+            scrollHelp(1);
         }
     }
 
@@ -93,8 +90,6 @@ final class PaintScrollRouting {
         int cell = host.cell();
         if (messages.contains(Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell))) {
             messages.scrollBy(ticks);
-        } else if (notePanel.contains(pointerX, pointerY)) {
-            notePanel.scrollDisplay(ticks * WHEEL_ROWS);
         } else if (host.helpContains(pointerX, pointerY)) {
             helpScroll.scrollBy(ticks * WHEEL_ROWS);
         } else if (sheet.contains(pointerX, pointerY)) {
@@ -102,11 +97,8 @@ final class PaintScrollRouting {
         }
     }
 
-    // The keys follow the note while it overflows; otherwise they scroll the help.
-    private void scrollNoteOrHelp(int rows) {
-        if (notePanel.canScroll()) {
-            notePanel.scrollDisplay(rows);
-        } else if (host.helpShown()) {
+    private void scrollHelp(int rows) {
+        if (host.helpShown()) {
             helpScroll.scrollBy(rows);
         }
     }

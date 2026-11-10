@@ -69,7 +69,6 @@ class CellSizeTest {
         assertEquals("8x16.txt", size.dataFileName());
         assertEquals("8x16.rules.json", size.rulesFileName());
         assertEquals("8x16.guides.txt", size.guidesFileName());
-        assertEquals("8x16.review.txt", size.reviewFileName());
     }
 
     @Test

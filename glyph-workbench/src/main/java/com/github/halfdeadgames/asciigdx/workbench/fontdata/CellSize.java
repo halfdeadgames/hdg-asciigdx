@@ -83,11 +83,6 @@ public record CellSize(int width, int height) {
         return fileStem() + ".guides.txt";
     }
 
-    /** Name of the upscale review file, such as {@code 16x16.review.txt}. */
-    public String reviewFileName() {
-        return fileStem() + ".review.txt";
-    }
-
     @Override
     public String toString() {
         return fileStem();

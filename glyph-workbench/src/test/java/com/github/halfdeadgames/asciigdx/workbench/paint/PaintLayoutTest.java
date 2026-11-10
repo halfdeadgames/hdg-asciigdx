@@ -72,8 +72,6 @@ class PaintLayoutTest {
                 assertEquals(shown.grid(), hidden.grid());
                 assertEquals(shown.preview(), hidden.preview());
                 assertEquals(shown.belowPreview(), hidden.belowPreview());
-                assertEquals(PaintLayout.helpArea(shown, true), PaintLayout.helpArea(hidden, true));
-                assertEquals(PaintLayout.noteArea(shown), PaintLayout.noteArea(hidden));
                 assertEquals(shown.messages().x(), hidden.messages().x());
                 assertEquals(shown.messages().y(), hidden.messages().y());
                 assertEquals(shown.messages().width(), hidden.messages().width());

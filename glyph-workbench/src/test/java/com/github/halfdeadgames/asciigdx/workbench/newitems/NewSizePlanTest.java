@@ -84,6 +84,14 @@ class NewSizePlanTest {
     }
 
     @Test
+    void sizeFilesOfOtherShapesAreIgnored() throws IOException {
+        addSizeFile("16x16.txt");
+        addSizeFile("16x12.txt");
+        List<CellSize> sizes = NewSizePlan.options(folder).stream().map(SizeOption::size).toList();
+        assertEquals(List.of(new CellSize(8, 8), new CellSize(16, 16), new CellSize(32, 32)), sizes);
+    }
+
+    @Test
     void emptyFolderHasNoOptions() throws IOException {
         assertTrue(NewSizePlan.options(folder).isEmpty());
     }

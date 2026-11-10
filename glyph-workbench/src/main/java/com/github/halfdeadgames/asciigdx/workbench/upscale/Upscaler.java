@@ -26,16 +26,6 @@ final class Upscaler {
         Method(String label) {
             this.label = label;
         }
-
-        /** Lowercase name written to the review file, such as {@code scale2x}. */
-        String id() {
-            return name().toLowerCase(java.util.Locale.ROOT);
-        }
-    }
-
-    /** The review file name of a candidate: the method id, with {@code @size} when several source sizes were offered. */
-    static String pickId(Method method, int sourceSize, boolean severalSources) {
-        return severalSources ? method.id() + "@" + sourceSize : method.id();
     }
 
     private static final int ON = 0xFFFFFFFF;

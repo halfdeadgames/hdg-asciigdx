@@ -17,7 +17,7 @@ import java.util.Set;
  * The "New size" rules for one font folder: which sizes are suggested, and creating the size file.
  * Sizes must be square or twice as tall, within the cell limits. Suggestions are the half (when both sides are even) and the
  * double of each existing {@code <width>x<height>.txt} size; {@code .guides.txt} and other sidecar files
- * are not size files.
+ * are not size files. Files of any other shape (neither square nor twice as tall) are ignored.
  */
 public final class NewSizePlan {
 
@@ -92,7 +92,10 @@ public final class NewSizePlan {
         try (DirectoryStream<Path> children = Files.newDirectoryStream(fontFolder)) {
             for (Path child : children) {
                 CellSize size = CellSize.ofDataFileName(child.getFileName().toString());
-                if (size != null && Files.isRegularFile(child)) {
+                if (size == null || !size.isSquareOrTall()) {
+                    continue;
+                }
+                if (Files.isRegularFile(child)) {
                     sizes.add(size);
                 }
             }

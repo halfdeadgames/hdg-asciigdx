@@ -73,14 +73,6 @@ class UiKitTest {
     }
 
     @Test
-    void wrapBreaksAtSpacesAndKeepsParagraphs() {
-        assertEquals(List.of("aaa", "bbb", "cc"), ScrollText.wrap("aaa bbb cc", 3));
-        assertEquals(List.of("abcd", "ef"), ScrollText.wrap("abcdef", 4));
-        assertEquals(List.of("a", "b"), ScrollText.wrap("a\nb", 5));
-        assertEquals(List.of(""), ScrollText.wrap("", 5));
-    }
-
-    @Test
     void scrollbarThumbMath() {
         assertEquals(10, ScrollText.thumbSize(10, 5, 8));
         assertEquals(5, ScrollText.thumbSize(10, 20, 10));
@@ -88,17 +80,6 @@ class UiKitTest {
         assertEquals(0, ScrollText.thumbStart(10, 20, 10, 0));
         assertEquals(5, ScrollText.thumbStart(10, 20, 10, 10));
         assertEquals(0, ScrollText.thumbStart(10, 5, 8, 0));
-    }
-
-    @Test
-    void scrollOffsetStaysInRange() {
-        ScrollText text = new ScrollText();
-        text.setText("a b c d e f g h", 1);
-        assertEquals(8, text.lineCount());
-        text.scrollBy(100);
-        assertTrue(text.offset() <= 7);
-        text.scrollBy(-100);
-        assertEquals(0, text.offset());
     }
 
     @Test

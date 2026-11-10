@@ -106,10 +106,10 @@ public final class PaintHelp {
     // Each control is {key, action}; a block lines its actions up in one column.
     private static final String[][] IDLE_CONTROLS = {
         {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"},
-        {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}};
+        {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}};
     private static final String[][] ALL_CONTROLS = {
         {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
-        {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP/NOTE"}, {"N", "NEW GLYPH"}, {"D", "DERIVE"},
+        {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}, {"N", "NEW GLYPH"}, {"D", "DERIVE"},
         {"U", "UNLOCK DERIVED"}, {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+E", "EXPORT"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
         {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
         {"F1", "RULES"}, {"F2", "GUIDES"}, {"F5", "RELOAD FILES"}, {"ALT+LETTER", "OPEN MENU"}, {"F10", "MENU BAR"}, {"ESC", "BACK"}};

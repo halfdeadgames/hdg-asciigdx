@@ -16,35 +16,16 @@ public final class PaintLayout {
     /** Rows above the panels: the menu bar, the breadcrumbs, and one blank row. */
     static final int TOP_ROWS = 3;
     private static final int MAX_PREVIEW_SHARE_PERCENT = 40;
-    private static final int MIN_NOTE_HEIGHT = 6;
-    private static final int MIN_HELP_HEIGHT = 4;
+    private static final int MIN_BELOW_PREVIEW_HEIGHT = 6;
 
     private PaintLayout() {
-    }
-
-    /** The area under the preview: the help panel alone, or the help over the review note when there is one. */
-    static CellRect helpArea(Result result, boolean withNote) {
-        CellRect area = result.belowPreview();
-        return withNote ? new CellRect(area.x(), area.y(), area.width(), area.height() - noteHeight(area)) : area;
-    }
-
-    /** The note panel when it shares the area under the preview with the help. */
-    static CellRect noteArea(Result result) {
-        CellRect area = result.belowPreview();
-        int height = noteHeight(area);
-        return new CellRect(area.x(), area.bottom() - height, area.width(), height);
-    }
-
-    // The note gets half the area, but the help keeps at least MIN_HELP_HEIGHT rows.
-    private static int noteHeight(CellRect area) {
-        return Math.max(2, Math.min(area.height() - MIN_HELP_HEIGHT, Math.max(MIN_NOTE_HEIGHT, area.height() / 2)));
     }
 
     /** Window pixels high that hold the editor at its minimum zoom, the smallest preview and help, the messages, and both bars, with the key bar shown. */
     static int minimumHeight(int glyphHeight, int cellPixels) {
         int editorRows = 2 + PaintGridLabels.LABEL_ROWS_ABOVE
             + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + cellPixels / 2 + cellPixels - 1) / cellPixels;
-        int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_NOTE_HEIGHT;
+        int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels) + MIN_BELOW_PREVIEW_HEIGHT;
         return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * cellPixels;
     }
 
@@ -69,7 +50,7 @@ public final class PaintLayout {
         int rightX = columns - rightWidth;
         int messagesY = rows - 1 - MESSAGES_HEIGHT;
         int columnHeight = messagesY - TOP_ROWS;
-        int maxPreviewHeight = Math.min(columnHeight * MAX_PREVIEW_SHARE_PERCENT / 100, columnHeight - MIN_NOTE_HEIGHT);
+        int maxPreviewHeight = Math.min(columnHeight * MAX_PREVIEW_SHARE_PERCENT / 100, columnHeight - MIN_BELOW_PREVIEW_HEIGHT);
         int scaleCount = PreviewFit.scaleCount(PreviewPanelSize.innerWidth(rightWidth, cellPixels),
             PreviewPanelSize.blockBudget(maxPreviewHeight, cellPixels),
             glyph, PreviewPanelSize.gap(cellPixels), 2 * cellPixels);
@@ -78,7 +59,7 @@ public final class PaintLayout {
         return new Result(
             new CellRect(gridX, TOP_ROWS, Math.max(1, rightX - gridX - 1), messagesY - TOP_ROWS),
             new CellRect(rightX, TOP_ROWS, rightWidth, previewHeight),
-            new CellRect(rightX, noteY, rightWidth,Math.max(MIN_NOTE_HEIGHT, messagesY - noteY)),
+            new CellRect(rightX, noteY, rightWidth, Math.max(MIN_BELOW_PREVIEW_HEIGHT, messagesY - noteY)),
             new CellRect(gridX, messagesY, columns - gridX, MESSAGES_HEIGHT + (statusBarShown ? 0 : 1)));
     }
 }

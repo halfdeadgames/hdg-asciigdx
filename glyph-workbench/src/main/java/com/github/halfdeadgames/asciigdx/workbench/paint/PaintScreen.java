@@ -39,7 +39,6 @@ import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizeDialog;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePrompt;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.PaintNewFont;
-import com.github.halfdeadgames.asciigdx.workbench.notes.NotePanel;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PaintPreview;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RuleChecker;
@@ -67,7 +66,6 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
 import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
-import com.github.halfdeadgames.asciigdx.workbench.upscale.ReviewFile;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceFonts;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSources;
 import java.nio.file.Path;
@@ -91,7 +89,6 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final String KEY_RULES = "rules";
     private static final String KEY_PICK = "pick";
     private static final String KEY_PICK_PROBLEM = "pickProblem";
-    private static final String KEY_REVIEW = "review";
     private static final String KEY_GUIDES = "guides";
     private static final String KEY_SCALE = "scale";
     private static final int COLUMNS = PaintSheetView.COLUMNS;
@@ -162,7 +159,6 @@ public final class PaintScreen implements WorkbenchScreen {
     private PaintGridView grid;
     private PaintPreview preview;
     private RulesScreen rules;
-    private NotePanel notePanel;
     private final GlyphTitle glyphTitle = new GlyphTitle();
     private final MessageStrip messages = new MessageStrip();
     private final PaintDeriveMenu deriveMenu = new PaintDeriveMenu(flow, messages);
@@ -183,11 +179,9 @@ public final class PaintScreen implements WorkbenchScreen {
     private final List<String> shownBrokenGuideKeys = new ArrayList<>();
     private int ruleGlyph = -1;
     private int ruleRevision = -1;
-    private ReviewFile review = new ReviewFile();
     private PaintGuides guides = PaintGuides.NONE;
     private PaintGuidesFile guidesFile;
     private boolean rulesFileBad;
-    private int shownNoteFor = -1;
     private final ScrollState helpScroll = new ScrollState(0);
     private PaintHelpPanel helpPanel;
     private boolean[] unselectable;
@@ -298,9 +292,8 @@ public final class PaintScreen implements WorkbenchScreen {
             preview.selectTab(requestedTab);
         }
         rules = new RulesScreen(rulesPainter);
-        notePanel = new NotePanel(painter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
-        scrollRouting = new PaintScrollRouting(messages, notePanel, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
+        scrollRouting = new PaintScrollRouting(messages, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
         pointer = new PaintPointer(viewport, scrollRouting);
         guideListPointerTargets = new PointerTargets(List.of(
             new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cell)));
@@ -310,7 +303,6 @@ public final class PaintScreen implements WorkbenchScreen {
             new MessagesPointerTarget(messages, this::cell),
             new SheetSlotPointerTarget(sheet, flow, derive, messages, new CursorSlotSelection()),
             new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new CursorStrokeStart())));
-        loadReviewNotes(directory);
         loadRules(directory);
     }
 
@@ -898,20 +890,6 @@ public final class PaintScreen implements WorkbenchScreen {
         derive.beginPick();
         flow.moveSource(sourceSlot);
         derive.refreshPick();
-    }
-
-    // A review file of this size is read once; its notes are shown read-only next to the grid.
-    private void loadReviewNotes(FileHandle directory) {
-        FileHandle reviewFile = directory.child(fontSize.reviewFileName());
-        if (!reviewFile.exists()) {
-            return;
-        }
-        try {
-            review = ReviewFile.parse(reviewFile.readString("UTF-8"));
-        } catch (IllegalArgumentException | GdxRuntimeException e) {
-            messages.setCondition(KEY_REVIEW, true, "Review file is bad: notes are off");
-            Gdx.app.error(TAG, "Cannot read " + reviewFile.path() + ": " + e.getMessage());
-        }
     }
 
     // A missing guides file means no guides; a bad one warns and also means no guides.
@@ -1711,7 +1689,7 @@ public final class PaintScreen implements WorkbenchScreen {
         PixelGlyph previewGlyph = previewGlyph();
         grid.draw(codePoint, previewGlyph, derive.pendingGhost(), ghostSeconds);
         preview.draw(rects.preview(), codePoint, previewGlyph);
-        drawBelowPreviewPanels(codePoint);
+        drawBelowPreviewPanels();
         CellRect strip = rects.messages();
         messages.draw(painter, strip,
             Gdx.graphics.getDeltaTime());
@@ -1820,27 +1798,14 @@ public final class PaintScreen implements WorkbenchScreen {
         return flow.isOverlayOperation() ? OVERLAY_PICK_KEYS : PICK_KEYS;
     }
 
-    // Draws a glyph's side panels: the guide list when open; otherwise the help panel,
-    // plus the read-only review note and pick if the glyph has a note.
-    private void drawBelowPreviewPanels(int codePoint) {
-        if (shownNoteFor != codePoint) {
-            shownNoteFor = codePoint;
-            notePanel.resetDisplayScroll();
-        }
+    // Draws the area under the preview: the guide list when open, otherwise the help panel.
+    private void drawBelowPreviewPanels() {
         if (guideListPanel.isOpen()) {
             guideListPanel.draw(rects.belowPreview(), cell());
-            notePanel.markHidden();
             helpPanel.markHidden();
             return;
         }
-        ReviewFile.Answer answer = review.get(codePoint);
-        boolean hasNote = answer != null && !answer.note().isEmpty();
-        helpPanel.draw(PaintLayout.helpArea(rects, hasNote), helpState(), cell());
-        if (hasNote) {
-            notePanel.drawReadOnly(PaintLayout.noteArea(rects), answer.pick(), answer.note());
-        } else {
-            notePanel.markHidden();
-        }
+        helpPanel.draw(rects.belowPreview(), helpState(), cell());
     }
 
     @Override
