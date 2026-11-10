@@ -25,15 +25,16 @@ public final class GlyphCandidates {
      * dropped, so the first method that produces it wins.
      *
      * @param source the glyph in the smaller font
-     * @param factor whole upscale factor
+     * @param factorX whole upscale factor across
+     * @param factorY whole upscale factor down
      * @return the distinct candidates in method order
      */
-    public static List<Candidate> forGlyph(PixelGlyph source, int factor) {
+    public static List<Candidate> forGlyph(PixelGlyph source, int factorX, int factorY) {
         List<Candidate> candidates = new ArrayList<>();
-        for (Upscaler.Method method : Upscaler.methodsFor(factor)) {
-            PixelGrid cell = Upscaler.upscale(source, factor, method);
+        for (Upscaler.Method method : Upscaler.methodsFor(factorX, factorY)) {
+            PixelGrid cell = Upscaler.upscale(source, factorX, factorY, method);
             if (!isAlreadyListed(candidates, cell)) {
-                candidates.add(new Candidate(labelFor(method, factor), cell));
+                candidates.add(new Candidate(labelFor(method, factorX, factorY), cell));
             }
         }
         return candidates;
@@ -48,7 +49,9 @@ public final class GlyphCandidates {
         return false;
     }
 
-    private static String labelFor(Upscaler.Method method, int factor) {
-        return method == Upscaler.Method.NEAREST ? method.label + " " + factor + "X" : method.label;
+    private static String labelFor(Upscaler.Method method, int factorX, int factorY) {
+        return method == Upscaler.Method.NEAREST
+            ? method.label + " " + Upscaler.factorLabel(factorX, factorY)
+            : method.label;
     }
 }

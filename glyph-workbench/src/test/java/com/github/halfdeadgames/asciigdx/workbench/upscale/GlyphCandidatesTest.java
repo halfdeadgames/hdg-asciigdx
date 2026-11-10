@@ -29,14 +29,14 @@ class GlyphCandidatesTest {
 
     @Test
     void factorTwoListsNearestFirst() {
-        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2);
+        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2, 2);
         assertEquals("NEAREST 2X", candidates.get(0).label());
-        assertEquals(Upscaler.upscale(edgeGlyph(), 2, Upscaler.Method.NEAREST), candidates.get(0).cell());
+        assertEquals(Upscaler.upscale(edgeGlyph(), 2, 2, Upscaler.Method.NEAREST), candidates.get(0).cell());
     }
 
     @Test
     void candidatesNeverRepeatACell() {
-        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2);
+        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2, 2);
         for (int first = 0; first < candidates.size(); first++) {
             for (int second = first + 1; second < candidates.size(); second++) {
                 assertFalse(candidates.get(first).cell().equals(candidates.get(second).cell()));
@@ -46,21 +46,33 @@ class GlyphCandidatesTest {
 
     @Test
     void methodsThatAgreeCollapseToTheFirstOne() {
-        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(blankGlyph(), 2);
+        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(blankGlyph(), 2, 2);
         assertEquals(1, candidates.size());
         assertEquals("NEAREST 2X", candidates.get(0).label());
     }
 
     @Test
     void factorThreeHasOnlyNearest() {
-        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 3);
+        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 3, 3);
         assertEquals(1, candidates.size());
         assertEquals("NEAREST 3X", candidates.get(0).label());
     }
 
     @Test
+    void equalFactorsLabelOneFactor() {
+        assertEquals("NEAREST 3X", GlyphCandidates.forGlyph(edgeGlyph(), 3, 3).get(0).label());
+    }
+
+    @Test
+    void differentFactorsLabelBothAxes() {
+        List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2, 1);
+        assertEquals(1, candidates.size());
+        assertEquals("NEAREST 2X/1X", candidates.get(0).label());
+    }
+
+    @Test
     void everyCellIsTheSourceCellScaled() {
-        for (GlyphCandidates.Candidate candidate : GlyphCandidates.forGlyph(edgeGlyph(), 2)) {
+        for (GlyphCandidates.Candidate candidate : GlyphCandidates.forGlyph(edgeGlyph(), 2, 2)) {
             assertEquals(16, candidate.cell().getWidth(), candidate.label());
             assertEquals(16, candidate.cell().getHeight(), candidate.label());
         }

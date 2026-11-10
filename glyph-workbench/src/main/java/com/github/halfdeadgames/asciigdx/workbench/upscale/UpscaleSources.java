@@ -6,13 +6,12 @@ import java.util.List;
 
 /**
  * Lists which fonts can be the upscale source for the glyph being painted. A font is usable when
- * the target is a whole multiple of it, at least twice as large, with the same factor in both
- * directions.
+ * the target is a whole multiple of it on each axis and it is smaller on at least one axis. Each
+ * axis has its own factor.
  */
 public final class UpscaleSources {
 
     static final String TOO_BIG = "TOO BIG";
-    static final String SHAPE = "SHAPE";
     static final String NOT_EVEN = "NOT EVEN";
 
     private static final int UNUSABLE_FACTOR = 0;
@@ -30,10 +29,11 @@ public final class UpscaleSources {
     /**
      * A font offered as a source.
      *
-     * @param factor  whole scale factor, 0 when unusable
+     * @param factorX whole scale factor across, 0 when unusable
+     * @param factorY whole scale factor down, 0 when unusable
      * @param problem short uppercase reason for the greyed row, empty when usable
      */
-    public record Option(Font font, int factor, String problem) {
+    public record Option(Font font, int factorX, int factorY, String problem) {
 
         public boolean usable() {
             return problem.isEmpty();
@@ -92,20 +92,20 @@ public final class UpscaleSources {
     }
 
     private static Option optionFor(Font target, Font source) {
-        if (source.cellWidth() >= target.cellWidth() || source.cellHeight() >= target.cellHeight()) {
+        boolean widerThanTarget = source.cellWidth() > target.cellWidth();
+        boolean tallerThanTarget = source.cellHeight() > target.cellHeight();
+        boolean sameSize = source.cellWidth() == target.cellWidth() && source.cellHeight() == target.cellHeight();
+        if (widerThanTarget || tallerThanTarget || sameSize) {
             return unusable(source, TOO_BIG);
-        }
-        // Cross-multiplied so the shape check needs no division.
-        if (target.cellWidth() * source.cellHeight() != target.cellHeight() * source.cellWidth()) {
-            return unusable(source, SHAPE);
         }
         if (target.cellWidth() % source.cellWidth() != 0 || target.cellHeight() % source.cellHeight() != 0) {
             return unusable(source, NOT_EVEN);
         }
-        return new Option(source, target.cellWidth() / source.cellWidth(), "");
+        return new Option(source, target.cellWidth() / source.cellWidth(),
+            target.cellHeight() / source.cellHeight(), "");
     }
 
     private static Option unusable(Font source, String problem) {
-        return new Option(source, UNUSABLE_FACTOR, problem);
+        return new Option(source, UNUSABLE_FACTOR, UNUSABLE_FACTOR, problem);
     }
 }

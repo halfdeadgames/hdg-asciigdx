@@ -76,7 +76,7 @@ class UpscaleSourceListTest {
 
     @Test
     void noUsableOptionMeansNoChoicesAndAMessage() {
-        sourceList.open(new Font("a", 16, 24), List.of(square("a", 8)));
+        sourceList.open(new Font("a", 16, 24), List.of(square("a", 16)));
         assertFalse(sourceList.hasChoices());
         assertNull(sourceList.selected());
         assertEquals(List.of("No smaller font divides", "16X24 evenly"), sourceList.noChoiceLines());
@@ -86,6 +86,12 @@ class UpscaleSourceListTest {
     void usableRowLabelShowsSizeAndFactor() {
         sourceList.open(new Font("a", 16, 32), List.of(new Font("a", 8, 16)));
         assertEquals(new SelectList.Row("8X16  2X", true, false, 0), row(1));
+    }
+
+    @Test
+    void usableRowLabelShowsFactorPerAxis() {
+        sourceList.open(new Font("a", 16, 16), List.of(new Font("a", 8, 16)));
+        assertEquals(new SelectList.Row("8X16  2X/1X", true, false, 0), row(1));
     }
 
     @Test

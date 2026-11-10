@@ -21,14 +21,16 @@ class UpscaleSourcesTest {
         List<Option> options = UpscaleSources.options(square("f", 16), List.of(square("f", 8)));
         assertEquals(1, options.size());
         assertTrue(options.get(0).usable());
-        assertEquals(2, options.get(0).factor());
+        assertEquals(2, options.get(0).factorX());
+        assertEquals(2, options.get(0).factorY());
     }
 
     @Test
     void twentyFourIsUsableFromEightAtFactorThree() {
         List<Option> options = UpscaleSources.options(square("f", 24), List.of(square("f", 8), square("f", 16)));
         assertTrue(options.get(0).usable());
-        assertEquals(3, options.get(0).factor());
+        assertEquals(3, options.get(0).factorX());
+        assertEquals(3, options.get(0).factorY());
     }
 
     @Test
@@ -36,7 +38,8 @@ class UpscaleSourcesTest {
         List<Option> options = UpscaleSources.options(square("f", 24), List.of(square("f", 8), square("f", 16)));
         assertFalse(options.get(1).usable());
         assertEquals("NOT EVEN", options.get(1).problem());
-        assertEquals(0, options.get(1).factor());
+        assertEquals(0, options.get(1).factorX());
+        assertEquals(0, options.get(1).factorY());
     }
 
     @Test
@@ -60,15 +63,45 @@ class UpscaleSourcesTest {
         Font target = new Font("f", 16, 32);
         List<Option> options = UpscaleSources.options(target, List.of(new Font("f", 8, 16)));
         assertTrue(options.get(0).usable());
-        assertEquals(2, options.get(0).factor());
+        assertEquals(2, options.get(0).factorX());
+        assertEquals(2, options.get(0).factorY());
     }
 
     @Test
-    void tallFontFromSquareFontIsADifferentShape() {
+    void tallFontIsUsableFromSquareFontWithOwnFactorPerAxis() {
         Font target = new Font("f", 16, 32);
         List<Option> options = UpscaleSources.options(target, List.of(square("f", 8)));
-        assertFalse(options.get(0).usable());
-        assertEquals("SHAPE", options.get(0).problem());
+        assertTrue(options.get(0).usable());
+        assertEquals(2, options.get(0).factorX());
+        assertEquals(4, options.get(0).factorY());
+    }
+
+    @Test
+    void sameHeightSourceIsUsableWhenNarrower() {
+        List<Option> options = UpscaleSources.options(square("f", 16), List.of(new Font("f", 8, 16)));
+        assertTrue(options.get(0).usable());
+        assertEquals(2, options.get(0).factorX());
+        assertEquals(1, options.get(0).factorY());
+    }
+
+    @Test
+    void sameWidthSourceIsUsableWhenShorter() {
+        List<Option> options = UpscaleSources.options(new Font("f", 16, 32), List.of(square("f", 16)));
+        assertTrue(options.get(0).usable());
+        assertEquals(1, options.get(0).factorX());
+        assertEquals(2, options.get(0).factorY());
+    }
+
+    @Test
+    void sourceWiderOnOneAxisIsTooBigEvenIfShorterOnTheOther() {
+        List<Option> options = UpscaleSources.options(square("f", 16), List.of(new Font("f", 32, 8)));
+        assertEquals("TOO BIG", options.get(0).problem());
+    }
+
+    @Test
+    void sourceThatFailsOnlyOneAxisIsNotEven() {
+        List<Option> options = UpscaleSources.options(square("f", 16), List.of(new Font("f", 8, 10)));
+        assertEquals("NOT EVEN", options.get(0).problem());
     }
 
     @Test

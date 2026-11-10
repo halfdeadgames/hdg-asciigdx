@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.function.IntPredicate;
 
 /**
- * Upscales one glyph by a whole factor. The whole cell is scaled. The smoothing methods exist for
- * factor 2 only.
+ * Upscales one glyph by a whole factor per axis. The entire cell is scaled. The smoothing methods exist
+ * only at factor 2 on both axes.
  */
 final class Upscaler {
 
@@ -45,17 +45,26 @@ final class Upscaler {
     private Upscaler() {
     }
 
-    /** Nearest always; the smoothing methods only at factor 2. */
-    static List<Method> methodsFor(int factor) {
-        return factor == 2 ? List.of(Method.values()) : List.of(Method.NEAREST);
+    /** Nearest always; the smoothing methods only when both factors are 2. */
+    static List<Method> methodsFor(int factorX, int factorY) {
+        return factorX == 2 && factorY == 2 ? List.of(Method.values()) : List.of(Method.NEAREST);
+    }
+
+    /** The factor as shown to the user: {@code 2X} for equal factors, {@code 2X/1X} otherwise. */
+    static String factorLabel(int factorX, int factorY) {
+        return factorX == factorY ? factorX + "X" : factorX + "X/" + factorY + "X";
     }
 
     /**
-     * Returns the whole target cell: the source cell scaled by the factor.
+     * Returns the entire target cell: the source cell scaled by a whole factor across and another down.
      */
-    static PixelGrid upscale(PixelGlyph glyph, int factor, Method method) {
-        if (factor < 1 || (factor != 2 && method != Method.NEAREST)) {
-            throw new IllegalArgumentException(method + " needs factor 2, but the factor is " + factor);
+    static PixelGrid upscale(PixelGlyph glyph, int factorX, int factorY, Method method) {
+        if (factorX < 1 || factorY < 1) {
+            throw new IllegalArgumentException("Factors must be at least 1, but they are " + factorX + " and " + factorY);
+        }
+        if (method != Method.NEAREST && (factorX != 2 || factorY != 2)) {
+            throw new IllegalArgumentException(method + " needs factor 2 on both axes, but the factors are "
+                + factorX + " and " + factorY);
         }
         PixelGrid pixels = glyph.pixels();
         int width = pixels.getWidth();
@@ -66,11 +75,11 @@ final class Upscaler {
                 packed[y * width + x] = pixels.isLit(x, y) ? ON : OFF;
             }
         }
-        int[] scaled = scale(packed, width, height, factor, method);
-        return toGrid(scaled, width * factor, height * factor);
+        int[] scaled = scale(packed, width, height, factorX, factorY, method);
+        return toGrid(scaled, width * factorX, height * factorY);
     }
 
-    private static int[] scale(int[] packed, int width, int height, int factor, Method method) {
+    private static int[] scale(int[] packed, int width, int height, int factorX, int factorY, Method method) {
         switch (method) {
             case SCALE2X:
                 return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
@@ -88,8 +97,20 @@ final class Upscaler {
                 return PixelScaler.light(packed, width, height, width, height, NO_LOCKED_SLOTS,
                     pixel -> pixel == OFF);
             default:
-                return PixelScaler.scale(packed, width, height, factor);
+                return repeatPixels(packed, width, height, factorX, factorY);
         }
+    }
+
+    private static int[] repeatPixels(int[] packed, int width, int height, int factorX, int factorY) {
+        int targetWidth = width * factorX;
+        int[] repeated = new int[targetWidth * height * factorY];
+        for (int y = 0; y < height * factorY; y++) {
+            int sourceRow = (y / factorY) * width;
+            for (int x = 0; x < targetWidth; x++) {
+                repeated[y * targetWidth + x] = packed[sourceRow + x / factorX];
+            }
+        }
+        return repeated;
     }
 
     private static PixelGrid toGrid(int[] packed, int width, int height) {

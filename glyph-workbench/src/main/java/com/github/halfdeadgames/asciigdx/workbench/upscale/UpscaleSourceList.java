@@ -150,7 +150,7 @@ public final class UpscaleSourceList {
         if (!option.usable()) {
             return new SelectList.Row(INDENT + size + "  " + option.problem(), false, true, 0);
         }
-        return new SelectList.Row(size + "  " + option.factor() + "X", true, false, 0);
+        return new SelectList.Row(size + "  " + Upscaler.factorLabel(option.factorX(), option.factorY()), true, false, 0);
     }
 
     private void selectDefault(int defaultOptionIndex, int[] rowOfOption) {

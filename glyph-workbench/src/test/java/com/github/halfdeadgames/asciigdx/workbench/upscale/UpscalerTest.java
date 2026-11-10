@@ -33,7 +33,7 @@ class UpscalerTest {
 
     @Test
     void nearestDoublesTheWholeCell() {
-        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, Upscaler.Method.NEAREST);
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, 2, Upscaler.Method.NEAREST);
         assertEquals(16, cell.getWidth());
         assertEquals(16, cell.getHeight());
         assertTrue(cell.isLit(15, 0));
@@ -43,7 +43,7 @@ class UpscalerTest {
 
     @Test
     void nearestTriplesTheWholeCell() {
-        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 3, Upscaler.Method.NEAREST);
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 3, 3, Upscaler.Method.NEAREST);
         assertEquals(24, cell.getWidth());
         assertEquals(24, cell.getHeight());
         assertTrue(cell.isLit(23, 0));
@@ -52,8 +52,8 @@ class UpscalerTest {
 
     @Test
     void everyFactorTwoMethodFillsTheTargetCellSize() {
-        for (Upscaler.Method method : Upscaler.methodsFor(2)) {
-            PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, method);
+        for (Upscaler.Method method : Upscaler.methodsFor(2, 2)) {
+            PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, 2, method);
             assertEquals(16, cell.getWidth(), method.label);
             assertEquals(16, cell.getHeight(), method.label);
         }
@@ -73,12 +73,12 @@ class UpscalerTest {
 
     private static void assertCodePointDoesNotChangeSmoothing(int codePoint) {
         boolean someMethodSmooths = false;
-        for (Upscaler.Method method : Upscaler.methodsFor(2)) {
-            PixelGrid ordinary = Upscaler.upscale(staircaseGlyph('A'), 2, method);
-            PixelGrid special = Upscaler.upscale(staircaseGlyph(codePoint), 2, method);
+        for (Upscaler.Method method : Upscaler.methodsFor(2, 2)) {
+            PixelGrid ordinary = Upscaler.upscale(staircaseGlyph('A'), 2, 2, method);
+            PixelGrid special = Upscaler.upscale(staircaseGlyph(codePoint), 2, 2, method);
             assertEquals(ordinary, special, method.label);
             someMethodSmooths |= !ordinary.equals(
-                Upscaler.upscale(staircaseGlyph('A'), 2, Upscaler.Method.NEAREST));
+                Upscaler.upscale(staircaseGlyph('A'), 2, 2, Upscaler.Method.NEAREST));
         }
         assertTrue(someMethodSmooths, "the staircase must differ from nearest under some method");
     }
@@ -96,10 +96,60 @@ class UpscalerTest {
 
     @Test
     void smoothingMethodsOnlyExistAtFactorTwo() {
-        assertEquals(6, Upscaler.methodsFor(2).size());
-        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(3));
-        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(4));
+        assertEquals(6, Upscaler.methodsFor(2, 2).size());
+        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(3, 3));
+        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(4, 4));
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(edgeGlyph(), 3, Upscaler.Method.MMPX));
+            () -> Upscaler.upscale(edgeGlyph(), 3, 3, Upscaler.Method.MMPX));
+    }
+
+    private static void assertEveryPixelMatchesItsSource(PixelGlyph glyph, PixelGrid cell, int factorX, int factorY) {
+        PixelGrid source = glyph.pixels();
+        assertEquals(source.getWidth() * factorX, cell.getWidth());
+        assertEquals(source.getHeight() * factorY, cell.getHeight());
+        for (int y = 0; y < cell.getHeight(); y++) {
+            for (int x = 0; x < cell.getWidth(); x++) {
+                assertEquals(source.isLit(x / factorX, y / factorY), cell.isLit(x, y), x + "," + y);
+            }
+        }
+    }
+
+    @Test
+    void nearestAtTwoByOneDoublesColumnsOnly() {
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, 1, Upscaler.Method.NEAREST);
+        assertEquals(16, cell.getWidth());
+        assertEquals(8, cell.getHeight());
+        assertEveryPixelMatchesItsSource(edgeGlyph(), cell, 2, 1);
+    }
+
+    @Test
+    void nearestAtOneByThreeTriplesRowsOnly() {
+        PixelGrid cell = Upscaler.upscale(edgeGlyph(), 1, 3, Upscaler.Method.NEAREST);
+        assertEquals(8, cell.getWidth());
+        assertEquals(24, cell.getHeight());
+        assertEveryPixelMatchesItsSource(edgeGlyph(), cell, 1, 3);
+    }
+
+    @Test
+    void smoothingMethodsNeedFactorTwoOnBothAxes() {
+        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(2, 1));
+        assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(1, 2));
+        assertEquals(6, Upscaler.methodsFor(2, 2).size());
+        assertThrows(IllegalArgumentException.class,
+            () -> Upscaler.upscale(edgeGlyph(), 2, 1, Upscaler.Method.SCALE2X));
+    }
+
+    @Test
+    void factorBelowOneIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+            () -> Upscaler.upscale(edgeGlyph(), 0, 2, Upscaler.Method.NEAREST));
+        assertThrows(IllegalArgumentException.class,
+            () -> Upscaler.upscale(edgeGlyph(), 2, 0, Upscaler.Method.NEAREST));
+    }
+
+    @Test
+    void factorLabelShowsOneFactorWhenEqual() {
+        assertEquals("2X", Upscaler.factorLabel(2, 2));
+        assertEquals("2X/1X", Upscaler.factorLabel(2, 1));
     }
 }
