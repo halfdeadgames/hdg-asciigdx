@@ -131,7 +131,7 @@ public final class UpscaleSourceDialog {
     }
 
     private void closeOnOutsideClick(Dialog.Layout layout, boolean clicked, int pixelX, int pixelY, int cellPixels) {
-        if (clicked && !ListHit.of(layout, pixelX, pixelY, cellPixels, 0, 0, 0, false).inside()) {
+        if (clicked && !layout.containsPixel(pixelX, pixelY, cellPixels)) {
             close();
         }
     }

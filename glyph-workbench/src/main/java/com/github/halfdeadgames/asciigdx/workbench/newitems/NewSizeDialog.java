@@ -6,10 +6,14 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer.Click;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ListHit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
-import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -27,9 +31,7 @@ public final class NewSizeDialog {
     private final NewSizePrompt prompt;
     private final KeyRepeat repeatBackspace = new KeyRepeat();
     private final Runnable backspacePrompt = this::backspaceInPrompt;
-    // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private int lastPixelX;
-    private int lastPixelY;
+    private final GroupedPickListPointer pointer = new GroupedPickListPointer();
     private int swallowFrames;
 
     /** @param onChoose called with the chosen size after the dialog closes */
@@ -55,8 +57,7 @@ public final class NewSizeDialog {
      * @param folderName the font folder name shown on the typed page
      */
     public void open(List<NewSizePlan.SizeOption> options, String folderName, int pixelX, int pixelY) {
-        lastPixelX = pixelX;
-        lastPixelY = pixelY;
+        pointer.prime(pixelX, pixelY);
         swallowFrames = OPENING_SWALLOW_FRAMES;
         prompt.open(options, folderName);
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
@@ -126,31 +127,25 @@ public final class NewSizeDialog {
      * @param area the cell rectangle the dialog is centred in
      */
     public void handlePointer(boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
-        Dialog.Layout layout = layout(area);
-        boolean inside = isInside(layout, pixelX, pixelY, cellPixels);
+        Dialog.Layout layout = fittedLayout(area);
         if (prompt.isTyping()) {
-            closeOnOutsideClick(clicked, inside);
+            closeOnOutsideClick(clicked, layout.containsPixel(pixelX, pixelY, cellPixels));
             return;
         }
-        int row = SelectList.rowAt(Math.floorDiv(pixelY, cellPixels), layout.textY(), prompt.rowCount());
-        boolean onRow = row >= 0 && inside;
-        followPointer(pixelX, pixelY, onRow, row);
-        if (clicked) {
-            handleClick(inside, onRow, row);
-        }
+        GroupedPickList<SizeChoice> list = prompt.list();
+        ListHit hit = ListHit.of(layout, pixelX, pixelY, cellPixels, layout.textY(), list.shownRows(),
+            list.window().offset(), list.scrolls());
+        applyClick(pointer.handle(list, hit, pixelX, pixelY, clicked, layout.textY()));
     }
 
     public void draw(Painter painter, int columns, int rows, CellRect area) {
+        Dialog.Layout layout = fittedLayout(area);
         Dialog.draw(painter, new CellRect(0, 0, columns, rows), content(), area);
-        Dialog.Layout layout = layout(area);
         if (prompt.isTyping()) {
             NewFontDialogs.drawSizeHint(painter, prompt.typedPage(), layout);
             return;
         }
-        List<SelectList.Row> sizeRows = prompt.rows();
-        SelectList.draw(painter,
-            SelectList.areaOf(layout.textX(), layout.textY(), Math.min(prompt.listWidth(), layout.textWidth()), sizeRows.size()),
-            sizeRows, prompt.selectedIndex());
+        GroupedPickListView.draw(painter, prompt.list(), layout.textX(), layout.textY(), layout.textWidth());
     }
 
     private void backspaceInPrompt() {
@@ -163,32 +158,16 @@ public final class NewSizeDialog {
         }
     }
 
-    private void followPointer(int pixelX, int pixelY, boolean onRow, int row) {
-        if (pixelX == lastPixelX && pixelY == lastPixelY) {
-            return;
-        }
-        lastPixelX = pixelX;
-        lastPixelY = pixelY;
-        if (onRow) {
-            prompt.hover(row);
-        }
-    }
-
-    private void handleClick(boolean inside, boolean onRow, int row) {
-        if (!inside) {
+    private void applyClick(Click click) {
+        if (click == Click.OUTSIDE) {
             prompt.dismiss();
-            return;
-        }
-        if (!onRow) {
-            return;
-        }
-        prompt.hover(row);
-        if (prompt.rows().get(row).selectable()) {
+        } else if (click == Click.PICK) {
             prompt.chooseSelected();
         }
     }
 
-    private Dialog.Layout layout(CellRect area) {
+    private Dialog.Layout fittedLayout(CellRect area) {
+        prompt.fitTo(area.height());
         return Dialog.layout(content(), area);
     }
 
@@ -198,12 +177,5 @@ public final class NewSizeDialog {
                 NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
         }
         return DialogContent.of(TITLE, prompt.lines(), LIST_BUTTONS);
-    }
-
-    private static boolean isInside(Dialog.Layout layout, int pixelX, int pixelY, int cellPixels) {
-        int column = Math.floorDiv(pixelX, cellPixels);
-        int row = Math.floorDiv(pixelY, cellPixels);
-        return column >= layout.x() && column < layout.x() + layout.width()
-            && row >= layout.y() && row < layout.y() + layout.height();
     }
 }

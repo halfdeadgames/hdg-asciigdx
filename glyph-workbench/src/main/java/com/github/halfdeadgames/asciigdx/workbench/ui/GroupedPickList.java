@@ -146,8 +146,13 @@ public final class GroupedPickList<T> {
 
     /** Width in cells of the widest row, counting the selection marker on selectable rows. */
     public int listWidth() {
+        return widthOf(rows);
+    }
+
+    /** Width in cells of the widest of the given rows, counting the selection marker on selectable rows. */
+    public static int widthOf(List<SelectList.Row> listRows) {
         int width = 0;
-        for (SelectList.Row row : rows) {
+        for (SelectList.Row row : listRows) {
             width = Math.max(width, row.text().length() + (row.selectable() ? MARKER_CELLS : 0));
         }
         return width;

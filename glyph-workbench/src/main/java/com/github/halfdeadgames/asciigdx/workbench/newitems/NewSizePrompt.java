@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,15 +20,14 @@ public final class NewSizePrompt {
 
     private static final String TAKEN_SUFFIX = "  (EXISTS)";
     private static final String INDENT = "  ";
-    private static final int MARKER_CELLS = 2;
+    private static final int MIN_SHOWN_ROWS = 1;
 
     private final Consumer<CellSize> onChoose;
     private final Runnable onDismiss;
     private final NewFontSizePrompt typedPage = new NewFontSizePrompt(this::submitTyped, this::backFromTyped);
+    private final GroupedPickList<SizeChoice> list = new GroupedPickList<>();
     private List<SizeOption> options = List.of();
-    private List<SelectList.Row> rows = List.of();
     private String folderName = "";
-    private int selected;
     private boolean open;
 
     /** @param onChoose called with the chosen size after the prompt has closed */
@@ -60,8 +61,7 @@ public final class NewSizePrompt {
      */
     void open(List<SizeOption> sizes, String folderName) {
         options = List.copyOf(sizes);
-        rows = buildRows();
-        selected = firstFreeOrOther();
+        fillList();
         open = true;
         this.folderName = folderName;
         typedPage.close();
@@ -73,8 +73,7 @@ public final class NewSizePrompt {
     void close() {
         folderName = "";
         options = List.of();
-        rows = List.of();
-        selected = 0;
+        list.clear();
         open = false;
         typedPage.close();
     }
@@ -90,16 +89,16 @@ public final class NewSizePrompt {
     }
 
     int selectedIndex() {
-        return selected;
+        return list.selectedIndex();
     }
 
     /** Rows in the list: the sizes, then OTHER SIZE.... */
     int rowCount() {
-        return rows.size();
+        return list.rows().size();
     }
 
-    List<SelectList.Row> rows() {
-        return rows;
+    GroupedPickList<SizeChoice> list() {
+        return list;
     }
 
     NewFontSizePrompt typedPage() {
@@ -108,24 +107,17 @@ public final class NewSizePrompt {
 
     /** Moves to the next row that is not taken in the direction of {@code step}; stays put when there is none. */
     void move(int step) {
-        int direction = Integer.signum(step);
-        if (typedPage.isOpen() || direction == 0) {
+        if (typedPage.isOpen()) {
             return;
         }
-        for (int i = selected + direction; i >= 0 && i < rows.size(); i += direction) {
-            if (rows.get(i).selectable()) {
-                selected = i;
-                return;
-            }
-        }
+        list.move(step);
     }
 
-    /** Highlights a row under the pointer; taken and missing rows are ignored. */
-    void hover(int index) {
-        if (typedPage.isOpen() || index < 0 || index >= rows.size() || !rows.get(index).selectable()) {
-            return;
-        }
-        selected = index;
+    /**
+     * Sizes the visible window for a dialog drawn in an area this many cells tall; rows that do not fit scroll.
+     */
+    void fitTo(int areaHeight) {
+        list.setCapacity(Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) + 1) / SelectList.PITCH));
     }
 
     /** Enter on the list picks the highlighted row; Enter on the typed page submits the typed size. */
@@ -142,13 +134,12 @@ public final class NewSizePrompt {
         if (typedPage.isOpen()) {
             return;
         }
-        if (selected == otherIndex()) {
-            typedPage.open(folderName);
+        if (list.selected() instanceof SizeChoice.Size choice) {
+            close();
+            onChoose.accept(choice.size());
             return;
         }
-        CellSize chosen = options.get(selected).size();
-        close();
-        onChoose.accept(chosen);
+        typedPage.open(folderName);
     }
 
     /** Esc: the typed page goes back to the list, the list closes the prompt. */
@@ -174,46 +165,35 @@ public final class NewSizePrompt {
         typedPage.backspace();
     }
 
-    /** Cells the rows need, including the selection marker. */
-    int listWidth() {
-        int width = 0;
-        for (SelectList.Row row : rows) {
-            width = Math.max(width, row.text().length() + (row.selectable() ? MARKER_CELLS : 0));
-        }
-        return width;
-    }
-
     /** Dialog text lines: the typed page's lines, or blank lines reserving the room the list is drawn into. */
     List<String> lines() {
         if (typedPage.isOpen()) {
             return typedPage.lines();
         }
-        return Collections.nCopies(rows.size() * SelectList.PITCH - 1, " ".repeat(listWidth()));
+        return Collections.nCopies(list.shownRows() * SelectList.PITCH - 1, " ".repeat(list.listWidth()));
     }
 
-    private List<SelectList.Row> buildRows() {
-        List<SelectList.Row> built = new ArrayList<>();
+    private void fillList() {
+        List<SelectList.Row> rows = new ArrayList<>();
+        List<SizeChoice> choices = new ArrayList<>();
         for (SizeOption option : options) {
             // SelectList indents only selectable rows, so a taken row carries the indent in its text.
-            built.add(option.taken()
-                ? new SelectList.Row(INDENT + label(option) + TAKEN_SUFFIX, false, true, 0)
-                : new SelectList.Row(label(option), true, false, 0));
-        }
-        built.add(new SelectList.Row(OTHER_SIZE_LABEL, true, false, 0));
-        return built;
-    }
-
-    private int firstFreeOrOther() {
-        for (int i = 0; i < options.size(); i++) {
-            if (!options.get(i).taken()) {
-                return i;
+            if (option.taken()) {
+                rows.add(new SelectList.Row(INDENT + label(option) + TAKEN_SUFFIX, false, true, 0));
+                choices.add(null);
+            } else {
+                rows.add(new SelectList.Row(label(option), true, false, 0));
+                choices.add(new SizeChoice.Size(option.size()));
             }
         }
-        return otherIndex();
+        rows.add(new SelectList.Row(OTHER_SIZE_LABEL, true, false, 0));
+        choices.add(new SizeChoice.Other());
+        list.setRows(rows, choices);
+        list.move(1);
     }
 
-    private int otherIndex() {
-        return options.size();
+    private int otherRow() {
+        return list.rows().size() - 1;
     }
 
     private boolean isTaken(CellSize size) {
@@ -240,6 +220,6 @@ public final class NewSizePrompt {
             return;
         }
         typedPage.close();
-        selected = otherIndex();
+        list.hover(otherRow());
     }
 }

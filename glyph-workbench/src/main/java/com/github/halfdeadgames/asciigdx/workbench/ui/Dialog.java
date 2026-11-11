@@ -24,6 +24,16 @@ public final class Dialog {
         public int textWidth() {
             return width - 2 * (PADDING + 1);
         }
+
+        /** Whether the cell lies within the dialog frame. */
+        public boolean containsCell(int column, int row) {
+            return column >= x && column < x + width && row >= y && row < y + height;
+        }
+
+        /** Whether the pixel lies within the dialog frame. */
+        public boolean containsPixel(int pixelX, int pixelY, int cellPixels) {
+            return containsCell(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels));
+        }
     }
 
     // Frame, title gap, blank rows around the text, and the button row.

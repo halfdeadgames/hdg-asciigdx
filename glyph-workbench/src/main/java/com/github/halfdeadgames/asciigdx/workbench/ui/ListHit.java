@@ -14,8 +14,7 @@ public record ListHit(boolean inside, boolean onBar, int cellRow, int row) {
                              int offset, boolean scrolls) {
         int column = Math.floorDiv(pixelX, cellPixels);
         int cellRow = Math.floorDiv(pixelY, cellPixels);
-        boolean inside = column >= layout.x() && column < layout.x() + layout.width()
-            && cellRow >= layout.y() && cellRow < layout.y() + layout.height();
+        boolean inside = layout.containsCell(column, cellRow);
         boolean onBar = scrolls && column == layout.textX() + layout.textWidth() - 1;
         int viewRow = onBar || !inside ? -1 : SelectList.rowAt(cellRow, listTop, shownRows);
         int row = viewRow < 0 ? -1 : viewRow + offset;

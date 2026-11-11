@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
+import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,6 @@ final class NewFontGlyphsPrompt {
     /** Index of the line the first list row is drawn on among {@link #lines()}. */
     static final int LIST_TOP_LINE = 2;
 
-    private static final int MARKER_CELLS = 2;
     private static final List<SelectList.Row> ROWS = List.of(
         new SelectList.Row("CP437 - 256 SLOTS", true, false, 0),
         new SelectList.Row("EMPTY - ADD AS YOU GO", true, false, 0));
@@ -72,11 +72,7 @@ final class NewFontGlyphsPrompt {
 
     /** Cells the rows need, including the selection marker. */
     int listWidth() {
-        int width = 0;
-        for (SelectList.Row row : ROWS) {
-            width = Math.max(width, row.text().length() + MARKER_CELLS);
-        }
-        return width;
+        return GroupedPickList.widthOf(ROWS);
     }
 
     /** Moves the highlight by the sign of {@code step}; it stops at the first and last row. */

@@ -18,6 +18,13 @@ public final class GroupedPickListPointer {
         lastPointerKnown = false;
     }
 
+    /** Takes the given position as the last pointer, so a pointer resting there does not move the highlight. */
+    public void prime(int pixelX, int pixelY) {
+        lastPointerKnown = true;
+        lastPixelX = pixelX;
+        lastPixelY = pixelY;
+    }
+
     /**
      * Follows the pointer with the highlight, then applies a click.
      *

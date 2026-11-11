@@ -54,8 +54,8 @@ class NewSizePromptTest {
     void endsWithAnOtherSizeRow() {
         var prompt = openWith(SQUARE_8, SQUARE_16);
         assertEquals(3, prompt.rowCount());
-        assertEquals(NewSizePrompt.OTHER_SIZE_LABEL, prompt.rows().get(2).text());
-        assertTrue(prompt.rows().get(2).selectable());
+        assertEquals(NewSizePrompt.OTHER_SIZE_LABEL, prompt.list().rows().get(2).text());
+        assertTrue(prompt.list().rows().get(2).selectable());
     }
 
     @Test
@@ -93,25 +93,26 @@ class NewSizePromptTest {
     @Test
     void hoverMovesTheHighlightOnlyOntoSelectableRows() {
         var prompt = openWith(SQUARE_8, SQUARE_16, SQUARE_24, SQUARE_32);
-        prompt.hover(3);
+        prompt.list().hover(3);
         assertEquals(3, prompt.selectedIndex());
-        prompt.hover(2);
-        prompt.hover(-1);
-        prompt.hover(5);
+        prompt.list().hover(2);
+        prompt.list().hover(-1);
+        prompt.list().hover(5);
         assertEquals(3, prompt.selectedIndex());
-        prompt.hover(4);
+        prompt.list().hover(4);
         assertEquals(4, prompt.selectedIndex());
     }
 
     @Test
     void takenRowsAreDimmedAndFreeRowsAreSelectable() {
         var prompt = openWith(SQUARE_8, SQUARE_16);
-        assertFalse(prompt.rows().get(0).selectable());
-        assertTrue(prompt.rows().get(0).dimmed());
-        assertTrue(prompt.rows().get(0).text().startsWith("  8X8"));
-        assertEquals("16X16", prompt.rows().get(1).text());
-        assertTrue(prompt.rows().get(1).selectable());
-        assertFalse(prompt.rows().get(1).dimmed());
+        var rows = prompt.list().rows();
+        assertFalse(rows.get(0).selectable());
+        assertTrue(rows.get(0).dimmed());
+        assertTrue(rows.get(0).text().startsWith("  8X8"));
+        assertEquals("16X16", rows.get(1).text());
+        assertTrue(rows.get(1).selectable());
+        assertFalse(rows.get(1).dimmed());
     }
 
     @Test
@@ -119,7 +120,7 @@ class NewSizePromptTest {
         var prompt = openWith(SQUARE_8, SQUARE_24);
         assertEquals(2, prompt.selectedIndex());
         prompt.move(-1);
-        prompt.hover(0);
+        prompt.list().hover(0);
         assertEquals(2, prompt.selectedIndex());
     }
 
@@ -127,8 +128,8 @@ class NewSizePromptTest {
     void listLinesReserveTwoCellsPerRowAsWideAsTheWidestRow() {
         var prompt = openWith(SQUARE_8, SQUARE_16);
         assertEquals(5, prompt.lines().size());
-        assertEquals(prompt.listWidth(), prompt.lines().get(0).length());
-        assertEquals("  8X8  (EXISTS)".length(), prompt.listWidth());
+        assertEquals(prompt.list().listWidth(), prompt.lines().get(0).length());
+        assertEquals("  8X8  (EXISTS)".length(), prompt.list().listWidth());
     }
 
     @Test
