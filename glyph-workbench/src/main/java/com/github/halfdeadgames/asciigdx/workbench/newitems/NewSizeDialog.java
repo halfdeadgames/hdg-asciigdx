@@ -7,6 +7,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.List;
@@ -25,6 +26,7 @@ public final class NewSizeDialog {
 
     private final NewSizePrompt prompt;
     private final KeyRepeat repeatBackspace = new KeyRepeat();
+    private final Runnable backspacePrompt = this::backspaceInPrompt;
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
     private int lastPixelX;
     private int lastPixelY;
@@ -98,12 +100,12 @@ public final class NewSizeDialog {
             prompt.cancel();
             return true;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             prompt.enter();
             return true;
         }
         if (prompt.isTyping()) {
-            repeatBackspaces(delta);
+            Keys.repeatBackspace(repeatBackspace, delta, backspacePrompt);
             return false;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
@@ -151,11 +153,8 @@ public final class NewSizeDialog {
             sizeRows, prompt.selectedIndex());
     }
 
-    private void repeatBackspaces(float delta) {
-        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            prompt.backspace();
-        }
+    private void backspaceInPrompt() {
+        prompt.backspace();
     }
 
     private void closeOnOutsideClick(boolean clicked, boolean inside) {

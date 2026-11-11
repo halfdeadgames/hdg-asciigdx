@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeyInput;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
@@ -144,15 +145,8 @@ final class PaintMenuInput {
         }
         // An action can swap the bar, so the open state is read from the host again.
         if (host.menuBar().isOpen() != wasOpen) {
-            holdArrowRepeats();
+            Keys.holdArrows(arrowRepeats);
         }
-    }
-
-    private void holdArrowRepeats() {
-        arrowRepeats.left().hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
-        arrowRepeats.right().hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
-        arrowRepeats.up().hold(Gdx.input.isKeyPressed(Input.Keys.UP));
-        arrowRepeats.down().hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
     }
 
     // Arrow repeats are read only while a menu is open, so a closed menu leaves them to the cursor.
@@ -163,8 +157,7 @@ final class PaintMenuInput {
         int rights = steering ? arrowRepeats.right().update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
         int ups = steering ? arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
         int downs = steering ? arrowRepeats.down().update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
-        boolean enter = Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
+        boolean enter = Keys.enterJustPressed();
         boolean enabled = !host.renamingGuide();
         char accessKey = alt ? pressedAccessKey(menuBar) : MenuKeys.NO_KEY;
         boolean f10Pressed = Gdx.input.isKeyJustPressed(Input.Keys.F10);

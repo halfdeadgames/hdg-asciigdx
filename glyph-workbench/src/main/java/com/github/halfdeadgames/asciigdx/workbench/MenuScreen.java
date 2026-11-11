@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
@@ -126,8 +127,7 @@ final class MenuScreen implements WorkbenchScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             model.move(1);
         }
-        if ((Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER))
-            && model.selectedItem() != null) {
+        if (Keys.enterJustPressed() && model.selectedItem() != null) {
             onChoose.accept(model.selectedItem());
             return;
         }

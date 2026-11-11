@@ -5,11 +5,13 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import java.util.List;
 
 /**
@@ -33,7 +35,6 @@ public final class ControlsScreen {
     private static final int MARGIN = 2;
     private static final int MIN_WIDTH = 12;
     private static final int MIN_HEIGHT = 4;
-    private static final int WHEEL_ROWS = 3;
     private static final Color DIM = new Color(0f, 0f, 0f, 0.55f);
 
     private final KeyRepeat repeatUp = new KeyRepeat();
@@ -102,15 +103,14 @@ public final class ControlsScreen {
      */
     public void handleInput(float delta, int wheelTicks, boolean clicked, int cellX, int cellY, int columns, int rows) {
         refresh(columns, rows);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-            || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Keys.enterJustPressed()
             || (clicked && isOutside(layout.rect(), cellX, cellY))) {
             close();
             return;
         }
         int ups = repeatUp.update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
         int downs = repeatDown.update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta);
-        scroll.scrollBy(downs - ups + wheelTicks * WHEEL_ROWS);
+        scroll.scrollBy(downs - ups + wheelTicks * WheelTicks.ROWS_PER_TICK);
     }
 
     /** Draws the dimmed screen and the box over everything drawn before. */

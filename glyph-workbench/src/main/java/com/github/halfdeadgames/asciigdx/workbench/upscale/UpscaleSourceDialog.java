@@ -8,6 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListPointer.Click;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickListView;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ListHit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.List;
@@ -100,7 +101,7 @@ public final class UpscaleSourceDialog {
             close();
             return true;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             chooseSelected();
             return true;
         }

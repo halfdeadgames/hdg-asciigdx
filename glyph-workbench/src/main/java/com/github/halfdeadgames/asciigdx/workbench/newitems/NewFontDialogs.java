@@ -8,6 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -204,7 +205,7 @@ final class NewFontDialogs {
             glyphsPage.back();
             return;
         }
-        if (isEnterJustPressed()) {
+        if (Keys.enterJustPressed()) {
             glyphsPage.enter();
             return;
         }
@@ -221,11 +222,11 @@ final class NewFontDialogs {
             namePage.cancel();
             return;
         }
-        if (isEnterJustPressed()) {
+        if (Keys.enterJustPressed()) {
             namePage.enter();
             return;
         }
-        repeatBackspaces(delta, namePage::backspace);
+        Keys.repeatBackspace(repeatBackspace, delta, namePage::backspace);
     }
 
     private void handleSize(float delta) {
@@ -233,22 +234,11 @@ final class NewFontDialogs {
             sizePage.back();
             return;
         }
-        if (isEnterJustPressed()) {
+        if (Keys.enterJustPressed()) {
             sizePage.enter();
             return;
         }
-        repeatBackspaces(delta, sizePage::backspace);
-    }
-
-    private static boolean isEnterJustPressed() {
-        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
-    }
-
-    private void repeatBackspaces(float delta, Runnable backspace) {
-        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            backspace.run();
-        }
+        Keys.repeatBackspace(repeatBackspace, delta, sizePage::backspace);
     }
 
     private DialogContent sizeContent() {

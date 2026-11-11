@@ -77,7 +77,7 @@ final class NewFontPlan {
         Path sizeFile = folder.resolve(size.dataFileName());
         Path glyphListFile = folder.resolve(GlyphListFile.FILE_NAME);
         try {
-            writeNewFile(sizeFile, "cell " + size + "\n");
+            NewSizeFile.writeNew(sizeFile, size);
             if (glyphs == NewFontGlyphs.CP437) {
                 writeNewFile(glyphListFile, CP437_GLYPH_LIST);
             }

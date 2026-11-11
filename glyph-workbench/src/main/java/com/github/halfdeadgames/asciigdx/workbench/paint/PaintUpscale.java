@@ -9,8 +9,10 @@ import com.github.halfdeadgames.asciigdx.workbench.help.PaintHelp;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.GlyphCandidates;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscalePick;
 import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleSourceDialog;
@@ -27,8 +29,6 @@ import java.util.Locale;
  * While any stage runs, nothing reaches painting.
  */
 final class PaintUpscale {
-
-    private static final int WHEEL_ROWS = 3;
 
     /** What the upscale mode needs from the screen it is shown on. */
     interface Host extends PaintUpscaleCandidates.Host {
@@ -221,15 +221,8 @@ final class PaintUpscale {
         pointerTargets = new PointerTargets(List.of(new SheetBarPointerTarget(view), new SourceSlotTarget()));
         layoutPending = true;
         revealCursor = true;
-        holdHeldArrows();
-    }
-
-    // A key still down from the dialog must not count as a fresh press on the sheet.
-    private void holdHeldArrows() {
-        arrowRepeats.left().hold(Gdx.input.isKeyPressed(Input.Keys.LEFT));
-        arrowRepeats.right().hold(Gdx.input.isKeyPressed(Input.Keys.RIGHT));
-        arrowRepeats.up().hold(Gdx.input.isKeyPressed(Input.Keys.UP));
-        arrowRepeats.down().hold(Gdx.input.isKeyPressed(Input.Keys.DOWN));
+        // A key still down from the dialog must not count as a fresh press on the sheet.
+        Keys.holdArrows(arrowRepeats);
     }
 
     private void handlePicking(float delta, int verticalTicks, int sidewaysTicks) {
@@ -237,12 +230,12 @@ final class PaintUpscale {
             backToFontDialog();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             confirm();
             return;
         }
         moveCursor(delta);
-        scrollByKeys();
+        Keys.scrollByPageKeys(view.scroll());
         scrollByWheel(verticalTicks, sidewaysTicks);
         pointerTargets.dispatch(host.pixelX(), host.pixelY(), host.leftClicked(),
             Gdx.input.isButtonPressed(Input.Buttons.LEFT));
@@ -267,27 +260,12 @@ final class PaintUpscale {
         }
     }
 
-    private void scrollByKeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_UP)) {
-            view.scroll().pageUp();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
-            view.scroll().pageDown();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.HOME)) {
-            view.scroll().toTop();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
-            view.scroll().toBottom();
-        }
-    }
-
     // Scrolling the view never moves the cursor.
     private void scrollByWheel(int verticalTicks, int sidewaysTicks) {
         if (!view.contains(host.pixelX(), host.pixelY())) {
             return;
         }
-        view.scroll().scrollBy(verticalTicks * WHEEL_ROWS);
+        view.scroll().scrollBy(verticalTicks * WheelTicks.ROWS_PER_TICK);
         view.columnScroll().scrollBy(sidewaysTicks);
     }
 
@@ -313,7 +291,7 @@ final class PaintUpscale {
         candidates.clear();
         messages.ok("Pick a glyph from " + label(chosen.font())
             + ". Enter or click it again to choose, Esc to go back.");
-        holdHeldArrows();
+        Keys.holdArrows(arrowRepeats);
     }
 
     private void end() {

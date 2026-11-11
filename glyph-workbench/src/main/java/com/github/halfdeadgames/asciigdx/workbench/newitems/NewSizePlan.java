@@ -2,11 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -73,8 +71,7 @@ public final class NewSizePlan {
             throw new IllegalArgumentException(problem);
         }
         Path target = fontFolder.resolve(size.dataFileName());
-        String content = "cell " + size + "\n";
-        Files.writeString(target, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        NewSizeFile.writeNew(target, size);
     }
 
     private static List<CellSize> suggestionsFor(CellSize size) {

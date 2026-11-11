@@ -10,6 +10,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
 import com.github.halfdeadgames.asciigdx.workbench.ui.BounceScroll;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
@@ -57,6 +58,8 @@ public final class PaintGuideListPanel {
     private final Host host;
     private final ArrowRepeats arrowRepeats;
     private final KeyRepeat repeatLabelBackspace = new KeyRepeat();
+    private final Runnable backspaceLabel = this::backspaceInLabel;
+    private boolean labelBackspaced;
 
     private GuideListModel guideList;
     private GuideAddFlow addFlow;
@@ -202,7 +205,7 @@ public final class PaintGuideListPanel {
             close();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             save();
             return;
         }
@@ -234,7 +237,7 @@ public final class PaintGuideListPanel {
             cancelGroups();
             return;
         }
-        if (isEnterJustPressed() || (Gdx.input.isKeyJustPressed(Input.Keys.G) && !controlDown())) {
+        if (Keys.enterJustPressed() || (Gdx.input.isKeyJustPressed(Input.Keys.G) && !Keys.controlDown())) {
             closeGroups();
             return;
         }
@@ -242,14 +245,6 @@ public final class PaintGuideListPanel {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             toggleSelectedGroup();
         }
-    }
-
-    private static boolean isEnterJustPressed() {
-        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
-    }
-
-    private static boolean controlDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
     }
 
     private void openGroups() {
@@ -530,7 +525,7 @@ public final class PaintGuideListPanel {
 
     // Returns whether a key changed the guides.
     private boolean handleEditKeys() {
-        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+        if (Keys.controlDown()) {
             return false;
         }
         boolean edited = true;
@@ -593,17 +588,20 @@ public final class PaintGuideListPanel {
             cancelNaming();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             acceptRename();
             return;
         }
-        int backspaces = repeatLabelBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            guideList.backspace();
-        }
-        if (backspaces > 0) {
+        Keys.repeatBackspace(repeatLabelBackspace, delta, backspaceLabel);
+        if (labelBackspaced) {
+            labelBackspaced = false;
             showTypedLabel();
         }
+    }
+
+    private void backspaceInLabel() {
+        guideList.backspace();
+        labelBackspaced = true;
     }
 
     private void cancelNaming() {

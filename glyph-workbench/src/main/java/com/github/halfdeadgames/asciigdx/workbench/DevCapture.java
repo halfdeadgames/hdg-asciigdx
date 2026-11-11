@@ -32,7 +32,7 @@ public final class DevCapture {
     private static final String UPSCALE_SOURCE_PROPERTY = "workbench.upscalesource";
     private static final String NEW_FONT_PROPERTY = "workbench.newfont";
     private static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
-    private static final String CAPTURE_PROPERTY = "workbench.capture";
+    public static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final String PICK_REQUEST = "pick";
     private static final String CANDIDATE_REQUEST = "cand";
     private static final int CAPTURE_FRAME = 60;

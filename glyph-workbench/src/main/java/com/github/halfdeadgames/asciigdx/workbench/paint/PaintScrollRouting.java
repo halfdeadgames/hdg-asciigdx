@@ -2,13 +2,12 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 
 final class PaintScrollRouting {
-
-    private static final int WHEEL_ROWS = 3;
 
     interface Host {
 
@@ -43,18 +42,7 @@ final class PaintScrollRouting {
     }
 
     void handleScrollKeys() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_UP)) {
-            sheet.scroll().pageUp();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
-            sheet.scroll().pageDown();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.HOME)) {
-            sheet.scroll().toTop();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.END)) {
-            sheet.scroll().toBottom();
-        }
+        Keys.scrollByPageKeys(sheet.scroll());
         if (host.isOverlayOperation()) {
             return;
         }
@@ -91,9 +79,9 @@ final class PaintScrollRouting {
         if (messages.contains(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels))) {
             messages.scrollBy(ticks);
         } else if (host.helpContains(pixelX, pixelY)) {
-            helpScroll.scrollBy(ticks * WHEEL_ROWS);
+            helpScroll.scrollBy(ticks * WheelTicks.ROWS_PER_TICK);
         } else if (sheet.contains(pixelX, pixelY)) {
-            sheet.scroll().scrollBy(ticks * WHEEL_ROWS);
+            sheet.scroll().scrollBy(ticks * WheelTicks.ROWS_PER_TICK);
         }
     }
 

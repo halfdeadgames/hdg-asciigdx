@@ -53,6 +53,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuBarView;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
@@ -355,7 +356,7 @@ public final class PaintScreen implements WorkbenchScreen {
                 newSize.type(character);
                 return true;
             }
-            if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || controlDown()) {
+            if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || Keys.controlDown()) {
                 return false;
             }
             guideListPanel.typeChar(character);
@@ -666,13 +667,9 @@ public final class PaintScreen implements WorkbenchScreen {
         return Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT);
     }
 
-    private static boolean controlDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
-    }
-
     // Runs before the layout each frame, so a new scale never draws one frame with the old layout.
     private void handleScaleKeys() {
-        if (!controlDown()) {
+        if (!Keys.controlDown()) {
             return;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.EQUALS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {
@@ -1039,7 +1036,7 @@ public final class PaintScreen implements WorkbenchScreen {
     // so a key held through the menu neither bursts nor counts as freshly pressed when the menu closes.
     private void swallowInput() {
         wheelTicks.clear();
-        boolean control = controlDown();
+        boolean control = Keys.controlDown();
         boolean shift = shiftDown();
         repeatLeft.update(Gdx.input.isKeyPressed(Input.Keys.LEFT), 0f);
         repeatRight.update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), 0f);
@@ -1181,7 +1178,7 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private boolean handleCommandKeys(float delta) {
-        boolean control = controlDown();
+        boolean control = Keys.controlDown();
         if (control && Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             save();
         }

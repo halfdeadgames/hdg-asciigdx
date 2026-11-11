@@ -1,13 +1,12 @@
 package com.github.halfdeadgames.asciigdx.workbench.export;
 
+import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
 import java.io.File;
 
 /** Builds the paint screen's export command with the right folder picker for this run. */
 public final class PaintExports {
-
-    private static final String CAPTURE_PROPERTY = "workbench.capture";
 
     private PaintExports() {
     }
@@ -25,7 +24,7 @@ public final class PaintExports {
 
     private static boolean isAutomated() {
         return System.getProperty(ScriptSession.SCRIPT_PROPERTY) != null
-            || System.getProperty(CAPTURE_PROPERTY) != null;
+            || System.getProperty(DevCapture.CAPTURE_PROPERTY) != null;
     }
 
     private static File repoRoot() {

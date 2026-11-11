@@ -2,6 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 public final class WheelTicks {
 
+    /** How many rows one wheel notch scrolls in the text panels. */
+    public static final int ROWS_PER_TICK = 3;
+
     private int vertical;
     private int sideways;
 

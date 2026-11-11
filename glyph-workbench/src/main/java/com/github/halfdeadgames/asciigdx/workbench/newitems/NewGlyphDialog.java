@@ -6,6 +6,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
 import com.github.halfdeadgames.asciigdx.workbench.ui.DialogContent;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
+import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.List;
 import java.util.function.IntConsumer;
@@ -24,6 +25,7 @@ public final class NewGlyphDialog {
 
     private final NewGlyphPrompt prompt = new NewGlyphPrompt();
     private final KeyRepeat repeatBackspace = new KeyRepeat();
+    private final Runnable backspacePrompt = prompt::backspace;
     private final IntConsumer onAdd;
     private final IntPredicate slotExists;
     private int keySwallowFrames;
@@ -72,11 +74,11 @@ public final class NewGlyphDialog {
             close();
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
+        if (Keys.enterJustPressed()) {
             addIfValid();
             return;
         }
-        repeatBackspaces(delta);
+        Keys.repeatBackspace(repeatBackspace, delta, backspacePrompt);
     }
 
     public void draw(Painter painter, int columns, int rows, CellRect area) {
@@ -94,13 +96,6 @@ public final class NewGlyphDialog {
         }
         onAdd.accept(result.codePoint());
         close();
-    }
-
-    private void repeatBackspaces(float delta) {
-        int backspaces = repeatBackspace.update(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE), delta);
-        for (int i = 0; i < backspaces; i++) {
-            prompt.backspace();
-        }
     }
 
     private void close() {

@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import java.util.HashSet;
 import java.util.List;
 
@@ -18,7 +19,6 @@ public final class RulesScreen {
 
     private static final float SLIDE_SECONDS = 0.15f;
     private static final float DIM_ALPHA = 0.7f;
-    private static final int WHEEL_ROWS = 3;
     private static final Color PAGE_FILL = new Color(0.08f, 0.09f, 0.13f, 1f);
     private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
     private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
@@ -115,7 +115,7 @@ public final class RulesScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.PAGE_DOWN)) {
             panel.pageDown();
         }
-        panel.scrollBy(wheelTicks * WHEEL_ROWS);
+        panel.scrollBy(wheelTicks * WheelTicks.ROWS_PER_TICK);
         return true;
     }
 
