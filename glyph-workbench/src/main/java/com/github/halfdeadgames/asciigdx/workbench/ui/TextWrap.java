@@ -12,35 +12,25 @@ public final class TextWrap {
     /**
      * Breaks at the last space that fits and drops that space; a word longer than a line is cut at
      * the line width. Always returns at least one line, and the last line is empty when the text
-     * ends right after a break.
+     * ends right after a break. A width below 1 is treated as 1.
      */
     public static List<String> wrap(String text, int width) {
+        int limit = Math.max(1, width);
         List<String> lines = new ArrayList<>();
         int start = 0;
         while (true) {
-            if (text.length() - start <= width) {
+            if (text.length() - start <= limit) {
                 lines.add(text.substring(start));
                 return lines;
             }
-            int space = text.lastIndexOf(' ', start + width);
+            int space = text.lastIndexOf(' ', start + limit);
             if (space > start) {
                 lines.add(text.substring(start, space));
                 start = space + 1;
             } else {
-                lines.add(text.substring(start, start + width));
-                start += width;
+                lines.add(text.substring(start, start + limit));
+                start += limit;
             }
         }
-    }
-
-    /** Row of the typing cursor, which sits after the last character; a full last line moves it down. */
-    static int cursorRow(List<String> lines, int width) {
-        int last = lines.size() - 1;
-        return lines.get(last).length() >= width ? last + 1 : last;
-    }
-
-    static int cursorColumn(List<String> lines, int width) {
-        int length = lines.get(lines.size() - 1).length();
-        return length >= width ? 0 : length;
     }
 }

@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GroupedPickList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import java.util.ArrayList;
@@ -16,13 +17,12 @@ import java.util.Map;
  */
 final class UpscaleSourceList {
 
-    static final int LINE_CELLS = 26;
+    static final int LINE_CELLS = DialogText.LINE_CELLS;
     /** Dialog text lines above the list: the "Into" line and a blank one. */
     static final int LINES_ABOVE_LIST = 2;
 
     // Room for a heading and its first size at least.
     private static final int MIN_SHOWN_ROWS = 2;
-    private static final String ELLIPSIS = "..";
     private static final String INDENT = "  ";
     private static final int NO_OPTION = -1;
 
@@ -109,9 +109,8 @@ final class UpscaleSourceList {
     }
 
     private String intoLine() {
-        String line = "Into " + target.folderName().toUpperCase(Locale.ROOT) + " " + target.cellWidth() + "X"
-            + target.cellHeight();
-        return line.length() > LINE_CELLS ? line.substring(0, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS : line;
+        return DialogText.ellipsize("Into " + target.folderName().toUpperCase(Locale.ROOT) + " " + target.cellWidth()
+            + "X" + target.cellHeight());
     }
 
     // Option indexes per folder: the target's folder first, the others in first-appearance order, empty folders left out.

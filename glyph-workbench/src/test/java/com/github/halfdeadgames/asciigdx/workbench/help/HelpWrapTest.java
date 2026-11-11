@@ -131,6 +131,30 @@ class HelpWrapTest {
     }
 
     @Test
+    void breakTextDropsTheEmptyLineWhenTheBreakLandsAtTheEnd() {
+        assertEquals(List.of("abc"), HelpWrap.breakText("abc ", 3));
+    }
+
+    @Test
+    void breakTextDropsOnlyTheLastSpaceOfAMultiSpaceBreak() {
+        assertEquals(List.of("ab ", "cd"), HelpWrap.breakText("ab  cd", 3));
+        assertEquals(List.of("ab", "cd"), HelpWrap.breakText("ab cd", 3));
+    }
+
+    @Test
+    void breakTextCutsLongWords() {
+        assertEquals(List.of("abcd", "efgh", "ij"), HelpWrap.breakText("abcdefghij", 4));
+        assertEquals(List.of("ab", "cdefg", "h"), HelpWrap.breakText("ab cdefg h", 5));
+    }
+
+    @Test
+    void breakTextTreatsWidthBelowOneAsOne() {
+        assertEquals(List.of("a", "b", "c"), HelpWrap.breakText("abc", 0));
+        assertEquals(List.of("a", "b", "c"), HelpWrap.breakText("abc", -2));
+        assertTrue(HelpWrap.breakText("", 0).isEmpty());
+    }
+
+    @Test
     void breakTextHandlesEmptyAndExactFits() {
         assertTrue(HelpWrap.breakText("", 5).isEmpty());
         assertEquals(List.of("ABCDE"), HelpWrap.breakText("ABCDE", 5));

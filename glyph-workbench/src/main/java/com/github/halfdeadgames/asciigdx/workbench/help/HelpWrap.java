@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.help;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.TextWrap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,24 +90,12 @@ final class HelpWrap {
 
     /** Breaks at spaces; a word longer than the width is cut. An empty text gives no lines. */
     static List<String> breakText(String text, int width) {
-        int limit = Math.max(1, width);
-        List<String> out = new ArrayList<>();
-        int start = 0;
-        while (start < text.length()) {
-            if (text.length() - start <= limit) {
-                out.add(text.substring(start));
-                break;
-            }
-            int space = text.lastIndexOf(' ', start + limit);
-            if (space > start) {
-                out.add(text.substring(start, space));
-                start = space + 1;
-            } else {
-                out.add(text.substring(start, start + limit));
-                start += limit;
-            }
+        List<String> wrapped = TextWrap.wrap(text, width);
+        // TextWrap ends with an empty line for empty text or a break at the very end; the only empty line it can produce.
+        if (wrapped.get(wrapped.size() - 1).isEmpty()) {
+            wrapped.remove(wrapped.size() - 1);
         }
-        return out;
+        return wrapped;
     }
 
     private static String clip(String text, int charsPerLine) {

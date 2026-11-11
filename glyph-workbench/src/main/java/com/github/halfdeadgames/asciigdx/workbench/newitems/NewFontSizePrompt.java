@@ -1,20 +1,20 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import java.util.List;
 import java.util.function.Consumer;
 
 /** The size typed into the size page of the "new font" dialog, and the lines the dialog shows for it. */
 final class NewFontSizePrompt {
 
-    static final int LINE_CELLS = 26;
+    static final int LINE_CELLS = DialogText.LINE_CELLS;
     /** Index of the typed-size line among {@link #lines()}. */
     static final int INPUT_LINE = 2;
     static final int MAX_TYPED = 9;
     static final String HINT = "e.g. 16x16";
 
     private static final char CURSOR = '_';
-    private static final String ELLIPSIS = "..";
 
     private final StringBuilder text = new StringBuilder(MAX_TYPED);
     private final Consumer<CellSize> onConfirm;
@@ -125,13 +125,12 @@ final class NewFontSizePrompt {
      * the typed text with a cursor, then the problem over two lines.
      */
     List<String> lines() {
-        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem());
+        List<String> problemLines = DialogText.wrapToTwoLines(problem());
         return List.of(sizeForLine(), "", typedLine(), problemLines.get(0), problemLines.get(1));
     }
 
     private String sizeForLine() {
-        String line = "Size for " + name;
-        return line.length() > LINE_CELLS ? line.substring(0, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS : line;
+        return DialogText.ellipsize("Size for " + name);
     }
 
     private String typedLine() {

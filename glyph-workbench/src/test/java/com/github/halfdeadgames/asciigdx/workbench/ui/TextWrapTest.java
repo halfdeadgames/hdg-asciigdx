@@ -46,12 +46,14 @@ class TextWrapTest {
     }
 
     @Test
-    void cursorFollowsTheLastLineAndDropsDownWhenItIsFull() {
-        List<String> partial = TextWrap.wrap("abc", 5);
-        assertEquals(0, TextWrap.cursorRow(partial, 5));
-        assertEquals(3, TextWrap.cursorColumn(partial, 5));
-        List<String> full = TextWrap.wrap("abcde", 5);
-        assertEquals(1, TextWrap.cursorRow(full, 5));
-        assertEquals(0, TextWrap.cursorColumn(full, 5));
+    void widthZeroWrapsLikeWidthOne() {
+        assertEquals(List.of("a", "b", "c"), TextWrap.wrap("abc", 0));
+        assertEquals(TextWrap.wrap("ab cd", 1), TextWrap.wrap("ab cd", 0));
+    }
+
+    @Test
+    void negativeWidthWrapsLikeWidthOne() {
+        assertEquals(List.of("a", "b", "c"), TextWrap.wrap("abc", -3));
+        assertEquals(TextWrap.wrap("ab cd", 1), TextWrap.wrap("ab cd", -3));
     }
 }

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import java.util.List;
 import java.util.function.IntPredicate;
 
@@ -9,11 +10,10 @@ import java.util.function.IntPredicate;
 final class NewGlyphPrompt {
 
     private static final int MAX_CHARS = 10;
-    static final int LINE_CELLS = 26;
+    static final int LINE_CELLS = DialogText.LINE_CELLS;
     private static final String EMPTY_HINT = "Type a character or hex code";
 
     private static final char CURSOR = '_';
-    private static final char UNDRAWABLE = '?';
     private static final String EXISTS_SUFFIX = " ALREADY IN FONT";
 
     private final StringBuilder text = new StringBuilder(MAX_CHARS);
@@ -78,7 +78,7 @@ final class NewGlyphPrompt {
         String code = CodePoints.label(codePoint);
         String name = GlyphName.fullName(codePoint);
         String status = hasSlot.test(codePoint) ? code + EXISTS_SUFFIX : code;
-        List<String> nameLines = twoLines(name);
+        List<String> nameLines = DialogText.wrapToTwoLines(name);
         if (nameLines.get(1).isEmpty()) {
             return List.of(typedLine(), "", status, nameLines.get(0));
         }
@@ -86,39 +86,11 @@ final class NewGlyphPrompt {
     }
 
     private List<String> wrapped(String message) {
-        List<String> messageLines = twoLines(message);
+        List<String> messageLines = DialogText.wrapToTwoLines(message);
         return List.of(typedLine(), "", messageLines.get(0), messageLines.get(1));
     }
 
-    // Splits at the last space that fits; the second line is cut if it is still too long.
-    private static List<String> twoLines(String message) {
-        if (message.length() <= LINE_CELLS) {
-            return List.of(message, "");
-        }
-        int split = message.lastIndexOf(' ', LINE_CELLS);
-        if (split <= 0) {
-            split = LINE_CELLS;
-        }
-        return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
-    }
-
-    private static String cut(String value) {
-        return value.length() > LINE_CELLS ? value.substring(0, LINE_CELLS) : value;
-    }
-
-    // The UI font may lack the typed character, so only plain BMP characters are drawn; the rest show as '?'.
     private String typedLine() {
-        StringBuilder line = new StringBuilder(LINE_CELLS);
-        for (int i = 0; i < text.length(); ) {
-            int codePoint = text.codePointAt(i);
-            i += Character.charCount(codePoint);
-            boolean drawable = Character.isBmpCodePoint(codePoint) && !Character.isSurrogate((char) codePoint);
-            line.append(drawable ? (char) codePoint : UNDRAWABLE);
-        }
-        line.append(CURSOR);
-        while (line.length() < LINE_CELLS) {
-            line.append(' ');
-        }
-        return line.toString();
+        return DialogText.typedLine(text, CURSOR, LINE_CELLS);
     }
 }

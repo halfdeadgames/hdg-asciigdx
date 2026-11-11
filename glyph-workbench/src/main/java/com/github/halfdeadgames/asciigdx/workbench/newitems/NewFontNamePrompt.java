@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -9,11 +10,10 @@ final class NewFontNamePrompt {
 
     /** Typing stops here so the text stays bounded; it is past the name limit, so the error still shows. */
     static final int MAX_TYPED = 40;
-    static final int LINE_CELLS = 26;
+    static final int LINE_CELLS = DialogText.LINE_CELLS;
     private static final String HINT_LINE = "Creates the folder";
 
     private static final char CURSOR = '_';
-    private static final char UNDRAWABLE = '?';
 
     private final StringBuilder text = new StringBuilder(MAX_TYPED);
     private final Consumer<String> onNext;
@@ -93,46 +93,15 @@ final class NewFontNamePrompt {
         if (error != null) {
             return wrapped(error);
         }
-        return List.of(typedLine(), "", HINT_LINE, cut(text.toString()));
+        return List.of(typedLine(), "", HINT_LINE, DialogText.cut(text.toString()));
     }
 
     private List<String> wrapped(String message) {
-        List<String> messageLines = wrapToTwoLines(message);
+        List<String> messageLines = DialogText.wrapToTwoLines(message);
         return List.of(typedLine(), "", messageLines.get(0), messageLines.get(1));
     }
 
-    /** Splits a message over two lines of {@link #LINE_CELLS}, at a space when there is one; the rest is cut. */
-    static List<String> wrapToTwoLines(String message) {
-        if (message.length() <= LINE_CELLS) {
-            return List.of(message, "");
-        }
-        int split = message.lastIndexOf(' ', LINE_CELLS);
-        if (split <= 0) {
-            split = LINE_CELLS;
-        }
-        return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
-    }
-
-    private static String cut(String value) {
-        return value.length() > LINE_CELLS ? value.substring(0, LINE_CELLS) : value;
-    }
-
-    // Long names scroll so the cursor stays visible; the UI font may lack a typed character, so only BMP ones are drawn.
     private String typedLine() {
-        StringBuilder shown = new StringBuilder(text.length() + 1);
-        for (int i = 0; i < text.length(); ) {
-            int codePoint = text.codePointAt(i);
-            i += Character.charCount(codePoint);
-            boolean drawable = Character.isBmpCodePoint(codePoint) && !Character.isSurrogate((char) codePoint);
-            shown.append(drawable ? (char) codePoint : UNDRAWABLE);
-        }
-        if (shown.length() > LINE_CELLS - 1) {
-            shown.delete(0, shown.length() - (LINE_CELLS - 1));
-        }
-        shown.append(CURSOR);
-        while (shown.length() < LINE_CELLS) {
-            shown.append(' ');
-        }
-        return shown.toString();
+        return DialogText.typedLine(text, CURSOR, LINE_CELLS);
     }
 }
