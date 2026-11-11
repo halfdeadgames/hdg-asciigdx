@@ -2,21 +2,12 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
-import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
+import com.github.halfdeadgames.asciigdx.workbench.ui.NoticeLine;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
-import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
-import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
-import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScreenKit;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -25,22 +16,15 @@ import java.util.function.BiConsumer;
 public final class NewFontScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewFont";
-    private static final int CELL = Painter.TEXT_SIZE;
-    private static final int CRUMB_ROW = 0;
-    private static final int NOTICE_MARGIN_CELLS = 2;
-    private static final int NOTICE_ROWS_FROM_BOTTOM = 3;
 
     private final Path fontsRoot;
     private final Runnable onBack;
     private final BiConsumer<Path, CellSize> onCreated;
     private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFolders, this::create, this::cancel);
-    private final ScreenViewport viewport = new ScreenViewport();
+    private final NewItemPage page = new NewItemPage(List.of("GLYPH WORKBENCH", "NEW FONT"));
+    private final ScreenKit kit = new ScreenKit();
     private final DevCapture devCapture = new DevCapture();
 
-    private SpriteBatch batch;
-    private Texture whitePixel;
-    private TextureGlyphSource source;
-    private Painter painter;
     private String notice = "";
 
     /**
@@ -56,14 +40,7 @@ public final class NewFontScreen implements WorkbenchScreen {
 
     @Override
     public void show() {
-        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixel.setColor(Color.WHITE);
-        pixel.fill();
-        whitePixel = new Texture(pixel);
-        pixel.dispose();
-        source = TextureGlyphSource.loadDungeonMode();
-        batch = new SpriteBatch();
-        painter = new Painter(batch, whitePixel, source, viewport);
+        kit.create();
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyTyped(char character) {
@@ -81,7 +58,7 @@ public final class NewFontScreen implements WorkbenchScreen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        kit.resize(width, height);
     }
 
     @Override
@@ -89,18 +66,6 @@ public final class NewFontScreen implements WorkbenchScreen {
         dialogs.handleInput(Gdx.graphics.getDeltaTime());
         draw();
         devCapture.afterRender();
-    }
-
-    private int columns() {
-        return Math.round(viewport.getWorldWidth()) / CELL;
-    }
-
-    private int rows() {
-        return Math.round(viewport.getWorldHeight()) / CELL;
-    }
-
-    private CellRect dialogArea() {
-        return new CellRect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
     }
 
     private void create(String name, CellSize size, NewFontGlyphs glyphs) {
@@ -129,27 +94,18 @@ public final class NewFontScreen implements WorkbenchScreen {
     }
 
     private void draw() {
-        ScreenUtils.clear(UiPalette.BG);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        int columns = columns();
-        int rows = rows();
-        TopBar.draw(painter, columns, CRUMB_ROW, List.of("GLYPH WORKBENCH", "NEW FONT"),
-            TopBarStatus.of("", UiPalette.TEXT));
-        dialogs.draw(painter, columns, rows, dialogArea());
-        if (!notice.isEmpty()) {
-            int room = Math.max(1, columns - 2 * NOTICE_MARGIN_CELLS);
-            painter.text(notice.length() > room ? notice.substring(0, room) : notice,
-                NOTICE_MARGIN_CELLS * CELL, (rows - NOTICE_ROWS_FROM_BOTTOM) * CELL, UiPalette.WARN);
-        }
-        batch.end();
+        Painter painter = kit.painter();
+        kit.beginFrame();
+        int columns = kit.columns();
+        int rows = kit.rows();
+        page.drawTopBar(painter, columns);
+        dialogs.draw(painter, columns, rows, NewItemPage.dialogArea(columns, rows));
+        NoticeLine.draw(painter, notice, columns, rows);
+        kit.endFrame();
     }
 
     @Override
     public void hide() {
-        batch.dispose();
-        whitePixel.dispose();
-        source.dispose();
+        kit.dispose();
     }
 }

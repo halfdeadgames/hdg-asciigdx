@@ -3,22 +3,12 @@ package com.github.halfdeadgames.asciigdx.workbench.newitems;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
 import com.github.halfdeadgames.asciigdx.workbench.WorkbenchScreen;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
-import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
-import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
-import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScreenKit;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,22 +20,14 @@ public final class NewSizeScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewSize";
     private static final int CELL = Painter.TEXT_SIZE;
-    private static final int CRUMB_ROW = 0;
 
     private final Path folder;
+    private final NewItemPage page;
     private final Runnable onBack;
     private final Consumer<String> onListFailed;
     private final NewSizeDialog dialog;
-    private final ScreenViewport viewport = new ScreenViewport();
+    private final ScreenKit kit = new ScreenKit();
     private final DevCapture devCapture = new DevCapture();
-    private final Vector2 pointer = new Vector2();
-
-    private int pixelX;
-    private int pixelY;
-    private SpriteBatch batch;
-    private Texture whitePixel;
-    private TextureGlyphSource source;
-    private Painter painter;
 
     /**
      * @param folder the font folder that gets the new size file
@@ -55,6 +37,8 @@ public final class NewSizeScreen implements WorkbenchScreen {
      */
     public NewSizeScreen(Path folder, Runnable onBack, Consumer<CellSize> onChosen, Consumer<String> onListFailed) {
         this.folder = folder;
+        this.page = new NewItemPage(List.of("GLYPH WORKBENCH",
+            folder.getFileName().toString().toUpperCase(Locale.ROOT), "NEW SIZE"));
         this.onBack = onBack;
         this.onListFailed = onListFailed;
         this.dialog = new NewSizeDialog(onChosen, onBack);
@@ -62,14 +46,7 @@ public final class NewSizeScreen implements WorkbenchScreen {
 
     @Override
     public void show() {
-        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixel.setColor(Color.WHITE);
-        pixel.fill();
-        whitePixel = new Texture(pixel);
-        pixel.dispose();
-        source = TextureGlyphSource.loadDungeonMode();
-        batch = new SpriteBatch();
-        painter = new Painter(batch, whitePixel, source, viewport);
+        kit.create();
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyTyped(char character) {
@@ -89,8 +66,8 @@ public final class NewSizeScreen implements WorkbenchScreen {
             onListFailed.accept(e.getMessage());
             return;
         }
-        updatePointer();
-        dialog.open(options, folder.getFileName().toString(), pixelX, pixelY);
+        kit.updatePointer();
+        dialog.open(options, folder.getFileName().toString(), kit.pointerX(), kit.pointerY());
         applyCaptureRequest();
     }
 
@@ -103,7 +80,7 @@ public final class NewSizeScreen implements WorkbenchScreen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        kit.resize(width, height);
     }
 
     @Override
@@ -121,48 +98,26 @@ public final class NewSizeScreen implements WorkbenchScreen {
             return;
         }
         boolean clicked = Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
-        updatePointer();
-        dialog.handlePointer(clicked, pixelX, pixelY, CELL, dialogArea());
-    }
-
-    // Window pixels go through the viewport so UI scale and HiDPI are honoured; Y is measured from the top.
-    private void updatePointer() {
-        pointer.set(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(pointer);
-        pixelX = (int) Math.floor(pointer.x);
-        pixelY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
-    }
-
-    private int columns() {
-        return Math.round(viewport.getWorldWidth()) / CELL;
-    }
-
-    private int rows() {
-        return Math.round(viewport.getWorldHeight()) / CELL;
+        kit.updatePointer();
+        dialog.handlePointer(clicked, kit.pointerX(), kit.pointerY(), CELL, dialogArea());
     }
 
     private CellRect dialogArea() {
-        return new CellRect(0, CRUMB_ROW + 1, columns(), Math.max(1, rows() - CRUMB_ROW - 1));
+        return NewItemPage.dialogArea(kit.columns(), kit.rows());
     }
 
     private void draw() {
-        ScreenUtils.clear(UiPalette.BG);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        TopBar.draw(painter, columns(), CRUMB_ROW,
-            List.of("GLYPH WORKBENCH", folder.getFileName().toString().toUpperCase(Locale.ROOT), "NEW SIZE"),
-            TopBarStatus.of("", UiPalette.TEXT));
+        Painter painter = kit.painter();
+        kit.beginFrame();
+        page.drawTopBar(painter, kit.columns());
         if (dialog.isOpen()) {
-            dialog.draw(painter, columns(), rows(), dialogArea());
+            dialog.draw(painter, kit.columns(), kit.rows(), dialogArea());
         }
-        batch.end();
+        kit.endFrame();
     }
 
     @Override
     public void hide() {
-        batch.dispose();
-        whitePixel.dispose();
-        source.dispose();
+        kit.dispose();
     }
 }

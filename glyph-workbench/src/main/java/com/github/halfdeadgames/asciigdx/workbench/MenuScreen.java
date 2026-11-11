@@ -3,18 +3,12 @@ package com.github.halfdeadgames.asciigdx.workbench;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
+import com.github.halfdeadgames.asciigdx.workbench.ui.NoticeLine;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScreenKit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -60,14 +54,9 @@ final class MenuScreen implements WorkbenchScreen {
     private final Function<MenuModel.Item, Detail> detailFor;
     private final Consumer<MenuModel.Item> onChoose;
     private final Runnable onBack;
-    private final ScreenViewport viewport = new ScreenViewport();
-    private final Vector2 pointer = new Vector2();
+    private final ScreenKit kit = new ScreenKit();
     private final DevCapture devCapture = new DevCapture();
 
-    private SpriteBatch batch;
-    private Texture whitePixel;
-    private TextureGlyphSource source;
-    private Painter painter;
     private int lastMouseX = -1;
     private int lastMouseY = -1;
 
@@ -93,20 +82,13 @@ final class MenuScreen implements WorkbenchScreen {
 
     @Override
     public void show() {
-        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixel.setColor(Color.WHITE);
-        pixel.fill();
-        whitePixel = new Texture(pixel);
-        pixel.dispose();
-        source = TextureGlyphSource.loadDungeonMode();
-        batch = new SpriteBatch();
-        painter = new Painter(batch, whitePixel, source, viewport);
+        kit.create();
         Gdx.input.setInputProcessor(new InputAdapter());
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        kit.resize(width, height);
     }
 
     @Override
@@ -155,10 +137,9 @@ final class MenuScreen implements WorkbenchScreen {
         if (!moved && !clicked) {
             return;
         }
-        pointer.set(mouseX, mouseY);
-        viewport.unproject(pointer);
-        int cellX = Math.floorDiv((int) Math.floor(pointer.x), CELL);
-        int cellY = Math.floorDiv((int) Math.floor(viewport.getWorldHeight() - pointer.y), CELL);
+        kit.updatePointer();
+        int cellX = Math.floorDiv(kit.pointerX(), CELL);
+        int cellY = Math.floorDiv(kit.pointerY(), CELL);
         if (cellX < LIST_X || cellX >= LIST_X + LIST_WIDTH) {
             return;
         }
@@ -195,12 +176,10 @@ final class MenuScreen implements WorkbenchScreen {
     }
 
     private void draw() {
-        ScreenUtils.clear(UiPalette.BG);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        int columns = Math.round(viewport.getWorldWidth()) / CELL;
-        int rowCount = Math.round(viewport.getWorldHeight()) / CELL;
+        Painter painter = kit.painter();
+        kit.beginFrame();
+        int columns = kit.columns();
+        int rowCount = kit.rows();
         TopBar.draw(painter, columns, 0, crumbs, TopBarStatus.of("", UiPalette.TEXT));
 
         int panelHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
@@ -212,16 +191,14 @@ final class MenuScreen implements WorkbenchScreen {
         Detail detail = detailFor.apply(model.selectedItem());
         int detailWidth = Math.max(10, Math.min(DETAIL_MAX_WIDTH, columns - DETAIL_X - 2));
         if (detail != null) {
-            drawDetail(detail, detailWidth, panelHeight);
+            drawDetail(painter, detail, detailWidth, panelHeight);
         }
-        if (!notice.isEmpty()) {
-            painter.text(notice, LIST_X * CELL, (rowCount - 3) * CELL, UiPalette.WARN);
-        }
+        NoticeLine.draw(painter, notice, columns, rowCount);
         StatusBar.draw(painter, columns, rowCount - 1, keys);
-        batch.end();
+        kit.endFrame();
     }
 
-    private void drawDetail(Detail detail, int width, int height) {
+    private void drawDetail(Painter painter, Detail detail, int width, int height) {
         Panel.draw(painter, new CellRect(DETAIL_X, PANEL_TOP, width, height), detail.title(), false);
         int y = LIST_TOP;
         int bottom = PANEL_TOP + height - 1;
@@ -237,8 +214,6 @@ final class MenuScreen implements WorkbenchScreen {
 
     @Override
     public void hide() {
-        batch.dispose();
-        whitePixel.dispose();
-        source.dispose();
+        kit.dispose();
     }
 }

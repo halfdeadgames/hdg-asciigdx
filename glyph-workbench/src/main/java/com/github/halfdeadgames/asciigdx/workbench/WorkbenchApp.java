@@ -169,7 +169,7 @@ final class WorkbenchApp extends ApplicationAdapter {
         return new NewSizeScreen(folder,
             () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE),
             size -> createSize(folder, size),
-            reason -> pending = () -> fontMenuScreen(folderName, limited("CANNOT LIST SIZES: " + reason),
+            reason -> pending = () -> fontMenuScreen(folderName, "CANNOT LIST SIZES: " + reason,
                 MenuModel.Kind.NEW_SIZE));
     }
 
@@ -179,16 +179,12 @@ final class WorkbenchApp extends ApplicationAdapter {
             NewSizePlan.create(folder, size);
         } catch (IOException | RuntimeException e) {
             Gdx.app.error(TAG, "Cannot create size " + size + ": " + e.getMessage());
-            pending = () -> fontMenuScreen(folderName, limited("CANNOT CREATE " + size + ": " + e.getMessage()),
+            pending = () -> fontMenuScreen(folderName, "CANNOT CREATE " + size + ": " + e.getMessage(),
                 MenuModel.Kind.NEW_SIZE);
             return;
         }
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
         pending = () -> paintScreen(backToFontMenu, folder.toString(), size);
-    }
-
-    private static String limited(String notice) {
-        return notice.length() > 100 ? notice.substring(0, 100) : notice;
     }
 
     private void switchTo(WorkbenchScreen next) {
@@ -210,7 +206,7 @@ final class WorkbenchApp extends ApplicationAdapter {
             switchTo(request.get());
         } catch (FontDataException | GdxRuntimeException e) {
             Gdx.app.error(TAG, "Cannot open screen: " + e.getMessage());
-            switchTo(fontListScreen(limited("CANNOT OPEN: " + e.getMessage())));
+            switchTo(fontListScreen("CANNOT OPEN: " + e.getMessage()));
         }
     }
 
