@@ -73,6 +73,11 @@ class CellSizeTest {
 
     @Test
     void readsTheSizeOutOfADataFileName() {
+        assertEquals(new CellSize(16, 8), CellSize.ofCellLine("cell 16x8"));
+        assertNull(CellSize.ofCellLine("cell 16X8"));
+        assertNull(CellSize.ofCellLine("cell 12345x8"));
+        assertNull(CellSize.ofCellLine("16x8"));
+        assertThrows(IllegalArgumentException.class, () -> CellSize.ofCellLine("cell 0x8"));
         assertEquals(new CellSize(8, 16), CellSize.ofDataFileName("8x16.txt"));
         assertEquals(new CellSize(16, 16), CellSize.ofDataFileName(new CellSize(16, 16).dataFileName()));
     }

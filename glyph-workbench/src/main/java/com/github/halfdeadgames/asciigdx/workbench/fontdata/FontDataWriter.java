@@ -40,7 +40,7 @@ public final class FontDataWriter {
     private static String writeOp(GlyphOp op) {
         List<String> sources = new ArrayList<>();
         for (GlyphOp.Source source : op.sources()) {
-            String reference = String.format("U+%04X", source.codePoint());
+            String reference = CodePoints.label(source.codePoint());
             sources.add(op.kind() == GlyphOp.Kind.OVERLAY ? writeOverlayPart(reference, source) : reference);
         }
         return op.kind().keyword() + " " + String.join(", ", sources);
@@ -55,6 +55,6 @@ public final class FontDataWriter {
         String character = codePoint == ' '
             ? "\\u{20}"
             : GlyphOrderText.escapeCodePoint(codePoint);
-        return String.format("U+%04X ", codePoint) + character;
+        return CodePoints.label(codePoint) + " " + character;
     }
 }

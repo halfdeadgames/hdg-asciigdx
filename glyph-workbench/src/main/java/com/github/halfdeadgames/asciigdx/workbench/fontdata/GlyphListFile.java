@@ -50,7 +50,7 @@ public final class GlyphListFile {
         Path target = new File(fontFolder, FILE_NAME).toPath();
         String existing = Files.exists(target) ? Files.readString(target, StandardCharsets.UTF_8) : "";
         String separator = existing.isEmpty() || existing.endsWith("\n") ? "" : "\n";
-        AtomicFiles.write(target, existing + separator + String.format("U+%04X", codePoint) + "\n");
+        AtomicFiles.write(target, existing + separator + CodePoints.label(codePoint) + "\n");
     }
 
     private static String readText(File file) {

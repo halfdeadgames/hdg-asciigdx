@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
 import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import java.util.List;
 import java.util.function.IntPredicate;
 
@@ -74,7 +75,7 @@ final class NewGlyphPrompt {
             return wrapped(result.error());
         }
         int codePoint = result.codePoint();
-        String code = String.format("U+%04X", codePoint);
+        String code = CodePoints.label(codePoint);
         String name = GlyphName.fullName(codePoint);
         String status = hasSlot.test(codePoint) ? code + EXISTS_SUFFIX : code;
         List<String> nameLines = twoLines(name);

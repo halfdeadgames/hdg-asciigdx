@@ -105,7 +105,19 @@ class GlyphListTest {
     void rejectsCodePointBeyondUnicode() {
         FontDataException error = assertThrows(FontDataException.class, () -> GlyphList.parse("U+0041\nU+110000"));
         assertEquals(2, error.getLine());
-        assertTrue(error.getMessage().contains("not a valid code point"));
+        assertTrue(error.getMessage().contains("'U+110000' goes past U+10FFFF"));
+    }
+
+    @Test
+    void acceptsLeadingZerosUpToEightDigits() {
+        assertEquals(Set.of(0x41, 0x42), GlyphList.parse("U+00000041\nU+0000042").plannedCodePoints());
+    }
+
+    @Test
+    void eightDigitCodePastUnicodeNamesTheLine() {
+        FontDataException error = assertThrows(FontDataException.class, () -> GlyphList.parse("U+FFFFFFFF"));
+        assertEquals(1, error.getLine());
+        assertTrue(error.getMessage().contains("'U+FFFFFFFF' goes past U+10FFFF"));
     }
 
     @Test

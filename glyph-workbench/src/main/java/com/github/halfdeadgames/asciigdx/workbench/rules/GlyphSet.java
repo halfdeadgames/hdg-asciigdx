@@ -1,14 +1,13 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /** An immutable set of code points, stored as inclusive ranges. */
 final class GlyphSet {
 
     private static final int MAX_CODE_POINT = Character.MAX_CODE_POINT;
-    private static final Pattern CODE_PATTERN = Pattern.compile("[Uu]\\+[0-9A-Fa-f]{4,6}");
 
     private final int[] firstCodePoints;
     private final int[] lastCodePoints;
@@ -87,8 +86,9 @@ final class GlyphSet {
             int codePoint = token.codePointAt(0);
             return new int[] {codePoint, codePoint};
         }
-        if (CODE_PATTERN.matcher(token).matches()) {
-            int codePoint = parseCode(token);
+        int code = CodePoints.readUPlus(token);
+        if (code != CodePoints.NOT_A_CODE) {
+            int codePoint = requireInUnicode(code, token);
             return new int[] {codePoint, codePoint};
         }
         return parseRange(token);
@@ -118,14 +118,14 @@ final class GlyphSet {
         if (text.codePointCount(0, text.length()) == 1) {
             return text.codePointAt(0);
         }
-        if (CODE_PATTERN.matcher(text).matches()) {
-            return parseCode(text);
+        int code = CodePoints.readUPlus(text);
+        if (code == CodePoints.NOT_A_CODE) {
+            return -1;
         }
-        return -1;
+        return requireInUnicode(code, text);
     }
 
-    private static int parseCode(String code) {
-        int codePoint = Integer.parseInt(code.substring(2), 16);
+    private static int requireInUnicode(int codePoint, String code) {
         if (codePoint > MAX_CODE_POINT) {
             throw new IllegalArgumentException(
                     "\"" + code + "\" is out of Unicode: the highest code is U+10FFFF");

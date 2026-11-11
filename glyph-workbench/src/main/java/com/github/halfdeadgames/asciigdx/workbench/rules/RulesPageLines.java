@@ -1,9 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TextWrap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 /** Lays out the text of the rules page as wrapped lines, without drawing anything. */
@@ -171,7 +171,7 @@ final class RulesPageLines {
         if (isPrintable(codePoint)) {
             return new String(Character.toChars(codePoint));
         }
-        return String.format(Locale.ROOT, "U+%04X", codePoint);
+        return CodePoints.label(codePoint);
     }
 
     private static boolean isPrintable(int codePoint) {

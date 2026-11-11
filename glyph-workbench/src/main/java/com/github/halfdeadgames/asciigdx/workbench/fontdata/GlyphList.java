@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The slots a font plans to have, read from its optional {@code glyphs.txt} file.
@@ -21,10 +19,8 @@ public final class GlyphList {
     /** No preset and nothing planned; stands in for a missing file. */
     public static final GlyphList NONE = new GlyphList(false, new TreeSet<>());
 
-    private static final String BYTE_ORDER_MARK = "﻿";
     private static final String CP437_KEYWORD = "cp437";
-    private static final Pattern ENTRY = Pattern.compile(
-        "U\\+([0-9a-f]{1,8})(?:\\.\\.U\\+([0-9a-f]{1,8}))?", Pattern.CASE_INSENSITIVE);
+    private static final String RANGE_MARKER = "..";
 
     private final boolean cp437;
     private final Set<Integer> planned;
@@ -45,8 +41,7 @@ public final class GlyphList {
         Objects.requireNonNull(text, "text");
         boolean cp437 = false;
         TreeSet<Integer> planned = new TreeSet<>();
-        String withoutMark = text.startsWith(BYTE_ORDER_MARK) ? text.substring(1) : text;
-        String[] lines = withoutMark.split("\\R", -1);
+        String[] lines = TextFiles.withoutByteOrderMark(text).split("\\R", -1);
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].strip();
             if (line.isEmpty()) {
@@ -72,15 +67,15 @@ public final class GlyphList {
     }
 
     private static void addEntry(String line, int lineNumber, TreeSet<Integer> planned) {
-        Matcher matcher = ENTRY.matcher(line);
-        if (!matcher.matches()) {
+        int rangeMarker = line.indexOf(RANGE_MARKER);
+        int first = CodePoints.readUPlus(rangeMarker < 0 ? line : line.substring(0, rangeMarker));
+        int last = rangeMarker < 0 ? first : CodePoints.readUPlus(line.substring(rangeMarker + RANGE_MARKER.length()));
+        if (first == CodePoints.NOT_A_CODE || last == CodePoints.NOT_A_CODE) {
             throw new FontDataException(lineNumber, "expected cp437, a code point like U+2588, or a range like "
                 + "U+2190..U+2193 but found '" + line + "'");
         }
-        long first = Long.parseLong(matcher.group(1), 16);
-        long last = matcher.group(2) == null ? first : Long.parseLong(matcher.group(2), 16);
-        requireInUnicode(first, lineNumber);
-        requireInUnicode(last, lineNumber);
+        requireInUnicode(first, line, lineNumber);
+        requireInUnicode(last, line, lineNumber);
         if (last < first) {
             throw new FontDataException(lineNumber, "range runs backwards; write the lower code point first, "
                 + "like U+2190..U+2193");
@@ -88,7 +83,7 @@ public final class GlyphList {
         if (last - first + 1 > MAX_PLANNED) {
             throw tooMany(lineNumber);
         }
-        for (int codePoint = (int) first; codePoint <= last; codePoint++) {
+        for (int codePoint = first; codePoint <= last; codePoint++) {
             requireUsable(codePoint, lineNumber);
             planned.add(codePoint);
             if (planned.size() > MAX_PLANNED) {
@@ -97,16 +92,15 @@ public final class GlyphList {
         }
     }
 
-    private static void requireInUnicode(long codePoint, int lineNumber) {
-        if (codePoint > Character.MAX_CODE_POINT) {
-            throw new FontDataException(lineNumber, String.format("U+%X is not a valid code point", codePoint));
+    private static void requireInUnicode(int codePoint, String line, int lineNumber) {
+        if (!Character.isValidCodePoint(codePoint)) {
+            throw new FontDataException(lineNumber, "'" + line + "' goes past U+10FFFF, the last code point");
         }
     }
 
     private static void requireUsable(int codePoint, int lineNumber) {
-        boolean unusable = Character.getType(codePoint) == Character.SURROGATE || codePoint == SheetOrder.FILLER;
-        if (unusable) {
-            throw new FontDataException(lineNumber, String.format("U+%04X cannot be used as a glyph", codePoint));
+        if (!CodePoints.isUsableAsGlyph(codePoint)) {
+            throw new FontDataException(lineNumber, CodePoints.label(codePoint) + " cannot be used as a glyph");
         }
     }
 

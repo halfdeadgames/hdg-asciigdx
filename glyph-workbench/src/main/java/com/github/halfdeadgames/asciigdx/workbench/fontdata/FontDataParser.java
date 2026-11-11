@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Reads font data text: a {@code cell WxH} line, then glyphs separated by blank lines. See
@@ -16,10 +14,6 @@ import java.util.regex.Pattern;
  * line it was found on.
  */
 public final class FontDataParser {
-
-    private static final Pattern CELL = Pattern.compile("cell (\\d+)x(\\d+)");
-    private static final Pattern HEX = Pattern.compile("[0-9A-Fa-f]{1,6}");
-    private static final int BYTE_ORDER_MARK = 0xFEFF;
 
     private final String[] lines;
     private final Map<Integer, GlyphEntry> entries = new TreeMap<>();
@@ -29,8 +23,7 @@ public final class FontDataParser {
     private int next;
 
     private FontDataParser(String text) {
-        String withoutMark = !text.isEmpty() && text.charAt(0) == BYTE_ORDER_MARK ? text.substring(1) : text;
-        lines = withoutMark.split("\r?\n", -1);
+        lines = TextFiles.withoutByteOrderMark(text).split("\r?\n", -1);
     }
 
     /**
@@ -76,19 +69,17 @@ public final class FontDataParser {
         if (!skipToContent()) {
             throw new FontDataException(0, "the file has no 'cell WxH' line");
         }
-        Matcher matcher = CELL.matcher(lines[next].strip());
-        if (!matcher.matches()) {
-            throw error(next, "the first line must be 'cell WxH', for example 'cell 16x16'");
-        }
+        CellSize size;
         try {
-            cellWidth = Integer.parseInt(matcher.group(1));
-            cellHeight = Integer.parseInt(matcher.group(2));
-        } catch (NumberFormatException e) {
-            throw error(next, "cell size is too large");
-        }
-        if (cellWidth < 1 || cellHeight < 1) {
+            size = CellSize.ofCellLine(lines[next].strip());
+        } catch (IllegalArgumentException zeroSide) {
             throw error(next, "cell must be at least 1 wide and 1 high");
         }
+        if (size == null) {
+            throw error(next, "the first line must be 'cell WxH', for example 'cell 16x16'");
+        }
+        cellWidth = size.width();
+        cellHeight = size.height();
         next++;
     }
 
@@ -108,13 +99,13 @@ public final class FontDataParser {
         int headerIndex = next;
         String line = lines[headerIndex];
         int codePointEnd = line.indexOf(' ');
-        if (!line.startsWith("U+") || codePointEnd < 0) {
+        if (!line.regionMatches(true, 0, "U+", 0, 2) || codePointEnd < 0) {
             throw error(headerIndex, "expected a glyph header like 'U+0041 A' but found: " + line);
         }
         int codePoint = parseCodePoint(line.substring(0, codePointEnd), headerIndex);
         int characterEnd = readCharacter(line, codePointEnd + 1, codePoint, headerIndex);
         if (entries.containsKey(codePoint)) {
-            throw error(headerIndex, label(codePoint) + " is defined twice (first on line "
+            throw error(headerIndex, CodePoints.label(codePoint) + " is defined twice (first on line "
                 + linesByCodePoint.get(codePoint) + ")");
         }
         String rest = line.substring(characterEnd).strip();
@@ -134,7 +125,7 @@ public final class FontDataParser {
     // Returns the index just past the character, after checking it matches the code point.
     private int readCharacter(String line, int start, int codePoint, int lineIndex) {
         if (start >= line.length()) {
-            throw error(lineIndex, "missing character after " + label(codePoint));
+            throw error(lineIndex, "missing character after " + CodePoints.label(codePoint));
         }
         int end;
         if (line.startsWith("\\u{", start)) {
@@ -158,7 +149,7 @@ public final class FontDataParser {
             throw error(lineIndex, "bad character escape: " + e.getMessage());
         }
         if (actual != codePoint) {
-            throw error(lineIndex, "the character is " + label(actual) + " but the header says " + label(codePoint));
+            throw error(lineIndex, "the character is " + CodePoints.label(actual) + " but the header says " + CodePoints.label(codePoint));
         }
         return end;
     }
@@ -176,14 +167,14 @@ public final class FontDataParser {
         for (int row = 1; row <= cellHeight; row++) {
             int rowIndex = headerIndex + row;
             if (rowIndex >= lines.length || lines[rowIndex].isBlank()) {
-                throw error(Math.min(rowIndex, lines.length - 1), label(codePoint) + " needs " + cellHeight
+                throw error(Math.min(rowIndex, lines.length - 1), CodePoints.label(codePoint) + " needs " + cellHeight
                     + " rows but has " + (row - 1));
             }
             rows.add(checkedRow(lines[rowIndex], cellWidth, rowIndex));
         }
         next = headerIndex + cellHeight + 1;
         if (next < lines.length && !lines[next].isBlank()) {
-            throw error(next, label(codePoint) + " has more than " + cellHeight
+            throw error(next, CodePoints.label(codePoint) + " has more than " + cellHeight
                 + " rows (separate glyphs with a blank line)");
         }
         return new PixelGlyph(codePoint, PixelGrid.ofRows(rows));
@@ -256,21 +247,15 @@ public final class FontDataParser {
     }
 
     private int parseCodePoint(String text, int lineIndex) {
-        if (!text.startsWith("U+") || !HEX.matcher(text.substring(2)).matches()) {
+        int codePoint = CodePoints.readUPlus(text);
+        if (codePoint == CodePoints.NOT_A_CODE) {
             throw error(lineIndex, "expected a code point like U+0041 but found '" + text + "'");
         }
-        int codePoint = Integer.parseInt(text.substring(2), 16);
-        boolean unusable = !Character.isValidCodePoint(codePoint)
-            || Character.getType(codePoint) == Character.SURROGATE
-            || codePoint == SheetOrder.FILLER;
-        if (unusable) {
-            throw error(lineIndex, label(codePoint) + " cannot be used as a glyph");
+        if (!CodePoints.isUsableAsGlyph(codePoint)) {
+            String shown = Character.isValidCodePoint(codePoint) ? CodePoints.label(codePoint) : text;
+            throw error(lineIndex, shown + " cannot be used as a glyph");
         }
         return codePoint;
-    }
-
-    private static String label(int codePoint) {
-        return String.format("U+%04X", codePoint);
     }
 
     private static FontDataException error(int lineIndex, String problem) {

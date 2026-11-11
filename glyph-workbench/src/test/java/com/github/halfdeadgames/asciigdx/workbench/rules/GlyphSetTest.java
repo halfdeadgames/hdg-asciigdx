@@ -30,6 +30,24 @@ class GlyphSetTest {
     }
 
     @Test
+    void shortCodesAreAccepted() {
+        assertTrue(GlyphSet.parse(List.of("U+41")).contains(0x41));
+        var range = GlyphSet.parse(List.of("U+41-U+5A"));
+        assertTrue(range.contains(0x41));
+        assertTrue(range.contains(0x5A));
+        assertFalse(range.contains(0x5B));
+    }
+
+    @Test
+    void shortCodesWithDashDigitsStillSplitAtTheDash() {
+        var set = GlyphSet.parse(List.of("U+2D-U+2F"));
+        assertTrue(set.contains(0x2D));
+        assertTrue(set.contains(0x2F));
+        assertFalse(set.contains(0x30));
+        assertTrue(GlyphSet.parse(List.of("-")).contains('-'));
+    }
+
+    @Test
     void characterRangeIncludesBothEnds() {
         var set = GlyphSet.parse(List.of("A-Z"));
         assertTrue(set.contains('A'));

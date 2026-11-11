@@ -121,7 +121,7 @@ class NewGlyphPromptTest {
             openPrompt("").lines(cp -> false));
         assertEquals(List.of(padded("2603_"), "", "U+2603 ALREADY IN FONT", "SNOWMAN"),
             openPrompt("2603").lines(cp -> true));
-        assertEquals(List.of(padded("U+ZZ_"), "", "Use 1 to 6 hex digits,", "like 41 or U+0041"),
+        assertEquals(List.of(padded("U+ZZ_"), "", "Use 1 to 8 hex digits,", "like 41 or U+0041"),
             openPrompt("U+ZZ").lines(cp -> false));
     }
 
@@ -165,9 +165,9 @@ class NewGlyphPromptTest {
     void invalidTextWrapsTheErrorOverTwoLines() {
         var prompt = openPrompt("U+ZZ");
         assertFalse(prompt.result().isValid());
-        assertEquals("Use 1 to 6 hex digits, like 41 or U+0041", prompt.result().error());
+        assertEquals("Use 1 to 8 hex digits, like 41 or U+0041", prompt.result().error());
         List<String> lines = prompt.lines(cp -> true);
-        assertEquals("Use 1 to 6 hex digits,", lines.get(2));
+        assertEquals("Use 1 to 8 hex digits,", lines.get(2));
         assertEquals("like 41 or U+0041", lines.get(3));
     }
 

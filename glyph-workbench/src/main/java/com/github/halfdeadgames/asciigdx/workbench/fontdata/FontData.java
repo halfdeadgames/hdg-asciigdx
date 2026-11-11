@@ -21,7 +21,7 @@ public record FontData(int cellWidth, int cellHeight, Map<Integer, GlyphEntry> e
         }
         for (Map.Entry<Integer, GlyphEntry> entry : entries.entrySet()) {
             if (entry.getKey() != entry.getValue().codePoint()) {
-                throw new IllegalArgumentException("Entry key U+" + Integer.toHexString(entry.getKey())
+                throw new IllegalArgumentException("Entry key " + CodePoints.label(entry.getKey())
                     + " does not match its glyph");
             }
         }

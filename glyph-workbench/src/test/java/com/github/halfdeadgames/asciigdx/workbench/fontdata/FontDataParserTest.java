@@ -42,6 +42,13 @@ class FontDataParserTest {
     }
 
     @Test
+    void acceptsLowercasePrefixInHeader() {
+        FontData data = FontDataParser.parse(file(glyph("u+0050 P", "#.......", "##......")));
+
+        assertEquals(8, pixelGlyph(data, 'P').pixels().getWidth());
+    }
+
+    @Test
     void sizeFileMustDeclareTheCellItsNameSays() {
         assertEquals(FontDataParser.parse(file(P)), FontDataParser.parseSizeFile(new CellSize(8, 8), file(P)));
 
@@ -101,6 +108,21 @@ class FontDataParserTest {
     @Test
     void reportsMissingCellLine() {
         assertEquals(1, parseError(P).getLine());
+    }
+
+    @Test
+    void reportsCellSizeOfFiveDigitsAsWrongForm() {
+        FontDataException problem = parseError("cell 12345x8\n");
+
+        assertEquals(1, problem.getLine());
+        assertTrue(problem.getMessage().contains("the first line must be 'cell WxH'"));
+    }
+
+    @Test
+    void reportsZeroCellSide() {
+        FontDataException problem = parseError("cell 0x8\n");
+
+        assertTrue(problem.getMessage().contains("cell must be at least 1 wide and 1 high"));
     }
 
     @Test

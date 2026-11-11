@@ -1,11 +1,12 @@
 package com.github.halfdeadgames.asciigdx.workbench.newitems;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.SheetOrder;
 
 /** Turns text typed into the "new glyph" prompt into a code point. */
 final class NewGlyphInput {
 
-    private static final int MAX_HEX_DIGITS = 6;
+    private static final int PREFIX_LENGTH = 2;
 
     /** The outcome of parsing: a code point when valid, a user-facing message otherwise. */
     record Result(int codePoint, String error) {
@@ -44,14 +45,14 @@ final class NewGlyphInput {
     }
 
     private static Result parseHex(String stripped, boolean hasPrefix) {
-        var digits = hasPrefix ? stripped.substring(2) : stripped;
-        if (digits.isEmpty()) {
+        if (hasPrefix && stripped.length() == PREFIX_LENGTH) {
             return failure("Add hex digits after U+");
         }
-        if (digits.length() > MAX_HEX_DIGITS || !isAsciiHex(digits)) {
-            return failure("Use 1 to 6 hex digits, like 41 or U+0041");
+        int code = hasPrefix ? CodePoints.readUPlus(stripped) : CodePoints.readHexDigits(stripped);
+        if (code == CodePoints.NOT_A_CODE) {
+            return failure("Use 1 to 8 hex digits, like 41 or U+0041");
         }
-        return check(Integer.parseInt(digits, 16));
+        return check(code);
     }
 
     private static Result check(int codePoint) {
@@ -68,17 +69,6 @@ final class NewGlyphInput {
             return failure("Control characters cannot be glyphs");
         }
         return new Result(codePoint, null);
-    }
-
-    private static boolean isAsciiHex(String text) {
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            boolean hex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-            if (!hex) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static Result failure(String message) {

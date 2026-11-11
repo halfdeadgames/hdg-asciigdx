@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.editor;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.DerivedGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontData;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
@@ -131,7 +132,7 @@ public final class FontEditor {
      */
     public void addSlot(int codePoint) {
         if (!Character.isValidCodePoint(codePoint) || codePoint == SheetOrder.FILLER) {
-            throw new IllegalArgumentException(String.format("U+%04X cannot have a slot", codePoint));
+            throw new IllegalArgumentException(CodePoints.label(codePoint) + " cannot have a slot");
         }
         int existingSlot = slotOf(codePoint);
         if (existingSlot != NO_GLYPH) {
@@ -301,7 +302,7 @@ public final class FontEditor {
      */
     public void replaceGlyph(int codePoint, PixelGrid cell) {
         if (!isSlotCodePoint(codePoint)) {
-            problem = String.format("U+%04X is not a glyph slot", codePoint);
+            problem = CodePoints.label(codePoint) + " is not a glyph slot";
             return;
         }
         if (cell.getWidth() != cellWidth || cell.getHeight() != cellHeight) {
@@ -344,11 +345,11 @@ public final class FontEditor {
     // Resolves the font as if the target were derived; no glyphs (with a problem) when that is refused.
     private Resolution resolveWithDerived(int targetCodePoint, GlyphOp op) {
         if (!isSlotCodePoint(targetCodePoint)) {
-            return refused(String.format("U+%04X is not a glyph slot", targetCodePoint));
+            return refused(CodePoints.label(targetCodePoint) + " is not a glyph slot");
         }
         for (GlyphOp.Source source : op.sources()) {
             if (!entries.containsKey(source.codePoint())) {
-                return refused(String.format("source U+%04X is empty; draw it first", source.codePoint()));
+                return refused("source " + CodePoints.label(source.codePoint()) + " is empty; draw it first");
             }
         }
         return resolveWithEntry(targetCodePoint, new DerivedGlyph(targetCodePoint, op));

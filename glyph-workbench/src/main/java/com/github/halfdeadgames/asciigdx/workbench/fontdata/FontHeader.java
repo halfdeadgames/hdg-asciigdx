@@ -5,14 +5,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /** Reads the {@code cell WxH} line at the top of a font data file. */
 public final class FontHeader {
-
-    private static final Pattern CELL = Pattern.compile("cell (\\d{1,4})x(\\d{1,4})");
-    private static final int BYTE_ORDER_MARK = 0xFEFF;
 
     private FontHeader() {
     }
@@ -32,25 +27,20 @@ public final class FontHeader {
             if (line == null) {
                 return null;
             }
-            Matcher matcher = CELL.matcher(withoutByteOrderMark(line).strip());
-            if (!matcher.matches()) {
-                return null;
-            }
-            int width = Integer.parseInt(matcher.group(1));
-            int height = Integer.parseInt(matcher.group(2));
-            if (width < 1 || height < 1) {
-                return null;
-            }
-            return new CellSize(width, height);
+            return readCellLine(TextFiles.withoutByteOrderMark(line).strip());
+        }
+    }
+
+    private static CellSize readCellLine(String line) {
+        try {
+            return CellSize.ofCellLine(line);
+        } catch (IllegalArgumentException zeroSide) {
+            return null;
         }
     }
 
     private static boolean isSkippable(String line) {
-        String content = withoutByteOrderMark(line);
+        String content = TextFiles.withoutByteOrderMark(line);
         return content.isBlank() || content.equals("#") || content.startsWith("# ");
-    }
-
-    private static String withoutByteOrderMark(String line) {
-        return !line.isEmpty() && line.charAt(0) == BYTE_ORDER_MARK ? line.substring(1) : line;
     }
 }

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import com.github.halfdeadgames.asciigdx.workbench.derive.DeriveFlow;
 import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.ArrayList;
 import java.util.List;
@@ -259,12 +260,7 @@ public final class PaintHelp {
 
     // The glyph itself is shown only when it is plain printable ASCII, which the UI font can draw.
     private static String partText(PartView part) {
-        StringBuilder out = new StringBuilder("U+");
-        String hex = Integer.toHexString(part.codePoint()).toUpperCase(java.util.Locale.ROOT);
-        for (int pad = hex.length(); pad < 4; pad++) {
-            out.append('0');
-        }
-        out.append(hex).append(' ');
+        StringBuilder out = new StringBuilder(CodePoints.label(part.codePoint())).append(' ');
         if (part.codePoint() > ' ' && part.codePoint() < 0x7F) {
             out.append((char) part.codePoint()).append(' ');
         }

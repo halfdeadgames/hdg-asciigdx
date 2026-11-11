@@ -124,6 +124,6 @@ public final class GlyphResolver {
     }
 
     private static String name(int codePoint) {
-        return String.format("U+%04X", codePoint);
+        return CodePoints.label(codePoint);
     }
 }

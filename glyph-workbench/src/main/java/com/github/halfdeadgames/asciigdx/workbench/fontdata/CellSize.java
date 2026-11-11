@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 public record CellSize(int width, int height) {
 
     private static final Pattern TEXT_FORM = Pattern.compile("(\\d{1,4})x(\\d{1,4})");
+    private static final String CELL_LINE_PREFIX = "cell ";
     private static final Pattern DATA_FILE = Pattern.compile("(\\d{1,4}x\\d{1,4})\\.txt");
 
     /** Rejects sizes with a side below 1. */
@@ -35,6 +36,24 @@ public record CellSize(int width, int height) {
         Matcher matcher = TEXT_FORM.matcher(text);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Size \"" + text + "\" must be width x height, like 16x16");
+        }
+        return new CellSize(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+    }
+
+    /**
+     * Reads a {@code cell WxH} line, like {@code cell 16x16}.
+     *
+     * @param line the line, without surrounding whitespace
+     * @return the size, or null when the line is not in that form
+     * @throws IllegalArgumentException if the line is in that form but a side is 0
+     */
+    public static CellSize ofCellLine(String line) {
+        if (!line.startsWith(CELL_LINE_PREFIX)) {
+            return null;
+        }
+        Matcher matcher = TEXT_FORM.matcher(line.substring(CELL_LINE_PREFIX.length()));
+        if (!matcher.matches()) {
+            return null;
         }
         return new CellSize(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
     }

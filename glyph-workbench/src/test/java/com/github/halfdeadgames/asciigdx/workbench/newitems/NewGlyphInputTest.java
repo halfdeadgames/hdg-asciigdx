@@ -94,7 +94,7 @@ class NewGlyphInputTest {
 
     @Test
     void tooManyDigitsIsRefused() {
-        assertRefused("0000041");
+        assertRefused("000000041");
     }
 
     @Test
