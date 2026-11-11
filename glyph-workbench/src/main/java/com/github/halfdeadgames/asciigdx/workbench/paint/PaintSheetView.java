@@ -7,6 +7,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBarHit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -204,13 +205,7 @@ final class PaintSheetView {
             return;
         }
         int barCell = (pixelY - barTop) / cellPixels();
-        if (barCell == 0) {
-            scroll.scrollBy(-1);
-        } else if (barCell == barCells - 1) {
-            scroll.scrollBy(1);
-        } else {
-            scroll.clickTrack(barCell - 1, barCells - 2);
-        }
+        ScrollBarHit.click(scroll, ScrollBarHit.part(scroll, barCell, barCells));
     }
 
     private int columnBarTop() {
@@ -354,19 +349,7 @@ final class PaintSheetView {
     }
 
     private void drawBar() {
-        boolean active = scroll.needed();
-        Color color = UiPalette.FRAME;
-        int barTop = layout.top();
-        painter.text("▲", barLeft, barTop, color);
-        painter.text("▼", barLeft, barTop + (barCells - 1) * cellPixels(), color);
-        int trackCells = barCells - 2;
-        int thumbStart = scroll.thumbStart(trackCells);
-        int thumbEnd = thumbStart + scroll.thumbSize(trackCells);
-        for (int i = 0; i < trackCells; i++) {
-            barGlyph.setLength(0);
-            boolean thumb = active && i >= thumbStart && i < thumbEnd;
-            barGlyph.append(thumb ? '█' : '░');
-            painter.text(barGlyph, barLeft, barTop + (i + 1) * cellPixels(), thumb ? UiPalette.FOCUS : color);
-        }
+        ScrollBar.drawBarAtPixels(painter, barLeft, layout.top(), barCells,
+            scroll.totalRows(), scroll.visibleRows(), scroll.offset(), scroll.needed());
     }
 }

@@ -83,6 +83,13 @@ class UiKitTest {
     }
 
     @Test
+    void scrollbarThumbMathClampsBadInput() {
+        assertEquals(5, ScrollBar.thumbStart(10, 20, 10, 50));
+        assertEquals(0, ScrollBar.thumbStart(10, 20, 10, -4));
+        assertEquals(10, ScrollBar.thumbSize(10, -3, 0));
+    }
+
+    @Test
     void dialogKeepsButtonsAwayFromTheFrameAndIsCentred() {
         List<Dialog.Button> buttons = List.of(
             new Dialog.Button("S", "SAVE", Dialog.Tone.OK),

@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
+import com.badlogic.gdx.graphics.Color;
+
 /** Shared ▲ ░ █ ▼ scrollbar drawing and thumb math. */
 public final class ScrollBar {
 
@@ -8,40 +10,40 @@ public final class ScrollBar {
 
     /** Thumb length in track cells: proportional to visible over total, at least 1. */
     public static int thumbSize(int track, int total, int visible) {
-        if (track <= 0) {
-            return 0;
-        }
-        if (total <= visible) {
-            return track;
-        }
-        return Math.max(1, Math.min(track, Math.round((float) track * visible / total)));
+        return ScrollState.thumbSize(track, total, visible);
     }
 
     /** First thumb cell; the thumb touches the track end exactly at the last offset. */
     public static int thumbStart(int track, int total, int visible, int offset) {
-        int travel = track - thumbSize(track, total, visible);
-        int max = total - visible;
-        if (travel <= 0 || max <= 0) {
-            return 0;
-        }
-        return Math.round((float) offset * travel / max);
+        return ScrollState.thumbStart(track, total, visible, offset);
     }
 
     /** The shared scrollbar in a one-column rectangle: ▲ and ▼ at the ends, a ░ track, and a █ thumb. Callers show it only when text overflows. */
     public static void drawBar(Painter painter, CellRect bar, int total, int visible, int offset) {
-        int x = bar.x();
-        int y = bar.y();
-        int height = bar.height();
+        drawBar(painter, bar.x(), bar.y(), bar.height(), total, visible, offset);
+    }
+
+    /** Same bar given by its column, top row, and height in cells. */
+    public static void drawBar(Painter painter, int column, int top, int height, int total, int visible, int offset) {
         int cellPixels = painter.cellPixels();
-        painter.text("▲", x * cellPixels, y * cellPixels, UiPalette.FRAME);
-        painter.text("▼", x * cellPixels, (y + height - 1) * cellPixels, UiPalette.FRAME);
+        drawBarAtPixels(painter, column * cellPixels, top * cellPixels, height, total, visible, offset, true);
+    }
+
+    /**
+     * Same bar at a pixel position. Without a thumb the whole track shows as ░, for a bar that has nothing to scroll.
+     */
+    public static void drawBarAtPixels(Painter painter, int pixelX, int pixelTop, int height,
+                                       int total, int visible, int offset, boolean showThumb) {
+        int cellPixels = painter.cellPixels();
+        painter.text("▲", pixelX, pixelTop, UiPalette.FRAME);
+        painter.text("▼", pixelX, pixelTop + (height - 1) * cellPixels, UiPalette.FRAME);
         int track = height - 2;
         int start = thumbStart(track, total, visible, offset);
         int size = thumbSize(track, total, visible);
         for (int i = 0; i < track; i++) {
-            boolean thumb = i >= start && i < start + size;
-            painter.text(thumb ? "█" : "░", x * cellPixels, (y + 1 + i) * cellPixels,
-                thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+            boolean thumb = showThumb && i >= start && i < start + size;
+            Color color = thumb ? UiPalette.FOCUS : UiPalette.FRAME;
+            painter.text(thumb ? "█" : "░", pixelX, pixelTop + (1 + i) * cellPixels, color);
         }
     }
 }

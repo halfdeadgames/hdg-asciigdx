@@ -15,6 +15,10 @@ public final class ScrollState {
         return offset;
     }
 
+    public int totalRows() {
+        return totalRows;
+    }
+
     public int visibleRows() {
         return visibleRows;
     }
@@ -77,34 +81,37 @@ public final class ScrollState {
 
     /** Thumb length in track cells: proportional to visible over total rows, at least 1. */
     public int thumbSize(int trackCells) {
-        if (trackCells <= 0) {
-            return 0;
-        }
-        if (!needed()) {
-            return trackCells;
-        }
-        int size = Math.round((float) trackCells * visibleRows / totalRows);
-        return Math.max(1, Math.min(trackCells, size));
+        return thumbSize(trackCells, totalRows, visibleRows);
     }
 
     /** First thumb cell in the track; the thumb touches the track end exactly at the last offset. */
     public int thumbStart(int trackCells) {
-        int travel = trackCells - thumbSize(trackCells);
-        int max = maxOffset();
+        return thumbStart(trackCells, totalRows, visibleRows, offset);
+    }
+
+    /** Thumb length for raw numbers: total is at least 0 and visible at least 1. */
+    public static int thumbSize(int trackCells, int totalRows, int visibleRows) {
+        if (trackCells <= 0) {
+            return 0;
+        }
+        int total = Math.max(0, totalRows);
+        int visible = Math.max(1, visibleRows);
+        if (total <= visible) {
+            return trackCells;
+        }
+        int size = Math.round((float) trackCells * visible / total);
+        return Math.max(1, Math.min(trackCells, size));
+    }
+
+    /** First thumb cell for raw numbers; the offset is clamped into range. */
+    public static int thumbStart(int trackCells, int totalRows, int visibleRows, int offset) {
+        int travel = trackCells - thumbSize(trackCells, totalRows, visibleRows);
+        int max = Math.max(0, Math.max(0, totalRows) - Math.max(1, visibleRows));
         if (travel <= 0 || max == 0) {
             return 0;
         }
-        return Math.round((float) offset * travel / max);
-    }
-
-    /** Pages towards a clicked track cell; clicks on the thumb do nothing. */
-    public void clickTrack(int trackCell, int trackCells) {
-        int start = thumbStart(trackCells);
-        if (trackCell < start) {
-            pageUp();
-        } else if (trackCell >= start + thumbSize(trackCells)) {
-            pageDown();
-        }
+        int clampedOffset = Math.max(0, Math.min(max, offset));
+        return Math.round((float) clampedOffset * travel / max);
     }
 
     private int clamp(int value) {

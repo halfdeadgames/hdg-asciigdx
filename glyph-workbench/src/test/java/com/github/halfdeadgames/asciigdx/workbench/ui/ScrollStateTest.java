@@ -95,16 +95,4 @@ class ScrollStateTest {
         assertEquals(8, scroll.thumbStart(20));
     }
 
-    @Test
-    void trackClicksPageTowardsTheClick() {
-        ScrollState scroll = state(100, 10);
-        scroll.clickTrack(15, 20);
-        assertEquals(10, scroll.offset());
-        int start = scroll.thumbStart(20);
-        scroll.clickTrack(start, 20);
-        assertEquals(10, scroll.offset());
-        scroll.toBottom();
-        scroll.clickTrack(0, 20);
-        assertEquals(80, scroll.offset());
-    }
 }
