@@ -40,8 +40,8 @@ public final class NewSizeScreen implements WorkbenchScreen {
     private final DevCapture devCapture = new DevCapture();
     private final Vector2 pointer = new Vector2();
 
-    private int pointerX;
-    private int pointerY;
+    private int pixelX;
+    private int pixelY;
     private SpriteBatch batch;
     private Texture whitePixel;
     private TextureGlyphSource source;
@@ -90,7 +90,7 @@ public final class NewSizeScreen implements WorkbenchScreen {
             return;
         }
         updatePointer();
-        dialog.open(options, folder.getFileName().toString(), pointerX, pointerY);
+        dialog.open(options, folder.getFileName().toString(), pixelX, pixelY);
         applyCaptureRequest();
     }
 
@@ -122,15 +122,15 @@ public final class NewSizeScreen implements WorkbenchScreen {
         }
         boolean clicked = Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
         updatePointer();
-        dialog.handlePointer(clicked, pointerX, pointerY, CELL, dialogArea());
+        dialog.handlePointer(clicked, pixelX, pixelY, CELL, dialogArea());
     }
 
     // Window pixels go through the viewport so UI scale and HiDPI are honoured; Y is measured from the top.
     private void updatePointer() {
         pointer.set(Gdx.input.getX(), Gdx.input.getY());
         viewport.unproject(pointer);
-        pointerX = (int) Math.floor(pointer.x);
-        pointerY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
+        pixelX = (int) Math.floor(pointer.x);
+        pixelY = (int) Math.floor(viewport.getWorldHeight() - pointer.y);
     }
 
     private int columns() {

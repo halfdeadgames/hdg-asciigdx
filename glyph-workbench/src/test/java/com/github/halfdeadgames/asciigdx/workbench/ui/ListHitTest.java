@@ -20,8 +20,8 @@ class ListHitTest {
         return cells * CELL + CELL / 2;
     }
 
-    private static ListHit hit(int pointerX, int pointerY, int offset, boolean scrolls) {
-        return ListHit.of(LAYOUT, pointerX, pointerY, CELL, LIST_TOP, SHOWN_ROWS, offset, scrolls);
+    private static ListHit hit(int pixelX, int pixelY, int offset, boolean scrolls) {
+        return ListHit.of(LAYOUT, pixelX, pixelY, CELL, LIST_TOP, SHOWN_ROWS, offset, scrolls);
     }
 
     private static ListHit hitAtCell(int column, int cellRow, int offset, boolean scrolls) {

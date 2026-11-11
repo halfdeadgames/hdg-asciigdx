@@ -126,10 +126,10 @@ public final class RulesScreen {
         }
         dim.set(0f, 0f, 0f, DIM_ALPHA * slide);
         painter.fill(dim, 0, 0, worldWidth, worldHeight);
-        int cell = painter.cell();
-        int cellsWide = RulesPanel.cellsWideFor(worldWidth, cell);
+        int cellPixels = painter.cellPixels();
+        int cellsWide = RulesPanel.cellsWideFor(worldWidth, cellPixels);
         float eased = 1f - (1f - slide) * (1f - slide);
-        int left = worldWidth - Math.round(cellsWide * cell * eased);
-        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / cell), worldHeight, codePoint);
+        int left = worldWidth - Math.round(cellsWide * cellPixels * eased);
+        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / cellPixels), worldHeight, codePoint);
     }
 }

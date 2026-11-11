@@ -14,13 +14,14 @@ final class PaintScale {
 
     /** Smallest window width that holds the paint screen at the given factor. */
     static int minimumWidth(int factor, int gap, int glyphWidth, int glyphHeight) {
-        int cell = new UiScale(factor).cell();
-        return PaintColumns.minimumWidth(PaintSheetView.slotWidthFor(glyphWidth, glyphHeight, cell), gap, glyphWidth, cell);
+        int cellPixels = new UiScale(factor).cellPixels();
+        return PaintColumns.minimumWidth(PaintSheetView.slotWidthFor(glyphWidth, glyphHeight, cellPixels), gap,
+            glyphWidth, cellPixels);
     }
 
     /** Smallest window height that holds the paint screen at the given factor. */
     static int minimumHeight(int factor, int glyphHeight) {
-        return PaintLayout.minimumHeight(glyphHeight, new UiScale(factor).cell());
+        return PaintLayout.minimumHeight(glyphHeight, new UiScale(factor).cellPixels());
     }
 
     /**

@@ -58,20 +58,22 @@ public final class Panel {
         int y = area.y();
         int width = area.width();
         int height = area.height();
-        int cell = painter.cell();
-        painter.fill(UiPalette.PANEL, x * cell, y * cell, width * cell, height * cell);
+        int cellPixels = painter.cellPixels();
+        painter.fill(UiPalette.PANEL, x * cellPixels, y * cellPixels, width * cellPixels, height * cellPixels);
         var color = focus ? UiPalette.FOCUS : UiPalette.FRAME;
-        painter.text(topEdge(width, title, focus), x * cell, y * cell, color);
-        painter.text(bottomEdge(width, focus), x * cell, (y + height - 1) * cell, color);
+        painter.text(topEdge(width, title, focus), x * cellPixels, y * cellPixels, color);
+        painter.text(bottomEdge(width, focus), x * cellPixels, (y + height - 1) * cellPixels, color);
         String vertical = focus ? "║" : "│";
         for (int row = 1; row < height - 1; row++) {
-            painter.text(vertical, x * cell, (y + row) * cell, color);
-            painter.text(vertical, (x + width - 1) * cell, (y + row) * cell, color);
+            painter.text(vertical, x * cellPixels, (y + row) * cellPixels, color);
+            painter.text(vertical, (x + width - 1) * cellPixels, (y + row) * cellPixels, color);
         }
         String label = titleLabel(width, title);
         if (!label.isEmpty()) {
-            painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * cell, y * cell, label.length() * cell, cell);
-            painter.text(label, (x + TITLE_INSET) * cell, y * cell, focus ? UiPalette.ACCENT : UiPalette.TITLE);
+            painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * cellPixels, y * cellPixels,
+                label.length() * cellPixels, cellPixels);
+            painter.text(label, (x + TITLE_INSET) * cellPixels, y * cellPixels,
+                focus ? UiPalette.ACCENT : UiPalette.TITLE);
         }
     }
 }

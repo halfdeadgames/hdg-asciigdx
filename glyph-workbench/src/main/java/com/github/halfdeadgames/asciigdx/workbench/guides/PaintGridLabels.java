@@ -21,10 +21,11 @@ public final class PaintGridLabels {
      * @param pixelSize size of one grid pixel
      * @param areaWidth width of the area the grid is fitted to
      * @param areaHeight height of the area the grid is fitted to
-     * @param cell size of one label character
+     * @param cellPixels size of one label character
      * @param labelGap free space required between neighbouring labels
      */
-    public record Frame(int left, int top, int pixelSize, int areaWidth, int areaHeight, int cell, int labelGap) { }
+    public record Frame(int left, int top, int pixelSize, int areaWidth, int areaHeight, int cellPixels,
+                        int labelGap) { }
 
     private int[] rowLabelY = new int[0];
     private int[] widthLabelX = new int[0];
@@ -68,11 +69,11 @@ public final class PaintGridLabels {
         fillShownRowWanted(wanted, shown, frame);
         if (slotCount > shownSlots) {
             wanted[shownSlots] = frame.top() + Math.round(highlightLineRow(mark) * frame.pixelSize())
-                - frame.cell() / 2;
+                - frame.cellPixels() / 2;
         }
-        Arrays.fill(sizes, frame.cell());
-        rowLabelY = LabelPlacer.place(wanted, sizes, frame.top() - LABEL_ROWS_ABOVE * frame.cell(),
-            frame.top() + frame.areaHeight() + frame.cell() / 2, frame.labelGap());
+        Arrays.fill(sizes, frame.cellPixels());
+        rowLabelY = LabelPlacer.place(wanted, sizes, frame.top() - LABEL_ROWS_ABOVE * frame.cellPixels(),
+            frame.top() + frame.areaHeight() + frame.cellPixels() / 2, frame.labelGap());
     }
 
     private static int findHighlightRowSlot(PaintGuides.Shown shown, PaintGuides.Listed mark) {
@@ -112,11 +113,11 @@ public final class PaintGridLabels {
         List<PaintGuides.RowGuide> rows = shown.rows();
         List<PaintGuides.BarGuide> bars = shown.bars();
         for (int i = 0; i < rows.size(); i++) {
-            wanted[i] = frame.top() + rows.get(i).boundaryRow() * frame.pixelSize() - frame.cell() / 2;
+            wanted[i] = frame.top() + rows.get(i).boundaryRow() * frame.pixelSize() - frame.cellPixels() / 2;
         }
         for (int i = 0; i < bars.size(); i++) {
             wanted[rows.size() + i] = frame.top() + Math.round(bars.get(i).centerRow() * frame.pixelSize())
-                - frame.cell() / 2;
+                - frame.cellPixels() / 2;
         }
     }
 
@@ -203,13 +204,13 @@ public final class PaintGridLabels {
         int slot = 0;
         for (int i = 0; i < tiers.length; i++) {
             if (tiers[i] == tier) {
-                tierSizes[slot] = labels[i].length() * frame.cell();
+                tierSizes[slot] = labels[i].length() * frame.cellPixels();
                 tierWanted[slot] = frame.left() + centers[i] - tierSizes[slot] / 2;
                 slot++;
             }
         }
-        int[] placed = LabelPlacer.place(tierWanted, tierSizes, frame.left() - WIDTH_LABEL_ROOM_LEFT * frame.cell(),
-            frame.left() + frame.areaWidth() + frame.cell(), frame.labelGap());
+        int[] placed = LabelPlacer.place(tierWanted, tierSizes, frame.left() - WIDTH_LABEL_ROOM_LEFT * frame.cellPixels(),
+            frame.left() + frame.areaWidth() + frame.cellPixels(), frame.labelGap());
         slot = 0;
         for (int i = 0; i < tiers.length; i++) {
             if (tiers[i] == tier) {

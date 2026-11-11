@@ -36,8 +36,8 @@ public final class Painter {
     }
 
     /** Pixels of one text cell at this painter's scale. */
-    public int cell() {
-        return scale.cell();
+    public int cellPixels() {
+        return scale.cellPixels();
     }
 
     public void fill(Color color, int x, int top, int width, int height) {
@@ -57,7 +57,7 @@ public final class Painter {
     }
 
     public void text(CharSequence value, int x, int top, Color color) {
-        int size = cell();
+        int size = cellPixels();
         batch.setColor(color);
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
@@ -69,7 +69,7 @@ public final class Painter {
 
     /** Draws a double-line border of text-sized cells; the size must be at least 2x2 cells. */
     public void frame(Color color, int x, int top, int cellsWide, int cellsHigh) {
-        int size = cell();
+        int size = cellPixels();
         int right = x + (cellsWide - 1) * size;
         int bottom = top + (cellsHigh - 1) * size;
         batch.setColor(color);
@@ -88,7 +88,7 @@ public final class Painter {
     }
 
     private void cell(char c, int x, int top) {
-        int size = cell();
+        int size = cellPixels();
         batch.draw(font.glyph(c), x, flipY(top, size), size, size);
     }
 

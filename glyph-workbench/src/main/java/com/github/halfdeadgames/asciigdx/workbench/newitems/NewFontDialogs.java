@@ -265,9 +265,9 @@ final class NewFontDialogs {
         if (!page.showsHint()) {
             return;
         }
-        int cell = painter.cell();
-        painter.text(NewFontSizePrompt.HINT, (layout.textX() + HINT_COLUMN) * cell,
-            (layout.textY() + NewFontSizePrompt.INPUT_LINE) * cell, UiPalette.INACTIVE);
+        int cellPixels = painter.cellPixels();
+        painter.text(NewFontSizePrompt.HINT, (layout.textX() + HINT_COLUMN) * cellPixels,
+            (layout.textY() + NewFontSizePrompt.INPUT_LINE) * cellPixels, UiPalette.INACTIVE);
     }
 
     /** Draws the open page, dimming the whole screen first. */

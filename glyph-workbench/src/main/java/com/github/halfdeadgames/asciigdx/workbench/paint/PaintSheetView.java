@@ -59,17 +59,17 @@ final class PaintSheetView {
         setVisibleColumns(COLUMNS);
     }
 
-    private int cell() {
-        return painter.cell();
+    private int cellPixels() {
+        return painter.cellPixels();
     }
 
     private int frameTop() {
-        return topRows * cell();
+        return topRows * cellPixels();
     }
 
     // Whole-number zoom that makes a glyph's longer side at least one text cell.
     private int pixelScale() {
-        return pixelScaleFor(editor.cellWidth(), editor.cellHeight(), cell());
+        return pixelScaleFor(editor.cellWidth(), editor.cellHeight(), cellPixels());
     }
 
     private static int pixelScaleFor(int glyphWidth, int glyphHeight, int cellPixels) {
@@ -87,25 +87,25 @@ final class PaintSheetView {
 
     /** Pixel width of one slot on the sheet. */
     int slotWidth() {
-        return slotWidthFor(editor.cellWidth(), editor.cellHeight(), cell());
+        return slotWidthFor(editor.cellWidth(), editor.cellHeight(), cellPixels());
     }
 
     /** Shows a window of glyph columns; the frame shrinks to fit them. Slot numbers do not change. */
     void setVisibleColumns(int columns) {
         int clamped = Math.max(1, Math.min(COLUMNS, columns));
-        if (clamped == visibleColumns && layoutCell == cell()) {
+        if (clamped == visibleColumns && layoutCell == cellPixels()) {
             return;
         }
         visibleColumns = clamped;
-        layoutCell = cell();
+        layoutCell = cellPixels();
         columnScroll.setVisibleRows(visibleColumns);
         columnsChanged = true;
         frameCellsWide = Math.max(minimumFrameCells,
-            PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP, cell()));
-        int inset = PaintColumns.panelInset(frameCellsWide, visibleColumns * (slotWidth() + GAP) + GAP, cell());
-        layout = new SheetGridLayout(frameLeft + cell() + inset, frameTop() + cell(),
+            PaintColumns.sheetCells(visibleColumns, slotWidth(), GAP, cellPixels()));
+        int inset = PaintColumns.panelInset(frameCellsWide, visibleColumns * (slotWidth() + GAP) + GAP, cellPixels());
+        layout = new SheetGridLayout(frameLeft + cellPixels() + inset, frameTop() + cellPixels(),
             new GlyphSize(slotWidth(), editor.cellHeight() * pixelScale()), GAP, COLUMNS, visibleColumns, rows);
-        barLeft = frameLeft + (frameCellsWide - 2) * cell();
+        barLeft = frameLeft + (frameCellsWide - 2) * cellPixels();
     }
 
     /** Keeps the frame at least this many cells wide; the glyph grid stays centred in it. */
@@ -155,7 +155,7 @@ final class PaintSheetView {
     }
 
     int frameRight() {
-        return frameLeft + frameCellsWide * cell();
+        return frameLeft + frameCellsWide * cellPixels();
     }
 
     /** Scrolls both ways, the least amount that shows the slot. */
@@ -173,10 +173,10 @@ final class PaintSheetView {
      * visible when asked or when the number of visible rows changed.
      */
     void fitToHeight(int worldHeight, boolean statusBarShown, int cursorSlot, boolean revealCursor) {
-        frameCellsHigh = PaintLayout.sheetRows(worldHeight, cell(), statusBarShown, topRows);
+        frameCellsHigh = PaintLayout.sheetRows(worldHeight, cellPixels(), statusBarShown, topRows);
         barCells = Math.max(1, frameCellsHigh - 2 - (columnBarShown() ? 1 : 0));
         int before = scroll.visibleRows();
-        scroll.setVisibleRows(layout.rowsThatFit(barCells * cell()));
+        scroll.setVisibleRows(layout.rowsThatFit(barCells * cellPixels()));
         if (revealCursor || before != scroll.visibleRows()) {
             scroll.keepVisible(cursorSlot / COLUMNS);
         }
@@ -188,7 +188,7 @@ final class PaintSheetView {
 
     boolean contains(int pixelX, int pixelY) {
         return pixelX >= frameLeft && pixelX < frameRight()
-            && pixelY >= frameTop() && pixelY < frameTop() + frameCellsHigh * cell();
+            && pixelY >= frameTop() && pixelY < frameTop() + frameCellsHigh * cellPixels();
     }
 
     /** Slot under a pixel, or -1. */
@@ -199,11 +199,11 @@ final class PaintSheetView {
     /** Handles a click on the scroll bar arrows or track. */
     void clickBar(int pixelX, int pixelY) {
         int barTop = layout.top();
-        if (!scroll.needed() || pixelX < barLeft || pixelX >= barLeft + cell()
-            || pixelY < barTop || pixelY >= barTop + barCells * cell()) {
+        if (!scroll.needed() || pixelX < barLeft || pixelX >= barLeft + cellPixels()
+            || pixelY < barTop || pixelY >= barTop + barCells * cellPixels()) {
             return;
         }
-        int barCell = (pixelY - barTop) / cell();
+        int barCell = (pixelY - barTop) / cellPixels();
         if (barCell == 0) {
             scroll.scrollBy(-1);
         } else if (barCell == barCells - 1) {
@@ -214,7 +214,7 @@ final class PaintSheetView {
     }
 
     private int columnBarTop() {
-        return frameTop() + (frameCellsHigh - 2) * cell();
+        return frameTop() + (frameCellsHigh - 2) * cellPixels();
     }
 
     private int columnBarCells() {
@@ -223,11 +223,11 @@ final class PaintSheetView {
 
     private int columnBarCellAt(int pixelX, int pixelY) {
         int barTop = columnBarTop();
-        if (!columnBarShown() || pixelY < barTop || pixelY >= barTop + cell()
-            || pixelX < frameLeft + cell() || pixelX >= frameLeft + cell() + columnBarCells() * cell()) {
+        if (!columnBarShown() || pixelY < barTop || pixelY >= barTop + cellPixels()
+            || pixelX < frameLeft + cellPixels() || pixelX >= frameLeft + cellPixels() + columnBarCells() * cellPixels()) {
             return -1;
         }
-        return (pixelX - frameLeft - cell()) / cell();
+        return (pixelX - frameLeft - cellPixels()) / cellPixels();
     }
 
     /** Handles a press on the glyph column bar; true when the press landed on it. A press on the thumb starts a drag. */
@@ -252,7 +252,7 @@ final class PaintSheetView {
 
     /** Moves the thumb with the pointer; the pointer may leave the bar sideways. */
     void dragColumnBar(int pixelX) {
-        int barCell = Math.floorDiv(pixelX - frameLeft - cell(), cell());
+        int barCell = Math.floorDiv(pixelX - frameLeft - cellPixels(), cellPixels());
         columnScroll.scrollTo(ScrollBarHit.offsetForDrag(columnScroll, barCell, columnBarCells(), columnGrabOffset));
     }
 
@@ -266,7 +266,7 @@ final class PaintSheetView {
 
     /** @param sourceSlot slot of the derive source cursor, or -1 for none */
     void draw(int cursorSlot, int sourceSlot) {
-        Panel.draw(painter, new CellRect(frameLeft / cell(), topRows, frameCellsWide, frameCellsHigh),
+        Panel.draw(painter, new CellRect(frameLeft / cellPixels(), topRows, frameCellsWide, frameCellsHigh),
             frameTitle(), false);
         drawBar();
         if (columnBarShown()) {
@@ -339,17 +339,17 @@ final class PaintSheetView {
         Color color = UiPalette.FRAME;
         int cells = columnBarCells();
         int barTop = columnBarTop();
-        int barLeftEdge = frameLeft + cell();
+        int barLeftEdge = frameLeft + cellPixels();
         int trackCells = cells - 2;
         painter.text("◄", barLeftEdge, barTop, color);
-        painter.text("►", barLeftEdge + (cells - 1) * cell(), barTop, color);
+        painter.text("►", barLeftEdge + (cells - 1) * cellPixels(), barTop, color);
         int thumbStart = columnScroll.thumbStart(trackCells);
         int thumbEnd = thumbStart + columnScroll.thumbSize(trackCells);
         for (int i = 0; i < trackCells; i++) {
             barGlyph.setLength(0);
             boolean thumb = i >= thumbStart && i < thumbEnd;
             barGlyph.append(thumb ? '█' : '░');
-            painter.text(barGlyph, barLeftEdge + (i + 1) * cell(), barTop, thumb ? UiPalette.FOCUS : color);
+            painter.text(barGlyph, barLeftEdge + (i + 1) * cellPixels(), barTop, thumb ? UiPalette.FOCUS : color);
         }
     }
 
@@ -358,7 +358,7 @@ final class PaintSheetView {
         Color color = UiPalette.FRAME;
         int barTop = layout.top();
         painter.text("▲", barLeft, barTop, color);
-        painter.text("▼", barLeft, barTop + (barCells - 1) * cell(), color);
+        painter.text("▼", barLeft, barTop + (barCells - 1) * cellPixels(), color);
         int trackCells = barCells - 2;
         int thumbStart = scroll.thumbStart(trackCells);
         int thumbEnd = thumbStart + scroll.thumbSize(trackCells);
@@ -366,7 +366,7 @@ final class PaintSheetView {
             barGlyph.setLength(0);
             boolean thumb = active && i >= thumbStart && i < thumbEnd;
             barGlyph.append(thumb ? '█' : '░');
-            painter.text(barGlyph, barLeft, barTop + (i + 1) * cell(), thumb ? UiPalette.FOCUS : color);
+            painter.text(barGlyph, barLeft, barTop + (i + 1) * cellPixels(), thumb ? UiPalette.FOCUS : color);
         }
     }
 }

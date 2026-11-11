@@ -7,16 +7,16 @@ import java.util.function.IntSupplier;
 final class MessagesPointerTarget implements PointerTarget {
 
     private final MessageStrip messages;
-    private final IntSupplier cell;
+    private final IntSupplier cellPixels;
 
-    MessagesPointerTarget(MessageStrip messages, IntSupplier cell) {
+    MessagesPointerTarget(MessageStrip messages, IntSupplier cellPixels) {
         this.messages = messages;
-        this.cell = cell;
+        this.cellPixels = cellPixels;
     }
 
     @Override
     public void notifyPress(int x, int y) {
-        int cellSize = cell.getAsInt();
-        messages.click(Math.floorDiv(x, cellSize), Math.floorDiv(y, cellSize));
+        int size = cellPixels.getAsInt();
+        messages.click(Math.floorDiv(x, size), Math.floorDiv(y, size));
     }
 }

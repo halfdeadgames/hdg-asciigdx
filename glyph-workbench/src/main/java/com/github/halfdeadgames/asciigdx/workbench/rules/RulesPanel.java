@@ -86,25 +86,25 @@ final class RulesPanel {
         if (stale || codePoint != shownCodePoint || cellsWide != builtCellsWide) {
             rebuild(codePoint, cellsWide);
         }
-        int cell = painter.cell();
-        painter.fill(fillColor, x, top, cellsWide * cell, pixelHeight);
+        int cellPixels = painter.cellPixels();
+        painter.fill(fillColor, x, top, cellsWide * cellPixels, pixelHeight);
         painter.frame(frameColor, x, top, cellsWide, cellsHigh);
         room = Math.max(1, cellsHigh - 2);
         offset = Math.max(0, Math.min(maxOffset(), offset));
-        int textLeft = x + cell;
-        int textTop = top + cell;
+        int textLeft = x + cellPixels;
+        int textTop = top + cellPixels;
         int end = Math.min(lines.size(), offset + room);
         for (int i = offset; i < end; i++) {
             RulesPageLines.PageLine line = lines.get(i);
             painter.text(line.text(), textLeft,
-                textTop + (i - offset) * cell, colorOf(line.role()));
+                textTop + (i - offset) * cellPixels, colorOf(line.role()));
         }
-        int arrowLeft = textLeft + textChars * cell;
+        int arrowLeft = textLeft + textChars * cellPixels;
         if (offset > 0) {
             painter.text("▲", arrowLeft, textTop, headingColor);
         }
         if (offset < maxOffset()) {
-            painter.text("▼", arrowLeft, textTop + (room - 1) * cell, headingColor);
+            painter.text("▼", arrowLeft, textTop + (room - 1) * cellPixels, headingColor);
         }
     }
 

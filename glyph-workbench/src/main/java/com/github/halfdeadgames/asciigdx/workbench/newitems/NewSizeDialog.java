@@ -26,8 +26,8 @@ public final class NewSizeDialog {
     private final NewSizePrompt prompt;
     private final KeyRepeat repeatBackspace = new KeyRepeat();
     // The list highlight follows the pointer only after it moves, so arrow keys are not undone by a resting pointer.
-    private int lastPointerX;
-    private int lastPointerY;
+    private int lastPixelX;
+    private int lastPixelY;
     private int swallowFrames;
 
     /** @param onChoose called with the chosen size after the dialog closes */
@@ -52,9 +52,9 @@ public final class NewSizeDialog {
      *
      * @param folderName the font folder name shown on the typed page
      */
-    public void open(List<NewSizePlan.SizeOption> options, String folderName, int pointerX, int pointerY) {
-        lastPointerX = pointerX;
-        lastPointerY = pointerY;
+    public void open(List<NewSizePlan.SizeOption> options, String folderName, int pixelX, int pixelY) {
+        lastPixelX = pixelX;
+        lastPixelY = pixelY;
         swallowFrames = OPENING_SWALLOW_FRAMES;
         prompt.open(options, folderName);
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
@@ -118,21 +118,21 @@ public final class NewSizeDialog {
     /**
      * Handles the pointer: hover follows it once it moves, a click outside closes the dialog, and a click on a selectable row picks it.
      *
-     * @param pointerX pointer position in pixels from the left
-     * @param pointerY pointer position in pixels from the top
-     * @param cell the cell size in pixels
+     * @param pixelX pointer position in pixels from the left
+     * @param pixelY pointer position in pixels from the top
+     * @param cellPixels the cell size in pixels
      * @param area the cell rectangle the dialog is centred in
      */
-    public void handlePointer(boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
+    public void handlePointer(boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
         Dialog.Layout layout = layout(area);
-        boolean inside = isInside(layout, pointerX, pointerY, cell);
+        boolean inside = isInside(layout, pixelX, pixelY, cellPixels);
         if (prompt.isTyping()) {
             closeOnOutsideClick(clicked, inside);
             return;
         }
-        int row = SelectList.rowAt(Math.floorDiv(pointerY, cell), layout.textY(), prompt.rowCount());
+        int row = SelectList.rowAt(Math.floorDiv(pixelY, cellPixels), layout.textY(), prompt.rowCount());
         boolean onRow = row >= 0 && inside;
-        followPointer(pointerX, pointerY, onRow, row);
+        followPointer(pixelX, pixelY, onRow, row);
         if (clicked) {
             handleClick(inside, onRow, row);
         }
@@ -164,12 +164,12 @@ public final class NewSizeDialog {
         }
     }
 
-    private void followPointer(int pointerX, int pointerY, boolean onRow, int row) {
-        if (pointerX == lastPointerX && pointerY == lastPointerY) {
+    private void followPointer(int pixelX, int pixelY, boolean onRow, int row) {
+        if (pixelX == lastPixelX && pixelY == lastPixelY) {
             return;
         }
-        lastPointerX = pointerX;
-        lastPointerY = pointerY;
+        lastPixelX = pixelX;
+        lastPixelY = pixelY;
         if (onRow) {
             prompt.hover(row);
         }
@@ -201,9 +201,9 @@ public final class NewSizeDialog {
         return DialogContent.of(TITLE, prompt.lines(), LIST_BUTTONS);
     }
 
-    private static boolean isInside(Dialog.Layout layout, int pointerX, int pointerY, int cell) {
-        int column = Math.floorDiv(pointerX, cell);
-        int row = Math.floorDiv(pointerY, cell);
+    private static boolean isInside(Dialog.Layout layout, int pixelX, int pixelY, int cellPixels) {
+        int column = Math.floorDiv(pixelX, cellPixels);
+        int row = Math.floorDiv(pixelY, cellPixels);
         return column >= layout.x() && column < layout.x() + layout.width()
             && row >= layout.y() && row < layout.y() + layout.height();
     }

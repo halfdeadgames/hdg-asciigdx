@@ -101,7 +101,7 @@ final class PaintGridView {
 
     /** Picks the largest pixel size that fits the area, leaving room on the right for guide labels. */
     void fitTo(int areaLeft, int areaTop, int areaWidth, int areaHeight) {
-        int usableWidth = areaWidth - LABEL_CELLS * painter.cell();
+        int usableWidth = areaWidth - LABEL_CELLS * painter.cellPixels();
         int fit = Math.min(usableWidth / editor.cellWidth(), areaHeight / editor.cellHeight());
         pixelSize = Math.max(MIN_PIXEL, Math.min(MAX_PIXEL, fit));
         left = areaLeft;
@@ -316,14 +316,14 @@ final class PaintGridView {
         int gridRight = left + editor.cellWidth() * pixelSize;
         int gridBottom = top + editor.cellHeight() * pixelSize;
         int arrowTop = clamp(top + (ghostFirstRow + ghostLastRow + 1 + 2 * ghost.down()) * pixelSize / 2
-            - painter.cell() / 2, top, gridBottom - painter.cell());
+            - painter.cellPixels() / 2, top, gridBottom - painter.cellPixels());
         int arrowLeft = clamp(left + (ghostFirstInk + ghostLastInk + 1 + 2 * ghost.shift()) * pixelSize / 2
-            - painter.cell() / 2, left, gridRight - painter.cell());
+            - painter.cellPixels() / 2, left, gridRight - painter.cellPixels());
         switch (side) {
-            case RIGHT -> painter.text(">", gridRight - painter.cell(), arrowTop, UiPalette.WARN);
+            case RIGHT -> painter.text(">", gridRight - painter.cellPixels(), arrowTop, UiPalette.WARN);
             case LEFT -> painter.text("<", left, arrowTop, UiPalette.WARN);
             case UP -> painter.text("^", arrowLeft, top, UiPalette.WARN);
-            case DOWN -> painter.text("v", arrowLeft, gridBottom - painter.cell(), UiPalette.WARN);
+            case DOWN -> painter.text("v", arrowLeft, gridBottom - painter.cellPixels(), UiPalette.WARN);
             default -> { }
         }
     }
@@ -361,7 +361,7 @@ final class PaintGridView {
         layoutDirty = false;
         PaintGuides.Listed mark = highlightVisible() ? highlighted : null;
         labels.layout(shown, mark, new PaintGridLabels.Frame(left, top, pixelSize, areaWidth, areaHeight,
-            painter.cell(), scaled(LABEL_GAP)));
+            painter.cellPixels(), scaled(LABEL_GAP)));
     }
 
     // Guides beyond the cell are not drawn, so they take no label slot either.
@@ -397,13 +397,13 @@ final class PaintGridView {
     }
 
     private void drawWidthLabel(String text, Color color, int lineX, int labelX, int tier) {
-        int cell = painter.cell();
-        int labelWidth = text.length() * cell;
-        int labelY = top - overhang() - (tier + 1) * cell;
+        int cellPixels = painter.cellPixels();
+        int labelWidth = text.length() * cellPixels;
+        int labelY = top - overhang() - (tier + 1) * cellPixels;
         painter.text(text, labelX, labelY, color);
         if (labelX != lineX - labelWidth / 2) {
             // Underline the moved label out to the guide, then drop a stem down to the guide's end.
-            int underlineY = labelY + cell;
+            int underlineY = labelY + cellPixels;
             int leader = scaled(LEADER_THICKNESS);
             painter.fill(color, Math.min(lineX, labelX), underlineY,
                 Math.max(lineX, labelX + labelWidth) - Math.min(lineX, labelX), leader);
@@ -413,16 +413,16 @@ final class PaintGridView {
 
     // Draws the label of a right-hand guide at labelY; a label moved off its guide gets a thin elbow leader.
     private void drawRowLabel(String text, Color color, int lineY, int labelY) {
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         int guideEnd = left + editor.cellWidth() * pixelSize + overhang();
-        int labelX = guideEnd + cell / 2;
+        int labelX = guideEnd + cellPixels / 2;
         painter.text(text, labelX, labelY, color);
-        int labelCenter = labelY + cell / 2;
+        int labelCenter = labelY + cellPixels / 2;
         if (labelCenter == lineY) {
             return;
         }
         int leader = scaled(LEADER_THICKNESS);
-        int elbowX = guideEnd + cell / 4;
+        int elbowX = guideEnd + cellPixels / 4;
         painter.fill(color, guideEnd, lineY, elbowX - guideEnd + leader, leader);
         painter.fill(color, elbowX, Math.min(lineY, labelCenter), leader, Math.abs(labelCenter - lineY));
         painter.fill(color, elbowX, labelCenter, labelX - elbowX, leader);

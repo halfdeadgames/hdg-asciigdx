@@ -32,15 +32,16 @@ public final class ScrollBar {
         int x = bar.x();
         int y = bar.y();
         int height = bar.height();
-        int cell = painter.cell();
-        painter.text("▲", x * cell, y * cell, UiPalette.FRAME);
-        painter.text("▼", x * cell, (y + height - 1) * cell, UiPalette.FRAME);
+        int cellPixels = painter.cellPixels();
+        painter.text("▲", x * cellPixels, y * cellPixels, UiPalette.FRAME);
+        painter.text("▼", x * cellPixels, (y + height - 1) * cellPixels, UiPalette.FRAME);
         int track = height - 2;
         int start = thumbStart(track, total, visible, offset);
         int size = thumbSize(track, total, visible);
         for (int i = 0; i < track; i++) {
             boolean thumb = i >= start && i < start + size;
-            painter.text(thumb ? "█" : "░", x * cell, (y + 1 + i) * cell, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+            painter.text(thumb ? "█" : "░", x * cellPixels, (y + 1 + i) * cellPixels,
+                thumb ? UiPalette.FOCUS : UiPalette.FRAME);
         }
     }
 }

@@ -25,18 +25,18 @@ public final class GroupedPickListView {
 
     // The bar sits in the last text column beside the list: arrows on the first and last cell, track between.
     private static void drawBar(Painter painter, GroupedPickList<?> list, int column, int listTop) {
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         ScrollState window = list.window();
         int barCells = list.shownRows() * SelectList.PITCH - 1;
         int trackCells = barCells - 2;
-        int x = column * cell;
-        painter.text("▲", x, listTop * cell, UiPalette.FRAME);
-        painter.text("▼", x, (listTop + barCells - 1) * cell, UiPalette.FRAME);
+        int x = column * cellPixels;
+        painter.text("▲", x, listTop * cellPixels, UiPalette.FRAME);
+        painter.text("▼", x, (listTop + barCells - 1) * cellPixels, UiPalette.FRAME);
         int thumbStart = window.thumbStart(trackCells);
         int thumbEnd = thumbStart + window.thumbSize(trackCells);
         for (int i = 0; i < trackCells; i++) {
             boolean thumb = i >= thumbStart && i < thumbEnd;
-            painter.text(thumb ? "█" : "░", x, (listTop + 1 + i) * cell, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
+            painter.text(thumb ? "█" : "░", x, (listTop + 1 + i) * cellPixels, thumb ? UiPalette.FOCUS : UiPalette.FRAME);
         }
     }
 }

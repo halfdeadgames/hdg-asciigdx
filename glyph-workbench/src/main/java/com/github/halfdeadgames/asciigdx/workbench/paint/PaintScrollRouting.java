@@ -18,7 +18,7 @@ final class PaintScrollRouting {
 
         boolean isOverlayOperation();
 
-        int cell();
+        int cellPixels();
 
         void unprojectInputToPointer();
 
@@ -78,21 +78,21 @@ final class PaintScrollRouting {
         wheelTicks.clearSideways();
     }
 
-    void routeVerticalWheel(int pointerX, int pointerY) {
+    void routeVerticalWheel(int pixelX, int pixelY) {
         int ticks = wheelTicks.vertical();
         if (ticks != 0) {
-            scrollPanelUnderPointer(ticks, pointerX, pointerY);
+            scrollPanelUnderPointer(ticks, pixelX, pixelY);
         }
         wheelTicks.clearVertical();
     }
 
-    private void scrollPanelUnderPointer(int ticks, int pointerX, int pointerY) {
-        int cell = host.cell();
-        if (messages.contains(Math.floorDiv(pointerX, cell), Math.floorDiv(pointerY, cell))) {
+    private void scrollPanelUnderPointer(int ticks, int pixelX, int pixelY) {
+        int cellPixels = host.cellPixels();
+        if (messages.contains(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels))) {
             messages.scrollBy(ticks);
-        } else if (host.helpContains(pointerX, pointerY)) {
+        } else if (host.helpContains(pixelX, pixelY)) {
             helpScroll.scrollBy(ticks * WHEEL_ROWS);
-        } else if (sheet.contains(pointerX, pointerY)) {
+        } else if (sheet.contains(pixelX, pixelY)) {
             sheet.scroll().scrollBy(ticks * WHEEL_ROWS);
         }
     }

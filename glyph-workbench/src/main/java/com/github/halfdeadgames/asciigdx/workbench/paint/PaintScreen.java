@@ -296,11 +296,11 @@ public final class PaintScreen implements WorkbenchScreen {
         scrollRouting = new PaintScrollRouting(messages, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
         pointer = new PaintPointer(viewport, scrollRouting);
         guideListPointerTargets = new PointerTargets(List.of(
-            new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cell)));
+            new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cellPixels)));
         pointerTargets = new PointerTargets(List.of(
-            new PreviewPointerTarget(preview, () -> rects.preview(), this::cell),
+            new PreviewPointerTarget(preview, () -> rects.preview(), this::cellPixels),
             new SheetBarPointerTarget(sheet),
-            new MessagesPointerTarget(messages, this::cell),
+            new MessagesPointerTarget(messages, this::cellPixels),
             new SheetSlotPointerTarget(sheet, flow, derive, messages, new CursorSlotSelection()),
             new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new CursorStrokeStart())));
         loadRules(directory);
@@ -483,12 +483,12 @@ public final class PaintScreen implements WorkbenchScreen {
         }
 
         @Override
-        public int pointerX() {
+        public int pixelX() {
             return pointer.pixelX();
         }
 
         @Override
-        public int pointerY() {
+        public int pixelY() {
             return pointer.pixelY();
         }
 
@@ -498,8 +498,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
 
         @Override
-        public int cell() {
-            return PaintScreen.this.cell();
+        public int cellPixels() {
+            return PaintScreen.this.cellPixels();
         }
 
         @Override
@@ -540,7 +540,7 @@ public final class PaintScreen implements WorkbenchScreen {
             return;
         }
         pointer.updatePosition();
-        newSize.handlePointer(leftClicked(), pointer.pixelX(), pointer.pixelY(), cell(), rects.grid());
+        newSize.handlePointer(leftClicked(), pointer.pixelX(), pointer.pixelY(), cellPixels(), rects.grid());
     }
 
     private void openNewSizeFromMenu() {
@@ -632,11 +632,11 @@ public final class PaintScreen implements WorkbenchScreen {
             return;
         }
         menuInput.pin();
-        MenuCaptureHook.apply(request, menuBar, menuAvailability, cell());
+        MenuCaptureHook.apply(request, menuBar, menuAvailability, cellPixels());
     }
 
-    private int cell() {
-        return uiScale.scale().cell();
+    private int cellPixels() {
+        return uiScale.scale().cellPixels();
     }
 
     private static Integer launchOverride() {
@@ -768,8 +768,8 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private boolean pointerOverGuideList() {
         pointer.unprojectInput();
-        int column = Math.floorDiv(pointer.unprojectedPixelX(), cell());
-        int row = Math.floorDiv(pointer.unprojectedPixelY(), cell());
+        int column = Math.floorDiv(pointer.unprojectedPixelX(), cellPixels());
+        int row = Math.floorDiv(pointer.unprojectedPixelY(), cellPixels());
         CellRect area = rects.belowPreview();
         return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
     }
@@ -856,7 +856,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
         @Override
         public boolean menuClicked(PaintDeriveMenu menu) {
-            return menu.handleClick(rects.grid(), cell(), pointer.pixelX(), pointer.pixelY(), leftClicked());
+            return menu.handleClick(rects.grid(), cellPixels(), pointer.pixelX(), pointer.pixelY(), leftClicked());
         }
     }
 
@@ -1111,8 +1111,8 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void handleControlsPanel(float delta) {
         controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
-            Math.floorDiv(pointer.pixelX(), cell()), Math.floorDiv(pointer.pixelY(), cell()),
-            worldWidth() / cell(), worldHeight() / cell());
+            Math.floorDiv(pointer.pixelX(), cellPixels()), Math.floorDiv(pointer.pixelY(), cellPixels()),
+            worldWidth() / cellPixels(), worldHeight() / cellPixels());
     }
 
     private boolean handleNewItemDialogs(float delta) {
@@ -1251,23 +1251,23 @@ public final class PaintScreen implements WorkbenchScreen {
     private void layoutPanels() {
         layoutBarShown = statusBarShown();
         PaintColumns.Split split = PaintColumns.split(
-            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cell());
+            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cellPixels());
         sheet.setVisibleColumns(split.sheetColumns());
         sheet.fitToHeight(worldHeight(), layoutBarShown, cursor, revealCursor);
         upscale.layoutSheet(split.sheetColumns(), sheet.frameCells(), worldHeight(), layoutBarShown, revealCursor);
         revealCursor = false;
-        rects = PaintLayout.compute(worldWidth() / cell(), worldHeight() / cell(),
-            sheet.frameRight() / cell(), split.rightCells(), new GlyphSize(editor.cellWidth(), editor.cellHeight()),
-            cell(), layoutBarShown);
+        rects = PaintLayout.compute(worldWidth() / cellPixels(), worldHeight() / cellPixels(),
+            sheet.frameRight() / cellPixels(), split.rightCells(), new GlyphSize(editor.cellWidth(), editor.cellHeight()),
+            cellPixels(), layoutBarShown);
         fitGrid();
     }
 
     // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
     private void fitGrid() {
         CellRect panel = rects.grid();
-        int left = (panel.x() + 2) * cell();
-        int top = (panel.y() + 1 + PaintGridLabels.LABEL_ROWS_ABOVE) * cell();
-        grid.fitTo(left, top, (panel.width() - 3) * cell(), (panel.bottom() - 1) * cell() - top - cell() / 2);
+        int left = (panel.x() + 2) * cellPixels();
+        int top = (panel.y() + 1 + PaintGridLabels.LABEL_ROWS_ABOVE) * cellPixels();
+        grid.fitTo(left, top, (panel.width() - 3) * cellPixels(), (panel.bottom() - 1) * cellPixels() - top - cellPixels() / 2);
     }
 
     // Conditions follow the current state every frame; texts are rebuilt only when their inputs change.
@@ -1501,18 +1501,18 @@ public final class PaintScreen implements WorkbenchScreen {
         }
 
         @Override
-        public int pointerX() {
+        public int pixelX() {
             return pointer.pixelX();
         }
 
         @Override
-        public int pointerY() {
+        public int pixelY() {
             return pointer.pixelY();
         }
 
         @Override
-        public int cell() {
-            return PaintScreen.this.cell();
+        public int cellPixels() {
+            return PaintScreen.this.cellPixels();
         }
 
         @Override
@@ -1556,7 +1556,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
         @Override
         public boolean helpContains(int pixelX, int pixelY) {
-            return helpPanel.contains(pixelX, pixelY, PaintScreen.this.cell());
+            return helpPanel.contains(pixelX, pixelY, PaintScreen.this.cellPixels());
         }
 
         @Override
@@ -1565,8 +1565,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
 
         @Override
-        public int cell() {
-            return PaintScreen.this.cell();
+        public int cellPixels() {
+            return PaintScreen.this.cellPixels();
         }
 
         @Override
@@ -1667,8 +1667,8 @@ public final class PaintScreen implements WorkbenchScreen {
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         int codePoint = codePoints[cursor];
-        int columns = worldWidth() / cell();
-        int rows = worldHeight() / cell();
+        int columns = worldWidth() / cellPixels();
+        int rows = worldHeight() / cellPixels();
         drawBase(codePoint, columns, rows);
         refreshLayers();
         drawDialogs(codePoint, columns, rows);
@@ -1746,7 +1746,7 @@ public final class PaintScreen implements WorkbenchScreen {
             derive.drawDialog(painter, columns, rows, rects.grid(), codePoint);
         }
         if (layers.redrawsDeriveHelp()) {
-            helpPanel.redraw(helpState(), cell());
+            helpPanel.redraw(helpState(), cellPixels());
         }
         guideListPanel.drawPicker(columns, rows, rects.grid());
     }
@@ -1801,11 +1801,11 @@ public final class PaintScreen implements WorkbenchScreen {
     // Draws the area under the preview: the guide list when open, otherwise the help panel.
     private void drawBelowPreviewPanels() {
         if (guideListPanel.isOpen()) {
-            guideListPanel.draw(rects.belowPreview(), cell());
+            guideListPanel.draw(rects.belowPreview(), cellPixels());
             helpPanel.markHidden();
             return;
         }
-        helpPanel.draw(rects.belowPreview(), helpState(), cell());
+        helpPanel.draw(rects.belowPreview(), helpState(), cellPixels());
     }
 
     @Override

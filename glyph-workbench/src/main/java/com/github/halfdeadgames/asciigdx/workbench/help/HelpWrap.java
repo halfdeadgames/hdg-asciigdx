@@ -19,23 +19,23 @@ final class HelpWrap {
     private HelpWrap() {
     }
 
-    /** The help lines for a state at {@code chars} characters per line, narrowed by one when they overflow {@code visibleRows}. */
-    static List<Line> lines(PaintHelp.State state, int chars, int visibleRows) {
-        List<Line> full = layout(PaintHelp.rows(state, chars), chars);
-        if (full.size() <= visibleRows || chars <= 1) {
+    /** The help lines for a state at {@code charsPerLine} characters per line, narrowed by one when they overflow {@code visibleRows}. */
+    static List<Line> lines(PaintHelp.State state, int charsPerLine, int visibleRows) {
+        List<Line> full = layout(PaintHelp.rows(state, charsPerLine), charsPerLine);
+        if (full.size() <= visibleRows || charsPerLine <= 1) {
             return full;
         }
-        int narrowed = chars - 1;
+        int narrowed = charsPerLine - 1;
         return layout(PaintHelp.rows(state, narrowed), narrowed);
     }
 
-    static List<Line> layout(List<PaintHelp.Row> rows, int chars) {
+    static List<Line> layout(List<PaintHelp.Row> rows, int charsPerLine) {
         List<Line> out = new ArrayList<>();
         int i = 0;
         while (i < rows.size()) {
             PaintHelp.Row row = rows.get(i);
             if (!row.isTable()) {
-                out.add(new Line(row.kind(), "", clip(row.action(), chars), 0));
+                out.add(new Line(row.kind(), "", clip(row.action(), charsPerLine), 0));
                 i++;
                 continue;
             }
@@ -43,34 +43,34 @@ final class HelpWrap {
             while (end < rows.size() && rows.get(end).isTable()) {
                 end++;
             }
-            layoutTable(rows.subList(i, end), chars, out);
+            layoutTable(rows.subList(i, end), charsPerLine, out);
             i = end;
         }
         return out;
     }
 
     // A run of table rows is laid out side by side or stacked as a whole, never mixed.
-    private static void layoutTable(List<PaintHelp.Row> table, int chars, List<Line> out) {
+    private static void layoutTable(List<PaintHelp.Row> table, int charsPerLine, List<Line> out) {
         int tableColumn = 0;
         int longestWord = 0;
         for (PaintHelp.Row row : table) {
             tableColumn = Math.max(tableColumn, row.actionColumn());
             longestWord = Math.max(longestWord, longestWord(row.action()));
         }
-        int actionColumn = Math.max(2, Math.min(tableColumn, chars - MIN_ACTION_CHARS));
-        boolean stacked = chars - actionColumn < longestWord;
+        int actionColumn = Math.max(2, Math.min(tableColumn, charsPerLine - MIN_ACTION_CHARS));
+        boolean stacked = charsPerLine - actionColumn < longestWord;
         for (PaintHelp.Row row : table) {
             if (stacked) {
-                for (String key : breakText(row.key(), chars)) {
+                for (String key : breakText(row.key(), charsPerLine)) {
                     out.add(new Line(row.kind(), key, "", 0));
                 }
-                for (String action : breakText(row.action(), chars - STACK_INDENT)) {
+                for (String action : breakText(row.action(), charsPerLine - STACK_INDENT)) {
                     out.add(new Line(row.kind(), "", action, STACK_INDENT));
                 }
                 continue;
             }
             List<String> keys = breakText(row.key(), actionColumn - 1);
-            List<String> actions = breakText(row.action(), chars - actionColumn);
+            List<String> actions = breakText(row.action(), charsPerLine - actionColumn);
             int count = Math.max(keys.size(), actions.size());
             for (int i = 0; i < count; i++) {
                 out.add(new Line(row.kind(), i < keys.size() ? keys.get(i) : "",
@@ -109,7 +109,7 @@ final class HelpWrap {
         return out;
     }
 
-    private static String clip(String text, int chars) {
-        return text.length() > chars ? text.substring(0, Math.max(0, chars)) : text;
+    private static String clip(String text, int charsPerLine) {
+        return text.length() > charsPerLine ? text.substring(0, Math.max(0, charsPerLine)) : text;
     }
 }

@@ -346,10 +346,10 @@ class PaintHelpTest {
         ControlsScreen.Layout layout = ControlsScreen.layout(30, 40);
         CellRect box = layout.rect();
         assertTrue(box.x() >= 0 && box.x() + box.width() <= 30);
-        assertEquals(box.width() - 4, layout.chars());
+        assertEquals(box.width() - 4, layout.charsPerLine());
         for (HelpWrap.Line line : layout.lines()) {
-            assertTrue(line.actionColumn() + line.action().length() <= layout.chars(), line.toString());
-            assertTrue(line.key().length() <= layout.chars(), line.toString());
+            assertTrue(line.actionColumn() + line.action().length() <= layout.charsPerLine(), line.toString());
+            assertTrue(line.key().length() <= layout.charsPerLine(), line.toString());
         }
         assertTrue(layout.lines().size() > PaintHelp.allControlRows().size());
     }

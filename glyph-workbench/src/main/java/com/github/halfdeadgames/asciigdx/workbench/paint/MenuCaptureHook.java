@@ -11,13 +11,13 @@ final class MenuCaptureHook {
     }
 
     static void apply(DevCapture.MenuRequest request, MenuBar menuBar, Predicate<PaintMenu.Action> availability,
-                      int cell) {
+                      int cellPixels) {
         for (int i = 0; i < menuBar.menuCount(); i++) {
             if (!menuBar.menu(i).title().equalsIgnoreCase(request.title())) {
                 continue;
             }
             if (request.inspect()) {
-                inspect(menuBar, availability, cell, i, request.item());
+                inspect(menuBar, availability, cellPixels, i, request.item());
             } else if (request.hoverOnly()) {
                 menuBar.hover(menuBar.titleColumn(i), MenuBar.NOT_IN_DROP_DOWN, 0, availability);
             } else if (menuBar.canOpenByAccessKey(menuBar.menu(i).accessKey(), availability)) {
@@ -32,7 +32,7 @@ final class MenuCaptureHook {
     }
 
     /** Hovers a title (item -1) or an item of that menu, opened via any available entry, as the pointer would. */
-    private static void inspect(MenuBar menuBar, Predicate<PaintMenu.Action> availability, int cell, int menu,
+    private static void inspect(MenuBar menuBar, Predicate<PaintMenu.Action> availability, int cellPixels, int menu,
                                 int item) {
         if (item < 0) {
             menuBar.hover(menuBar.titleColumn(menu), MenuBar.NOT_IN_DROP_DOWN, 0, availability);
@@ -42,7 +42,7 @@ final class MenuCaptureHook {
             return;
         }
         menuBar.openByAccessKey(menuBar.menu(menu).accessKey(), availability);
-        int columns = Gdx.graphics.getWidth() / cell;
+        int columns = Gdx.graphics.getWidth() / cellPixels;
         menuBar.hover(menuBar.dropDownColumn(menu, columns) + 1, item, columns, availability);
     }
 }

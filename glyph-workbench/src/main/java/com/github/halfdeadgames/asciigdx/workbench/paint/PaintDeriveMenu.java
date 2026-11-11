@@ -54,13 +54,13 @@ final class PaintDeriveMenu {
     }
 
     /** Highlights the clicked row; returns whether a click chose an operation. */
-    boolean handleClick(CellRect grid, int cell, int pointerX, int pointerY, boolean leftClicked) {
+    boolean handleClick(CellRect grid, int cellPixels, int pixelX, int pixelY, boolean leftClicked) {
         if (!leftClicked) {
             return false;
         }
         Dialog.Layout layout = layout(grid);
-        int column = pointerX / cell;
-        int row = SelectList.rowAt(pointerY / cell, layout.textY(), flow.operations().size());
+        int column = pixelX / cellPixels;
+        int row = SelectList.rowAt(pixelY / cellPixels, layout.textY(), flow.operations().size());
         if (row < 0 || column < layout.x() || column >= layout.x() + layout.width()) {
             return false;
         }

@@ -70,16 +70,17 @@ class PaintColumnsTest {
 
     @Test
     void atTheRoomyWidthTheSheetHasEightColumnsTheRightColumnIsFullAndTheEditorIsAtItsFloor() {
-        for (int cell : new int[] {8, 16, 24, 32}) {
-            int roomy = PaintColumns.roomyWidth(cell, PaintSheetView.GAP, 8, cell);
-            PaintColumns.Split atRoomy = PaintColumns.split(roomy, cell, PaintSheetView.GAP, 8, cell);
+        for (int cellPixels : new int[] {8, 16, 24, 32}) {
+            int roomy = PaintColumns.roomyWidth(cellPixels, PaintSheetView.GAP, 8, cellPixels);
+            PaintColumns.Split atRoomy = PaintColumns.split(roomy, cellPixels, PaintSheetView.GAP, 8, cellPixels);
             assertEquals(8, atRoomy.sheetColumns());
             assertEquals(24, atRoomy.rightCells());
-            assertEquals(PaintColumns.editorFloorCells(8, cell), atRoomy.editorCells());
-            PaintColumns.Split narrower = PaintColumns.split(roomy - cell, cell, PaintSheetView.GAP, 8, cell);
+            assertEquals(PaintColumns.editorFloorCells(8, cellPixels), atRoomy.editorCells());
+            PaintColumns.Split narrower =
+                PaintColumns.split(roomy - cellPixels, cellPixels, PaintSheetView.GAP, 8, cellPixels);
             assertTrue(narrower.sheetColumns() < 8);
             assertEquals(24, narrower.rightCells());
-            assertTrue(narrower.editorCells() >= PaintColumns.editorFloorCells(8, cell));
+            assertTrue(narrower.editorCells() >= PaintColumns.editorFloorCells(8, cellPixels));
         }
     }
 
@@ -139,15 +140,16 @@ class PaintColumnsTest {
 
     @Test
     void otherCellSizesKeepTheShrinkOrderAndNoOverlap() {
-        for (int cell : new int[] {8, 16, 32}) {
-            int floor = PaintColumns.editorFloorCells(8, cell);
-            int minimumWidth = PaintColumns.minimumWidth(cell, PaintSheetView.GAP, 8, cell);
+        for (int cellPixels : new int[] {8, 16, 32}) {
+            int floor = PaintColumns.editorFloorCells(8, cellPixels);
+            int minimumWidth = PaintColumns.minimumWidth(cellPixels, PaintSheetView.GAP, 8, cellPixels);
             for (int cells : new int[] {79, 62, 50, 42}) {
-                PaintColumns.Split split = PaintColumns.split(cells * cell, cell, PaintSheetView.GAP, 8, cell);
+                PaintColumns.Split split =
+                    PaintColumns.split(cells * cellPixels, cellPixels, PaintSheetView.GAP, 8, cellPixels);
                 assertTrue(split.sheetColumns() >= 4 && split.sheetColumns() <= 16);
                 assertTrue(split.rightCells() >= 16 && split.rightCells() <= 24);
-                assertShrinkOrder(split, PaintColumns.editorComfortCells(8, cell));
-                if (cells * cell >= minimumWidth) {
+                assertShrinkOrder(split, PaintColumns.editorComfortCells(8, cellPixels));
+                if (cells * cellPixels >= minimumWidth) {
                     assertTrue(split.editorCells() >= floor);
                     assertTrue(split.sheetCells() + 1 + split.editorCells() + 1 + split.rightCells() <= cells);
                 }
@@ -160,8 +162,9 @@ class PaintColumnsTest {
         assertEquals(" SHEET ", Panel.titleLabel(11, PaintColumns.SHEET_TITLE));
         assertEquals(" SHEE ", Panel.titleLabel(10, PaintColumns.SHEET_TITLE));
         assertEquals(" SH ", Panel.titleLabel(8, PaintColumns.SHEET_TITLE));
-        for (int cell : new int[] {8, 16, 24, 32}) {
-            int narrowest = PaintColumns.sheetCells(PaintColumns.MIN_SHEET_COLUMNS, cell, PaintSheetView.GAP, cell);
+        for (int cellPixels : new int[] {8, 16, 24, 32}) {
+            int narrowest = PaintColumns.sheetCells(PaintColumns.MIN_SHEET_COLUMNS, cellPixels, PaintSheetView.GAP,
+                cellPixels);
             assertTrue(!Panel.titleLabel(narrowest, PaintColumns.SHEET_TITLE).isEmpty());
         }
     }
@@ -186,14 +189,15 @@ class PaintColumnsTest {
         assertEquals(42 * 8, PaintColumns.minimumWidth(8, PaintSheetView.GAP, 8, 8));
         assertEquals(38 * 16, PaintColumns.minimumWidth(16, PaintSheetView.GAP, 8, 16));
         assertEquals(36 * 32, PaintColumns.minimumWidth(32, PaintSheetView.GAP, 8, 32));
-        for (int cell : new int[] {8, 16, 32}) {
-            int minimum = PaintColumns.minimumWidth(cell, PaintSheetView.GAP, 8, cell);
-            PaintColumns.Split atMinimum = PaintColumns.split(minimum, cell, PaintSheetView.GAP, 8, cell);
+        for (int cellPixels : new int[] {8, 16, 32}) {
+            int minimum = PaintColumns.minimumWidth(cellPixels, PaintSheetView.GAP, 8, cellPixels);
+            PaintColumns.Split atMinimum = PaintColumns.split(minimum, cellPixels, PaintSheetView.GAP, 8, cellPixels);
             assertEquals(4, atMinimum.sheetColumns());
             assertEquals(16, atMinimum.rightCells());
-            assertEquals(PaintColumns.editorFloorCells(8, cell), atMinimum.editorCells());
-            PaintColumns.Split narrower = PaintColumns.split(minimum - cell, cell, PaintSheetView.GAP, 8, cell);
-            assertTrue(narrower.editorCells() < PaintColumns.editorFloorCells(8, cell));
+            assertEquals(PaintColumns.editorFloorCells(8, cellPixels), atMinimum.editorCells());
+            PaintColumns.Split narrower =
+                PaintColumns.split(minimum - cellPixels, cellPixels, PaintSheetView.GAP, 8, cellPixels);
+            assertTrue(narrower.editorCells() < PaintColumns.editorFloorCells(8, cellPixels));
         }
     }
 }

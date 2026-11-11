@@ -10,17 +10,17 @@ final class PreviewPointerTarget implements PointerTarget {
 
     private final PaintPreview preview;
     private final Supplier<CellRect> previewArea;
-    private final IntSupplier cell;
+    private final IntSupplier cellPixels;
 
-    PreviewPointerTarget(PaintPreview preview, Supplier<CellRect> previewArea, IntSupplier cell) {
+    PreviewPointerTarget(PaintPreview preview, Supplier<CellRect> previewArea, IntSupplier cellPixels) {
         this.preview = preview;
         this.previewArea = previewArea;
-        this.cell = cell;
+        this.cellPixels = cellPixels;
     }
 
     @Override
     public void notifyPress(int x, int y) {
-        int cellSize = cell.getAsInt();
-        preview.click(previewArea.get(), Math.floorDiv(x, cellSize), Math.floorDiv(y, cellSize));
+        int size = cellPixels.getAsInt();
+        preview.click(previewArea.get(), Math.floorDiv(x, size), Math.floorDiv(y, size));
     }
 }

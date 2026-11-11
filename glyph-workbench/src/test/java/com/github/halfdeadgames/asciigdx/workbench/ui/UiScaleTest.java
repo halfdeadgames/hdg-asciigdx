@@ -12,7 +12,7 @@ class UiScaleTest {
 
     @Test
     void defaultFactorMatchesTheOldCellSize() {
-        assertEquals(Painter.TEXT_SIZE, DEFAULT.cell());
+        assertEquals(Painter.TEXT_SIZE, DEFAULT.cellPixels());
         assertEquals(DEFAULT, UiScale.DEFAULT);
     }
 
@@ -21,7 +21,7 @@ class UiScaleTest {
         assertEquals(12, DEFAULT.half());
         assertEquals(6, DEFAULT.px(2));
         assertEquals(3, DEFAULT.px(1));
-        assertEquals(6, DEFAULT.cell() / 4);
+        assertEquals(6, DEFAULT.cellPixels() / 4);
     }
 
     @Test
@@ -48,9 +48,9 @@ class UiScaleTest {
 
     @Test
     void cellSizesFollowTheFactor() {
-        assertEquals(8, new UiScale(1).cell());
-        assertEquals(16, new UiScale(2).cell());
-        assertEquals(32, new UiScale(4).cell());
+        assertEquals(8, new UiScale(1).cellPixels());
+        assertEquals(16, new UiScale(2).cellPixels());
+        assertEquals(32, new UiScale(4).cellPixels());
         assertEquals(16, new UiScale(4).half());
         assertEquals(8, new UiScale(4).px(2));
     }
@@ -59,6 +59,6 @@ class UiScaleTest {
     void factorsOutsideTheRangeAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> new UiScale(0));
         assertThrows(IllegalArgumentException.class, () -> new UiScale(5));
-        assertTrue(new UiScale(UiScale.MIN_FACTOR).cell() > 0);
+        assertTrue(new UiScale(UiScale.MIN_FACTOR).cellPixels() > 0);
     }
 }

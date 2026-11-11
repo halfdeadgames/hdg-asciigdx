@@ -49,13 +49,13 @@ final class PaintUpscale {
 
         void endStroke();
 
-        int pointerX();
+        int pixelX();
 
-        int pointerY();
+        int pixelY();
 
         boolean leftClicked();
 
-        int cell();
+        int cellPixels();
 
         /** The cell rectangle dialogs are centred in. */
         CellRect dialogArea();
@@ -133,7 +133,7 @@ final class PaintUpscale {
     /** Handles one frame of the dialog or of the glyph pick, whichever stage is running. */
     void handleInput(float delta, int verticalTicks, int sidewaysTicks) {
         if (isChoosingFont()) {
-            dialog.handleInput(verticalTicks, host.leftClicked(), host.pointerX(), host.pointerY(), host.cell(),
+            dialog.handleInput(verticalTicks, host.leftClicked(), host.pixelX(), host.pixelY(), host.cellPixels(),
                 host.dialogArea());
             return;
         }
@@ -244,7 +244,7 @@ final class PaintUpscale {
         moveCursor(delta);
         scrollByKeys();
         scrollByWheel(verticalTicks, sidewaysTicks);
-        pointerTargets.dispatch(host.pointerX(), host.pointerY(), host.leftClicked(),
+        pointerTargets.dispatch(host.pixelX(), host.pixelY(), host.leftClicked(),
             Gdx.input.isButtonPressed(Input.Buttons.LEFT));
     }
 
@@ -284,7 +284,7 @@ final class PaintUpscale {
 
     // Scrolling the view never moves the cursor.
     private void scrollByWheel(int verticalTicks, int sidewaysTicks) {
-        if (!view.contains(host.pointerX(), host.pointerY())) {
+        if (!view.contains(host.pixelX(), host.pixelY())) {
             return;
         }
         view.scroll().scrollBy(verticalTicks * WHEEL_ROWS);

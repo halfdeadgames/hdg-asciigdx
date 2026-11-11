@@ -22,23 +22,23 @@ class PreviewPanelSizeTest {
 
     @Test
     void heightFitsItsContentAtEveryCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
+        for (int cellPixels : OTHER_CELL_SIZES) {
             for (int height : new int[] {8, 16, 32}) {
-                int content = cell + cell / 2 + cell + 8 * height;
-                int rows = PreviewPanelSize.height(height, 8, cell);
-                assertTrue((rows - 2) * cell >= content);
-                assertTrue((rows - 3) * cell < content);
+                int content = cellPixels + cellPixels / 2 + cellPixels + 8 * height;
+                int rows = PreviewPanelSize.height(height, 8, cellPixels);
+                assertTrue((rows - 2) * cellPixels >= content);
+                assertTrue((rows - 3) * cellPixels < content);
             }
         }
     }
 
     @Test
     void blockBudgetAndInnerWidthScaleWithTheCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
-            assertEquals(21 * cell, PreviewPanelSize.innerWidth(24, cell));
-            int rows = PreviewPanelSize.height(8, 8, cell);
-            assertTrue(PreviewPanelSize.blockBudget(rows, cell) >= 8 * 8);
-            assertTrue(PreviewPanelSize.blockBudget(rows - 1, cell) < 8 * 8);
+        for (int cellPixels : OTHER_CELL_SIZES) {
+            assertEquals(21 * cellPixels, PreviewPanelSize.innerWidth(24, cellPixels));
+            int rows = PreviewPanelSize.height(8, 8, cellPixels);
+            assertTrue(PreviewPanelSize.blockBudget(rows, cellPixels) >= 8 * 8);
+            assertTrue(PreviewPanelSize.blockBudget(rows - 1, cellPixels) < 8 * 8);
         }
     }
 }

@@ -62,25 +62,25 @@ public final class UpscaleSourceDialog {
      * what lies beneath in the same frame.
      *
      * @param wheelTicks wheel notches this frame
-     * @param pointerX pointer position in pixels from the left
-     * @param pointerY pointer position in pixels from the top
-     * @param cell the cell size in pixels
+     * @param pixelX pointer position in pixels from the left
+     * @param pixelY pointer position in pixels from the top
+     * @param cellPixels the cell size in pixels
      * @param area the cell rectangle the dialog is centred in
      */
-    public void handleInput(int wheelTicks, boolean clicked, int pointerX, int pointerY, int cell, CellRect area) {
+    public void handleInput(int wheelTicks, boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
         if (!isOpen() || handleKeys()) {
             return;
         }
         Dialog.Layout layout = fittedLayout(area);
         if (!sources.hasChoices()) {
-            closeOnOutsideClick(layout, clicked, pointerX, pointerY, cell);
+            closeOnOutsideClick(layout, clicked, pixelX, pixelY, cellPixels);
             return;
         }
         sources.list().wheel(wheelTicks);
         int listTop = layout.textY() + UpscaleSourceList.LINES_ABOVE_LIST;
-        ListHit hit = ListHit.of(layout, pointerX, pointerY, cell, listTop, sources.list().shownRows(),
+        ListHit hit = ListHit.of(layout, pixelX, pixelY, cellPixels, listTop, sources.list().shownRows(),
             sources.list().window().offset(), sources.list().scrolls());
-        applyClick(pointer.handle(sources.list(), hit, pointerX, pointerY, clicked, listTop));
+        applyClick(pointer.handle(sources.list(), hit, pixelX, pixelY, clicked, listTop));
     }
 
     /** Draws the dialog, dimming the whole screen first. */
@@ -129,8 +129,8 @@ public final class UpscaleSourceDialog {
         }
     }
 
-    private void closeOnOutsideClick(Dialog.Layout layout, boolean clicked, int pointerX, int pointerY, int cell) {
-        if (clicked && !ListHit.of(layout, pointerX, pointerY, cell, 0, 0, 0, false).inside()) {
+    private void closeOnOutsideClick(Dialog.Layout layout, boolean clicked, int pixelX, int pixelY, int cellPixels) {
+        if (clicked && !ListHit.of(layout, pixelX, pixelY, cellPixels, 0, 0, 0, false).inside()) {
             close();
         }
     }

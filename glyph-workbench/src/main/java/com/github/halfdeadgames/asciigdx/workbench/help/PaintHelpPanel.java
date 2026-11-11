@@ -15,7 +15,7 @@ public final class PaintHelpPanel {
     private final Painter painter;
     private final ScrollState scroll;
     private PaintHelp.State shownState;
-    private int shownChars;
+    private int shownCharsPerLine;
     private int shownVisible;
     private List<HelpWrap.Line> lines = List.of();
     private CellRect area;
@@ -27,19 +27,19 @@ public final class PaintHelpPanel {
     }
 
     // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
-    public void draw(CellRect drawArea, PaintHelp.State state, int cell) {
+    public void draw(CellRect drawArea, PaintHelp.State state, int cellPixels) {
         Panel.draw(painter, drawArea,
             "HELP", false);
-        int chars = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
+        int charsPerLine = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
         int visible = Math.max(1, drawArea.height() - 2);
         if (!state.equals(shownState)) {
             scroll.toTop();
         }
-        if (!state.equals(shownState) || chars != shownChars || visible != shownVisible) {
+        if (!state.equals(shownState) || charsPerLine != shownCharsPerLine || visible != shownVisible) {
             shownState = state;
-            shownChars = chars;
+            shownCharsPerLine = charsPerLine;
             shownVisible = visible;
-            lines = HelpWrap.lines(state, chars, visible);
+            lines = HelpWrap.lines(state, charsPerLine, visible);
         }
         scroll.setVisibleRows(visible);
         scroll.setTotalRows(lines.size());
@@ -47,9 +47,9 @@ public final class PaintHelpPanel {
         shown = true;
         int first = scroll.offset();
         int last = Math.min(lines.size(), first + visible);
-        int textX = (drawArea.x() + 1 + Panel.TEXT_PADDING) * cell;
+        int textX = (drawArea.x() + 1 + Panel.TEXT_PADDING) * cellPixels;
         for (int i = first; i < last; i++) {
-            drawLine(lines.get(i), textX, (drawArea.y() + 1 + i - first) * cell, cell);
+            drawLine(lines.get(i), textX, (drawArea.y() + 1 + i - first) * cellPixels, cellPixels);
         }
         if (scroll.needed() && visible >= 2) {
             ScrollBar.drawBar(painter,
@@ -59,24 +59,24 @@ public final class PaintHelpPanel {
     }
 
     // Draws again where the panel was last drawn, for a state that changed since.
-    public void redraw(PaintHelp.State state, int cell) {
-        draw(area, state, cell);
+    public void redraw(PaintHelp.State state, int cellPixels) {
+        draw(area, state, cellPixels);
     }
 
-    private void drawLine(HelpWrap.Line line, int textX, int top, int cell) {
+    private void drawLine(HelpWrap.Line line, int textX, int top, int cellPixels) {
         Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
             : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
             : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
         if (!line.key().isEmpty()) {
             painter.text(line.key(), textX, top, color == UiPalette.TEXT ? UiPalette.FOCUS : color);
         }
-        painter.text(line.action(), textX + line.actionColumn() * cell, top, color);
+        painter.text(line.action(), textX + line.actionColumn() * cellPixels, top, color);
     }
 
-    public boolean contains(int pixelX, int pixelY, int cell) {
+    public boolean contains(int pixelX, int pixelY, int cellPixels) {
         return shown && area != null
-            && pixelX >= area.x() * cell && pixelX < (area.x() + area.width()) * cell
-            && pixelY >= area.y() * cell && pixelY < area.bottom() * cell;
+            && pixelX >= area.x() * cellPixels && pixelX < (area.x() + area.width()) * cellPixels
+            && pixelY >= area.y() * cellPixels && pixelY < area.bottom() * cellPixels;
     }
 
     public boolean isShown() {

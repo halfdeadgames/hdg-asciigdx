@@ -29,12 +29,13 @@ public final class StatusBar {
     }
 
     public static void draw(Painter painter, int columns, int row, List<Key> keys) {
-        int cell = painter.cell();
-        painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
+        int cellPixels = painter.cellPixels();
+        painter.fill(UiPalette.PANEL, 0, row * cellPixels, columns * cellPixels, cellPixels);
         for (Cap cap : layout(keys)) {
-            painter.fill(UiPalette.KEYBG, cap.capX() * cell, row * cell, cap.capText().length() * cell, cell);
-            painter.text(cap.capText(), cap.capX() * cell, row * cell, UiPalette.TEXT);
-            painter.text(cap.label(), cap.labelX() * cell, row * cell, UiPalette.DIM);
+            painter.fill(UiPalette.KEYBG, cap.capX() * cellPixels, row * cellPixels,
+                cap.capText().length() * cellPixels, cellPixels);
+            painter.text(cap.capText(), cap.capX() * cellPixels, row * cellPixels, UiPalette.TEXT);
+            painter.text(cap.label(), cap.labelX() * cellPixels, row * cellPixels, UiPalette.DIM);
         }
     }
 }

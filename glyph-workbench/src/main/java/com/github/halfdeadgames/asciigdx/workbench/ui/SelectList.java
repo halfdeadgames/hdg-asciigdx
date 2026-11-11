@@ -43,13 +43,13 @@ public final class SelectList {
         int x = area.x();
         int topRow = area.y();
         int widthCells = area.width();
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
-            int y = (topRow + i * PITCH) * cell;
-            int rowX = (x + row.indent() * INDENT_CELLS) * cell;
+            int y = (topRow + i * PITCH) * cellPixels;
+            int rowX = (x + row.indent() * INDENT_CELLS) * cellPixels;
             if (i == selectedRow) {
-                painter.fill(UiPalette.KEYBG, x * cell, y, widthCells * cell, cell);
+                painter.fill(UiPalette.KEYBG, x * cellPixels, y, widthCells * cellPixels, cellPixels);
                 painter.text("► " + row.text(), rowX, y, UiPalette.ACCENT);
                 continue;
             }

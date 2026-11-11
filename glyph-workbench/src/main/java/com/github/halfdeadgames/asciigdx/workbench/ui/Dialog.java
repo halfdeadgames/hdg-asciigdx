@@ -112,8 +112,8 @@ public final class Dialog {
         List<Button> buttons = content.buttons();
         int inputLine = content.inputLine();
         int inputCells = content.inputCells();
-        int cell = painter.cell();
-        painter.fill(DIM_COLOR, 0, 0, screen.width() * cell, screen.height() * cell);
+        int cellPixels = painter.cellPixels();
+        painter.fill(DIM_COLOR, 0, 0, screen.width() * cellPixels, screen.height() * cellPixels);
         Layout layout = layout(content, area);
         drawShadow(painter, layout);
         Panel.draw(painter, new CellRect(layout.x(), layout.y(), layout.width(), layout.height()), title, true);
@@ -121,35 +121,39 @@ public final class Dialog {
             String line = lines.get(i);
             boolean input = i == inputLine;
             if (input) {
-                int inset = Math.max(MIN_INPUT_INSET, cell / INPUT_INSET_DIVISOR);
-                painter.fill(INPUT_BACKGROUND, layout.textX() * cell - inset, (layout.textY() + i) * cell - inset,
-                    Math.min(inputCells, layout.textWidth()) * cell + 2 * inset, cell + 2 * inset);
+                int inset = Math.max(MIN_INPUT_INSET, cellPixels / INPUT_INSET_DIVISOR);
+                painter.fill(INPUT_BACKGROUND, layout.textX() * cellPixels - inset,
+                    (layout.textY() + i) * cellPixels - inset,
+                    Math.min(inputCells, layout.textWidth()) * cellPixels + 2 * inset, cellPixels + 2 * inset);
             }
             painter.text(line.length() > layout.textWidth() ? line.substring(0, layout.textWidth()) : line,
-                layout.textX() * cell, (layout.textY() + i) * cell, input ? INPUT_TEXT : UiPalette.TEXT);
+                layout.textX() * cellPixels, (layout.textY() + i) * cellPixels, input ? INPUT_TEXT : UiPalette.TEXT);
         }
         for (int i = 0; i < buttons.size(); i++) {
             Button button = buttons.get(i);
             int capWidth = button.key().length() + 2;
             int bx = layout.buttonXs().get(i);
-            painter.fill(UiPalette.KEYBG, bx * cell, layout.buttonY() * cell, capWidth * cell, cell);
-            painter.text(" " + button.key() + " ", bx * cell, layout.buttonY() * cell, UiPalette.TEXT);
+            painter.fill(UiPalette.KEYBG, bx * cellPixels, layout.buttonY() * cellPixels, capWidth * cellPixels,
+                cellPixels);
+            painter.text(" " + button.key() + " ", bx * cellPixels, layout.buttonY() * cellPixels, UiPalette.TEXT);
             Color label = switch (button.tone()) {
                 case OK -> UiPalette.OK;
                 case WARN -> UiPalette.WARN;
                 case DIM -> UiPalette.DIM;
             };
-            painter.text(button.label(), (bx + capWidth + 1) * cell, layout.buttonY() * cell, label);
+            painter.text(button.label(), (bx + capWidth + 1) * cellPixels, layout.buttonY() * cellPixels, label);
         }
     }
 
     private static void drawShadow(Painter painter, Layout layout) {
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         for (int i = 1; i <= layout.height(); i++) {
-            painter.text("▓", (layout.x() + layout.width()) * cell, (layout.y() + i) * cell, UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + layout.width()) * cellPixels, (layout.y() + i) * cellPixels,
+                UiPalette.SHADOW);
         }
         for (int i = 1; i <= layout.width(); i++) {
-            painter.text("▓", (layout.x() + i) * cell, (layout.y() + layout.height()) * cell, UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + i) * cellPixels, (layout.y() + layout.height()) * cellPixels,
+                UiPalette.SHADOW);
         }
     }
 }

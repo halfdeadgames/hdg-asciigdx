@@ -20,11 +20,11 @@ final class PaintMenuInput {
 
         void updatePointerPosition();
 
-        int pointerX();
+        int pixelX();
 
-        int pointerY();
+        int pixelY();
 
-        int cell();
+        int cellPixels();
 
         int worldWidth();
 
@@ -84,18 +84,18 @@ final class PaintMenuInput {
         host.updatePointerPosition();
         forgetAltWhenReleased();
         MenuBar<PaintMenu.Action> menuBar = host.menuBar();
-        int pointerX = host.pointerX();
-        int pointerY = host.pointerY();
+        int pixelX = host.pixelX();
+        int pixelY = host.pixelY();
         if (menuPinned) {
-            rememberPinPosition(pointerX, pointerY);
-            if (pinHolds(pointerX, pointerY)) {
+            rememberPinPosition(pixelX, pixelY);
+            if (pinHolds(pixelX, pixelY)) {
                 return menuBar.isOpen();
             }
             menuPinned = false;
         }
         boolean wasOpen = menuBar.isOpen();
         boolean escape = Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
-        PaintMenu.Action chosen = pointMenu(menuBar, pointerX, pointerY, escape);
+        PaintMenu.Action chosen = pointMenu(menuBar, pixelX, pixelY, escape);
         boolean keysOwnFrame = false;
         if (chosen == null && (!escape || host.altDown())) {
             chosen = routeMenuKeys(menuBar, delta);
@@ -111,26 +111,26 @@ final class PaintMenuInput {
         }
     }
 
-    private void rememberPinPosition(int pointerX, int pointerY) {
+    private void rememberPinPosition(int pixelX, int pixelY) {
         if (menuPinPositionKnown) {
             return;
         }
         menuPinPositionKnown = true;
-        menuPinX = pointerX;
-        menuPinY = pointerY;
+        menuPinX = pixelX;
+        menuPinY = pixelY;
     }
 
-    private boolean pinHolds(int pointerX, int pointerY) {
-        return pointerX == menuPinX && pointerY == menuPinY && !host.leftClicked()
+    private boolean pinHolds(int pixelX, int pixelY) {
+        return pixelX == menuPinX && pixelY == menuPinY && !host.leftClicked()
             && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
     }
 
-    private PaintMenu.Action pointMenu(MenuBar<PaintMenu.Action> menuBar, int pointerX, int pointerY,
+    private PaintMenu.Action pointMenu(MenuBar<PaintMenu.Action> menuBar, int pixelX, int pixelY,
                                        boolean escape) {
-        int cell = host.cell();
-        int column = Math.floorDiv(pointerX, cell);
-        int row = Math.floorDiv(pointerY, cell);
-        int totalColumns = host.worldWidth() / cell;
+        int cellPixels = host.cellPixels();
+        int column = Math.floorDiv(pixelX, cellPixels);
+        int row = Math.floorDiv(pixelY, cellPixels);
+        int totalColumns = host.worldWidth() / cellPixels;
         boolean pressStarted = host.leftClicked();
         boolean buttonDown = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
         boolean pointerBusy = host.pointerBusy();

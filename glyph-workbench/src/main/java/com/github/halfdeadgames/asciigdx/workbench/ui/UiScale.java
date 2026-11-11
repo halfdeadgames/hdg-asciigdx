@@ -17,12 +17,12 @@ public record UiScale(int factor) {
     }
 
     /** Pixels of one text cell. */
-    public int cell() {
+    public int cellPixels() {
         return FONT_PIXELS * factor;
     }
 
     public int half() {
-        return cell() / 2;
+        return cellPixels() / 2;
     }
 
     /** A length given in pixels of the unscaled font. */

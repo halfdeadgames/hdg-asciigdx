@@ -36,8 +36,8 @@ class GroupedPickListPointerTest {
         return new ListHit(true, false, LIST_TOP, row);
     }
 
-    private Click handle(ListHit hit, int pointerX, int pointerY, boolean clicked) {
-        return pointer.handle(list, hit, pointerX, pointerY, clicked, LIST_TOP);
+    private Click handle(ListHit hit, int pixelX, int pixelY, boolean clicked) {
+        return pointer.handle(list, hit, pixelX, pixelY, clicked, LIST_TOP);
     }
 
     @Test

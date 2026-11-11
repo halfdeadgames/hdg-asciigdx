@@ -212,20 +212,20 @@ public final class MessageStrip {
     }
 
     private void drawScrollIndicators(Painter painter) {
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         if (blinkOn()) {
-            int arrowColumn = (boundsX + 1) * cell;
+            int arrowColumn = (boundsX + 1) * cellPixels;
             if (hiddenAbove()) {
-                painter.text("▲", arrowColumn, topButtonRow() * cell, UiPalette.ACCENT);
+                painter.text("▲", arrowColumn, topButtonRow() * cellPixels, UiPalette.ACCENT);
             }
             if (hiddenBelow()) {
-                painter.text("▼", arrowColumn, bottomButtonRow() * cell, UiPalette.ACCENT);
+                painter.text("▼", arrowColumn, bottomButtonRow() * cellPixels, UiPalette.ACCENT);
             }
         }
         if (buttonsFit()) {
-            painter.text("▲", buttonColumn() * cell, topButtonRow() * cell,
+            painter.text("▲", buttonColumn() * cellPixels, topButtonRow() * cellPixels,
                 hiddenAbove() ? UiPalette.TEXT : UiPalette.DIM);
-            painter.text("▼", buttonColumn() * cell, bottomButtonRow() * cell,
+            painter.text("▼", buttonColumn() * cellPixels, bottomButtonRow() * cellPixels,
                 hiddenBelow() ? UiPalette.TEXT : UiPalette.DIM);
         }
     }
@@ -245,11 +245,11 @@ public final class MessageStrip {
         List<Message> shown = visible(height - 2);
         int room = width - RESERVED_COLUMNS;
         int row = y + 1;
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         for (Message message : shown) {
-            painter.text(message.warning() ? "!" : "✓", (x + 2) * cell, row * cell,
+            painter.text(message.warning() ? "!" : "✓", (x + 2) * cellPixels, row * cellPixels,
                 message.warning() ? UiPalette.WARN : UiPalette.OK);
-            painter.text(lineText(message, room), (x + 4) * cell, row * cell, UiPalette.TEXT);
+            painter.text(lineText(message, room), (x + 4) * cellPixels, row * cellPixels, UiPalette.TEXT);
             row++;
         }
         drawScrollIndicators(painter);

@@ -106,12 +106,12 @@ class HelpWrapTest {
 
     @Test
     void everyPaintControlFitsTheSixteenCellColumn() {
-        int chars = 12;
-        List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), chars);
+        int charsPerLine = 12;
+        List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), charsPerLine);
         assertTrue(lines.size() > 18);
         for (HelpWrap.Line line : lines) {
-            assertTrue(line.actionColumn() + line.action().length() <= chars, line.toString());
-            assertTrue(line.key().length() <= chars, line.toString());
+            assertTrue(line.actionColumn() + line.action().length() <= charsPerLine, line.toString());
+            assertTrue(line.key().length() <= charsPerLine, line.toString());
             assertTrue(line.actionColumn() == 0 || line.actionColumn() == 2, line.toString());
             assertTrue(line.key().isEmpty() || line.action().isEmpty(), line.toString());
         }

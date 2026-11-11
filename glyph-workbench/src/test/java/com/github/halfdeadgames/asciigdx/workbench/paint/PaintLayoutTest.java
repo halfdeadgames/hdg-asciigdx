@@ -65,10 +65,12 @@ class PaintLayoutTest {
 
     @Test
     void theKeyBarComingAndGoingMovesOnlyTheMessagesBottomEdge() {
-        for (int cell : OTHER_CELL_SIZES) {
-            for (int rows : new int[] {PaintLayout.minimumHeight(8, cell) / cell, 30, 41, 60}) {
-                PaintLayout.Result shown = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cell, true);
-                PaintLayout.Result hidden = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cell, false);
+        for (int cellPixels : OTHER_CELL_SIZES) {
+            for (int rows : new int[] {PaintLayout.minimumHeight(8, cellPixels) / cellPixels, 30, 41, 60}) {
+                PaintLayout.Result shown =
+                    PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cellPixels, true);
+                PaintLayout.Result hidden =
+                    PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cellPixels, false);
                 assertEquals(shown.grid(), hidden.grid());
                 assertEquals(shown.preview(), hidden.preview());
                 assertEquals(shown.belowPreview(), hidden.belowPreview());
@@ -83,49 +85,53 @@ class PaintLayoutTest {
 
     @Test
     void theSheetReachesTheBottomRowExactlyWhenTheKeyBarIsHidden() {
-        int cell = 24;
+        int cellPixels = 24;
         for (int extraPixels : new int[] {0, 5, 23}) {
             int rows = 41;
-            int worldHeight = rows * cell + extraPixels;
-            PaintLayout.Result shown = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cell, true);
-            PaintLayout.Result hidden = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cell, false);
-            assertEquals(shown.messages().bottom(), PaintLayout.TOP_ROWS + PaintLayout.sheetRows(worldHeight, cell, true));
-            assertEquals(hidden.messages().bottom(), PaintLayout.TOP_ROWS + PaintLayout.sheetRows(worldHeight, cell, false));
-            assertEquals(1, PaintLayout.sheetRows(worldHeight, cell, false) - PaintLayout.sheetRows(worldHeight, cell, true));
+            int worldHeight = rows * cellPixels + extraPixels;
+            PaintLayout.Result shown = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cellPixels, true);
+            PaintLayout.Result hidden = PaintLayout.compute(79, rows, 18, 24, new GlyphSize(8, 8), cellPixels, false);
+            assertEquals(shown.messages().bottom(),
+                PaintLayout.TOP_ROWS + PaintLayout.sheetRows(worldHeight, cellPixels, true));
+            assertEquals(hidden.messages().bottom(),
+                PaintLayout.TOP_ROWS + PaintLayout.sheetRows(worldHeight, cellPixels, false));
+            assertEquals(1,
+                PaintLayout.sheetRows(worldHeight, cellPixels, false) - PaintLayout.sheetRows(worldHeight, cellPixels, true));
         }
     }
 
     @Test
     void theMinimumHeightStillFitsEveryPanelWithTheKeyBarShown() {
-        for (int cell : OTHER_CELL_SIZES) {
+        for (int cellPixels : OTHER_CELL_SIZES) {
             for (int glyphHeight : new int[] {8, 16, 32}) {
-                int minimum = PaintLayout.minimumHeight(glyphHeight, cell);
-                int rows = minimum / cell;
-                PaintLayout.Result result = PaintLayout.compute(60, rows, 10, 16, new GlyphSize(8, glyphHeight), cell, true);
+                int minimum = PaintLayout.minimumHeight(glyphHeight, cellPixels);
+                int rows = minimum / cellPixels;
+                PaintLayout.Result result =
+                    PaintLayout.compute(60, rows, 10, 16, new GlyphSize(8, glyphHeight), cellPixels, true);
                 assertTrue(result.belowPreview().bottom() <= result.messages().y());
                 assertEquals(rows - 1, result.messages().bottom());
                 assertEquals(PaintLayout.MESSAGES_HEIGHT, result.messages().height());
-                assertTrue(PaintLayout.sheetRows(minimum, cell, true) >= 3);
+                assertTrue(PaintLayout.sheetRows(minimum, cellPixels, true) >= 3);
             }
         }
     }
 
     @Test
     void minimumHeightIsWholeCellsAndHoldsTheRightColumnAtEveryCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
+        for (int cellPixels : OTHER_CELL_SIZES) {
             for (int glyphHeight : new int[] {8, 32}) {
-                int minimum = PaintLayout.minimumHeight(glyphHeight, cell);
-                assertEquals(0, minimum % cell);
-                int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cell) + 6;
-                assertTrue(minimum / cell >= PaintLayout.TOP_ROWS + rightRows + PaintLayout.MESSAGES_HEIGHT + 1);
+                int minimum = PaintLayout.minimumHeight(glyphHeight, cellPixels);
+                assertEquals(0, minimum % cellPixels);
+                int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels) + 6;
+                assertTrue(minimum / cellPixels >= PaintLayout.TOP_ROWS + rightRows + PaintLayout.MESSAGES_HEIGHT + 1);
             }
         }
     }
 
     @Test
     void panelsDoNotOverlapAtEveryCellSize() {
-        for (int cell : OTHER_CELL_SIZES) {
-            PaintLayout.Result result = PaintLayout.compute(79, 41, 18, 24, new GlyphSize(8, 8), cell, true);
+        for (int cellPixels : OTHER_CELL_SIZES) {
+            PaintLayout.Result result = PaintLayout.compute(79, 41, 18, 24, new GlyphSize(8, 8), cellPixels, true);
             assertEquals(19, result.grid().x());
             assertEquals(PaintLayout.TOP_ROWS, result.grid().y());
             assertEquals(41 - 1, result.messages().bottom());

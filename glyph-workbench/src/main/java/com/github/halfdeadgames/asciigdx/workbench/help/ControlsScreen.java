@@ -21,7 +21,7 @@ public final class ControlsScreen {
     private static final String TITLE ="CONTROLS";
 
     /** The box, its text width, and the wrapped lines; {@code visibleRows} is how many lines show at once. */
-    record Layout(CellRect rect, int chars, int visibleRows, List<HelpWrap.Line> lines) {
+    record Layout(CellRect rect, int charsPerLine, int visibleRows, List<HelpWrap.Line> lines) {
 
         int maxOffset() {
             return Math.max(0, lines.size() - visibleRows);
@@ -52,11 +52,11 @@ public final class ControlsScreen {
         }
         int extra = FRAME + 2 * PADDING;
         int width = Math.min(columns, Math.min(natural + extra, Math.max(MIN_WIDTH, columns - 2 * MARGIN)));
-        int chars = Math.max(1, width - extra);
-        List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), chars);
+        int charsPerLine = Math.max(1, width - extra);
+        List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), charsPerLine);
         int height = Math.min(rows, Math.min(lines.size() + FRAME, Math.max(MIN_HEIGHT, rows - 2 * MARGIN)));
         CellRect rect = new CellRect((columns - width) / 2, (rows - height) / 2, width, height);
-        return new Layout(rect, chars, Math.max(1, height - FRAME), lines);
+        return new Layout(rect, charsPerLine, Math.max(1, height - FRAME), lines);
     }
 
     /** True when a click at this cell is outside the box, which closes it. */
@@ -116,27 +116,27 @@ public final class ControlsScreen {
     /** Draws the dimmed screen and the box over everything drawn before. */
     public void draw(Painter painter, int columns, int rows) {
         refresh(columns, rows);
-        int cell = painter.cell();
+        int cellPixels = painter.cellPixels();
         CellRect rect = layout.rect();
-        painter.fill(DIM, 0, 0, columns * cell, rows * cell);
+        painter.fill(DIM, 0, 0, columns * cellPixels, rows * cellPixels);
         for (int i = 1; i <= rect.height(); i++) {
-            painter.text("▓", (rect.x() + rect.width()) * cell, (rect.y() + i) * cell, UiPalette.SHADOW);
+            painter.text("▓", (rect.x() + rect.width()) * cellPixels, (rect.y() + i) * cellPixels, UiPalette.SHADOW);
         }
         for (int i = 1; i <= rect.width(); i++) {
-            painter.text("▓", (rect.x() + i) * cell, rect.bottom() * cell, UiPalette.SHADOW);
+            painter.text("▓", (rect.x() + i) * cellPixels, rect.bottom() * cellPixels, UiPalette.SHADOW);
         }
         Panel.draw(painter, rect, TITLE, true);
         List<HelpWrap.Line> lines = layout.lines();
         int first = scroll.offset();
         int last = Math.min(lines.size(), first + layout.visibleRows());
-        int textX = (rect.x() + 1 + PADDING) * cell;
+        int textX = (rect.x() + 1 + PADDING) * cellPixels;
         for (int i = first; i < last; i++) {
             HelpWrap.Line line = lines.get(i);
-            int top = (rect.y() + 1 + i - first) * cell;
+            int top = (rect.y() + 1 + i - first) * cellPixels;
             if (!line.key().isEmpty()) {
                 painter.text(line.key(), textX, top, UiPalette.FOCUS);
             }
-            painter.text(line.action(), textX + line.actionColumn() * cell, top, UiPalette.TEXT);
+            painter.text(line.action(), textX + line.actionColumn() * cellPixels, top, UiPalette.TEXT);
         }
         if (scroll.needed() && layout.visibleRows() >= 2) {
             ScrollBar.drawBar(painter,

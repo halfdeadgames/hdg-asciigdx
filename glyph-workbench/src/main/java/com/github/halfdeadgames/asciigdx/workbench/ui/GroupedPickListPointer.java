@@ -10,8 +10,8 @@ public final class GroupedPickListPointer {
     public enum Click { NONE, OUTSIDE, PICK }
 
     private boolean lastPointerKnown;
-    private int lastPointerX;
-    private int lastPointerY;
+    private int lastPixelX;
+    private int lastPixelY;
 
     /** Forgets the last pointer, so the next frame only records it. */
     public void reset() {
@@ -26,9 +26,9 @@ public final class GroupedPickListPointer {
      * @return {@link Click#OUTSIDE} for a click off the dialog, {@link Click#PICK} for a click on a choosable row
      *     (now highlighted), otherwise {@link Click#NONE}; a click on the scroll bar scrolls the window
      */
-    public Click handle(GroupedPickList<?> list, ListHit hit, int pointerX, int pointerY, boolean clicked,
+    public Click handle(GroupedPickList<?> list, ListHit hit, int pixelX, int pixelY, boolean clicked,
                         int listTop) {
-        followPointer(list, hit, pointerX, pointerY);
+        followPointer(list, hit, pixelX, pixelY);
         if (!clicked) {
             return Click.NONE;
         }
@@ -43,18 +43,18 @@ public final class GroupedPickListPointer {
         return list.isChoosable(hit.row()) ? Click.PICK : Click.NONE;
     }
 
-    private void followPointer(GroupedPickList<?> list, ListHit hit, int pointerX, int pointerY) {
+    private void followPointer(GroupedPickList<?> list, ListHit hit, int pixelX, int pixelY) {
         if (!lastPointerKnown) {
             lastPointerKnown = true;
-            lastPointerX = pointerX;
-            lastPointerY = pointerY;
+            lastPixelX = pixelX;
+            lastPixelY = pixelY;
             return;
         }
-        if (pointerX == lastPointerX && pointerY == lastPointerY) {
+        if (pixelX == lastPixelX && pixelY == lastPixelY) {
             return;
         }
-        lastPointerX = pointerX;
-        lastPointerY = pointerY;
+        lastPixelX = pixelX;
+        lastPixelY = pixelY;
         list.hover(hit.row());
     }
 

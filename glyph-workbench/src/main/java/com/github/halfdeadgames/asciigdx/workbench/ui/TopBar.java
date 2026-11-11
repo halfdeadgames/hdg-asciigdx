@@ -62,19 +62,20 @@ public final class TopBar {
         String tag = barStatus.tag();
         String status = barStatus.text();
         Color statusColor = barStatus.color();
-        int cell = painter.cell();
-        painter.fill(UiPalette.PANEL, 0, row * cell, columns * cell, cell);
+        int cellPixels = painter.cellPixels();
+        painter.fill(UiPalette.PANEL, 0, row * cellPixels, columns * cellPixels, cellPixels);
         boolean hasStatus = isPresent(status);
         boolean hasTag = isPresent(tag);
         int available = columns - 1 - rightWidth(hasTag ? tag : "", hasStatus ? status : "");
         for (Segment segment : layout(fit(crumbs, available))) {
-            painter.text(segment.text(), segment.x() * cell, row * cell, colorOf(segment.kind()));
+            painter.text(segment.text(), segment.x() * cellPixels, row * cellPixels, colorOf(segment.kind()));
         }
         if (hasTag) {
-            painter.text(tag, tagX(columns, tag, hasStatus ? status : "") * cell, row * cell, UiPalette.TEXT);
+            painter.text(tag, tagX(columns, tag, hasStatus ? status : "") * cellPixels,
+                row * cellPixels, UiPalette.TEXT);
         }
         if (hasStatus) {
-            painter.text(status, rightX(columns, status) * cell, row * cell, statusColor);
+            painter.text(status, rightX(columns, status) * cellPixels, row * cellPixels, statusColor);
         }
     }
 

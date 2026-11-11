@@ -51,16 +51,16 @@ public final class PaintPreview {
         this.editor = editor;
     }
 
-    private int cell() {
-        return painter.cell();
+    private int cellPixels() {
+        return painter.cellPixels();
     }
 
     private int sectionGap() {
-        return PreviewPanelSize.gap(cell());
+        return PreviewPanelSize.gap(cellPixels());
     }
 
     private int labelWidth() {
-        return 2 * cell();
+        return 2 * cellPixels();
     }
 
     public void selectTab(PreviewTabs.Tab tab) {
@@ -84,12 +84,12 @@ public final class PaintPreview {
     public void draw(CellRect rect, int codePoint, PixelGlyph shown) {
         Panel.draw(painter, rect, "PREVIEW", false);
         drawTabs(rect);
-        int left = (rect.x() + 2) * cell();
-        int rowTop = (PreviewTabs.labelRow(rect) + 1) * cell() + sectionGap();
+        int left = (rect.x() + 2) * cellPixels();
+        int rowTop = (PreviewTabs.labelRow(rect) + 1) * cellPixels() + sectionGap();
         PixelGlyph glyph = shown != null ? shown : editor.glyph(codePoint);
-        int innerWidth = PreviewPanelSize.innerWidth(rect.width(), cell());
+        int innerWidth = PreviewPanelSize.innerWidth(rect.width(), cellPixels());
         int scaleCount = PreviewFit.scaleCount(innerWidth,
-            PreviewPanelSize.blockBudget(rect.height(), cell()),
+            PreviewPanelSize.blockBudget(rect.height(), cellPixels()),
             new GlyphSize(editor.cellWidth(), editor.cellHeight()), sectionGap(), labelWidth());
         int largestScale = PreviewFit.largestScale(scaleCount);
         if (activeTab == PreviewTabs.Tab.SCALES) {
@@ -122,12 +122,12 @@ public final class PaintPreview {
     private void drawTicker(CellRect rect, int selected, int left, int top, int largestScale) {
         float delta = Math.min(Gdx.graphics.getDeltaTime(), MAX_FRAME_SECONDS);
         tickerSeconds += delta;
-        int clipRight = (rect.x() + rect.width() - 1) * cell();
+        int clipRight = (rect.x() + rect.width() - 1) * cellPixels();
         int visibleWidth = clipRight - left;
-        refreshTicker(selected, visibleWidth / cell());
+        refreshTicker(selected, visibleWidth / cellPixels());
 
         int cellHeight = editor.cellHeight();
-        int bandHeight = (cell() + largestScale * cellHeight) / TICKER_LINES;
+        int bandHeight = (cellPixels() + largestScale * cellHeight) / TICKER_LINES;
         tickerDrawer.clipLeft = left;
         tickerDrawer.clipRight = clipRight;
         tickerDrawer.featured = selected;
@@ -138,8 +138,8 @@ public final class PaintPreview {
             TickerLine line = tickerLines[i];
             if (line == null) {
                 String message = tickerMessages[i];
-                painter.text(message.length() > visibleWidth / cell() ? message.substring(0, visibleWidth / cell()) : message,
-                    left, bandTop + (bandHeight - cell()) / 2, tickerMessageColors[i]);
+                painter.text(message.length() > visibleWidth / cellPixels() ? message.substring(0, visibleWidth / cellPixels()) : message,
+                    left, bandTop + (bandHeight - cellPixels()) / 2, tickerMessageColors[i]);
                 continue;
             }
             line.setVisibleWidth(visibleWidth);
@@ -243,9 +243,9 @@ public final class PaintPreview {
     }
 
     private void drawTabs(CellRect rect) {
-        int top = PreviewTabs.labelRow(rect) * cell();
+        int top = PreviewTabs.labelRow(rect) * cellPixels();
         for (PreviewTabs.Tab tab : PreviewTabs.Tab.values()) {
-            painter.text(PreviewTabs.label(rect, tab), PreviewTabs.labelColumn(rect, tab) * cell(), top,
+            painter.text(PreviewTabs.label(rect, tab), PreviewTabs.labelColumn(rect, tab) * cellPixels(), top,
                 tab == activeTab ? UiPalette.ACCENT : UiPalette.DIM);
         }
     }
@@ -263,7 +263,7 @@ public final class PaintPreview {
     private int drawTileBlock(int left, int top, PixelGlyph glyph, String label, int scale, int count) {
         int cellWidth = editor.cellWidth();
         int cellHeight = editor.cellHeight();
-        int blockTop = top + cell();
+        int blockTop = top + cellPixels();
         int blockSize = count * scale;
         painter.text(label, left, top, UiPalette.DIM);
         painter.fill(BACKDROP, left, blockTop, cellWidth * blockSize, cellHeight * blockSize);
@@ -276,13 +276,13 @@ public final class PaintPreview {
                 }
             }
         }
-        return left + Math.max(label.length() * cell(), cellWidth * blockSize) + 2 * sectionGap();
+        return left + Math.max(label.length() * cellPixels(), cellWidth * blockSize) + 2 * sectionGap();
     }
 
     private void drawScales(int left, int top, PixelGlyph glyph, int scaleCount) {
         int cellWidth = editor.cellWidth();
         int cellHeight = editor.cellHeight();
-        int blockTop = top + cell();
+        int blockTop = top + cellPixels();
         int blockLeft = left;
         for (int i = 0; i < scaleCount; i++) {
             int scale = SCALES[i];
@@ -291,7 +291,7 @@ public final class PaintPreview {
             if (glyph != null) {
                 painter.pixels(glyph.pixels(), blockLeft, blockTop, scale, Color.WHITE);
             }
-            int labelWidth = SCALE_LABELS[i].length() * cell();
+            int labelWidth = SCALE_LABELS[i].length() * cellPixels();
             blockLeft += Math.max(labelWidth, cellWidth * scale) + sectionGap();
         }
     }

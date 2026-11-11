@@ -290,28 +290,29 @@ public final class PaintGuideListPanel {
     }
 
     // One row per text line; only the selected row bounces when it is too long, the others are cut.
-    public void draw(CellRect area, int cell) {
+    public void draw(CellRect area, int cellPixels) {
         Panel.draw(painter, area, title, true);
         seconds += Gdx.graphics.getDeltaTime();
         cursorBlink.advance(Gdx.graphics.getDeltaTime());
         int visible = visibleRows(area);
-        int chars = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
+        int charsPerLine = Math.max(1, area.width() - 2 - 2 * Panel.TEXT_PADDING);
         if (legendShown(area) && !guideList.isRenaming()) {
-            drawLegend(area, visible, cell);
+            drawLegend(area, visible, cellPixels);
         }
         int first = firstVisibleRow(visible);
         int shown = Math.min(visible, rowCount() - first);
         for (int i = 0; i < shown; i++) {
             int index = first + i;
             String text = rowText(index);
-            int top = (area.y() + 1 + i) * cell;
-            int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
+            int top = (area.y() + 1 + i) * cellPixels;
+            int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cellPixels;
             if (index == selectedRow()) {
-                painter.fill(UiPalette.KEYBG, (area.x() + 1) * cell, top, (area.width() - 2) * cell, cell);
-                painter.text("►", (area.x() + 1) * cell, top, UiPalette.ACCENT);
-                painter.text(BounceScroll.window(text, chars, seconds), textX, top, UiPalette.ACCENT);
+                painter.fill(UiPalette.KEYBG, (area.x() + 1) * cellPixels, top, (area.width() - 2) * cellPixels,
+                    cellPixels);
+                painter.text("►", (area.x() + 1) * cellPixels, top, UiPalette.ACCENT);
+                painter.text(BounceScroll.window(text, charsPerLine, seconds), textX, top, UiPalette.ACCENT);
             } else {
-                painter.text(text.length() > chars ? text.substring(0, chars) : text, textX, top, UiPalette.TEXT);
+                painter.text(text.length() > charsPerLine ? text.substring(0, charsPerLine) : text, textX, top, UiPalette.TEXT);
             }
         }
     }
@@ -385,18 +386,18 @@ public final class PaintGuideListPanel {
         return GuideListRows.visibleRows(area, legendShown(area) ? legend().size() : 0);
     }
 
-    private void drawLegend(CellRect area, int rowsAbove, int cell) {
-        int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cell;
+    private void drawLegend(CellRect area, int rowsAbove, int cellPixels) {
+        int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cellPixels;
         List<String[]> entries = legend();
         for (int i = 0; i < entries.size(); i++) {
             String[] entry = entries.get(i);
-            int top = (area.y() + 1 + rowsAbove + i) * cell;
+            int top = (area.y() + 1 + rowsAbove + i) * cellPixels;
             if (entry.length == 1) {
                 painter.text(entry[0], textX, top, UiPalette.TEXT);
                 continue;
             }
             painter.text(entry[0], textX, top, UiPalette.TITLE);
-            painter.text(entry[1], textX + LEGEND_ACTION_COLUMN * cell, top, UiPalette.TEXT);
+            painter.text(entry[1], textX + LEGEND_ACTION_COLUMN * cellPixels, top, UiPalette.TEXT);
         }
     }
 

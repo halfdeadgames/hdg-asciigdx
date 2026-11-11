@@ -10,10 +10,10 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
  */
 public record ListHit(boolean inside, boolean onBar, int cellRow, int row) {
 
-    public static ListHit of(Dialog.Layout layout, int pointerX, int pointerY, int cell, int listTop, int shownRows,
+    public static ListHit of(Dialog.Layout layout, int pixelX, int pixelY, int cellPixels, int listTop, int shownRows,
                              int offset, boolean scrolls) {
-        int column = Math.floorDiv(pointerX, cell);
-        int cellRow = Math.floorDiv(pointerY, cell);
+        int column = Math.floorDiv(pixelX, cellPixels);
+        int cellRow = Math.floorDiv(pixelY, cellPixels);
         boolean inside = column >= layout.x() && column < layout.x() + layout.width()
             && cellRow >= layout.y() && cellRow < layout.y() + layout.height();
         boolean onBar = scrolls && column == layout.textX() + layout.textWidth() - 1;
