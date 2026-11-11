@@ -17,7 +17,8 @@ final class PaintColumns {
     static final int ROOMY_SHEET_COLUMNS = 8;
     static final int FULL_RIGHT_CELLS = 24;
     static final int MIN_RIGHT_CELLS = 16;
-    private static final String SHEET_TITLE = "SHEET";
+    /** The sheet title. The panel shortens it to fit the frame when it draws. */
+    static final String SHEET_TITLE = "SHEET";
     private static final int COMFORT_EDITOR_CELLS = 20;
     private static final int FRAME_BORDER_CELLS = 2;
     private static final int GRID_PANEL_OVERHEAD_CELLS = 3;
@@ -31,11 +32,6 @@ final class PaintColumns {
     static int sheetCells(int visibleColumns, int slotWidth, int gap, int cellPixels) {
         int panelWidth = visibleColumns * (slotWidth + gap) + gap;
         return (panelWidth + cellPixels + cellPixels - 1) / cellPixels + FRAME_BORDER_CELLS;
-    }
-
-    /** The sheet title. The panel shortens it to fit the frame when it draws. */
-    static String sheetTitle(int frameCells) {
-        return SHEET_TITLE;
     }
 
     /** Pixels left of the glyph panel so the leftover of the whole-cell frame splits evenly around it. */

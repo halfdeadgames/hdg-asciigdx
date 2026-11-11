@@ -83,7 +83,7 @@ class GuideListModelTest {
         assertEquals(7, column.position());
         assertEquals("uppercase,digits", column.groups());
         model.select(2);
-        assertEquals(1, model.selectedGuide().rowCount());
+        assertEquals(1, model.selectedGuide().span());
     }
 
     @Test
@@ -140,7 +140,7 @@ class GuideListModelTest {
         assertEquals(CELL_HEIGHT - 2, model.selectedGuide().position());
         adjustTimes(model, -1, 20);
         assertEquals(0, model.selectedGuide().position());
-        assertEquals(2, model.selectedGuide().rowCount());
+        assertEquals(2, model.selectedGuide().span());
     }
 
     @Test

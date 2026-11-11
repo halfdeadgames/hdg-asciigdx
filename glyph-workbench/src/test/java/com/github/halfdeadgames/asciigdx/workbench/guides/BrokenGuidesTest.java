@@ -68,7 +68,7 @@ class BrokenGuidesTest {
     }
 
     @Test
-    void shownFlagsFollowTheSortedWidthGuides() {
+    void shownFlagsFollowTheSortedColumnGuides() {
         PaintGuides sorted = PaintGuides.parse("column LATE 6 nothing\ncolumn EARLY 2 all\n");
         PaintGuides.Shown shown = sorted.forGlyph(UPPER, RULES, 8, 8);
 

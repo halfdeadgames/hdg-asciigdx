@@ -10,8 +10,8 @@ class LabelTiersTest {
 
     @Test
     void widthGuidesAloneAlternateTiersByPosition() {
-        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.WidthGuide("A", 1, 0),
-            new PaintGuides.WidthGuide("B", 3, 0), new PaintGuides.WidthGuide("C", 5, 0)), List.of());
+        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.ColumnGuide("A", 1, 0),
+            new PaintGuides.ColumnGuide("B", 3, 0), new PaintGuides.ColumnGuide("C", 5, 0)), List.of());
         assertEquals(0, tiered.widths().get(0).tier());
         assertEquals(1, tiered.widths().get(1).tier());
         assertEquals(0, tiered.widths().get(2).tier());
@@ -20,7 +20,7 @@ class LabelTiersTest {
 
     @Test
     void aColumnGuideAndAColumnBarSideBySideGetDifferentTiers() {
-        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.WidthGuide("A", 4, 0)),
+        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.ColumnGuide("A", 4, 0)),
             List.of(new PaintGuides.ColumnBarGuide("B", 4, 2)));
         assertEquals(0, tiered.widths().get(0).tier());
         assertEquals(1, tiered.columnBars().get(0).tier());
@@ -29,7 +29,7 @@ class LabelTiersTest {
     @Test
     void aColumnBarIsOrderedByTheMiddleOfItsBand() {
         LabelTiers.Tiered tiered = LabelTiers.assign(
-            List.of(new PaintGuides.WidthGuide("A", 6, 0), new PaintGuides.WidthGuide("C", 9, 0)),
+            List.of(new PaintGuides.ColumnGuide("A", 6, 0), new PaintGuides.ColumnGuide("C", 9, 0)),
             List.of(new PaintGuides.ColumnBarGuide("B", 3, 4)));
         // The band starts at column 3 but its middle is column 5, so it comes before both guides.
         assertEquals(0, tiered.columnBars().get(0).tier());
@@ -39,7 +39,7 @@ class LabelTiersTest {
 
     @Test
     void aColumnBarStartingBeforeAGuideCanStillComeAfterIt() {
-        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.WidthGuide("A", 5, 0)),
+        LabelTiers.Tiered tiered = LabelTiers.assign(List.of(new PaintGuides.ColumnGuide("A", 5, 0)),
             List.of(new PaintGuides.ColumnBarGuide("B", 4, 4)));
         // The middle of the band is column 6, after the guide at column 5.
         assertEquals(0, tiered.widths().get(0).tier());

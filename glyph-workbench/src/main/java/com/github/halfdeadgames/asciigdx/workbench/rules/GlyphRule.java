@@ -26,7 +26,7 @@ record GlyphRule(String name, RuleCheck check, CheckSettings settings, GlyphSet 
      * @param codePoint the glyph to look up
      * @return true if the check applies
      */
-    public boolean appliesTo(int codePoint) {
+    public boolean checks(int codePoint) {
         if (!appliesTo.contains(codePoint)) {
             return false;
         }

@@ -32,7 +32,7 @@ public final class RuleChecker {
         }
         List<RuleWarning> warnings = new ArrayList<>();
         for (GlyphRule rule : rulesFile.rules()) {
-            if (rule.appliesTo(codePoint)) {
+            if (rule.checks(codePoint)) {
                 findProblem(rule.check(), rule.settings(), glyph.pixels(), bounds.get())
                     .map(detail -> warningOf(rule, detail))
                     .ifPresent(warnings::add);

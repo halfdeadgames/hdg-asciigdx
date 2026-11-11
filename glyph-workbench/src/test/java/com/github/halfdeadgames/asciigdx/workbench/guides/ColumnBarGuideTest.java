@@ -36,7 +36,7 @@ class ColumnBarGuideTest {
         assertEquals(PaintGuides.ListedKind.COLUMN_BAR, listed.kind());
         assertEquals("STEM", listed.label());
         assertEquals(3, listed.position());
-        assertEquals(2, listed.rowCount());
+        assertEquals(2, listed.span());
         assertEquals("uppercase", listed.groups());
         assertEquals(1, guides.columnBarCount());
     }
@@ -71,7 +71,7 @@ class ColumnBarGuideTest {
     void newColumnBarIsCenteredAndTwoWide() {
         PaintGuides.Listed sixteen = only(PaintGuides.NONE.withColumnBarAdded(16));
         assertEquals(7, sixteen.position());
-        assertEquals(2, sixteen.rowCount());
+        assertEquals(2, sixteen.span());
         assertEquals("NEW", sixteen.label());
         assertEquals("all", sixteen.groups());
         assertEquals(PaintGuides.ListedKind.COLUMN_BAR, sixteen.kind());
@@ -81,17 +81,17 @@ class ColumnBarGuideTest {
     void newColumnBarInAnOddCellSitsOneColumnLeftOfTheMiddle() {
         PaintGuides.Listed nine = only(PaintGuides.NONE.withColumnBarAdded(9));
         assertEquals(3, nine.position());
-        assertEquals(2, nine.rowCount());
+        assertEquals(2, nine.span());
     }
 
     @Test
     void newColumnBarInANarrowCellIsOneColumnAtZero() {
         PaintGuides.Listed one = only(PaintGuides.NONE.withColumnBarAdded(1));
         assertEquals(0, one.position());
-        assertEquals(1, one.rowCount());
+        assertEquals(1, one.span());
         PaintGuides.Listed two = only(PaintGuides.NONE.withColumnBarAdded(2));
         assertEquals(0, two.position());
-        assertEquals(2, two.rowCount());
+        assertEquals(2, two.span());
     }
 
     @Test
@@ -100,7 +100,7 @@ class ColumnBarGuideTest {
         assertEquals(4, only(guides.withGuideMoved(0, 1, 8, 8)).position());
         assertEquals(6, only(guides.withGuideMoved(0, 50, 8, 8)).position());
         assertEquals(0, only(guides.withGuideMoved(0, -50, 8, 8)).position());
-        assertEquals(2, only(guides.withGuideMoved(0, 50, 8, 8)).rowCount());
+        assertEquals(2, only(guides.withGuideMoved(0, 50, 8, 8)).span());
     }
 
     @Test
@@ -154,7 +154,7 @@ class ColumnBarGuideTest {
         PaintGuides.Listed relabeled = PaintGuides.parse(ALL_KINDS).withGuideRelabeled(3, "BODY").allGuides().get(3);
         assertEquals("BODY", relabeled.label());
         assertEquals(3, relabeled.position());
-        assertEquals(2, relabeled.rowCount());
+        assertEquals(2, relabeled.span());
         assertEquals("uppercase,digits", relabeled.groups());
     }
 

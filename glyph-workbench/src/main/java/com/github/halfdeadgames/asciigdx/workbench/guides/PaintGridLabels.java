@@ -86,7 +86,7 @@ public final class PaintGridLabels {
         return found >= 0 ? found : shown.rows().size() + shown.bars().size();
     }
 
-    private static int findShownRow(List<PaintGuides.Guide> rows, PaintGuides.Listed mark) {
+    private static int findShownRow(List<PaintGuides.RowGuide> rows, PaintGuides.Listed mark) {
         int found = -1;
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i).boundaryRow() == mark.position() && rows.get(i).label().equals(mark.label())) {
@@ -100,7 +100,7 @@ public final class PaintGridLabels {
         int found = -1;
         for (int i = 0; i < bars.size(); i++) {
             PaintGuides.BarGuide bar = bars.get(i);
-            if (bar.firstRow() == mark.position() && bar.rowCount() == mark.rowCount()
+            if (bar.firstRow() == mark.position() && bar.rowCount() == mark.span()
                 && bar.label().equals(mark.label())) {
                 found = rowCount + i;
             }
@@ -109,7 +109,7 @@ public final class PaintGridLabels {
     }
 
     private static void fillShownRowWanted(int[] wanted, PaintGuides.Shown shown, Frame frame) {
-        List<PaintGuides.Guide> rows = shown.rows();
+        List<PaintGuides.RowGuide> rows = shown.rows();
         List<PaintGuides.BarGuide> bars = shown.bars();
         for (int i = 0; i < rows.size(); i++) {
             wanted[i] = frame.top() + rows.get(i).boundaryRow() * frame.pixelSize() - frame.cell() / 2;
@@ -125,7 +125,7 @@ public final class PaintGridLabels {
     }
 
     private void layoutWidthLabels(PaintGuides.Shown shown, PaintGuides.Listed mark, Frame frame) {
-        List<PaintGuides.WidthGuide> widths = shown.widths();
+        List<PaintGuides.ColumnGuide> widths = shown.widths();
         List<PaintGuides.ColumnBarGuide> columnBars = shown.columnBars();
         int shownSlots = widths.size() + columnBars.size();
         highlightWidthSlot = findHighlightWidthSlot(shown, mark);
@@ -173,7 +173,7 @@ public final class PaintGridLabels {
         return found >= 0 ? found : fallback;
     }
 
-    private static int findShownWidth(List<PaintGuides.WidthGuide> widths, PaintGuides.Listed mark) {
+    private static int findShownWidth(List<PaintGuides.ColumnGuide> widths, PaintGuides.Listed mark) {
         int found = -1;
         for (int i = 0; i < widths.size(); i++) {
             if (widths.get(i).boundaryColumn() == mark.position() && widths.get(i).label().equals(mark.label())) {
@@ -188,7 +188,7 @@ public final class PaintGridLabels {
         int found = -1;
         for (int i = 0; i < columnBars.size(); i++) {
             PaintGuides.ColumnBarGuide bar = columnBars.get(i);
-            if (bar.firstColumn() == mark.position() && bar.columnCount() == mark.rowCount()
+            if (bar.firstColumn() == mark.position() && bar.columnCount() == mark.span()
                 && bar.label().equals(mark.label())) {
                 found = widthCount + i;
             }

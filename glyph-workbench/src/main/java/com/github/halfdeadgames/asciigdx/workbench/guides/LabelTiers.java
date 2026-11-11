@@ -9,7 +9,7 @@ final class LabelTiers {
 
     private static final int TIER_COUNT = 2;
 
-    record Tiered(List<PaintGuides.WidthGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) { }
+    record Tiered(List<PaintGuides.ColumnGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) { }
 
     private record Entry(float position, boolean isColumnBar, int index) { }
 
@@ -20,7 +20,7 @@ final class LabelTiers {
      * Orders all labels by position (a column bar by the middle of its band; a width guide first on a tie) and gives
      * them tiers 0, 1, 0, ... in that order. Each list keeps its own order.
      */
-    static Tiered assign(List<PaintGuides.WidthGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) {
+    static Tiered assign(List<PaintGuides.ColumnGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) {
         List<Entry> ordered = orderedByPosition(widths, columnBars);
         int[] widthTiers = new int[widths.size()];
         int[] columnBarTiers = new int[columnBars.size()];
@@ -32,7 +32,7 @@ final class LabelTiers {
         return new Tiered(withWidthTiers(widths, widthTiers), withColumnBarTiers(columnBars, columnBarTiers));
     }
 
-    private static List<Entry> orderedByPosition(List<PaintGuides.WidthGuide> widths,
+    private static List<Entry> orderedByPosition(List<PaintGuides.ColumnGuide> widths,
                                                  List<PaintGuides.ColumnBarGuide> columnBars) {
         List<Entry> entries = new ArrayList<>();
         for (int i = 0; i < widths.size(); i++) {
@@ -45,11 +45,11 @@ final class LabelTiers {
         return entries;
     }
 
-    private static List<PaintGuides.WidthGuide> withWidthTiers(List<PaintGuides.WidthGuide> widths, int[] tiers) {
-        List<PaintGuides.WidthGuide> tiered = new ArrayList<>();
+    private static List<PaintGuides.ColumnGuide> withWidthTiers(List<PaintGuides.ColumnGuide> widths, int[] tiers) {
+        List<PaintGuides.ColumnGuide> tiered = new ArrayList<>();
         for (int i = 0; i < widths.size(); i++) {
-            PaintGuides.WidthGuide guide = widths.get(i);
-            tiered.add(new PaintGuides.WidthGuide(guide.label(), guide.boundaryColumn(), tiers[i]));
+            PaintGuides.ColumnGuide guide = widths.get(i);
+            tiered.add(new PaintGuides.ColumnGuide(guide.label(), guide.boundaryColumn(), tiers[i]));
         }
         return List.copyOf(tiered);
     }

@@ -38,7 +38,7 @@ class PaintGuidesTest {
         """;
 
     private static List<Integer> columns(PaintGuides.Shown shown) {
-        return shown.widths().stream().map(PaintGuides.WidthGuide::boundaryColumn).toList();
+        return shown.widths().stream().map(PaintGuides.ColumnGuide::boundaryColumn).toList();
     }
 
     private static PaintGuides.Shown shown(PaintGuides guides, int codePoint, int cellWidth, int cellHeight) {
@@ -46,7 +46,7 @@ class PaintGuidesTest {
     }
 
     private static List<String> rowLabels(PaintGuides.Shown shown) {
-        return shown.rows().stream().map(PaintGuides.Guide::label).toList();
+        return shown.rows().stream().map(PaintGuides.RowGuide::label).toList();
     }
 
     private static String badLineMessage(String text) {
@@ -78,7 +78,7 @@ class PaintGuidesTest {
     @Test
     void columnLabelTiersAlternate() {
         PaintGuides.Shown shown = shown(PaintGuides.parse(SAMPLE), UPPER, 8, 8);
-        assertEquals(List.of(0, 1, 0), shown.widths().stream().map(PaintGuides.WidthGuide::tier).toList());
+        assertEquals(List.of(0, 1, 0), shown.widths().stream().map(PaintGuides.ColumnGuide::tier).toList());
     }
 
     @Test
@@ -135,11 +135,11 @@ class PaintGuidesTest {
     void realSaiksisttGuidesParse() throws IOException {
         PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16x16.guides.txt"));
         PaintGuides.Shown upper = shown(guides, UPPER, 16, 16);
-        assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
+        assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.RowGuide::boundaryRow).toList());
         assertTrue(upper.widths().isEmpty());
         assertEquals(6.5f, upper.bars().get(0).centerRow());
         PaintGuides.Shown lower = shown(guides, LOWER, 16, 16);
-        assertEquals(List.of(1, 2, 6, 12), lower.rows().stream().map(PaintGuides.Guide::boundaryRow).toList());
+        assertEquals(List.of(1, 2, 6, 12), lower.rows().stream().map(PaintGuides.RowGuide::boundaryRow).toList());
         assertEquals(8.5f, lower.bars().get(0).centerRow());
         assertEquals(6.5f, shown(guides, DIGIT, 16, 16).bars().get(0).centerRow());
         assertTrue(shown(guides, PUNCT, 16, 16).bars().isEmpty());
@@ -275,7 +275,7 @@ class PaintGuidesTest {
         for (int codePoint : List.of(UPPER, LOWER, DIGIT)) {
             PaintGuides.Shown shown = shown(guides, codePoint, 8, 8);
             for (PaintGuides.BarGuide bar : shown.bars()) {
-                for (PaintGuides.Guide row : shown.rows()) {
+                for (PaintGuides.RowGuide row : shown.rows()) {
                     assertTrue(Math.abs(row.boundaryRow() - bar.centerRow()) >= 0.5f, bar.label() + " vs " + row.label());
                 }
             }

@@ -1,12 +1,12 @@
-package com.github.halfdeadgames.asciigdx.workbench.notes;
+package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Splits note text into lines of at most a given number of characters. */
-public final class NoteText {
+/** Splits text into lines of at most a given number of characters. */
+public final class TextWrap {
 
-    private NoteText() {
+    private TextWrap() {
     }
 
     /**

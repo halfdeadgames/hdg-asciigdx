@@ -157,12 +157,12 @@ class PaintColumnsTest {
 
     @Test
     void titleAlwaysShowsOnAVisibleFrameShortenedWhenNarrow() {
-        assertEquals(" SHEET ", Panel.titleLabel(11, PaintColumns.sheetTitle(11)));
-        assertEquals(" SHEE ", Panel.titleLabel(10, PaintColumns.sheetTitle(10)));
-        assertEquals(" SH ", Panel.titleLabel(8, PaintColumns.sheetTitle(8)));
+        assertEquals(" SHEET ", Panel.titleLabel(11, PaintColumns.SHEET_TITLE));
+        assertEquals(" SHEE ", Panel.titleLabel(10, PaintColumns.SHEET_TITLE));
+        assertEquals(" SH ", Panel.titleLabel(8, PaintColumns.SHEET_TITLE));
         for (int cell : new int[] {8, 16, 24, 32}) {
             int narrowest = PaintColumns.sheetCells(PaintColumns.MIN_SHEET_COLUMNS, cell, PaintSheetView.GAP, cell);
-            assertTrue(!Panel.titleLabel(narrowest, PaintColumns.sheetTitle(narrowest)).isEmpty());
+            assertTrue(!Panel.titleLabel(narrowest, PaintColumns.SHEET_TITLE).isEmpty());
         }
     }
 

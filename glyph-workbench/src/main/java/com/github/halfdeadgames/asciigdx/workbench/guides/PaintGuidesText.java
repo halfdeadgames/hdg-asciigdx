@@ -2,9 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.BarGuide;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.ColumnBarGuide;
-import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.Guide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.RowGuide;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.Scoped;
-import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.WidthGuide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.ColumnGuide;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,8 +17,8 @@ final class PaintGuidesText {
     }
 
     static PaintGuides parse(String text) {
-        List<Scoped<Guide>> rows = new ArrayList<>();
-        List<Scoped<WidthGuide>> columns = new ArrayList<>();
+        List<Scoped<RowGuide>> rows = new ArrayList<>();
+        List<Scoped<ColumnGuide>> columns = new ArrayList<>();
         List<Scoped<BarGuide>> bars = new ArrayList<>();
         List<Scoped<ColumnBarGuide>> columnBars = new ArrayList<>();
         String[] lines = text.split("\r?\n", -1);
@@ -36,16 +36,16 @@ final class PaintGuidesText {
         return new PaintGuides(rows, columns, bars, columnBars);
     }
 
-    private static void parseLine(String[] words, List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns,
+    private static void parseLine(String[] words, List<Scoped<RowGuide>> rows, List<Scoped<ColumnGuide>> columns,
                                   List<Scoped<BarGuide>> bars, List<Scoped<ColumnBarGuide>> columnBars) {
         switch (words[0]) {
             case "row" -> {
                 expectWords(words, 4, "row <label> <boundaryRow> <groups>");
-                rows.add(new Scoped<>(new Guide(words[1], number(words[2], 0)), groups(words[3])));
+                rows.add(new Scoped<>(new RowGuide(words[1], number(words[2], 0)), groups(words[3])));
             }
             case "column" -> {
                 expectWords(words, 4, "column <label> <boundaryColumn> <groups>");
-                columns.add(new Scoped<>(new WidthGuide(words[1], number(words[2], 0), 0), groups(words[3])));
+                columns.add(new Scoped<>(new ColumnGuide(words[1], number(words[2], 0), 0), groups(words[3])));
             }
             case "bar" -> {
                 expectWords(words, 5, "bar <label> <firstRow> <rowCount> <groups>");
@@ -104,7 +104,7 @@ final class PaintGuidesText {
             text.append(kindWord(guide.kind())).append(' ').append(guide.label()).append(' ')
                 .append(guide.position()).append(' ');
             if (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
-                text.append(guide.rowCount()).append(' ');
+                text.append(guide.span()).append(' ');
             }
             text.append(guide.groups()).append('\n');
         }

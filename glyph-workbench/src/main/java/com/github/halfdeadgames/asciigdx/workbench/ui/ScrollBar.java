@@ -1,9 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /** Shared ▲ ░ █ ▼ scrollbar drawing and thumb math. */
-public final class ScrollText {
+public final class ScrollBar {
 
-    private ScrollText() {
+    private ScrollBar() {
     }
 
     /** Thumb length in track cells: proportional to visible over total, at least 1. */

@@ -146,7 +146,7 @@ final class PaintGridView {
         drawGridLines();
         drawMarkers(codePoint);
         drawGuides();
-        drawWidthGuides();
+        drawColumnGuides();
         drawBarGuides();
         drawColumnBarGuides();
         drawHighlight();
@@ -220,9 +220,9 @@ final class PaintGridView {
             return;
         }
         if (highlighted.kind() == PaintGuides.ListedKind.BAR) {
-            tintRows(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.rowCount());
+            tintRows(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.span());
         } else if (highlighted.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
-            tintColumns(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.rowCount());
+            tintColumns(HIGHLIGHT_TINT_COLOR, highlighted.position(), highlighted.span());
         }
     }
 
@@ -373,18 +373,18 @@ final class PaintGridView {
         return switch (guide.kind()) {
             case ROW -> guide.position() <= editor.cellHeight();
             case COLUMN -> guide.position() <= editor.cellWidth();
-            case BAR -> guide.position() + guide.rowCount() <= editor.cellHeight();
-            case COLUMN_BAR -> guide.position() + guide.rowCount() <= editor.cellWidth();
+            case BAR -> guide.position() + guide.span() <= editor.cellHeight();
+            case COLUMN_BAR -> guide.position() + guide.span() <= editor.cellWidth();
         };
     }
 
-    private void drawWidthGuides() {
+    private void drawColumnGuides() {
         int height = editor.cellHeight() * pixelSize;
         int overhang = overhang();
         int thickness = scaled(WIDTH_GUIDE_THICKNESS);
-        List<PaintGuides.WidthGuide> widths = shown.widths();
+        List<PaintGuides.ColumnGuide> widths = shown.widths();
         for (int i = 0; i < widths.size(); i++) {
-            PaintGuides.WidthGuide guide = widths.get(i);
+            PaintGuides.ColumnGuide guide = widths.get(i);
             if (isBlinkedOut(shown.isWidthBroken(i), i == labels.highlightWidthSlot())) {
                 continue;
             }
@@ -549,9 +549,9 @@ final class PaintGridView {
         int width = editor.cellWidth() * pixelSize;
         int overhang = overhang();
         int thickness = scaled(GUIDE_THICKNESS);
-        List<PaintGuides.Guide> rows = shown.rows();
+        List<PaintGuides.RowGuide> rows = shown.rows();
         for (int i = 0; i < rows.size(); i++) {
-            PaintGuides.Guide guide = rows.get(i);
+            PaintGuides.RowGuide guide = rows.get(i);
             if (isBlinkedOut(shown.isRowBroken(i), i == labels.highlightRowSlot())) {
                 continue;
             }

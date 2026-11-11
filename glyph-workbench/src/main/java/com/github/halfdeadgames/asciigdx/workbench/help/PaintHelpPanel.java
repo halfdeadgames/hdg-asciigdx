@@ -5,7 +5,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
@@ -52,7 +52,7 @@ public final class PaintHelpPanel {
             drawLine(lines.get(i), textX, (drawArea.y() + 1 + i - first) * cell, cell);
         }
         if (scroll.needed() && visible >= 2) {
-            ScrollText.drawBar(painter,
+            ScrollBar.drawBar(painter,
                 new CellRect(drawArea.x() + drawArea.width() - 2, drawArea.y() + 1, 1, visible),
                 lines.size(), visible, first);
         }

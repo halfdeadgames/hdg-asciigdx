@@ -23,7 +23,7 @@ final class GuideBands {
         return selected != null
             && selected.kind() == kind
             && selected.position() == firstCell
-            && selected.rowCount() == cellCount
+            && selected.span() == cellCount
             && selected.label().equals(label);
     }
 }

@@ -16,6 +16,6 @@ public final class WorkbenchLauncher {
         configuration.setWindowedMode(Integer.parseInt(windowSize[0]), Integer.parseInt(windowSize[1]));
         configuration.setResizable(true);
         configuration.useVsync(true);
-        new Lwjgl3Application(new WorkbenchHost(System.getProperty("workbench.mode")), configuration);
+        new Lwjgl3Application(new WorkbenchApp(System.getProperty("workbench.mode")), configuration);
     }
 }

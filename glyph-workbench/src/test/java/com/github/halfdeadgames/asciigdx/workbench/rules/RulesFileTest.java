@@ -282,33 +282,33 @@ class RulesFileTest {
     @Test
     void appliesToAllCoversEveryGlyph() {
         var rule = onlyRule("{ rules: [ { name: r, check: centeredX, appliesTo: [ all ] } ] }");
-        assertTrue(rule.appliesTo('A'));
-        assertTrue(rule.appliesTo(0x2588));
+        assertTrue(rule.checks('A'));
+        assertTrue(rule.checks(0x2588));
     }
 
     @Test
     void appliesToJoinsGroups() {
         var rule = onlyRule("{ groups: { a: [\"A\"], b: [\"b\"] }, rules: "
                 + "[ { name: r, check: centeredX, appliesTo: [ a, b ] } ] }");
-        assertTrue(rule.appliesTo('A'));
-        assertTrue(rule.appliesTo('b'));
-        assertFalse(rule.appliesTo('c'));
+        assertTrue(rule.checks('A'));
+        assertTrue(rule.checks('b'));
+        assertFalse(rule.checks('c'));
     }
 
     @Test
     void exceptionByGroupExcludesItsGlyphs() {
         var rule = onlyRule("{ groups: { caps: [\"A-Z\"], odd: [\"Q\"] }, rules: [ { name: r, check: centeredX, "
                 + "appliesTo: [ caps ], except: [ { group: odd, why: \"tail\" } ] } ] }");
-        assertTrue(rule.appliesTo('A'));
-        assertFalse(rule.appliesTo('Q'));
+        assertTrue(rule.checks('A'));
+        assertFalse(rule.checks('Q'));
     }
 
     @Test
     void exceptionByGlyphsExcludesThem() {
         var rule = onlyRule("{ rules: [ { name: r, check: centeredX, appliesTo: [ all ], "
                 + "except: [ { glyphs: [ \"U+00B7\" ], why: \"narrow\" } ] } ] }");
-        assertFalse(rule.appliesTo(0xB7));
-        assertTrue(rule.appliesTo('A'));
+        assertFalse(rule.checks(0xB7));
+        assertTrue(rule.checks('A'));
     }
 
     @Test

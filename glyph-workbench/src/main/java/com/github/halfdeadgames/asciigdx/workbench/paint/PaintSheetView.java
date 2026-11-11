@@ -131,7 +131,7 @@ final class PaintSheetView {
 
     private String frameTitle() {
         if (title == null) {
-            return PaintColumns.sheetTitle(frameCellsWide);
+            return PaintColumns.SHEET_TITLE;
         }
         return title.length() <= Panel.titleRoom(frameCellsWide) ? title : shortTitle;
     }
@@ -193,7 +193,7 @@ final class PaintSheetView {
 
     /** Slot under a pixel, or -1. */
     int slotAt(int pixelX, int pixelY) {
-        return layout.cellAt(pixelX, pixelY, scroll.offset(), scroll.visibleRows(), columnScroll.offset());
+        return layout.slotAt(pixelX, pixelY, scroll.offset(), scroll.visibleRows(), columnScroll.offset());
     }
 
     /** Handles a click on the scroll bar arrows or track. */
@@ -290,11 +290,11 @@ final class PaintSheetView {
     }
 
     private void drawSlot(int slot, int codePoint) {
-        int width = layout.cellWidth();
-        int height = layout.cellHeight();
+        int width = layout.slotWidth();
+        int height = layout.slotHeight();
         int hairline = painter.scale().scaled(1);
-        int x = layout.cellLeft(slot, columnScroll.offset());
-        int top = layout.cellTop(slot, scroll.offset());
+        int x = layout.slotLeft(slot, columnScroll.offset());
+        int top = layout.slotTop(slot, scroll.offset());
         painter.fill(CELL_FILL, x, top, width, height);
         PixelGlyph glyph = editor.glyph(codePoint);
         if (glyph == null) {
@@ -308,8 +308,8 @@ final class PaintSheetView {
         if (!isSlotVisible(cursorSlot)) {
             return;
         }
-        outline(CURSOR_COLOR, layout.cellLeft(cursorSlot, columnScroll.offset()),
-            layout.cellTop(cursorSlot, scroll.offset()), layout.cellWidth(), layout.cellHeight(),
+        outline(CURSOR_COLOR, layout.slotLeft(cursorSlot, columnScroll.offset()),
+            layout.slotTop(cursorSlot, scroll.offset()), layout.slotWidth(), layout.slotHeight(),
             painter.scale().scaled(OUTLINE));
     }
 
@@ -319,9 +319,9 @@ final class PaintSheetView {
         }
         int outline = painter.scale().scaled(OUTLINE);
         int inset = outline + painter.scale().scaled(1);
-        outline(SOURCE_CURSOR_COLOR, layout.cellLeft(sourceSlot, columnScroll.offset()) + inset,
-            layout.cellTop(sourceSlot, scroll.offset()) + inset,
-            layout.cellWidth() - 2 * inset, layout.cellHeight() - 2 * inset, outline);
+        outline(SOURCE_CURSOR_COLOR, layout.slotLeft(sourceSlot, columnScroll.offset()) + inset,
+            layout.slotTop(sourceSlot, scroll.offset()) + inset,
+            layout.slotWidth() - 2 * inset, layout.slotHeight() - 2 * inset, outline);
     }
 
     private boolean isSlotVisible(int slot) {

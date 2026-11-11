@@ -143,7 +143,7 @@ final class GuideListModel {
         StringBuilder text = new StringBuilder(kindWord(guide.kind())).append(' ').append(label).append(' ')
             .append(guide.position());
         if (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
-            text.append('+').append(guide.rowCount());
+            text.append('+').append(guide.span());
         }
         return text.toString();
     }

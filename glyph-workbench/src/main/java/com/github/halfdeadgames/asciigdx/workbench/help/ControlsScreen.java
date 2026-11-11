@@ -8,7 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
-import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollText;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
@@ -139,7 +139,7 @@ public final class ControlsScreen {
             painter.text(line.action(), textX + line.actionColumn() * cell, top, UiPalette.TEXT);
         }
         if (scroll.needed() && layout.visibleRows() >= 2) {
-            ScrollText.drawBar(painter,
+            ScrollBar.drawBar(painter,
                 new CellRect(rect.x() + rect.width() - 2, rect.y() + 1, 1, layout.visibleRows()),
                 lines.size(), layout.visibleRows(), first);
         }

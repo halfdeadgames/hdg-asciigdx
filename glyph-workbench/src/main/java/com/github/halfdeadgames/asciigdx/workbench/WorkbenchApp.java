@@ -29,7 +29,7 @@ import java.util.function.Supplier;
  * shortcut for captures) the paint screen opens directly and Esc quits. A screen switch asked for
  * during a frame happens after that frame, so a screen is never disposed mid-render.
  */
-final class WorkbenchHost extends ApplicationAdapter {
+final class WorkbenchApp extends ApplicationAdapter {
 
     private static final String TAG = "Workbench";
     private static final CellSize DEFAULT_FONT_SIZE = new CellSize(16, 16);
@@ -40,7 +40,7 @@ final class WorkbenchHost extends ApplicationAdapter {
     private ScriptSession scriptSession;
 
     /** @param mode {@code paint} or anything else (including null) for the menus */
-    WorkbenchHost(String mode) {
+    WorkbenchApp(String mode) {
         this.mode = mode;
     }
 

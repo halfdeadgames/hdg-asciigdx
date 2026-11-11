@@ -33,10 +33,10 @@ class GuideResizeTest {
         PaintGuides guides = PaintGuides.parse(TEXT);
         PaintGuides.Listed grown = guides.withGuideResized(BAR_INDEX, 1, CELL, CELL).allGuides().get(BAR_INDEX);
         assertEquals(6, grown.position());
-        assertEquals(2, grown.rowCount());
+        assertEquals(2, grown.span());
         PaintGuides.Listed shrunk = guides.withGuideResized(BAR_INDEX, 1, CELL, CELL)
             .withGuideResized(BAR_INDEX, -1, CELL, CELL).allGuides().get(BAR_INDEX);
-        assertEquals(1, shrunk.rowCount());
+        assertEquals(1, shrunk.span());
     }
 
     @Test
@@ -45,10 +45,10 @@ class GuideResizeTest {
         PaintGuides.Listed grown = guides.withGuideResized(COLUMN_BAR_INDEX, -1, CELL, CELL)
             .allGuides().get(COLUMN_BAR_INDEX);
         assertEquals(7, grown.position());
-        assertEquals(1, grown.rowCount());
+        assertEquals(1, grown.span());
         PaintGuides wide = PaintGuides.parse("colbar W 2 2 all\n").withGuideResized(0, 1, CELL, CELL);
         assertEquals(2, wide.allGuides().get(0).position());
-        assertEquals(3, wide.allGuides().get(0).rowCount());
+        assertEquals(3, wide.allGuides().get(0).span());
     }
 
     @Test
@@ -62,7 +62,7 @@ class GuideResizeTest {
     @Test
     void barStopsAtTheCellEdge() {
         PaintGuides guides = PaintGuides.parse(TEXT).withGuideResized(BAR_INDEX, 1, CELL, CELL);
-        assertEquals(2, guides.allGuides().get(BAR_INDEX).rowCount());
+        assertEquals(2, guides.allGuides().get(BAR_INDEX).span());
         assertSame(guides, guides.withGuideResized(BAR_INDEX, 1, CELL, CELL));
     }
 
@@ -71,7 +71,7 @@ class GuideResizeTest {
         PaintGuides guides = PaintGuides.parse("colbar W 6 2 all\n");
         assertSame(guides, guides.withGuideResized(0, 1, CELL, CELL));
         PaintGuides inner = PaintGuides.parse("colbar W 5 2 all\n").withGuideResized(0, 1, CELL, CELL);
-        assertEquals(3, inner.allGuides().get(0).rowCount());
+        assertEquals(3, inner.allGuides().get(0).span());
         assertSame(inner, inner.withGuideResized(0, 1, CELL, CELL));
     }
 
@@ -101,7 +101,7 @@ class GuideResizeTest {
         GuideListModel model = modelSelecting(BAR_INDEX);
         model.resizeSelected(1);
         PaintGuides reread = PaintGuides.parse(model.guides().toText());
-        assertEquals(2, reread.allGuides().get(BAR_INDEX).rowCount());
+        assertEquals(2, reread.allGuides().get(BAR_INDEX).span());
         assertEquals(model.guides().toText(), reread.toText());
     }
 

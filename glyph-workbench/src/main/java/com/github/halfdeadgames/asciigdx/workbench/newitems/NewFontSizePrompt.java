@@ -17,18 +17,18 @@ final class NewFontSizePrompt {
     private static final String ELLIPSIS = "..";
 
     private final StringBuilder text = new StringBuilder(MAX_TYPED);
-    private final Consumer<CellSize> onCreate;
+    private final Consumer<CellSize> onConfirm;
     private final Runnable onBack;
     private String name = "";
     private String problem = "";
     private boolean open;
 
     /**
-     * @param onCreate receives the typed cell size when Enter is pressed on a valid size, to go on to the glyph page
+     * @param onConfirm receives the typed cell size when Enter is pressed on a valid size
      * @param onBack called when Esc is pressed, to return to the name page
      */
-    NewFontSizePrompt(Consumer<CellSize> onCreate, Runnable onBack) {
-        this.onCreate = onCreate;
+    NewFontSizePrompt(Consumer<CellSize> onConfirm, Runnable onBack) {
+        this.onConfirm = onConfirm;
         this.onBack = onBack;
     }
 
@@ -111,7 +111,7 @@ final class NewFontSizePrompt {
             problem = sizeError;
             return;
         }
-        onCreate.accept(NewFontInput.typedSize(text.toString()));
+        onConfirm.accept(NewFontInput.typedSize(text.toString()));
     }
 
     void back() {

@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
-import com.github.halfdeadgames.asciigdx.workbench.notes.NoteText;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TextWrap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -81,7 +81,7 @@ final class RulesPageLines {
 
     private static void sortRule(GlyphRule rule, int codePoint, List<GlyphRule> applying,
             List<GlyphRule> skipped, List<GlyphRule> other) {
-        if (rule.appliesTo(codePoint)) {
+        if (rule.checks(codePoint)) {
             applying.add(rule);
         } else if (rule.appliesTo().contains(codePoint)) {
             skipped.add(rule);
@@ -137,7 +137,7 @@ final class RulesPageLines {
             return;
         }
         int bodyWidth = Math.max(1, textWidth - BULLET.length());
-        List<String> pieces = NoteText.wrap(text.substring(BULLET.length()), bodyWidth);
+        List<String> pieces = TextWrap.wrap(text.substring(BULLET.length()), bodyWidth);
         for (int i = 0; i < pieces.size(); i++) {
             if (i > 0 && pieces.get(i).isEmpty()) {
                 continue;
@@ -148,7 +148,7 @@ final class RulesPageLines {
     }
 
     private void addWrapped(String text, Role role) {
-        List<String> pieces = NoteText.wrap(text, textWidth);
+        List<String> pieces = TextWrap.wrap(text, textWidth);
         for (int i = 0; i < pieces.size(); i++) {
             if (i > 0 && pieces.get(i).isEmpty()) {
                 continue;

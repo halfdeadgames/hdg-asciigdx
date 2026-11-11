@@ -74,12 +74,12 @@ class UiKitTest {
 
     @Test
     void scrollbarThumbMath() {
-        assertEquals(10, ScrollText.thumbSize(10, 5, 8));
-        assertEquals(5, ScrollText.thumbSize(10, 20, 10));
-        assertEquals(1, ScrollText.thumbSize(10, 1000, 2));
-        assertEquals(0, ScrollText.thumbStart(10, 20, 10, 0));
-        assertEquals(5, ScrollText.thumbStart(10, 20, 10, 10));
-        assertEquals(0, ScrollText.thumbStart(10, 5, 8, 0));
+        assertEquals(10, ScrollBar.thumbSize(10, 5, 8));
+        assertEquals(5, ScrollBar.thumbSize(10, 20, 10));
+        assertEquals(1, ScrollBar.thumbSize(10, 1000, 2));
+        assertEquals(0, ScrollBar.thumbStart(10, 20, 10, 0));
+        assertEquals(5, ScrollBar.thumbStart(10, 20, 10, 10));
+        assertEquals(0, ScrollBar.thumbStart(10, 5, 8, 0));
     }
 
     @Test
