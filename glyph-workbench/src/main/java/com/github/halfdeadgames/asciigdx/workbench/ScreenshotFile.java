@@ -29,7 +29,7 @@ public final class ScreenshotFile {
     }
 
     // Translucent draws leave partial alpha in the framebuffer. The window ignores it, but image viewers would not.
-    static void makeOpaque(byte[] rgbaPixels) {
+    private static void makeOpaque(byte[] rgbaPixels) {
         for (int i = ALPHA_OFFSET; i < rgbaPixels.length; i += BYTES_PER_PIXEL) {
             rgbaPixels[i] = OPAQUE;
         }

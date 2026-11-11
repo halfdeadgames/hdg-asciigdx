@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /** Lays out the text of the rules page as wrapped lines, without drawing anything. */
-public final class RulesPageLines {
+final class RulesPageLines {
 
     /** How a line is colored. */
     public enum Role { TEXT, HEADING, WARNING, INACTIVE }
@@ -16,10 +16,9 @@ public final class RulesPageLines {
      * One line of the page.
      *
      * @param text the characters to draw
-     * @param indent how many cells the line is pushed right
      * @param role the color to draw it in
      */
-    public record PageLine(String text, int indent, Role role) {}
+    public record PageLine(String text, Role role) {}
 
     private static final String BULLET = "- ";
     private static final String BULLET_CONTINUATION = "  ";
@@ -144,7 +143,7 @@ public final class RulesPageLines {
                 continue;
             }
             String prefix = i == 0 ? BULLET : BULLET_CONTINUATION;
-            lines.add(new PageLine(prefix + pieces.get(i), 0, role));
+            lines.add(new PageLine(prefix + pieces.get(i), role));
         }
     }
 
@@ -154,12 +153,12 @@ public final class RulesPageLines {
             if (i > 0 && pieces.get(i).isEmpty()) {
                 continue;
             }
-            lines.add(new PageLine(pieces.get(i), 0, role));
+            lines.add(new PageLine(pieces.get(i), role));
         }
     }
 
     private void addBlank() {
-        lines.add(new PageLine("", 0, Role.TEXT));
+        lines.add(new PageLine("", Role.TEXT));
     }
 
     private void addBlankUnlessFirst() {

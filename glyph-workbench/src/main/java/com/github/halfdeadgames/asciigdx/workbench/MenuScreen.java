@@ -27,7 +27,7 @@ import java.util.function.Function;
 /** A menu in the UI kit style: a focused list on the left, details of the selected entry on the right. */
 final class MenuScreen implements WorkbenchScreen {
 
-    /** The right panel: its title, a short description in dim text, and extra lines such as the actions. */
+    /** The right panel: its title and its lines, such as the actions. */
     record Detail(String title, List<String> lines) {
     }
 

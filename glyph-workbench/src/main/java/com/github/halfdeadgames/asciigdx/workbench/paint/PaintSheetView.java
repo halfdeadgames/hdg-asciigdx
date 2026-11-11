@@ -17,7 +17,6 @@ final class PaintSheetView {
     static final int COLUMNS = 16;
     static final int GAP = 1;
     private static final int OUTLINE = 2;
-    private static final int MARK_SIZE = 6;
 
     private static final Color CELL_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
     private static final Color EMPTY_OUTLINE = new Color(0.4f, 0.42f, 0.55f, 1f);
@@ -25,10 +24,6 @@ final class PaintSheetView {
     private static final Color DERIVED_COLOR = UiPalette.DERIVED;
     private static final Color CURSOR_COLOR = Color.YELLOW;
     private static final Color SOURCE_CURSOR_COLOR = UiPalette.ORANGE;
-    private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
-    private static final Color LABEL_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
-    private static final Color BAR_COLOR = new Color(0.75f, 0.8f, 0.95f, 1f);
-    private static final Color BAR_DIM_COLOR = new Color(0.25f, 0.27f, 0.34f, 1f);
 
     private final Painter painter;
     private final FontEditor editor;
@@ -45,7 +40,6 @@ final class PaintSheetView {
     private boolean draggingColumnBar;
     private int columnGrabOffset;
     private final StringBuilder barGlyph = new StringBuilder(1);
-    private Color[] marks;
     private int visibleColumns;
     private int frameCellsWide;
     private int minimumFrameCells;
@@ -143,24 +137,17 @@ final class PaintSheetView {
     }
 
     /**
-     * Picks up slots the editor added: the row count, scroll limits, and grid layout follow it. Marks are
-     * indexed by slot, so they are dropped and must be set again.
+     * Picks up slots the editor added: the row count, scroll limits, and grid layout follow it.
      */
     void refreshSlots() {
         rows = editor.slotCount() / COLUMNS;
         scroll.setTotalRows(rows);
-        marks = null;
         layoutCell = -1;
         setVisibleColumns(visibleColumns);
     }
 
     ScrollState scroll() {
         return scroll;
-    }
-
-    /** First visible glyph column. */
-    int firstColumn() {
-        return columnScroll.offset();
     }
 
     ScrollState columnScroll() {
@@ -273,11 +260,6 @@ final class PaintSheetView {
         draggingColumnBar = false;
     }
 
-    /** Small corner squares drawn on slots; one color (or null for none) per slot, or null for no marks. */
-    void setMarks(Color[] marks) {
-        this.marks = marks;
-    }
-
     void draw(int cursorSlot) {
         draw(cursorSlot, -1);
     }
@@ -319,10 +301,6 @@ final class PaintSheetView {
             outline(EMPTY_OUTLINE, x, top, width, height, hairline);
         } else {
             painter.pixels(glyph.pixels(), x, top, pixelScale(), editor.isDerived(codePoint) ? DERIVED_COLOR : GLYPH_COLOR);
-        }
-        if (marks != null && marks[slot] != null) {
-            int markSize = painter.scale().scaled(MARK_SIZE);
-            painter.fill(marks[slot], x + width - markSize - hairline, top + hairline, markSize, markSize);
         }
     }
 

@@ -17,7 +17,7 @@ import java.util.TreeSet;
 public final class SheetOrder {
 
     /** Columns per sheet row. */
-    public static final int COLUMNS = 16;
+    static final int COLUMNS = 16;
 
     /** Code point listed for an empty slot: the last private use code point, never a real glyph. */
     public static final int FILLER = 0x10FFFD;

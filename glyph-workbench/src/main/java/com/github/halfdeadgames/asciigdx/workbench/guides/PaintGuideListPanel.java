@@ -124,7 +124,7 @@ public final class PaintGuideListPanel {
         return open ? guideList.selectedGuideForDisplay() : null;
     }
 
-    public boolean isPicking() {
+    private boolean isPicking() {
         return open && addFlow.isPicking();
     }
 

@@ -127,10 +127,6 @@ final class PaintGridView {
     /** A pending overlay part drawn faded at its shifted position; pixels past the part's own width are outside the cell. */
     record Ghost(PixelGrid pixels, int shift, int down) { }
 
-    void draw(int codePoint) {
-        draw(codePoint, null, null, 0f);
-    }
-
     /**
      * @param previewGlyph glyph to show instead of the slot's own (a derive preview), or null
      * @param ghost pending overlay part to show faded on top, or null

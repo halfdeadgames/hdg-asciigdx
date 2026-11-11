@@ -11,8 +11,8 @@ import java.util.List;
  */
 public final class UpscaleSources {
 
-    static final String TOO_BIG = "TOO BIG";
-    static final String NOT_EVEN = "NOT EVEN";
+    private static final String TOO_BIG = "TOO BIG";
+    private static final String NOT_EVEN = "NOT EVEN";
 
     private static final int UNUSABLE_FACTOR = 0;
     private static final int NO_INDEX = -1;

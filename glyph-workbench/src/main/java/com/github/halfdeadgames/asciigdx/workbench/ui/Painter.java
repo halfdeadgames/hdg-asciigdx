@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
@@ -57,11 +56,6 @@ public final class Painter {
         }
     }
 
-    public void region(TextureRegion region, int x, int top, int size, Color tint) {
-        batch.setColor(tint);
-        batch.draw(region, x, flipY(top, size), size, size);
-    }
-
     public void text(CharSequence value, int x, int top, Color color) {
         int size = cell();
         batch.setColor(color);
@@ -96,15 +90,6 @@ public final class Painter {
     private void cell(char c, int x, int top) {
         int size = cell();
         batch.draw(font.glyph(c), x, flipY(top, size), size, size);
-    }
-
-    /** Rounds a pixel length up to whole text cells at the default scale. */
-    public static int roundUpToCells(int pixels) {
-        return roundUpToCells(pixels, TEXT_SIZE);
-    }
-
-    static int roundUpToCells(int pixels, int cellPixels) {
-        return (pixels + cellPixels - 1) / cellPixels * cellPixels;
     }
 
     private float flipY(int top, int height) {

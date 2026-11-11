@@ -8,7 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
  * {@code columns * (cellWidth + gap) + gap} pixels wide and {@code rows * (cellHeight + gap) + gap}
  * pixels high.
  */
-public final class SheetGridLayout {
+final class SheetGridLayout {
 
     private final int left;
     private final int top;
@@ -21,7 +21,7 @@ public final class SheetGridLayout {
     private final int visibleColumns;
     private final int rows;
 
-    public SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns, int rows) {
+    SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns, int rows) {
         this(left, top, cellSize, gap, columns, columns, rows);
     }
 
@@ -29,8 +29,8 @@ public final class SheetGridLayout {
      * Cells are numbered across all {@code columns}, but only the first {@code visibleColumns} take
      * room in the panel and answer {@link #cellAt}.
      */
-    public SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns,
-                           int visibleColumns, int rows) {
+    SheetGridLayout(int left, int top, GlyphSize cellSize, int gap, int columns,
+                    int visibleColumns, int rows) {
         this.visibleColumns = Math.max(1, Math.min(columns, visibleColumns));
         this.left = left;
         this.top = top;
@@ -43,55 +43,55 @@ public final class SheetGridLayout {
         this.rows = rows;
     }
 
-    public int panelWidth() {
+    int panelWidth() {
         return visibleColumns * pitchX + gap;
     }
 
-    public int panelHeight() {
+    int panelHeight() {
         return rows * pitchY + gap;
     }
 
-    public int left() {
+    int left() {
         return left;
     }
 
-    public int top() {
+    int top() {
         return top;
     }
 
-    public int cellWidth() {
+    int cellWidth() {
         return cellWidth;
     }
 
-    public int cellHeight() {
+    int cellHeight() {
         return cellHeight;
     }
 
-    public int cellLeft(int index) {
+    int cellLeft(int index) {
         return left + gap + (index % columns) * pitchX;
     }
 
-    public int cellTop(int index) {
+    int cellTop(int index) {
         return top + gap + (index / columns) * pitchY;
     }
 
     /** Top of a cell when the panel is scrolled so that {@code firstRow} is the first visible row. */
-    public int cellTop(int index, int firstRow) {
+    int cellTop(int index, int firstRow) {
         return top + gap + (index / columns - firstRow) * pitchY;
     }
 
     /** Height of a panel that shows the given number of rows. */
-    public int heightForRows(int visibleRows) {
+    int heightForRows(int visibleRows) {
         return visibleRows * pitchY + gap;
     }
 
     /** Number of whole rows that fit in a height, at least 1. */
-    public int rowsThatFit(int height) {
+    int rowsThatFit(int height) {
         return Math.max(1, (height - gap) / pitchY);
     }
 
     /** Returns the cell under a pixel, or -1 if the pixel is in a gap or outside the panel. */
-    public int cellAt(int pixelX, int pixelY) {
+    int cellAt(int pixelX, int pixelY) {
         return cellAt(pixelX, pixelY, 0, rows);
     }
 
@@ -99,12 +99,12 @@ public final class SheetGridLayout {
      * Returns the cell under a pixel when the panel is scrolled to {@code firstRow} and shows
      * {@code visibleRows} rows, or -1 for gaps, hidden rows, and pixels outside the panel.
      */
-    public int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows) {
+    int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows) {
         return cellAt(pixelX, pixelY, firstRow, visibleRows, 0);
     }
 
     /** Like the row-scrolled lookup, with {@code firstColumn} as the leftmost shown column. */
-    public int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows, int firstColumn) {
+    int cellAt(int pixelX, int pixelY, int firstRow, int visibleRows, int firstColumn) {
         int x = pixelX - left - gap;
         int y = pixelY - top - gap;
         if (x < 0 || y < 0) {
@@ -122,7 +122,7 @@ public final class SheetGridLayout {
     }
 
     /** Left of a cell when {@code firstColumn} is the leftmost shown column. */
-    public int cellLeft(int index, int firstColumn) {
+    int cellLeft(int index, int firstColumn) {
         return left + gap + (index % columns - firstColumn) * pitchX;
     }
 }

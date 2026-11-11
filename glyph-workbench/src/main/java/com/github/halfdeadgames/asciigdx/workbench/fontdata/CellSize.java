@@ -43,8 +43,8 @@ public record CellSize(int width, int height) {
      * Reads the size out of a font data file name such as {@code 16x16.txt}.
      *
      * @param fileName a file name without folders
-     * @return the size, or null when the name is not a size data file (sidecars like {@code 16x16.guides.txt} are not,
-     *         and neither are height-only names like {@code 16.txt})
+     * @return the size, or null when the name is not a size data file: sidecars like {@code 16x16.guides.txt} and
+     *         height-only names like {@code 16.txt} are ignored.
      */
     public static CellSize ofDataFileName(String fileName) {
         Matcher matcher = DATA_FILE.matcher(fileName);

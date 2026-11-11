@@ -222,7 +222,7 @@ public final class DeriveFlow {
         return mode == Mode.PICK_SOURCE && slot == sourceSlot;
     }
 
-    /** Moves the source to the clicked slot; a click on the current source confirms it instead and moves nothing. */
+    /** Moves the source to the clicked slot. The caller checks {@link #isConfirmingClick} first. */
     public void clickSource(int slot) {
         if (mode != Mode.PICK_SOURCE) {
             return;
@@ -247,11 +247,6 @@ public final class DeriveFlow {
     }
 
     /** Ends the flow from any mode; unlike {@link #cancel}, the replace question does not step back to picking. */
-    public void cancelAll() {
-        clearOverlayState();
-        mode = Mode.IDLE;
-    }
-
     public void finish() {
         clearOverlayState();
         mode = Mode.IDLE;

@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8, and an optional right-aligned status. */
+/** The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8X8, and an optional right-aligned status. */
 public final class TopBar {
 
     public enum Kind { TITLE, TEXT, ACCENT, SEPARATOR }

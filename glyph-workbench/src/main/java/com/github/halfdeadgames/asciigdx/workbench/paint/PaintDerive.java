@@ -105,7 +105,7 @@ final class PaintDerive {
         return new PaintHelp.State(mode, operation, committed, pending, overlayCheck());
     }
 
-    // The pending overlay part shows as a ghost only while its shift puts ink outside the cell.
+    // The pending overlay part shows as a ghost only while its shift or down offset puts ink outside the cell.
     PaintGridView.Ghost pendingGhost() {
         if (!flow.isOverlayOperation() || !flow.isPicking() || flow.sourceIsTarget()
             || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
@@ -206,7 +206,7 @@ final class PaintDerive {
         refreshPick();
     }
 
-    void handleDeriveMenu() {
+    private void handleDeriveMenu() {
         boolean choseByKey = deriveMenu.handleKeys();
         if (flow.mode() != DeriveFlow.Mode.MENU) {
             return;
@@ -225,7 +225,7 @@ final class PaintDerive {
         derivePick.begin(host.codePoints(), host.cursorSlot());
     }
 
-    void handleOverlayKeys() {
+    private void handleOverlayKeys() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
             messages.nextAction();
             flow.shiftSource(-1);
@@ -265,7 +265,7 @@ final class PaintDerive {
     }
 
     // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
-    void confirmSource() {
+    private void confirmSource() {
         messages.nextAction();
         if (flow.isOverlayOperation()) {
             addOverlayPart();
@@ -283,13 +283,13 @@ final class PaintDerive {
     // Leaves derive from any mode. Nothing reaches the font before applyDerive's editor.derive call.
     void cancelDerive() {
         messages.nextAction();
-        flow.cancelAll();
+        flow.finish();
         derivePick.clear();
         host.keepVisible(host.cursorSlot());
         messages.ok("Derive cancelled");
     }
 
-    void handleReplacePrompt() {
+    private void handleReplacePrompt() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             applyDerive();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -300,7 +300,7 @@ final class PaintDerive {
 
     private void addOverlayPart() {
         OverlayCheck.Result check = overlayCheck();
-        if (check.blocksAdd()) {
+        if (check.hasWarning()) {
             messages.warn(check.message());
         } else if (!derivePick.isValid()) {
             String problem = derivePick.problemText();

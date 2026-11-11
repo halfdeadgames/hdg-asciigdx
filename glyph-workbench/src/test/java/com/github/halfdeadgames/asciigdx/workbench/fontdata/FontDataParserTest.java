@@ -3,7 +3,6 @@ package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.file;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,19 +53,10 @@ class FontDataParserTest {
     }
 
     @Test
-    void acceptsAndIgnoresTheLegacyFullKeyword() {
-        FontData withKeyword = FontDataParser.parse(file(glyph("U+0051 Q full", "#.......")));
-        FontData without = FontDataParser.parse(file(glyph("U+0051 Q", "#.......")));
+    void rejectsTheRetiredFullKeyword() {
+        FontDataException problem = parseError(file(glyph("U+0051 Q full", "#.......")));
 
-        assertEquals(without, withKeyword);
-    }
-
-    @Test
-    void writerNeverWritesTheFullKeyword() {
-        String written = FontDataWriter.write(FontDataParser.parse(file(glyph("U+0051 Q full", "#......."))));
-
-        assertFalse(written.contains("full"));
-        assertTrue(written.contains("U+0051 Q\n"));
+        assertTrue(problem.getMessage().contains("after the character expected '= <operation>' but found: full"));
     }
 
     @Test

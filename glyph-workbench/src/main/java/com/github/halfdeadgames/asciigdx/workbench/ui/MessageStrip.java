@@ -17,7 +17,7 @@ public final class MessageStrip {
     }
 
     /** Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll button column. */
-    public static final int RESERVED_COLUMNS = 7;
+    private static final int RESERVED_COLUMNS = 7;
 
     private int firstIndex;
     private int viewRows;

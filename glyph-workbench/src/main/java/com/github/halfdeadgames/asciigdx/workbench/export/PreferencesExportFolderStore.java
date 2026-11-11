@@ -10,8 +10,8 @@ import java.util.Optional;
  */
 public final class PreferencesExportFolderStore implements ExportFolderStore {
 
-    public static final String PREFERENCES_NAME = "hdg-glyph-workbench";
-    public static final String KEY = "exportFolder";
+    private static final String PREFERENCES_NAME = "hdg-glyph-workbench";
+    private static final String KEY = "exportFolder";
 
     private final Preferences preferences;
 

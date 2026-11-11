@@ -103,8 +103,8 @@ public final class Dialog {
     }
 
     /**
-     * Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. Draws line
-     * {@code inputLine} as a text field: a black box {@code inputCells} wide behind white text.
+     * Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. Draws the
+     * content's {@code inputLine} as a text field: a black box {@code inputCells} wide behind white text.
      */
     public static void draw(Painter painter, CellRect screen, DialogContent content, CellRect area) {
         String title = content.title();

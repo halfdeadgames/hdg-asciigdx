@@ -12,7 +12,7 @@ import java.util.List;
  * @param settings the rows, columns, or ring size the check uses
  * @param exceptions glyphs the rule skips
  */
-public record GlyphRule(String name, RuleCheck check, CheckSettings settings, GlyphSet appliesTo,
+record GlyphRule(String name, RuleCheck check, CheckSettings settings, GlyphSet appliesTo,
         List<String> appliesToNames, List<RuleException> exceptions) {
 
     public GlyphRule {

@@ -19,10 +19,6 @@ public final class ScrollState {
         return visibleRows;
     }
 
-    int totalRows() {
-        return totalRows;
-    }
-
     int maxOffset() {
         return Math.max(0, totalRows - visibleRows);
     }

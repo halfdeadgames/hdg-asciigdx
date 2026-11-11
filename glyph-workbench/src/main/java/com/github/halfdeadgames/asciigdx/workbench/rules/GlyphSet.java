@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /** An immutable set of code points, stored as inclusive ranges. */
-public final class GlyphSet {
+final class GlyphSet {
 
     private static final int MAX_CODE_POINT = Character.MAX_CODE_POINT;
     private static final Pattern CODE_PATTERN = Pattern.compile("[Uu]\\+[0-9A-Fa-f]{4,6}");

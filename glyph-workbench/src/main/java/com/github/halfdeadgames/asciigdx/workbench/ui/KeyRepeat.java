@@ -3,8 +3,8 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 /** Turns a held key into moves: one on press, then steady repeats after a delay. */
 public final class KeyRepeat {
 
-    static final float DELAY_SECONDS = 0.5f;
-    static final float REPEATS_PER_SECOND = 12f;
+    private static final float DELAY_SECONDS = 0.5f;
+    private static final float REPEATS_PER_SECOND = 12f;
 
     private static final float INTERVAL_SECONDS = 1f / REPEATS_PER_SECOND;
 

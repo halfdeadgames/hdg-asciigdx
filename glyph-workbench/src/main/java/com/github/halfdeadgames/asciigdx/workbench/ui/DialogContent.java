@@ -5,7 +5,7 @@ import java.util.List;
 /** What a dialog says: title, text lines, buttons, and an optional text-field line. */
 public record DialogContent(String title, List<String> lines, List<Dialog.Button> buttons, int inputLine, int inputCells) {
 
-    public static final int NO_INPUT_LINE = -1;
+    private static final int NO_INPUT_LINE = -1;
 
     /** Content with no text-field line. */
     public static DialogContent of(String title, List<String> lines, List<Dialog.Button> buttons) {

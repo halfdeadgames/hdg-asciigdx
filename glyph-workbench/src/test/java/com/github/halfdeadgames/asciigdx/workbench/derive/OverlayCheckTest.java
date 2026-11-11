@@ -35,7 +35,7 @@ class OverlayCheckTest {
         OverlayCheck.Result tooFar = OverlayCheck.check(false, INKED, 3, 0);
         assertEquals(OverlayCheck.Problem.OUTSIDE, tooFar.problem());
         assertEquals("SHIFT +3 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2", tooFar.message());
-        assertTrue(tooFar.blocksAdd());
+        assertTrue(tooFar.hasWarning());
         assertTrue(tooFar.blocksFinish());
         OverlayCheck.Result tooLeft = OverlayCheck.check(false, INKED, -2, 0);
         assertEquals("SHIFT -2 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2", tooLeft.message());
@@ -83,7 +83,7 @@ class OverlayCheckTest {
         OverlayCheck.Result result = OverlayCheck.check(true, INKED, 0, 0);
         assertEquals(OverlayCheck.Problem.SAME_AS_TARGET, result.problem());
         assertEquals("PICK A DIFFERENT GLYPH", result.message());
-        assertTrue(result.blocksAdd());
+        assertTrue(result.hasWarning());
         assertFalse(result.blocksFinish());
     }
 
@@ -92,7 +92,7 @@ class OverlayCheckTest {
         OverlayCheck.Result result = OverlayCheck.check(false, null, 0, 0);
         assertEquals(OverlayCheck.Problem.EMPTY, result.problem());
         assertEquals("SOURCE SLOT IS EMPTY: DRAW IT FIRST", result.message());
-        assertTrue(result.blocksAdd());
+        assertTrue(result.hasWarning());
         assertFalse(result.blocksFinish());
     }
 

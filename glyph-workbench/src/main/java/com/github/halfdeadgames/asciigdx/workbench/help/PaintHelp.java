@@ -73,7 +73,7 @@ public final class PaintHelp {
     }
 
     /**
-     * TEXT and WARNING rows are prose (already wrapped, or blank); the others are tables whose action may be bounced.
+     * TEXT and WARNING rows are prose (already wrapped, or blank); the others are table rows with a key and an action.
      * WARNING is the highlighted overlay warning and INFO a table row of facts, such as the shift range.
      */
     enum Kind { TEXT, HEADING, CONTROL, PART, PENDING_PART, INFO, WARNING }
@@ -88,7 +88,7 @@ public final class PaintHelp {
             return kind == Kind.CONTROL || kind == Kind.PART || kind == Kind.PENDING_PART || kind == Kind.INFO;
         }
 
-        /** The row as plain text, key padded to the action column; used when nothing is bounced. */
+        /** The row as plain text, key padded to the action column. */
         String plain() {
             StringBuilder out = new StringBuilder(key);
             while (out.length() < actionColumn) {

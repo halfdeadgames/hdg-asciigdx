@@ -116,7 +116,7 @@ public final class PaintGuides {
         }
     }
 
-    /** The guides to draw for one rules group in one cell size. */
+    /** The guides to draw for one glyph: those that apply to it and fit its cell, as built by {@link #forGlyph}. */
     public record Shown(List<Guide> rows, List<WidthGuide> widths, List<BarGuide> bars,
                         List<ColumnBarGuide> columnBars, BrokenFlags broken) {
 
@@ -168,11 +168,6 @@ public final class PaintGuides {
         this.columns = List.copyOf(columns);
         this.bars = List.copyOf(bars);
         this.columnBars = List.copyOf(columnBars);
-    }
-
-    /** Guides without column bars. */
-    PaintGuides(List<Scoped<Guide>> rows, List<Scoped<WidthGuide>> columns, List<Scoped<BarGuide>> bars) {
-        this(rows, columns, bars, List.of());
     }
 
     private static final String NEW_LABEL = "NEW";
@@ -438,7 +433,7 @@ public final class PaintGuides {
         }
     }
 
-    /** Every guide, group-filtered or not, in the order {@link #toText} writes them: rows, columns, then bars. */
+    /** Every guide, group-filtered or not, in the order {@link #toText} writes them: rows, columns, bars, then column bars. */
     List<Listed> allGuides() {
         List<Listed> all = new ArrayList<>();
         for (Scoped<Guide> row : rows) {

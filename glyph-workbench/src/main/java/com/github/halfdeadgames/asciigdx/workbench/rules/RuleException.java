@@ -7,4 +7,4 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
  * @param source the group name, or the glyph tokens as written, joined with ", "
  * @param why the reason shown in the rules panel
  */
-public record RuleException(GlyphSet glyphs, String source, String why) {}
+record RuleException(GlyphSet glyphs, String source, String why) {}

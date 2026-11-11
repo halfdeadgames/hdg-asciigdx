@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 
-public sealed interface ScriptStep {
+sealed interface ScriptStep {
 
   record WaitSeconds(float seconds) implements ScriptStep {}
 

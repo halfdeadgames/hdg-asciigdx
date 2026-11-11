@@ -19,7 +19,11 @@ final class PaintMenu {
     enum Context {
         IDLE,
         DERIVING,
-        /** The unsaved-changes prompt, or the guide list (including its rename field). */
+        /**
+         * A prompt or panel that takes input: the unsaved-changes prompt, the guide list (including its rename
+         * field), and the New glyph, New size, Upscale, and New font flows. While one is open, only the help items
+         * stay available.
+         */
         MODAL,
         RULES_OPEN,
         /** The Controls panel: it takes every key and click, so all menus are locked. */

@@ -123,13 +123,6 @@ class DevCaptureTest {
     }
 
     @Test
-    void newFontRequestIsTheTypedTextOrNullWhenUnset() {
-        assertNull(DevCapture.parseNewFontRequest(null));
-        assertEquals("", DevCapture.parseNewFontRequest(""));
-        assertEquals("My Font", DevCapture.parseNewFontRequest("My Font"));
-    }
-
-    @Test
     void newFontSizeRequestHasANameAndOptionalTypedText() {
         assertNull(DevCapture.parseNewFontSizeRequest(null));
         assertEquals(new DevCapture.NewFontSizeRequest("my-font", ""), DevCapture.parseNewFontSizeRequest(""));

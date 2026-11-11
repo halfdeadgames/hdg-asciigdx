@@ -35,7 +35,7 @@ public final class PaintGuidesFile {
         }
     }
 
-    // Bad UTF-8 bytes become U+FFFD instead of failing, as FileHandle.readString did.
+    // Bad UTF-8 bytes become U+FFFD instead of failing the read.
     private static String readLenient(Path path) throws IOException {
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     }
@@ -61,7 +61,7 @@ public final class PaintGuidesFile {
         return path;
     }
 
-    // Slash-separated, as FileHandle.path() wrote it.
+    // Slash-separated on every platform, for display.
     public String displayPath() {
         return path.toString().replace('\\', '/');
     }

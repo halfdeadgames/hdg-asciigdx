@@ -14,18 +14,12 @@ import java.util.function.IntPredicate;
 final class Upscaler {
 
     enum Method {
-        NEAREST("NEAREST"),
-        SCALE2X("SCALE2X"),
-        FILL("FILL"),
-        TRIM("TRIM"),
-        MMPX("MMPX"),
-        LIGHT("LIGHT");
-
-        final String label;
-
-        Method(String label) {
-            this.label = label;
-        }
+        NEAREST,
+        SCALE2X,
+        FILL,
+        TRIM,
+        MMPX,
+        LIGHT
     }
 
     private static final int ON = 0xFFFFFFFF;

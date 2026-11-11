@@ -22,17 +22,17 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  */
 public final class DevCapture {
 
-    static final String SELECT_PROPERTY = "workbench.select";
-    static final String DERIVE_PROPERTY = "workbench.derive";
-    static final String TAB_PROPERTY = "workbench.tab";
-    static final String GUIDES_PROPERTY = "workbench.guides";
-    static final String MENU_PROPERTY = "workbench.menu";
-    static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
-    static final String NEW_SIZE_PROPERTY = "workbench.newsize";
-    static final String UPSCALE_SOURCE_PROPERTY = "workbench.upscalesource";
-    static final String NEW_FONT_PROPERTY = "workbench.newfont";
-    static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
-    static final String CAPTURE_PROPERTY = "workbench.capture";
+    private static final String SELECT_PROPERTY = "workbench.select";
+    private static final String DERIVE_PROPERTY = "workbench.derive";
+    private static final String TAB_PROPERTY = "workbench.tab";
+    private static final String GUIDES_PROPERTY = "workbench.guides";
+    private static final String MENU_PROPERTY = "workbench.menu";
+    private static final String NEW_GLYPH_PROPERTY = "workbench.newglyph";
+    private static final String NEW_SIZE_PROPERTY = "workbench.newsize";
+    private static final String UPSCALE_SOURCE_PROPERTY = "workbench.upscalesource";
+    private static final String NEW_FONT_PROPERTY = "workbench.newfont";
+    private static final String NEW_FONT_SIZE_PROPERTY = "workbench.newfontsize";
+    private static final String CAPTURE_PROPERTY = "workbench.capture";
     private static final String PICK_REQUEST = "pick";
     private static final String CANDIDATE_REQUEST = "cand";
     private static final int CAPTURE_FRAME = 60;
@@ -99,12 +99,7 @@ public final class DevCapture {
 
     /** The text to type into the opened New font dialog named by {@code workbench.newfont}, or null to leave it closed. */
     public static String newFontRequest() {
-        return parseNewFontRequest(System.getProperty(NEW_FONT_PROPERTY));
-    }
-
-    /** Any value opens the dialog and is typed as given, spaces included; a blank value opens it empty. */
-    static String parseNewFontRequest(String request) {
-        return request;
+        return System.getProperty(NEW_FONT_PROPERTY);
     }
 
     /** A parsed {@code workbench.newfontsize} request: the font name and the text to type into the size field. */

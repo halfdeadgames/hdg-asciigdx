@@ -18,7 +18,7 @@ import java.util.List;
  */
 public final class ControlsScreen {
 
-    static final String TITLE = "CONTROLS";
+    private static final String TITLE ="CONTROLS";
 
     /** The box, its text width, and the wrapped lines; {@code visibleRows} is how many lines show at once. */
     record Layout(CellRect rect, int chars, int visibleRows, List<HelpWrap.Line> lines) {

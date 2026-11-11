@@ -80,7 +80,7 @@ public final class NewSizePrompt {
     }
 
     /** The cell as {@code WxH}, for example {@code 16X32}. */
-    public static String label(SizeOption option) {
+    static String label(SizeOption option) {
         return label(option.size());
     }
 

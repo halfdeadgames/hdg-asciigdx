@@ -47,7 +47,7 @@ class RulesPageLinesTest {
     void badFileShowsHeadingAndEveryErrorLine() {
         var result = RulesLoadResult.bad("first problem\nsecond problem", PATH);
         var lines = build(result, null, Set.of());
-        assertEquals(new PageLine("RULES FILE IS BAD", 0, Role.HEADING), lines.get(0));
+        assertEquals(new PageLine("RULES FILE IS BAD",Role.HEADING), lines.get(0));
         assertEquals("first problem", lines.get(1).text());
         assertEquals("second problem", lines.get(2).text());
     }
@@ -131,10 +131,10 @@ class RulesPageLinesTest {
     void notesShowHeadingsBulletsAndText() {
         var lines = build(loaded(), "# Title\n\n- first point\nplain words", Set.of());
         int notes = indexOf(lines, "NOTES");
-        assertEquals(new PageLine("Title", 0, Role.HEADING), lines.get(notes + 1));
-        assertEquals(new PageLine("", 0, Role.TEXT), lines.get(notes + 2));
-        assertEquals(new PageLine("- first point", 0, Role.TEXT), lines.get(notes + 3));
-        assertEquals(new PageLine("plain words", 0, Role.TEXT), lines.get(notes + 4));
+        assertEquals(new PageLine("Title",Role.HEADING), lines.get(notes + 1));
+        assertEquals(new PageLine("",Role.TEXT), lines.get(notes + 2));
+        assertEquals(new PageLine("- first point",Role.TEXT), lines.get(notes + 3));
+        assertEquals(new PageLine("plain words",Role.TEXT), lines.get(notes + 4));
     }
 
     @Test

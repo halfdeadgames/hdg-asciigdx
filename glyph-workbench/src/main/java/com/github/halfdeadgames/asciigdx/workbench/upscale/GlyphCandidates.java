@@ -51,7 +51,7 @@ public final class GlyphCandidates {
 
     private static String labelFor(Upscaler.Method method, int factorX, int factorY) {
         return method == Upscaler.Method.NEAREST
-            ? method.label + " " + Upscaler.factorLabel(factorX, factorY)
-            : method.label;
+            ? method.name() + " " + Upscaler.factorLabel(factorX, factorY)
+            : method.name();
     }
 }

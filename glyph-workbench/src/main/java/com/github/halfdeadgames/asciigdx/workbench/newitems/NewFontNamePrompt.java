@@ -10,7 +10,7 @@ final class NewFontNamePrompt {
     /** Typing stops here so the text stays bounded; it is past the name limit, so the error still shows. */
     static final int MAX_TYPED = 40;
     static final int LINE_CELLS = 26;
-    static final String HINT_LINE = "Creates the folder";
+    private static final String HINT_LINE = "Creates the folder";
 
     private static final char CURSOR = '_';
     private static final char UNDRAWABLE = '?';

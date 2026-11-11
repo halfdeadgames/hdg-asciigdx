@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 
-public final class ScriptedInput implements Input {
+final class ScriptedInput implements Input {
 
   private static final int ONLY_POINTER = 0;
 
@@ -14,10 +14,6 @@ public final class ScriptedInput implements Input {
   public ScriptedInput(Input delegate, ScriptedInputState state) {
     this.delegate = delegate;
     this.state = state;
-  }
-
-  public InputProcessor currentProcessor() {
-    return processor;
   }
 
   @Override

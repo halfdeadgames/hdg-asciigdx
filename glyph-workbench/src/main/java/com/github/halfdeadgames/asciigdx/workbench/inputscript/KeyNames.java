@@ -18,7 +18,7 @@ final class KeyNames {
     return code == null ? OptionalInt.empty() : OptionalInt.of(code);
   }
 
-  static String normalize(String name) {
+  private static String normalize(String name) {
     return name.toUpperCase(Locale.ROOT).replace(' ', '_');
   }
 

@@ -4,7 +4,7 @@ import com.badlogic.gdx.Input;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class ScriptedInputState {
+final class ScriptedInputState {
 
   private final Set<Integer> keysDown = new HashSet<>();
   private final Set<Integer> keysJustPressed = new HashSet<>();

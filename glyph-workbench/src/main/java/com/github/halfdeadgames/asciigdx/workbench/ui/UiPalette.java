@@ -13,7 +13,7 @@ public final class UiPalette {
     public static final Color ACCENT = new Color(0xFFD23CFF);
     public static final Color TEXT = new Color(0xE6E8EEFF);
     public static final Color DIM = new Color(0x6E748CFF);
-    /** Text for rules that do not check the selected glyph. */
+    /** Text for rules that do not check the selected glyph, and the grey size example in the New font dialog. */
     public static final Color INACTIVE = new Color(0xA4AABCFF);
     public static final Color WARN = new Color(0xFF6B6BFF);
     public static final Color OK = new Color(0x6BDC8AFF);

@@ -7,7 +7,7 @@ public final class PreviewTabs {
 
     public enum Tab { SCALES, TILE, TEXT }
 
-    static final int LABEL_GAP = 2;
+    private static final int LABEL_GAP = 2;
     private static final int LEFT_PADDING = 2;
     private static final int RIGHT_PADDING = 1;
     private static final Tab[] TABS = Tab.values();

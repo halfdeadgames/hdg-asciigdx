@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.regex.Pattern;
 
-public final class InputScriptParser {
+final class InputScriptParser {
 
   private static final Pattern DECIMAL = Pattern.compile("\\d+(\\.\\d*)?|\\.\\d+");
   private static final Pattern WHOLE_NUMBER = Pattern.compile("\\d+");

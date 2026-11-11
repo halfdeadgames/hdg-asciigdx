@@ -133,7 +133,8 @@ final class GuideListModel {
         select(guideIndex);
     }
 
-    // Bars show first row plus row count, such as 6+1.
+    // Bars show their first row plus the row count, and column bars their first column plus the column count,
+    // for example 6+1.
     private static String guideText(PaintGuides.Listed guide) {
         return guideText(guide, guide.label());
     }

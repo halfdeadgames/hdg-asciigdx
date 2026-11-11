@@ -4,12 +4,12 @@ import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 import java.util.List;
 import java.util.function.IntPredicate;
 
-/** The text typed into the "new glyph" dialog, and the four lines the dialog shows for it. */
+/** The text typed into the "new glyph" dialog, and the four or five lines the dialog shows for it. */
 final class NewGlyphPrompt {
 
-    static final int MAX_CHARS = 10;
+    private static final int MAX_CHARS = 10;
     static final int LINE_CELLS = 26;
-    static final String EMPTY_HINT = "Type a character or hex code";
+    private static final String EMPTY_HINT = "Type a character or hex code";
 
     private static final char CURSOR = '_';
     private static final char UNDRAWABLE = '?';
@@ -60,8 +60,8 @@ final class NewGlyphPrompt {
     }
 
     /**
-     * Exactly four lines: the typed text with a cursor, a blank line, then either the hint or error wrapped
-     * over two lines, or the code point and the glyph name.
+     * Four lines, or five when the glyph name wraps: the typed text with a cursor, a blank line, then either
+     * the hint or error (wrapped over two lines) or the code point and glyph name.
      *
      * @param hasSlot tells whether the sheet already has a slot for a code point
      */

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Sorts the lines of a notes file into headings, bullets, text, and blanks; other markdown stays literal. */
-public final class NotesMarkdown {
+final class NotesMarkdown {
 
     /** What a line of notes is. */
     public enum Kind { HEADING, BULLET, TEXT, BLANK }

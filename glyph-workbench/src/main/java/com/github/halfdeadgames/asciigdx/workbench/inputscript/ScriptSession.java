@@ -44,7 +44,7 @@ public final class ScriptSession implements ScriptListener {
             InputScriptParser.parse(readScript(scriptPath)),
             state,
             this,
-            scriptedInput::currentProcessor);
+            scriptedInput::getInputProcessor);
     realGraphics = Gdx.graphics;
     fixedStepGraphics = new FixedStepGraphics(realGraphics);
     installScriptedDevices();
@@ -93,7 +93,7 @@ public final class ScriptSession implements ScriptListener {
     realInputRestored = true;
     Gdx.input = realInput;
     Gdx.graphics = realGraphics;
-    realInput.setInputProcessor(scriptedInput.currentProcessor());
+    realInput.setInputProcessor(scriptedInput.getInputProcessor());
   }
 
   private void savePendingCapture() {

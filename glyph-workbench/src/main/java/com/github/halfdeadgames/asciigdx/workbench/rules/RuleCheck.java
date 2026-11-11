@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 import java.util.Optional;
 
 /** The checks a rule can name, spelled in the rules file as {@link #fileName()}. */
-public enum RuleCheck {
+enum RuleCheck {
     NO_INK_ROWS("noInkRows"),
     NO_INK_COLUMNS("noInkColumns"),
     RING("ring"),

@@ -14,7 +14,10 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.Random;
 import java.util.Set;
 
-/** The "PREVIEW" panel: a tab strip over a side-by-side 1x to 8x view of the selected glyph's whole cell, at real font pixel size. */
+/**
+ * The "PREVIEW" panel: a tab strip over one of three views. SCALES shows the selected glyph's whole cell
+ * side by side at 1x to 8x, TILE repeats it in blocks, and TEXT scrolls ticker lines of glyphs.
+ */
 public final class PaintPreview {
 
     private static final int[] SCALES = PreviewFit.SCALES;
@@ -60,10 +63,6 @@ public final class PaintPreview {
         return 2 * cell();
     }
 
-    PreviewTabs.Tab activeTab() {
-        return activeTab;
-    }
-
     public void selectTab(PreviewTabs.Tab tab) {
         activeTab = tab;
     }
@@ -79,10 +78,6 @@ public final class PaintPreview {
             return;
         }
         activeTab = tab;
-    }
-
-    void draw(CellRect rect, int codePoint) {
-        draw(rect, codePoint, null);
     }
 
     /** @param shown glyph to show instead of the slot's own, or null */

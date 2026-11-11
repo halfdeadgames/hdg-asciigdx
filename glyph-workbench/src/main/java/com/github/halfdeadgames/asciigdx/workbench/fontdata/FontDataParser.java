@@ -78,7 +78,7 @@ public final class FontDataParser {
         }
         Matcher matcher = CELL.matcher(lines[next].strip());
         if (!matcher.matches()) {
-            throw error(next, "the first line must be 'cell WxH', for example 'cell 8x8'");
+            throw error(next, "the first line must be 'cell WxH', for example 'cell 16x16'");
         }
         try {
             cellWidth = Integer.parseInt(matcher.group(1));
@@ -119,8 +119,7 @@ public final class FontDataParser {
         }
         String rest = line.substring(characterEnd).strip();
         GlyphEntry entry;
-        // 'full' is a legacy keyword from files that had a letter gap; it is accepted and ignored.
-        if (rest.isEmpty() || rest.equals("full")) {
+        if (rest.isEmpty()) {
             entry = readPixelGlyph(codePoint, headerIndex);
         } else if (rest.startsWith("=")) {
             entry = new DerivedGlyph(codePoint, parseOp(rest.substring(1).strip(), headerIndex));

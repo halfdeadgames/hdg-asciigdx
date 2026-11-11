@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public final class GlyphList {
 
     /** Most code points one list may name, so a huge range fails instead of hanging the editor. */
-    public static final int MAX_PLANNED = 65536;
+    static final int MAX_PLANNED = 65536;
 
     /** No preset and nothing planned; stands in for a missing file. */
     public static final GlyphList NONE = new GlyphList(false, new TreeSet<>());

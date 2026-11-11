@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * A menu list: the selectable items, the lines to show, and the selection. There are three menus: the
+ * A menu list: the selectable items, the lines to show, and the selection. There are two menus: the
  * list of fonts and the actions for one font (paint each size, add a new size).
  */
 final class MenuModel {

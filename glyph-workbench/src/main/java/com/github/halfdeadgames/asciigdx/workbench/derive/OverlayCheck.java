@@ -30,11 +30,6 @@ public final class OverlayCheck {
             return problem != Problem.NONE;
         }
 
-        /** Whether the part cannot be added. */
-        public boolean blocksAdd() {
-            return problem != Problem.NONE;
-        }
-
         /** Whether finishing is refused too: the pending part would make the file fail to load. */
         public boolean blocksFinish() {
             return problem == Problem.OUTSIDE;

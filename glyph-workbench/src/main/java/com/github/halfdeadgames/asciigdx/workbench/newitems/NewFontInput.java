@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-/** Validation and sizing rules for the "new font" prompt. */
+/** Validation and sizing rules shared by the New font prompt and the New size plan. */
 final class NewFontInput {
 
     /** The largest width or height of a cell, in pixels. */
-    static final int MAX_CELL_SIDE = 128;
+    private static final int MAX_CELL_SIDE = 128;
 
     private static final int MAX_NAME_LENGTH = 32;
     private static final List<String> RESERVED_NAMES = List.of(

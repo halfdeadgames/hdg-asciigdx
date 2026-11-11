@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 
-public interface ScriptListener {
+interface ScriptListener {
 
   void captureRequested(String name);
 

@@ -54,8 +54,8 @@ class UpscalerTest {
     void everyFactorTwoMethodFillsTheTargetCellSize() {
         for (Upscaler.Method method : Upscaler.methodsFor(2, 2)) {
             PixelGrid cell = Upscaler.upscale(edgeGlyph(), 2, 2, method);
-            assertEquals(16, cell.getWidth(), method.label);
-            assertEquals(16, cell.getHeight(), method.label);
+            assertEquals(16, cell.getWidth(), method.name());
+            assertEquals(16, cell.getHeight(), method.name());
         }
     }
 
@@ -76,7 +76,7 @@ class UpscalerTest {
         for (Upscaler.Method method : Upscaler.methodsFor(2, 2)) {
             PixelGrid ordinary = Upscaler.upscale(staircaseGlyph('A'), 2, 2, method);
             PixelGrid special = Upscaler.upscale(staircaseGlyph(codePoint), 2, 2, method);
-            assertEquals(ordinary, special, method.label);
+            assertEquals(ordinary, special, method.name());
             someMethodSmooths |= !ordinary.equals(
                 Upscaler.upscale(staircaseGlyph('A'), 2, 2, Upscaler.Method.NEAREST));
         }

@@ -9,7 +9,7 @@ import java.util.BitSet;
  * @param columns the column numbers a noInkColumns check watches
  * @param ringSize the width of the blank border for a ring check
  */
-public record CheckSettings(BitSet rows, BitSet columns, int ringSize) {
+record CheckSettings(BitSet rows, BitSet columns, int ringSize) {
 
     public static final CheckSettings NONE = new CheckSettings(new BitSet(), new BitSet(), 0);
 

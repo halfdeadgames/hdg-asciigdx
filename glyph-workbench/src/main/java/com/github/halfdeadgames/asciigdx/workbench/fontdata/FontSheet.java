@@ -7,7 +7,7 @@ import java.awt.image.BufferedImage;
 import java.util.Map;
 
 /** A font laid out as a glyph sheet: every glyph resolved to a full cell and placed in its slot. */
-public final class FontSheet {
+final class FontSheet {
 
     private static final int LIT_PIXEL = 0xFFFFFFFF;
 
@@ -32,18 +32,18 @@ public final class FontSheet {
      * @return the sheet
      * @throws FontDataException if a derived glyph cannot be resolved
      */
-    public static FontSheet of(FontData data, GlyphList list) {
+    static FontSheet of(FontData data, GlyphList list) {
         Map<Integer, PixelGlyph> glyphs = GlyphResolver.resolveAll(data);
         return new FontSheet(data, glyphs, SheetOrder.slotsFor(glyphs.keySet(), list.usesCp437()));
     }
 
     /** Returns the sheet layout: cells of the font's size, 16 per row. */
-    public GlyphSheetLayout getLayout() {
+    GlyphSheetLayout getLayout() {
         return layout;
     }
 
     /** Returns the code point of each slot; empty slots hold {@link SheetOrder#FILLER}. */
-    public int[] getSlots() {
+    int[] getSlots() {
         return slots.clone();
     }
 
@@ -53,7 +53,7 @@ public final class FontSheet {
      * @param slot slot index
      * @return the cell, blank for an empty slot
      */
-    public PixelGrid cellAt(int slot) {
+    PixelGrid cellAt(int slot) {
         PixelGlyph glyph = glyphs.get(slots[slot]);
         return glyph == null
             ? PixelGrid.blank(data.cellWidth(), data.cellHeight())
@@ -61,12 +61,12 @@ public final class FontSheet {
     }
 
     /** Returns the slot order as a character list, ready for the sheet's {@code .txt} file. */
-    public String toOrderText() {
+    String toOrderText() {
         return GlyphOrderText.write(GlyphOrder.ofCodePoints(slots), SheetOrder.COLUMNS);
     }
 
     /** Returns the sheet image: opaque white glyph pixels on a transparent background. */
-    public BufferedImage toImage() {
+    BufferedImage toImage() {
         BufferedImage image = new BufferedImage(
             layout.requiredImageWidth(), layout.requiredImageHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int slot = 0; slot < slots.length; slot++) {

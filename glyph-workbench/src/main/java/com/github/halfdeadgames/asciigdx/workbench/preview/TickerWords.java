@@ -13,9 +13,9 @@ import java.util.Set;
 final class TickerWords {
 
     /** Minimum number of distinct candidate code points needed to generate words. */
-    public static final int MIN_CANDIDATES = 6;
-    public static final int MIN_WORD_LENGTH = 2;
-    public static final int MAX_WORD_LENGTH = 7;
+    static final int MIN_CANDIDATES = 6;
+    static final int MIN_WORD_LENGTH = 2;
+    static final int MAX_WORD_LENGTH = 7;
 
     private static final int CAPITAL_ONE_IN = 4;
     private static final String VOWELS = "aeiou";
@@ -63,17 +63,17 @@ final class TickerWords {
     }
 
     /** Returns how many distinct candidate code points the font offers for this mode. */
-    public int haveCount() {
+    int haveCount() {
         return candidateCount;
     }
 
     /** Returns how many distinct candidate code points are required. */
-    public int needCount() {
+    int needCount() {
         return MIN_CANDIDATES;
     }
 
     /** Returns whether enough candidates exist for {@link #nextWord()}. */
-    public boolean hasEnough() {
+    boolean hasEnough() {
         return candidateCount >= MIN_CANDIDATES;
     }
 
@@ -83,7 +83,7 @@ final class TickerWords {
      * @return code points of a word, 2 to 7 long
      * @throws IllegalStateException if {@link #hasEnough()} is false
      */
-    public int[] nextWord() {
+    int[] nextWord() {
         if (!hasEnough()) {
             throw new IllegalStateException(
                     "Need " + MIN_CANDIDATES + " candidates but have " + candidateCount);
@@ -107,7 +107,7 @@ final class TickerWords {
      * Produces the next word with {@code featured} placed once at a random position, so the glyph being
      * edited shows up in every word. Falls back to {@link #nextWord()} when the mode can't use it.
      */
-    public int[] nextWord(int featured) {
+    int[] nextWord(int featured) {
         int[] word = nextWord();
         if (glyphClass.contains(featured) && available.contains(featured)) {
             word[random.nextInt(word.length)] = featured;
@@ -137,10 +137,6 @@ final class TickerWords {
 
     private int pick(int[] pool) {
         return pool[random.nextInt(pool.length)];
-    }
-
-    GlyphClass glyphClass() {
-        return glyphClass;
     }
 
     private static int[] lowercaseOrAll(int[] letters) {

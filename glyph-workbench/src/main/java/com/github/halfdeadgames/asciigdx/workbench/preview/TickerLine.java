@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * One news-ticker line scrolling right to left. Words are queued with one blank cell after each; new words
+ * One news-ticker line scrolling right to left. Words are queued with a configurable gap of blank cells after each (one by default); new words
  * are requested whenever the queue ends before the visible width, and words that have fully left on the left
  * are dropped. Positions are in pixels from the left edge of the line.
  */
@@ -73,7 +73,7 @@ final class TickerLine {
         }
     }
 
-    /** Where the queued text ends, including the blank cell after the last word. */
+    /** Where the queued text ends, including the gap after the last word. */
     float contentEnd() {
         float end = firstWordX;
         for (int i = 0; i < words.size(); i++) {

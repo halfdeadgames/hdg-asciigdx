@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-/** The start screen's "new font" flow: an empty page that hosts the name and size dialogs. */
+/** The start screen's "new font" flow: an empty page that hosts the name, size, and glyph-set dialogs. */
 public final class NewFontScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewFont";

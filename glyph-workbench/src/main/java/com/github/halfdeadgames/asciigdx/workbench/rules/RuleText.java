@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 /** Describes a rule as short lines of text for the rules panel. */
-public final class RuleText {
+final class RuleText {
 
     private static final String BULLET = "- ";
 

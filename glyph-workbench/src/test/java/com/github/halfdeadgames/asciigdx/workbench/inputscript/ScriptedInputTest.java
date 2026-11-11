@@ -36,11 +36,11 @@ class ScriptedInputTest {
   @Test
   void processorIsStoredLocally() {
     InputProcessor processor = new InputAdapter();
-    assertNull(input.currentProcessor());
+    assertNull(input.getInputProcessor());
 
     input.setInputProcessor(processor);
 
     assertSame(processor, input.getInputProcessor());
-    assertSame(processor, input.currentProcessor());
+    assertSame(processor, input.getInputProcessor());
   }
 }

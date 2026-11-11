@@ -113,12 +113,12 @@ class DeriveFlowTest {
     void cancelAllEndsTheFlowFromEveryMode() {
         DeriveFlow flow = new DeriveFlow();
         flow.openMenu(1, true);
-        flow.cancelAll();
+        flow.finish();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
 
         flow.openMenu(1, true);
         flow.chooseOperation();
-        flow.cancelAll();
+        flow.finish();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
 
         flow.openMenu(1, true);
@@ -126,11 +126,11 @@ class DeriveFlowTest {
         flow.moveSource(2);
         flow.askReplace();
         assertEquals(DeriveFlow.Mode.CONFIRM_REPLACE, flow.mode());
-        flow.cancelAll();
+        flow.finish();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
         assertFalse(flow.isActive());
 
-        flow.cancelAll();
+        flow.finish();
         assertEquals(DeriveFlow.Mode.IDLE, flow.mode());
     }
 
@@ -141,7 +141,7 @@ class DeriveFlowTest {
         flow.addPart();
         flow.shiftSource(2);
         flow.askReplace();
-        flow.cancelAll();
+        flow.finish();
         assertTrue(flow.parts().isEmpty());
         assertEquals(0, flow.pendingShift());
         assertFalse(flow.isOverlayOperation());

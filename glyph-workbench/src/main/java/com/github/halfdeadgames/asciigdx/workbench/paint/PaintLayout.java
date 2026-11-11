@@ -7,7 +7,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 
 /** Where the panels of the paint screen go, in text cells: the sheet on the left, the grid in the middle, the previews on the right. */
-public final class PaintLayout {
+final class PaintLayout {
 
     record Result(CellRect grid, CellRect preview, CellRect belowPreview, CellRect messages) {
     }

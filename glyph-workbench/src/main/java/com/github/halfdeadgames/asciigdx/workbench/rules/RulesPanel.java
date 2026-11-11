@@ -9,7 +9,7 @@ import java.util.Set;
 /** Draws the rules page and the font's notes inside a framed, scrollable page; rebuilds the lines only on change. */
 final class RulesPanel {
 
-    static final int MAX_CELLS_WIDE = 40;
+    private static final int MAX_CELLS_WIDE = 40;
     private static final int MIN_CELLS_WIDE = 8;
     private static final int PAGE_OVERLAP = 1;
 
@@ -96,7 +96,7 @@ final class RulesPanel {
         int end = Math.min(lines.size(), offset + room);
         for (int i = offset; i < end; i++) {
             RulesPageLines.PageLine line = lines.get(i);
-            painter.text(line.text(), textLeft + line.indent() * cell,
+            painter.text(line.text(), textLeft,
                 textTop + (i - offset) * cell, colorOf(line.role()));
         }
         int arrowLeft = textLeft + textChars * cell;

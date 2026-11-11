@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public final class InputScriptPlayer {
+final class InputScriptPlayer {
 
   private static final int NOTHING_PENDING = Integer.MIN_VALUE;
   private static final int POINTER = 0;

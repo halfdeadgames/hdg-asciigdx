@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 
-public class InputScriptException extends RuntimeException {
+class InputScriptException extends RuntimeException {
 
   private final int lineNumber;
 
