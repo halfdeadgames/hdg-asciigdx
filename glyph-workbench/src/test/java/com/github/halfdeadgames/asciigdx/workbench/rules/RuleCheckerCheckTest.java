@@ -58,50 +58,50 @@ class RuleCheckerCheckTest {
     @Test
     void noInkRowsPassesWhenWatchedRowsAreBlank() {
         var grid = PixelGrid.ofRows(List.of("#.", "..", ".."));
-        assertTrue(RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("1-2"), grid).isEmpty());
+        assertTrue(RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("1-2"), grid).isEmpty());
     }
 
     @Test
     void noInkRowsNamesSingleRow() {
-        assertEquals("INK IN ROW 3", RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("3-3"), TALL)
+        assertEquals("INK IN ROW 3", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("3-3"), TALL)
             .orElseThrow());
     }
 
     @Test
     void noInkRowsCollapsesConsecutiveRows() {
-        assertEquals("INK IN ROWS 3-5", RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("3-5"), TALL)
+        assertEquals("INK IN ROWS 3-5", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("3-5"), TALL)
             .orElseThrow());
     }
 
     @Test
     void noInkRowsListsSplitRanges() {
-        assertEquals("INK IN ROWS 0, 3-5", RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("0-0", "3-5"), TALL)
+        assertEquals("INK IN ROWS 0, 3-5", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-0", "3-5"), TALL)
             .orElseThrow());
     }
 
     @Test
     void noInkRowsListsOnlyRowsWithInk() {
         var grid = PixelGrid.ofRows(List.of("#.", "..", "#."));
-        assertEquals("INK IN ROWS 0, 2", RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("0-2"), grid)
+        assertEquals("INK IN ROWS 0, 2", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-2"), grid)
             .orElseThrow());
     }
 
     @Test
     void noInkColumnsNamesSingleColumn() {
-        assertEquals("INK IN COLUMN 0", RuleChecker.findProblem(RuleCheck.NO_INK_COLUMNS, columns(0, 2), TALL)
+        assertEquals("INK IN COLUMN 0", RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 2), TALL)
             .orElseThrow());
     }
 
     @Test
     void noInkColumnsCollapsesRange() {
         var grid = PixelGrid.ofRows(List.of("###."));
-        assertEquals("INK IN COLUMNS 0-2", RuleChecker.findProblem(RuleCheck.NO_INK_COLUMNS, columns(0, 3), grid)
+        assertEquals("INK IN COLUMNS 0-2", RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 3), grid)
             .orElseThrow());
     }
 
     @Test
     void noInkColumnsPassesWhenBlank() {
-        assertTrue(RuleChecker.findProblem(RuleCheck.NO_INK_COLUMNS, columns(2, 5), TALL).isEmpty());
+        assertTrue(RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(2, 5), TALL).isEmpty());
     }
 
     @Test
@@ -175,8 +175,8 @@ class RuleCheckerCheckTest {
     }
 
     @Test
-    void findProblemStaysEmptyForBlankGlyph() {
+    void blankGlyphGivesNoProblem() {
         assertEquals(Optional.empty(),
-            RuleChecker.findProblem(RuleCheck.NO_INK_ROWS, rows("0-5"), PixelGrid.blank(6, 6)));
+            RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-5"), PixelGrid.blank(6, 6)));
     }
 }

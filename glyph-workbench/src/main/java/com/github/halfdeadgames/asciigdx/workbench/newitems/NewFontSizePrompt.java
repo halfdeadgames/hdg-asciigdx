@@ -125,7 +125,7 @@ final class NewFontSizePrompt {
      * the typed text with a cursor, then the problem over two lines.
      */
     List<String> lines() {
-        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem);
+        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem());
         return List.of(sizeForLine(), "", typedLine(), problemLines.get(0), problemLines.get(1));
     }
 

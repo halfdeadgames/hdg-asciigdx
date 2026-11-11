@@ -41,10 +41,6 @@ public final class RuleChecker {
         return warnings;
     }
 
-    static Optional<String> findProblem(RuleCheck check, CheckSettings settings, PixelGrid pixels) {
-        return InkBounds.measure(pixels).flatMap(ink -> findProblem(check, settings, pixels, ink));
-    }
-
     private static RuleWarning warningOf(GlyphRule rule, String detail) {
         return new RuleWarning(rule.name(), rule.name().toUpperCase(Locale.ROOT) + ": " + detail);
     }

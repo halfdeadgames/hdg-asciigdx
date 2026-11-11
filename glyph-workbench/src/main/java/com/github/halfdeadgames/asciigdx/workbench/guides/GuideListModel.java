@@ -156,12 +156,10 @@ final class GuideListModel {
         return rows.size();
     }
 
-    /** While renaming, the selected row shows the typed text followed by a cursor. */
-    Row row(int index) {
-        return row(index, true);
-    }
-
-    /** A hidden cursor leaves a blank, so the row keeps its length. */
+    /**
+     * While renaming, the selected row shows the typed text followed by a cursor; a hidden cursor leaves a blank,
+     * so the row keeps its length.
+     */
     Row row(int index, boolean cursorVisible) {
         Row row = rows.get(index);
         if (label.isActive() && index == selected) {

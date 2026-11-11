@@ -225,13 +225,13 @@ class DeriveFlowTest {
         DeriveFlow flow = overlayPicking(2);
         flow.moveSource(5);
         flow.addPart();
-        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0, 0)), flow.parts());
         flow.moveSource(6);
         flow.addPart();
-        assertEquals(List.of(new DeriveFlow.Part(5, 0), new DeriveFlow.Part(6, 0)), flow.parts());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0, 0), new DeriveFlow.Part(6, 0, 0)), flow.parts());
         assertTrue(flow.canRemovePart());
         flow.removeLastPart();
-        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0, 0)), flow.parts());
         assertTrue(flow.canRemovePart());
         flow.removeLastPart();
         assertFalse(flow.canRemovePart());
@@ -247,7 +247,7 @@ class DeriveFlowTest {
         assertEquals(3, flow.pendingShift());
         flow.addPart();
         assertEquals(0, flow.pendingShift());
-        assertEquals(new DeriveFlow.Part(5, 3), flow.parts().get(0));
+        assertEquals(new DeriveFlow.Part(5, 3, 0), flow.parts().get(0));
     }
 
     @Test
@@ -358,7 +358,7 @@ class DeriveFlowTest {
         flow.askReplace();
         flow.cancel();
         assertTrue(flow.isPicking());
-        assertEquals(List.of(new DeriveFlow.Part(5, 0)), flow.parts());
+        assertEquals(List.of(new DeriveFlow.Part(5, 0, 0)), flow.parts());
         assertEquals(2, flow.pendingShift());
     }
 
@@ -368,17 +368,17 @@ class DeriveFlowTest {
         flow.shiftSource(1);
         assertTrue(flow.partsWithPending().isEmpty());
         flow.moveSource(5);
-        assertEquals(List.of(new DeriveFlow.Part(5, 1)), flow.partsWithPending());
+        assertEquals(List.of(new DeriveFlow.Part(5, 1, 0)), flow.partsWithPending());
         flow.addPart();
         flow.shiftSource(-2);
-        assertEquals(List.of(new DeriveFlow.Part(5, 1), new DeriveFlow.Part(5, -2)), flow.partsWithPending());
+        assertEquals(List.of(new DeriveFlow.Part(5, 1, 0), new DeriveFlow.Part(5, -2, 0)), flow.partsWithPending());
     }
 
     @Test
     void overlayOpMapsSlotsToCodePointsWithShifts() {
         int[] codePoints = {10, 20, 30};
         GlyphOp op = DeriveFlow.overlayOp(
-            List.of(new DeriveFlow.Part(2, 0), new DeriveFlow.Part(1, -1)), codePoints);
+            List.of(new DeriveFlow.Part(2, 0, 0), new DeriveFlow.Part(1, -1, 0)), codePoints);
         assertEquals(GlyphOp.Kind.OVERLAY, op.kind());
         assertEquals(List.of(new GlyphOp.Source(30, 0), new GlyphOp.Source(20, -1)), op.sources());
     }

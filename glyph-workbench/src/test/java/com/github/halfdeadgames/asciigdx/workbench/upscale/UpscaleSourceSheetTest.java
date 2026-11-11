@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +20,6 @@ import org.junit.jupiter.api.io.TempDir;
 class UpscaleSourceSheetTest {
 
     private static final UpscaleSources.Font FONT = new UpscaleSources.Font("classic", 8, 8);
-    private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final String BLANK_ROW = "........";
     private static final String INK_ROW = "########";
 
@@ -35,8 +32,11 @@ class UpscaleSourceSheetTest {
         + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
         + "U+0043 C = mirror U+0041\n";
 
-    private static UpscaleSourceSheet sheet(String text) {
-        return UpscaleSourceSheet.of(FontDataParser.parse(text), CP437, FONT);
+    @TempDir
+    Path sheetRoot;
+
+    private UpscaleSourceSheet sheet(String text) {
+        return UpscaleSheetFiles.load(sheetRoot, text);
     }
 
     private static int slotOf(UpscaleSourceSheet sheet, int codePoint) {

@@ -11,11 +11,6 @@ public final class PaintHelp {
 
     /** One overlay part as the help shows it. */
     public record PartView(int codePoint, int shift, int down) {
-
-        /** Creates a part that is not moved down. */
-        public PartView(int codePoint, int shift) {
-            this(codePoint, shift, 0);
-        }
     }
 
     /**

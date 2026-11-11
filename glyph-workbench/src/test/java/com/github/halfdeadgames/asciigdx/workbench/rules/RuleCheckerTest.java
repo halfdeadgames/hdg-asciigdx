@@ -16,14 +16,14 @@ class RuleCheckerTest {
     }
 
     private static Optional<String> problem(RuleCheck check, CheckSettings settings, String... rows) {
-        return RuleChecker.findProblem(check, settings, PixelGrid.ofRows(List.of(rows)));
+        return RuleProbe.problem(check, settings, PixelGrid.ofRows(List.of(rows)));
     }
 
     @Test
     void emptyGlyphPassesEveryCheck() {
         var empty = PixelGrid.blank(4, 4);
         for (RuleCheck check : RuleCheck.values()) {
-            assertTrue(RuleChecker.findProblem(check, ring(2), empty).isEmpty(), check.name());
+            assertTrue(RuleProbe.problem(check, ring(2), empty).isEmpty(), check.name());
         }
     }
 

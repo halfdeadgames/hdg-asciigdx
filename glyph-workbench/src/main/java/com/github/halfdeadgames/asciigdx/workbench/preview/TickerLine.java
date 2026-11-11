@@ -28,12 +28,8 @@ final class TickerLine {
      * @param wordSource      supplies non-empty words
      * @param glyphAdvance    pixels from one glyph to the next
      * @param pixelsPerSecond scroll speed to the left
+     * @param gapCells        blank cells after each word; 0 runs the words together into one continuous string
      */
-    TickerLine(Supplier<int[]> wordSource, int glyphAdvance, float pixelsPerSecond) {
-        this(wordSource, glyphAdvance, pixelsPerSecond, 1);
-    }
-
-    /** @param gapCells blank cells after each word; 0 runs the words together into one continuous string */
     TickerLine(Supplier<int[]> wordSource, int glyphAdvance, float pixelsPerSecond, int gapCells) {
         this.wordSource = wordSource;
         this.glyphAdvance = glyphAdvance;

@@ -25,11 +25,6 @@ public final class DeriveFlow {
 
     /** One committed overlay source: the slot it comes from, how far it is shifted right, and how far down. */
     public record Part(int slot, int shift, int down) {
-
-        /** Creates a part that is not moved down. */
-        public Part(int slot, int shift) {
-            this(slot, shift, 0);
-        }
     }
 
     private final List<Part> parts = new ArrayList<>();

@@ -114,7 +114,7 @@ final class NewFontGlyphsPrompt {
      * over, with a blank line between), a blank, then the problem over two lines.
      */
     List<String> lines() {
-        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem);
+        List<String> problemLines = NewFontNamePrompt.wrapToTwoLines(problem());
         String listLine = " ".repeat(LINE_CELLS);
         List<String> lines = new ArrayList<>(LIST_TOP_LINE + ROWS.size() * SelectList.PITCH + 2);
         lines.add(glyphsForLine());

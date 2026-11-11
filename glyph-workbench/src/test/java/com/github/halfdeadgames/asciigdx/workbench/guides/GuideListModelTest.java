@@ -35,14 +35,14 @@ class GuideListModelTest {
     void rowsAreTheGuidesInFileOrder() {
         GuideListModel model = model(FILE);
         assertEquals(3, model.size());
-        assertEquals("ROW CAP 1", model.row(0).text());
-        assertEquals("COLUMN C 7", model.row(1).text());
-        assertEquals("BAR MID 6+1", model.row(2).text());
+        assertEquals("ROW CAP 1", model.row(0, true).text());
+        assertEquals("COLUMN C 7", model.row(1, true).text());
+        assertEquals("BAR MID 6+1", model.row(2, true).text());
     }
 
     @Test
     void aColumnBarRowShowsItsFirstColumnAndWidth() {
-        assertEquals("COLBAR STEM 7+2", model("colbar STEM 7 2 digits\n").row(0).text());
+        assertEquals("COLBAR STEM 7+2", model("colbar STEM 7 2 digits\n").row(0, true).text());
     }
 
     @Test
@@ -107,13 +107,13 @@ class GuideListModelTest {
         GuideListModel model = model(FILE);
         model.select(0);
         model.adjust(1);
-        assertEquals("ROW CAP 2", model.row(0).text());
+        assertEquals("ROW CAP 2", model.row(0, true).text());
         model.select(1);
         model.adjust(-1);
-        assertEquals("COLUMN C 6", model.row(1).text());
+        assertEquals("COLUMN C 6", model.row(1, true).text());
         model.select(2);
         model.adjust(-1);
-        assertEquals("BAR MID 5+1", model.row(2).text());
+        assertEquals("BAR MID 5+1", model.row(2, true).text());
         assertEquals(5, model.selectedGuide().position());
     }
 
@@ -149,14 +149,14 @@ class GuideListModelTest {
         model.addRow();
         assertEquals(4, model.size());
         assertEquals(1, model.selectedIndex());
-        assertEquals("ROW NEW 0", model.row(1).text());
+        assertEquals("ROW NEW 0", model.row(1, true).text());
         model.addColumn();
         assertEquals(3, model.selectedIndex());
-        assertEquals("COLUMN NEW 0", model.row(3).text());
+        assertEquals("COLUMN NEW 0", model.row(3, true).text());
         model.addBar();
         assertEquals(6, model.size());
         assertEquals(5, model.selectedIndex());
-        assertEquals("BAR NEW 0+1", model.row(5).text());
+        assertEquals("BAR NEW 0+1", model.row(5, true).text());
         assertEquals(PaintGuides.ListedKind.BAR, model.selectedGuide().kind());
     }
 
@@ -309,10 +309,10 @@ class GuideListModelTest {
         assertTrue(model.canRename());
         model.beginRename();
         assertEquals("C", model.renameText());
-        assertEquals("COLUMN C_ 7", model.row(1).text());
+        assertEquals("COLUMN C_ 7", model.row(1, true).text());
         type(model, "ab");
-        assertEquals("COLUMN CAB_ 7", model.row(1).text());
-        assertEquals("ROW CAP 1", model.row(0).text());
+        assertEquals("COLUMN CAB_ 7", model.row(1, true).text());
+        assertEquals("ROW CAP 1", model.row(0, true).text());
         assertEquals("C", model.selectedGuide().label());
     }
 
@@ -328,9 +328,9 @@ class GuideListModelTest {
         assertTrue(model.canAcceptRename());
         model.acceptRename();
         assertFalse(model.isRenaming());
-        assertEquals("BAR XLINE 6+1", model.row(2).text());
+        assertEquals("BAR XLINE 6+1", model.row(2, true).text());
         assertTrue(model.guides().toText().contains("bar XLINE 6 1 lowercase\n"));
-        assertEquals(model.row(2).text(), model(model.guides().toText()).row(2).text());
+        assertEquals(model.row(2, true).text(), model(model.guides().toText()).row(2, true).text());
     }
 
     @Test
@@ -347,7 +347,7 @@ class GuideListModelTest {
         type(model, "q");
         assertTrue(model.canAcceptRename());
         model.acceptRename();
-        assertEquals("ROW Q 1", model.row(0).text());
+        assertEquals("ROW Q 1", model.row(0, true).text());
     }
 
     @Test
@@ -359,7 +359,7 @@ class GuideListModelTest {
         type(model, "zzz");
         model.cancelRename();
         assertFalse(model.isRenaming());
-        assertEquals("COLUMN C 7", model.row(1).text());
+        assertEquals("COLUMN C 7", model.row(1, true).text());
         assertEquals("uppercase,lowercase,digits", model.selectedGuide().groups());
         assertTrue(model.isChanged());
     }
@@ -412,8 +412,8 @@ class GuideListModelTest {
         GuideListModel reread = model(model.guides().toText());
         assertEquals(model.size(), reread.size());
         for (int i = 0; i < model.size(); i++) {
-            assertEquals(model.row(i).text(), reread.row(i).text());
+            assertEquals(model.row(i, true).text(), reread.row(i, true).text());
         }
-        assertEquals("ROW CAP 3", reread.row(0).text());
+        assertEquals("ROW CAP 3", reread.row(0, true).text());
     }
 }

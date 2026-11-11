@@ -90,10 +90,10 @@ class GuideResizeTest {
     void listTextShowsTheNewSize() {
         GuideListModel model = modelSelecting(BAR_INDEX);
         model.resizeSelected(1);
-        assertEquals("BAR BAR 6+2", model.row(BAR_INDEX).text());
+        assertEquals("BAR BAR 6+2", model.row(BAR_INDEX, true).text());
         model.select(COLUMN_BAR_INDEX);
         model.resizeSelected(-1);
-        assertEquals("COLBAR STEM 7+1", model.row(COLUMN_BAR_INDEX).text());
+        assertEquals("COLBAR STEM 7+1", model.row(COLUMN_BAR_INDEX, true).text());
     }
 
     @Test

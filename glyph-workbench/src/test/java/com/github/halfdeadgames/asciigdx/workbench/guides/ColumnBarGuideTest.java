@@ -106,9 +106,9 @@ class ColumnBarGuideTest {
     @Test
     void listTextShowsFirstPlusCount() {
         GuideListModel model = new GuideListModel(PaintGuides.parse(ALL_KINDS), 8, 8);
-        assertEquals("COLBAR STEM 3+2", model.row(3).text());
-        assertEquals("COLBAR WIDE 0+4", model.row(4).text());
-        assertEquals("BAR MID 6+1", model.row(2).text());
+        assertEquals("COLBAR STEM 3+2", model.row(3, true).text());
+        assertEquals("COLBAR WIDE 0+4", model.row(4, true).text());
+        assertEquals("BAR MID 6+1", model.row(2, true).text());
     }
 
     @Test
@@ -119,7 +119,7 @@ class ColumnBarGuideTest {
         assertEquals(6, model.size());
         assertEquals(PaintGuides.ListedKind.COLUMN_BAR, model.selectedGuide().kind());
         assertEquals(7, model.selectedGuide().position());
-        assertEquals("COLBAR NEW 7+2", model.row(5).text());
+        assertEquals("COLBAR NEW 7+2", model.row(5, true).text());
     }
 
     @Test

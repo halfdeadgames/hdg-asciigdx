@@ -34,11 +34,6 @@ final class NewFontNamePrompt {
         return open;
     }
 
-    /** Opens the prompt with nothing typed. */
-    void open(Collection<String> existingFolders) {
-        open(existingFolders, "");
-    }
-
     /** Opens the prompt with {@code initialText} already typed, for coming back from a later page. */
     void open(Collection<String> existingFolders, String initialText) {
         text.setLength(0);

@@ -42,10 +42,7 @@ public final class UpscaleSourceSheet {
         Path folder = fontsRoot.resolve(font.folderName());
         String text = Files.readString(folder.resolve(font.size().dataFileName()), StandardCharsets.UTF_8);
         GlyphList glyphList = GlyphListFile.load(folder.toFile());
-        return of(FontDataParser.parseSizeFile(font.size(), text), glyphList, font);
-    }
-
-    public static UpscaleSourceSheet of(FontData data, GlyphList glyphList, UpscaleSources.Font font) {
+        FontData data = FontDataParser.parseSizeFile(font.size(), text);
         return new UpscaleSourceSheet(new FontEditor(data, glyphList), font);
     }
 

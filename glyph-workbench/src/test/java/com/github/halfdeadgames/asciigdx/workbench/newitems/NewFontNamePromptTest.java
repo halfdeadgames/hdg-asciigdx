@@ -16,7 +16,7 @@ class NewFontNamePromptTest {
 
     private NewFontNamePrompt openPrompt(String typed, String... existing) {
         var prompt = new NewFontNamePrompt(accepted::add, () -> cancels++);
-        prompt.open(List.of(existing));
+        prompt.open(List.of(existing), "");
         for (int i = 0; i < typed.length(); i++) {
             prompt.type(typed.charAt(i));
         }
@@ -31,7 +31,7 @@ class NewFontNamePromptTest {
     void startsClosedAndTracksOpenAndClose() {
         var prompt = new NewFontNamePrompt(accepted::add, () -> cancels++);
         assertFalse(prompt.isOpen());
-        prompt.open(List.of());
+        prompt.open(List.of(), "");
         assertTrue(prompt.isOpen());
         prompt.close();
         assertFalse(prompt.isOpen());
@@ -41,7 +41,7 @@ class NewFontNamePromptTest {
     void ignoresTypingWhileClosed() {
         var prompt = new NewFontNamePrompt(accepted::add, () -> cancels++);
         prompt.type('a');
-        prompt.open(List.of());
+        prompt.open(List.of(), "");
         assertEquals("", prompt.name());
     }
 
@@ -49,7 +49,7 @@ class NewFontNamePromptTest {
     void reopeningClearsEarlierText() {
         var prompt = openPrompt("abc");
         prompt.close();
-        prompt.open(List.of());
+        prompt.open(List.of(), "");
         assertEquals("", prompt.name());
     }
 

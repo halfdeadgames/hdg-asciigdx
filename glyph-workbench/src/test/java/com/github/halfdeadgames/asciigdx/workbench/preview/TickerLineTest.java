@@ -13,6 +13,7 @@ class TickerLineTest {
     private static final int ADVANCE = 10;
     private static final float SPEED = 40f;
     private static final int WIDTH = 100;
+    private static final int GAP_CELLS = 1;
 
     private int suppliedWords;
 
@@ -23,7 +24,7 @@ class TickerLineTest {
     }
 
     private TickerLine line() {
-        TickerLine line = new TickerLine(this::nextWord, ADVANCE, SPEED);
+        TickerLine line = new TickerLine(this::nextWord, ADVANCE, SPEED, GAP_CELLS);
         line.setVisibleWidth(WIDTH);
         return line;
     }

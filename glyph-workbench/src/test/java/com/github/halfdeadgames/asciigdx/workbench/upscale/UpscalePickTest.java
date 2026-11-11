@@ -4,15 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphList;
+import java.nio.file.Path;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class UpscalePickTest {
 
-    private static final UpscaleSources.Font FONT = new UpscaleSources.Font("classic", 8, 8);
-    private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final int COLUMNS = 16;
 
     private static String rows(String row) {
@@ -24,8 +22,11 @@ class UpscalePickTest {
         + "U+0042 B\n" + rows("........") + "\n\n"
         + "U+0043 C\n" + rows("########") + "\n";
 
-    private static UpscaleSourceSheet sheet() {
-        return UpscaleSourceSheet.of(FontDataParser.parse(FONT_TEXT), CP437, FONT);
+    @TempDir
+    Path sheetRoot;
+
+    private UpscaleSourceSheet sheet() {
+        return UpscaleSheetFiles.load(sheetRoot, FONT_TEXT);
     }
 
     private static int slotOf(UpscaleSourceSheet sheet, int codePoint) {
