@@ -4,8 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * The 16x16 glyphs drawn by hand, keyed by code point. They are candidates for the 16x16 sheet
- * and are compared against the upscaled 8x8 glyphs in the workbench.
+ * The 16x16 glyphs drawn by hand, keyed by code point. They feed the {@code hand} sheet export
+ * and the cells that the final-sheet picks mark as {@code hand}.
  *
  * <p>Art rows are top to bottom; {@code #} is lit, anything else is transparent.
  */

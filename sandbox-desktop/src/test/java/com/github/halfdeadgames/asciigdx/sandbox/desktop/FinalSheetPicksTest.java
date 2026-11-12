@@ -21,6 +21,27 @@ class FinalSheetPicksTest {
     }
 
     @Test
+    void parseRejectsMalformedLine() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> FinalSheetPicks.parse("U+0041\tA\tmmpx\nU+0042\tB\n"));
+        assertTrue(error.getMessage().contains("Picks line 2 is malformed"));
+    }
+
+    @Test
+    void parseRejectsBadCodePoint() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> FinalSheetPicks.parse("U+ZZZZ\tA\tmmpx\n"));
+        assertTrue(error.getMessage().contains("Picks line 1 has a bad code point: U+ZZZZ"));
+    }
+
+    @Test
+    void parseRejectsRepeatedCodePoint() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+            () -> FinalSheetPicks.parse("U+0041\tA\tmmpx\nU+0041\tA\tlight\n"));
+        assertTrue(error.getMessage().contains("Picks line 2 repeats U+0041"));
+    }
+
+    @Test
     void codePointsWithoutAPickFallBackToNearest() {
         String[] chosen = FinalSheetPicks.select(SHEET, BLANK, Map.of(0x41, "light"), Set.of());
         assertArrayEquals(new String[] {"light", "nearest", "nearest", "nearest"}, chosen);

@@ -10,9 +10,10 @@ import java.util.Set;
 /** Decides which candidate supplies each cell of the final 16x16 sheet, from the workbench picks file. */
 final class FinalSheetPicks {
 
-    static final String NEAREST = "nearest";
     static final String HAND = "hand";
-    static final String NONE = "none";
+
+    private static final String NEAREST = "nearest";
+    private static final String NONE = "none";
 
     private static final Set<String> KNOWN_IDS = Set.of(
         NEAREST, "scale2x", "scale2x-fill", "scale2x-trim", "mmpx", "scale2x-sfx", "light", HAND);

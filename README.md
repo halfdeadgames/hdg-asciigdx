@@ -99,15 +99,26 @@ In PowerShell, quote comma lists: `"-Pscenes=renderer-basics,glyph-showcase"`.
 
 ### Exporting glyph sheets
 
-The `exportSheet` task bakes a font into a PNG sheet and a matching character list, without opening a window:
+The `exportSheet` task writes glyph sheet PNGs and matching character lists, without opening a window. By default it bakes a font:
 
 ```
 ./gradlew :sandbox-desktop:exportSheet -Pfont=dungeon-mode -PcellHeight=16
 ```
 
-Options are `-Pfont` (`dungeon-mode`, `dungeon-mode-inverted`, or a TTF path), `-PcellHeight`, `-Pchars` (`cp437` or a character list file), `-Pcolumns`, and `-PsheetName`. Output goes to `build/exports/`.
+Font baking options are `-Pfont` (`dungeon-mode`, `dungeon-mode-inverted`, or a TTF path), `-PcellHeight`, `-Pchars` (`cp437` or a character list file), and `-PsheetName`. `-Pcolumns` (default 16) applies to every mode, and `-Pscale` (default 1) enlarges the baked sheet by that whole factor. Output goes to `build/exports/`.
 
-`-Passemble=true` rebuilds the bundled extended sheet. Copy the resulting `dungeon-extended.png` and `.txt` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` by hand.
+`-Passemble=true` rebuilds the bundled extended sheet from CP437, TTF picks, and the generated glyphs. Copy the resulting `dungeon-extended.png` and `.txt` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` by hand. `-Pgenerated=true` exports only the glyphs drawn in code. Both accept `-Pscale=<n>` for nearest-neighbor enlargement.
+
+`-Pupscale` picks how a sheet is enlarged:
+
+| Value | Effect |
+|---|---|
+| `nearest` | Default. Plain nearest-neighbor; honors `-Pscale` |
+| `scale2x`, `scale2x-fill`, `scale2x-trim`, `mmpx`, `scale2x-sfx`, `light` | Smoothing scaler. Needs `-Passemble` or `-Pgenerated`, and `-Pscale` must be 2 (the default when a smoothing scaler is chosen). The id is appended to the file name |
+| `hand` | Exports the hand-drawn 16x16 glyphs on the default sheet's slots, plus a `.present.txt` listing the slots that have one. Ignores `-Pscale` and `-Pfont` |
+| `final` | Builds the 16x16 sheet, taking each cell from the candidate named in the picks file. Ignores `-Pscale` and `-Pfont` |
+
+`-Ppicks` sets the picks file for `-Pupscale=final` (default `glyph-workbench/picks/dungeon-extended-16.txt`, relative to the repository root). It is a tab-separated file with the code point (`U+0041`), a label, and the pick id in the first three columns; extra columns are ignored. The export fails if a pick is `none`, unknown, names a code point missing from the sheet, or asks for `hand` without hand art.
 
 ### Adding a scene
 

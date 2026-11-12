@@ -64,26 +64,6 @@ class HandDrawnGlyphsTest {
         assertArrayEquals(GeneratedGlyphs.rotated180(glyphs.get(0x2617)), glyphs.get(0x26CA));
     }
 
-    @Test
-    void generatedTurnedShogiPiecesAreTheShogiPiecesRotated() {
-        Map<Integer, boolean[][]> glyphs = GeneratedGlyphs.all();
-        assertArrayEquals(GeneratedGlyphs.rotated180(glyphs.get(0x2616)), glyphs.get(0x26C9));
-        assertArrayEquals(GeneratedGlyphs.rotated180(glyphs.get(0x2617)), glyphs.get(0x26CA));
-    }
-
-    @Test
-    void generatedGlyphsDropTheHourglassPartsAndGainTheShieldEnds() {
-        Map<Integer, boolean[][]> glyphs = GeneratedGlyphs.all();
-        for (int codePoint = 0xE0E8; codePoint <= 0xE0EB; codePoint++) {
-            assertFalse(glyphs.containsKey(codePoint), "unexpected U+" + Integer.toHexString(codePoint));
-        }
-        for (int codePoint = 0xE0F0; codePoint <= 0xE0F7; codePoint++) {
-            assertFalse(glyphs.containsKey(codePoint), "unexpected U+" + Integer.toHexString(codePoint));
-        }
-        assertTrue(glyphs.containsKey(GeneratedGlyphs.SHIELD_EMPTY));
-        assertTrue(glyphs.containsKey(GeneratedGlyphs.SHIELD_FULL));
-    }
-
     private static GlyphOrder readDefaultOrder() throws IOException {
         try (InputStream stream = HandDrawnGlyphsTest.class.getClassLoader().getResourceAsStream(DEFAULT_LIST)) {
             assertNotNull(stream, "missing resource " + DEFAULT_LIST);

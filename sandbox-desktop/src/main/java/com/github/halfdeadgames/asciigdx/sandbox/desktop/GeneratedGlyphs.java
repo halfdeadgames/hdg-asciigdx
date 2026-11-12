@@ -7,9 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * The 8x8 glyphs drawn in code for the default sheet: quadrant blocks in every shade, and
- * geometric symbols that match the dungeon.mode style (2-pixel lines on x or y = 3..4, 4-pixel
- * heavy lines on 2..5, filled shapes in the same 6x6 box as the CP437 square).
+ * The 8x8 glyphs drawn in code for the default sheet: quadrant blocks in every shade, geometric
+ * symbols that match the dungeon.mode style (2-pixel lines on x or y = 3..4, 4-pixel heavy lines
+ * on 2..5, filled shapes in the same 6x6 box as the CP437 square), pictorial glyphs, symbols,
+ * hourglass and turn arrows, and game pieces.
  *
  * <p>Art rows are top to bottom; {@code #} is lit, anything else is transparent.
  */
@@ -17,23 +18,27 @@ final class GeneratedGlyphs {
 
     static final int SIZE = 8;
 
-    static final int SHIELD_STAGES_START = 0xE0A0;
-    static final int SWORD_STAGES_START = 0xE0A4;
     static final int SHIELD_EMPTY = 0xE0A9;
     static final int SHIELD_FULL = 0xE0AA;
-    static final int OUTLINED_DICE_START = 0xE0B0;
-    static final int TEN = 0xE0C0;
-    static final int CARD_BACK = 0xE0C1;
-    static final int CARD_BACK_SELECTED = 0xE0C2;
-    static final int COIN_FACE = 0xE100;
-    static final int COIN_EDGE = 0xE101;
+
+    private static final int SHIELD_STAGES_START = 0xE0A0;
+    private static final int SWORD_STAGES_START = 0xE0A4;
+    private static final int OUTLINED_DICE_START = 0xE0B0;
+    private static final int TEN = 0xE0C0;
+    private static final int CARD_BACK = 0xE0C1;
+    private static final int CARD_BACK_SELECTED = 0xE0C2;
+    private static final int COIN_FACE = 0xE100;
+    private static final int COIN_EDGE = 0xE101;
 
     private static final int[][] BAYER = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
 
     private GeneratedGlyphs() {
     }
 
-    /** Returns every generated glyph in sheet order: quadrants first, then geometric symbols. */
+    /**
+     * Returns every generated glyph in sheet order: quadrants, geometric symbols, pictorial glyphs,
+     * symbols, hourglass and turn arrows, then game pieces.
+     */
     static Map<Integer, boolean[][]> all() {
         Map<Integer, boolean[][]> glyphs = new LinkedHashMap<>();
         for (Shade shade : Shade.values()) {
@@ -300,7 +305,7 @@ final class GeneratedGlyphs {
         };
     }
 
-    static boolean[][] quadrant(Shade shade, int mask) {
+    private static boolean[][] quadrant(Shade shade, int mask) {
         boolean[][] pixels = new boolean[SIZE][SIZE];
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
@@ -312,7 +317,7 @@ final class GeneratedGlyphs {
         return pixels;
     }
 
-    // Patterns are anchored to the cell, not the quadrant, so they tile across neighbours.
+    // Patterns are anchored to the cell, not the quadrant, so they tile across neighbors.
     private static boolean isPatternLit(Shade shade, int x, int y) {
         boolean slash = Math.floorMod(x + y, 4) == 0;
         boolean backslash = Math.floorMod(x - y, 4) == 0;
@@ -343,7 +348,7 @@ final class GeneratedGlyphs {
         int[] leftEighths = {0x258F, 0x258E, 0x258D, 0x258B, 0x258A, 0x2589};
         int[] leftColumns = {1, 2, 3, 5, 6, 7};
         for (int i = 0; i < leftEighths.length; i++) {
-            glyphs.put(leftEighths[i], transpose(lowerBlockFromTop(leftColumns[i])));
+            glyphs.put(leftEighths[i], transpose(topRowsBlock(leftColumns[i])));
         }
 
         boolean[][] roundedDownRight = art(
@@ -519,7 +524,7 @@ final class GeneratedGlyphs {
         return glyphs;
     }
 
-    static boolean[][] art(String... rows) {
+    private static boolean[][] art(String... rows) {
         if (rows.length != SIZE) {
             throw new IllegalArgumentException("Art needs " + SIZE + " rows, got " + rows.length);
         }
@@ -543,7 +548,7 @@ final class GeneratedGlyphs {
         return pixels;
     }
 
-    private static boolean[][] lowerBlockFromTop(int rows) {
+    private static boolean[][] topRowsBlock(int rows) {
         boolean[][] pixels = new boolean[SIZE][SIZE];
         for (int y = 0; y < rows; y++) {
             Arrays.fill(pixels[y], true);

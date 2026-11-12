@@ -98,7 +98,7 @@ run {
 }
 
 tasks.register('exportSheet', JavaExec) {
-  description = 'Bakes a TTF into a glyph sheet PNG and character list. See SheetExporter.'
+  description = 'Exports glyph sheet PNGs and character lists: TTF bake, assemble, generated, and upscale (smoothing, hand, final) variants. See SheetExporter.'
   classpath = sourceSets.main.runtimeClasspath
   mainClass = 'com.github.halfdeadgames.asciigdx.sandbox.desktop.SheetExporter'
   jvmArgs += "--enable-native-access=ALL-UNNAMED"

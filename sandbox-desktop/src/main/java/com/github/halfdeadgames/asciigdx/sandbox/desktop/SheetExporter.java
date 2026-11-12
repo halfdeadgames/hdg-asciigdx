@@ -21,9 +21,18 @@ import java.util.TreeMap;
 import java.util.function.IntPredicate;
 
 /**
- * Bakes a TTF into a glyph sheet PNG plus its character list {@code .txt}, without opening a
- * window. Run through the {@code exportSheet} Gradle task, which passes the settings as
- * {@code asciigdx.export.*} system properties.
+ * Exports glyph sheet PNGs plus their character list {@code .txt}, without opening a window.
+ * Run through the {@code exportSheet} Gradle task, which passes the settings as
+ * {@code asciigdx.export.*} system properties. Modes:
+ * <ul>
+ *   <li>default: bakes a TTF at the given cell height;</li>
+ *   <li>{@code assemble}: the default 8x8 sheet from CP437, TTF picks, and generated glyphs;</li>
+ *   <li>{@code generated}: only the glyphs drawn in code;</li>
+ *   <li>{@code upscale=<scaler id>}: a 2x sheet from a smoothing scaler, for assemble or generated
+ *       ({@code nearest}, the default, scales without smoothing);</li>
+ *   <li>{@code upscale=hand}: the hand-drawn 16x16 glyphs on the default sheet's slots;</li>
+ *   <li>{@code upscale=final}: a 16x16 sheet where each cell uses the candidate chosen in the picks file.</li>
+ * </ul>
  */
 public final class SheetExporter {
 
@@ -69,26 +78,26 @@ public final class SheetExporter {
         }
         String upscaleId = canonicalUpscaleId(upscale);
         SheetScaler mode = scalerFor(upscaleId);
-        String suffix = mode != null ? upscaleId : null;
-        boolean scale2x = mode != null;
-        int scale = Integer.parseInt(System.getProperty("asciigdx.export.scale", scale2x ? "2" : "1"));
+        boolean upscaling = mode != null;
+        int scale = Integer.parseInt(System.getProperty("asciigdx.export.scale", upscaling ? "2" : "1"));
         if (scale < 1) {
             throw new IllegalArgumentException("scale must be at least 1: " + scale);
         }
-        if (scale2x && scale != 2) {
-            throw new IllegalArgumentException("upscale=scale2x needs scale 2: " + scale);
+        if (upscaling && scale != 2) {
+            throw new IllegalArgumentException("upscale=" + upscaleId + " needs scale 2: " + scale);
         }
         FileHandle outputFolder = Gdx.files.absolute(System.getProperty("asciigdx.export.output"));
         if (System.getProperty("asciigdx.export.generated") != null) {
-            exportGenerated(outputFolder, columns, scale, mode, suffix);
+            exportGenerated(outputFolder, columns, scale, mode, upscaleId);
             return;
         }
         if (System.getProperty("asciigdx.export.assemble") != null) {
-            assembleDefaultSheet(outputFolder, columns, scale, mode, suffix);
+            assembleDefaultSheet(outputFolder, columns, scale, mode, upscaleId);
             return;
         }
-        if (scale2x) {
-            throw new IllegalArgumentException("upscale=scale2x only applies to -Passemble or -Pgenerated sheets");
+        if (upscaling) {
+            throw new IllegalArgumentException(
+                "upscale=" + upscaleId + " only applies to -Passemble or -Pgenerated sheets");
         }
 
         FileHandle font = fontFile(fontSetting);
@@ -98,8 +107,9 @@ public final class SheetExporter {
         String name = System.getProperty("asciigdx.export.sheetName", font.nameWithoutExtension()) + "-" + cellHeight * scale;
 
         FreeTypeGlyphBaker.Result baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
-        Pixmap output = scaled(baked.getPixmap(), scale, null, null);
+        Pixmap output = null;
         try {
+            output = scaled(baked.getPixmap(), scale, null, null);
             FileHandle png = outputFolder.child(name + ".png");
             FileHandle txt = outputFolder.child(name + ".txt");
             PixmapIO.writePNG(png, output);
@@ -110,7 +120,7 @@ public final class SheetExporter {
             System.out.println("  " + png.file().getAbsolutePath());
             System.out.println("  " + txt.file().getAbsolutePath());
         } finally {
-            if (output != baked.getPixmap()) {
+            if (output != null && output != baked.getPixmap()) {
                 output.dispose();
             }
             baked.getPixmap().dispose();
@@ -118,8 +128,8 @@ public final class SheetExporter {
     }
 
     // Returns the source itself when scale is 1; the caller disposes the result only if it differs.
-    // Non-null scale2xCodePoints (one per cell slot, scale must be 2) selects Scale2x instead of nearest.
-    private static Pixmap scaled(Pixmap source, int scale, int[] scale2xCodePoints, SheetScaler mode) {
+    // Non-null slotCodePoints (one per cell slot, scale must be 2) selects the given scaler instead of nearest.
+    private static Pixmap scaled(Pixmap source, int scale, int[] slotCodePoints, SheetScaler mode) {
         if (scale == 1) {
             return source;
         }
@@ -131,9 +141,9 @@ public final class SheetExporter {
                 pixels[y * width + x] = source.getPixel(x, y);
             }
         }
-        int[] scaledPixels = scale2xCodePoints == null
+        int[] scaledPixels = slotCodePoints == null
             ? PixelScaler.scale(pixels, width, height, scale)
-            : mode.scale(pixels, width, height, GeneratedGlyphs.SIZE, scale2xCodePoints);
+            : mode.scale(pixels, width, height, GeneratedGlyphs.SIZE, slotCodePoints);
         int scaledWidth = width * scale;
         Pixmap result = new Pixmap(scaledWidth, height * scale, Pixmap.Format.RGBA8888);
         result.setBlending(Pixmap.Blending.None);
@@ -146,17 +156,17 @@ public final class SheetExporter {
     }
 
     /** Glyphs taken from the dungeon.mode TTF that the CP437 sheet lacks. */
-    private static final String TTF_PICKS = "☠⚇⚉⚱⚷†◇⏺⟁⸙⛑⭦⬚⛨★☝✕";
+    static final String TTF_PICKS = "☠⚇⚉⚱⚷†◇⏺⟁⸙⛑⭦⬚⛨★☝✕";
 
     // The default sheet: the CP437 sheet's cells first (unchanged), then glyphs baked from the
     // TTF, then the generated glyphs. Code points already placed are skipped. Every cell is
     // stored as white with alpha 0 or 255.
     private static void assembleDefaultSheet(FileHandle outputFolder, int columns, int scale,
-        SheetScaler mode, String suffix) {
+        SheetScaler mode, String upscaleId) {
         int size = GeneratedGlyphs.SIZE;
         Map<Integer, boolean[][]> glyphs = assembleGlyphs(columns);
         String name = scale > 1 ? "dungeon-extended-" + size * scale : "dungeon-extended";
-        writeSheet(outputFolder, name, glyphs, columns, scale, mode, suffix);
+        writeSheet(outputFolder, name, glyphs, columns, scale, mode, upscaleId);
     }
 
     private static Map<Integer, boolean[][]> assembleGlyphs(int columns) {
@@ -298,10 +308,11 @@ public final class SheetExporter {
             }
         }
         throw new IllegalArgumentException(
-            "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, or light: " + upscale);
+            "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, light, hand, or final: "
+                + upscale);
     }
 
-    /** The scaler for an exact id, or null for plain nearest-neighbour scaling. */
+    /** The scaler for an exact id, or null for plain nearest-neighbor scaling. */
     private static SheetScaler scalerFor(String id) {
         return switch (id) {
             case NEAREST_ID -> null;
@@ -331,14 +342,14 @@ public final class SheetExporter {
     }
 
     private static void exportGenerated(FileHandle outputFolder, int columns, int scale,
-        SheetScaler mode, String suffix) {
+        SheetScaler mode, String upscaleId) {
         writeSheet(outputFolder, "generated-" + GeneratedGlyphs.SIZE * scale, GeneratedGlyphs.all(), columns, scale,
-            mode, suffix);
+            mode, upscaleId);
     }
 
     private static void writeSheet(FileHandle outputFolder, String baseName, Map<Integer, boolean[][]> glyphs,
-        int columns, int scale, SheetScaler mode, String suffix) {
-        String name = mode != null ? baseName + "-" + suffix : baseName;
+        int columns, int scale, SheetScaler mode, String upscaleId) {
+        String name = mode != null ? baseName + "-" + upscaleId : baseName;
         int size = GeneratedGlyphs.SIZE;
         int rows = (glyphs.size() + columns - 1) / columns;
         Pixmap sheet = new Pixmap(columns * size, rows * size, Pixmap.Format.RGBA8888);
