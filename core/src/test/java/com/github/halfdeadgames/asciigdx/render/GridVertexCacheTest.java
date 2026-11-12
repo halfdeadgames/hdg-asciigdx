@@ -258,12 +258,12 @@ class GridVertexCacheTest {
     }
 
     @Test
-    void isEmptyDependsOnlyOnAlphaByte() {
-        assertTrue(GridVertexCache.isEmpty(0));
-        assertTrue(GridVertexCache.isEmpty(0xFF00FF00));
-        assertTrue(GridVertexCache.isEmpty(0xFFFFFF00));
-        assertFalse(GridVertexCache.isEmpty(0x00000001));
-        assertFalse(GridVertexCache.isEmpty(0xFFFFFFFF));
+    void isFullyTransparentDependsOnlyOnAlphaByte() {
+        assertTrue(GridVertexCache.isFullyTransparent(0));
+        assertTrue(GridVertexCache.isFullyTransparent(0xFF00FF00));
+        assertTrue(GridVertexCache.isFullyTransparent(0xFFFFFF00));
+        assertFalse(GridVertexCache.isFullyTransparent(0x00000001));
+        assertFalse(GridVertexCache.isFullyTransparent(0xFFFFFFFF));
     }
 
     @Test

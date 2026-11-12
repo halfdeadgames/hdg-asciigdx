@@ -43,9 +43,9 @@ class ColorKeyConversionTest {
     }
 
     @Test
-    void isTransparentChecksAlphaBelowOpaque() {
-        assertFalse(ColorKeyConversion.isTransparent(0xFF));
-        assertTrue(ColorKeyConversion.isTransparent(0xFE));
-        assertTrue(ColorKeyConversion.isTransparent(0x00));
+    void isNotFullyOpaqueChecksAlphaBelowOpaque() {
+        assertFalse(ColorKeyConversion.isNotFullyOpaque(0xFF));
+        assertTrue(ColorKeyConversion.isNotFullyOpaque(0xFE));
+        assertTrue(ColorKeyConversion.isNotFullyOpaque(0x00));
     }
 }

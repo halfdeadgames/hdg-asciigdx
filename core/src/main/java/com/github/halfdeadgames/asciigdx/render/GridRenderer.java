@@ -142,7 +142,7 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     }
 
     private static boolean isBlankGlyph(int codePoint, int foreground) {
-        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || GridVertexCache.isEmpty(foreground);
+        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || GridVertexCache.isFullyTransparent(foreground);
     }
 
     private void writeCell(int column, int row) {

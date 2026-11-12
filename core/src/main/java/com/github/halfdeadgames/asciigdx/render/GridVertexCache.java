@@ -90,8 +90,8 @@ final class GridVertexCache {
             translucentCells[cell] = translucent;
             translucentBackgroundCount += translucent ? 1 : -1;
         }
-        boolean visible = !isEmpty(rgba);
-        if (visible != visibleBackgroundCells[cell]) {
+        boolean visible = !isFullyTransparent(rgba);
+if (visible != visibleBackgroundCells[cell]) {
             visibleBackgroundCells[cell] = visible;
             visibleBackgroundCount += visible ? 1 : -1;
         }
@@ -119,15 +119,15 @@ final class GridVertexCache {
     public void writeGlyph(int column, int row, int rgba, float u, float v, float u2, float v2) {
         writeQuad(glyphs, column, row, rgba, u, v, u2, v2);
         int cell = row * columns + column;
-        boolean visible = !isEmpty(rgba);
-        if (visible != visibleGlyphCells[cell]) {
+        boolean visible = !isFullyTransparent(rgba);
+if (visible != visibleGlyphCells[cell]) {
             visibleGlyphCells[cell] = visible;
             visibleGlyphCount += visible ? 1 : -1;
         }
     }
 
     /** True when the RGBA8888 alpha byte is zero, so nothing would be visible. */
-    static boolean isEmpty(int rgba) {
+    static boolean isFullyTransparent(int rgba) {
         return (rgba & 0xFF) == 0;
     }
 
@@ -138,7 +138,7 @@ final class GridVertexCache {
         int i = (row * columns + column) * GridVertexLayout.FLOATS_PER_QUAD;
         float left = column * cellWidth;
         float bottom = -(row + 1) * cellHeight;
-        if (isEmpty(rgba)) {
+        if (isFullyTransparent(rgba)) {
             for (int vertex = 0; vertex < GridVertexLayout.VERTICES_PER_QUAD; vertex++) {
                 putVertex(target, i + vertex * GridVertexLayout.FLOATS_PER_VERTEX, left, bottom, 0f, 0f, 0f);
             }

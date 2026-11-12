@@ -17,8 +17,10 @@ package com.github.halfdeadgames.asciigdx.grid;
  * <p>Dirty tracking: each consumer (for example a renderer) creates its own
  * {@link DirtyTracker} with {@link #createDirtyTracker()}, which starts with all
  * cells dirty. Creating a tracker does not change cell content.
+ *
+ * <p>Only {@link TerminalGrid} implements this interface, because the grid creates the trackers.
  */
-public interface TerminalView {
+public sealed interface TerminalView permits TerminalGrid {
 
     /** Returns the number of columns. */
     int getWidth();

@@ -9,6 +9,9 @@ import com.badlogic.gdx.utils.Disposable;
  *
  * <p>An implementation owns its textures. {@link #dispose()} releases them, and every
  * region obtained from the source is invalid afterwards.
+ *
+ * <p>Every region returned by {@link #glyph(int)} must belong to the same texture;
+ * {@code GridRenderer} reads that texture from the region of the space glyph.
  */
 public interface GlyphSource extends Disposable {
 

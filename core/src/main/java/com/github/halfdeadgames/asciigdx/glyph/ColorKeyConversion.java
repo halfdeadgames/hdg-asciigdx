@@ -40,7 +40,7 @@ final class ColorKeyConversion {
      * @param rgba8888 the pixel to test
      * @return true if its alpha is below 255
      */
-    public static boolean isTransparent(int rgba8888) {
+    public static boolean isNotFullyOpaque(int rgba8888) {
         return (rgba8888 & 0xFF) < OPAQUE;
     }
 

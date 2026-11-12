@@ -177,7 +177,7 @@ public final class TextureGlyphSource implements GlyphSource {
         try {
             requireImageFits(pixmap, "Image " + path, layout);
             int key = keyRgba8888OrNull != null ? keyRgba8888OrNull : pixmap.getPixel(0, 0);
-            if (mode.shouldConvert(hasTransparentPixel(pixmap))) {
+            if (mode.shouldConvert(hasNonOpaquePixel(pixmap))) {
                 if (pixmap.getFormat() != Pixmap.Format.RGBA8888) {
                     Pixmap rgba = new Pixmap(pixmap.getWidth(), pixmap.getHeight(), Pixmap.Format.RGBA8888);
                     Pixmap original = pixmap;
@@ -292,10 +292,10 @@ public final class TextureGlyphSource implements GlyphSource {
             TransparencyMode.AUTO);
     }
 
-    private static boolean hasTransparentPixel(Pixmap pixmap) {
+    private static boolean hasNonOpaquePixel(Pixmap pixmap) {
         for (int y = 0; y < pixmap.getHeight(); y++) {
             for (int x = 0; x < pixmap.getWidth(); x++) {
-                if (ColorKeyConversion.isTransparent(pixmap.getPixel(x, y))) {
+                if (ColorKeyConversion.isNotFullyOpaque(pixmap.getPixel(x, y))) {
                     return true;
                 }
             }
@@ -330,14 +330,6 @@ public final class TextureGlyphSource implements GlyphSource {
     @Override
     public boolean hasGlyph(int codePoint) {
         return order.contains(codePoint) && presentInSheet.test(codePoint);
-    }
-
-    /**
-     * Returns the sheet texture that every region of this source belongs to. Owned by this
-     * source: do not dispose it.
-     */
-    public Texture getTexture() {
-        return texture;
     }
 
     /** Releases the texture. Safe to call more than once. */

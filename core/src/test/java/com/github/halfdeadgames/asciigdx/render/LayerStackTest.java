@@ -86,7 +86,7 @@ class LayerStackTest {
     private final List<String> drawLog = new ArrayList<>();
     private final List<FakeRenderer> renderers = new ArrayList<>();
     private int created;
-    private final LayerStack stack = new LayerStack((grid, source) -> {
+    private final LayerStack stack = new LayerStack((grid, source, shared) -> {
         FakeRenderer renderer = new FakeRenderer("L" + created++, drawLog);
         renderers.add(renderer);
         return renderer;
@@ -374,7 +374,7 @@ class LayerStackTest {
 
     @Test
     void layerFromAnotherStackIsRejected() {
-        LayerStack other = new LayerStack((grid, source) -> new FakeRenderer("other", drawLog));
+        LayerStack other = new LayerStack((grid, source, shared) -> new FakeRenderer("other", drawLog));
         Layer foreign = other.add(new TerminalGrid(2, 2), font);
         addLayer();
 

@@ -108,18 +108,17 @@ public final class LayerStack implements Disposable {
         if (index < 0 || index > layers.size) {
             throw new IndexOutOfBoundsException("Index " + index + ", size " + layers.size);
         }
-        LayerRenderer renderer;
-        if (rendererFactory.usesSharedResources()) {
-            if (sharedResources == null) {
-                sharedResources = new GridRenderResources();
-            }
-            renderer = rendererFactory.create(sharedResources, grid, glyphSource);
-        } else {
-            renderer = rendererFactory.create(grid, glyphSource);
-        }
+        LayerRenderer renderer = rendererFactory.create(grid, glyphSource, this::sharedResources);
         Layer layer = new Layer(this, grid, glyphSource, renderer);
         layers.insert(index, layer);
         return layer;
+    }
+
+    private GridRenderResources sharedResources() {
+        if (sharedResources == null) {
+            sharedResources = new GridRenderResources();
+        }
+        return sharedResources;
     }
 
     /**
