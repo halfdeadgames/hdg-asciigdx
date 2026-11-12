@@ -59,8 +59,8 @@ class FreeTypeGlyphBakerTest {
             FreeTypeGlyphBaker.Result result =
                 FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), cellHeight, GlyphOrder.CP437);
             try {
-                assertEquals(cellHeight, result.getCellHeight());
-                assertEquals(cellHeight, result.getCellWidth());
+                assertEquals(cellHeight, result.getLayout().getCellHeight());
+                assertEquals(cellHeight, result.getLayout().getCellWidth());
             } finally {
                 result.getPixmap().dispose();
             }
@@ -99,7 +99,8 @@ class FreeTypeGlyphBakerTest {
         GlyphOrder order = GlyphOrder.ofCodePoints(0x2588);
         FreeTypeGlyphBaker.Result result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
-            assertEquals(result.getCellWidth() * result.getCellHeight(), opaquePixels(result, 0x2588, order));
+            GlyphSheetLayout layout = result.getLayout();
+            assertEquals(layout.getCellWidth() * layout.getCellHeight(), opaquePixels(result, 0x2588, order));
         } finally {
             result.getPixmap().dispose();
         }
@@ -142,7 +143,7 @@ class FreeTypeGlyphBakerTest {
         FreeTypeGlyphBaker.Result result =
             FreeTypeGlyphBaker.bake(font("dungeon-mode-inverted.ttf"), PIXEL_SIZE, order);
         try {
-            int cellPixels = result.getCellWidth() * result.getCellHeight();
+            int cellPixels = result.getLayout().getCellWidth() * result.getLayout().getCellHeight();
             assertTrue(opaquePixels(result, 'A', order) * 2 > cellPixels);
         } finally {
             result.getPixmap().dispose();
@@ -179,11 +180,12 @@ class FreeTypeGlyphBakerTest {
         FreeTypeGlyphBaker.Result result =
             FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);
         try {
-            assertEquals(16, result.getColumns());
-            assertEquals(16, result.getRows());
+            GlyphSheetLayout layout = result.getLayout();
+            assertEquals(16, layout.getColumns());
+            assertEquals(16, layout.getRows());
             assertEquals(Pixmap.Format.RGBA8888, result.getPixmap().getFormat());
-            assertEquals(16 * result.getCellWidth(), result.getPixmap().getWidth());
-            assertEquals(16 * result.getCellHeight(), result.getPixmap().getHeight());
+            assertEquals(16 * layout.getCellWidth(), result.getPixmap().getWidth());
+            assertEquals(16 * layout.getCellHeight(), result.getPixmap().getHeight());
         } finally {
             result.getPixmap().dispose();
         }
@@ -195,8 +197,8 @@ class FreeTypeGlyphBakerTest {
         FreeTypeGlyphBaker.Result result =
             FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order, 2, false);
         try {
-            assertEquals(2, result.getColumns());
-            assertEquals(3, result.getRows());
+            assertEquals(2, result.getLayout().getColumns());
+            assertEquals(3, result.getLayout().getRows());
         } finally {
             result.getPixmap().dispose();
         }

@@ -124,8 +124,8 @@ public final class SheetExporter {
             PixmapIO.writePNG(png, output);
             txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
             verifyRoundTrip(output, order, columns, png, txt);
-            System.out.println("Exported " + order.size() + " glyphs, " + baked.getCellWidth() * scale + "x"
-                + baked.getCellHeight() * scale + " cells, " + missingCount(baked, order) + " missing from the font");
+            System.out.println("Exported " + order.size() + " glyphs, " + baked.getLayout().getCellWidth() * scale + "x"
+                + baked.getLayout().getCellHeight() * scale + " cells, " + missingCount(baked, order) + " missing from the font");
             System.out.println("  " + png.file().getAbsolutePath());
             System.out.println("  " + txt.file().getAbsolutePath());
         } finally {

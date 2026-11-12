@@ -18,7 +18,7 @@ public enum TransparencyMode {
      * @param imageHasTransparentPixel whether any pixel of the image has alpha below 255
      * @return true if the image should be converted
      */
-    public boolean shouldConvert(boolean imageHasTransparentPixel) {
+    boolean shouldConvert(boolean imageHasTransparentPixel) {
         return switch (this) {
             case AUTO -> !imageHasTransparentPixel;
             case ALWAYS -> true;

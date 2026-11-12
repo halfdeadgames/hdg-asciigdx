@@ -236,26 +236,6 @@ public final class FreeTypeGlyphBaker {
             return layout;
         }
 
-        /** Returns the width of one cell in pixels. */
-        public int getCellWidth() {
-            return layout.getCellWidth();
-        }
-
-        /** Returns the height of one cell in pixels. */
-        public int getCellHeight() {
-            return layout.getCellHeight();
-        }
-
-        /** Returns the number of cells per row. */
-        public int getColumns() {
-            return layout.getColumns();
-        }
-
-        /** Returns the number of cell rows. */
-        public int getRows() {
-            return layout.getRows();
-        }
-
         /** Returns whether the font had a glyph for the code point; if not, its cell is blank. */
         public boolean hasGlyph(int codePoint) {
             return presentCodePoints.contains(codePoint);

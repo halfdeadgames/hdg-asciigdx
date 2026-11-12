@@ -335,9 +335,8 @@ public final class TextureGlyphSource implements GlyphSource {
     }
 
     /**
-     * Returns the sheet texture. Every region of this source belongs to it, so a renderer
-     * can batch all glyphs of the source with a single texture bind. Owned by this source:
-     * do not dispose it.
+     * Returns the sheet texture that every region of this source belongs to. Owned by this
+     * source: do not dispose it.
      */
     public Texture getTexture() {
         return texture;

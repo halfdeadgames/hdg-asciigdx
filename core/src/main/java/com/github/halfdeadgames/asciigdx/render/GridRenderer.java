@@ -25,8 +25,9 @@ import java.util.Objects;
  * {@link DirtyTracker} on the grid and releases it on {@link #dispose()}.
  *
  * <p>All glyph regions of the source must share one texture, as is true for
- * sheet-based sources. The cell size of the glyph source is read at
- * construction and again after {@link #setGlyphSource}. If the grid is resized or the glyph
+ * sheet-based sources. The glyph texture is read at construction and in
+ * {@link #setGlyphSource}; the cell size is read whenever the cache is built: at construction
+ * and at the first draw after a source switch. If the grid is resized or the glyph
  * source is switched, the next draw rebuilds the cache and meshes (this allocates, once per
  * change).
  *
@@ -53,11 +54,13 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      * @param glyphSource supplies glyph regions and the cell size
      */
     public GridRenderer(TerminalView grid, GlyphSource glyphSource) {
-        this(grid, glyphSource, new GridRenderResources(), true);
+        this(Objects.requireNonNull(grid, "grid"), Objects.requireNonNull(glyphSource, "glyphSource"),
+            new GridRenderResources(), true);
     }
 
     GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources) {
-        this(grid, glyphSource, resources, false);
+        this(Objects.requireNonNull(grid, "grid"), Objects.requireNonNull(glyphSource, "glyphSource"),
+            resources, false);
     }
 
     private GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources,
@@ -124,10 +127,10 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     }
 
     /**
-     * Switches to another glyph source. The glyph texture and cell size are taken from it now;
-     * the next draw rebuilds the cache and meshes and rewrites every cell (this allocates, once
-     * per switch). The grid keeps its contents and its cell count. Glyphs missing from the new
-     * source draw as its fallback. The source is not owned.
+     * Switches to another glyph source. The glyph texture is read from it now; its cell size is
+     * read at the next draw, which rebuilds the cache and meshes and rewrites every cell (this
+     * allocates, once per switch). The grid keeps its contents and its cell count. Glyphs
+     * missing from the new source draw as its fallback. The source is not owned.
      */
     @Override
     public void setGlyphSource(GlyphSource glyphSource) {
@@ -155,7 +158,7 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     }
 
     /**
-     * Releases the dirty tracker and frees the meshes. The shader and background
+     * Releases the dirty tracker and frees the meshes. The shader and the white pixel
      * texture are freed only if this renderer created them.
      */
     @Override

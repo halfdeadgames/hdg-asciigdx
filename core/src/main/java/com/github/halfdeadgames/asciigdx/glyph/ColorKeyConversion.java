@@ -8,7 +8,7 @@ package com.github.halfdeadgames.asciigdx.glyph;
  * <p>The default key is the sheet's top-left pixel; the loader chooses it, not this class.
  * Conversion whitens glyph colors so the renderer can tint them.
  */
-public final class ColorKeyConversion {
+final class ColorKeyConversion {
 
     private static final int WHITE_RGB = 0xFFFFFF00;
     private static final int OPAQUE = 255;

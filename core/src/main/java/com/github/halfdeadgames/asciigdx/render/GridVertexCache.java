@@ -12,7 +12,7 @@ import com.github.tommyettinger.colorful.rgb.ColorTools;
  * lie at negative y. This class has no GL or
  * texture dependency.
  */
-public final class GridVertexCache {
+final class GridVertexCache {
 
     private final int columns;
     private final int rows;
@@ -34,7 +34,7 @@ public final class GridVertexCache {
      * @param cellWidth cell width in world units, positive
      * @param cellHeight cell height in world units, positive
      */
-    public GridVertexCache(int columns, int rows, float cellWidth, float cellHeight) {
+    GridVertexCache(int columns, int rows, float cellWidth, float cellHeight) {
         if (columns <= 0 || rows <= 0) {
             throw new IllegalArgumentException("Grid size must be positive: " + columns + "x" + rows);
         }
@@ -67,7 +67,7 @@ public final class GridVertexCache {
         return fullRebuildNeeded;
     }
 
-    /** Call after every cell has been rewritten for the current origin. */
+    /** Call after every cell has been written, to clear the full-rebuild flag. */
     public void markRebuilt() {
         fullRebuildNeeded = false;
     }
@@ -106,7 +106,7 @@ public final class GridVertexCache {
     }
 
     /** True when the RGBA8888 alpha byte is neither 0 nor 255. */
-    public static boolean isTranslucent(int rgba) {
+    private static boolean isTranslucent(int rgba) {
         int alpha = rgba & 0xFF;
         return alpha != 0 && alpha != 0xFF;
     }
@@ -127,7 +127,7 @@ public final class GridVertexCache {
     }
 
     /** True when the RGBA8888 alpha byte is zero, so nothing would be visible. */
-    public static boolean isEmpty(int rgba) {
+    static boolean isEmpty(int rgba) {
         return (rgba & 0xFF) == 0;
     }
 

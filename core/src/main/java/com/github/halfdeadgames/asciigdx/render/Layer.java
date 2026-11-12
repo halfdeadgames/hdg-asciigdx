@@ -5,8 +5,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * One grid in a {@link LayerStack}, with an offset and a visibility flag. Created
- * only by the stack.
+ * One grid in a {@link LayerStack}, with an offset, a visibility flag, a tint, a clip,
+ * and a switchable glyph source. Created only by the stack.
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner,
  * with y growing downward like grid rows. Once the layer is removed from its
