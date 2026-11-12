@@ -3,7 +3,10 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
-/** Integer nearest-neighbour upscaling of packed pixel arrays: every pixel becomes a square block, values untouched. */
+/**
+ * Upscaling of packed pixel arrays: integer nearest-neighbour blocks, and per-cell 2x smoothing
+ * (Scale2x with fill/trim modes, Scale2xSFX, MMPX, and a light mode). Output pixels are copies of input pixels.
+ */
 public final class PixelScaler {
 
     private PixelScaler() {
@@ -29,18 +32,9 @@ public final class PixelScaler {
     }
 
     /** Glyphs that must stay plain 2x under Scale2x: line art, blocks, and private-use pieces that tile or layer. */
-    public static boolean isScale2xLocked(int codePoint) {
+    static boolean isScale2xLocked(int codePoint) {
         return (codePoint >= 0x2500 && codePoint <= 0x259F)
             || (codePoint >= 0xE000 && codePoint <= 0xF8FF);
-    }
-
-    /**
-     * Scale2x (EPX) of a sheet made of cellWidth x cellHeight cells. Each cell is scaled on its own and
-     * edge pixels stand in for neighbours outside the cell. Cells for which {@code locked} returns true
-     * (by slot, row-major) are scaled as plain 2x. Output pixels are copies of input pixels.
-     */
-    public static int[] scale2x(int[] pixels, int width, int height, int cellWidth, int cellHeight, IntPredicate locked) {
-        return scale2x(pixels, width, height, cellWidth, cellHeight, locked, Scale2xMode.FULL, pixel -> false);
     }
 
     /** Which Scale2x changes are kept; the rest stay as nearest-neighbour 2x. */
@@ -53,7 +47,12 @@ public final class PixelScaler {
         TRIM_ONLY
     }
 
-    /** Same as the plain variant, with {@code mode} filtering which changes apply; {@code background} tells empty pixels apart. */
+    /**
+     * Scale2x (EPX) of a sheet made of cellWidth x cellHeight cells. Each cell is scaled on its own and
+     * edge pixels stand in for neighbours outside the cell. Cells for which {@code locked} returns true
+     * (by slot, row-major) are scaled as plain 2x. Output pixels are copies of input pixels.
+     * {@code mode} filters which changes apply; {@code background} tells empty pixels apart.
+     */
     public static int[] scale2x(int[] pixels, int width, int height, int cellWidth, int cellHeight, IntPredicate locked,
         Scale2xMode mode, IntPredicate background) {
         if (pixels.length != width * height) {
@@ -390,10 +389,6 @@ public final class PixelScaler {
     }
 
     /** Scale2x of a sheet where {@code codePoints[slot]} names the glyph in each cell; locked glyphs stay plain 2x. */
-    public static int[] scale2xGlyphSheet(int[] pixels, int width, int height, int cellSize, int[] codePoints) {
-        return scale2xGlyphSheet(pixels, width, height, cellSize, codePoints, Scale2xMode.FULL, pixel -> false);
-    }
-
     public static int[] scale2xGlyphSheet(int[] pixels, int width, int height, int cellSize, int[] codePoints,
         Scale2xMode mode, IntPredicate background) {
         return scale2x(pixels, width, height, cellSize, cellSize,

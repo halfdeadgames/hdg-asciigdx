@@ -11,7 +11,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.render.LayerStack;
 
-/** A scene made of one integer-scaled grid. Subclasses fill the grid and may change it in {@link #update(float)}. */
+/** A scene drawn through an integer-scaled viewport. Holds a main grid and a {@link LayerStack} for extra layers; subclasses fill them and may change them in {@link #update(float)}. */
 abstract class GridScene implements SandboxScene {
     static final int BLACK = 0x000000FF;
     static final int WHITE = 0xFFFFFFFF;

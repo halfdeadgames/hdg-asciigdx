@@ -13,9 +13,9 @@ public final class CaptureConfig {
     public static final String KEY_SAMPLE_SECONDS = "sampleSeconds";
     public static final String KEY_DIRTY = "dirty";
     public static final String KEY_LAYERS = "layers";
-    public static final int MAX_LAYER_COUNT = 8;
-    public static final int DEFAULT_SAMPLES = 5;
-    public static final float DEFAULT_SAMPLE_SECONDS = 0.5f;
+    private static final int MAX_LAYER_COUNT = 8;
+    private static final int DEFAULT_SAMPLES = 5;
+    private static final float DEFAULT_SAMPLE_SECONDS = 0.5f;
     private static final int MAX_DIRTY_PERCENT = 100;
 
     private final String outputDirectory;
@@ -25,8 +25,8 @@ public final class CaptureConfig {
     private final List<Integer> dirtyPercents;
     private final List<Integer> layerCounts;
 
-    public CaptureConfig(String outputDirectory, List<String> sceneIds, int samples, float sampleSeconds,
-                         List<Integer> dirtyPercents, List<Integer> layerCounts) {
+    private CaptureConfig(String outputDirectory, List<String> sceneIds, int samples, float sampleSeconds,
+                          List<Integer> dirtyPercents, List<Integer> layerCounts) {
         this.layerCounts = Collections.unmodifiableList(new ArrayList<>(layerCounts));
         this.outputDirectory = outputDirectory;
         this.sceneIds = Collections.unmodifiableList(new ArrayList<>(sceneIds));
@@ -140,32 +140,32 @@ public final class CaptureConfig {
         return parsed;
     }
 
-    public String getOutputDirectory() {
+    String getOutputDirectory() {
         return outputDirectory;
     }
 
     /** Scene ids to visit in order; empty means every scene. */
-    public List<String> getSceneIds() {
+    List<String> getSceneIds() {
         return sceneIds;
     }
 
     /** Dirty percentages to sweep in order; empty means no sweep. */
-    public List<Integer> getDirtyPercents() {
+    List<Integer> getDirtyPercents() {
         return dirtyPercents;
     }
 
     /** Layer counts to sweep in order; empty means no sweep. */
-    public List<Integer> getLayerCounts() {
+    List<Integer> getLayerCounts() {
         return layerCounts;
     }
 
     /** Number of timing windows collected per scene after warm-up. */
-    public int getSamples() {
+    int getSamples() {
         return samples;
     }
 
     /** Minimum wall-clock length of each timing window. */
-    public float getSampleSeconds() {
+    float getSampleSeconds() {
         return sampleSeconds;
     }
 }

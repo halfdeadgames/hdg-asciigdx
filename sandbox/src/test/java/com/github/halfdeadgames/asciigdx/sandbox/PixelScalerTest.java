@@ -52,7 +52,8 @@ class PixelScalerTest {
             1, 0, 0,
             1, 1, 0,
             1, 1, 1};
-        int[] scaled = PixelScaler.scale2x(staircase, 3, 3, 3, 3, slot -> false);
+        int[] scaled = PixelScaler.scale2x(staircase, 3, 3, 3, 3, slot -> false,
+            PixelScaler.Scale2xMode.FULL, pixel -> false);
         // Centre pixel: only its top-right quarter takes the empty neighbour's colour.
         assertEquals(1, scaled[2 * 6 + 2]);
         assertEquals(0, scaled[2 * 6 + 3]);
@@ -63,9 +64,11 @@ class PixelScalerTest {
     @Test
     void scale2xKeepsSolidBlocksAndIsolatedPixelsAsPlainBlocks() {
         int[] solid = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        assertArrayEquals(PixelScaler.scale(solid, 3, 3, 2), PixelScaler.scale2x(solid, 3, 3, 3, 3, slot -> false));
+        assertArrayEquals(PixelScaler.scale(solid, 3, 3, 2), PixelScaler.scale2x(solid, 3, 3, 3, 3, slot -> false,
+            PixelScaler.Scale2xMode.FULL, pixel -> false));
         int[] isolated = {0, 0, 0, 0, 1, 0, 0, 0, 0};
-        assertArrayEquals(PixelScaler.scale(isolated, 3, 3, 2), PixelScaler.scale2x(isolated, 3, 3, 3, 3, slot -> false));
+        assertArrayEquals(PixelScaler.scale(isolated, 3, 3, 2), PixelScaler.scale2x(isolated, 3, 3, 3, 3, slot -> false,
+            PixelScaler.Scale2xMode.FULL, pixel -> false));
     }
 
     @Test
@@ -74,7 +77,8 @@ class PixelScalerTest {
         int[] pixels = {
             1, 1, 0, 0,
             1, 1, 0, 0};
-        assertArrayEquals(PixelScaler.scale(pixels, 4, 2, 2), PixelScaler.scale2x(pixels, 4, 2, 2, 2, slot -> false));
+        assertArrayEquals(PixelScaler.scale(pixels, 4, 2, 2), PixelScaler.scale2x(pixels, 4, 2, 2, 2, slot -> false,
+            PixelScaler.Scale2xMode.FULL, pixel -> false));
     }
 
     @Test
@@ -108,7 +112,8 @@ class PixelScalerTest {
         }
         int[] source = image.getRGB(0, 0, width, height, null, 0, width);
         int[] plain = PixelScaler.scale(source, width, height, 2);
-        int[] smooth = PixelScaler.scale2xGlyphSheet(source, width, height, cell, codePoints);
+        int[] smooth = PixelScaler.scale2xGlyphSheet(source, width, height, cell, codePoints,
+            PixelScaler.Scale2xMode.FULL, pixel -> false);
         int scaledWidth = width * 2;
         int lockedCells = 0;
 

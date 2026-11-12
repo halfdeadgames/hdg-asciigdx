@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
+import java.util.Locale;
+
 /** Box, colors, transparency and the integer scale label. */
 class RendererBasicsScene extends GridScene {
     private static final int COLUMNS = 32;
@@ -68,8 +70,8 @@ class RendererBasicsScene extends GridScene {
     private void showScaleIndicator() {
         float scale = viewport.getScreenWidth() / viewport.getWorldWidth();
         String label = scale >= 1f
-            ? String.format(" %dx ", Math.round(scale))
-            : String.format(" %.2fx fit ", scale);
+            ? String.format(Locale.ROOT, " %dx ", Math.round(scale))
+            : String.format(Locale.ROOT, " %.2fx fit ", scale);
         int row = ROWS - 1;
         for (int column = 1; column < COLUMNS - 1; column++) {
             grid.set(column, row, '─', WHITE, CLEAR);

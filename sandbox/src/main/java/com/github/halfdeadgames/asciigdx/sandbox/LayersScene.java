@@ -404,7 +404,7 @@ class LayersScene extends GridScene {
         writeText(popup, 2, 1, "Inventory", GOLD, POPUP_BACKGROUND);
         writeText(popup, 2, 2, "$ Gold      x2", WHITE, POPUP_BACKGROUND);
         writeText(popup, 2, 3, "! Potion    x1", WHITE, POPUP_BACKGROUND);
-        writeText(popup, 2, 4, "[Esc] close", 0x9090B0FF, POPUP_BACKGROUND);
+        writeText(popup, 2, 4, "? Scroll    x1", WHITE, POPUP_BACKGROUND);
     }
 
     private static void drawRain(TerminalGrid rain) {

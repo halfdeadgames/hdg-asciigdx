@@ -14,8 +14,8 @@ import java.nio.ByteBuffer;
 import java.util.zip.Deflater;
 
 /** Saves PNG screenshots and GIF recordings of the back buffer. Call {@link #onFrameRendered()} at the end of every render. */
-public class ScreenCapture {
-    public static final int MAX_GIF_FRAMES = 120;
+class ScreenCapture {
+    static final int MAX_GIF_FRAMES = 120;
     private static final int GIF_FRAMES_PER_SECOND = 30;
     private static final int PALETTE_SIZE = 256;
     private static final double PALETTE_THRESHOLD = 100.0;
@@ -25,34 +25,30 @@ public class ScreenCapture {
     private String pendingScreenshotName;
     private boolean recording;
 
-    public ScreenCapture(FileHandle outputDirectory) {
+    ScreenCapture(FileHandle outputDirectory) {
         this.outputDirectory = outputDirectory;
         outputDirectory.mkdirs();
     }
 
-    public FileHandle getOutputDirectory() {
+    FileHandle getOutputDirectory() {
         return outputDirectory;
     }
 
-    public boolean isRecording() {
-        return recording;
-    }
-
-    public int getRecordedFrameCount() {
+    int getRecordedFrameCount() {
         return recordedFrames.size;
     }
 
     /** The screenshot is taken at the end of the current frame, once the frame has been drawn. */
-    public void requestScreenshot(String fileName) {
+    void requestScreenshot(String fileName) {
         pendingScreenshotName = fileName;
     }
 
-    public void startRecording() {
+    void startRecording() {
         clearRecordedFrames();
         recording = true;
     }
 
-    public void toggleManualRecording() {
+    void toggleManualRecording() {
         if (recording) {
             stopRecording("recording-" + TimeUtils.millis() + ".gif");
         } else {
@@ -60,11 +56,11 @@ public class ScreenCapture {
         }
     }
 
-    public void requestTimestampedScreenshot() {
+    void requestTimestampedScreenshot() {
         requestScreenshot("screenshot-" + TimeUtils.millis() + ".png");
     }
 
-    public void onFrameRendered() {
+    void onFrameRendered() {
         if (pendingScreenshotName != null) {
             savePng(pendingScreenshotName);
             pendingScreenshotName = null;
@@ -77,7 +73,7 @@ public class ScreenCapture {
         }
     }
 
-    public void stopRecording(String fileName) {
+    void stopRecording(String fileName) {
         recording = false;
         if (recordedFrames.size > 0) {
             writeGif(outputDirectory.child(fileName));
@@ -133,7 +129,7 @@ public class ScreenCapture {
         recordedFrames.clear();
     }
 
-    public void dispose() {
+    void dispose() {
         clearRecordedFrames();
     }
 }

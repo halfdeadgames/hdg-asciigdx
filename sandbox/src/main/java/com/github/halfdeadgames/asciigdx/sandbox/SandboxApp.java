@@ -30,11 +30,6 @@ public class SandboxApp extends ApplicationAdapter {
     private ScreenCapture screenCapture;
     private CaptureScript captureScript;
 
-    /** No settings: capture mode stays off. */
-    public SandboxApp() {
-        this(key -> null);
-    }
-
     /** @param settings key to value lookup returning null when missing; see {@link CaptureConfig} */
     public SandboxApp(Function<String, String> settings) {
         this.settings = settings;

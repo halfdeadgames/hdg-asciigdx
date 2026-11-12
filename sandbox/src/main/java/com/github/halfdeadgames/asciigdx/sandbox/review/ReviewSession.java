@@ -55,11 +55,11 @@ public final class ReviewSession {
         }
 
         /**
-         * Returns the number used in the results text and on the keyboard.
+         * Returns the number written after the verdict in the results text.
          *
          * @return the reason number
          */
-        public int number() {
+        int number() {
             return number;
         }
 
@@ -69,7 +69,7 @@ public final class ReviewSession {
          * @param number the reason number
          * @return the reason, or empty when the number is unknown
          */
-        public static Optional<FailReason> fromNumber(int number) {
+        static Optional<FailReason> fromNumber(int number) {
             for (FailReason reason : values()) {
                 if (reason.number == number) {
                     return Optional.of(reason);
