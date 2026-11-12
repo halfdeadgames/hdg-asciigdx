@@ -17,7 +17,7 @@
                    "♔", "♕", "♖", "♗", "♘", "♙", "♚", "♛", "♜", "♝", "♞", "♟",
                    "♡", "♢", "♤", "♧", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅",
                    "⏴", "⏵", "⏸", "⏹", "⏺",
-                   "U+1FBC5-U+1FBC9" ],
+                   "U+1FBC5-U+1FBC9", "U+1FBF0-U+1FBF9" ],
     accented:    [ "Ä", "Å", "Ç", "É", "Ñ", "Ö", "Ü", "U+E841", "U+E845", "U+E84E", "U+E84F", "U+E855",
                    "à", "á", "â", "ä", "å", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï", "ñ", "ò", "ó", "ô", "ö", "ù", "ú", "û", "ü", "ÿ" ],
     marks:       [ "¨", "´", "¸", "ˆ", "ˋ", "˚", "˜" ],
@@ -51,7 +51,8 @@
       except: [
         { glyphs: [ "☣" ], why: "odd height, can't center" },
         { glyphs: [ "♙", "♟" ], why: "stands on the chess base line" },
-        { glyphs: [ "♘", "♞" ], why: "faces left" }
+        { glyphs: [ "♘", "♞" ], why: "faces left" },
+        { glyphs: [ "U+1FBF1" ], why: "uses the right segments like a real display" }
       ]
     },
     {
