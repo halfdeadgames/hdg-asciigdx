@@ -7,8 +7,6 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 class FullRewriteStressScene extends GridScene {
     private static final int COLUMNS = 240;
     private static final int ROWS = 135;
-    private static final int FIRST_RANDOM_GLYPH = '!';
-    private static final int LAST_RANDOM_GLYPH = '~';
 
     FullRewriteStressScene(GlyphSource glyphs) {
         super(glyphs, COLUMNS, ROWS);
@@ -33,13 +31,10 @@ class FullRewriteStressScene extends GridScene {
     protected void update(float delta) {
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                int glyph = MathUtils.random(FIRST_RANDOM_GLYPH, LAST_RANDOM_GLYPH);
-                grid.set(column, row, glyph, randomOpaqueColor(), randomOpaqueColor());
+                int glyph = SceneDrawing.randomGlyph(MathUtils.random);
+                grid.set(column, row, glyph, SceneDrawing.randomOpaqueColor(MathUtils.random),
+                    SceneDrawing.randomOpaqueColor(MathUtils.random));
             }
         }
-    }
-
-    private static int randomOpaqueColor() {
-        return (MathUtils.random(0xFFFFFF) << 8) | 0xFF;
     }
 }

@@ -41,10 +41,7 @@ class PerfOverlay {
 
     void setStatus(String text) {
         int background = text.isEmpty() ? GridScene.CLEAR : GridScene.BLACK;
-        for (int column = 0; column < WIDTH; column++) {
-            char character = column < text.length() ? text.charAt(column) : ' ';
-            grid.set(column, 1, character, GridScene.WHITE, background);
-        }
+        SceneDrawing.writePadded(grid, 0, 1, WIDTH, text, GridScene.WHITE, background);
     }
 
     void resize(int width, int height) {
@@ -84,9 +81,6 @@ class PerfOverlay {
             readout.append("measuring ");
         }
         readout.append(cellCount).append(" cells");
-        for (int column = 0; column < WIDTH; column++) {
-            char character = column < readout.length() ? readout.charAt(column) : ' ';
-            grid.set(column, 0, character, GridScene.WHITE, GridScene.BLACK);
-        }
+        SceneDrawing.writePadded(grid, 0, 0, WIDTH, readout, GridScene.WHITE, GridScene.BLACK);
     }
 }

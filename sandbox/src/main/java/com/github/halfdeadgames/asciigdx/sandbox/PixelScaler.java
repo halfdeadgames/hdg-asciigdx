@@ -55,13 +55,7 @@ public final class PixelScaler {
      */
     public static int[] scale2x(int[] pixels, int width, int height, int cellWidth, int cellHeight, IntPredicate locked,
         Scale2xMode mode, IntPredicate background) {
-        if (pixels.length != width * height) {
-            throw new IllegalArgumentException("pixels length " + pixels.length + " does not match " + width + "x" + height);
-        }
-        if (width % cellWidth != 0 || height % cellHeight != 0) {
-            throw new IllegalArgumentException("size " + width + "x" + height + " is not a whole number of "
-                + cellWidth + "x" + cellHeight + " cells");
-        }
+        requireWholeCells(pixels, width, height, cellWidth, cellHeight);
         int columns = width / cellWidth;
         int scaledWidth = width * 2;
         int[] scaled = new int[scaledWidth * height * 2];
@@ -102,6 +96,16 @@ public final class PixelScaler {
         return scaled;
     }
 
+    private static void requireWholeCells(int[] pixels, int width, int height, int cellWidth, int cellHeight) {
+        if (pixels.length != width * height) {
+            throw new IllegalArgumentException("pixels length " + pixels.length + " does not match " + width + "x" + height);
+        }
+        if (width % cellWidth != 0 || height % cellHeight != 0) {
+            throw new IllegalArgumentException("size " + width + "x" + height + " is not a whole number of "
+                + cellWidth + "x" + cellHeight + " cells");
+        }
+    }
+
     private static int filtered(Scale2xMode mode, IntPredicate background, int nearest, int smooth) {
         switch (mode) {
             case FILL_ONLY:
@@ -130,13 +134,7 @@ public final class PixelScaler {
 
     private static int[] scaleCells(int[] pixels, int width, int height, int cellWidth, int cellHeight,
         IntPredicate locked, CellScaler scaler) {
-        if (pixels.length != width * height) {
-            throw new IllegalArgumentException("pixels length " + pixels.length + " does not match " + width + "x" + height);
-        }
-        if (width % cellWidth != 0 || height % cellHeight != 0) {
-            throw new IllegalArgumentException("size " + width + "x" + height + " is not a whole number of "
-                + cellWidth + "x" + cellHeight + " cells");
-        }
+        requireWholeCells(pixels, width, height, cellWidth, cellHeight);
         int columns = width / cellWidth;
         int scaledWidth = width * 2;
         int[] scaled = new int[scaledWidth * height * 2];
@@ -392,6 +390,6 @@ public final class PixelScaler {
     public static int[] scale2xGlyphSheet(int[] pixels, int width, int height, int cellSize, int[] codePoints,
         Scale2xMode mode, IntPredicate background) {
         return scale2x(pixels, width, height, cellSize, cellSize,
-            slot -> slot < codePoints.length && isScale2xLocked(codePoints[slot]), mode, background);
+            lockedSlots(codePoints), mode, background);
     }
 }

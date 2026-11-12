@@ -59,7 +59,6 @@ final class GlyphReviewScene extends GridScene {
     private static final int PAIR_GAP = 4;
     private static final int PAIR_SPACING = 12;
     private static final String MISSING_MARKER = "new";
-    private static final int CONTEXT_PATTERN_LENGTH = 17;
 
     private static final int PREVIEW_PADDING = 8;
     private static final int PREVIEW_WIDTH = 152;
@@ -80,6 +79,7 @@ final class GlyphReviewScene extends GridScene {
 
     private static final int BOX_VERTICAL = 0x2502;
     private static final int MEDIUM_SHADE = 0x2592;
+    private static final int CONTEXT_PATTERN_LENGTH = contextPattern(0).length;
 
     private static final String RESULTS_FILE = "glyph-review/results.txt";
     private static final String DESKTOP_RESULTS_FILE = "../build/glyph-review/results.txt";
@@ -467,13 +467,17 @@ final class GlyphReviewScene extends GridScene {
             + "  right: old " + glyphs.getCellWidth() + "x" + glyphs.getCellHeight(), LABEL);
     }
 
-    private void writeCandidateContext(int codePoint) {
-        int[] pattern = {
+    private static int[] contextPattern(int codePoint) {
+        return new int[] {
             'a', '#', codePoint, '#', 'b', ' ',
             BOX_VERTICAL, codePoint, BOX_VERTICAL, ' ',
             MEDIUM_SHADE, codePoint, MEDIUM_SHADE, ' ',
             '0', codePoint, 'O',
         };
+    }
+
+    private void writeCandidateContext(int codePoint) {
+        int[] pattern = contextPattern(codePoint);
         for (int pair = 0; pair < contextPairs; pair++) {
             for (int column = 0; column < candidateGrid.getWidth(); column++) {
                 int glyph = pattern[column];
@@ -500,19 +504,12 @@ final class GlyphReviewScene extends GridScene {
     }
 
     private void writeLine(int row, String text, int foreground) {
-        for (int column = 0; column < grid.getWidth(); column++) {
-            int index = column - MARGIN_COLUMNS;
-            grid.set(column, row, index >= 0 && index < text.length() ? text.charAt(index) : ' ', foreground, CLEAR);
-        }
+        SceneDrawing.writePadded(grid, 0, row, MARGIN_COLUMNS, "", foreground, CLEAR);
+        SceneDrawing.writePadded(grid, MARGIN_COLUMNS, row, grid.getWidth() - MARGIN_COLUMNS, text, foreground, CLEAR);
     }
 
     private void writeContextRows(int codePoint) {
-        int[] row = {
-            'a', '#', codePoint, '#', 'b', ' ',
-            BOX_VERTICAL, codePoint, BOX_VERTICAL, ' ',
-            MEDIUM_SHADE, codePoint, MEDIUM_SHADE, ' ',
-            '0', codePoint, 'O',
-        };
+        int[] pattern = contextPattern(codePoint);
         for (int pair = 0; pair < COLOR_PAIRS.length; pair++) {
             int foreground = COLOR_PAIRS[pair][0];
             int background = COLOR_PAIRS[pair][1];
@@ -520,7 +517,7 @@ final class GlyphReviewScene extends GridScene {
             for (int column = 0; column < CONTEXT_WIDTH; column++) {
                 int index = column - MARGIN_COLUMNS;
                 boolean inMargin = index < 0;
-                grid.set(column, y, !inMargin && index < row.length ? row[index] : ' ', foreground,
+                grid.set(column, y, !inMargin && index < pattern.length ? pattern[index] : ' ', foreground,
                         inMargin ? CLEAR : background);
             }
         }

@@ -94,7 +94,7 @@ class FlexibleGridScene extends GridScene {
     @Override
     public void render(SpriteBatch batch, float delta) {
         if (fitIsEmpty) {
-            ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+            ScreenUtils.clear(SceneDrawing.VIEWPORT_BACKGROUND);
             return;
         }
         super.render(batch, delta);
@@ -131,20 +131,7 @@ class FlexibleGridScene extends GridScene {
     }
 
     private void drawBorder() {
-        int right = grid.getWidth() - 1;
-        int bottom = grid.getHeight() - 1;
-        for (int column = 1; column < right; column++) {
-            grid.set(column, 0, '─', WHITE, CLEAR);
-            grid.set(column, bottom, '─', WHITE, CLEAR);
-        }
-        for (int row = 1; row < bottom; row++) {
-            grid.set(0, row, '│', WHITE, CLEAR);
-            grid.set(right, row, '│', WHITE, CLEAR);
-        }
-        grid.set(0, 0, '┌', WHITE, CLEAR);
-        grid.set(right, 0, '┐', WHITE, CLEAR);
-        grid.set(0, bottom, '└', WHITE, CLEAR);
-        grid.set(right, bottom, '┘', WHITE, CLEAR);
+        SceneDrawing.box(grid, 0, 0, grid.getWidth(), grid.getHeight(), WHITE, CLEAR);
     }
 
     private void eraseBorderAndStatus() {

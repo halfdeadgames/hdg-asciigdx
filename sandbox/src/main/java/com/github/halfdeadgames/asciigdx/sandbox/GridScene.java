@@ -1,10 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.HdpiUtils;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -58,7 +55,7 @@ abstract class GridScene implements SandboxScene {
     @Override
     public void render(SpriteBatch batch, float delta) {
         update(delta);
-        clearGridArea();
+        SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
@@ -69,14 +66,6 @@ abstract class GridScene implements SandboxScene {
 
     /** Draws extra sprites in grid pixels after the layers, inside the open batch. */
     protected void drawOverGrid(SpriteBatch batch) {
-    }
-
-    private void clearGridArea() {
-        Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
-        HdpiUtils.glScissor(viewport.getScreenX(), viewport.getScreenY(),
-            viewport.getScreenWidth(), viewport.getScreenHeight());
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
     }
 
     @Override

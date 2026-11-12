@@ -32,6 +32,11 @@ public final class SheetExporter {
     /** Empty pixels in the exported sheet: RGBA8888 with alpha 0. */
     private static final IntPredicate EXPORT_BACKGROUND = pixel -> (pixel & 0xFF) == 0;
 
+    private static final String NEAREST_ID = "nearest";
+    private static final String[] SMOOTHING_IDS = {
+        "scale2x", "scale2x-fill", "scale2x-trim", "mmpx", "scale2x-sfx", "light"
+    };
+
     private SheetExporter() {
     }
 
@@ -62,33 +67,9 @@ public final class SheetExporter {
             exportFinal(Gdx.files.absolute(System.getProperty("asciigdx.export.output")), columns);
             return;
         }
-        SheetScaler mode = null;
-        String suffix = null;
-        if (upscale.equalsIgnoreCase("scale2x")) {
-            mode = scale2xScaler(PixelScaler.Scale2xMode.FULL);
-            suffix = "scale2x";
-        } else if (upscale.equalsIgnoreCase("scale2x-fill")) {
-            mode = scale2xScaler(PixelScaler.Scale2xMode.FILL_ONLY);
-            suffix = "scale2x-fill";
-        } else if (upscale.equalsIgnoreCase("scale2x-trim")) {
-            mode = scale2xScaler(PixelScaler.Scale2xMode.TRIM_ONLY);
-            suffix = "scale2x-trim";
-        } else if (upscale.equalsIgnoreCase("mmpx")) {
-            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.mmpx(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), PixelScaler::lumaRgba8888);
-            suffix = "mmpx";
-        } else if (upscale.equalsIgnoreCase("scale2x-sfx")) {
-            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.scale2xSfx(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints));
-            suffix = "scale2x-sfx";
-        } else if (upscale.equalsIgnoreCase("light")) {
-            mode = (pixels, width, height, cellSize, codePoints) -> PixelScaler.light(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), EXPORT_BACKGROUND);
-            suffix = "light";
-        } else if (!upscale.equalsIgnoreCase("nearest")) {
-            throw new IllegalArgumentException(
-                "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, or light: " + upscale);
-        }
+        String upscaleId = canonicalUpscaleId(upscale);
+        SheetScaler mode = scalerFor(upscaleId);
+        String suffix = mode != null ? upscaleId : null;
         boolean scale2x = mode != null;
         int scale = Integer.parseInt(System.getProperty("asciigdx.export.scale", scale2x ? "2" : "1"));
         if (scale < 1) {
@@ -299,27 +280,42 @@ public final class SheetExporter {
     }
 
     private static int[] candidatePixels(String id, int[] pixels, int width, int height, int[] codePoints) {
-        int size = GeneratedGlyphs.SIZE;
-        switch (id) {
-            case "nearest":
-                return PixelScaler.scale(pixels, width, height, 2);
-            case "scale2x":
-                return scale2xScaler(PixelScaler.Scale2xMode.FULL).scale(pixels, width, height, size, codePoints);
-            case "scale2x-fill":
-                return scale2xScaler(PixelScaler.Scale2xMode.FILL_ONLY).scale(pixels, width, height, size, codePoints);
-            case "scale2x-trim":
-                return scale2xScaler(PixelScaler.Scale2xMode.TRIM_ONLY).scale(pixels, width, height, size, codePoints);
-            case "mmpx":
-                return PixelScaler.mmpx(pixels, width, height, size, size, PixelScaler.lockedSlots(codePoints),
-                    PixelScaler::lumaRgba8888);
-            case "scale2x-sfx":
-                return PixelScaler.scale2xSfx(pixels, width, height, size, size, PixelScaler.lockedSlots(codePoints));
-            case "light":
-                return PixelScaler.light(pixels, width, height, size, size, PixelScaler.lockedSlots(codePoints),
-                    EXPORT_BACKGROUND);
-            default:
-                throw new IllegalStateException("No candidate for pick " + id);
+        SheetScaler scaler = scalerFor(id);
+        if (scaler == null) {
+            return PixelScaler.scale(pixels, width, height, 2);
         }
+        return scaler.scale(pixels, width, height, GeneratedGlyphs.SIZE, codePoints);
+    }
+
+    /** Matches the setting ignoring case and returns the lower-case id used by {@link #scalerFor}. */
+    private static String canonicalUpscaleId(String upscale) {
+        if (NEAREST_ID.equalsIgnoreCase(upscale)) {
+            return NEAREST_ID;
+        }
+        for (String id : SMOOTHING_IDS) {
+            if (id.equalsIgnoreCase(upscale)) {
+                return id;
+            }
+        }
+        throw new IllegalArgumentException(
+            "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, or light: " + upscale);
+    }
+
+    /** The scaler for an exact id, or null for plain nearest-neighbour scaling. */
+    private static SheetScaler scalerFor(String id) {
+        return switch (id) {
+            case NEAREST_ID -> null;
+            case "scale2x" -> scale2xScaler(PixelScaler.Scale2xMode.FULL);
+            case "scale2x-fill" -> scale2xScaler(PixelScaler.Scale2xMode.FILL_ONLY);
+            case "scale2x-trim" -> scale2xScaler(PixelScaler.Scale2xMode.TRIM_ONLY);
+            case "mmpx" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.mmpx(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), PixelScaler::lumaRgba8888);
+            case "scale2x-sfx" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.scale2xSfx(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints));
+            case "light" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.light(
+                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), EXPORT_BACKGROUND);
+            default -> throw new IllegalStateException("No candidate for pick " + id);
+        };
     }
 
     private static boolean[][] cell(Pixmap sheet, int slot, int columns, int size, IntPredicate isLit) {

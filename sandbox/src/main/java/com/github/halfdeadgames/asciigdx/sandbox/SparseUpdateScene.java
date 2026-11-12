@@ -15,10 +15,7 @@ class SparseUpdateScene extends GridScene {
     private static final int ROWS = 135;
     private static final int CELL_COUNT = COLUMNS * ROWS;
     private static final int[] PERCENT_LEVELS = {1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
-    private static final int FIRST_RANDOM_GLYPH = '!';
-    private static final int LAST_RANDOM_GLYPH = '~';
     private static final int[] LAYER_LEVELS = {1, 2, 4};
-    private static final int MAX_LAYERS = 8;
     private static final int EXTRA_LAYER_FILL_PERCENT = 10;
     private static final long SEED = 20240607L;
 
@@ -102,7 +99,7 @@ class SparseUpdateScene extends GridScene {
 
     @Override
     public void setLayerCount(int count) {
-        layerCount = MathUtils.clamp(count, 1, MAX_LAYERS);
+        layerCount = MathUtils.clamp(count, 1, CaptureConfig.MAX_LAYER_COUNT);
         while (extraLayers.size > layerCount - 1) {
             layers.remove(extraLayers.pop());
         }
@@ -126,8 +123,8 @@ class SparseUpdateScene extends GridScene {
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 if (layerRandom.nextInt(100) < EXTRA_LAYER_FILL_PERCENT) {
-                    int glyph = FIRST_RANDOM_GLYPH + layerRandom.nextInt(LAST_RANDOM_GLYPH - FIRST_RANDOM_GLYPH + 1);
-                    sparse.set(column, row, glyph, (layerRandom.nextInt(0x1000000) << 8) | 0xFF, CLEAR);
+                    int glyph = SceneDrawing.randomGlyph(layerRandom);
+                    sparse.set(column, row, glyph, SceneDrawing.randomOpaqueColor(layerRandom), CLEAR);
                 }
             }
         }
@@ -180,11 +177,7 @@ class SparseUpdateScene extends GridScene {
     }
 
     private void setRandomCell(int column, int row) {
-        int glyph = FIRST_RANDOM_GLYPH + random.nextInt(LAST_RANDOM_GLYPH - FIRST_RANDOM_GLYPH + 1);
-        grid.set(column, row, glyph, randomOpaqueColor(), randomOpaqueColor());
-    }
-
-    private int randomOpaqueColor() {
-        return (random.nextInt(0x1000000) << 8) | 0xFF;
+        int glyph = SceneDrawing.randomGlyph(random);
+        grid.set(column, row, glyph, SceneDrawing.randomOpaqueColor(random), SceneDrawing.randomOpaqueColor(random));
     }
 }

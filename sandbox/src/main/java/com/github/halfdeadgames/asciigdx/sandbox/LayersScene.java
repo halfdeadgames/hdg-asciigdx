@@ -389,18 +389,7 @@ class LayersScene extends GridScene {
                 popup.set(column, row, ' ', WHITE, POPUP_BACKGROUND);
             }
         }
-        for (int column = 1; column < POPUP_COLUMNS - 1; column++) {
-            popup.set(column, 0, '─', POPUP_FRAME, POPUP_BACKGROUND);
-            popup.set(column, POPUP_ROWS - 1, '─', POPUP_FRAME, POPUP_BACKGROUND);
-        }
-        for (int row = 1; row < POPUP_ROWS - 1; row++) {
-            popup.set(0, row, '│', POPUP_FRAME, POPUP_BACKGROUND);
-            popup.set(POPUP_COLUMNS - 1, row, '│', POPUP_FRAME, POPUP_BACKGROUND);
-        }
-        popup.set(0, 0, '┌', POPUP_FRAME, POPUP_BACKGROUND);
-        popup.set(POPUP_COLUMNS - 1, 0, '┐', POPUP_FRAME, POPUP_BACKGROUND);
-        popup.set(0, POPUP_ROWS - 1, '└', POPUP_FRAME, POPUP_BACKGROUND);
-        popup.set(POPUP_COLUMNS - 1, POPUP_ROWS - 1, '┘', POPUP_FRAME, POPUP_BACKGROUND);
+        SceneDrawing.box(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, POPUP_FRAME, POPUP_BACKGROUND);
         writeText(popup, 2, 1, "Inventory", GOLD, POPUP_BACKGROUND);
         writeText(popup, 2, 2, "$ Gold      x2", WHITE, POPUP_BACKGROUND);
         writeText(popup, 2, 3, "! Potion    x1", WHITE, POPUP_BACKGROUND);

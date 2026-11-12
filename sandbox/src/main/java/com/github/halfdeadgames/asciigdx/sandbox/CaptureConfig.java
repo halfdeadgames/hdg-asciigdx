@@ -13,7 +13,7 @@ public final class CaptureConfig {
     public static final String KEY_SAMPLE_SECONDS = "sampleSeconds";
     public static final String KEY_DIRTY = "dirty";
     public static final String KEY_LAYERS = "layers";
-    private static final int MAX_LAYER_COUNT = 8;
+    static final int MAX_LAYER_COUNT = 8;
     private static final int DEFAULT_SAMPLES = 5;
     private static final float DEFAULT_SAMPLE_SECONDS = 0.5f;
     private static final int MAX_DIRTY_PERCENT = 100;
@@ -52,45 +52,32 @@ public final class CaptureConfig {
     }
 
     private static List<Integer> parseLayerCounts(String value) {
-        List<Integer> counts = new ArrayList<>();
-        if (value == null || value.trim().isEmpty()) {
-            return counts;
-        }
-        for (String part : value.split(",", -1)) {
-            String text = part.trim();
-            int count;
-            try {
-                count = Integer.parseInt(text);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid value for '" + KEY_LAYERS + "': '" + text + "' is not a whole number", e);
-            }
-            if (count < 1 || count > MAX_LAYER_COUNT) {
-                throw new IllegalArgumentException("Invalid value for '" + KEY_LAYERS + "': " + count + " must be between 1 and " + MAX_LAYER_COUNT);
-            }
-            counts.add(count);
-        }
-        return counts;
+        return parseBoundedWholeNumbers(value, KEY_LAYERS, 1, MAX_LAYER_COUNT);
     }
 
     private static List<Integer> parseDirtyPercents(String value) {
-        List<Integer> percents = new ArrayList<>();
+        return parseBoundedWholeNumbers(value, KEY_DIRTY, 0, MAX_DIRTY_PERCENT);
+    }
+
+    private static List<Integer> parseBoundedWholeNumbers(String value, String key, int min, int max) {
+        List<Integer> numbers = new ArrayList<>();
         if (value == null || value.trim().isEmpty()) {
-            return percents;
+            return numbers;
         }
         for (String part : value.split(",", -1)) {
             String text = part.trim();
-            int percent;
+            int number;
             try {
-                percent = Integer.parseInt(text);
+                number = Integer.parseInt(text);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid value for '" + KEY_DIRTY + "': '" + text + "' is not a whole number", e);
+                throw new IllegalArgumentException("Invalid value for '" + key + "': '" + text + "' is not a whole number", e);
             }
-            if (percent < 0 || percent > MAX_DIRTY_PERCENT) {
-                throw new IllegalArgumentException("Invalid value for '" + KEY_DIRTY + "': " + percent + " must be between 0 and " + MAX_DIRTY_PERCENT);
+            if (number < min || number > max) {
+                throw new IllegalArgumentException("Invalid value for '" + key + "': " + number + " must be between " + min + " and " + max);
             }
-            percents.add(percent);
+            numbers.add(number);
         }
-        return percents;
+        return numbers;
     }
 
     private static List<String> parseSceneIds(String value) {

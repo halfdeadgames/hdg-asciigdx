@@ -37,7 +37,7 @@ class RendererBasicsScene extends GridScene {
     }
 
     private void fillDemoGrid() {
-        drawBox(0, 0, COLUMNS, ROWS, WHITE);
+        SceneDrawing.box(grid, 0, 0, COLUMNS, ROWS, WHITE, CLEAR);
         writeText(2, 1, "Top-left: row 0 is the top", WHITE, NAVY);
         writeText(2, 3, "Transparent bg over clear", GOLD, CLEAR);
         writeText(2, 5, "Red bg, cyan glyphs", CYAN, DARK_RED);
@@ -48,23 +48,6 @@ class RendererBasicsScene extends GridScene {
         }
         writeText(2, 10, "Spaces skip:  [   ]", WHITE, CLEAR);
         writeText(2, ROWS - 2, "Bottom row of text", GOLD, NAVY);
-    }
-
-    private void drawBox(int left, int top, int width, int height, int color) {
-        int right = left + width - 1;
-        int bottom = top + height - 1;
-        for (int column = left + 1; column < right; column++) {
-            grid.set(column, top, '─', color, CLEAR);
-            grid.set(column, bottom, '─', color, CLEAR);
-        }
-        for (int row = top + 1; row < bottom; row++) {
-            grid.set(left, row, '│', color, CLEAR);
-            grid.set(right, row, '│', color, CLEAR);
-        }
-        grid.set(left, top, '┌', color, CLEAR);
-        grid.set(right, top, '┐', color, CLEAR);
-        grid.set(left, bottom, '└', color, CLEAR);
-        grid.set(right, bottom, '┘', color, CLEAR);
     }
 
     private void showScaleIndicator() {

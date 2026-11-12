@@ -2,10 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.HdpiUtils;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
@@ -123,9 +120,7 @@ class FontComparisonScene implements SandboxScene {
 
     private void writeLabel() {
         String label = (showingTtf ? "TTF baked" : "PNG sheet") + (paused ? " (paused)" : "");
-        for (int column = 0; column < COLUMNS; column++) {
-            grid.set(column, LABEL_ROW, column < label.length() ? label.charAt(column) : ' ', WHITE, BLACK);
-        }
+        SceneDrawing.writePadded(grid, 0, LABEL_ROW, COLUMNS, label, WHITE, BLACK);
     }
 
     @Override
@@ -143,11 +138,7 @@ class FontComparisonScene implements SandboxScene {
                 writeLabel();
             }
         }
-        Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
-        HdpiUtils.glScissor(viewport.getScreenX(), viewport.getScreenY(),
-            viewport.getScreenWidth(), viewport.getScreenHeight());
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
+        SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
