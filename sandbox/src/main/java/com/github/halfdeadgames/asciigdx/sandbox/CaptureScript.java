@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -234,18 +233,12 @@ class CaptureScript {
     }
 
     private void appendPerf(SandboxScene scene, String label) {
-        float[] sorted = sampleMeansMs.clone();
-        Arrays.sort(sorted);
-        float min = sorted[0];
-        float max = sorted[sorted.length - 1];
-        int middle = sorted.length / 2;
-        float median = sorted.length % 2 == 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2f;
-        long spreadPercent = median > 0f ? Math.round((max - min) / median * 100f) : 0L;
+        PerfSummary summary = PerfSummary.of(sampleMeansMs);
         report.append(label)
-            .append(": medianMs=").append(formatMilliseconds(median))
-            .append(" minMs=").append(formatMilliseconds(min))
-            .append(" maxMs=").append(formatMilliseconds(max))
-            .append(" spreadPct=").append(spreadPercent)
+            .append(": medianMs=").append(formatMilliseconds(summary.medianMs()))
+            .append(" minMs=").append(formatMilliseconds(summary.minMs()))
+            .append(" maxMs=").append(formatMilliseconds(summary.maxMs()))
+            .append(" spreadPct=").append(summary.spreadPercent())
             .append(" samples=[");
         for (int i = 0; i < sampleMeansMs.length; i++) {
             if (i > 0) {
