@@ -3,7 +3,7 @@
     uppercase:   [ "A-Z" ],
     lowercase:   [ "a-z", "ı" ],
     digits:      [ "0-9" ],
-    punctuation: [ "!-/", ":-@", "[-`", "{-~", "¶", "§", "‼" ],
+    punctuation: [ "!-/", ":-@", "[-`", "{-~", "¶", "§", "‼", "¡", "¢", "¥", "«", "¬", "»", "¿", "⌐" ],
     descenders:  [ "g", "j", "p", "q", "y" ],
     ascenders:   [ "b", "d", "f", "h", "k", "l" ],
     tallStems:   [ "i", "j", "t" ],
