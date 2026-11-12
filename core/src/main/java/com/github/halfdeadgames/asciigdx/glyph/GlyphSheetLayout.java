@@ -52,7 +52,7 @@ public final class GlyphSheetLayout {
         // Fail fast on overflow and on slot counts that do not fit in an int.
         extent(cellWidth, columns, margin, spacing);
         extent(cellHeight, rows, margin, spacing);
-        Math.multiplyExact(columns, rows);
+        checkSlotCountFits(columns, rows);
     }
 
     /**
@@ -142,6 +142,15 @@ public final class GlyphSheetLayout {
         if (slot < 0 || slot >= slotCount()) {
             throw new IndexOutOfBoundsException(
                 "Slot " + slot + " is outside [0, " + slotCount() + ")");
+        }
+    }
+
+    private static void checkSlotCountFits(int columns, int rows) {
+        try {
+            Math.multiplyExact(columns, rows);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException(
+                "Slot count does not fit in an int: " + columns + "x" + rows, e);
         }
     }
 

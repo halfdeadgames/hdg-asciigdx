@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
 import com.github.halfdeadgames.asciigdx.grid.DirtyTracker;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import java.util.Objects;
 
 /**
  * Draws a {@link TerminalView} with a {@link GlyphSource} into a caller-managed
@@ -130,8 +131,10 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      */
     @Override
     public void setGlyphSource(GlyphSource glyphSource) {
+        Objects.requireNonNull(glyphSource, "glyphSource");
+        Texture newGlyphTexture = glyphSource.glyph(' ').getTexture();
         this.glyphSource = glyphSource;
-        glyphTexture = glyphSource.glyph(' ').getTexture();
+        glyphTexture = newGlyphTexture;
         glyphSourceChanged = true;
     }
 

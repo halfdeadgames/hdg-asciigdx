@@ -78,7 +78,6 @@ public final class FontFit {
                 return i;
             }
         }
-        GridFit.calculate(windowWidth, windowHeight, cellWidths[last], cellHeights[last], minColumns, minRows);
         return last;
     }
 

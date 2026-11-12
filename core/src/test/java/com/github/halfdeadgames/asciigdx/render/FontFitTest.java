@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,41 @@ class FontFitTest {
         int[] sizes = {16, 8};
         assertThrows(IllegalArgumentException.class, () -> pick(1600, 900, 0, 45, sizes, sizes));
         assertThrows(IllegalArgumentException.class, () -> pick(1600, 900, 80, -1, sizes, sizes));
+    }
+
+    @Test
+    void singleFontWithBadMinimumsThrowsThroughChoose() {
+        List<GlyphSource> fonts = List.of(fontWithCellSize(16, 16));
+        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(1600, 900, 0, 45, fonts));
+        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(1600, 900, 80, -1, fonts));
+    }
+
+    private static GlyphSource fontWithCellSize(int width, int height) {
+        return new GlyphSource() {
+            @Override
+            public int getCellWidth() {
+                return width;
+            }
+
+            @Override
+            public int getCellHeight() {
+                return height;
+            }
+
+            @Override
+            public TextureRegion glyph(int codePoint) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean hasGlyph(int codePoint) {
+                return false;
+            }
+
+            @Override
+            public void dispose() {
+            }
+        };
     }
 
     @Test
