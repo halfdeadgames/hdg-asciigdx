@@ -48,15 +48,6 @@ public final class ReviewList {
         return codePoints.clone();
     }
 
-    /** For each code point in {@link #codePoints()} order, whether the given source can draw it. */
-    public boolean[] presentIn(IntPredicate hasGlyph) {
-        boolean[] present = new boolean[codePoints.length];
-        for (int i = 0; i < present.length; i++) {
-            present[i] = hasGlyph.test(codePoints[i]);
-        }
-        return present;
-    }
-
     public int missingCount() {
         return missingCount;
     }

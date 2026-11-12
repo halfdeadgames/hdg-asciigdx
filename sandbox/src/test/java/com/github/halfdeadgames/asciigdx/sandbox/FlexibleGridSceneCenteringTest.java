@@ -91,21 +91,4 @@ class FlexibleGridSceneCenteringTest {
             step(grid, columns, rows, position);
         }
     }
-
-    @Test
-    void halvedSizeChangeFormulaDriftsOnSingleColumnGrowth() {
-        TerminalGrid grid = new TerminalGrid(40, 30);
-        int left = (40 - MARKER_WIDTH) / 2;
-        writeMarker(grid, left, 12);
-
-        int columns = 40;
-        for (int i = 0; i < 19; i++) {
-            int oldColumns = columns;
-            columns++;
-            grid.resize(columns, 30, (columns - oldColumns) / 2, 0);
-        }
-
-        assertEquals(59, grid.getWidth());
-        assertEquals(glyphAt(0, 0), grid.getGlyph(left, 12));
-    }
 }

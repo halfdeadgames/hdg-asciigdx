@@ -7,18 +7,18 @@ import org.junit.jupiter.api.Test;
 
 class TopBarFitTest {
 
-    private static final List<String> CRUMBS = List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 8");
+    private static final List<String> CRUMBS = List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16");
 
     @Test
     void crumbsDropFromTheLeftOnceTheyNoLongerFit() {
-        assertEquals(CRUMBS, TopBar.fit(CRUMBS, 38));
-        assertEquals(CRUMBS.subList(1, 3), TopBar.fit(CRUMBS, 37));
+        assertEquals(CRUMBS, TopBar.fit(CRUMBS, 42));
+        assertEquals(CRUMBS.subList(1, 3), TopBar.fit(CRUMBS, 41));
     }
 
     @Test
     void theLastCrumbAlwaysStays() {
         assertEquals(CRUMBS.subList(2, 3), TopBar.fit(CRUMBS, 1));
-        assertEquals(CRUMBS.subList(2, 3), TopBar.fit(CRUMBS, 8));
+        assertEquals(CRUMBS.subList(2, 3), TopBar.fit(CRUMBS, 12));
     }
 
     @Test

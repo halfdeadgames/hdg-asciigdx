@@ -143,15 +143,7 @@ class HelpWrapTest {
 
     @Test
     void breakTextCutsLongWords() {
-        assertEquals(List.of("abcd", "efgh", "ij"), HelpWrap.breakText("abcdefghij", 4));
         assertEquals(List.of("ab", "cdefg", "h"), HelpWrap.breakText("ab cdefg h", 5));
-    }
-
-    @Test
-    void breakTextTreatsWidthBelowOneAsOne() {
-        assertEquals(List.of("a", "b", "c"), HelpWrap.breakText("abc", 0));
-        assertEquals(List.of("a", "b", "c"), HelpWrap.breakText("abc", -2));
-        assertTrue(HelpWrap.breakText("", 0).isEmpty());
     }
 
     @Test

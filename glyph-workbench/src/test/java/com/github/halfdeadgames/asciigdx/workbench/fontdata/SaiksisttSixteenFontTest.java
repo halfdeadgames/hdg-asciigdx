@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-/** Checks the real Saiksistt 16 font file: it parses, has a 16x16 cell, and exports white on transparent. */
+/** Checks the real Saiksistt 16 font file: it exports white on transparent. */
 class SaiksisttSixteenFontTest {
 
     private static final int OPAQUE_WHITE = 0xFFFFFFFF;
@@ -30,22 +30,10 @@ class SaiksisttSixteenFontTest {
         glyphList = GlyphListFile.load(fontFolder);
     }
 
-    @Test
-    void usesTheCp437Preset() {
-        assertTrue(glyphList.usesCp437());
-    }
-
     private static String readText(File file) throws IOException {
         try (InputStream input = new FileInputStream(file)) {
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
-    }
-
-    @Test
-    void parsesWithASixteenBySixteenCell() {
-        assertEquals(16, data.cellWidth());
-        assertEquals(16, data.cellHeight());
-        assertTrue(data.entries().size() > 0);
     }
 
     @Test

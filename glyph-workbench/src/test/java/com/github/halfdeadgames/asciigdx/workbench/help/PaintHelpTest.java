@@ -32,9 +32,17 @@ class PaintHelpTest {
     private static List<String> plain(List<PaintHelp.Row> rows) {
         List<String> out = new ArrayList<>();
         for (PaintHelp.Row row : rows) {
-            out.add(row.plain());
+            out.add(plain(row));
         }
         return out;
+    }
+
+    private static String plain(PaintHelp.Row row) {
+        StringBuilder out = new StringBuilder(row.key());
+        while (out.length() < row.actionColumn()) {
+            out.append(' ');
+        }
+        return out.append(row.action()).toString();
     }
 
     private static PaintHelp.Row find(List<PaintHelp.Row> rows, String key) {
@@ -55,7 +63,7 @@ class PaintHelpTest {
     private static void assertProseFits(List<PaintHelp.Row> rows) {
         for (PaintHelp.Row row : rows) {
             if (!row.isTable()) {
-                assertTrue(row.plain().length() <= WIDTH, row.plain());
+                assertTrue(plain(row).length() <= WIDTH, plain(row));
             }
         }
     }
@@ -68,7 +76,7 @@ class PaintHelpTest {
             keys.add(row.key());
             assertEquals(PaintHelp.Kind.CONTROL, row.kind());
             assertEquals(8, row.actionColumn());
-            assertEquals(8, row.plain().indexOf(row.action()), row.plain());
+            assertEquals(8, plain(row).indexOf(row.action()), plain(row));
         }
         assertEquals(List.of("CLICK", "DRAG", "ARROWS", "PGUP", "PGDN", "HOME", "END", "[ ]"), keys);
         assertTrue(plain(rows).contains("ARROWS  PICK GLYPH"));
@@ -104,9 +112,9 @@ class PaintHelpTest {
             }
         }
         assertEquals(2, candidates.size());
-        assertEquals("1  NEAREST 2X", candidates.get(0).plain());
+        assertEquals("1  NEAREST 2X", plain(candidates.get(0)));
         assertEquals(PaintHelp.Kind.PART, candidates.get(0).kind());
-        assertEquals("2  SMOOTH", candidates.get(1).plain());
+        assertEquals("2  SMOOTH", plain(candidates.get(1)));
         assertEquals(PaintHelp.Kind.PENDING_PART, candidates.get(1).kind());
         assertEquals(List.of("1-9", "ARROWS", "ENTER", "ESC"), keys);
     }
@@ -175,8 +183,8 @@ class PaintHelpTest {
     @Test
     void proseStillWraps() {
         List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.FLIP);
-        assertEquals("Pick the source", rows.get(0).plain());
-        assertEquals("  glyph.", rows.get(1).plain());
+        assertEquals("Pick the source", plain(rows.get(0)));
+        assertEquals("  glyph.", plain(rows.get(1)));
         assertEquals(PaintHelp.Kind.TEXT, rows.get(0).kind());
     }
 
@@ -224,14 +232,14 @@ class PaintHelpTest {
         PaintHelp.Row range = find(rows, "SHIFT RANGE");
         assertEquals(PaintHelp.Kind.INFO, range.kind());
         assertTrue(range.isTable());
-        assertEquals("SHIFT RANGE -1..+2", range.plain());
+        assertEquals("SHIFT RANGE -1..+2", plain(range));
         int pendingIndex = rows.indexOf(find(rows, ">"));
         int firstWarning = -1;
         StringBuilder warning = new StringBuilder();
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i).kind() == PaintHelp.Kind.WARNING) {
                 firstWarning = firstWarning < 0 ? i : firstWarning;
-                warning.append(rows.get(i).plain().trim()).append(' ');
+                warning.append(plain(rows.get(i)).trim()).append(' ');
             }
         }
         assertTrue(firstWarning > pendingIndex);
@@ -262,7 +270,7 @@ class PaintHelpTest {
             List.of(), new PaintHelp.PartView(0x22, 1, 0), check), WIDTH);
         PaintHelp.Row shiftRange = find(rows, "SHIFT RANGE");
         PaintHelp.Row downRange = find(rows, "DOWN RANGE");
-        assertEquals("DOWN RANGE  -3..+4", downRange.plain());
+        assertEquals("DOWN RANGE  -3..+4", plain(downRange));
         assertEquals(PaintHelp.Kind.INFO, downRange.kind());
         assertEquals(shiftRange.actionColumn(), downRange.actionColumn());
         assertEquals(rows.indexOf(shiftRange) + 1, rows.indexOf(downRange));
@@ -277,7 +285,7 @@ class PaintHelpTest {
         assertTrue(clean.stream().noneMatch(row -> row.kind() == PaintHelp.Kind.WARNING));
         List<PaintHelp.Row> withPending = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE,
             GlyphOp.Kind.OVERLAY, List.of(), new PaintHelp.PartView(0x22, 1, 0), none), WIDTH);
-        assertEquals("SHIFT RANGE -1..+2", find(withPending, "SHIFT RANGE").plain());
+        assertEquals("SHIFT RANGE -1..+2", plain(find(withPending, "SHIFT RANGE")));
         assertTrue(withPending.stream().noneMatch(row -> row.kind() == PaintHelp.Kind.WARNING));
     }
 

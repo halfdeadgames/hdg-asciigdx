@@ -28,17 +28,10 @@ class ReviewListTest {
     }
 
     @Test
-    void reportsWhichKeptGlyphsAnotherSourceHas() {
-        ReviewList list = ReviewList.fromText("ABC", cp -> true);
-        assertArrayEquals(new boolean[] {true, false, true}, list.presentIn(cp -> cp != 'B'));
-    }
-
-    @Test
     void candidateFilterAppliesBeforeReferenceCheck() {
         ReviewList list = ReviewList.fromText("ABCA", cp -> cp != 'C');
         assertArrayEquals(new int[] {'A', 'B'}, list.codePoints());
         assertEquals(1, list.missingCount());
-        assertArrayEquals(new boolean[] {false, true}, list.presentIn(cp -> cp == 'B'));
     }
 
     @Test

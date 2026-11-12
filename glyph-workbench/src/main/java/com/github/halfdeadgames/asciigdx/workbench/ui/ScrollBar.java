@@ -9,12 +9,12 @@ public final class ScrollBar {
     }
 
     /** Thumb length in track cells: proportional to visible over total, at least 1. */
-    public static int thumbSize(int track, int total, int visible) {
+    private static int thumbSize(int track, int total, int visible) {
         return ScrollState.thumbSize(track, total, visible);
     }
 
     /** First thumb cell; the thumb touches the track end exactly at the last offset. */
-    public static int thumbStart(int track, int total, int visible, int offset) {
+    private static int thumbStart(int track, int total, int visible, int offset) {
         return ScrollState.thumbStart(track, total, visible, offset);
     }
 

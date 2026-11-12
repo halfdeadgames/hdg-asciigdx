@@ -44,10 +44,6 @@ final class PaintLayers {
         return coveringPanelShown;
     }
 
-    boolean promptShown() {
-        return promptShown;
-    }
-
     boolean menuBarBelowDim() {
         return promptShown;
     }

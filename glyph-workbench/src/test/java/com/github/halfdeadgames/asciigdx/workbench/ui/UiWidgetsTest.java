@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class UiKitTest {
+class UiWidgetsTest {
 
     @Test
     void panelEdgesHaveCornersAndAnInsetTitle() {
@@ -28,7 +28,7 @@ class UiKitTest {
 
     @Test
     void breadcrumbMatchesTheMockupColumns() {
-        List<TopBar.Segment> segments = TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 8"));
+        List<TopBar.Segment> segments = TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16"));
         assertEquals(5, segments.size());
         assertEquals(1, segments.get(0).x());
         assertEquals(17, segments.get(1).x());
@@ -70,23 +70,6 @@ class UiKitTest {
         assertFalse(SelectList.isSelectable(rows, 0));
         assertTrue(SelectList.isSelectable(rows, 1));
         assertFalse(SelectList.isSelectable(rows, 5));
-    }
-
-    @Test
-    void scrollbarThumbMath() {
-        assertEquals(10, ScrollBar.thumbSize(10, 5, 8));
-        assertEquals(5, ScrollBar.thumbSize(10, 20, 10));
-        assertEquals(1, ScrollBar.thumbSize(10, 1000, 2));
-        assertEquals(0, ScrollBar.thumbStart(10, 20, 10, 0));
-        assertEquals(5, ScrollBar.thumbStart(10, 20, 10, 10));
-        assertEquals(0, ScrollBar.thumbStart(10, 5, 8, 0));
-    }
-
-    @Test
-    void scrollbarThumbMathClampsBadInput() {
-        assertEquals(5, ScrollBar.thumbStart(10, 20, 10, 50));
-        assertEquals(0, ScrollBar.thumbStart(10, 20, 10, -4));
-        assertEquals(10, ScrollBar.thumbSize(10, -3, 0));
     }
 
     @Test

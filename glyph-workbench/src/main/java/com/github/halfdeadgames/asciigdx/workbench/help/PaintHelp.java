@@ -83,15 +83,6 @@ public final class PaintHelp {
         boolean isTable() {
             return kind == Kind.CONTROL || kind == Kind.PART || kind == Kind.PENDING_PART || kind == Kind.INFO;
         }
-
-        /** The row as plain text, key padded to the action column. */
-        String plain() {
-            StringBuilder out = new StringBuilder(key);
-            while (out.length() < actionColumn) {
-                out.append(' ');
-            }
-            return out.append(action).toString();
-        }
     }
 
     private static final int CONTINUATION_INDENT = 2;

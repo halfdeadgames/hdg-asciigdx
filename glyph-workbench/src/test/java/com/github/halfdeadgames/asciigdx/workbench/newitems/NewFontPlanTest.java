@@ -140,7 +140,7 @@ class NewFontPlanTest {
     }
 
     @Test
-    void aSizeOutsideTheOldLadderGetsItsOwnFileName() throws IOException {
+    void anyTypedSizeGetsItsOwnFileName() throws IOException {
         Path folder = NewFontPlan.create(root, "odd", new CellSize(7, 14), CP437);
         assertEquals("cell 7x14\n", read(folder.resolve("7x14.txt")));
     }

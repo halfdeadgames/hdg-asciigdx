@@ -60,7 +60,7 @@ class FontDataParserTest {
     }
 
     @Test
-    void rejectsTheRetiredFullKeyword() {
+    void rejectsAnUnknownOperationWord() {
         FontDataException problem = parseError(file(glyph("U+0051 Q full", "#.......")));
 
         assertTrue(problem.getMessage().contains("after the character expected '= <operation>' but found: full"));

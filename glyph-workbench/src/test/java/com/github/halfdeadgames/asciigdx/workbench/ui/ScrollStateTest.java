@@ -95,4 +95,21 @@ class ScrollStateTest {
         assertEquals(8, scroll.thumbStart(20));
     }
 
+    @Test
+    void staticThumbMath() {
+        assertEquals(10, ScrollState.thumbSize(10, 5, 8));
+        assertEquals(5, ScrollState.thumbSize(10, 20, 10));
+        assertEquals(1, ScrollState.thumbSize(10, 1000, 2));
+        assertEquals(0, ScrollState.thumbStart(10, 20, 10, 0));
+        assertEquals(5, ScrollState.thumbStart(10, 20, 10, 10));
+        assertEquals(0, ScrollState.thumbStart(10, 5, 8, 0));
+    }
+
+    @Test
+    void staticThumbMathClampsBadInput() {
+        assertEquals(5, ScrollState.thumbStart(10, 20, 10, 50));
+        assertEquals(0, ScrollState.thumbStart(10, 20, 10, -4));
+        assertEquals(10, ScrollState.thumbSize(10, -3, 0));
+    }
+
 }

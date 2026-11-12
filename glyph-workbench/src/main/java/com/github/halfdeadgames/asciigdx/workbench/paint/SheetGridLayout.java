@@ -21,10 +21,6 @@ final class SheetGridLayout {
     private final int visibleColumns;
     private final int rows;
 
-    SheetGridLayout(int left, int top, GlyphSize slotSize, int gap, int columns, int rows) {
-        this(left, top, slotSize, gap, columns, columns, rows);
-    }
-
     /**
      * Slots are numbered across all {@code columns}, but only the first {@code visibleColumns} take
      * room in the panel and answer {@link #slotAt}.
@@ -67,14 +63,6 @@ final class SheetGridLayout {
         return slotHeight;
     }
 
-    int slotLeft(int index) {
-        return left + gap + (index % columns) * pitchX;
-    }
-
-    int slotTop(int index) {
-        return top + gap + (index / columns) * pitchY;
-    }
-
     /** Top of a slot when the panel is scrolled so that {@code firstRow} is the first visible row. */
     int slotTop(int index, int firstRow) {
         return top + gap + (index / columns - firstRow) * pitchY;
@@ -90,20 +78,11 @@ final class SheetGridLayout {
         return Math.max(1, (height - gap) / pitchY);
     }
 
-    /** Returns the slot under a pixel, or -1 if the pixel is in a gap or outside the panel. */
-    int slotAt(int pixelX, int pixelY) {
-        return slotAt(pixelX, pixelY, 0, rows);
-    }
-
     /**
-     * Returns the slot under a pixel when the panel is scrolled to {@code firstRow} and shows
-     * {@code visibleRows} rows, or -1 for gaps, hidden rows, and pixels outside the panel.
+     * Returns the slot under a pixel when the panel is scrolled to {@code firstRow} and
+     * {@code firstColumn} and shows {@code visibleRows} rows, or -1 for gaps, hidden rows and
+     * columns, and pixels outside the panel.
      */
-    int slotAt(int pixelX, int pixelY, int firstRow, int visibleRows) {
-        return slotAt(pixelX, pixelY, firstRow, visibleRows, 0);
-    }
-
-    /** Like the row-scrolled lookup, with {@code firstColumn} as the leftmost shown column. */
     int slotAt(int pixelX, int pixelY, int firstRow, int visibleRows, int firstColumn) {
         int x = pixelX - left - gap;
         int y = pixelY - top - gap;

@@ -13,7 +13,6 @@ class PaintLayersTest {
     void nothingOpenShowsNoPrompt() {
         layers.update(nothingOpen().build());
 
-        assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
         assertFalse(layers.coveringPanelShown());
         assertFalse(layers.redrawsDeriveHelp());
@@ -31,7 +30,7 @@ class PaintLayersTest {
         assertFalse(layers.newFontShown());
         assertFalse(layers.newSizeShown());
         assertFalse(layers.deriveDialogAllowed());
-        assertFalse(layers.promptShown());
+        assertFalse(layers.menuBarBelowDim());
     }
 
     @Test
@@ -53,7 +52,6 @@ class PaintLayersTest {
     void dialogPutsBarBelowDim() {
         layers.update(nothingOpen().newGlyphOpen().build());
 
-        assertTrue(layers.promptShown());
         assertTrue(layers.menuBarBelowDim());
         assertTrue(layers.newGlyphShown());
     }
@@ -62,28 +60,25 @@ class PaintLayersTest {
     void deriveDimsAloneShowsPrompt() {
         layers.update(nothingOpen().deriveDims().build());
 
-        assertTrue(layers.promptShown());
         assertTrue(layers.menuBarBelowDim());
     }
 
     @Test
     void openMenuOrCoveringPanelTurnsPromptOff() {
         layers.update(nothingOpen().newGlyphOpen().menuOpen().build());
-        assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
 
         layers.update(nothingOpen().newGlyphOpen().controlsOpen().build());
-        assertFalse(layers.promptShown());
+        assertFalse(layers.menuBarBelowDim());
 
         layers.update(nothingOpen().newGlyphOpen().rulesShowing().build());
-        assertFalse(layers.promptShown());
+        assertFalse(layers.menuBarBelowDim());
     }
 
     @Test
     void promptWithMenuOpenKeepsBarOnTop() {
         layers.update(nothingOpen().confirmingUnsaved().menuOpen().build());
 
-        assertFalse(layers.promptShown());
         assertFalse(layers.menuBarBelowDim());
         assertTrue(layers.unsavedPromptShown());
     }
@@ -128,7 +123,6 @@ class PaintLayersTest {
         layers.update(nothingOpen().upscaleSourceOpen().build());
 
         assertTrue(layers.upscaleSourceShown());
-        assertTrue(layers.promptShown());
         assertTrue(layers.menuBarBelowDim());
     }
 

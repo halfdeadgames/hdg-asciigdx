@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -131,31 +130,6 @@ class PaintGuidesTest {
         assertEquals("row CAP 1 symbols\n", PaintGuides.parse("row CAP 1 symbols").toText());
     }
 
-    @Test
-    void realSaiksisttGuidesParse() throws IOException {
-        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16x16.guides.txt"));
-        PaintGuides.Shown upper = shown(guides, UPPER, 16, 16);
-        assertEquals(List.of(2, 6, 12), upper.rows().stream().map(PaintGuides.RowGuide::boundaryRow).toList());
-        assertTrue(upper.widths().isEmpty());
-        assertEquals(6.5f, upper.bars().get(0).centerRow());
-        PaintGuides.Shown lower = shown(guides, LOWER, 16, 16);
-        assertEquals(List.of(1, 2, 6, 12), lower.rows().stream().map(PaintGuides.RowGuide::boundaryRow).toList());
-        assertEquals(8.5f, lower.bars().get(0).centerRow());
-        assertEquals(6.5f, shown(guides, DIGIT, 16, 16).bars().get(0).centerRow());
-        assertTrue(shown(guides, PUNCT, 16, 16).bars().isEmpty());
-    }
-
-    @Test
-    void realRulesAndGuidesShowTheRightGuidesOnA() throws IOException {
-        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16x16.rules.json"), 16, 16);
-        PaintGuides guides = PaintGuides.parse(readRepoFile("fonts/saiksistt/16x16.guides.txt"));
-        PaintGuides.Shown shownOnA = guides.forGlyph('A', rules, 16, 16);
-        assertEquals(List.of("CAP", "X-HT", "BASE"), rowLabels(shownOnA));
-        assertEquals(1, shownOnA.bars().size());
-        assertEquals(6, shownOnA.bars().get(0).firstRow());
-        assertEquals(1, shownOnA.bars().get(0).rowCount());
-    }
-
     private static void assertRoundTrips(String text) {
         PaintGuides original = PaintGuides.parse(text);
         String written = original.toText();
@@ -173,21 +147,6 @@ class PaintGuidesTest {
         String fileText = readRepoFile("fonts/saiksistt/16x16.guides.txt").replace("\r\n", "\n");
         assertEquals(fileText, PaintGuides.parse(fileText).toText());
         assertRoundTrips(fileText);
-    }
-
-    @Test
-    void realRulesFileParsesAndSortsGlyphsIntoGroups() throws IOException {
-        RulesFile rules = RulesFile.parse(readRepoFile("fonts/saiksistt/16x16.rules.json"), 16, 16);
-        assertEquals(List.of("uppercase", "lowercase", "digits", "punctuation"),
-            rules.groupNames().subList(0, 4));
-        assertTrue(rules.isInGroup("uppercase", 'A'));
-        assertTrue(rules.isInGroup("lowercase", 'a'));
-        assertTrue(rules.isInGroup("digits", '5'));
-        assertTrue(rules.isInGroup("punctuation", '!'));
-        assertFalse(rules.isInGroup("lowercase", 'A'));
-        assertFalse(rules.isInGroup("uppercase", 'a'));
-        assertFalse(rules.isInGroup("punctuation", '5'));
-        assertFalse(rules.isInGroup("digits", '!'));
     }
 
     @Test

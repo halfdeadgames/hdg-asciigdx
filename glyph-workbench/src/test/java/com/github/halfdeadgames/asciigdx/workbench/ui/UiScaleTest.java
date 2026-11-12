@@ -11,13 +11,13 @@ class UiScaleTest {
     private static final UiScale DEFAULT = new UiScale(3);
 
     @Test
-    void defaultFactorMatchesTheOldCellSize() {
+    void defaultFactorMatchesTheTextSize() {
         assertEquals(Painter.TEXT_SIZE, DEFAULT.cellPixels());
         assertEquals(DEFAULT, UiScale.DEFAULT);
     }
 
     @Test
-    void defaultFactorReproducesTheOldDerivedLiterals() {
+    void defaultFactorGivesTheBaseDerivedSizes() {
         assertEquals(12, DEFAULT.half());
         assertEquals(6, DEFAULT.px(2));
         assertEquals(3, DEFAULT.px(1));
@@ -25,7 +25,7 @@ class UiScaleTest {
     }
 
     @Test
-    void defaultFactorKeepsEveryOldPixelLiteralExactly() {
+    void defaultFactorKeepsEveryPixelValueExactly() {
         for (int value = 0; value <= 200; value++) {
             assertEquals(value, DEFAULT.scaled(value), "value " + value);
         }
