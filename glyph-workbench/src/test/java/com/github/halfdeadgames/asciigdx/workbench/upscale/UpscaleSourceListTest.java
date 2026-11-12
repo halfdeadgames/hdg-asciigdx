@@ -58,7 +58,7 @@ class UpscaleSourceListTest {
     }
 
     @Test
-    void moveSkipsGreyedRowsAndHeadings() {
+    void moveSkipsGrayedRowsAndHeadings() {
         sourceList.open(square("a", 24), List.of(square("a", 8), square("a", 16), square("b", 12)));
         assertEquals(square("a", 8), sourceList.selected().font());
         sourceList.move(1);

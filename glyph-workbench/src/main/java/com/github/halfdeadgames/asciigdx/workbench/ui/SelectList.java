@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * Rows on the cell grid, two cells apart. The selected row gets a full-width highlight bar and a
- * "►"; headings use the title colour and dimmed rows are greyed. Selection itself is kept by the caller.
+ * "►"; headings use the title color and dimmed rows are grayed. Selection itself is kept by the caller.
  */
 public final class SelectList {
 

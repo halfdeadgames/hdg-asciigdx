@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * The state of the upscale source list: options grouped under their font folder, the target's own folder first.
- * Unusable options are shown greyed with their reason, and the cursor never lands on them.
+ * Unusable options are shown grayed with their reason, and the cursor never lands on them.
  */
 final class UpscaleSourceList {
 

@@ -15,7 +15,7 @@ public final class PreviewFit {
      *
      * @param innerWidth     pixels between the panel borders
      * @param maxBlockHeight pixels available for the tallest glyph block
-     * @param gap            pixels between neighbouring blocks
+     * @param gap            pixels between neighboring blocks
      * @param labelWidth     pixels a block's label needs; a block is at least this wide
      */
     public static int scaleCount(int innerWidth, int maxBlockHeight, GlyphSize cell, int gap, int labelWidth) {

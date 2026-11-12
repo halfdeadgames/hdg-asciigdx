@@ -180,21 +180,21 @@ public final class PaintGuides {
         return index < 0 || index >= guideTotal();
     }
 
-    /** A copy with a row guide labelled NEW at position 0 for every group, last among the rows. */
+    /** A copy with a row guide labeled NEW at position 0 for every group, last among the rows. */
     PaintGuides withRowAdded() {
         List<Scoped<RowGuide>> edited = new ArrayList<>(rows);
         edited.add(new Scoped<>(new RowGuide(NEW_LABEL, 0), GuideGroups.EVERY_GLYPH));
         return new PaintGuides(edited, columns, bars, columnBars);
     }
 
-    /** A copy with a column guide labelled NEW at position 0 for every group, last among the columns. */
+    /** A copy with a column guide labeled NEW at position 0 for every group, last among the columns. */
     PaintGuides withColumnAdded() {
         List<Scoped<ColumnGuide>> edited = new ArrayList<>(columns);
         edited.add(new Scoped<>(new ColumnGuide(NEW_LABEL, 0, 0), GuideGroups.EVERY_GLYPH));
         return new PaintGuides(rows, edited, bars, columnBars);
     }
 
-    /** A copy with a one-row bar labelled NEW at row 0 for every group, last among the bars. */
+    /** A copy with a one-row bar labeled NEW at row 0 for every group, last among the bars. */
     PaintGuides withBarAdded() {
         List<Scoped<BarGuide>> edited = new ArrayList<>(bars);
         edited.add(new Scoped<>(new BarGuide(NEW_LABEL, 0, 1), GuideGroups.EVERY_GLYPH));
@@ -202,7 +202,7 @@ public final class PaintGuides {
     }
 
     /**
-     * A copy with a column bar labelled NEW for every group, last among the column bars. It starts centered and two
+     * A copy with a column bar labeled NEW for every group, last among the column bars. It starts centered and two
      * columns wide: first column {@code cellWidth / 2 - 1}, so 7-8 in a 16-wide cell and 3-4 in a 9-wide one
      * (one column left of the exact middle). A cell under 2 wide gets a one-column bar at column 0.
      */
@@ -463,7 +463,7 @@ public final class PaintGuides {
     /**
      * The guides that apply to a glyph (see {@link GuideGroups#showsOnGlyph}) and fit the cell. Width guides are
      * sorted by column. Width guides and column bars together are ordered by position and alternate label tiers
-     * 0, 1, 0, ... so neighbouring labels never overlap.
+     * 0, 1, 0, ... so neighboring labels never overlap.
      */
     public Shown forGlyph(int codePoint, RulesFile rules, int cellWidth, int cellHeight) {
         List<Scoped<RowGuide>> shownRows = fittingRows(codePoint, rules, cellHeight);

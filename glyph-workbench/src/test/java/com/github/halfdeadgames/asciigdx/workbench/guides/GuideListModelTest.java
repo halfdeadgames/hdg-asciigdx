@@ -351,7 +351,7 @@ class GuideListModelTest {
     }
 
     @Test
-    void cancellingARenameKeepsTheOldLabelAndEarlierEdits() {
+    void cancelingARenameKeepsTheOldLabelAndEarlierEdits() {
         GuideListModel model = model(FILE);
         model.select(1);
         model.toggleGroup("lowercase", DEFINED);

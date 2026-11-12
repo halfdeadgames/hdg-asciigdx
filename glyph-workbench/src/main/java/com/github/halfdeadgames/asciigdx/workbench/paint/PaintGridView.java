@@ -14,7 +14,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 import java.util.Objects;
 
-/** The big pixel grid of the selected glyph, with labelled guide lines. */
+/** The big pixel grid of the selected glyph, with labeled guide lines. */
 final class PaintGridView {
 
     static final int LABEL_CELLS = 5;
@@ -481,7 +481,7 @@ final class PaintGridView {
         }
     }
 
-    // A highlight that is also a shown guide had its label drawn in the highlight colour with that guide.
+    // A highlight that is also a shown guide had its label drawn in the highlight color with that guide.
     private boolean highlightNeedsOwnWidthLabel() {
         return labels.highlightWidthSlot() >= shown.widths().size() + shown.columnBars().size();
     }
@@ -508,7 +508,7 @@ final class PaintGridView {
         }
     }
 
-    // A highlight that is also a shown guide had its label drawn in the highlight colour with that guide.
+    // A highlight that is also a shown guide had its label drawn in the highlight color with that guide.
     private boolean highlightNeedsOwnRowLabel() {
         return labels.highlightRowSlot() >= shown.rows().size() + shown.bars().size();
     }

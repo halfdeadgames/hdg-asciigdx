@@ -33,7 +33,7 @@ class TerminalGridTest {
     }
 
     @Test
-    void setDoesNotTouchNeighbours() {
+    void setDoesNotTouchNeighbors() {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
         grid.set(1, 0, '@', RED, BLUE);

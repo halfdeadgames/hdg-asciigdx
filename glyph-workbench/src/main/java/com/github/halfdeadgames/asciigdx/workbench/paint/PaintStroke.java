@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 
 /**
- * One mouse stroke: the first pixel toggles, and every pixel dragged over gets the colour that
+ * One mouse stroke: the first pixel toggles, and every pixel dragged over gets the color that
  * first pixel turned into. Fast drags are filled in with a straight line between mouse samples.
  * The whole stroke is one undo step.
  */

@@ -100,11 +100,11 @@ class RuleTextTest {
     @Test
     void exceptionNamesItsSourceAndReason() {
         var exceptions = List.of(
-                new RuleException(GlyphSet.all(), "tiling", "joins its neighbours"),
+                new RuleException(GlyphSet.all(), "tiling", "joins its neighbors"),
                 new RuleException(GlyphSet.all(), "g, j", "tails drop!"),
                 new RuleException(GlyphSet.all(), "U+00B7", "is it narrow?"));
         var lines = RuleText.describe(rule(RuleCheck.CENTERED_X, CheckSettings.NONE, List.of("all"), exceptions));
-        assertEquals("- Skips tiling: joins its neighbours.", lines.get(3));
+        assertEquals("- Skips tiling: joins its neighbors.", lines.get(3));
         assertEquals("- Skips g, j: tails drop!", lines.get(4));
         assertEquals("- Skips U+00B7: is it narrow?", lines.get(5));
     }

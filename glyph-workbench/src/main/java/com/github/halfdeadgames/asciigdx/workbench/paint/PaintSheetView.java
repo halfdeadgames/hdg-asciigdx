@@ -109,7 +109,7 @@ final class PaintSheetView {
         barLeft = frameLeft + (frameCellsWide - 2) * cellPixels();
     }
 
-    /** Keeps the frame at least this many cells wide; the glyph grid stays centred in it. */
+    /** Keeps the frame at least this many cells wide; the glyph grid stays centered in it. */
     void setMinimumFrameCells(int cells) {
         if (cells == minimumFrameCells) {
             return;

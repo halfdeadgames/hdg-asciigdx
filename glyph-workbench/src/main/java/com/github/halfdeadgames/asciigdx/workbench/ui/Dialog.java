@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A centred, focused panel over a dimmed screen, with a shadow and keycap buttons. */
+/** A centered, focused panel over a dimmed screen, with a shadow and keycap buttons. */
 public final class Dialog {
 
     public enum Tone { OK, WARN, DIM }
@@ -56,7 +56,7 @@ public final class Dialog {
     }
 
     /**
-     * Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centres it in the
+     * Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centers it in the
      * area, capped so the frame and its one-cell shadow stay inside it.
      */
     public static Layout layout(DialogContent dialog, CellRect area) {
@@ -107,7 +107,7 @@ public final class Dialog {
         return total;
     }
 
-    /** Dims the screen and centres the dialog in it. */
+    /** Dims the screen and centers the dialog in it. */
     public static void draw(Painter painter, CellRect screen, DialogContent content) {
         draw(painter, screen, content, screen);
     }

@@ -22,7 +22,7 @@ class PaintStrokeTest {
     }
 
     @Test
-    void firstPixelToggleDecidesTheDragColour() {
+    void firstPixelToggleDecidesTheDragColor() {
         FontEditor editor = editor();
         PaintStroke stroke = new PaintStroke(editor);
         stroke.begin(0x41, 0, 0);

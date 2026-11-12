@@ -64,7 +64,7 @@ class PaintExportTest {
 
         assertTrue(!outputDirectory.exists());
         assertEquals(null, store.path);
-        assertEquals(List.of("ok:Export cancelled"), messages.entries);
+        assertEquals(List.of("ok:Export canceled"), messages.entries);
     }
 
     @Test

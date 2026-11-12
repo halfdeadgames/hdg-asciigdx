@@ -26,7 +26,7 @@ class RulesFileTest {
                   check: ring,
                   size: 1,
                   appliesTo: [ all ],
-                  except: [ { group: tiling, why: "joins its neighbours" } ]
+                  except: [ { group: tiling, why: "joins its neighbors" } ]
                 },
                 {
                   name: "Centered across",
@@ -70,7 +70,7 @@ class RulesFileTest {
         assertEquals(RuleCheck.RING, rules.get(0).check());
         assertEquals(RuleCheck.CENTERED_X, rules.get(1).check());
         assertEquals(RuleCheck.NO_INK_ROWS, rules.get(2).check());
-        assertEquals("joins its neighbours", rules.get(0).exceptions().get(0).why());
+        assertEquals("joins its neighbors", rules.get(0).exceptions().get(0).why());
     }
 
     @Test

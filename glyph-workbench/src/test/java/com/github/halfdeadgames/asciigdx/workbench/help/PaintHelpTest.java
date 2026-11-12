@@ -321,7 +321,7 @@ class PaintHelpTest {
     }
 
     @Test
-    void controlsBoxIsCentredAndHoldsTheWholeListInABigWindow() {
+    void controlsBoxIsCenteredAndHoldsTheWholeListInABigWindow() {
         ControlsScreen.Layout layout = ControlsScreen.layout(100, 60);
         CellRect box = layout.rect();
         assertEquals((100 - box.width()) / 2, box.x());

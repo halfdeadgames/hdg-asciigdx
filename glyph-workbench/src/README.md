@@ -41,7 +41,7 @@ F1 opens the rules panel for the selected glyph. It lists, in order:
 
 1. Rules that check this glyph. A rule the glyph breaks right now is shown in red.
 2. Rules that skip this glyph through an exception, with the reason.
-3. Rules that never check this glyph, under the heading `NOT FOR` and the glyph. Their text is grey, so they read as inactive.
+3. Rules that never check this glyph, under the heading `NOT FOR` and the glyph. Their text is gray, so they read as inactive.
 4. The notes.
 
 ## notes.md
@@ -77,7 +77,7 @@ The file is JSON in lenient mode: keys and plain words need no quotes, and `//` 
       check: ring,
       size: 1,
       appliesTo: [ all ],
-      except: [ { group: tiling, why: "joins its neighbours" } ]
+      except: [ { group: tiling, why: "joins its neighbors" } ]
     },
     {
       name: "Centered across",

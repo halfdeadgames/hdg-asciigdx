@@ -15,7 +15,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import java.util.List;
 
 /**
- * The Help > Controls panel: a centred modal box listing every paint control. While it is open it takes
+ * The Help > Controls panel: a centered modal box listing every paint control. While it is open it takes
  * the whole frame; Esc, Enter, or a click outside the box closes it. Sizes are in text cells, so it follows the UI scale.
  */
 public final class ControlsScreen {

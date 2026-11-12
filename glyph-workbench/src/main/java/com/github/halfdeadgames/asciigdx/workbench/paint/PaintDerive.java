@@ -16,7 +16,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The derive actions of the paint screen: opening the menu, picking sources, applying, and cancelling. */
+/** The derive actions of the paint screen: opening the menu, picking sources, applying, and canceling. */
 final class PaintDerive {
 
     private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
@@ -287,7 +287,7 @@ final class PaintDerive {
         flow.finish();
         derivePick.clear();
         host.keepVisible(host.cursorSlot());
-        messages.ok("Derive cancelled");
+        messages.ok("Derive canceled");
     }
 
     private void handleReplacePrompt() {

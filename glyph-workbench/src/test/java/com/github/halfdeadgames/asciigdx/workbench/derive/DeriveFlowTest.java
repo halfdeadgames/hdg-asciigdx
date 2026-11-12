@@ -97,7 +97,7 @@ class DeriveFlowTest {
     }
 
     @Test
-    void cancellingTheReplaceQuestionReturnsToPicking() {
+    void cancelingTheReplaceQuestionReturnsToPicking() {
         DeriveFlow flow = new DeriveFlow();
         flow.openMenu(1, true);
         flow.chooseOperation();
@@ -292,7 +292,7 @@ class DeriveFlowTest {
     }
 
     @Test
-    void cancellingClearsPendingDown() {
+    void cancelingClearsPendingDown() {
         DeriveFlow flow = overlayPicking(2);
         flow.moveSource(5);
         flow.shiftSourceDown(3);
@@ -350,7 +350,7 @@ class DeriveFlowTest {
     }
 
     @Test
-    void cancellingTheReplaceQuestionKeepsParts() {
+    void cancelingTheReplaceQuestionKeepsParts() {
         DeriveFlow flow = overlayPicking(2);
         flow.moveSource(5);
         flow.addPart();

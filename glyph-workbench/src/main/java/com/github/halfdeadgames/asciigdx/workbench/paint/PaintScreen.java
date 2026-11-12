@@ -539,7 +539,7 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
-    // Unsaved changes are asked about after the pick, so cancelling the prompt loses nothing and creates nothing.
+    // Unsaved changes are asked about after the pick, so canceling the prompt loses nothing and creates nothing.
     private void confirmNewSize(CellSize chosen) {
         runAfterUnsavedCheck(() -> createSize(chosen), SWITCH_SIZE_QUESTION);
     }

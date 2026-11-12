@@ -96,7 +96,7 @@ final class NewFontSizePrompt {
         return problem;
     }
 
-    /** Whether the grey example should be drawn in place of the (empty) typed text. */
+    /** Whether the gray example should be drawn in place of the (empty) typed text. */
     boolean showsHint() {
         return open && text.isEmpty();
     }

@@ -57,7 +57,7 @@ final class PaintUpscale {
 
         int cellPixels();
 
-        /** The cell rectangle dialogs are centred in. */
+        /** The cell rectangle dialogs are centered in. */
         CellRect dialogArea();
     }
 

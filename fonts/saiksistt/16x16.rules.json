@@ -17,8 +17,8 @@
       size: 1,
       appliesTo: [ all ],
       except: [
-        { group: tiling, why: "joins its neighbours" },
-        { glyphs: [ "_" ], why: "joins its neighbours into one line" }
+        { group: tiling, why: "joins its neighbors" },
+        { glyphs: [ "_" ], why: "joins its neighbors into one line" }
       ]
     },
     {

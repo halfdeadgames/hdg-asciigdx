@@ -38,7 +38,7 @@ class LabelPlacerTest {
     }
 
     @Test
-    void gapIsKeptBetweenNeighbours() {
+    void gapIsKeptBetweenNeighbors() {
         int[] placed = LabelPlacer.place(new int[] {100, 100}, new int[] {24, 24}, 0, 400, 6);
         assertTrue(placed[1] - placed[0] >= 24 + 6);
     }

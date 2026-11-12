@@ -73,7 +73,7 @@ class UiWidgetsTest {
     }
 
     @Test
-    void dialogKeepsButtonsAwayFromTheFrameAndIsCentred() {
+    void dialogKeepsButtonsAwayFromTheFrameAndIsCentered() {
         List<Dialog.Button> buttons = List.of(
             new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
             new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),

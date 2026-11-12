@@ -20,7 +20,7 @@ import java.util.Set;
 public final class NewSizePlan {
 
     /**
-     * One entry of the size pick list. Taken sizes are listed so they can be shown greyed.
+     * One entry of the size pick list. Taken sizes are listed so they can be shown grayed.
      *
      * @param size the cell size
      * @param taken whether the font already has a file for this size

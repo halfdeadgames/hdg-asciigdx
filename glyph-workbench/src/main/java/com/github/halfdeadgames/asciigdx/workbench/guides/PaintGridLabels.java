@@ -22,7 +22,7 @@ public final class PaintGridLabels {
      * @param areaWidth width of the area the grid is fitted to
      * @param areaHeight height of the area the grid is fitted to
      * @param cellPixels size of one label character
-     * @param labelGap free space required between neighbouring labels
+     * @param labelGap free space required between neighboring labels
      */
     public record Frame(int left, int top, int pixelSize, int areaWidth, int areaHeight, int cellPixels,
                         int labelGap) { }

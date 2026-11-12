@@ -19,7 +19,7 @@ public final class TopBar {
     private TopBar() {
     }
 
-    /** The first crumb is the title colour, the last the accent colour, the rest plain; separators are dim. */
+    /** The first crumb is the title color, the last the accent color, the rest plain; separators are dim. */
     public static List<Segment> layout(List<String> crumbs) {
         List<Segment> segments = new ArrayList<>();
         int x = DEFAULT_START;

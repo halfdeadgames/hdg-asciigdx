@@ -66,7 +66,7 @@ public final class UpscaleSourceDialog {
      * @param pixelX pointer position in pixels from the left
      * @param pixelY pointer position in pixels from the top
      * @param cellPixels the cell size in pixels
-     * @param area the cell rectangle the dialog is centred in
+     * @param area the cell rectangle the dialog is centered in
      */
     public void handleInput(int wheelTicks, boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
         if (!isOpen() || handleKeys()) {

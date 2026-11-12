@@ -72,7 +72,7 @@ public final class ScreenKit {
 
     /**
      * Reads the mouse position into {@link #pointerX()} and {@link #pointerY()}. Window pixels go through the
-     * viewport so UI scale and HiDPI are honoured.
+     * viewport so UI scale and HiDPI are honored.
      */
     public void updatePointer() {
         pointer.set(Gdx.input.getX(), Gdx.input.getY());

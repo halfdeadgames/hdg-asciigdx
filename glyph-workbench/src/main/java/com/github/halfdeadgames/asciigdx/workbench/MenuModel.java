@@ -28,7 +28,7 @@ final class MenuModel {
 
     /**
      * One displayed line; {@code itemIndex} is -1 for headings and notes that cannot be selected.
-     * Dimmed lines are shown greyed out.
+     * Dimmed lines are shown grayed out.
      */
     record Line(String text, int itemIndex, int indent, boolean dimmed) {
     }

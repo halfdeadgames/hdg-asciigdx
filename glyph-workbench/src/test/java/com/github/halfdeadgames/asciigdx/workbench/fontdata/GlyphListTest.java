@@ -86,7 +86,7 @@ class GlyphListTest {
     }
 
     @Test
-    void rejectsUnrecognisedLineWithLineNumber() {
+    void rejectsUnrecognizedLineWithLineNumber() {
         FontDataException error = assertThrows(FontDataException.class, () -> GlyphList.parse("U+0041\n\nhello"));
         assertEquals(3, error.getLine());
         assertTrue(error.getMessage().startsWith("Line 3: "));

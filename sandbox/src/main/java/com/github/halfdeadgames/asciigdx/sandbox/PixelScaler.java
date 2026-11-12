@@ -4,7 +4,7 @@ import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
 /**
- * Upscaling of packed pixel arrays: integer nearest-neighbour blocks, and per-cell 2x smoothing
+ * Upscaling of packed pixel arrays: integer nearest-neighbor blocks, and per-cell 2x smoothing
  * (Scale2x with fill/trim modes, Scale2xSFX, MMPX, and a light mode). Output pixels are copies of input pixels.
  */
 public final class PixelScaler {
@@ -37,7 +37,7 @@ public final class PixelScaler {
             || (codePoint >= 0xE000 && codePoint <= 0xF8FF);
     }
 
-    /** Which Scale2x changes are kept; the rest stay as nearest-neighbour 2x. */
+    /** Which Scale2x changes are kept; the rest stay as nearest-neighbor 2x. */
     public enum Scale2xMode {
         /** Every Scale2x change. */
         FULL,
@@ -49,7 +49,7 @@ public final class PixelScaler {
 
     /**
      * Scale2x (EPX) of a sheet made of cellWidth x cellHeight cells. Each cell is scaled on its own and
-     * edge pixels stand in for neighbours outside the cell. Cells for which {@code locked} returns true
+     * edge pixels stand in for neighbors outside the cell. Cells for which {@code locked} returns true
      * (by slot, row-major) are scaled as plain 2x. Output pixels are copies of input pixels.
      * {@code mode} filters which changes apply; {@code background} tells empty pixels apart.
      */
@@ -161,7 +161,7 @@ public final class PixelScaler {
 
     /**
      * MMPX (McGuire and Gagiu, "MMPX Style-Preserving Pixel Art Magnification", JCGT 2021) per cell.
-     * {@code luma} ranks pixel brightness; edge pixels stand in for neighbours outside the cell.
+     * {@code luma} ranks pixel brightness; edge pixels stand in for neighbors outside the cell.
      */
     public static int[] mmpx(int[] pixels, int width, int height, int cellWidth, int cellHeight, IntPredicate locked,
         IntUnaryOperator luma) {
@@ -363,7 +363,7 @@ public final class PixelScaler {
 
     /**
      * Plain 2x per cell, then every foreground pixel in the right half of its source pixel is cleared when
-     * its right neighbour inside the cell is background and its left neighbour is foreground. Vertical
+     * its right neighbor inside the cell is background and its left neighbor is foreground. Vertical
      * strokes end up 1 px wide while horizontal strokes keep their 2 px height.
      */
     public static int[] light(int[] pixels, int width, int height, int cellWidth, int cellHeight, IntPredicate locked,

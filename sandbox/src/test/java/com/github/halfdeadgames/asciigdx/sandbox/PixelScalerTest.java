@@ -54,7 +54,7 @@ class PixelScalerTest {
             1, 1, 1};
         int[] scaled = PixelScaler.scale2x(staircase, 3, 3, 3, 3, slot -> false,
             PixelScaler.Scale2xMode.FULL, pixel -> false);
-        // Centre pixel: only its top-right quarter takes the empty neighbour's colour.
+        // Center pixel: only its top-right quarter takes the empty neighbor's color.
         assertEquals(1, scaled[2 * 6 + 2]);
         assertEquals(0, scaled[2 * 6 + 3]);
         assertEquals(1, scaled[3 * 6 + 2]);
@@ -73,7 +73,7 @@ class PixelScalerTest {
 
     @Test
     void scale2xNeverReadsAcrossCellEdges() {
-        // Two 2x2 cells side by side; each is one solid colour, so no pixel may change.
+        // Two 2x2 cells side by side; each is one solid color, so no pixel may change.
         int[] pixels = {
             1, 1, 0, 0,
             1, 1, 0, 0};
@@ -82,7 +82,7 @@ class PixelScalerTest {
     }
 
     @Test
-    void lockedRangesAreRecognised() {
+    void lockedRangesAreRecognized() {
         assertEquals(true, PixelScaler.isScale2xLocked(0x2500));
         assertEquals(true, PixelScaler.isScale2xLocked(0x259F));
         assertEquals(true, PixelScaler.isScale2xLocked(0xE000));
@@ -92,7 +92,7 @@ class PixelScalerTest {
     }
 
     @Test
-    void scale2xOnTheDefaultSheetLocksGlyphsAndOnlyCopiesSourceColours() throws IOException {
+    void scale2xOnTheDefaultSheetLocksGlyphsAndOnlyCopiesSourceColors() throws IOException {
         int cell = 8;
         BufferedImage image;
         try (InputStream stream = PixelScalerTest.class.getResourceAsStream(DEFAULT_SHEET)) {
@@ -121,10 +121,10 @@ class PixelScalerTest {
             int left = (slot % columns) * cell * 2;
             int top = (slot / columns) * cell * 2;
             boolean locked = PixelScaler.isScale2xLocked(codePoints[slot]);
-            Set<Integer> sourceColours = new HashSet<>();
+            Set<Integer> sourceColors = new HashSet<>();
             for (int y = 0; y < cell; y++) {
                 for (int x = 0; x < cell; x++) {
-                    sourceColours.add(source[((top / 2) + y) * width + left / 2 + x]);
+                    sourceColors.add(source[((top / 2) + y) * width + left / 2 + x]);
                 }
             }
             for (int y = 0; y < cell * 2; y++) {
@@ -133,7 +133,7 @@ class PixelScalerTest {
                     if (locked) {
                         assertEquals(plain[index], smooth[index], "locked U+" + Integer.toHexString(codePoints[slot]));
                     }
-                    assertEquals(true, sourceColours.contains(smooth[index]), "colour in slot " + slot);
+                    assertEquals(true, sourceColors.contains(smooth[index]), "color in slot " + slot);
                 }
             }
             if (locked) {
@@ -232,11 +232,11 @@ class PixelScalerTest {
 
     private static final Upscaler[] NEW_UPSCALERS = {MMPX, SFX, LIGHT};
 
-    private static int[] randomSheet(int width, int height, long seed, int colours) {
+    private static int[] randomSheet(int width, int height, long seed, int colors) {
         Random random = new Random(seed);
         int[] pixels = new int[width * height];
         for (int i = 0; i < pixels.length; i++) {
-            pixels[i] = random.nextInt(100) < 45 ? 0xFF000000 | (1 + random.nextInt(colours)) : 0;
+            pixels[i] = random.nextInt(100) < 45 ? 0xFF000000 | (1 + random.nextInt(colors)) : 0;
         }
         return pixels;
     }
@@ -256,12 +256,12 @@ class PixelScalerTest {
         for (Upscaler upscaler : NEW_UPSCALERS) {
             for (long seed = 1; seed <= 20; seed++) {
                 int[] pixels = randomSheet(32, 16, seed, 3);
-                Set<Integer> colours = new HashSet<>();
+                Set<Integer> colors = new HashSet<>();
                 for (int pixel : pixels) {
-                    colours.add(pixel);
+                    colors.add(pixel);
                 }
                 for (int pixel : upscaler.apply(pixels, 32, 16, 8, slot -> false)) {
-                    assertEquals(true, colours.contains(pixel), "new colour " + Integer.toHexString(pixel));
+                    assertEquals(true, colors.contains(pixel), "new color " + Integer.toHexString(pixel));
                 }
             }
         }
@@ -364,7 +364,7 @@ class PixelScalerTest {
     }
 
     @Test
-    void lightOnlyClearsPixelsWhoseLeftNeighbourIsForeground() {
+    void lightOnlyClearsPixelsWhoseLeftNeighborIsForeground() {
         for (long seed = 1; seed <= 20; seed++) {
             int[] pixels = randomSheet(16, 16, seed, 1);
             int[] plain = PixelScaler.scale(pixels, 16, 16, 2);
@@ -376,10 +376,10 @@ class PixelScalerTest {
                         continue;
                     }
                     assertEquals(1, x % 2, "only right halves change");
-                    assertEquals(false, plain[index - 1] == 0, "left neighbour is foreground");
-                    assertEquals(0, plain[index + 1], "right neighbour is background");
+                    assertEquals(false, plain[index - 1] == 0, "left neighbor is foreground");
+                    assertEquals(0, plain[index + 1], "right neighbor is background");
                     assertEquals(0, light[index]);
-                    assertEquals(true, (x + 1) % 16 != 0, "right neighbour inside the cell");
+                    assertEquals(true, (x + 1) % 16 != 0, "right neighbor inside the cell");
                 }
             }
         }

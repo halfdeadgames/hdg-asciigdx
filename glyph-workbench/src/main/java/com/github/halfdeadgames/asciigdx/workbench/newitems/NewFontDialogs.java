@@ -246,7 +246,7 @@ final class NewFontDialogs {
             NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
     }
 
-    // The dialog draws line text in one colour, so the grey example is laid over the blank field after it.
+    // The dialog draws line text in one color, so the gray example is laid over the blank field after it.
     private void drawSizeHint(Painter painter, CellRect area) {
         drawSizeHint(painter, sizePage, Dialog.layout(sizeContent(), area));
     }

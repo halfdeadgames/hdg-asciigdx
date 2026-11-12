@@ -6,7 +6,7 @@ import java.util.function.Predicate;
 /**
  * Logic for a top menu bar on the cell grid: which menu is open, which item is highlighted, which
  * title the pointer is over, and where everything sits in cells. Nothing here draws or reads input.
- * Availability comes from the caller on each call so greyed items follow live state. A menu without
+ * Availability comes from the caller on each call so grayed items follow live state. A menu without
  * an available item is locked: it cannot be opened and left/right movement skips it.
  */
 public final class MenuBar<A> {

@@ -31,7 +31,7 @@ public final class UpscaleSources {
      *
      * @param factorX whole scale factor across, 0 when unusable
      * @param factorY whole scale factor down, 0 when unusable
-     * @param problem short uppercase reason for the greyed row, empty when usable
+     * @param problem short uppercase reason for the grayed row, empty when usable
      */
     public record Option(Font font, int factorX, int factorY, String problem) {
 

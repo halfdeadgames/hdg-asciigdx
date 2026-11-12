@@ -72,7 +72,7 @@ public final class PaintNewFont {
     }
 
     // Unsaved changes are asked about after the glyph slots are chosen. The dialog stays open (and hidden) under the
-    // prompt, so cancelling it returns to the glyph page with the selection kept.
+    // prompt, so canceling it returns to the glyph page with the selection kept.
     private void createNewFont(String name, CellSize size, NewFontGlyphs glyphs) {
         runAfterUnsavedCheck.accept(() -> finishNewFont(name, size, glyphs), NEW_FONT_QUESTION);
     }

@@ -60,7 +60,7 @@ final class PaintLayers {
         return newGlyphOpen && !coveringPanelShown;
     }
 
-    // Under the unsaved-changes prompt the dialog is hidden but kept, so cancelling returns to it.
+    // Under the unsaved-changes prompt the dialog is hidden but kept, so canceling returns to it.
     boolean newFontShown() {
         return newFontOpen && !coveringPanelShown && !confirmingUnsaved;
     }

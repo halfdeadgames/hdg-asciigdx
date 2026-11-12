@@ -12,7 +12,7 @@ final class LabelPlacer {
      * @param sizes length of each label along the axis
      * @param min lowest allowed start
      * @param max highest allowed end
-     * @param gap free space required between neighbours
+     * @param gap free space required between neighbors
      * @return start of each label, in input order; labels that cannot fit between the bounds are stacked from {@code min}
      */
     static int[] place(int[] wanted, int[] sizes, int min, int max, int gap) {

@@ -45,7 +45,7 @@ public final class PaintExport {
             return;
         }
         if (chosen.isEmpty()) {
-            messages.ok("Export cancelled");
+            messages.ok("Export canceled");
             return;
         }
         exportInto(chosen.get());
