@@ -23,7 +23,7 @@ Terminal feel with some nostalgia, but none of the old fonts' frustrations. Read
 - w and y have flat bottoms, for a more retro look.
 
 # Small glyphs
-- Small digits and letters (fractions, ª º, later ² ⁿ) are 5 rows tall and 6 columns wide, with the same 2 px verticals and 1 px horizontals as full-size letters.
+- Small digits and letters (fractions, ª º, ² ⁿ) are 5 rows tall and 6 columns wide, with the same 2 px verticals and 1 px horizontals as full-size letters.
 - Fractions use a diagonal layout: numerator top left, denominator bottom right, and a 2 px slash between them.
 - ª and º sit on rows 2-6 with a 1 px underline on row 8.
 
