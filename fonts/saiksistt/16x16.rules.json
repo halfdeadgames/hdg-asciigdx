@@ -7,7 +7,7 @@
     descenders:  [ "g", "j", "p", "q", "y" ],
     ascenders:   [ "b", "d", "f", "h", "k", "l" ],
     tallStems:   [ "i", "j", "t" ],
-    symbols:     [ "@", "☺", "☻", "♥", "♦", "♣", "♠", "•", "○" ],
+    symbols:     [ "@", "☺", "☻", "♥", "♦", "♣", "♠", "•", "○", "◘", "◙", "♂", "♀", "♪", "♫", "☼", "↑" ],
     tiling:      [ "U+2500-U+259F" ]
   },
   rules: [
@@ -18,7 +18,8 @@
       appliesTo: [ all ],
       except: [
         { group: tiling, why: "joins its neighbors" },
-        { glyphs: [ "_" ], why: "joins its neighbors into one line" }
+        { glyphs: [ "_" ], why: "joins its neighbors into one line" },
+        { glyphs: [ "◘", "◙" ], why: "fills the cell, meant for drawing" }
       ]
     },
     {
