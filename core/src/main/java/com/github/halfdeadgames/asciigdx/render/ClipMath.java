@@ -63,7 +63,7 @@ final class ClipMath {
         return out.set(x0, y0, x1 - x0, y1 - y0);
     }
 
-    private static float snap(float value) {
+    static float snap(float value) {
         return (float) Math.floor(value + 0.5f);
     }
 }

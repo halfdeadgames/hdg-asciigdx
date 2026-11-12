@@ -219,8 +219,8 @@ public final class LayerStack implements Disposable {
             float screenX = x + layer.getOffsetX();
             float screenY = y - layer.getOffsetY();
             if (pixelSnapping) {
-                screenX = (float) Math.floor(screenX + 0.5f);
-                screenY = (float) Math.floor(screenY + 0.5f);
+                screenX = ClipMath.snap(screenX);
+                screenY = ClipMath.snap(screenY);
             }
             if (!layer.hasClip()) {
                 drawLayer(layer, batch, screenX, screenY);

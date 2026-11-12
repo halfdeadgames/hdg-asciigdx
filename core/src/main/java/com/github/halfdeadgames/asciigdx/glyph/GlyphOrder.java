@@ -104,7 +104,11 @@ public final class GlyphOrder {
     private static boolean isSkipped(int codePoint) {
         return codePoint == '\n'
             || codePoint == '\r'
-            || (codePoint >= 0xFE00 && codePoint <= 0xFE0F)
+            || isVariationSelector(codePoint);
+    }
+
+    static boolean isVariationSelector(int codePoint) {
+        return (codePoint >= 0xFE00 && codePoint <= 0xFE0F)
             || (codePoint >= 0xE0100 && codePoint <= 0xE01EF);
     }
 

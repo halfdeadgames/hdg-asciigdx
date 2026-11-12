@@ -41,10 +41,7 @@ public final class DirtyTracker {
      * @throws IndexOutOfBoundsException if {@code (x, y)} is outside the grid
      */
     public boolean isDirty(int x, int y) {
-        if (x < 0 || x >= width || y < 0 || y >= height) {
-            throw new IndexOutOfBoundsException(
-                "Cell (" + x + ", " + y + ") is outside a " + width + "x" + height + " grid");
-        }
+        TerminalGrid.requireCellInside(x, y, width, height);
         return dirtyCells.get(y * width + x);
     }
 

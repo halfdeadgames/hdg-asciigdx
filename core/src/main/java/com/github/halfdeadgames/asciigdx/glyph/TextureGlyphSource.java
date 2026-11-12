@@ -89,11 +89,7 @@ public final class TextureGlyphSource implements GlyphSource {
         Objects.requireNonNull(layout, "layout must not be null");
         Objects.requireNonNull(order, "order must not be null");
         Objects.requireNonNull(mode, "mode must not be null");
-        if (order.size() > layout.slotCount()) {
-            throw new IllegalArgumentException(
-                "Order has " + order.size() + " glyphs but the layout has only "
-                    + layout.slotCount() + " slots");
-        }
+        requireOrderFits(order, layout);
         int fallbackSlot = order.slotOf(fallbackCodePoint);
         if (fallbackSlot < 0) {
             throw new IllegalArgumentException(
@@ -152,6 +148,23 @@ public final class TextureGlyphSource implements GlyphSource {
         return convertAndUpload(pixmap, image.path(), layout, order, mode, null, fallbackSlot);
     }
 
+    private static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {
+        if (order.size() > layout.slotCount()) {
+            throw new IllegalArgumentException(
+                "Order has " + order.size() + " glyphs but the layout has only "
+                    + layout.slotCount() + " slots");
+        }
+    }
+
+    private static void requireImageFits(Pixmap image, String imageName, GlyphSheetLayout layout) {
+        if (image.getWidth() < layout.requiredImageWidth() || image.getHeight() < layout.requiredImageHeight()) {
+            throw new IllegalArgumentException(
+                imageName + " is " + image.getWidth() + "x" + image.getHeight()
+                    + " but the layout needs at least " + layout.requiredImageWidth()
+                    + "x" + layout.requiredImageHeight());
+        }
+    }
+
     // Takes ownership of the pixmap and disposes it, also when this method throws.
     private static TextureGlyphSource convertAndUpload(
         Pixmap pixmap,
@@ -162,13 +175,7 @@ public final class TextureGlyphSource implements GlyphSource {
         Integer keyRgba8888OrNull,
         int fallbackSlot) {
         try {
-            if (pixmap.getWidth() < layout.requiredImageWidth()
-                || pixmap.getHeight() < layout.requiredImageHeight()) {
-                throw new IllegalArgumentException(
-                    "Image " + path + " is " + pixmap.getWidth() + "x" + pixmap.getHeight()
-                        + " but the layout needs at least " + layout.requiredImageWidth()
-                        + "x" + layout.requiredImageHeight());
-            }
+            requireImageFits(pixmap, "Image " + path, layout);
             int key = keyRgba8888OrNull != null ? keyRgba8888OrNull : pixmap.getPixel(0, 0);
             if (mode.shouldConvert(hasTransparentPixel(pixmap))) {
                 if (pixmap.getFormat() != Pixmap.Format.RGBA8888) {
@@ -216,22 +223,13 @@ public final class TextureGlyphSource implements GlyphSource {
             Objects.requireNonNull(layout, "layout must not be null");
             Objects.requireNonNull(order, "order must not be null");
             Objects.requireNonNull(presentInSheet, "presentInSheet must not be null");
-            if (order.size() > layout.slotCount()) {
-                throw new IllegalArgumentException(
-                    "Order has " + order.size() + " glyphs but the layout has only "
-                        + layout.slotCount() + " slots");
-            }
+            requireOrderFits(order, layout);
             int fallbackSlot = order.slotOf(fallbackCodePoint);
             if (fallbackSlot < 0 || !presentInSheet.test(fallbackCodePoint)) {
                 throw new IllegalArgumentException(
                     "Sheet has no glyph for fallback code point " + fallbackCodePoint);
             }
-            if (sheet.getWidth() < layout.requiredImageWidth() || sheet.getHeight() < layout.requiredImageHeight()) {
-                throw new IllegalArgumentException(
-                    "Sheet is " + sheet.getWidth() + "x" + sheet.getHeight()
-                        + " but the layout needs at least " + layout.requiredImageWidth()
-                        + "x" + layout.requiredImageHeight());
-            }
+            requireImageFits(sheet, "Sheet", layout);
             return upload(sheet, layout, order, fallbackSlot, presentInSheet);
         } finally {
             if (sheet != null) {

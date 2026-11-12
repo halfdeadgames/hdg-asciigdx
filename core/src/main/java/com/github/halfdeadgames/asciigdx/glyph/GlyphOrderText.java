@@ -42,10 +42,10 @@ public final class GlyphOrderText {
         for (int slot = 0; slot < order.size(); slot++) {
             int codePoint = order.codePointAt(slot);
             boolean lastInLine = slot % columns == columns - 1 || slot == order.size() - 1;
-            if (needsEscape(codePoint) || (lastInLine && codePoint == ' ')) {
+            if (lastInLine && codePoint == ' ') {
                 appendEscape(text, codePoint);
             } else {
-                text.appendCodePoint(codePoint);
+                appendCodePointOrEscape(text, codePoint);
             }
             if (lastInLine) {
                 text.append('\n');
@@ -63,12 +63,16 @@ public final class GlyphOrderText {
      */
     public static String escapeCodePoint(int codePoint) {
         StringBuilder text = new StringBuilder();
+        appendCodePointOrEscape(text, codePoint);
+        return text.toString();
+    }
+
+    private static void appendCodePointOrEscape(StringBuilder text, int codePoint) {
         if (needsEscape(codePoint)) {
             appendEscape(text, codePoint);
         } else {
             text.appendCodePoint(codePoint);
         }
-        return text.toString();
     }
 
     /**
@@ -166,8 +170,7 @@ public final class GlyphOrderText {
             || codePoint == BYTE_ORDER_MARK
             || Character.getType(codePoint) == Character.PRIVATE_USE
             || Character.getType(codePoint) == Character.SURROGATE
-            || (codePoint >= 0xFE00 && codePoint <= 0xFE0F)
-            || (codePoint >= 0xE0100 && codePoint <= 0xE01EF)
+            || GlyphOrder.isVariationSelector(codePoint)
             || codePoint == 0x2028
             || codePoint == 0x2029;
     }

@@ -259,10 +259,14 @@ public final class TerminalGrid implements TerminalView {
     }
 
     private int checkedIndexOf(int x, int y) {
-        if (!contains(x, y)) {
+        requireCellInside(x, y, width, height);
+        return indexOf(x, y);
+    }
+
+    static void requireCellInside(int x, int y, int width, int height) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
             throw new IndexOutOfBoundsException(
                 "Cell (" + x + ", " + y + ") is outside a " + width + "x" + height + " grid");
         }
-        return indexOf(x, y);
     }
 }
