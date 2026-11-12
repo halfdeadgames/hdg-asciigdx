@@ -26,7 +26,7 @@ public final class TopBar {
         for (int i = 0; i < crumbs.size(); i++) {
             Kind kind = i == 0 ? Kind.TITLE : i == crumbs.size() - 1 ? Kind.ACCENT : Kind.TEXT;
             segments.add(new Segment(crumbs.get(i), x, kind));
-            x += crumbs.get(i).length();
+            x += TextCells.cellCount(crumbs.get(i));
             if (i < crumbs.size() - 1) {
                 segments.add(new Segment(SEPARATOR, x + 1, Kind.SEPARATOR));
                 x += 3;
@@ -47,14 +47,14 @@ public final class TopBar {
     private static int width(List<String> crumbs, int start) {
         int width = DEFAULT_START + 3 * (crumbs.size() - 1 - start);
         for (int i = start; i < crumbs.size(); i++) {
-            width += crumbs.get(i).length();
+            width += TextCells.cellCount(crumbs.get(i));
         }
         return width;
     }
 
     /** Column of a right-aligned text with one blank cell before the edge. */
     public static int rightX(int columns, String text) {
-        return Math.max(0, columns - text.length() - 1);
+        return Math.max(0, columns - TextCells.cellCount(text) - 1);
     }
 
     /** Also draws a plain tag just left of the status; the crumbs shorten to leave room for both. */
@@ -94,7 +94,7 @@ public final class TopBar {
 
     /** Cells taken at the right edge by a tag and a status, each followed by one blank cell. */
     static int rightWidth(String tag, String status) {
-        return (tag.isEmpty() ? 0 : tag.length() + 1) + (status.isEmpty() ? 0 : status.length() + 1);
+        return (tag.isEmpty() ? 0 : TextCells.cellCount(tag) + 1) + (status.isEmpty() ? 0 : TextCells.cellCount(status) + 1);
     }
 
     /** Column of a tag that sits left of the status, with one blank cell between them. */

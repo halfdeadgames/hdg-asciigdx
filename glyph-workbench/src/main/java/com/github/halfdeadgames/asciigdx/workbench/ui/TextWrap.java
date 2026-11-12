@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Splits text into lines of at most a given number of characters. */
+/** Splits text into lines of at most a given number of cells (code points). */
 public final class TextWrap {
 
     private TextWrap() {
@@ -19,17 +19,18 @@ public final class TextWrap {
         List<String> lines = new ArrayList<>();
         int start = 0;
         while (true) {
-            if (text.length() - start <= limit) {
+            int limitEnd = TextCells.indexAfterCells(text, start, limit);
+            if (limitEnd >= text.length()) {
                 lines.add(text.substring(start));
                 return lines;
             }
-            int space = text.lastIndexOf(' ', start + limit);
+            int space = text.lastIndexOf(' ', limitEnd);
             if (space > start) {
                 lines.add(text.substring(start, space));
                 start = space + 1;
             } else {
-                lines.add(text.substring(start, start + limit));
-                start += limit;
+                lines.add(text.substring(start, limitEnd));
+                start = limitEnd;
             }
         }
     }

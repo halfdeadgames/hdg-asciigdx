@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CodePoints;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TextWrap;
+import com.github.halfdeadgames.asciigdx.workbench.unicodenames.CategoryTypes;
+import com.github.halfdeadgames.asciigdx.workbench.unicodenames.UnicodeFacts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,9 +27,11 @@ final class RulesPageLines {
 
     private final List<PageLine> lines = new ArrayList<>();
     private final int textWidth;
+    private final UnicodeFacts facts;
 
-    private RulesPageLines(int textWidth) {
+    private RulesPageLines(int textWidth, UnicodeFacts facts) {
         this.textWidth = Math.max(1, textWidth);
+        this.facts = facts;
     }
 
     /**
@@ -42,7 +46,13 @@ final class RulesPageLines {
      */
     public static List<PageLine> build(RulesLoadResult rules, String notesMarkdown, int codePoint,
             Set<String> brokenRuleNames, int textWidth) {
-        var page = new RulesPageLines(textWidth);
+        return build(rules, notesMarkdown, codePoint, brokenRuleNames, textWidth, UnicodeFacts.bundled());
+    }
+
+    /** Same as {@link #build(RulesLoadResult, String, int, Set, int)}, with the Unicode facts given by the caller. */
+    public static List<PageLine> build(RulesLoadResult rules, String notesMarkdown, int codePoint,
+            Set<String> brokenRuleNames, int textWidth, UnicodeFacts facts) {
+        var page = new RulesPageLines(textWidth, facts);
         page.addRulesPart(rules, codePoint, brokenRuleNames);
         page.addNotesPart(notesMarkdown);
         return page.lines;
@@ -167,19 +177,21 @@ final class RulesPageLines {
         }
     }
 
-    private static String glyphLabel(int codePoint) {
+    private String glyphLabel(int codePoint) {
         if (isPrintable(codePoint)) {
             return new String(Character.toChars(codePoint));
         }
         return CodePoints.label(codePoint);
     }
 
-    private static boolean isPrintable(int codePoint) {
-        if (!Character.isValidCodePoint(codePoint) || Character.isWhitespace(codePoint)
-                || Character.isSpaceChar(codePoint)) {
+    private boolean isPrintable(int codePoint) {
+        if (!Character.isValidCodePoint(codePoint) || Character.isWhitespace(codePoint)) {
             return false;
         }
-        int type = Character.getType(codePoint);
+        int type = facts.type(codePoint);
+        if (CategoryTypes.isSeparator(type)) {
+            return false;
+        }
         return type != Character.CONTROL && type != Character.FORMAT && type != Character.SURROGATE
                 && type != Character.UNASSIGNED;
     }

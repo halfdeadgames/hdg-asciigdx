@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
-/** The "new glyph" dialog: a typed character to add or go to, with its input handling and drawing. */
+/** The "new glyph" dialog: a typed hex code to add or go to, with its input handling and drawing. */
 public final class NewGlyphDialog {
 
     private static final String TITLE = "NEW GLYPH";

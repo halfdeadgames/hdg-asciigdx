@@ -52,6 +52,13 @@ class TextWrapTest {
     }
 
     @Test
+    void supplementaryCharacterCountsAsOneCellAndIsNotSplit() {
+        String dagger = "🗡";
+        assertEquals(List.of("ab" + dagger, "cd"), TextWrap.wrap("ab" + dagger + "cd", 3));
+        assertEquals(List.of(dagger + dagger, dagger), TextWrap.wrap(dagger + dagger + dagger, 2));
+    }
+
+    @Test
     void negativeWidthWrapsLikeWidthOne() {
         assertEquals(List.of("a", "b", "c"), TextWrap.wrap("abc", -3));
         assertEquals(TextWrap.wrap("ab cd", 1), TextWrap.wrap("ab cd", -3));

@@ -37,8 +37,9 @@ public final class BounceScroll {
 
     /** The visible part of {@code text}, {@code width} characters or fewer, scrolled for the given time. */
     public static String window(String text, int width, float seconds) {
-        int visible = Math.min(Math.max(0, width), text.length());
-        int start = offset(text.length() - visible, seconds);
-        return text.substring(start, start + visible);
+        int total = TextCells.cellCount(text);
+        int visible = Math.min(Math.max(0, width), total);
+        int start = TextCells.indexAfterCells(text, 0, offset(total - visible, seconds));
+        return text.substring(start, TextCells.indexAfterCells(text, start, visible));
     }
 }

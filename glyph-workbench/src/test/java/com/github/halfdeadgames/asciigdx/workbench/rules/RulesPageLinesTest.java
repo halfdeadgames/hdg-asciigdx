@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesPageLines.PageLine;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesPageLines.Role;
+import com.github.halfdeadgames.asciigdx.workbench.unicodenames.UnicodeFacts;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -35,6 +36,21 @@ class RulesPageLinesTest {
             }
         }
         return -1;
+    }
+
+    @Test
+    void newerAssignedGlyphIsPrintedNotLabeled() {
+        var oldJdk = UnicodeFacts.fromTableText("1FA8F So SHOVEL\n1FA90 Zs NEW SPACE\n",
+                codePoint -> Character.UNASSIGNED, codePoint -> null);
+        var result = loaded(rule("R", GlyphSet.all(), List.of()));
+
+        var shovel = RulesPageLines.build(result, null, 0x1FA8F, Set.of(), WIDTH, oldJdk);
+        var space = RulesPageLines.build(result, null, 0x1FA90, Set.of(), WIDTH, oldJdk);
+        var unlisted = RulesPageLines.build(result, null, 0x1FA91, Set.of(), WIDTH, oldJdk);
+
+        assertEquals("RULES FOR " + new String(Character.toChars(0x1FA8F)), shovel.get(0).text());
+        assertEquals("RULES FOR U+1FA90", space.get(0).text());
+        assertEquals("RULES FOR U+1FA91", unlisted.get(0).text());
     }
 
     @Test

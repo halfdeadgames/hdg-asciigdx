@@ -60,6 +60,23 @@ tasks.register('exportFont', JavaExec) {
   }
 }
 
+tasks.register('updateUnicodeNames', JavaExec) {
+  group = 'unicode'
+  description = 'Regenerates src/main/resources/unicode-names.txt. Pass -PucdDir=<folder with DerivedName.txt, DerivedGeneralCategory.txt, DerivedAge.txt, Blocks.txt, and license.txt>.'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'com.github.halfdeadgames.asciigdx.workbench.unicodenames.UpdateUnicodeNames'
+  def commandLineProperties = gradle.startParameter.projectProperties
+  doFirst {
+    if (!commandLineProperties.containsKey('ucdDir')) {
+      throw new GradleException('Pass -PucdDir=<folder with DerivedName.txt, DerivedGeneralCategory.txt, DerivedAge.txt, Blocks.txt, and license.txt>')
+    }
+    args = [
+      rootProject.file(commandLineProperties['ucdDir']).absolutePath,
+      project.file('src/main/resources/unicode-names.txt').absolutePath
+    ]
+  }
+}
+
 run {
   workingDir = rootProject.file('assets').path
   jvmArgs += "--enable-native-access=ALL-UNNAMED"

@@ -9,7 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
  * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
  * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
  * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
- * {@code workbench.newglyph} opens the New glyph dialog with that text typed into it, and
+ * {@code workbench.newglyph} opens the New glyph dialog with that hex code typed into it, and
  * {@code workbench.newsize} opens the New size dialog: {@code list} (or any other value) just opens the list,
  * {@code down:N} moves N rows into it, and {@code other:<typed>} goes to OTHER SIZE... and types the text.
  * {@code workbench.upscalesource} opens the Upscale from dialog (optionally {@code down:N} rows into the list);

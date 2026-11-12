@@ -21,7 +21,7 @@ public final class Panel {
         edge.append(focus ? '╗' : '┐');
         String label = titleLabel(width, title);
         if (!label.isEmpty()) {
-            edge.replace(TITLE_INSET, TITLE_INSET + label.length(), label);
+            edge.replace(TITLE_INSET, TITLE_INSET + TextCells.cellCount(label), label);
         }
         return edge.toString();
     }
@@ -37,8 +37,7 @@ public final class Panel {
             return "";
         }
         int room = titleRoom(width);
-        String shown = title.length() > room ? title.substring(0, room) : title;
-        return " " + shown + " ";
+        return " " + TextCells.prefix(title, room) + " ";
     }
 
     public static String bottomEdge(int width, boolean focus) {
@@ -71,7 +70,7 @@ public final class Panel {
         String label = titleLabel(width, title);
         if (!label.isEmpty()) {
             painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * cellPixels, y * cellPixels,
-                label.length() * cellPixels, cellPixels);
+                TextCells.cellCount(label) * cellPixels, cellPixels);
             painter.text(label, (x + TITLE_INSET) * cellPixels, y * cellPixels,
                 focus ? UiPalette.ACCENT : UiPalette.TITLE);
         }

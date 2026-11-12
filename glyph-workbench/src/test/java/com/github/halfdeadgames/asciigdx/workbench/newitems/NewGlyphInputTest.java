@@ -26,20 +26,25 @@ class NewGlyphInputTest {
     }
 
     @Test
-    void singleCharacterIsItself() {
-        assertCodePoint(0x41, "A");
-        assertCodePoint(0x34, "4");
-        assertCodePoint(0x20, " ");
+    void singleHexDigitIsHexNotTheLiteralCharacter() {
+        assertRefused("A");
+        assertRefused("4");
+        assertRefused("f");
     }
 
     @Test
-    void singleHexLetterIsTheLetter() {
-        assertCodePoint(0x66, "f");
+    void literalCharactersAreNotGlyphs() {
+        assertRefused("é");
+        assertRefused("☺");
+        assertRefused(new String(Character.toChars(0x1F600)));
+        assertRefused("");
     }
 
     @Test
-    void nonBmpCharacterCountsAsOne() {
-        assertCodePoint(0x1F600, new String(Character.toChars(0x1F600)));
+    void supplementaryHexIsParsed() {
+        assertCodePoint(0x1F5E1, "1F5E1");
+        assertCodePoint(0x1F5E1, "U+1F5E1");
+        assertCodePoint(0xE9, "u+e9");
     }
 
     @Test
@@ -62,12 +67,6 @@ class NewGlyphInputTest {
     void surroundingWhitespaceIsStripped() {
         assertCodePoint(0x41, "  U+0041 ");
         assertCodePoint(0x41, " 41\t");
-    }
-
-    @Test
-    void strippedSingleCharacterIsTheCharacter() {
-        assertCodePoint(0x34, " 4 ");
-        assertCodePoint(0x5A, " Z ");
     }
 
     @Test

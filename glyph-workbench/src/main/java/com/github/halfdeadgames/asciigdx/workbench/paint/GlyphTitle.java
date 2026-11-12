@@ -14,6 +14,8 @@ final class GlyphTitle {
     private final StringBuilder line = new StringBuilder();
     private int shownCodePoint = -1;
     private float shownSeconds;
+    private int cachedNameCodePoint = -1;
+    private String cachedName = "";
 
     void draw(Painter painter, CellRect panel, int codePoint, float deltaSeconds) {
         advance(codePoint, deltaSeconds);
@@ -36,7 +38,16 @@ final class GlyphTitle {
         GlyphLabel.appendHex(line, codePoint);
         line.append("  ");
         int nameChars = Math.max(1, panelWidth - PANEL_BORDER_CHARS - line.length());
-        line.append(BounceScroll.window(GlyphName.fullName(codePoint), nameChars, shownSeconds));
+        refreshNameCache(codePoint);
+        line.append(BounceScroll.window(cachedName, nameChars, shownSeconds));
         return line;
+    }
+
+    private void refreshNameCache(int codePoint) {
+        if (codePoint == cachedNameCodePoint) {
+            return;
+        }
+        cachedNameCodePoint = codePoint;
+        cachedName = GlyphName.fullName(codePoint);
     }
 }

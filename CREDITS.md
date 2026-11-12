@@ -20,6 +20,12 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 | [gdx-freetype](https://libgdx.com/wiki/extensions/gdx-freetype) | libGDX contributors | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0); bundled FreeType natives under the [FreeType License](https://freetype.org/license.html) | Rasterizing TTF fonts into glyph sheets |
 | [colorful](https://github.com/tommyettinger/colorful-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Color conversion |
 
+## Data
+
+| Data | Author | License | Used for |
+|---|---|---|---|
+| [Unicode Character Database](https://www.unicode.org/ucd/) | Unicode, Inc. | [Unicode License v3](https://www.unicode.org/license.txt) | Character names newer than the JDK's data, in the glyph workbench (`glyph-workbench/src/main/resources/unicode-names.txt`; the license text is kept in that file) |
+
 ## Development tools
 
 Used only by the `sandbox` demo modules and the glyph workbench (Checkstyle and the native folder dialog). Not part of any release artifact.

@@ -184,7 +184,7 @@ public final class MessageStrip {
     }
 
     String lineText(Message message, int room) {
-        if (message.text().length() <= room) {
+        if (TextCells.cellCount(message.text()) <= room) {
             return message.text();
         }
         Float startSeconds = scrollStartSeconds.get(message);

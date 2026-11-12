@@ -21,26 +21,18 @@ final class NewGlyphInput {
     }
 
     /**
-     * Reads either a single character or a hex code point such as {@code 41} or {@code U+0041}.
+     * Reads a hex code point such as {@code 41} or {@code U+0041}. Every input is hex, so a lone {@code A}
+     * means U+000A.
      *
      * @param typed the raw text from the prompt
      * @return the code point, or an error message
      */
     static Result parse(String typed) {
-        if (typed == null || typed.isEmpty()) {
-            return failure("Type a character or a code point like U+0041");
-        }
-        if (typed.codePointCount(0, typed.length()) == 1) {
-            return check(typed.codePointAt(0));
-        }
-        var stripped = typed.strip();
+        var stripped = typed == null ? "" : typed.strip();
         if (stripped.isEmpty()) {
-            return failure("Type a character or a code point like U+0041");
+            return failure("Type a hex code like 41 or U+0041");
         }
         boolean hasPrefix = stripped.startsWith("U+") || stripped.startsWith("u+");
-        if (!hasPrefix && stripped.codePointCount(0, stripped.length()) == 1) {
-            return check(stripped.codePointAt(0));
-        }
         return parseHex(stripped, hasPrefix);
     }
 

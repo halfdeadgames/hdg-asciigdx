@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScreenKit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.SelectList;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TextCells;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBarStatus;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
@@ -206,7 +207,7 @@ final class MenuScreen implements WorkbenchScreen {
             if (y >= bottom) {
                 break;
             }
-            painter.text(line.length() > width - 4 ? line.substring(0, width - 4) : line,
+            painter.text(TextCells.prefix(line, width - 4),
                 (DETAIL_X + 2) * CELL, y * CELL, UiPalette.TEXT);
             y += SelectList.PITCH;
         }

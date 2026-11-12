@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
+import com.github.halfdeadgames.asciigdx.workbench.unicodenames.UnicodeFacts;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +35,11 @@ public final class SheetOrder {
      * @return code points by slot, with {@link #FILLER} in empty slots
      */
     public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437) {
+        return slotsFor(codePoints, reserveCp437, UnicodeFacts.bundled());
+    }
+
+    /** Same as {@link #slotsFor(Collection, boolean)}, with the Unicode facts given by the caller. */
+    public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437, UnicodeFacts facts) {
         List<Integer> slots = new ArrayList<>();
         if (reserveCp437) {
             for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
@@ -47,17 +53,18 @@ public final class SheetOrder {
             if (reserveCp437 && GlyphOrder.CP437.contains(codePoint)) {
                 continue;
             }
-            (isPrivateUse(codePoint) ? privateUse : others).add(codePoint);
+            (isPrivateUse(codePoint, facts) ? privateUse : others).add(codePoint);
         }
-        appendByBlock(slots, others);
-        appendByBlock(slots, privateUse);
+        appendByBlock(slots, others, facts);
+        appendByBlock(slots, privateUse, facts);
         return slots.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private static void appendByBlock(List<Integer> slots, Collection<Integer> sortedCodePoints) {
-        Character.UnicodeBlock currentBlock = null;
+    private static void appendByBlock(List<Integer> slots, Collection<Integer> sortedCodePoints,
+                                      UnicodeFacts facts) {
+        String currentBlock = null;
         for (int codePoint : sortedCodePoints) {
-            Character.UnicodeBlock block = Character.UnicodeBlock.of(codePoint);
+            String block = facts.blockOf(codePoint);
             if (!Objects.equals(block, currentBlock)) {
                 while (slots.size() % COLUMNS != 0) {
                     slots.add(FILLER);
@@ -71,7 +78,7 @@ public final class SheetOrder {
         }
     }
 
-    private static boolean isPrivateUse(int codePoint) {
-        return Character.getType(codePoint) == Character.PRIVATE_USE;
+    private static boolean isPrivateUse(int codePoint, UnicodeFacts facts) {
+        return facts.type(codePoint) == Character.PRIVATE_USE;
     }
 }

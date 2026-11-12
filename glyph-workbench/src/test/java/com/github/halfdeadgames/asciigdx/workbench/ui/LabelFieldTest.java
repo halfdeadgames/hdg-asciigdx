@@ -40,6 +40,13 @@ class LabelFieldTest {
     }
 
     @Test
+    void privateUseCharactersAreRefused() {
+        LabelField field = field("");
+        type(field, "abcd\uDFFF");
+        assertEquals("ABCD", field.value());
+    }
+
+    @Test
     void lengthStopsAtTheMaximum() {
         LabelField field = field("");
         type(field, "abcdefghij");

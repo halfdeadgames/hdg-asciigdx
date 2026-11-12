@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
+import com.github.halfdeadgames.asciigdx.workbench.unicodenames.UnicodeFacts;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -78,6 +79,38 @@ class SheetOrderTest {
         assertEquals(0xFF21, order[16]);
         assertEquals(0xE000, order[32]);
         assertEquals(48, order.length);
+    }
+
+    @Test
+    void twoDifferentBlocksNewerThanTheJdkGetSeparateRows() {
+        UnicodeFacts oldJdk = UnicodeFacts.fromTableText("""
+            1FA8F So SHOVEL
+            1FB00 So LEGACY ONE
+            BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
+            BLOCK 1FB00..1FBFF Symbols for Legacy Computing
+            """, codePoint -> Character.UNASSIGNED, codePoint -> null);
+
+        int[] order = SheetOrder.slotsFor(Set.of(0x1FA8F, 0x1FB00), false, oldJdk);
+
+        assertEquals(0x1FA8F, order[0]);
+        assertEquals(FILLER, order[1]);
+        assertEquals(0x1FB00, order[16]);
+        assertEquals(32, order.length);
+    }
+
+    @Test
+    void sameNewerBlockSharesARow() {
+        UnicodeFacts oldJdk = UnicodeFacts.fromTableText("""
+            1FA8F So SHOVEL
+            1FA90 So OTHER
+            BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
+            """, codePoint -> Character.UNASSIGNED, codePoint -> null);
+
+        int[] order = SheetOrder.slotsFor(Set.of(0x1FA8F, 0x1FA90), false, oldJdk);
+
+        assertEquals(0x1FA8F, order[0]);
+        assertEquals(0x1FA90, order[1]);
+        assertEquals(16, order.length);
     }
 
     @Test

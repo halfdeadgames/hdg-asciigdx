@@ -9,6 +9,8 @@ public final class LabelField {
     static final int MAX_LENGTH = 8;
 
     private static final char COMMENT_MARK = '#';
+    private static final char PRIVATE_USE_FIRST = '';
+    private static final char PRIVATE_USE_LAST = '';
 
     private final StringBuilder text = new StringBuilder();
     private boolean active;
@@ -55,6 +57,12 @@ public final class LabelField {
 
     private static boolean isAccepted(char character) {
         return !Character.isISOControl(character) && !Character.isWhitespace(character)
-            && !Character.isSpaceChar(character) && !Character.isSurrogate(character);
+            && !Character.isSpaceChar(character) && !Character.isSurrogate(character)
+            && !isPrivateUse(character);
+    }
+
+    // Supplementary characters reach keyTyped truncated to a char, which lands in this range.
+    private static boolean isPrivateUse(char character) {
+        return character >= PRIVATE_USE_FIRST && character <= PRIVATE_USE_LAST;
     }
 }

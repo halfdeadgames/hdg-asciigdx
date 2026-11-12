@@ -41,9 +41,14 @@ final class SceneDrawing {
     /** Writes {@code text} from {@code column}, cut off or padded with spaces to exactly {@code width} cells. */
     static void writePadded(TerminalGrid grid, int column, int row, int width, CharSequence text,
                             int foreground, int background) {
+        int index = 0;
         for (int offset = 0; offset < width; offset++) {
-            char character = offset < text.length() ? text.charAt(offset) : ' ';
-            grid.set(column + offset, row, character, foreground, background);
+            int codePoint = ' ';
+            if (index < text.length()) {
+                codePoint = Character.codePointAt(text, index);
+                index += Character.charCount(codePoint);
+            }
+            grid.set(column + offset, row, codePoint, foreground, background);
         }
     }
 

@@ -13,7 +13,7 @@ public final class Dialog {
 
         /** Cells the button takes: " KEY ", a gap, and the label. */
         int width() {
-            return key.length() + 3 + label.length();
+            return TextCells.cellCount(key) + 3 + TextCells.cellCount(label);
         }
     }
 
@@ -67,9 +67,9 @@ public final class Dialog {
         int areaY = area.y();
         int areaWidth = area.width();
         int areaHeight = area.height();
-        int content = Math.max(buttonsWidth(buttons, BUTTON_GAP), title.length() + 2);
+        int content = Math.max(buttonsWidth(buttons, BUTTON_GAP), TextCells.cellCount(title) + 2);
         for (String line : lines) {
-            content = Math.max(content, line.length());
+            content = Math.max(content, TextCells.cellCount(line));
         }
         int width = content + 2 * (PADDING + 1);
         width = Math.min(width, Math.max(MIN_CAPPED_WIDTH, areaWidth - SHADOW_MARGIN));
@@ -136,12 +136,12 @@ public final class Dialog {
                     (layout.textY() + i) * cellPixels - inset,
                     Math.min(inputCells, layout.textWidth()) * cellPixels + 2 * inset, cellPixels + 2 * inset);
             }
-            painter.text(line.length() > layout.textWidth() ? line.substring(0, layout.textWidth()) : line,
+            painter.text(TextCells.prefix(line, layout.textWidth()),
                 layout.textX() * cellPixels, (layout.textY() + i) * cellPixels, input ? INPUT_TEXT : UiPalette.TEXT);
         }
         for (int i = 0; i < buttons.size(); i++) {
             Button button = buttons.get(i);
-            int capWidth = button.key().length() + 2;
+            int capWidth = TextCells.cellCount(button.key()) + 2;
             int bx = layout.buttonXs().get(i);
             painter.fill(UiPalette.KEYBG, bx * cellPixels, layout.buttonY() * cellPixels, capWidth * cellPixels,
                 cellPixels);

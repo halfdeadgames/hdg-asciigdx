@@ -10,6 +10,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import com.github.halfdeadgames.asciigdx.workbench.ui.TextCells;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.Random;
 import java.util.Set;
@@ -111,11 +112,11 @@ public final class PaintPreview {
             "NEED " + need + ", HAVE " + have,
         };
         for (String candidate : candidates) {
-            if (candidate.length() <= maxChars) {
+            if (TextCells.cellCount(candidate) <= maxChars) {
                 return candidate;
             }
         }
-        return candidates[candidates.length - 1].substring(0, Math.max(0, maxChars));
+        return TextCells.prefix(candidates[candidates.length - 1], Math.max(0, maxChars));
     }
 
     // Glyphs are clipped by skipping the pixel columns outside the content area; no GL scissor is involved.
@@ -138,7 +139,7 @@ public final class PaintPreview {
             TickerLine line = tickerLines[i];
             if (line == null) {
                 String message = tickerMessages[i];
-                painter.text(message.length() > visibleWidth / cellPixels() ? message.substring(0, visibleWidth / cellPixels()) : message,
+                painter.text(TextCells.prefix(message, visibleWidth / cellPixels()),
                     left, bandTop + (bandHeight - cellPixels()) / 2, tickerMessageColors[i]);
                 continue;
             }

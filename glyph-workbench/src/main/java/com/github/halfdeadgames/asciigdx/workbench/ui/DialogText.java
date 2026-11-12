@@ -16,24 +16,28 @@ public final class DialogText {
 
     /** Splits a message over two lines of {@link #LINE_CELLS}, at a space when there is one; the rest is cut. */
     public static List<String> wrapToTwoLines(String message) {
-        if (message.length() <= LINE_CELLS) {
+        if (TextCells.cellCount(message) <= LINE_CELLS) {
             return List.of(message, "");
         }
-        int split = message.lastIndexOf(' ', LINE_CELLS);
+        int lineEnd = TextCells.indexAfterCells(message, 0, LINE_CELLS);
+        int split = message.lastIndexOf(' ', lineEnd);
         if (split <= 0) {
-            split = LINE_CELLS;
+            split = lineEnd;
         }
         return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
     }
 
-    /** Cuts a value to at most {@link #LINE_CELLS} characters. */
+    /** Cuts a value to at most {@link #LINE_CELLS} cells. */
     public static String cut(String value) {
-        return value.length() > LINE_CELLS ? value.substring(0, LINE_CELLS) : value;
+        return TextCells.prefix(value, LINE_CELLS);
     }
 
-    /** Cuts a line longer than {@link #LINE_CELLS} and ends it with "..". */
+    /** Cuts a line longer than {@link #LINE_CELLS} cells and ends it with "..". */
     public static String ellipsize(String line) {
-        return line.length() > LINE_CELLS ? line.substring(0, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS : line;
+        if (TextCells.cellCount(line) <= LINE_CELLS) {
+            return line;
+        }
+        return TextCells.prefix(line, LINE_CELLS - ELLIPSIS.length()) + ELLIPSIS;
     }
 
     /**

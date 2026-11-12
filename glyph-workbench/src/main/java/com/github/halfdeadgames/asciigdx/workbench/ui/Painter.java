@@ -59,10 +59,12 @@ public final class Painter {
     public void text(CharSequence value, int x, int top, Color color) {
         int size = cellPixels();
         batch.setColor(color);
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c != ' ') {
-                batch.draw(font.glyph(c), x + i * size, flipY(top, size), size, size);
+        int column = 0;
+        for (int i = 0; i < value.length(); column++) {
+            int codePoint = Character.codePointAt(value, i);
+            i += Character.charCount(codePoint);
+            if (codePoint != ' ') {
+                batch.draw(font.glyph(codePoint), x + column * size, flipY(top, size), size, size);
             }
         }
     }

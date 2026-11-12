@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.help;
 
+import com.github.halfdeadgames.asciigdx.workbench.ui.TextCells;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TextWrap;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,7 +84,7 @@ final class HelpWrap {
     private static int longestWord(String text) {
         int longest = 0;
         for (String word : text.split(" ")) {
-            longest = Math.max(longest, word.length());
+            longest = Math.max(longest, TextCells.cellCount(word));
         }
         return longest;
     }
@@ -99,6 +100,6 @@ final class HelpWrap {
     }
 
     private static String clip(String text, int charsPerLine) {
-        return text.length() > charsPerLine ? text.substring(0, Math.max(0, charsPerLine)) : text;
+        return TextCells.prefix(text, Math.max(0, charsPerLine));
     }
 }

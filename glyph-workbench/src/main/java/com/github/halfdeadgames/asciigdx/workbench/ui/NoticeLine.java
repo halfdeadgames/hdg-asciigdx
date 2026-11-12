@@ -21,12 +21,12 @@ public final class NoticeLine {
     }
 
     static String fit(String notice, int room) {
-        if (notice.length() <= room) {
+        if (TextCells.cellCount(notice) <= room) {
             return notice;
         }
         if (room < CUT_MARK.length() + 1) {
-            return notice.substring(0, room);
+            return TextCells.prefix(notice, room);
         }
-        return notice.substring(0, room - CUT_MARK.length()) + CUT_MARK;
+        return TextCells.prefix(notice, room - CUT_MARK.length()) + CUT_MARK;
     }
 }

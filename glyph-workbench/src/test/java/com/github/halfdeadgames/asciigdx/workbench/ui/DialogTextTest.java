@@ -23,6 +23,15 @@ class DialogTextTest {
     }
 
     @Test
+    void supplementaryCharacterAtTheBoundaryIsNotSplit() {
+        String dagger = "🗡";
+        String message = "a".repeat(25) + dagger + "b".repeat(4);
+        assertEquals(List.of("a".repeat(25) + dagger, "b".repeat(4)), DialogText.wrapToTwoLines(message));
+        assertEquals("a".repeat(25) + dagger, DialogText.cut(message));
+        assertEquals("a".repeat(23) + dagger + "..", DialogText.ellipsize("a".repeat(23) + dagger + "bbbb"));
+    }
+
+    @Test
     void secondLineIsCutWhenStillTooLong() {
         assertEquals("b".repeat(26), DialogText.wrapToTwoLines("a " + "b".repeat(40)).get(1));
     }
