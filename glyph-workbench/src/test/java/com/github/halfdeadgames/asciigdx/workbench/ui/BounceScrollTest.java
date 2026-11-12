@@ -59,9 +59,22 @@ class BounceScrollTest {
         String atStart = BounceScroll.window(text, width, 0f);
         String atEnd = BounceScroll.window(text, width, HOLD + overflow / BounceScroll.CHARS_PER_SECOND);
         assertEquals(width, atStart.length());
-        assertEquals("DOUBLE EXCLAMATI", atStart);
+        assertEquals("DOUBLE EXCLAMA..", atStart);
         assertEquals(width, atEnd.length());
-        assertEquals("EXCLAMATION MARK", atEnd);
+        assertEquals("..CLAMATION MARK", atEnd);
+    }
+
+    @Test
+    void midScrollMarksBothSides() {
+        String shown = BounceScroll.window("DOUBLE EXCLAMATION MARK", 16, HOLD + 0.5f);
+        assertEquals(16, shown.length());
+        assertEquals("..LE EXCLAMATI..", shown);
+    }
+
+    @Test
+    void narrowWindowShowsNoMarkers() {
+        assertEquals("DOUBL", BounceScroll.window("DOUBLE EXCLAMATION MARK", 5, 0f));
+        assertEquals("UBLE ", BounceScroll.window("DOUBLE EXCLAMATION MARK", 5, HOLD + 0.5f));
     }
 
     @Test

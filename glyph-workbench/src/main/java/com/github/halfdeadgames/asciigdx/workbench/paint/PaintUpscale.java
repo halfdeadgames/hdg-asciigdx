@@ -284,7 +284,7 @@ final class PaintUpscale {
             return;
         }
         candidates.begin(label(chosen.font()), found);
-        messages.ok("Pick how to upscale. Enter to apply, Esc to go back.");
+        messages.ok(PaintUpscaleCandidates.CHOOSING_MESSAGE);
     }
 
     private void backToSourcePick() {

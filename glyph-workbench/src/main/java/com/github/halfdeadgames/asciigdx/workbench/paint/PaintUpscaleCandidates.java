@@ -21,6 +21,8 @@ import java.util.List;
  */
 final class PaintUpscaleCandidates {
 
+    static final String CHOOSING_MESSAGE = "Pick how to upscale. Enter to apply, Esc to go back.";
+
     private static final int MOST_NUMBERED_CANDIDATES = 9;
     private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
         new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
@@ -131,6 +133,7 @@ final class PaintUpscaleCandidates {
             replaceTarget();
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             messages.nextAction();
+            messages.ok(CHOOSING_MESSAGE);
             confirmingReplace = false;
         }
     }
