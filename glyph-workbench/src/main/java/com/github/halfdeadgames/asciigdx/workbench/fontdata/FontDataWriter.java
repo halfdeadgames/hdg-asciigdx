@@ -1,10 +1,11 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
+import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Writes {@link FontData} as font data text, glyphs in sheet order and derived glyphs as recipes. */
+/** Writes {@link FontData} as font data text, CP437 glyphs first, then the rest by code point, and derived glyphs as recipes. */
 public final class FontDataWriter {
 
     private FontDataWriter() {
@@ -19,14 +20,28 @@ public final class FontDataWriter {
     public static String write(FontData data) {
         List<String> blocks = new ArrayList<>();
         blocks.add("cell " + data.cellWidth() + "x" + data.cellHeight());
-        // Always the CP437 order, so toggling a font's glyph list never reorders its data file.
-        for (int codePoint : SheetOrder.slotsFor(data.entries().keySet(), true)) {
-            GlyphEntry entry = data.entries().get(codePoint);
-            if (entry != null) {
-                blocks.add(writeEntry(entry));
-            }
+        for (int codePoint : fileOrder(data)) {
+            blocks.add(writeEntry(data.entries().get(codePoint)));
         }
         return String.join("\n\n", blocks) + "\n";
+    }
+
+    // CP437 glyphs keep their fixed order, so toggling a font's glyph list never reorders the file;
+    // every other glyph follows in ascending code point order.
+    private static List<Integer> fileOrder(FontData data) {
+        List<Integer> order = new ArrayList<>();
+        for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
+            int codePoint = GlyphOrder.CP437.codePointAt(slot);
+            if (data.entries().containsKey(codePoint)) {
+                order.add(codePoint);
+            }
+        }
+        for (int codePoint : data.entries().keySet()) {
+            if (!GlyphOrder.CP437.contains(codePoint)) {
+                order.add(codePoint);
+            }
+        }
+        return order;
     }
 
     private static String writeEntry(GlyphEntry entry) {

@@ -96,13 +96,24 @@ class FontDataParserTest {
     }
 
     @Test
-    void writerKeepsDerivedGlyphsAsRecipesInSheetOrder() {
+    void writerKeepsDerivedGlyphsAsRecipesInCp437Order() {
         String written = FontDataWriter.write(FontDataParser.parse(file(
             P, "U+0052 R = mirror U+0050", glyph("U+263A ☺", "#......."))));
 
         assertTrue(written.contains("U+0052 R = mirror U+0050"));
         assertTrue(written.indexOf("U+263A") < written.indexOf("U+0050"), "CP437 slot 1 comes before 'P'");
         assertTrue(written.indexOf("U+0050") < written.indexOf("U+0052"));
+    }
+
+    @Test
+    void writerPutsCp437FirstThenOtherGlyphsByCodePoint() {
+        String written = FontDataWriter.write(FontDataParser.parse(file(
+            glyph("U+1FB82 \\u{1FB82}", "#......."),
+            glyph("U+E841 \\u{E841}", "##......"),
+            P)));
+
+        assertTrue(written.indexOf("U+0050") < written.indexOf("U+E841"), "CP437 glyph first");
+        assertTrue(written.indexOf("U+E841") < written.indexOf("U+1FB82"), "private use before supplementary");
     }
 
     @Test
