@@ -95,4 +95,14 @@ public final class ScreenKit {
     public Painter painter() {
         return painter;
     }
+
+    /** The viewport, for screens that read the pointer or world size themselves. */
+    public ScreenViewport viewport() {
+        return viewport;
+    }
+
+    /** Another painter on the same batch, font, and viewport, for screens that draw with two scales. */
+    public Painter newPainter() {
+        return new Painter(batch, whitePixel, source, viewport);
+    }
 }

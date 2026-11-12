@@ -5,14 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.workbench.AtomicFiles;
 import com.github.halfdeadgames.asciigdx.workbench.CursorNavigator;
 import com.github.halfdeadgames.asciigdx.workbench.DevCapture;
@@ -60,6 +53,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.MenuKeys;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MenuPointer;
 import com.github.halfdeadgames.asciigdx.workbench.ui.MessageStrip;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
+import com.github.halfdeadgames.asciigdx.workbench.ui.ScreenKit;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TopBar;
@@ -129,7 +123,7 @@ public final class PaintScreen implements WorkbenchScreen {
         action -> PaintMenu.isAvailable(action, menuContext());
     private PaintDerivePick derivePick;
     private PaintDerive derive;
-    private final ScreenViewport viewport = new ScreenViewport();
+    private final ScreenKit kit = new ScreenKit();
     private final StringBuilder line = new StringBuilder();
     private final DevCapture devCapture = new DevCapture();
     private final KeyRepeat repeatLeft = new KeyRepeat();
@@ -146,9 +140,6 @@ public final class PaintScreen implements WorkbenchScreen {
     private final PaintNewFont newFont;
     private PaintGuideListPanel guideListPanel;
 
-    private SpriteBatch batch;
-    private Texture whitePixel;
-    private TextureGlyphSource source;
     private Painter painter;
     private Painter rulesPainter;
     private PaintUiScale uiScale;
@@ -260,15 +251,9 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private void createPainters() {
-        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixel.setColor(Color.WHITE);
-        pixel.fill();
-        whitePixel = new Texture(pixel);
-        pixel.dispose();
-        source = TextureGlyphSource.loadDungeonMode();
-        batch = new SpriteBatch();
-        painter = new Painter(batch, whitePixel, source, viewport);
-        rulesPainter = new Painter(batch, whitePixel, source, viewport);
+        kit.create();
+        painter = kit.painter();
+        rulesPainter = kit.newPainter();
     }
 
     private void setUpScale() {
@@ -295,7 +280,7 @@ public final class PaintScreen implements WorkbenchScreen {
         rules = new RulesScreen(rulesPainter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
         scrollRouting = new PaintScrollRouting(messages, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
-        pointer = new PaintPointer(viewport, scrollRouting);
+        pointer = new PaintPointer(kit.viewport(), scrollRouting);
         guideListPointerTargets = new PointerTargets(List.of(
             new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cellPixels)));
         pointerTargets = new PointerTargets(List.of(
@@ -959,7 +944,7 @@ public final class PaintScreen implements WorkbenchScreen {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
+        kit.resize(width, height);
         if (editor != null) {
             updateScale(width, height);
         }
@@ -973,11 +958,11 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private int worldWidth() {
-        return Math.round(viewport.getWorldWidth());
+        return Math.round(kit.viewport().getWorldWidth());
     }
 
     private int worldHeight() {
-        return Math.round(viewport.getWorldHeight());
+        return Math.round(kit.viewport().getWorldHeight());
     }
 
     private PaintMenu.Context menuContext() {
@@ -1659,10 +1644,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (statusBarShown() != layoutBarShown || upscale.needsLayout()) {
             layoutPanels();
         }
-        ScreenUtils.clear(UiPalette.BG);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
+        kit.beginFrame();
         int codePoint = codePoints[cursor];
         int columns = worldWidth() / cellPixels();
         int rows = worldHeight() / cellPixels();
@@ -1670,7 +1652,7 @@ public final class PaintScreen implements WorkbenchScreen {
         refreshLayers();
         drawDialogs(codePoint, columns, rows);
         drawTopLayers(codePoint, columns, rows);
-        batch.end();
+        kit.endFrame();
     }
 
     private void drawBase(int codePoint, int columns, int rows) {
@@ -1808,8 +1790,6 @@ public final class PaintScreen implements WorkbenchScreen {
     @Override
     public void hide() {
         clearWindowSizeLimits();
-        batch.dispose();
-        whitePixel.dispose();
-        source.dispose();
+        kit.dispose();
     }
 }
