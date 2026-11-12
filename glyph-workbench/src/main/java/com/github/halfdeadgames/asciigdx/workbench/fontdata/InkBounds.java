@@ -1,6 +1,5 @@
-package com.github.halfdeadgames.asciigdx.workbench.rules;
+package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.Optional;
 
 /**
@@ -11,7 +10,7 @@ import java.util.Optional;
  * @param top blank rows above the first inked row
  * @param bottom blank rows below the last inked row
  */
-record InkBounds(int left, int right, int top, int bottom) {
+public record InkBounds(int left, int right, int top, int bottom) {
 
     /**
      * Measures the margins of a grid.
@@ -19,7 +18,7 @@ record InkBounds(int left, int right, int top, int bottom) {
      * @param grid the grid to measure
      * @return the margins, or empty if the grid has no ink
      */
-    static Optional<InkBounds> measure(PixelGrid grid) {
+    public static Optional<InkBounds> measure(PixelGrid grid) {
         if (!grid.hasLitPixel()) {
             return Optional.empty();
         }
@@ -66,7 +65,8 @@ record InkBounds(int left, int right, int top, int bottom) {
         return row;
     }
 
-    static boolean columnHasInk(PixelGrid grid, int column) {
+    /** Whether any pixel in the column is lit. */
+    public static boolean columnHasInk(PixelGrid grid, int column) {
         for (int y = 0; y < grid.getHeight(); y++) {
             if (grid.isLit(column, y)) {
                 return true;
@@ -75,7 +75,8 @@ record InkBounds(int left, int right, int top, int bottom) {
         return false;
     }
 
-    static boolean rowHasInk(PixelGrid grid, int row) {
+    /** Whether any pixel in the row is lit. */
+    public static boolean rowHasInk(PixelGrid grid, int row) {
         for (int x = 0; x < grid.getWidth(); x++) {
             if (grid.isLit(x, row)) {
                 return true;

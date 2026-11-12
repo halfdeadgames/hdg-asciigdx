@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.InkBounds;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.ArrayList;

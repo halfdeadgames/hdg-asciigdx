@@ -184,9 +184,7 @@ public final class FontEditor {
 
     public boolean isLit(int codePoint, int x, int y) {
         PixelGlyph glyph = resolved.get(codePoint);
-        return glyph != null && x >= 0 && y >= 0
-            && x < glyph.pixels().getWidth() && y < glyph.pixels().getHeight()
-            && glyph.pixels().isLit(x, y);
+        return glyph != null && glyph.pixels().isLitWithin(x, y);
     }
 
     /** Whether the glyph existed in the last saved (or loaded) state. */
@@ -197,9 +195,7 @@ public final class FontEditor {
     /** Whether a pixel was lit in the last saved (or loaded) state; false for glyphs that were not saved. */
     public boolean wasLitWhenSaved(int codePoint, int x, int y) {
         PixelGlyph glyph = savedGlyphs.get(codePoint);
-        return glyph != null && x >= 0 && y >= 0
-            && x < glyph.pixels().getWidth() && y < glyph.pixels().getHeight()
-            && glyph.pixels().isLit(x, y);
+        return glyph != null && glyph.pixels().isLitWithin(x, y);
     }
 
     public boolean isPaintable(int codePoint, int x, int y) {

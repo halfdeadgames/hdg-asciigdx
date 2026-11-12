@@ -1,8 +1,10 @@
 package com.github.halfdeadgames.asciigdx.workbench.derive;
 
+import com.github.halfdeadgames.asciigdx.workbench.fontdata.InkBounds;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
+import java.util.Optional;
 
 /** Judges the overlay part being picked and words the warning for it. It holds no drawing or input code. */
 public final class OverlayCheck {
@@ -66,12 +68,12 @@ public final class OverlayCheck {
             return new Result(Problem.EMPTY, EMPTY_MESSAGE, false, 0, 0);
         }
         PixelGrid pixels = source.pixels();
-        int left = leftmostInk(pixels);
-        boolean hasRange = left >= 0;
-        int min = hasRange ? -left : 0;
-        int max = hasRange ? pixels.getWidth() - 1 - rightmostInk(pixels) : 0;
-        int minDown = hasRange ? -topmostInk(pixels) : 0;
-        int maxDown = hasRange ? pixels.getHeight() - 1 - bottommostInk(pixels) : 0;
+        Optional<InkBounds> bounds = InkBounds.measure(pixels);
+        boolean hasRange = bounds.isPresent();
+        int min = hasRange ? -bounds.get().left() : 0;
+        int max = hasRange ? bounds.get().right() : 0;
+        int minDown = hasRange ? -bounds.get().top() : 0;
+        int maxDown = hasRange ? bounds.get().bottom() : 0;
         if (hasRange && (shift < min || shift > max)) {
             return outside("SHIFT", shift, min, max, min, max, minDown, maxDown);
         }
@@ -131,63 +133,8 @@ public final class OverlayCheck {
         return Blink.isOnAt(seconds);
     }
 
-    static String signed(int value) {
+    /** The value with a leading + when positive, for example +3, 0, -2. */
+    public static String signed(int value) {
         return value > 0 ? "+" + value : String.valueOf(value);
-    }
-
-    /** First column holding ink, or -1 when the grid has none. */
-    private static int leftmostInk(PixelGrid grid) {
-        for (int x = 0; x < grid.getWidth(); x++) {
-            if (columnHasInk(grid, x)) {
-                return x;
-            }
-        }
-        return -1;
-    }
-
-    private static int rightmostInk(PixelGrid grid) {
-        for (int x = grid.getWidth() - 1; x >= 0; x--) {
-            if (columnHasInk(grid, x)) {
-                return x;
-            }
-        }
-        return -1;
-    }
-
-    /** First row holding ink, or -1 when the grid has none. */
-    private static int topmostInk(PixelGrid grid) {
-        for (int y = 0; y < grid.getHeight(); y++) {
-            if (rowHasInk(grid, y)) {
-                return y;
-            }
-        }
-        return -1;
-    }
-
-    private static int bottommostInk(PixelGrid grid) {
-        for (int y = grid.getHeight() - 1; y >= 0; y--) {
-            if (rowHasInk(grid, y)) {
-                return y;
-            }
-        }
-        return -1;
-    }
-
-    private static boolean rowHasInk(PixelGrid grid, int y) {
-        for (int x = 0; x < grid.getWidth(); x++) {
-            if (grid.isLit(x, y)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean columnHasInk(PixelGrid grid, int x) {
-        for (int y = 0; y < grid.getHeight(); y++) {
-            if (grid.isLit(x, y)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

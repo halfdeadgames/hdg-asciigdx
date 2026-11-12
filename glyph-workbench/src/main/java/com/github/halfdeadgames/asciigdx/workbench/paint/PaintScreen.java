@@ -768,7 +768,7 @@ public final class PaintScreen implements WorkbenchScreen {
         int column = Math.floorDiv(pointer.unprojectedPixelX(), cellPixels());
         int row = Math.floorDiv(pointer.unprojectedPixelY(), cellPixels());
         CellRect area = rects.belowPreview();
-        return column >= area.x() && column < area.x() + area.width() && row >= area.y() && row < area.bottom();
+        return area.contains(column, row);
     }
 
     private final class GuideListPanelHost implements PaintGuideListPanel.Host {

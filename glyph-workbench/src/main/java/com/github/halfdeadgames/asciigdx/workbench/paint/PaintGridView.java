@@ -156,7 +156,7 @@ final class PaintGridView {
         Color lit = previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
-                boolean on = previewGlyph == null ? editor.isLit(codePoint, x, y) : isLit(previewGlyph, x, y);
+                boolean on = previewGlyph == null ? editor.isLit(codePoint, x, y) : previewGlyph.pixels().isLitWithin(x, y);
                 Color fill = on ? lit : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
@@ -330,10 +330,6 @@ final class PaintGridView {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
-    }
-
-    private static boolean isLit(PixelGlyph glyph, int x, int y) {
-        return x < glyph.pixels().getWidth() && y < glyph.pixels().getHeight() && glyph.pixels().isLit(x, y);
     }
 
     // Orange with a dark outline reads on both white and dark pixels.

@@ -75,8 +75,7 @@ public final class PaintHelpPanel {
 
     public boolean contains(int pixelX, int pixelY, int cellPixels) {
         return shown && area != null
-            && pixelX >= area.x() * cellPixels && pixelX < (area.x() + area.width()) * cellPixels
-            && pixelY >= area.y() * cellPixels && pixelY < area.bottom() * cellPixels;
+            && area.contains(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels));
     }
 
     public boolean isShown() {

@@ -264,9 +264,9 @@ public final class PaintHelp {
         if (part.codePoint() > ' ' && part.codePoint() < 0x7F) {
             out.append((char) part.codePoint()).append(' ');
         }
-        out.append("SHIFT ").append(part.shift() > 0 ? "+" : "").append(part.shift());
+        out.append("SHIFT ").append(OverlayCheck.signed(part.shift()));
         if (part.down() != 0) {
-            out.append(" DOWN ").append(part.down() > 0 ? "+" : "").append(part.down());
+            out.append(" DOWN ").append(OverlayCheck.signed(part.down()));
         }
         return out.toString();
     }

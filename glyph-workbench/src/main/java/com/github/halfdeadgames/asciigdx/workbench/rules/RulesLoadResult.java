@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
 import java.nio.file.Path;
-import java.util.List;
 
 /**
  * What reading a rules file gave. A missing or bad file still carries a usable, empty rules set.
@@ -17,7 +16,7 @@ public record RulesLoadResult(Status status, RulesFile rulesFile, String errorTe
     public enum Status { MISSING, LOADED, BAD }
 
     static RulesLoadResult missing(Path path) {
-        return new RulesLoadResult(Status.MISSING, new RulesFile(List.of()), "", path);
+        return new RulesLoadResult(Status.MISSING, RulesFile.empty(), "", path);
     }
 
     static RulesLoadResult loaded(RulesFile rulesFile, Path path) {
@@ -25,6 +24,6 @@ public record RulesLoadResult(Status status, RulesFile rulesFile, String errorTe
     }
 
     static RulesLoadResult bad(String errorText, Path path) {
-        return new RulesLoadResult(Status.BAD, new RulesFile(List.of()), errorText, path);
+        return new RulesLoadResult(Status.BAD, RulesFile.empty(), errorText, path);
     }
 }

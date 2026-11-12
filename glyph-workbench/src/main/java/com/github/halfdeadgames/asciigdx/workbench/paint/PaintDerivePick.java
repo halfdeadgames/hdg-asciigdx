@@ -153,16 +153,12 @@ final class PaintDerivePick {
             text.append(overlay ? " PICK A PART" : " PICK SOURCE");
         }
         if (overlay) {
-            appendSigned(text.append("  SHIFT "), flow.pendingShift());
+            text.append("  SHIFT ").append(OverlayCheck.signed(flow.pendingShift()));
             if (flow.pendingDown() != 0) {
-                appendSigned(text.append("  DOWN "), flow.pendingDown());
+                text.append("  DOWN ").append(OverlayCheck.signed(flow.pendingDown()));
             }
             text.append("  PARTS ").append(flow.parts().size());
         }
         return text.toString();
-    }
-
-    private static void appendSigned(StringBuilder target, int value) {
-        target.append(value > 0 ? "+" : "").append(value);
     }
 }

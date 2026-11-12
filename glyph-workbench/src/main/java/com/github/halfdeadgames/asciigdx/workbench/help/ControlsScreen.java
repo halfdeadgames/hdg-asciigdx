@@ -62,7 +62,7 @@ public final class ControlsScreen {
 
     /** True when a click at this cell is outside the box, which closes it. */
     static boolean isOutside(CellRect rect, int cellX, int cellY) {
-        return cellX < rect.x() || cellX >= rect.x() + rect.width() || cellY < rect.y() || cellY >= rect.bottom();
+        return !rect.contains(cellX, cellY);
     }
 
     public boolean isOpen() {

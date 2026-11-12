@@ -1,9 +1,8 @@
-package com.github.halfdeadgames.asciigdx.workbench.rules;
+package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

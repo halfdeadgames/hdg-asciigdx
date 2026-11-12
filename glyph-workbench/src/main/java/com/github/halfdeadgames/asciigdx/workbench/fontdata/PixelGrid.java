@@ -86,6 +86,11 @@ public final class PixelGrid {
         return lit.get(y * width + x);
     }
 
+    /** Whether the pixel is lit; false outside the grid instead of throwing. */
+    public boolean isLitWithin(int x, int y) {
+        return x >= 0 && x < width && y >= 0 && y < height && lit.get(y * width + x);
+    }
+
     /**
      * Returns a copy with one pixel set or cleared.
      *
