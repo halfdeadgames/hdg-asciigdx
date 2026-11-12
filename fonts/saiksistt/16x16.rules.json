@@ -1,13 +1,15 @@
 {
   groups: {
     uppercase:   [ "A-Z" ],
-    lowercase:   [ "a-z" ],
+    lowercase:   [ "a-z", "ı" ],
     digits:      [ "0-9" ],
     punctuation: [ "!-/", ":-@", "[-`", "{-~", "¶", "§", "‼" ],
     descenders:  [ "g", "j", "p", "q", "y" ],
     ascenders:   [ "b", "d", "f", "h", "k", "l" ],
     tallStems:   [ "i", "j", "t" ],
     symbols:     [ "@", "☺", "☻", "♥", "♦", "♣", "♠", "•", "○", "◘", "◙", "♂", "♀", "♪", "♫", "☼", "↑", "↓", "→", "←", "↕", "↨", "↔", "▲", "▼", "►", "◄", "∟", "⌂", "▬", "■" ],
+    accented:    [ "à", "á", "â", "ä", "å", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï", "ñ", "ò", "ó", "ô", "ö", "ù", "ú", "û", "ü", "ÿ" ],
+    marks:       [ "¨", "´", "¸", "ˆ", "ˋ", "˚", "˜" ],
     tiling:      [ "U+2500-U+259F" ]
   },
   rules: [
@@ -25,7 +27,10 @@
     {
       name: "Centered across",
       check: centeredX,
-      appliesTo: [ uppercase, lowercase, digits, punctuation ]
+      appliesTo: [ uppercase, lowercase, digits, punctuation, marks, accented ],
+      except: [
+        { glyphs: [ "¸" ], why: "hangs under the letter, not the cell" }
+      ]
     },
     {
       name: "Symbols centered both ways",
