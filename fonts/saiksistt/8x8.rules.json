@@ -1,0 +1,81 @@
+{
+  groups: {
+    uppercase:   [ "A-Z", "Æ", "Γ", "Θ", "Σ", "Φ", "Ω" ],
+    lowercase:   [ "a-z", "ı", "æ", "ƒ", "α", "ß", "δ", "ε", "µ", "π", "σ", "τ", "φ" ],
+    digits:      [ "0-9" ],
+    punctuation: [ "!-/", ":-@", "[-`", "{-~", "¶", "§", "‼", "¡", "¢", "¥", "«", "¬", "»", "¿", "⌐", "£", "₧", "ª", "º",
+                   "∞", "∩", "≡", "±", "≥", "≤", "÷", "≈", "°", "√", "ⁿ", "²",
+                   "×", "≠", "…", "—", "€", "½", "¼", "∙", "·" ],
+    descenders:  [ "g", "j", "p", "q", "y", "ƒ", "µ", "φ" ],
+    ascenders:   [ "b", "d", "f", "h", "k", "l", "ƒ", "ß", "δ" ],
+    tallStems:   [ "i", "j", "t", "φ" ],
+    symbols:     [ "@", "☺", "☻", "♥", "♦", "♣", "♠", "•", "○", "◘", "◙", "♂", "♀", "♪", "♫", "☼", "↑", "↓", "→", "←", "↕", "↨", "↔", "▲", "▼", "►", "◄", "∟", "⌂", "▬", "■", "↖", "↗", "↘", "↙", "↵", "↺", "↻", "⇐", "⇑", "⇒", "⇓",
+                   "□", "▪", "▫", "△", "▴", "▷", "▸", "▽", "▾", "◁", "◂", "◉", "◎", "●", "◐", "◑", "◢", "◣", "◤", "◥", "☐", "☑", "☒",
+                   "★", "☆", "☠", "⚑", "⚔", "⚠", "✓", "✗", "⌛", "☁", "⚓", "⚗", "⚙", "⚡", "⛏", "❄",
+                   "☂", "☃", "♩", "♬", "⚒", "⛰", "⛺", "✚",
+                   "☢", "☣", "⛫", "⛵",
+                   "♔", "♕", "♖", "♗", "♘", "♙", "♚", "♛", "♜", "♝", "♞", "♟",
+                   "♡", "♢", "♤", "♧", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅",
+                   "⏴", "⏵", "⏸", "⏹", "⏺",
+                   "U+1FBC5-U+1FBC9", "U+1FBF0-U+1FBF9",
+                   "U+1F3F9", "U+1F4A3", "U+1F4DC", "U+1F511", "U+1F512", "U+1F5E1", "U+1F6E1", "U+1FA93",
+                   "U+1F34E", "U+1F356", "U+1F451", "U+1F48E", "U+1F4B0", "U+1F9B4", "U+1F9EA", "U+1FA99",
+                   "U+1F332", "U+1F344", "U+1F4A7", "U+1F525", "U+1F56F", "U+1F578", "U+1F6AA", "U+1FAA8",
+                   "U+1F47B", "U+1F577" ],
+    accented:    [ "Ä", "Å", "Ç", "É", "Ñ", "Ö", "Ü",
+                   "à", "á", "â", "ä", "å", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï", "ñ", "ò", "ó", "ô", "ö", "ù", "ú", "û", "ü", "ÿ" ],
+    marks:       [ "¨", "´", "¸", "ˆ", "ˋ", "˚", "˜" ],
+    tiling:      [ "U+2500-U+259F", "U+1FB40-U+1FB9B", "U+1FBA0-U+1FBAE", "U+1FBD0-U+1FBDF" ]
+  },
+  rules: [
+    {
+      name: "Blank side columns",
+      check: noInkColumns,
+      columns: [ "0", "7" ],
+      appliesTo: [ uppercase, lowercase, digits, punctuation, marks, accented ],
+      except: [
+        { glyphs: [ "M", "W", "m", "w" ], why: "three stems need 7 columns" }
+      ]
+    },
+    {
+      name: "Centered across",
+      check: centeredX,
+      appliesTo: [ uppercase, lowercase, digits, punctuation, marks, accented ],
+      except: [
+        { glyphs: [ "¸" ], why: "hangs under the letter, not the cell" },
+        { glyphs: [ "M", "W", "m", "w" ], why: "7 columns wide, can't center" }
+      ]
+    },
+    {
+      name: "Symbols centered both ways",
+      check: centeredBoth,
+      appliesTo: [ symbols ]
+    },
+    {
+      name: "Capitals start at the cap line",
+      check: noInkRows,
+      rows: [ "0" ],
+      appliesTo: [ uppercase, digits ]
+    },
+    {
+      name: "Nothing below the baseline",
+      check: noInkRows,
+      rows: [ "7" ],
+      appliesTo: [ uppercase, lowercase, digits ],
+      except: [
+        { group: descenders, why: "tails drop into row 7" },
+        { glyphs: [ "Q" ], why: "tail dips below the baseline" }
+      ]
+    },
+    {
+      name: "Lowercase stays under the x-height",
+      check: noInkRows,
+      rows: [ "0-2" ],
+      appliesTo: [ lowercase ],
+      except: [
+        { group: ascenders, why: "ascenders rise to row 0" },
+        { group: tallStems, why: "dot or stem starts above the x-height" }
+      ]
+    }
+  ]
+}
