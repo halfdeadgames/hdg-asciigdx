@@ -34,7 +34,12 @@
       columns: [ "0", "7" ],
       appliesTo: [ uppercase, lowercase, digits, punctuation, marks, accented ],
       except: [
-        { glyphs: [ "M", "W", "m", "w" ], why: "three stems need 7 columns" }
+        { glyphs: [ "M", "W", "m", "w" ], why: "three stems need 7 columns" },
+        { glyphs: [ "₧" ], why: "two letters need the whole cell" },
+        { glyphs: [ "∞" ], why: "two loops need the whole cell" },
+        { glyphs: [ "½", "¼" ], why: "a fraction needs the whole cell" },
+        { glyphs: [ "_", "…", "—" ], why: "joins its neighbors into one line" },
+        { glyphs: [ "€" ], why: "bars cross the left edge" }
       ]
     },
     {
@@ -44,7 +49,10 @@
       except: [
         { glyphs: [ "¸" ], why: "hangs under the letter, not the cell" },
         { glyphs: [ "M", "W", "m", "w" ], why: "7 columns wide, can't center" },
-        { glyphs: [ "/", "\\" ], why: "four even steps need an odd width" }
+        { glyphs: [ "/", "\\" ], why: "four even steps need an odd width" },
+        { glyphs: [ ",", ";" ], why: "tail steps left of the dot" },
+        { glyphs: [ "f" ], why: "hook reaches right of the stem" },
+        { glyphs: [ "€" ], why: "bars cross the left edge" }
       ]
     },
     {
