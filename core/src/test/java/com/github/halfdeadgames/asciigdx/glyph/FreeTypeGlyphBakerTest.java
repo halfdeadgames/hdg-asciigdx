@@ -22,7 +22,7 @@ class FreeTypeGlyphBakerTest {
     private static final String FONT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
     private static final int PIXEL_SIZE = 8;
     private static final int MISSING_CODE_POINT = 0x4E00;
-    // The bundled PNG and TTF are different revisions of dungeon.mode; these CP437 slots
+    // The fixture PNG and TTF are different revisions of dungeon.mode; these CP437 slots
     // (e.g. '%', 'i', the dark shade, and NBSP) are drawn differently in the two files.
     private static final Set<Integer> SLOTS_DRAWN_DIFFERENTLY_IN_PNG_AND_TTF =
         new TreeSet<>(List.of(37, 74, 75, 102, 104, 105, 106, 125, 134, 139, 178, 200, 255));
@@ -68,7 +68,7 @@ class FreeTypeGlyphBakerTest {
     }
 
     @Test
-    void bakedSheetMatchesBundledPngSheetExceptRevisedGlyphs() throws URISyntaxException {
+    void bakedSheetMatchesFixturePngSheetExceptRevisedGlyphs() throws URISyntaxException {
         Pixmap png = new Pixmap(font("dungeon-437.png"));
         FreeTypeGlyphBaker.Result result =
             FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);

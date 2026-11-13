@@ -6,9 +6,12 @@ Third-party assets bundled with HDG-AsciiGDX.
 
 | Asset | Author | License | Location |
 |---|---|---|---|
-| [dungeon.mode](https://datagoblin.itch.io/dungeonmode) | datagoblin | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` |
+| Saiksistt | halfdeadgames | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/` |
+| [dungeon.mode](https://datagoblin.itch.io/dungeonmode) | datagoblin | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/test/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` and `glyph-workbench/src/main/resources/com/github/halfdeadgames/asciigdx/workbench/ui/` |
 
-The folder holds the CP437 PNG sheet, both TTFs (regular and inverted), the extended default sheet, and its 16x16 version. The extended sheet adds glyphs drawn for this project (quadrant shades, bars, card and chess glyphs, and more), which are also released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), so the whole sheet can be reused freely. The 16x16 sheet is upscaled and redrawn for this project and also released under CC0 1.0. dungeon.mode is the default and fallback font. CC0 does not require credit, but it is given here with thanks.
+Saiksistt is the bundled default font, drawn for this project. Its source is `fonts/saiksistt/16x16.txt`.
+
+dungeon.mode is not shipped with the library. Its CP437 sheet and both TTFs (regular and inverted) are test fixtures for the TrueType baker tests. Its extended 8x8 sheet is the glyph workbench's interface font; the glyphs this project added to that sheet are also released under CC0 1.0. CC0 does not require credit, but it is given here with thanks.
 
 ## Libraries
 

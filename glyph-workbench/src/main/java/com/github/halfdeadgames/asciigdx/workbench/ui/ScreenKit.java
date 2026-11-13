@@ -9,9 +9,13 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
+import com.github.halfdeadgames.asciigdx.glyph.TransparencyMode;
 
 /** The drawing setup every workbench menu and dialog screen shares: viewport, batch, UI font, painter, and the pointer in world pixels. */
 public final class ScreenKit {
+
+    private static final String UI_FONT_FOLDER = "com/github/halfdeadgames/asciigdx/workbench/ui/";
+    private static final int UI_FONT_CELL_SIZE = 8;
 
     private final ScreenViewport viewport = new ScreenViewport();
     private final Vector2 pointer = new Vector2();
@@ -30,9 +34,19 @@ public final class ScreenKit {
         pixel.fill();
         whitePixel = new Texture(pixel);
         pixel.dispose();
-        source = TextureGlyphSource.loadDungeonMode();
+        source = loadUiFont();
         batch = new SpriteBatch();
         painter = new Painter(batch, whitePixel, source, viewport);
+    }
+
+    // The workbench UI keeps the 8x8 dungeon.mode sheet until an 8x8 Saiksistt exists.
+    private static TextureGlyphSource loadUiFont() {
+        return TextureGlyphSource.loadSheet(
+            Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.png"),
+            Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.txt"),
+            UI_FONT_CELL_SIZE,
+            UI_FONT_CELL_SIZE,
+            TransparencyMode.AUTO);
     }
 
     /** Releases the batch, white pixel, and font; call from {@code hide()}. */

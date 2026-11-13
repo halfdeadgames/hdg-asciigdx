@@ -1,0 +1,12 @@
+Saiksistt
+Author: halfdeadgames
+Source: https://github.com/halfdeadgames/hdg-asciigdx
+License: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Files in this folder:
+- saiksistt-16x16.png, saiksistt-16x16.txt: the default sheet (16x16 cells, 16 columns) and its
+  character list. Code Page 437 comes first, then the extra glyphs in code point order.
+
+The sheet is exported from fonts/saiksistt/16x16.txt in the repository. Edit that file, not the
+PNG.

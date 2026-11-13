@@ -12,50 +12,17 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.sandbox.PixelScaler;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.IntPredicate;
 
 /**
- * Exports glyph sheet PNGs plus their character list {@code .txt}, without opening a window.
+ * Bakes a TTF into a glyph sheet PNG plus its character list {@code .txt}, without opening a window.
  * Run through the {@code exportSheet} Gradle task, which passes the settings as
- * {@code asciigdx.export.*} system properties. Modes:
- * <ul>
- *   <li>default: bakes a TTF at the given cell height;</li>
- *   <li>{@code assemble}: the default 8x8 sheet from CP437, TTF picks, and generated glyphs;</li>
- *   <li>{@code generated}: only the glyphs drawn in code;</li>
- *   <li>{@code upscale=<scaler id>}: a 2x sheet from a smoothing scaler, for assemble or generated
- *       ({@code nearest}, the default, scales without smoothing);</li>
- *   <li>{@code upscale=hand}: the hand-drawn 16x16 glyphs on the default sheet's slots;</li>
- *   <li>{@code upscale=final}: a 16x16 sheet where each cell uses the candidate chosen in the picks file.</li>
- * </ul>
+ * {@code asciigdx.export.*} system properties.
  */
 public final class SheetExporter {
 
-    private static final String BUNDLED_FONT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
-
-    /** Empty pixels in the exported sheet: RGBA8888 with alpha 0. */
-    private static final IntPredicate EXPORT_BACKGROUND = pixel -> (pixel & 0xFF) == 0;
-
-    private static final String NEAREST_ID = "nearest";
-    private static final String[] SMOOTHING_IDS = {
-        "scale2x", "scale2x-fill", "scale2x-trim", "mmpx", "scale2x-sfx", "light"
-    };
+    private static final String PROPERTY_PREFIX = "asciigdx.export.";
 
     private SheetExporter() {
-    }
-
-    private interface SheetScaler {
-        int[] scale(int[] pixels, int width, int height, int cellSize, int[] codePoints);
-    }
-
-    private static SheetScaler scale2xScaler(PixelScaler.Scale2xMode scale2xMode) {
-        return (pixels, width, height, cellSize, codePoints) ->
-            PixelScaler.scale2xGlyphSheet(pixels, width, height, cellSize, codePoints, scale2xMode, EXPORT_BACKGROUND);
     }
 
     public static void main(String[] args) {
@@ -63,53 +30,27 @@ public final class SheetExporter {
         new SharedLibraryLoader().load("gdx-freetype");
         Gdx.files = new Lwjgl3Files();
 
-        String fontSetting = System.getProperty("asciigdx.export.font", "dungeon-mode");
-        int cellHeight = Integer.parseInt(System.getProperty("asciigdx.export.cellHeight", "8"));
-        int columns = Integer.parseInt(System.getProperty("asciigdx.export.columns", "16"));
-        String charsSetting = System.getProperty("asciigdx.export.chars", "cp437");
-        String upscale = System.getProperty("asciigdx.export.upscale", "nearest");
-        if (upscale.equalsIgnoreCase("hand")) {
-            exportHandDrawn(Gdx.files.absolute(System.getProperty("asciigdx.export.output")), columns);
-            return;
-        }
-        if (upscale.equalsIgnoreCase("final")) {
-            exportFinal(Gdx.files.absolute(System.getProperty("asciigdx.export.output")), columns);
-            return;
-        }
-        String upscaleId = canonicalUpscaleId(upscale);
-        SheetScaler mode = scalerFor(upscaleId);
-        boolean upscaling = mode != null;
-        int scale = Integer.parseInt(System.getProperty("asciigdx.export.scale", upscaling ? "2" : "1"));
+        FileHandle font = fontFile(System.getProperty(PROPERTY_PREFIX + "font"));
+        int cellHeight = Integer.parseInt(System.getProperty(PROPERTY_PREFIX + "cellHeight", "8"));
+        int columns = Integer.parseInt(System.getProperty(PROPERTY_PREFIX + "columns", "16"));
+        int scale = Integer.parseInt(System.getProperty(PROPERTY_PREFIX + "scale", "1"));
         if (scale < 1) {
             throw new IllegalArgumentException("scale must be at least 1: " + scale);
         }
-        if (upscaling && scale != 2) {
-            throw new IllegalArgumentException("upscale=" + upscaleId + " needs scale 2: " + scale);
-        }
-        FileHandle outputFolder = Gdx.files.absolute(System.getProperty("asciigdx.export.output"));
-        if (System.getProperty("asciigdx.export.generated") != null) {
-            exportGenerated(outputFolder, columns, scale, mode, upscaleId);
-            return;
-        }
-        if (System.getProperty("asciigdx.export.assemble") != null) {
-            assembleDefaultSheet(outputFolder, columns, scale, mode, upscaleId);
-            return;
-        }
-        if (upscaling) {
-            throw new IllegalArgumentException(
-                "upscale=" + upscaleId + " only applies to -Passemble or -Pgenerated sheets");
-        }
+        GlyphOrder order = glyphOrder(System.getProperty(PROPERTY_PREFIX + "chars", "cp437"), columns);
+        String name = System.getProperty(PROPERTY_PREFIX + "sheetName", font.nameWithoutExtension())
+            + "-" + cellHeight * scale;
+        FileHandle outputFolder = Gdx.files.absolute(System.getProperty(PROPERTY_PREFIX + "output"));
 
-        FileHandle font = fontFile(fontSetting);
-        GlyphOrder order = charsSetting.equalsIgnoreCase("cp437")
-            ? GlyphOrder.CP437
-            : GlyphOrderText.read(Gdx.files.absolute(charsSetting).readString("UTF-8"), columns);
-        String name = System.getProperty("asciigdx.export.sheetName", font.nameWithoutExtension()) + "-" + cellHeight * scale;
+        exportSheet(font, cellHeight, order, columns, scale, outputFolder, name);
+    }
 
+    private static void exportSheet(FileHandle font, int cellHeight, GlyphOrder order, int columns, int scale,
+        FileHandle outputFolder, String name) {
         FreeTypeGlyphBaker.Result baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
         Pixmap output = null;
         try {
-            output = scaled(baked.getPixmap(), scale, null, null);
+            output = scaled(baked.getPixmap(), scale);
             FileHandle png = outputFolder.child(name + ".png");
             FileHandle txt = outputFolder.child(name + ".txt");
             PixmapIO.writePNG(png, output);
@@ -127,9 +68,15 @@ public final class SheetExporter {
         }
     }
 
+    private static GlyphOrder glyphOrder(String charsSetting, int columns) {
+        if (charsSetting.equalsIgnoreCase("cp437")) {
+            return GlyphOrder.CP437;
+        }
+        return GlyphOrderText.read(Gdx.files.absolute(charsSetting).readString("UTF-8"), columns);
+    }
+
     // Returns the source itself when scale is 1; the caller disposes the result only if it differs.
-    // Non-null slotCodePoints (one per cell slot, scale must be 2) selects the given scaler instead of nearest.
-    private static Pixmap scaled(Pixmap source, int scale, int[] slotCodePoints, SheetScaler mode) {
+    private static Pixmap scaled(Pixmap source, int scale) {
         if (scale == 1) {
             return source;
         }
@@ -141,9 +88,7 @@ public final class SheetExporter {
                 pixels[y * width + x] = source.getPixel(x, y);
             }
         }
-        int[] scaledPixels = slotCodePoints == null
-            ? PixelScaler.scale(pixels, width, height, scale)
-            : mode.scale(pixels, width, height, GeneratedGlyphs.SIZE, slotCodePoints);
+        int[] scaledPixels = PixelScaler.scale(pixels, width, height, scale);
         int scaledWidth = width * scale;
         Pixmap result = new Pixmap(scaledWidth, height * scale, Pixmap.Format.RGBA8888);
         result.setBlending(Pixmap.Blending.None);
@@ -155,295 +100,9 @@ public final class SheetExporter {
         return result;
     }
 
-    /** Glyphs taken from the dungeon.mode TTF that the CP437 sheet lacks. */
-    static final String TTF_PICKS = "☠⚇⚉⚱⚷†◇⏺⟁⸙⛑⭦⬚⛨★☝✕";
-
-    // The default sheet: the CP437 sheet's cells first (unchanged), then glyphs baked from the
-    // TTF, then the generated glyphs. Code points already placed are skipped. Every cell is
-    // stored as white with alpha 0 or 255.
-    private static void assembleDefaultSheet(FileHandle outputFolder, int columns, int scale,
-        SheetScaler mode, String upscaleId) {
-        int size = GeneratedGlyphs.SIZE;
-        Map<Integer, boolean[][]> glyphs = assembleGlyphs(columns);
-        String name = scale > 1 ? "dungeon-extended-" + size * scale : "dungeon-extended";
-        writeSheet(outputFolder, name, glyphs, columns, scale, mode, upscaleId);
-    }
-
-    private static Map<Integer, boolean[][]> assembleGlyphs(int columns) {
-        int size = GeneratedGlyphs.SIZE;
-        Map<Integer, boolean[][]> glyphs = new LinkedHashMap<>();
-
-        Pixmap cp437 = new Pixmap(Gdx.files.classpath(BUNDLED_FONT_FOLDER + "dungeon-437.png"));
-        try {
-            int background = cp437.getPixel(0, 0);
-            for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
-                glyphs.put(GlyphOrder.CP437.codePointAt(slot), cell(cp437, slot, 16, size, pixel -> pixel != background));
-            }
-        } finally {
-            cp437.dispose();
-        }
-
-        GlyphOrder picks = GlyphOrder.ofString(TTF_PICKS);
-        FreeTypeGlyphBaker.Result baked = FreeTypeGlyphBaker.bake(
-            Gdx.files.classpath(BUNDLED_FONT_FOLDER + "dungeon-mode.ttf"), size, picks, columns, true);
-        try {
-            for (int slot = 0; slot < picks.size(); slot++) {
-                int codePoint = picks.codePointAt(slot);
-                if (!baked.hasGlyph(codePoint)) {
-                    throw new IllegalStateException("TTF lacks pick U+" + Integer.toHexString(codePoint));
-                }
-                glyphs.putIfAbsent(codePoint, cell(baked.getPixmap(), slot, columns, size, pixel -> (pixel & 0xFF) > 127));
-            }
-        } finally {
-            baked.getPixmap().dispose();
-        }
-
-        GeneratedGlyphs.all().forEach(glyphs::putIfAbsent);
-        return glyphs;
-    }
-
-    // Every cell comes from the candidate picked for its glyph; candidates are computed here, per
-    // sheet, with the same scalers as the other upscale options. Cells are white at alpha 0 or 255.
-    private static void exportFinal(FileHandle outputFolder, int columns) {
-        int size = GeneratedGlyphs.SIZE;
-        Map<Integer, boolean[][]> glyphs = assembleGlyphs(columns);
-        int slots = glyphs.size();
-        int rows = (slots + columns - 1) / columns;
-        int width = columns * size;
-        int height = rows * size;
-        int[] codePoints = new int[slots];
-        boolean[] blank = new boolean[slots];
-        int[] pixels = new int[width * height];
-        int slot = 0;
-        for (Map.Entry<Integer, boolean[][]> glyph : glyphs.entrySet()) {
-            codePoints[slot] = glyph.getKey();
-            blank[slot] = true;
-            for (int y = 0; y < size; y++) {
-                for (int x = 0; x < size; x++) {
-                    if (glyph.getValue()[y][x]) {
-                        blank[slot] = false;
-                        pixels[((slot / columns) * size + y) * width + (slot % columns) * size + x] = 0xFFFFFFFF;
-                    }
-                }
-            }
-            slot++;
-        }
-
-        Map<Integer, boolean[][]> handArt = HandDrawnGlyphs.all();
-        String picksPath = System.getProperty("asciigdx.export.picks");
-        FileHandle picksFile = Gdx.files.absolute(picksPath);
-        if (!picksFile.exists()) {
-            throw new IllegalArgumentException("Picks file not found: " + picksPath);
-        }
-        String[] chosen = FinalSheetPicks.select(
-            codePoints, blank, FinalSheetPicks.parse(picksFile.readString("UTF-8")), handArt.keySet());
-
-        int outputSize = size * 2;
-        int outputWidth = width * 2;
-        int[] output = new int[outputWidth * height * 2];
-        Map<String, int[]> candidates = new HashMap<>();
-        Map<String, Integer> usage = new TreeMap<>();
-        for (slot = 0; slot < slots; slot++) {
-            String id = chosen[slot];
-            usage.merge(id, 1, Integer::sum);
-            int left = (slot % columns) * outputSize;
-            int top = (slot / columns) * outputSize;
-            if (FinalSheetPicks.HAND.equals(id)) {
-                boolean[][] art = handArt.get(codePoints[slot]);
-                for (int y = 0; y < outputSize; y++) {
-                    for (int x = 0; x < outputSize; x++) {
-                        output[(top + y) * outputWidth + left + x] = art[y][x] ? 0xFFFFFFFF : 0;
-                    }
-                }
-                continue;
-            }
-            int[] candidate = candidates.get(id);
-            if (candidate == null) {
-                candidate = candidatePixels(id, pixels, width, height, codePoints);
-                candidates.put(id, candidate);
-            }
-            for (int y = 0; y < outputSize; y++) {
-                System.arraycopy(candidate, (top + y) * outputWidth + left, output, (top + y) * outputWidth + left,
-                    outputSize);
-            }
-        }
-
-        Pixmap sheet = new Pixmap(outputWidth, height * 2, Pixmap.Format.RGBA8888);
-        try {
-            sheet.setBlending(Pixmap.Blending.None);
-            for (int y = 0; y < height * 2; y++) {
-                for (int x = 0; x < outputWidth; x++) {
-                    sheet.drawPixel(x, y, output[y * outputWidth + x]);
-                }
-            }
-            String name = "dungeon-extended-" + outputSize + "-final";
-            FileHandle png = outputFolder.child(name + ".png");
-            FileHandle txt = outputFolder.child(name + ".txt");
-            PixmapIO.writePNG(png, sheet);
-            txt.writeString(GlyphOrderText.write(GlyphOrder.ofCodePoints(codePoints), columns), false, "UTF-8");
-            System.out.println("Exported " + slots + " glyphs, " + columns + "x" + rows + " cells; picks used: " + usage);
-            System.out.println("  " + png.file().getAbsolutePath());
-            System.out.println("  " + txt.file().getAbsolutePath());
-        } finally {
-            sheet.dispose();
-        }
-    }
-
-    private static int[] candidatePixels(String id, int[] pixels, int width, int height, int[] codePoints) {
-        SheetScaler scaler = scalerFor(id);
-        if (scaler == null) {
-            return PixelScaler.scale(pixels, width, height, 2);
-        }
-        return scaler.scale(pixels, width, height, GeneratedGlyphs.SIZE, codePoints);
-    }
-
-    /** Matches the setting ignoring case and returns the lower-case id used by {@link #scalerFor}. */
-    private static String canonicalUpscaleId(String upscale) {
-        if (NEAREST_ID.equalsIgnoreCase(upscale)) {
-            return NEAREST_ID;
-        }
-        for (String id : SMOOTHING_IDS) {
-            if (id.equalsIgnoreCase(upscale)) {
-                return id;
-            }
-        }
-        throw new IllegalArgumentException(
-            "upscale must be nearest, scale2x, scale2x-fill, scale2x-trim, mmpx, scale2x-sfx, light, hand, or final: "
-                + upscale);
-    }
-
-    /** The scaler for an exact id, or null for plain nearest-neighbor scaling. */
-    private static SheetScaler scalerFor(String id) {
-        return switch (id) {
-            case NEAREST_ID -> null;
-            case "scale2x" -> scale2xScaler(PixelScaler.Scale2xMode.FULL);
-            case "scale2x-fill" -> scale2xScaler(PixelScaler.Scale2xMode.FILL_ONLY);
-            case "scale2x-trim" -> scale2xScaler(PixelScaler.Scale2xMode.TRIM_ONLY);
-            case "mmpx" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.mmpx(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), PixelScaler::lumaRgba8888);
-            case "scale2x-sfx" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.scale2xSfx(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints));
-            case "light" -> (pixels, width, height, cellSize, codePoints) -> PixelScaler.light(
-                pixels, width, height, cellSize, cellSize, PixelScaler.lockedSlots(codePoints), EXPORT_BACKGROUND);
-            default -> throw new IllegalStateException("No candidate for pick " + id);
-        };
-    }
-
-    private static boolean[][] cell(Pixmap sheet, int slot, int columns, int size, IntPredicate isLit) {
-        boolean[][] pixels = new boolean[size][size];
-        int left = (slot % columns) * size;
-        int top = (slot / columns) * size;
-        for (int y = 0; y < size; y++) {
-            for (int x = 0; x < size; x++) {
-                pixels[y][x] = isLit.test(sheet.getPixel(left + x, top + y));
-            }
-        }
-        return pixels;
-    }
-
-    private static void exportGenerated(FileHandle outputFolder, int columns, int scale,
-        SheetScaler mode, String upscaleId) {
-        writeSheet(outputFolder, "generated-" + GeneratedGlyphs.SIZE * scale, GeneratedGlyphs.all(), columns, scale,
-            mode, upscaleId);
-    }
-
-    private static void writeSheet(FileHandle outputFolder, String baseName, Map<Integer, boolean[][]> glyphs,
-        int columns, int scale, SheetScaler mode, String upscaleId) {
-        String name = mode != null ? baseName + "-" + upscaleId : baseName;
-        int size = GeneratedGlyphs.SIZE;
-        int rows = (glyphs.size() + columns - 1) / columns;
-        Pixmap sheet = new Pixmap(columns * size, rows * size, Pixmap.Format.RGBA8888);
-        try {
-            sheet.setBlending(Pixmap.Blending.None);
-            int[] codePoints = new int[glyphs.size()];
-            int slot = 0;
-            for (Map.Entry<Integer, boolean[][]> glyph : glyphs.entrySet()) {
-                codePoints[slot] = glyph.getKey();
-                int left = (slot % columns) * size;
-                int top = (slot / columns) * size;
-                for (int y = 0; y < size; y++) {
-                    for (int x = 0; x < size; x++) {
-                        if (glyph.getValue()[y][x]) {
-                            sheet.drawPixel(left + x, top + y, 0xFFFFFFFF);
-                        }
-                    }
-                }
-                slot++;
-            }
-            Pixmap output = scaled(sheet, scale, mode != null ? codePoints : null, mode);
-            try {
-                FileHandle png = outputFolder.child(name + ".png");
-                FileHandle txt = outputFolder.child(name + ".txt");
-                PixmapIO.writePNG(png, output);
-                txt.writeString(GlyphOrderText.write(GlyphOrder.ofCodePoints(codePoints), columns), false, "UTF-8");
-                System.out.println("Exported " + glyphs.size() + " glyphs, " + columns + "x" + rows + " cells");
-                System.out.println("  " + png.file().getAbsolutePath());
-                System.out.println("  " + txt.file().getAbsolutePath());
-            } finally {
-                if (output != sheet) {
-                    output.dispose();
-                }
-            }
-        } finally {
-            sheet.dispose();
-        }
-    }
-
-    // Same slots as the default sheet. Cells without a hand-drawn glyph stay empty; the sidecar
-    // lists the code points that do have one, so readers can ignore the empty cells.
-    private static void exportHandDrawn(FileHandle outputFolder, int columns) {
-        String listing = Gdx.files.classpath(BUNDLED_FONT_FOLDER + "dungeon-extended.txt").readString("UTF-8");
-        GlyphOrder order = GlyphOrderText.read(listing, columns);
-        Map<Integer, boolean[][]> handGlyphs = HandDrawnGlyphs.all();
-        for (int codePoint : handGlyphs.keySet()) {
-            if (!order.contains(codePoint)) {
-                throw new IllegalStateException("Default sheet lacks hand-drawn U+" + Integer.toHexString(codePoint));
-            }
-        }
-        int size = HandDrawnGlyphs.SIZE;
-        int rows = (order.size() + columns - 1) / columns;
-        int[] presentCodePoints = new int[handGlyphs.size()];
-        int presentCount = 0;
-        Pixmap sheet = new Pixmap(columns * size, rows * size, Pixmap.Format.RGBA8888);
-        try {
-            sheet.setBlending(Pixmap.Blending.None);
-            for (int slot = 0; slot < order.size(); slot++) {
-                boolean[][] glyph = handGlyphs.get(order.codePointAt(slot));
-                if (glyph == null) {
-                    continue;
-                }
-                presentCodePoints[presentCount++] = order.codePointAt(slot);
-                int left = (slot % columns) * size;
-                int top = (slot / columns) * size;
-                for (int y = 0; y < size; y++) {
-                    for (int x = 0; x < size; x++) {
-                        if (glyph[y][x]) {
-                            sheet.drawPixel(left + x, top + y, 0xFFFFFFFF);
-                        }
-                    }
-                }
-            }
-            String name = "dungeon-extended-" + size + "-hand";
-            FileHandle png = outputFolder.child(name + ".png");
-            FileHandle txt = outputFolder.child(name + ".txt");
-            FileHandle present = outputFolder.child(name + ".present.txt");
-            PixmapIO.writePNG(png, sheet);
-            txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
-            present.writeString(GlyphOrderText.write(
-                GlyphOrder.ofCodePoints(Arrays.copyOf(presentCodePoints, presentCount)), columns),
-                false, "UTF-8");
-            System.out.println("Exported " + presentCount + " hand-drawn glyphs, " + columns + "x" + rows + " cells");
-            System.out.println("  " + png.file().getAbsolutePath());
-            System.out.println("  " + txt.file().getAbsolutePath());
-            System.out.println("  " + present.file().getAbsolutePath());
-        } finally {
-            sheet.dispose();
-        }
-    }
-
     private static FileHandle fontFile(String setting) {
-        if (setting.equalsIgnoreCase("dungeon-mode") || setting.equalsIgnoreCase("dungeon-mode-inverted")) {
-            return Gdx.files.classpath(BUNDLED_FONT_FOLDER + setting.toLowerCase(Locale.ROOT) + ".ttf");
+        if (setting == null || setting.isEmpty()) {
+            throw new IllegalArgumentException("Missing -Pfont=<path to a TTF file>");
         }
         FileHandle file = Gdx.files.absolute(setting);
         if (!file.exists()) {

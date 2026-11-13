@@ -6,11 +6,6 @@ https://creativecommons.org/publicdomain/zero/1.0/
 
 CC0 does not require attribution. Credit is given anyway, with thanks to the author.
 
-Files in this folder:
+These files are test fixtures for the TrueType baker tests. They are not shipped.
 - dungeon-437.png: 16x16 sheet of 8x8 glyphs in Code Page 437 order.
 - dungeon-mode.ttf, dungeon-mode-inverted.ttf: the TrueType versions (regular and inverted).
-- dungeon-extended.png, dungeon-extended.txt: the default sheet and its character list. It holds
-  the dungeon.mode glyphs (CC0, above) plus glyphs added by HDG-AsciiGDX, which are also
-  released under CC0 1.0 Universal.
-- dungeon-extended-16.png, dungeon-extended-16.txt: the same glyphs as the default sheet on 16x16
-  cells, upscaled and redrawn for HDG-AsciiGDX, released under CC0 1.0 Universal.

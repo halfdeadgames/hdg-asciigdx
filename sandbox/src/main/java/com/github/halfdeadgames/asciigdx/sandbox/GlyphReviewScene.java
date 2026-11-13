@@ -12,8 +12,6 @@ import com.badlogic.gdx.utils.IntArray;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-import com.github.halfdeadgames.asciigdx.glyph.QuadrantGlyphs;
-import com.github.halfdeadgames.asciigdx.glyph.QuadrantGlyphs.Shade;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TransparencyMode;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewCellSize;
@@ -32,7 +30,7 @@ import java.util.OptionalInt;
 final class GlyphReviewScene extends GridScene {
 
     private static final int[] REVIEW_LIST = {
-        0xE0D0, 0xE0D1, 0xE0D2, 0xE0D3, 0xE0E0, 0xE0E4, 0x2B05, 0x2764, 0x26A1, 0x2654,
+        0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525,
     };
 
     private static final int COLUMNS = 40;
@@ -62,7 +60,7 @@ final class GlyphReviewScene extends GridScene {
 
     private static final int PREVIEW_PADDING = 8;
     private static final int PREVIEW_WIDTH = 152;
-    private static final int[] PREVIEW_SCALES = {2, 4, 8};
+    private static final int[] PREVIEW_SCALES = {1, 2, 4};
     private static final int[] PREVIEW_X = {8, 32, 80};
 
     private static final int LABEL = 0x9090C0FF;
@@ -79,6 +77,7 @@ final class GlyphReviewScene extends GridScene {
 
     private static final int BOX_VERTICAL = 0x2502;
     private static final int MEDIUM_SHADE = 0x2592;
+    private static final int FULL_BLOCK = 0x2588;
     private static final int CONTEXT_PATTERN_LENGTH = contextPattern(0).length;
 
     private static final String RESULTS_FILE = "glyph-review/results.txt";
@@ -323,7 +322,7 @@ final class GlyphReviewScene extends GridScene {
         int cellHeight = glyphs.getCellHeight();
         int panelTop = Math.round(viewport.getWorldHeight()) - PREVIEW_TOP_ROW * cellHeight;
         int panelBottom = panelTop - PREVIEW_ROWS * cellHeight;
-        TextureRegion solid = glyphs.glyph(QuadrantGlyphs.codePoint(Shade.SOLID, QuadrantGlyphs.ALL));
+        TextureRegion solid = glyphs.glyph(FULL_BLOCK);
         int left = MARGIN_COLUMNS * cellWidth;
         setDrawColor(batch, PREVIEW_BACKGROUND);
         batch.draw(solid, left, panelBottom, PREVIEW_WIDTH, panelTop - panelBottom);
@@ -337,7 +336,7 @@ final class GlyphReviewScene extends GridScene {
     }
 
     private void drawComparePreviews(SpriteBatch batch, int codePoint) {
-        TextureRegion solid = glyphs.glyph(QuadrantGlyphs.codePoint(Shade.SOLID, QuadrantGlyphs.ALL));
+        TextureRegion solid = glyphs.glyph(FULL_BLOCK);
         int cellHeight = glyphs.getCellHeight();
         int top = Math.round(viewport.getWorldHeight()) - PREVIEW_TOP_ROW * cellHeight;
         int bottom = top - comparePanelRows * cellHeight;

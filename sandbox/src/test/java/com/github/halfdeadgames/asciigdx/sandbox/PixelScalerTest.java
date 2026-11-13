@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 class PixelScalerTest {
 
     private static final String DEFAULT_SHEET =
-        "/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/dungeon-extended.png";
+        "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.png";
 
     private static final String DEFAULT_ORDER =
-        "/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/dungeon-extended.txt";
+        "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.txt";
+
+    private static final int DEFAULT_CELL = 16;
 
     @Test
     void scaleOneReturnsEqualPixels() {
@@ -93,7 +95,7 @@ class PixelScalerTest {
 
     @Test
     void scale2xOnTheDefaultSheetLocksGlyphsAndOnlyCopiesSourceColors() throws IOException {
-        int cell = 8;
+        int cell = DEFAULT_CELL;
         BufferedImage image;
         try (InputStream stream = PixelScalerTest.class.getResourceAsStream(DEFAULT_SHEET)) {
             image = ImageIO.read(stream);
@@ -387,7 +389,7 @@ class PixelScalerTest {
 
     @Test
     void everyCellOfTheDefaultSheetScaledByTwoMatchesItsSourceCell() throws IOException {
-        int cell = 8;
+        int cell = DEFAULT_CELL;
         int scale = 2;
         BufferedImage image;
         try (InputStream stream = PixelScalerTest.class.getResourceAsStream(DEFAULT_SHEET)) {

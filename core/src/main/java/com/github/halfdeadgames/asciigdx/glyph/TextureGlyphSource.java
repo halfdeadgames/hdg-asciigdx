@@ -21,7 +21,7 @@ public final class TextureGlyphSource implements GlyphSource {
     /** Fallback code point used by the short {@code load} overload. */
     public static final int DEFAULT_FALLBACK_CODE_POINT = '?';
 
-    private static final String DUNGEON_MODE_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
+    private static final String SAIKSISTT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";
 
     private final Texture texture;
     private final GlyphOrder order;
@@ -252,43 +252,15 @@ public final class TextureGlyphSource implements GlyphSource {
     }
 
     /**
-     * Loads the bundled default font, dungeon.mode extended: 8x8 cells holding Code Page 437
-     * plus quadrant blocks in every {@link QuadrantGlyphs.Shade}, box-drawing and bar glyphs,
-     * arrows, card and chess glyphs, dice, and durability meters. Its character list lists every
-     * code point.
+     * Loads the bundled default font, Saiksistt, on 16x16 cells: Code Page 437 plus box drawing,
+     * blocks, shades, arrows, shapes, game pieces, and pictographs. Released under CC0.
      */
-    public static TextureGlyphSource loadDungeonMode() {
+    public static TextureGlyphSource loadSaiksistt() {
         return loadSheet(
-            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended.png"),
-            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended.txt"),
-            8,
-            8,
-            TransparencyMode.AUTO);
-    }
-
-    /**
-     * Loads the 16x16 version of the bundled default font: the same glyphs in the same order as
-     * {@link #loadDungeonMode()}, redrawn on 16x16 cells with a 16 column sheet.
-     */
-    public static TextureGlyphSource loadDungeonMode16() {
-        return loadSheet(
-            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended-16.png"),
-            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-extended-16.txt"),
+            Gdx.files.classpath(SAIKSISTT_FOLDER + "saiksistt-16x16.png"),
+            Gdx.files.classpath(SAIKSISTT_FOLDER + "saiksistt-16x16.txt"),
             16,
             16,
-            TransparencyMode.AUTO);
-    }
-
-    /**
-     * Loads the bundled dungeon.mode Code Page 437 sheet: 8x8 cells, 16x16 grid, black
-     * background. It is the minimal example of a hand-made sheet: a plain image in a fixed
-     * order, with no character list and no alpha channel, loaded with a color key.
-     */
-    public static TextureGlyphSource loadDungeonMode437() {
-        return load(
-            Gdx.files.classpath(DUNGEON_MODE_FOLDER + "dungeon-437.png"),
-            GlyphSheetLayout.grid(8, 8, 16, 16),
-            GlyphOrder.CP437,
             TransparencyMode.AUTO);
     }
 

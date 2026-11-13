@@ -38,7 +38,7 @@ public class SandboxApp extends ApplicationAdapter {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        glyphs = TextureGlyphSource.loadDungeonMode();
+        glyphs = TextureGlyphSource.loadSaiksistt();
         registerScenes();
         menu = new MenuScene(glyphs, scenes);
         menu.show();
@@ -114,8 +114,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
-        scenes.add(new FontComparisonScene(glyphs));
-        scenes.add(new GlyphShowcaseScene(glyphs, settings.apply(GlyphShowcaseScene.KEY_SHOWCASE_FONT)));
+        scenes.add(new GlyphShowcaseScene(glyphs));
         scenes.add(new LayersScene(glyphs));
         scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,

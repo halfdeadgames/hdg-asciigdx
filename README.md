@@ -19,8 +19,7 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 - Transparency conversion: sheets without an alpha channel are converted on load. The background color (by default the top-left pixel) becomes transparent and the glyphs become white so they can be tinted any color. Anti-aliased edges stay smooth.
 - Fallback glyph: characters missing from the sheet draw as `?`, or another glyph you choose.
 - TrueType fonts: bake a TTF into a glyph sheet at load time with FreeType. Bitmap sheets are the default; TTF baking is there for sizes or characters a sheet doesn't cover. Pixel fonts stay sharp only at whole multiples of their design size.
-- Bundled font: [dungeon.mode](https://datagoblin.itch.io/dungeonmode) by datagoblin (CC0) is the default font. It is extended with about 360 extra glyphs: quadrant blocks in several shade patterns, box-drawing pieces, arrows, geometric shapes, cards, chess pieces, dice, and meters for durability, health, and time. A UTF-8 text file next to the image lists the character in each slot, and you can write the same kind of file for your own sheets.
-- Minimal example sheet: the original Code Page 437 sheet is also bundled (`TextureGlyphSource.loadDungeonMode437()`). It is a plain 16x16 image on a black background with no character list and no alpha channel. Use it as a reference for the least a hand-made sheet needs.
+- Bundled font: Saiksistt, a 16x16 pixel font drawn for this library and released under CC0, is the default font (`TextureGlyphSource.loadSaiksistt()`). Its 512 glyphs cover all of Code Page 437 plus light, heavy, double, and rounded box drawing, block elements and shades, arrows, geometric shapes, card suits, chess pieces, dice, and pictographs. A UTF-8 text file next to the image lists the character in each slot, and you can write the same kind of file for your own sheets.
 
 ## Planned features
 
@@ -53,8 +52,7 @@ The sandbox is a demo app for checking features by eye. It opens to a menu of te
 | Layers | A pacing boss shakes the map under a frame, rain fades in and out, a popup slides in, and a character hops. R changes the layer order, V hides the rain, and P toggles pixel snapping. On Android, tap the left, middle, or right third. |
 | Stress: full rewrite | A 240x135 grid rewritten every frame |
 | Large grid: sparse updates | The same grid with a small share of cells changing each frame. L switches between 1, 2, and 4 layers. |
-| Font comparison: PNG vs TTF | The bundled sheet and the baked TTF, swapped back and forth |
-| Glyph sheet showcase | The whole extended sheet, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers |
+| Glyph sheet showcase | Every glyph of the bundled font, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers. Scroll with the arrow keys, the mouse wheel, or by dragging. |
 
 ```
 ./gradlew :sandbox-desktop:run                                 # desktop
@@ -99,26 +97,15 @@ In PowerShell, quote comma lists: `"-Pscenes=renderer-basics,glyph-showcase"`.
 
 ### Exporting glyph sheets
 
-The `exportSheet` task writes glyph sheet PNGs and matching character lists, without opening a window. By default it bakes a font:
+The `exportSheet` task bakes a TTF into a glyph sheet PNG and a matching character list, without opening a window:
 
 ```
-./gradlew :sandbox-desktop:exportSheet -Pfont=dungeon-mode -PcellHeight=16
+./gradlew :sandbox-desktop:exportSheet -Pfont=path/to/font.ttf -PcellHeight=16
 ```
 
-Font baking options are `-Pfont` (`dungeon-mode`, `dungeon-mode-inverted`, or a TTF path), `-PcellHeight`, `-Pchars` (`cp437` or a character list file), and `-PsheetName`. `-Pcolumns` (default 16) applies to every mode, and `-Pscale` (default 1) enlarges the baked sheet by that whole factor. Output goes to `build/exports/`.
+`-Pfont` (a TTF path) is required. The other options are `-PcellHeight` (default 8), `-Pchars` (`cp437` or a character list file), `-PsheetName` (default: the TTF file name), `-Pcolumns` (default 16), and `-Pscale` (default 1), which enlarges the baked sheet by that whole factor. Output goes to `build/exports/`.
 
-`-Passemble=true` rebuilds the bundled extended sheet from CP437, TTF picks, and the generated glyphs. Copy the resulting `dungeon-extended.png` and `.txt` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` by hand. `-Pgenerated=true` exports only the glyphs drawn in code. Both accept `-Pscale=<n>` for nearest-neighbor enlargement.
-
-`-Pupscale` picks how a sheet is enlarged:
-
-| Value | Effect |
-|---|---|
-| `nearest` | Default. Plain nearest-neighbor; honors `-Pscale` |
-| `scale2x`, `scale2x-fill`, `scale2x-trim`, `mmpx`, `scale2x-sfx`, `light` | Smoothing scaler. Needs `-Passemble` or `-Pgenerated`, and `-Pscale` must be 2 (the default when a smoothing scaler is chosen). The id is appended to the file name |
-| `hand` | Exports the hand-drawn 16x16 glyphs on the default sheet's slots, plus a `.present.txt` listing the slots that have one. Ignores `-Pscale` and `-Pfont` |
-| `final` | Builds the 16x16 sheet, taking each cell from the candidate named in the picks file. Ignores `-Pscale` and `-Pfont` |
-
-`-Ppicks` sets the picks file for `-Pupscale=final` (default `glyph-workbench/picks/dungeon-extended-16.txt`, relative to the repository root). It is a tab-separated file with the code point (`U+0041`), a label, and the pick id in the first three columns; extra columns are ignored. The export fails if a pick is `none`, unknown, names a code point missing from the sheet, or asks for `hand` without hand art.
+The bundled Saiksistt sheet is exported from `fonts/saiksistt/16x16.txt` with `./gradlew :glyph-workbench:exportFont`. Copy the resulting `saiksistt-16x16.png` and `.txt` from `build/exports/` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/`. A workbench test fails if the copy in core is out of date.
 
 ### Adding a scene
 
