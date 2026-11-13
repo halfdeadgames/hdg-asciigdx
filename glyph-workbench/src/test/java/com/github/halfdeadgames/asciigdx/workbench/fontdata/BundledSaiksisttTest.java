@@ -11,59 +11,69 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-/** Checks that the Saiksistt sheet bundled in core matches a fresh export of the font data. */
+/** Checks that every Saiksistt sheet bundled in core matches a fresh export of the font data. */
 class BundledSaiksisttTest {
 
     private static final String BUNDLED_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";
-    private static final String EXPORT_NAME = "saiksistt-16x16";
-    private static final String REFRESH_HINT = " The bundled font is out of date. Run `.\\gradlew.bat :glyph-workbench:exportFont`"
-        + " and copy build/exports/saiksistt-16x16.png and .txt into"
-        + " core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/.";
 
-    @TempDir
-    Path exportDirectory;
+    @ParameterizedTest
+    @ValueSource(strings = {"16x16", "16x32"})
+    void bundledCharacterListMatchesFreshExport(String size, @TempDir Path exportDirectory) throws IOException {
+        String exportName = "saiksistt-" + size;
+        String refreshHint = refreshHint(size);
+        exportFont(size, exportDirectory);
 
-    @Test
-    void bundledCharacterListMatchesFreshExport() throws IOException {
-        exportFont();
+        String exported = Files.readString(exportDirectory.resolve(exportName + ".txt"), StandardCharsets.UTF_8);
+        String bundled = new String(readBundled(exportName + ".txt", refreshHint), StandardCharsets.UTF_8);
 
-        String exported = Files.readString(exportDirectory.resolve(EXPORT_NAME + ".txt"), StandardCharsets.UTF_8);
-        String bundled = new String(readBundled(EXPORT_NAME + ".txt"), StandardCharsets.UTF_8);
-
-        assertEquals(exported, bundled, "Character list differs." + REFRESH_HINT);
+        assertEquals(exported, bundled, "Character list differs." + refreshHint);
     }
 
-    @Test
-    void bundledImageMatchesFreshExportPixelForPixel() throws IOException {
-        exportFont();
+    @ParameterizedTest
+    @ValueSource(strings = {"16x16", "16x32"})
+    void bundledImageMatchesFreshExportPixelForPixel(String size, @TempDir Path exportDirectory)
+        throws IOException {
+        String exportName = "saiksistt-" + size;
+        String refreshHint = refreshHint(size);
+        exportFont(size, exportDirectory);
 
-        BufferedImage exported = ImageIO.read(exportDirectory.resolve(EXPORT_NAME + ".png").toFile());
-        BufferedImage bundled = ImageIO.read(new java.io.ByteArrayInputStream(readBundled(EXPORT_NAME + ".png")));
+        BufferedImage exported = ImageIO.read(exportDirectory.resolve(exportName + ".png").toFile());
+        BufferedImage bundled = ImageIO.read(
+            new java.io.ByteArrayInputStream(readBundled(exportName + ".png", refreshHint)));
 
-        assertEquals(exported.getWidth(), bundled.getWidth(), "Image width differs." + REFRESH_HINT);
-        assertEquals(exported.getHeight(), bundled.getHeight(), "Image height differs." + REFRESH_HINT);
+        assertEquals(exported.getWidth(), bundled.getWidth(), "Image width differs." + refreshHint);
+        assertEquals(exported.getHeight(), bundled.getHeight(), "Image height differs." + refreshHint);
         for (int y = 0; y < exported.getHeight(); y++) {
             for (int x = 0; x < exported.getWidth(); x++) {
                 assertEquals(exported.getRGB(x, y), bundled.getRGB(x, y),
-                    "Pixel " + x + "," + y + " differs." + REFRESH_HINT);
+                    "Pixel " + x + "," + y + " differs." + refreshHint);
             }
         }
     }
 
-    private void exportFont() throws IOException {
-        String repoRoot = System.getProperty("workbench.repoRoot");
-        assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
-        File fontFolder = new File(repoRoot, "fonts/saiksistt");
-        FontExporter.export(fontFolder, new CellSize(16, 16), exportDirectory.toFile());
+    private static String refreshHint(String size) {
+        return " The bundled font is out of date. Run `.\\gradlew.bat :glyph-workbench:exportFont '-PfontSize="
+            + size + "'` and copy build/exports/saiksistt-" + size + ".png and saiksistt-" + size + ".txt into"
+            + " core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/.";
     }
 
-    private static byte[] readBundled(String fileName) throws IOException {
+    private static void exportFont(String size, Path exportDirectory) throws IOException {
+        String repoRoot = System.getProperty("workbench.repoRoot");
+        assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
+        String[] parts = size.split("x");
+        CellSize cellSize = new CellSize(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        File fontFolder = new File(repoRoot, "fonts/saiksistt");
+        FontExporter.export(fontFolder, cellSize, exportDirectory.toFile());
+    }
+
+    private static byte[] readBundled(String fileName, String refreshHint) throws IOException {
         try (InputStream input = BundledSaiksisttTest.class.getClassLoader()
             .getResourceAsStream(BUNDLED_FOLDER + fileName)) {
-            assertNotNull(input, "Bundled resource " + fileName + " is missing from the classpath." + REFRESH_HINT);
+            assertNotNull(input, "Bundled resource " + fileName + " is missing from the classpath." + refreshHint);
             return input.readAllBytes();
         }
     }

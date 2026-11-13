@@ -9,7 +9,7 @@ Third-party assets bundled with HDG-AsciiGDX.
 | Saiksistt | halfdeadgames | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/` |
 | [dungeon.mode](https://datagoblin.itch.io/dungeonmode) | datagoblin | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | `core/src/test/resources/com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/` and `glyph-workbench/src/main/resources/com/github/halfdeadgames/asciigdx/workbench/ui/` |
 
-Saiksistt is the bundled default font, drawn for this project. Its source is `fonts/saiksistt/16x16.txt`.
+Saiksistt is the bundled default font, drawn for this project. Its sources are `fonts/saiksistt/16x16.txt` and `fonts/saiksistt/16x32.txt`.
 
 dungeon.mode is not shipped with the library. Its CP437 sheet and both TTFs (regular and inverted) are test fixtures for the TrueType baker tests. Its extended 8x8 sheet is the glyph workbench's interface font; the glyphs this project added to that sheet are also released under CC0 1.0. CC0 does not require credit, but it is given here with thanks.
 

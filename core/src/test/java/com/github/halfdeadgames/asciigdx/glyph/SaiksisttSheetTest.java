@@ -10,47 +10,48 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class SaiksisttSheetTest {
 
-    private static final String FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";
-    private static final int CELL = 16;
     private static final int COLUMNS = 16;
     /** The exporter lists this code point in every unused slot, so it may repeat. */
     private static final int EMPTY_SLOT_FILLER = 0x10FFFD;
 
-    private static Pixmap sheet;
-    private static GlyphOrder order;
+    private static FileHandle resource(String path) throws URISyntaxException {
+        return new FileHandle(new File(SaiksisttSheetTest.class.getClassLoader().getResource(path).toURI()));
+    }
 
-    private static FileHandle resource(String name) throws URISyntaxException {
-        return new FileHandle(new File(SaiksisttSheetTest.class.getClassLoader().getResource(FOLDER + name).toURI()));
+    private static GlyphOrder readOrder(SaiksisttSize size) throws URISyntaxException {
+        return GlyphOrderText.read(resource(size.characterListPath()).readString("UTF-8"), COLUMNS);
     }
 
     @BeforeAll
-    static void load() throws URISyntaxException {
+    static void loadNatives() {
         new SharedLibraryLoader().load("gdx");
-        sheet = new Pixmap(resource("saiksistt-16x16.png"));
-        order = GlyphOrderText.read(resource("saiksistt-16x16.txt").readString("UTF-8"), COLUMNS);
     }
 
-    @AfterAll
-    static void dispose() {
-        sheet.dispose();
+    @ParameterizedTest
+    @EnumSource(SaiksisttSize.class)
+    void sheetIsSixteenColumnsOfCellsAndFitsTheGlyphCount(SaiksisttSize size) throws URISyntaxException {
+        GlyphOrder order = readOrder(size);
+        Pixmap sheet = new Pixmap(resource(size.sheetPath()));
+        try {
+            int rows = (order.size() + COLUMNS - 1) / COLUMNS;
+            assertEquals(COLUMNS * size.cellWidth(), sheet.getWidth());
+            assertTrue(sheet.getHeight() >= rows * size.cellHeight(), "sheet is too short for " + rows + " rows");
+            assertEquals(0, sheet.getHeight() % size.cellHeight());
+        } finally {
+            sheet.dispose();
+        }
     }
 
-    @Test
-    void sheetIsSixteenColumnsOfSixteenPixelsAndFitsTheGlyphCount() {
-        int rows = (order.size() + COLUMNS - 1) / COLUMNS;
-        assertEquals(COLUMNS * CELL, sheet.getWidth());
-        assertTrue(sheet.getHeight() >= rows * CELL, "sheet is too short for " + rows + " rows");
-        assertEquals(0, sheet.getHeight() % CELL);
-    }
-
-    @Test
-    void characterListHasNoDuplicateGlyphs() {
+    @ParameterizedTest
+    @EnumSource(SaiksisttSize.class)
+    void characterListHasNoDuplicateGlyphs(SaiksisttSize size) throws URISyntaxException {
+        GlyphOrder order = readOrder(size);
         Set<Integer> seen = new HashSet<>();
         for (int slot = 0; slot < order.size(); slot++) {
             int codePoint = order.codePointAt(slot);
@@ -61,8 +62,10 @@ class SaiksisttSheetTest {
         }
     }
 
-    @Test
-    void characterListContainsEveryCodePage437CodePointAndTheFallback() {
+    @ParameterizedTest
+    @EnumSource(SaiksisttSize.class)
+    void characterListContainsEveryCodePage437CodePointAndTheFallback(SaiksisttSize size) throws URISyntaxException {
+        GlyphOrder order = readOrder(size);
         for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
             int codePoint = GlyphOrder.CP437.codePointAt(slot);
             assertTrue(order.contains(codePoint), "missing code point " + codePoint);
@@ -70,22 +73,34 @@ class SaiksisttSheetTest {
         assertTrue(order.contains('?'));
     }
 
-    @Test
-    void firstTwoHundredFiftySixEntriesAreInCodePage437Order() {
+    @ParameterizedTest
+    @EnumSource(SaiksisttSize.class)
+    void firstTwoHundredFiftySixEntriesAreInCodePage437Order(SaiksisttSize size) throws URISyntaxException {
+        GlyphOrder order = readOrder(size);
         for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
             assertEquals(GlyphOrder.CP437.codePointAt(slot), order.codePointAt(slot), "slot " + slot);
         }
     }
 
-    @Test
-    void sheetHasRealAlpha() {
+    @ParameterizedTest
+    @EnumSource(SaiksisttSize.class)
+    void sheetHasRealAlpha(SaiksisttSize size) throws URISyntaxException {
+        Pixmap sheet = new Pixmap(resource(size.sheetPath()));
+        try {
+            assertTrue(hasNonOpaquePixel(sheet), "every pixel is fully opaque, so the sheet has no alpha");
+        } finally {
+            sheet.dispose();
+        }
+    }
+
+    private static boolean hasNonOpaquePixel(Pixmap sheet) {
         for (int y = 0; y < sheet.getHeight(); y++) {
             for (int x = 0; x < sheet.getWidth(); x++) {
                 if ((sheet.getPixel(x, y) & 0xFF) != 0xFF) {
-                    return;
+                    return true;
                 }
             }
         }
-        throw new AssertionError("every pixel is fully opaque, so the sheet has no alpha");
+        return false;
     }
 }

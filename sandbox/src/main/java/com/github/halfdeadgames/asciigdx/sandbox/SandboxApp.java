@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 
 import java.util.function.Function;
@@ -23,6 +24,7 @@ public class SandboxApp extends ApplicationAdapter {
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
+    private GlyphSource tallGlyphs;
     private MenuScene menu;
     private PerfOverlay perfOverlay;
     private SandboxScene activeScene;
@@ -39,6 +41,7 @@ public class SandboxApp extends ApplicationAdapter {
     public void create() {
         batch = new SpriteBatch();
         glyphs = TextureGlyphSource.loadSaiksistt();
+        tallGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_16X32);
         registerScenes();
         menu = new MenuScene(glyphs, scenes);
         menu.show();
@@ -114,7 +117,8 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
-        scenes.add(new GlyphShowcaseScene(glyphs));
+        scenes.add(new GlyphShowcaseScene(glyphs, SaiksisttSize.SQUARE_16X16));
+        scenes.add(new GlyphShowcaseScene(tallGlyphs, SaiksisttSize.TALL_16X32));
         scenes.add(new LayersScene(glyphs));
         scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
@@ -264,5 +268,6 @@ public class SandboxApp extends ApplicationAdapter {
         perfOverlay.dispose();
         batch.dispose();
         glyphs.dispose();
+        tallGlyphs.dispose();
     }
 }

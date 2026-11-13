@@ -21,8 +21,6 @@ public final class TextureGlyphSource implements GlyphSource {
     /** Fallback code point used by the short {@code load} overload. */
     public static final int DEFAULT_FALLBACK_CODE_POINT = '?';
 
-    private static final String SAIKSISTT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";
-
     private final Texture texture;
     private final GlyphOrder order;
     private final TextureRegion[] regionsBySlot;
@@ -253,14 +251,21 @@ public final class TextureGlyphSource implements GlyphSource {
 
     /**
      * Loads the bundled default font, Saiksistt, on 16x16 cells: Code Page 437 plus box drawing,
-     * blocks, shades, arrows, shapes, game pieces, and pictographs. Released under CC0.
+     * blocks, shades, arrows, shapes, game pieces, and pictographs. Released under CC0. This is the
+     * default size; use {@link #loadSaiksistt(SaiksisttSize)} to pick another.
      */
     public static TextureGlyphSource loadSaiksistt() {
+        return loadSaiksistt(SaiksisttSize.SQUARE_16X16);
+    }
+
+    /** Loads the bundled Saiksistt font in the given cell size. */
+    public static TextureGlyphSource loadSaiksistt(SaiksisttSize size) {
+        Objects.requireNonNull(size, "size must not be null");
         return loadSheet(
-            Gdx.files.classpath(SAIKSISTT_FOLDER + "saiksistt-16x16.png"),
-            Gdx.files.classpath(SAIKSISTT_FOLDER + "saiksistt-16x16.txt"),
-            16,
-            16,
+            Gdx.files.classpath(size.sheetPath()),
+            Gdx.files.classpath(size.characterListPath()),
+            size.cellWidth(),
+            size.cellHeight(),
             TransparencyMode.AUTO);
     }
 

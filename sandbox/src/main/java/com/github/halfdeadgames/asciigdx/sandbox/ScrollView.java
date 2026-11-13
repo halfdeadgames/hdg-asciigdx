@@ -9,9 +9,9 @@ final class ScrollView {
     }
 
     /** Largest whole-number scale that still shows the minimum visible cells, at least 1. */
-    static int chooseScale(int windowWidth, int windowHeight, int cellSize) {
-        int scaleForColumns = windowWidth / (cellSize * MIN_VISIBLE_COLUMNS);
-        int scaleForRows = windowHeight / (cellSize * MIN_VISIBLE_ROWS);
+    static int chooseScale(int windowWidth, int windowHeight, int cellWidth, int cellHeight) {
+        int scaleForColumns = windowWidth / (cellWidth * MIN_VISIBLE_COLUMNS);
+        int scaleForRows = windowHeight / (cellHeight * MIN_VISIBLE_ROWS);
         return Math.max(1, Math.min(scaleForColumns, scaleForRows));
     }
 

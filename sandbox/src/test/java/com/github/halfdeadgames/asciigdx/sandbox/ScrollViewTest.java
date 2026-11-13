@@ -8,26 +8,32 @@ class ScrollViewTest {
 
     @Test
     void phoneLandscapeUsesTwoTimes() {
-        assertEquals(2, ScrollView.chooseScale(2400, 1080, 16));
+        assertEquals(2, ScrollView.chooseScale(2400, 1080, 16, 16));
         assertEquals(75, ScrollView.visibleCells(2400, 16, 2));
         assertEquals(33, ScrollView.visibleCells(1080, 16, 2));
     }
 
     @Test
     void smallDesktopWindowUsesOneTimes() {
-        assertEquals(1, ScrollView.chooseScale(640, 480, 16));
+        assertEquals(1, ScrollView.chooseScale(640, 480, 16, 16));
         assertEquals(40, ScrollView.visibleCells(640, 16, 1));
         assertEquals(30, ScrollView.visibleCells(480, 16, 1));
     }
 
     @Test
     void scaleFollowsTheTighterAxisOfTheWindow() {
-        assertEquals(1, ScrollView.chooseScale(1000, 1080, 16));
-        assertEquals(1, ScrollView.chooseScale(2400, 500, 16));
-        assertEquals(1, ScrollView.chooseScale(1024, 512, 16));
-        assertEquals(2, ScrollView.chooseScale(1920, 1080, 16));
-        assertEquals(3, ScrollView.chooseScale(2560, 1440, 16));
-        assertEquals(4, ScrollView.chooseScale(3840, 2160, 16));
+        assertEquals(1, ScrollView.chooseScale(1000, 1080, 16, 16));
+        assertEquals(1, ScrollView.chooseScale(2400, 500, 16, 16));
+        assertEquals(1, ScrollView.chooseScale(1024, 512, 16, 16));
+        assertEquals(2, ScrollView.chooseScale(1920, 1080, 16, 16));
+        assertEquals(3, ScrollView.chooseScale(2560, 1440, 16, 16));
+        assertEquals(4, ScrollView.chooseScale(3840, 2160, 16, 16));
+    }
+
+    @Test
+    void tallCellsScaleByTheirOwnHeight() {
+        assertEquals(1, ScrollView.chooseScale(1920, 1080, 16, 32));
+        assertEquals(2, ScrollView.chooseScale(3840, 2160, 16, 32));
     }
 
     @Test

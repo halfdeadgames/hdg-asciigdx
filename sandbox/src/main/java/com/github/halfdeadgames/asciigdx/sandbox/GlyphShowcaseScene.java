@@ -5,13 +5,12 @@ import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /** The whole Saiksistt sheet next to examples built from its cards, chess pieces, dice, and bar glyphs. */
 final class GlyphShowcaseScene extends GridScene {
 
-    private static final String CHARACTER_LIST =
-        "com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.txt";
     private static final int EMPTY_SLOT_FILLER = 0x10FFFD;
     private static final int SHEET_COLUMNS = 16;
     private static final int PANEL = 18;
@@ -64,6 +63,7 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int TAP_SLOP_PIXELS = 24;
 
     private final GlyphSource glyphs;
+    private final SaiksisttSize size;
     private final Layer contentLayer;
 
     private int windowWidth;
@@ -84,20 +84,29 @@ final class GlyphShowcaseScene extends GridScene {
     private int pendingDragX;
     private int pendingDragY;
 
-    GlyphShowcaseScene(GlyphSource glyphs) {
+    GlyphShowcaseScene(GlyphSource glyphs, SaiksisttSize size) {
         super(glyphs, COLUMNS, ROWS);
         this.glyphs = glyphs;
+        this.size = size;
         contentLayer = layers.get(0);
     }
 
     @Override
     public String id() {
-        return "glyph-showcase";
+        // The square id predates the tall size and capture baselines depend on it.
+        if (size == SaiksisttSize.SQUARE_16X16) {
+            return "glyph-showcase";
+        }
+        return "glyph-showcase-" + sizeLabel();
     }
 
     @Override
     public String title() {
-        return "Glyph sheet showcase";
+        return "Glyph sheet showcase " + sizeLabel();
+    }
+
+    private String sizeLabel() {
+        return size.cellWidth() + "x" + size.cellHeight();
     }
 
     @Override
@@ -158,13 +167,14 @@ final class GlyphShowcaseScene extends GridScene {
         if (Math.abs(screenX - touchStartX) + Math.abs(screenY - touchStartY) > TAP_SLOP_PIXELS) {
             dragging = true;
         }
-        int stepPixels = glyphs.getCellWidth() * scale;
+        int columnStepPixels = glyphs.getCellWidth() * scale;
+        int rowStepPixels = glyphs.getCellHeight() * scale;
         pendingDragX += touchLastX - screenX;
         pendingDragY += touchLastY - screenY;
-        int columns = ScrollView.wholeSteps(pendingDragX, stepPixels);
-        int rows = ScrollView.wholeSteps(pendingDragY, stepPixels);
-        pendingDragX -= columns * stepPixels;
-        pendingDragY -= rows * stepPixels;
+        int columns = ScrollView.wholeSteps(pendingDragX, columnStepPixels);
+        int rows = ScrollView.wholeSteps(pendingDragY, rowStepPixels);
+        pendingDragX -= columns * columnStepPixels;
+        pendingDragY -= rows * rowStepPixels;
         scrollBy(columns, rows);
         touchLastX = screenX;
         touchLastY = screenY;
@@ -189,10 +199,11 @@ final class GlyphShowcaseScene extends GridScene {
     private void layoutScrollView() {
         int cellWidth = glyphs.getCellWidth();
         int cellHeight = glyphs.getCellHeight();
-        scale = ScrollView.chooseScale(windowWidth, windowHeight, cellWidth);
+        scale = ScrollView.chooseScale(windowWidth, windowHeight, cellWidth, cellHeight);
         visibleColumns = ScrollView.visibleCells(windowWidth, cellWidth, scale);
         int visibleRows = ScrollView.visibleCells(windowHeight, cellHeight, scale);
-        int overlayPixels = OVERLAY_ROWS * cellHeight * Math.max(1, Math.round(Gdx.graphics.getDensity()));
+        int overlayCellHeight = SaiksisttSize.SQUARE_16X16.cellHeight();
+        int overlayPixels = OVERLAY_ROWS * overlayCellHeight * Math.max(1, Math.round(Gdx.graphics.getDensity()));
         overlayRows = Math.min(ScrollView.coveredCells(overlayPixels, cellHeight, scale), visibleRows - 1);
         visibleContentRows = visibleRows - overlayRows;
         float worldWidth = visibleColumns * cellWidth;
@@ -211,8 +222,9 @@ final class GlyphShowcaseScene extends GridScene {
 
     private void fillGrid() {
         grid.clear();
-        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(CHARACTER_LIST).readString("UTF-8"), SHEET_COLUMNS);
-        writeText(0, 0, "Saiksistt 16x16, " + countGlyphs(order) + " glyphs", LABEL, CLEAR);
+        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(size.characterListPath()).readString("UTF-8"),
+            SHEET_COLUMNS);
+        writeText(0, 0, "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL, CLEAR);
         writeSheet(order);
         writeCards(1);
         writeChess(5);

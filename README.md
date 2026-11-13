@@ -19,7 +19,7 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 - Transparency conversion: sheets without an alpha channel are converted on load. The background color (by default the top-left pixel) becomes transparent and the glyphs become white so they can be tinted any color. Anti-aliased edges stay smooth.
 - Fallback glyph: characters missing from the sheet draw as `?`, or another glyph you choose.
 - TrueType fonts: bake a TTF into a glyph sheet at load time with FreeType. Bitmap sheets are the default; TTF baking is there for sizes or characters a sheet doesn't cover. Pixel fonts stay sharp only at whole multiples of their design size.
-- Bundled font: Saiksistt, a 16x16 pixel font drawn for this library and released under CC0, is the default font (`TextureGlyphSource.loadSaiksistt()`). Its 512 glyphs cover all of Code Page 437 plus light, heavy, double, and rounded box drawing, block elements and shades, arrows, geometric shapes, card suits, chess pieces, dice, and pictographs. A UTF-8 text file next to the image lists the character in each slot, and you can write the same kind of file for your own sheets.
+- Bundled font: Saiksistt, a pixel font drawn for this library and released under CC0, is the default font. It comes in two cell sizes: square 16x16 cells for maps and gameplay (`TextureGlyphSource.loadSaiksistt()`), and tall 16x32 cells for long text (`loadSaiksistt(SaiksisttSize.TALL_16X32)`). Each size covers all of Code Page 437 plus light, heavy, double, and rounded box drawing, block elements and shades, arrows, geometric shapes, card suits, chess pieces, dice, and pictographs. A UTF-8 text file next to each image lists the character in each slot, and you can write the same kind of file for your own sheets. `SaiksisttSize` also gives the path of each sheet and its character list, so you can load them with your own fallback glyph or transparency mode.
 
 ## Planned features
 
@@ -52,7 +52,7 @@ The sandbox is a demo app for checking features by eye. It opens to a menu of te
 | Layers | A pacing boss shakes the map under a frame, rain fades in and out, a popup slides in, and a character hops. R changes the layer order, V hides the rain, and P toggles pixel snapping. On Android, tap the left, middle, or right third. |
 | Stress: full rewrite | A 240x135 grid rewritten every frame |
 | Large grid: sparse updates | The same grid with a small share of cells changing each frame. L switches between 1, 2, and 4 layers. |
-| Glyph sheet showcase | Every glyph of the bundled font, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers. Scroll with the arrow keys, the mouse wheel, or by dragging. |
+| Glyph sheet showcase 16x16 and 16x32 | Every glyph of the bundled font in that cell size, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers. Scroll with the arrow keys, the mouse wheel, or by dragging. |
 
 ```
 ./gradlew :sandbox-desktop:run                                 # desktop
@@ -105,7 +105,7 @@ The `exportSheet` task bakes a TTF into a glyph sheet PNG and a matching charact
 
 `-Pfont` (a TTF path) is required. The other options are `-PcellHeight` (default 8), `-Pchars` (`cp437` or a character list file), `-PsheetName` (default: the TTF file name), `-Pcolumns` (default 16), and `-Pscale` (default 1), which enlarges the baked sheet by that whole factor. Output goes to `build/exports/`.
 
-The bundled Saiksistt sheet is exported from `fonts/saiksistt/16x16.txt` with `./gradlew :glyph-workbench:exportFont`. Copy the resulting `saiksistt-16x16.png` and `.txt` from `build/exports/` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/`. A workbench test fails if the copy in core is out of date.
+The bundled Saiksistt sheets are exported from `fonts/saiksistt/` with `./gradlew :glyph-workbench:exportFont -PfontSize=16x16` (the default) or `-PfontSize=16x32`. Copy the resulting `saiksistt-16x16` or `saiksistt-16x32` `.png` and `.txt` from `build/exports/` into `core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt/`. A workbench test fails if any copy in core is out of date.
 
 ### Adding a scene
 
