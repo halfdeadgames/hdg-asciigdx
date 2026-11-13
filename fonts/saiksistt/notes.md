@@ -16,6 +16,19 @@ Terminal feel with some nostalgia, but none of the old fonts' frustrations. Read
 - Ink widths: capitals 10, lowercase 8, digits 8, wide letters (M W X m w) 12.
 - Letters, digits, and most punctuation center across only and share the baseline. Symbols and UI glyphs center both ways.
 
+# Metrics (16x32)
+Trial values. They may change once the first drafts are drawn.
+- Same widths, strokes, and letter shapes as 16x16. Only the heights change.
+- Ascender row 6, capitals rows 8-23, x-height rows 13-23, descenders rows 24-29. Rows 0 and 31 stay blank as line spacing.
+- Capitals center on rows 15-16, the middle of the cell, so symbols centered in the cell line up with text.
+- Accented capitals keep full height. Accent marks are 3 rows tall: rows 3-5 over capitals, rows 8-10 over lowercase.
+- Other row numbers in this file (the j hook, ª and º, and small glyphs) are for 16x16. Their 16x32 rows get set during drawing.
+
+# Glyph classes (16x32)
+- Text: letters, digits, punctuation, accents, and symbols used inside a line of text (currency, math, Greek, fractions, « » ¿ ¡ ¶ § … × ≠ —). Drafts start from the 16x16 glyph, with straight stem rows repeated and columns unchanged. Diagonal and round glyphs that would stretch badly (k v w x y z, 2 4 7, and similar) get drawn by hand instead.
+- Connecting: box lines, stubs, diagonals, blocks, eighths, shades, checkers, and Legacy Computing fills. Redrawn for tiling, never stretched: lines on columns 7-8 and rows 15-16, eighths 4 rows, halves 16 rows.
+- Pictorial: faces, suits, icons, pictographs, chess, dice, shapes, and standalone arrows. Copied from 16x16 and centered in the cell.
+
 # Letter families
 - Build h m r u from n. Build b d p q c e from o.
 - Build E F L T I from H. Build C G Q D from O.
