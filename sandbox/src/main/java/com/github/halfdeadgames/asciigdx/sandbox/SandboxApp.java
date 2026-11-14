@@ -24,6 +24,7 @@ public class SandboxApp extends ApplicationAdapter {
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
+    private GlyphSource smallGlyphs;
     private GlyphSource tallGlyphs;
     private MenuScene menu;
     private PerfOverlay perfOverlay;
@@ -41,6 +42,7 @@ public class SandboxApp extends ApplicationAdapter {
     public void create() {
         batch = new SpriteBatch();
         glyphs = TextureGlyphSource.loadSaiksistt();
+        smallGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_8X8);
         tallGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_16X32);
         registerScenes();
         menu = new MenuScene(glyphs, scenes);
@@ -117,6 +119,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
+        scenes.add(new GlyphShowcaseScene(smallGlyphs, SaiksisttSize.SQUARE_8X8));
         scenes.add(new GlyphShowcaseScene(glyphs, SaiksisttSize.SQUARE_16X16));
         scenes.add(new GlyphShowcaseScene(tallGlyphs, SaiksisttSize.TALL_16X32));
         scenes.add(new LayersScene(glyphs));
@@ -268,6 +271,7 @@ public class SandboxApp extends ApplicationAdapter {
         perfOverlay.dispose();
         batch.dispose();
         glyphs.dispose();
+        smallGlyphs.dispose();
         tallGlyphs.dispose();
     }
 }

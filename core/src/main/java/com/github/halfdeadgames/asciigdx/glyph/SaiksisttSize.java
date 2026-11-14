@@ -5,6 +5,7 @@ package com.github.halfdeadgames.asciigdx.glyph;
  * tall cells suit long text.
  */
 public enum SaiksisttSize {
+    SQUARE_8X8(8, 8),
     SQUARE_16X16(16, 16),
     TALL_16X32(16, 32);
 

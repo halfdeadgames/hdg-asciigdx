@@ -21,7 +21,7 @@ class BundledSaiksisttTest {
     private static final String BUNDLED_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";
 
     @ParameterizedTest
-    @ValueSource(strings = {"16x16", "16x32"})
+    @ValueSource(strings = {"8x8", "16x16", "16x32"})
     void bundledCharacterListMatchesFreshExport(String size, @TempDir Path exportDirectory) throws IOException {
         String exportName = "saiksistt-" + size;
         String refreshHint = refreshHint(size);
@@ -34,7 +34,7 @@ class BundledSaiksisttTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"16x16", "16x32"})
+    @ValueSource(strings = {"8x8", "16x16", "16x32"})
     void bundledImageMatchesFreshExportPixelForPixel(String size, @TempDir Path exportDirectory)
         throws IOException {
         String exportName = "saiksistt-" + size;
