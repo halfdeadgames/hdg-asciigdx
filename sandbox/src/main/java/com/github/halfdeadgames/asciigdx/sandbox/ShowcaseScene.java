@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphFilter;
@@ -14,10 +15,10 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.EighthBar;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.FallSpin;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopFade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
@@ -33,6 +34,8 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterSwap;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterRipple;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
+import com.github.halfdeadgames.asciigdx.tween.Timeline;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import com.github.halfdeadgames.asciigdx.tween.TweenClock;
 
 import java.util.Arrays;
@@ -149,9 +152,9 @@ class ShowcaseScene extends GridScene {
     private static final int RAIN_DROP_CODE_POINT = '/';
     private static final int RAIN_COLOR = 0x8CB4E6C0;
 
-    private static final Beat HP_DRAIN = new Beat(3.4f, 1.0f, Interpolation.pow2Out);
+    private static final float HP_DRAIN_START_SECONDS = 3.4f;
+    private static final float HP_DRAIN_SECONDS = 1.0f;
     private static final float HP_AFTER_WAIL = 0.55f;
-    private static final float HP_LOST_AT_END = 1f - HP_AFTER_WAIL;
 
     private static final float SPLASH_SECONDS = 7.6f;
     private static final float SPRAY_SECONDS = 0.7f;
@@ -190,7 +193,7 @@ class ShowcaseScene extends GridScene {
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
     private final TweenClock clock = TweenClock.looping(LOOP_SECONDS, MAX_FRAME_SECONDS);
-    private final Fade fade = new Fade(FADE_IN_SECONDS, FADE_OUT_START_SECONDS, FADE_OUT_SECONDS);
+    private final Timeline timeline = new Timeline();
     private final MessageLog log = new MessageLog(
         typedLine(0.6f, "You step onto the old rope bridge."),
         typedLine(2.0f, "Something pale drifts out of the fog."),
@@ -251,7 +254,7 @@ class ShowcaseScene extends GridScene {
     private final float fallEndY;
     private final CameraPan cameraPan;
     private final GlyphSprite ghostSprite;
-    private float lastHpFraction = 1f;
+    private final Layer[] splashTintedLayers;
     private boolean clockPinned;
 
     {
@@ -294,12 +297,16 @@ class ShowcaseScene extends GridScene {
         ghostSprite = addGhost();
         addRainLayers(glyphs);
         lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
+        splashTintedLayers = new Layer[] {
+            waterLayer, underwaterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer,
+            rainLayers[0], rainLayers[1], rainLayers[2]};
         splash = createSplash();
         waterRipple = createWaterRipple();
         underwaterSwap = createUnderwaterSwap();
         addTitleLetters(addTitleLayer(glyphs));
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
+        bindTimeline();
         pinAllLayersToScreen();
         pinClockIfRequested(showcaseTimeSetting);
     }
@@ -318,13 +325,65 @@ class ShowcaseScene extends GridScene {
         updatePlayer(time);
         underwaterSwap.update(time);
         updateGhost(time);
-        updateHp(time);
         updateRain(time);
         applyLightning(time);
         splash.update(time);
         drawLog(time);
-        updateTitle(time);
-        overlayLayer.setAlpha(fade.alphaAt(time));
+        timeline.apply(time);
+    }
+
+    private void bindTimeline() {
+        bindOverlayFade();
+        bindHpBar();
+        bindTitleLetters();
+        bindSplashColors();
+        bindSpriteVisibility();
+    }
+
+    private void bindOverlayFade() {
+        timeline.bind(
+            LoopFade.track(FADE_IN_SECONDS, FADE_OUT_START_SECONDS, FADE_OUT_SECONDS),
+            overlayLayer::setAlpha);
+    }
+
+    private void bindHpBar() {
+        timeline.bind(
+            new Tween(HP_DRAIN_START_SECONDS, HP_DRAIN_SECONDS, 1f, HP_AFTER_WAIL, Interpolation.pow2Out),
+            this::drawHpBar);
+    }
+
+    private void bindTitleLetters() {
+        timeline.bind(TITLE_POP.scaleTrack(), titleLetters.length, (letter, scale) -> titleLetters[letter].setScale(scale));
+        timeline.bind(TITLE_POP.alphaTrack(), titleLetters.length, (letter, alpha) -> titleLetters[letter].setAlpha(alpha));
+    }
+
+    private void bindSplashColors() {
+        timeline.bind(SplashColor.flashTrack(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out), this::mixSplashLayersWithWhite);
+        timeline.bind(
+            SplashColor.saturationTrack(SPLASH_SECONDS, SINK_SECONDS, SURFACE_SECONDS, Interpolation.sine),
+            this::saturateSplashLayers);
+    }
+
+    private void mixSplashLayersWithWhite(float amount) {
+        for (int index = 0; index < splashTintedLayers.length; index++) {
+            splashTintedLayers[index].setMix(Color.WHITE, amount);
+        }
+    }
+
+    private void saturateSplashLayers(float saturation) {
+        for (int index = 0; index < splashTintedLayers.length; index++) {
+            splashTintedLayers[index].setSaturation(saturation);
+        }
+    }
+
+    /**
+     * Binds the bridge @, the falling @, and the ghost. The crisp @ stays in updatePlayer because it is
+     * visible over two spans (spin end to splash, and after surfacing).
+     */
+    private void bindSpriteVisibility() {
+        timeline.visibleDuring(0f, FALL_START_SECONDS, playerSprite::setVisible);
+        timeline.visibleDuring(FALL_START_SECONDS, FALL_START_SECONDS + SPIN_SECONDS, fallingPlayerSprite::setVisible);
+        timeline.visibleDuring(ghostPath.driftStartSeconds(), LOOP_SECONDS, ghostSprite::setVisible);
     }
 
     @Override
@@ -407,9 +466,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private GlyphSprite addFallingPlayer() {
-        GlyphSprite sprite = playerLayer.addSprite('@', GOLD, fallStartX, fallStartY);
-        sprite.setVisible(false);
-        return sprite;
+        return playerLayer.addSprite('@', GOLD, fallStartX, fallStartY);
     }
 
     /**
@@ -464,29 +521,13 @@ class ShowcaseScene extends GridScene {
         float top = SCENE_INNER_HEIGHT * cellHeight * TITLE_CENTER_HEIGHT_FRACTION - letterHeight / 2f;
         for (int letter = 0; letter < titleLetters.length; letter++) {
             GlyphSprite sprite = titleLayer.addSprite(TITLE_TEXT.charAt(letter), TITLE_POP.colorAt(letter), left + letter * letterWidth, top);
-            sprite.setVisible(false);
             titleLetters[letter] = sprite;
-        }
-    }
-
-    private void updateTitle(float time) {
-        for (int letter = 0; letter < titleLetters.length; letter++) {
-            GlyphSprite sprite = titleLetters[letter];
-            boolean shown = TITLE_POP.isShownAt(letter, time);
-            sprite.setVisible(shown);
-            if (!shown) {
-                continue;
-            }
-            sprite.setScale(TITLE_POP.scaleAt(letter, time));
-            sprite.setAlpha(TITLE_POP.alphaAt(letter, time));
         }
     }
 
     private void updatePlayer(float time) {
         boolean fallen = time >= FALL_START_SECONDS;
         boolean spinDone = fallen && FALL_SPIN.isCrispAt(time);
-        playerSprite.setVisible(!fallen);
-        fallingPlayerSprite.setVisible(fallen && !spinDone);
         crispPlayerSprite.setVisible(spinDone && !UNDERWATER_DIVE.isUnderwaterAt(time));
         if (fallen) {
             updateFallingPlayer(time);
@@ -622,15 +663,11 @@ class ShowcaseScene extends GridScene {
     }
 
     private GlyphSprite addGhost() {
-        GlyphSprite sprite = bridgeLayer.addSprite(GHOST_CODE_POINT, GHOST_COLOR, bridgeLayerX(GHOST_START_COLUMN), BRIDGE_PLANK_ROW * cellHeight);
-        sprite.setVisible(false);
-        return sprite;
+        return bridgeLayer.addSprite(GHOST_CODE_POINT, GHOST_COLOR, bridgeLayerX(GHOST_START_COLUMN), BRIDGE_PLANK_ROW * cellHeight);
     }
 
     private void updateGhost(float time) {
-        boolean visible = ghostPath.isVisibleAt(time);
-        ghostSprite.setVisible(visible);
-        if (!visible) {
+        if (!ghostPath.isVisibleAt(time)) {
             return;
         }
         float row = BRIDGE_PLANK_ROW + ghostPath.wobbleRowsAt(time);
@@ -678,10 +715,8 @@ class ShowcaseScene extends GridScene {
     private Splash createSplash() {
         DropletSpray spray = new DropletSpray(
             new Beat(SPLASH_SECONDS, SPRAY_SECONDS), SPRAY_DROPLET_COUNT, SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
-        SplashColor color = new SplashColor(SPLASH_SECONDS, new Beat(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out), UNDERWATER_DIVE);
         return new Splash(
-            dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth, cellHeight, spray, color,
-            waterLayer, underwaterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]);
+            dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth, cellHeight, spray);
     }
 
     private WaterRipple createWaterRipple() {
@@ -714,15 +749,6 @@ class ShowcaseScene extends GridScene {
         for (int index = 0; index < lightningLayers.length; index++) {
             lightningLayers[index].setInvert(amount);
         }
-    }
-
-    private void updateHp(float time) {
-        float fraction = 1f - HP_LOST_AT_END * HP_DRAIN.progress(time);
-        if (fraction == lastHpFraction) {
-            return;
-        }
-        lastHpFraction = fraction;
-        drawHpBar(fraction);
     }
 
     /** The clip is in stack pixels and ignores the layer's offset and zoom. */

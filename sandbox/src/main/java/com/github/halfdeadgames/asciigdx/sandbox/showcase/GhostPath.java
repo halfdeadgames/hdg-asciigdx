@@ -28,6 +28,10 @@ public final class GhostPath {
         this.endColumn = endColumn;
     }
 
+    public float driftStartSeconds() {
+        return drift.start();
+    }
+
     public boolean isVisibleAt(float timeSeconds) {
         return timeSeconds >= drift.start();
     }

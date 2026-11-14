@@ -2,12 +2,14 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.color.CellColor;
+import com.github.halfdeadgames.asciigdx.tween.StaggeredTrack;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /** A title whose letters pop in one at a time, each overshooting its size before settling. */
 public final class TitlePop {
 
-    private final Beat[] scaleBeats;
-    private final Beat[] alphaBeats;
+    private final StaggeredTrack scaleTrack;
+    private final StaggeredTrack alphaTrack;
     private final int[] letterColors;
 
     /**
@@ -32,42 +34,29 @@ public final class TitlePop {
         if (!(staggerSeconds >= 0f)) {
             throw new IllegalArgumentException("staggerSeconds must be >= 0: " + staggerSeconds);
         }
-        scaleBeats = new Beat[letterCount];
-        alphaBeats = new Beat[letterCount];
+        scaleTrack = new StaggeredTrack(
+                new Tween(startSeconds, popSeconds, 0f, 1f, new Interpolation.SwingOut(overshoot)), staggerSeconds);
+        alphaTrack = new StaggeredTrack(new Tween(startSeconds, popSeconds, 0f, 1f), staggerSeconds);
         letterColors = new int[letterCount];
-        var swing = new Interpolation.SwingOut(overshoot);
         for (int i = 0; i < letterCount; i++) {
-            float letterStart = startSeconds + i * staggerSeconds;
-            scaleBeats[i] = new Beat(letterStart, popSeconds, swing);
-            alphaBeats[i] = new Beat(letterStart, popSeconds);
             letterColors[i] = letterCount == 1
                     ? fromRgba
                     : CellColor.mixOklab(fromRgba, toRgba, i / (float) (letterCount - 1));
         }
     }
 
-    /** Whether the letter's pop has started. */
-    public boolean isShownAt(int letter, float timeSeconds) {
-        return timeSeconds >= scaleBeats[letter].start();
-    }
-
     /** Letter scale: 0 before its pop, overshoots 1 during it, exactly 1 afterward. */
-    public float scaleAt(int letter, float timeSeconds) {
-        return scaleBeats[letter].progress(timeSeconds);
+    public StaggeredTrack scaleTrack() {
+        return scaleTrack;
     }
 
     /** Letter opacity, rising linearly from 0 to 1 over its pop. */
-    public float alphaAt(int letter, float timeSeconds) {
-        return alphaBeats[letter].progress(timeSeconds);
+    public StaggeredTrack alphaTrack() {
+        return alphaTrack;
     }
 
     /** Gradient color of the letter. */
     public int colorAt(int letter) {
         return letterColors[letter];
-    }
-
-    /** When the last letter settles. */
-    public float endSeconds() {
-        return scaleBeats[scaleBeats.length - 1].end();
     }
 }
