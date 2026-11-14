@@ -24,6 +24,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.RainSet;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -86,6 +87,10 @@ class ShowcaseScene extends GridScene {
     private static final FallSpin FALL_SPIN = new FallSpin(
         new Beat(FALL_START_SECONDS, SPIN_SECONDS, Interpolation.sine), SPIN_DEGREES, SHRUNK_SCALE);
     private static final Beat CAMERA_PAN_BEAT = new Beat(FALL_START_SECONDS, PAN_SECONDS, Interpolation.sine);
+    private static final float WATER_SWAY_DEGREES = 3f;
+    private static final float WATER_SWAY_CYCLES_PER_SECOND = 1.25f;
+    private static final WaterSway WATER_SWAY = new WaterSway(
+        new Beat(FALL_START_SECONDS, FALL_SECONDS), WATER_SWAY_DEGREES, WATER_SWAY_CYCLES_PER_SECOND);
 
     /**
      * Sized so the water covers the inner area at its zoom of 1 / WATER_DEPTH. The pan shifts it by up to
@@ -179,6 +184,10 @@ class ShowcaseScene extends GridScene {
     private final Layer[] lightningLayers;
     private final float cellWidth;
     private final float cellHeight;
+    private final float waterCenterX;
+    private final float waterCenterY;
+    private final float waterRestOffsetX;
+    private final float waterRestOffsetY;
     private final GlyphSprite playerSprite;
     private final GlyphSprite fallingPlayerSprite;
     private final TextureGlyphSource smoothGlyphs;
@@ -212,6 +221,10 @@ class ShowcaseScene extends GridScene {
         cellHeight = glyphs.getCellHeight();
         smoothGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
         crispGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_8X8, GlyphFilter.NEAREST);
+        waterCenterX = WATER_COLUMNS * cellWidth / 2f;
+        waterCenterY = WATER_ROWS * cellHeight / 2f;
+        waterRestOffsetX = innerCenterX(glyphs) - waterCenterX;
+        waterRestOffsetY = innerCenterY(glyphs) - waterCenterY;
         waterLayer = addWaterLayer(glyphs);
         playerLayer = addInnerLayer(smoothGlyphs);
         crispPlayerLayer = addCrispPlayerLayer(glyphs);
@@ -240,6 +253,7 @@ class ShowcaseScene extends GridScene {
         }
         float time = clock.time();
         applyCamera(time);
+        applyWaterSway(time);
         drawWaterIfStepChanged(time);
         drawPlankIfBreakChanged(time);
         updatePlayer(time);
@@ -283,10 +297,8 @@ class ShowcaseScene extends GridScene {
             GridDrawing.fill(waterGrid, 0, row, WATER_COLUMNS, 1, ' ', WATER_GLYPH_COLOR, WATER_BACKGROUND_COLOR);
         }
         Layer layer = layers.add(waterGrid, glyphs);
-        float gridCenterX = WATER_COLUMNS * glyphs.getCellWidth() / 2f;
-        float gridCenterY = WATER_ROWS * glyphs.getCellHeight() / 2f;
-        layer.setPivot(gridCenterX, gridCenterY);
-        layer.setOffset(innerCenterX(glyphs) - gridCenterX, innerCenterY(glyphs) - gridCenterY);
+        layer.setPivot(waterCenterX, waterCenterY);
+        layer.setOffset(waterRestOffsetX, waterRestOffsetY);
         clipToSceneInner(layer, glyphs);
         return layer;
     }
@@ -384,15 +396,58 @@ class ShowcaseScene extends GridScene {
 
     /** Both sprites share one center; the crisp cell is smaller, so its corner shifts by half the size difference. */
     private void updateFallingPlayer(float time) {
-        float bridgeZoom = camera.zoomFor(BRIDGE_DEPTH);
-        float x = cameraPan.followAt(time, fallStartX, fallEndX, bridgeZoom);
-        float y = cameraPan.followAt(time, fallStartY, fallEndY, bridgeZoom);
+        float x = fallingPlayerX(time);
+        float y = fallingPlayerY(time);
         fallingPlayerSprite.setPosition(x, y);
         fallingPlayerSprite.setRotation(FALL_SPIN.rotationDegreesAt(time));
         fallingPlayerSprite.setScale(FALL_SPIN.scaleAt(time));
         crispPlayerSprite.setPosition(
             x + (cellWidth - crispGlyphs.getCellWidth()) / 2f,
             y + (cellHeight - crispGlyphs.getCellHeight()) / 2f);
+    }
+
+    /** X of the top-left corner of the falling @'s cell, in player layer pixels. */
+    private float fallingPlayerX(float time) {
+        return cameraPan.followAt(time, fallStartX, fallEndX, camera.zoomFor(BRIDGE_DEPTH));
+    }
+
+    private float fallingPlayerY(float time) {
+        return cameraPan.followAt(time, fallStartY, fallEndY, camera.zoomFor(BRIDGE_DEPTH));
+    }
+
+    /**
+     * Rocks the water about the pixel under the falling @'s center. The unrotated screen position of a water
+     * pixel q is offset - camera * zoom + (1 - zoom) * pivot + zoom * q, so moving the pivot by d needs the offset
+     * to move by -(1 - zoom) * d to leave the placement unchanged. Without a sway the rest values are used as is.
+     */
+    private void applyWaterSway(float time) {
+        float degrees = WATER_SWAY.degreesAt(time);
+        waterLayer.setRotation(degrees);
+        float zoom = camera.zoomFor(WATER_DEPTH);
+        if (degrees == 0f || zoom <= 0f) {
+            waterLayer.setPivot(waterCenterX, waterCenterY);
+            waterLayer.setOffset(waterRestOffsetX, waterRestOffsetY);
+            return;
+        }
+        float anchorX = waterPixelAt(playerCenterStackX(time), waterRestOffsetX + waterCenterX, cameraPan.cameraXAt(time), zoom, waterCenterX);
+        float anchorY = waterPixelAt(playerCenterStackY(time), waterRestOffsetY + waterCenterY, cameraPan.cameraYAt(time), zoom, waterCenterY);
+        waterLayer.setPivot(anchorX, anchorY);
+        waterLayer.setOffset(
+            waterRestOffsetX - (1f - zoom) * (anchorX - waterCenterX),
+            waterRestOffsetY - (1f - zoom) * (anchorY - waterCenterY));
+    }
+
+    /** Inverts the rest placement: screen = innerCenter + zoom * (pixel - gridCenter) - camera * zoom. */
+    private static float waterPixelAt(float screen, float innerCenter, float camera, float zoom, float gridCenter) {
+        return gridCenter + (screen - innerCenter) / zoom + camera;
+    }
+
+    private float playerCenterStackX(float time) {
+        return SCENE_INNER_LEFT * cellWidth + fallingPlayerX(time) + cellWidth / 2f;
+    }
+
+    private float playerCenterStackY(float time) {
+        return SCENE_INNER_TOP * cellHeight + fallingPlayerY(time) + cellHeight / 2f;
     }
 
     /** An empty layer in the same screen-space spot as the player layer, so sprite coordinates match. */
