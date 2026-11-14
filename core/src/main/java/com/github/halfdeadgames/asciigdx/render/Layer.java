@@ -116,6 +116,29 @@ public final class Layer {
     }
 
     /**
+     * Shifts the layer relative to its current offset.
+     *
+     * @param dx virtual pixels to the right
+     * @param dy virtual pixels downward
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void offsetBy(float dx, float dy) {
+        setOffset(offsetX + dx, offsetY + dy);
+    }
+
+    /**
+     * Shifts the layer by whole cells of this layer's glyph source, equal to
+     * {@code offsetBy(columns * cellWidth, rows * cellHeight)}.
+     *
+     * @param columns cells to the right
+     * @param rows cells downward
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void cellOffsetBy(int columns, int rows) {
+        offsetBy(columns * glyphSource.getCellWidth(), rows * glyphSource.getCellHeight());
+    }
+
+    /**
      * Shows or hides the layer. A hidden layer is skipped when drawing but keeps
      * its place in the stack.
      *

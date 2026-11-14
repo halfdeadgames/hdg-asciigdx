@@ -219,6 +219,31 @@ class LayerStackTest {
     }
 
     @Test
+    void offsetByAddsToTheCurrentOffset() {
+        Layer layer = addLayer();
+        layer.setOffset(10f, 20f);
+
+        layer.offsetBy(5f, -8f);
+        assertEquals(15f, layer.getOffsetX());
+        assertEquals(12f, layer.getOffsetY());
+
+        layer.offsetBy(-15f, 0f);
+        assertEquals(0f, layer.getOffsetX());
+        assertEquals(12f, layer.getOffsetY());
+    }
+
+    @Test
+    void cellOffsetByUsesThatLayersCellSize() {
+        Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource(8, 12));
+        layer.setCellOffset(1, 1);
+
+        layer.cellOffsetBy(2, -3);
+
+        assertEquals(24f, layer.getOffsetX());
+        assertEquals(-24f, layer.getOffsetY());
+    }
+
+    @Test
     void snappingIsOnByDefaultAndRoundsHalfUp() {
         assertTrue(stack.isPixelSnapping());
         Layer layer = addLayer();
@@ -295,6 +320,8 @@ class LayerStackTest {
 
         assertThrows(IllegalStateException.class, () -> layer.setOffset(1f, 1f));
         assertThrows(IllegalStateException.class, () -> layer.setCellOffset(1, 1));
+        assertThrows(IllegalStateException.class, () -> layer.offsetBy(1f, 1f));
+        assertThrows(IllegalStateException.class, () -> layer.cellOffsetBy(1, 1));
         assertThrows(IllegalStateException.class, () -> layer.setVisible(false));
         assertThrows(IllegalStateException.class, () -> layer.moveTo(0));
         assertThrows(IllegalStateException.class, layer::remove);
