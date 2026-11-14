@@ -12,7 +12,9 @@ import java.util.List;
  * {@code y} grows downward, in text-row order.
  *
  * <p>Colors are packed RGBA8888 ints ({@code 0xRRGGBBAA}), the format returned by
- * libGDX {@code Color.rgba8888()}.
+ * libGDX {@code Color.rgba8888()}. A 6-digit hex literal such as {@code 0xFF4040} is read as
+ * {@code 0x00FF4040} and draws the wrong color; wrap it with
+ * {@link com.github.halfdeadgames.asciigdx.color.CellColor#rgb(int)}.
  *
  * <p>Bounds rule: writes outside the grid are silently ignored, which allows
  * clipped drawing. Reads outside the grid throw {@link IndexOutOfBoundsException}.

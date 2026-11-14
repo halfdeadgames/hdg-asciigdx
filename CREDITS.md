@@ -1,6 +1,6 @@
 # Credits
 
-Third-party assets bundled with HDG-AsciiGDX.
+Third-party work used by HDG-AsciiGDX.
 
 ## Fonts
 
@@ -28,6 +28,12 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 | Data | Author | License | Used for |
 |---|---|---|---|
 | [Unicode Character Database](https://www.unicode.org/ucd/) | Unicode, Inc. | [Unicode License v3](https://www.unicode.org/license.txt) | Character names newer than the JDK's data, in the glyph workbench (`glyph-workbench/src/main/resources/unicode-names.txt`; the license text is kept in that file) |
+
+## Algorithms
+
+| Algorithm | Author | License | Used for |
+|---|---|---|---|
+| [Oklab](https://bottosson.github.io/posts/oklab/) | Björn Ottosson | Public domain, or [MIT](https://opensource.org/licenses/MIT) | Color mixing in `CellColor.mixOklab` (conversion matrices from the 2021-01-25 update) |
 
 ## Development tools
 
