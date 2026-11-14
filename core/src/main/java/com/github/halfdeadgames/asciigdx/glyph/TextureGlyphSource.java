@@ -11,8 +11,10 @@ import java.util.function.IntPredicate;
 /**
  * A {@link GlyphSource} backed by a single sheet image uploaded as one {@link Texture}.
  *
- * <p>The texture uses nearest filtering, no mipmaps and clamped edges so glyph pixels stay
- * sharp. Slots of the layout beyond the size of the {@link GlyphOrder} are unused.
+ * <p>The texture uses no mipmaps and clamped edges. By default it uses nearest filtering so glyph
+ * pixels stay sharp; pass {@link GlyphFilter#LINEAR} for smooth scaling and rotation, which
+ * uploads a slightly larger sheet with a transparent gutter around every glyph. Slots of the
+ * layout beyond the size of the {@link GlyphOrder} are unused.
  *
  * <p>Must be created and disposed on the render thread, because it uploads a texture.
  */
@@ -94,7 +96,8 @@ public final class TextureGlyphSource implements GlyphSource {
                 "Order has no glyph for fallback code point " + fallbackCodePoint);
         }
 
-        return convertAndUpload(new Pixmap(file), file.path(), layout, order, mode, keyRgba8888OrNull, fallbackSlot);
+        return convertAndUpload(
+            new Pixmap(file), file.path(), layout, order, mode, keyRgba8888OrNull, fallbackSlot, GlyphFilter.NEAREST);
     }
 
     /**
@@ -115,9 +118,27 @@ public final class TextureGlyphSource implements GlyphSource {
      */
     public static TextureGlyphSource loadSheet(
         FileHandle image, FileHandle characterList, int cellWidth, int cellHeight, TransparencyMode mode) {
+        return loadSheet(image, characterList, cellWidth, cellHeight, mode, GlyphFilter.NEAREST);
+    }
+
+    /**
+     * Same as {@link #loadSheet(FileHandle, FileHandle, int, int, TransparencyMode)}, with a
+     * choice of texture filter.
+     *
+     * @param filter how the texture is sampled; {@link GlyphFilter#LINEAR} uploads a repacked,
+     *        slightly larger copy of the sheet
+     */
+    public static TextureGlyphSource loadSheet(
+        FileHandle image,
+        FileHandle characterList,
+        int cellWidth,
+        int cellHeight,
+        TransparencyMode mode,
+        GlyphFilter filter) {
         Objects.requireNonNull(image, "image must not be null");
         Objects.requireNonNull(characterList, "characterList must not be null");
         Objects.requireNonNull(mode, "mode must not be null");
+        Objects.requireNonNull(filter, "filter must not be null");
         if (cellWidth <= 0 || cellHeight <= 0) {
             throw new IllegalArgumentException("Cell size must be positive, was " + cellWidth + "x" + cellHeight);
         }
@@ -143,7 +164,7 @@ public final class TextureGlyphSource implements GlyphSource {
             pixmap.dispose();
             throw e;
         }
-        return convertAndUpload(pixmap, image.path(), layout, order, mode, null, fallbackSlot);
+        return convertAndUpload(pixmap, image.path(), layout, order, mode, null, fallbackSlot, filter);
     }
 
     private static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {
@@ -171,7 +192,8 @@ public final class TextureGlyphSource implements GlyphSource {
         GlyphOrder order,
         TransparencyMode mode,
         Integer keyRgba8888OrNull,
-        int fallbackSlot) {
+        int fallbackSlot,
+        GlyphFilter filter) {
         try {
             requireImageFits(pixmap, "Image " + path, layout);
             int key = keyRgba8888OrNull != null ? keyRgba8888OrNull : pixmap.getPixel(0, 0);
@@ -191,7 +213,7 @@ public final class TextureGlyphSource implements GlyphSource {
                 convertToWhiteWithAlpha(pixmap, key);
             }
 
-            return upload(pixmap, layout, order, fallbackSlot, codePoint -> true);
+            return upload(pixmap, layout, order, fallbackSlot, codePoint -> true, filter);
         } finally {
             pixmap.dispose();
         }
@@ -216,7 +238,25 @@ public final class TextureGlyphSource implements GlyphSource {
      */
     public static TextureGlyphSource fromPixmap(
         Pixmap sheet, GlyphSheetLayout layout, GlyphOrder order, IntPredicate presentInSheet, int fallbackCodePoint) {
+        return fromPixmap(sheet, layout, order, presentInSheet, fallbackCodePoint, GlyphFilter.NEAREST);
+    }
+
+    /**
+     * Same as {@link #fromPixmap(Pixmap, GlyphSheetLayout, GlyphOrder, IntPredicate, int)}, with a
+     * choice of texture filter. {@link GlyphFilter#LINEAR} uploads a repacked, slightly larger
+     * copy; {@code sheet} is still disposed by this method.
+     *
+     * @param filter how the texture is sampled
+     */
+    public static TextureGlyphSource fromPixmap(
+        Pixmap sheet,
+        GlyphSheetLayout layout,
+        GlyphOrder order,
+        IntPredicate presentInSheet,
+        int fallbackCodePoint,
+        GlyphFilter filter) {
         try {
+            Objects.requireNonNull(filter, "filter must not be null");
             Objects.requireNonNull(sheet, "sheet must not be null");
             Objects.requireNonNull(layout, "layout must not be null");
             Objects.requireNonNull(order, "order must not be null");
@@ -228,7 +268,7 @@ public final class TextureGlyphSource implements GlyphSource {
                     "Sheet has no glyph for fallback code point " + fallbackCodePoint);
             }
             requireImageFits(sheet, "Sheet", layout);
-            return upload(sheet, layout, order, fallbackSlot, presentInSheet);
+            return upload(sheet, layout, order, fallbackSlot, presentInSheet, filter);
         } finally {
             if (sheet != null) {
                 sheet.dispose();
@@ -236,11 +276,41 @@ public final class TextureGlyphSource implements GlyphSource {
         }
     }
 
+    // Does not dispose the given pixmap; the caller keeps ownership.
     private static TextureGlyphSource upload(
+        Pixmap pixmap,
+        GlyphSheetLayout layout,
+        GlyphOrder order,
+        int fallbackSlot,
+        IntPredicate presentInSheet,
+        GlyphFilter filter) {
+        if (filter == GlyphFilter.LINEAR) {
+            return uploadPadded(pixmap, layout, order, fallbackSlot, presentInSheet);
+        }
+        return uploadTexture(pixmap, layout, order, fallbackSlot, presentInSheet, Texture.TextureFilter.Nearest);
+    }
+
+    private static TextureGlyphSource uploadPadded(
         Pixmap pixmap, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot, IntPredicate presentInSheet) {
+        GlyphSheetLayout paddedLayout = PaddedSheet.layoutFor(layout);
+        Pixmap padded = PaddedSheet.copy(pixmap, layout, paddedLayout, order.size());
+        try {
+            return uploadTexture(padded, paddedLayout, order, fallbackSlot, presentInSheet, Texture.TextureFilter.Linear);
+        } finally {
+            padded.dispose();
+        }
+    }
+
+    private static TextureGlyphSource uploadTexture(
+        Pixmap pixmap,
+        GlyphSheetLayout layout,
+        GlyphOrder order,
+        int fallbackSlot,
+        IntPredicate presentInSheet,
+        Texture.TextureFilter textureFilter) {
         Texture texture = new Texture(pixmap, false);
         try {
-            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            texture.setFilter(textureFilter, textureFilter);
             texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
             return new TextureGlyphSource(texture, layout, order, fallbackSlot, presentInSheet);
         } catch (RuntimeException e) {
@@ -260,13 +330,20 @@ public final class TextureGlyphSource implements GlyphSource {
 
     /** Loads the bundled Saiksistt font in the given cell size. */
     public static TextureGlyphSource loadSaiksistt(SaiksisttSize size) {
+        return loadSaiksistt(size, GlyphFilter.NEAREST);
+    }
+
+    /** Loads the bundled Saiksistt font in the given cell size with the given texture filter. */
+    public static TextureGlyphSource loadSaiksistt(SaiksisttSize size, GlyphFilter filter) {
         Objects.requireNonNull(size, "size must not be null");
+        Objects.requireNonNull(filter, "filter must not be null");
         return loadSheet(
             Gdx.files.classpath(size.sheetPath()),
             Gdx.files.classpath(size.characterListPath()),
             size.cellWidth(),
             size.cellHeight(),
-            TransparencyMode.AUTO);
+            TransparencyMode.AUTO,
+            filter);
     }
 
     private static boolean hasNonOpaquePixel(Pixmap pixmap) {
