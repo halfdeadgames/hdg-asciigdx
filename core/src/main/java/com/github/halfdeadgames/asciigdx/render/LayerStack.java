@@ -37,6 +37,7 @@ public final class LayerStack implements Disposable {
     private final Vector3 clipCorner = new Vector3();
     private final Affine2 layerTransform = new Affine2();
     private final Affine2 inverseTransform = new Affine2();
+    private final Affine2 pointTransform = new Affine2();
     private final Vector2 layerPixel = new Vector2();
     private final Rectangle clipRect = new Rectangle();
     private final Rectangle worldRect = new Rectangle();
@@ -326,12 +327,77 @@ public final class LayerStack implements Disposable {
         if (out == null) {
             throw new IllegalArgumentException("out must not be null");
         }
-        composeLayerTransform(layer, stackX, stackY, inverseTransform);
-        inverseTransform.inv();
-        LayerTransform.worldToLayerPixels(inverseTransform, worldX, worldY, layerPixel);
+        layerPointAt(layer, stackX, stackY, worldX, worldY, layerPixel);
         GlyphSource source = layer.getGlyphSource();
         out.x = (int) Math.floor(layerPixel.x / source.getCellWidth());
         out.y = (int) Math.floor(layerPixel.y / source.getCellHeight());
+    }
+
+    /**
+     * Maps a point in batch world space to layer pixels, using the same transform
+     * {@link #draw} uses: offset shifted by camera and parallax, zoom, rotation about the
+     * pivot, and corner snapping. The result is measured from the top-left corner of the layer's
+     * grid, x right and y down, before zoom and rotation. It uses the same units as sprite
+     * positions and {@link Layer#setPivot}.
+     *
+     * <p>This takes two steps. The caller first turns a window pixel into batch world space
+     * with its viewport, for example {@code viewport.unproject}, then passes that point here
+     * with the same stack position it gives to {@code draw}.
+     *
+     * <p>The result is always written to {@code out}, even outside the grid. It matches what is
+     * drawn, so with corner snapping on it can step by up to half a pixel. It describes the
+     * layer's current state only.
+     *
+     * @param layer a layer of this stack
+     * @param stackX the x passed to {@link #draw}
+     * @param stackY the y passed to {@link #draw} (y grows upward)
+     * @param worldX x of the point in batch world space
+     * @param worldY y of the point in batch world space
+     * @param out receives the point in layer pixels
+     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void layerPointAt(Layer layer, float stackX, float stackY, float worldX, float worldY, Vector2 out) {
+        requireOutAndOwned(layer, out);
+        composeLayerTransform(layer, stackX, stackY, inverseTransform);
+        inverseTransform.inv();
+        LayerTransform.worldToLayerPixels(inverseTransform, worldX, worldY, out);
+    }
+
+    /**
+     * Maps a point in layer pixels to batch world space, the inverse of {@link #layerPointAt}.
+     * It uses the same transform {@link #draw} uses: offset shifted by camera and parallax,
+     * zoom, rotation about the pivot, and corner snapping. The layer point is measured from the
+     * top-left corner of the layer's grid, x right and y down, before zoom and rotation.
+     *
+     * <p>The caller passes the same stack position it gives to {@code draw}. The result is in
+     * batch world space with y up, so the caller can pass it to {@code viewport.project} to get
+     * a window pixel.
+     *
+     * <p>The result is always written to {@code out}, even outside the grid. It matches what is
+     * drawn, so with corner snapping on it can step by up to half a pixel. It describes the
+     * layer's current state only.
+     *
+     * @param layer a layer of this stack
+     * @param stackX the x passed to {@link #draw}
+     * @param stackY the y passed to {@link #draw} (y grows upward)
+     * @param layerX x of the point in layer pixels
+     * @param layerY y of the point in layer pixels (y grows downward)
+     * @param out receives the point in batch world space
+     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void worldPointOf(Layer layer, float stackX, float stackY, float layerX, float layerY, Vector2 out) {
+        requireOutAndOwned(layer, out);
+        composeLayerTransform(layer, stackX, stackY, pointTransform);
+        LayerTransform.layerPixelsToWorld(pointTransform, layerX, layerY, out);
+    }
+
+    private void requireOutAndOwned(Layer layer, Vector2 out) {
+        requireOwned(layer);
+        if (out == null) {
+            throw new IllegalArgumentException("out must not be null");
+        }
     }
 
     /**

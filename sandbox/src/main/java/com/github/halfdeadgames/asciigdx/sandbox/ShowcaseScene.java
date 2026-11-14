@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Vector2;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphFilter;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -169,7 +170,6 @@ class ShowcaseScene extends GridScene {
     private static final float RIPPLE_HALF_WIDTH_CELLS = 1.2f;
     private static final float RIPPLE_MAX_SCALE_BUMP = 0.6f;
     private static final float RIPPLE_COVER_MARGIN_CELLS = 1f;
-    private static final float WATER_ZOOM_AT_SPLASH = 1f;
 
     private static final float SINK_SECONDS = 0.4f;
     private static final float SURFACE_SECONDS = 0.6f;
@@ -188,6 +188,9 @@ class ShowcaseScene extends GridScene {
     private static final TitlePop TITLE_POP = new TitlePop(
         TITLE_START_SECONDS, TITLE_STAGGER_SECONDS, TITLE_POP_SECONDS, TITLE_OVERSHOOT,
         TITLE_TEXT.length(), TITLE_FROM_COLOR, TITLE_TO_COLOR);
+
+    /** The x GridScene passes to layers.draw; the y is the viewport's world height. */
+    private static final float STACK_DRAW_X = 0f;
 
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
@@ -255,6 +258,7 @@ class ShowcaseScene extends GridScene {
     private final GlyphSprite ghostSprite;
     private final Layer[] splashTintedLayers;
     private boolean clockPinned;
+    private final Vector2 waterPixel = new Vector2();
 
     {
         Arrays.fill(rowLine, NO_LINE);
@@ -299,6 +303,7 @@ class ShowcaseScene extends GridScene {
         splashTintedLayers = new Layer[] {
             waterLayer, underwaterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer,
             rainLayers[0], rainLayers[1], rainLayers[2]};
+        poseStackAt(SPLASH_SECONDS);
         splash = createSplash();
         waterRipple = createWaterRipple();
         underwaterSwap = createUnderwaterSwap();
@@ -556,30 +561,48 @@ class ShowcaseScene extends GridScene {
     }
 
     /**
-     * Rocks the water about the pixel under the falling @'s center. The unrotated screen position of a water
-     * pixel q is offset - camera * zoom + (1 - zoom) * pivot + zoom * q, so moving the pivot by d needs the offset
-     * to move by -(1 - zoom) * d to leave the placement unchanged. Without a sway the rest values are used as is.
+     * Rocks the water about the pixel under the falling @'s center, measured in the water's rest placement. The
+     * unrotated screen position of a water pixel q is offset - camera * zoom + (1 - zoom) * pivot + zoom * q, so
+     * moving the pivot by d needs the offset to move by -(1 - zoom) * d to leave the placement unchanged.
+     * Without a sway the rest values are used as is. Needs the camera and water zoom of this frame applied first.
      */
     private void applyWaterSway(float time) {
         float degrees = WATER_SWAY.degreesAt(time);
-        waterLayer.setRotation(degrees);
+        placeWaterAtRest();
         float zoom = camera.zoomFor(WATER_DEPTH);
         if (degrees == 0f || zoom <= 0f) {
-            waterLayer.setPivot(waterCenterX, waterCenterY);
-            waterLayer.setOffset(waterRestOffsetX, waterRestOffsetY);
             return;
         }
-        float anchorX = waterPixelAt(playerCenterStackX(time), waterRestOffsetX + waterCenterX, cameraPan.cameraXAt(time), zoom, waterCenterX);
-        float anchorY = waterPixelAt(playerCenterStackY(time), waterRestOffsetY + waterCenterY, cameraPan.cameraYAt(time), zoom, waterCenterY);
+        findWaterPixelUnder(playerCenterStackX(time), playerCenterStackY(time));
+        float anchorX = waterPixel.x;
+        float anchorY = waterPixel.y;
+        waterLayer.setRotation(degrees);
         waterLayer.setPivot(anchorX, anchorY);
         waterLayer.setOffset(
             waterRestOffsetX - (1f - zoom) * (anchorX - waterCenterX),
             waterRestOffsetY - (1f - zoom) * (anchorY - waterCenterY));
     }
 
-    /** Inverts the rest placement: screen = innerCenter + zoom * (pixel - gridCenter) - camera * zoom. */
-    private static float waterPixelAt(float screen, float innerCenter, float camera, float zoom, float gridCenter) {
-        return gridCenter + (screen - innerCenter) / zoom + camera;
+    private void placeWaterAtRest() {
+        waterLayer.setRotation(0f);
+        waterLayer.setPivot(waterCenterX, waterCenterY);
+        waterLayer.setOffset(waterRestOffsetX, waterRestOffsetY);
+    }
+
+    /** Finds the water layer pixel under a point given in stack pixels (y down) and stores it in waterPixel. */
+    private void findWaterPixelUnder(float stackPixelX, float stackPixelY) {
+        float stackTop = viewport.getWorldHeight();
+        layers.layerPointAt(waterLayer, STACK_DRAW_X, stackTop, STACK_DRAW_X + stackPixelX, stackTop - stackPixelY, waterPixel);
+    }
+
+    /**
+     * Applies the camera and water sway for the given time. The layer-point query only sees the stack's current
+     * state, but the ripple and the see-through water need the cell under the @ at the splash when they are
+     * built. The first update replaces this pose.
+     */
+    private void poseStackAt(float time) {
+        applyCamera(time);
+        applyWaterSway(time);
     }
 
     private float playerCenterStackX(float time) {
@@ -726,19 +749,23 @@ class ShowcaseScene extends GridScene {
             rings, RIPPLE_MAX_SCALE_BUMP);
     }
 
-    /** The water cell-unit column under the @'s center at the splash, where the water is unrotated at zoom 1. */
+    /** The water cell-unit column under the @'s center at the splash; the stack must be posed at the splash. */
     private float splashWaterColumn() {
-        float stackX = SCENE_INNER_LEFT * cellWidth + fallEndX + cellWidth / 2f;
-        float pixelX = waterPixelAt(
-            stackX, waterRestOffsetX + waterCenterX, cameraPan.cameraXAt(SPLASH_SECONDS), WATER_ZOOM_AT_SPLASH, waterCenterX);
-        return pixelX / cellWidth;
+        findWaterPixelUnder(splashStackX(), splashStackY());
+        return waterPixel.x / cellWidth;
     }
 
     private float splashWaterRow() {
-        float stackY = SCENE_INNER_TOP * cellHeight + fallEndY + cellHeight / 2f;
-        float pixelY = waterPixelAt(
-            stackY, waterRestOffsetY + waterCenterY, cameraPan.cameraYAt(SPLASH_SECONDS), WATER_ZOOM_AT_SPLASH, waterCenterY);
-        return pixelY / cellHeight;
+        findWaterPixelUnder(splashStackX(), splashStackY());
+        return waterPixel.y / cellHeight;
+    }
+
+    private float splashStackX() {
+        return SCENE_INNER_LEFT * cellWidth + fallEndX + cellWidth / 2f;
+    }
+
+    private float splashStackY() {
+        return SCENE_INNER_TOP * cellHeight + fallEndY + cellHeight / 2f;
     }
 
     private void applyLightning(float time) {

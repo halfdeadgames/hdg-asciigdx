@@ -66,6 +66,18 @@ final class LayerTransform {
         out.y = -out.y;
     }
 
+    /**
+     * Maps a point in the layer's pixels, measured from its top-left corner with y growing
+     * down, into batch-world space.
+     *
+     * @param layerToWorld a transform written by {@link #compose}
+     * @param out receives the point in batch-world space
+     */
+    static void layerPixelsToWorld(Affine2 layerToWorld, float layerX, float layerY, Vector2 out) {
+        out.set(layerX, -layerY);
+        layerToWorld.applyTo(out);
+    }
+
     private static void setLinearPart(float zoom, float rotationDegrees, Affine2 out) {
         if (rotationDegrees == 0f) {
             out.setToScaling(zoom, zoom);
