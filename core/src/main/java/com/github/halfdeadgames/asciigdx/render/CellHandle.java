@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.github.halfdeadgames.asciigdx.color.CellColor;
+import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
 /**
  * Holds everything temporary about one cell, for bump attacks, wiggles, hit pops, and flashes.
@@ -61,7 +62,14 @@ public final class CellHandle implements SpriteTransform {
     private int overrideCodePoint = NO_CODE_POINT;
     private boolean overridesChanged;
 
+    private final Layer owner;
+
     CellHandle(int column, int row) {
+        this(null, column, row);
+    }
+
+    CellHandle(Layer owner, int column, int row) {
+        this.owner = owner;
         this.column = column;
         this.row = row;
     }
@@ -228,6 +236,28 @@ public final class CellHandle implements SpriteTransform {
         requireAttached();
         this.pivotX = pivotX;
         this.pivotY = pivotY;
+    }
+
+    /**
+     * Moves the pivot and adjusts the offset so the glyph stays where it is drawn now. Placement is
+     * kept for the rotation and scale set at the time of the call; later changes to either happen
+     * about the new pivot. {@link #setPivot} alone moves the glyph when the cell is rotated or
+     * scaled. Like the pivot, this does not lift the glyph: with default rotation and scale the
+     * offset stays as it is.
+     *
+     * @param pivotX horizontal pivot as a fraction of the cell box
+     * @param pivotY vertical pivot as a fraction of the cell box
+     * @throws IllegalStateException if the handle was detached
+     */
+    public void setPivotKeepingPlacement(float pivotX, float pivotY) {
+        requireAttached();
+        GlyphSource glyphSource = owner.getGlyphSource();
+        float shiftX = (pivotX - this.pivotX) * glyphSource.getCellWidth();
+        float shiftY = (pivotY - this.pivotY) * glyphSource.getCellHeight();
+        float newOffsetX = SpritePlacement.xKeepingPlacement(offsetX, shiftX, shiftY, scaleX, scaleY, rotation);
+        float newOffsetY = SpritePlacement.yKeepingPlacement(offsetY, shiftX, shiftY, scaleX, scaleY, rotation);
+        setPivot(pivotX, pivotY);
+        setOffset(newOffsetX, newOffsetY);
     }
 
     /** Multiplier on the glyph's alpha, from 0 to 1. */

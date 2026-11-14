@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
+import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+
 /**
  * A glyph placed off the grid: a position in virtual pixels, plus rotation, scale, color, and
  * visibility. Position is the top-left corner of the sprite's unscaled cell box, measured from
@@ -210,6 +212,27 @@ public final class GlyphSprite implements SpriteTransform {
         requireNotRemoved();
         this.pivotX = pivotX;
         this.pivotY = pivotY;
+    }
+
+    /**
+     * Moves the pivot and adjusts the position so the glyph stays where it is drawn now. Placement
+     * is kept for the rotation and scale set at the time of the call; later changes to either
+     * happen about the new pivot. {@link #setPivot} alone moves the glyph when the sprite is
+     * rotated or scaled.
+     *
+     * @param pivotX horizontal pivot as a fraction of the cell box
+     * @param pivotY vertical pivot as a fraction of the cell box
+     * @throws IllegalStateException if the sprite was removed
+     */
+    public void setPivotKeepingPlacement(float pivotX, float pivotY) {
+        requireNotRemoved();
+        GlyphSource glyphSource = owner.getGlyphSource();
+        float shiftX = (pivotX - this.pivotX) * glyphSource.getCellWidth();
+        float shiftY = (pivotY - this.pivotY) * glyphSource.getCellHeight();
+        float newX = SpritePlacement.xKeepingPlacement(x, shiftX, shiftY, scaleX, scaleY, rotation);
+        float newY = SpritePlacement.yKeepingPlacement(y, shiftX, shiftY, scaleX, scaleY, rotation);
+        setPivot(pivotX, pivotY);
+        setPosition(newX, newY);
     }
 
     /** Whether the sprite is shown. A visible sprite whose color alpha is 0 is skipped too. */

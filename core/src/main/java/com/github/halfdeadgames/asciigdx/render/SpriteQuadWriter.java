@@ -105,7 +105,7 @@ final class SpriteQuadWriter {
         return pivotY + sin * offsetX + cos * offsetY;
     }
 
-    private static float exactSin(float degrees) {
+    static float exactSin(float degrees) {
         if (!isQuarterTurn(degrees)) {
             return (float) Math.sin(Math.toRadians(degrees));
         }
@@ -116,7 +116,7 @@ final class SpriteQuadWriter {
         };
     }
 
-    private static float exactCos(float degrees) {
+    static float exactCos(float degrees) {
         if (!isQuarterTurn(degrees)) {
             return (float) Math.cos(Math.toRadians(degrees));
         }

@@ -19,6 +19,8 @@ import com.github.halfdeadgames.asciigdx.render.Layer;
  * monsters there lose their handles; they get fresh ones when the grid grows back.
  * H releases the layer's idle cell handles; the status line shows the handle count, and the
  * monsters and the word at the bottom ask for fresh handles when theirs are released.
+ * C swaps the spinning marker's pivot between its center and its bottom-left corner without
+ * moving it, so it spins about the new point from where it is.
  *
  * <p>The word at the bottom runs the {@link OverrideDemo} cycle: flat and lifted letters must
  * look identical in every phase.
@@ -46,6 +48,9 @@ class SpritesScene extends GridScene {
     private static final float FLASH_STRENGTH = 0.8f;
     private static final float HALF_ALPHA = 0.5f;
     private static final float CAPPED_DELTA = 0.1f;
+    private static final float CENTER_PIVOT = 0.5f;
+    private static final float CORNER_PIVOT_X = 0f;
+    private static final float CORNER_PIVOT_Y = 1f;
 
     private static final int FLOOR_A = 0x1C2A1CFF;
     private static final int FLOOR_B = 0x142014FF;
@@ -90,6 +95,7 @@ class SpritesScene extends GridScene {
     private float flashRemaining;
     private boolean gray;
     private boolean halfAlpha;
+    private boolean spinnerPivotAtCorner;
 
     private final boolean startsFaded;
 
@@ -132,13 +138,14 @@ class SpritesScene extends GridScene {
     @Override
     public String statusText() {
         status.setLength(0);
-        // Labeled by key (G gray, P snap, A alpha, M slide, K shrink): the overlay is 40 columns wide.
+        // Labeled by key (G gray, P snap, A alpha, M slide, K shrink, C pivot): the overlay is 40 columns wide.
         status.append("G:").append(gray ? "on" : "off")
             .append(" P:").append(layers.isPixelSnapping() ? "on" : "off")
             .append(" A:").append(halfAlpha ? "0.5" : "1")
             .append(" M:").append(sliding ? "on" : "off")
             .append(" K:").append(shrunk ? "on" : "off")
-            .append(" H:").append(mapLayer.getCellHandleCount());
+            .append(" H:").append(mapLayer.getCellHandleCount())
+            .append(" C:").append(spinnerPivotAtCorner ? "corner" : "center");
         return status.toString();
     }
 
@@ -174,6 +181,10 @@ class SpritesScene extends GridScene {
         }
         if (keycode == Input.Keys.H) {
             mapLayer.releaseIdleCellHandles();
+            return true;
+        }
+        if (keycode == Input.Keys.C) {
+            toggleSpinnerPivot();
             return true;
         }
         return false;
@@ -248,6 +259,16 @@ class SpritesScene extends GridScene {
             LiftedMonster monster = monsters[i];
             monster.placeIn(grid, floorBackground(monster.getColumn(), monster.getRow()));
         }
+    }
+
+    /** The marker keeps its place at the swap, then spins about the new pivot. */
+    private void toggleSpinnerPivot() {
+        spinnerPivotAtCorner = !spinnerPivotAtCorner;
+        if (spinnerPivotAtCorner) {
+            spinner.setPivotKeepingPlacement(CORNER_PIVOT_X, CORNER_PIVOT_Y);
+            return;
+        }
+        spinner.setPivotKeepingPlacement(CENTER_PIVOT, CENTER_PIVOT);
     }
 
     private void toggleGray() {

@@ -818,7 +818,7 @@ public final class Layer {
         if (cellHandles.size == 0) {
             renderer.setCellHandles(cellHandles);
         }
-        CellHandle created = new CellHandle(column, row);
+        CellHandle created = new CellHandle(this, column, row);
         cellsByPosition.put(cellKey(column, row), created);
         cellHandles.add(created);
         return created;
