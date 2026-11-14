@@ -58,7 +58,10 @@
     {
       name: "Symbols centered both ways",
       check: centeredBoth,
-      appliesTo: [ symbols ]
+      appliesTo: [ symbols ],
+      except: [
+        { glyphs: [ "♪" ], why: "3 px head and flag give an odd width" }
+      ]
     },
     {
       name: "Capitals start at the cap line",
