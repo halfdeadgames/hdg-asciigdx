@@ -2,14 +2,19 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
+import com.github.halfdeadgames.asciigdx.glyph.GlyphFilter;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
+import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Beat;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.EighthBar;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.FallSpin;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
@@ -70,12 +75,37 @@ class ShowcaseScene extends GridScene {
     private static final float BRIDGE_DEPTH = 1f;
     private static final float WATER_DEPTH = 3.5f;
 
-    /** Sized so the water still covers the inner area at the water's zoom of 1 / WATER_DEPTH. */
-    private static final int WATER_COLUMNS = (int) Math.ceil(SCENE_INNER_WIDTH * WATER_DEPTH);
-    private static final int WATER_ROWS = (int) Math.ceil(SCENE_INNER_HEIGHT * WATER_DEPTH);
+    private static final float FALL_START_SECONDS = 6.0f;
+    private static final float FALL_SECONDS = 1.6f;
+    private static final float PAN_SECONDS = 0.8f;
+    private static final float FALL_CAMERA_DEPTH = 2.5f;
+    private static final Beat CAMERA_DEPTH_FALL = new Beat(FALL_START_SECONDS, FALL_SECONDS, Interpolation.pow2In);
+    private static final float SPIN_SECONDS = 1.3f;
+    private static final float SPIN_DEGREES = 720f;
+    private static final float SHRUNK_SCALE = 0.5f;
+    private static final FallSpin FALL_SPIN = new FallSpin(
+        new Beat(FALL_START_SECONDS, SPIN_SECONDS, Interpolation.sine), SPIN_DEGREES, SHRUNK_SCALE);
+    private static final Beat CAMERA_PAN_BEAT = new Beat(FALL_START_SECONDS, PAN_SECONDS, Interpolation.sine);
+
+    /**
+     * Sized so the water covers the inner area at its zoom of 1 / WATER_DEPTH. The pan shifts it by up to
+     * about 7 columns and 2.5 rows while the zoom is still small, which needs about 45.5 columns and
+     * 24.6 rows on each side of center; the margin adds 4 cells per side beyond the zoomed-out size.
+     */
+    private static final int WATER_MARGIN_CELLS = 4;
+    private static final int WATER_COLUMNS = (int) Math.ceil(SCENE_INNER_WIDTH * WATER_DEPTH) + 2 * WATER_MARGIN_CELLS;
+    private static final int WATER_ROWS = (int) Math.ceil(SCENE_INNER_HEIGHT * WATER_DEPTH) + 2 * WATER_MARGIN_CELLS;
     private static final int WATER_BACKGROUND_COLOR = 0x0A1E3CFF;
     private static final int WATER_GLYPH_COLOR = 0x3C78B4FF;
 
+    /**
+     * Bridge columns are numbered from the inner area's left edge (0); the grid extends this many
+     * columns past each side. While the pan centers the player (6 columns right of center), the right end sits
+     * zoom * (12.5 + margin - 6 * pan) cells from the screen center and must stay >= 12.5 (half the inner width).
+     * Sampled over the pan and dive, the worst case needs a margin of about 1.12, so 2 columns, plus 2 spare.
+     */
+    private static final int BRIDGE_MARGIN_COLUMNS = 4;
+    private static final int BRIDGE_COLUMNS = SCENE_INNER_WIDTH + 2 * BRIDGE_MARGIN_COLUMNS;
     private static final int BRIDGE_ROPE_ROW_ABOVE = 6;
     private static final int BRIDGE_PLANK_ROW = 7;
     private static final int BRIDGE_ROPE_ROW_BELOW = 8;
@@ -123,8 +153,9 @@ class ShowcaseScene extends GridScene {
     private final TerminalGrid logGrid = new TerminalGrid(LOG_TEXT_WIDTH, LOG_ROWS);
     private final DepthCamera camera = new DepthCamera(HIDDEN_DISTANCE, FADE_DISTANCE);
     private final TerminalGrid waterGrid = new TerminalGrid(WATER_COLUMNS, WATER_ROWS);
-    private final TerminalGrid bridgeGrid = new TerminalGrid(SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT);
+    private final TerminalGrid bridgeGrid = new TerminalGrid(BRIDGE_COLUMNS, SCENE_INNER_HEIGHT);
     private final Layer waterLayer;
+    private final Layer playerLayer;
     private final Layer bridgeLayer;
     private int drawnWaterStep = Integer.MIN_VALUE;
     private final Layer overlayLayer;
@@ -149,6 +180,16 @@ class ShowcaseScene extends GridScene {
     private final float cellWidth;
     private final float cellHeight;
     private final GlyphSprite playerSprite;
+    private final GlyphSprite fallingPlayerSprite;
+    private final TextureGlyphSource smoothGlyphs;
+    private final TextureGlyphSource crispGlyphs;
+    private final Layer crispPlayerLayer;
+    private final GlyphSprite crispPlayerSprite;
+    private final float fallStartX;
+    private final float fallStartY;
+    private final float fallEndX;
+    private final float fallEndY;
+    private final CameraPan cameraPan;
     private final GlyphSprite ghostSprite;
     private float lastHpFraction = 1f;
     private boolean clockPinned;
@@ -167,16 +208,28 @@ class ShowcaseScene extends GridScene {
         GridDrawing.fill(grid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
         drawFrames();
         drawStats();
-        waterLayer = addWaterLayer(glyphs);
-        bridgeLayer = addBridgeLayer(glyphs);
         cellWidth = glyphs.getCellWidth();
         cellHeight = glyphs.getCellHeight();
+        smoothGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
+        crispGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_8X8, GlyphFilter.NEAREST);
+        waterLayer = addWaterLayer(glyphs);
+        playerLayer = addInnerLayer(smoothGlyphs);
+        crispPlayerLayer = addCrispPlayerLayer(glyphs);
+        bridgeLayer = addBridgeLayer(glyphs);
         playerSprite = addPlayer();
+        fallStartX = playerPath.columnAt(FALL_START_SECONDS) * cellWidth;
+        fallStartY = playerPath.rowAt(FALL_START_SECONDS) * cellHeight;
+        fallEndX = (SCENE_INNER_WIDTH - 1) * cellWidth / 2f;
+        fallEndY = (SCENE_INNER_HEIGHT - 1) * cellHeight / 2f;
+        fallingPlayerSprite = addFallingPlayer();
+        crispPlayerSprite = addCrispPlayer();
+        cameraPan = createCameraPan();
         ghostSprite = addGhost();
         addRainLayers(glyphs);
         lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
+        pinAllLayersToScreen();
         pinClockIfRequested(showcaseTimeSetting);
     }
 
@@ -186,7 +239,7 @@ class ShowcaseScene extends GridScene {
             clock.advance(delta);
         }
         float time = clock.time();
-        applyDepth();
+        applyCamera(time);
         drawWaterIfStepChanged(time);
         drawPlankIfBreakChanged(time);
         updatePlayer(time);
@@ -239,25 +292,123 @@ class ShowcaseScene extends GridScene {
     }
 
     private Layer addBridgeLayer(GlyphSource glyphs) {
-        GridDrawing.fill(bridgeGrid, 0, 0, SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_ABOVE, SCENE_INNER_WIDTH, 1, '─', ROPE_COLOR, CLEAR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_PLANK_ROW, SCENE_INNER_WIDTH, 1, '║', PLANK_COLOR, PLANK_BACKGROUND_COLOR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_BELOW, SCENE_INNER_WIDTH, 1, '─', ROPE_COLOR, CLEAR);
-        Layer layer = layers.add(bridgeGrid, glyphs);
-        layer.setPivot(SCENE_INNER_WIDTH * glyphs.getCellWidth() / 2f, SCENE_INNER_HEIGHT * glyphs.getCellHeight() / 2f);
-        layer.setOffset(SCENE_INNER_LEFT * glyphs.getCellWidth(), SCENE_INNER_TOP * glyphs.getCellHeight());
+        GridDrawing.fill(bridgeGrid, 0, 0, BRIDGE_COLUMNS, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
+        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_ABOVE, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
+        GridDrawing.fill(bridgeGrid, 0, BRIDGE_PLANK_ROW, BRIDGE_COLUMNS, 1, '║', PLANK_COLOR, PLANK_BACKGROUND_COLOR);
+        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_BELOW, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
+        return addInnerLayer(bridgeGrid, glyphs, BRIDGE_MARGIN_COLUMNS);
+    }
+
+    private Layer addInnerLayer(GlyphSource glyphs) {
+        TerminalGrid emptyGrid = new TerminalGrid(SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT);
+        GridDrawing.fill(emptyGrid, 0, 0, SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
+        return addInnerLayer(emptyGrid, glyphs, 0);
+    }
+
+    /**
+     * Puts the pivot at the grid center and offsets the layer so grid column {@code marginColumns} lines up with
+     * the inner area's left edge. Zoom then keeps the inner center fixed.
+     */
+    private Layer addInnerLayer(TerminalGrid layerGrid, GlyphSource glyphs, int marginColumns) {
+        Layer layer = layers.add(layerGrid, glyphs);
+        float gridColumns = SCENE_INNER_WIDTH + 2 * marginColumns;
+        layer.setPivot(gridColumns * glyphs.getCellWidth() / 2f, SCENE_INNER_HEIGHT * glyphs.getCellHeight() / 2f);
+        layer.setOffset((SCENE_INNER_LEFT - marginColumns) * glyphs.getCellWidth(), SCENE_INNER_TOP * glyphs.getCellHeight());
         clipToSceneInner(layer, glyphs);
         return layer;
     }
 
     /** Sprite positions are the cell box's top-left corner in layer pixels, y down, so a cell's origin is its column and row times the cell size. */
     private GlyphSprite addPlayer() {
-        return bridgeLayer.addSprite('@', GOLD, PLAYER_COLUMN * cellWidth, BRIDGE_PLANK_ROW * cellHeight);
+        return bridgeLayer.addSprite('@', GOLD, bridgeLayerX(PLAYER_COLUMN), BRIDGE_PLANK_ROW * cellHeight);
+    }
+
+    /** Converts a bridge column (0 = inner area's left edge, may be fractional) to bridge layer pixels. */
+    private float bridgeLayerX(float bridgeColumn) {
+        return (bridgeColumn + BRIDGE_MARGIN_COLUMNS) * cellWidth;
+    }
+
+    private static int bridgeGridColumn(int bridgeColumn) {
+        return bridgeColumn + BRIDGE_MARGIN_COLUMNS;
+    }
+
+    private GlyphSprite addFallingPlayer() {
+        GlyphSprite sprite = playerLayer.addSprite('@', GOLD, fallStartX, fallStartY);
+        sprite.setVisible(false);
+        return sprite;
+    }
+
+    /**
+     * The target is the player's cell center relative to the bridge pivot. The margin is symmetric, so bridge
+     * numbering needs no shift.
+     */
+    private CameraPan createCameraPan() {
+        float targetX = CameraPan.cellCenterFromPivot(playerPath.columnAt(FALL_START_SECONDS), cellWidth, SCENE_INNER_WIDTH * cellWidth / 2f);
+        float targetY = CameraPan.cellCenterFromPivot(playerPath.rowAt(FALL_START_SECONDS), cellHeight, SCENE_INNER_HEIGHT * cellHeight / 2f);
+        return new CameraPan(CAMERA_PAN_BEAT, targetX, targetY);
+    }
+
+    /** Stops every layer from following the camera. Depth layers then get their parallax from their zoom each frame. */
+    private void pinAllLayersToScreen() {
+        for (int index = 0; index < layers.size(); index++) {
+            layers.get(index).setParallax(0f);
+        }
+    }
+
+    private void applyCamera(float time) {
+        camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.progress(time));
+        layers.setCamera(cameraPan.cameraXAt(time), cameraPan.cameraYAt(time));
+        applyDepth();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        smoothGlyphs.dispose();
+        crispGlyphs.dispose();
     }
 
     private void updatePlayer(float time) {
-        playerSprite.setPosition(playerPath.columnAt(time) * cellWidth, playerPath.rowAt(time) * cellHeight);
+        boolean fallen = time >= FALL_START_SECONDS;
+        boolean crisp = fallen && FALL_SPIN.isCrispAt(time);
+        playerSprite.setVisible(!fallen);
+        fallingPlayerSprite.setVisible(fallen && !crisp);
+        crispPlayerSprite.setVisible(crisp);
+        if (fallen) {
+            updateFallingPlayer(time);
+            return;
+        }
+        playerSprite.setPosition(bridgeLayerX(playerPath.columnAt(time)), playerPath.rowAt(time) * cellHeight);
         playerSprite.setScale(playerPath.scaleAt(time));
+    }
+
+    /** Both sprites share one center; the crisp cell is smaller, so its corner shifts by half the size difference. */
+    private void updateFallingPlayer(float time) {
+        float bridgeZoom = camera.zoomFor(BRIDGE_DEPTH);
+        float x = cameraPan.followAt(time, fallStartX, fallEndX, bridgeZoom);
+        float y = cameraPan.followAt(time, fallStartY, fallEndY, bridgeZoom);
+        fallingPlayerSprite.setPosition(x, y);
+        fallingPlayerSprite.setRotation(FALL_SPIN.rotationDegreesAt(time));
+        fallingPlayerSprite.setScale(FALL_SPIN.scaleAt(time));
+        crispPlayerSprite.setPosition(
+            x + (cellWidth - crispGlyphs.getCellWidth()) / 2f,
+            y + (cellHeight - crispGlyphs.getCellHeight()) / 2f);
+    }
+
+    /** An empty layer in the same screen-space spot as the player layer, so sprite coordinates match. */
+    private Layer addCrispPlayerLayer(GlyphSource mainGlyphs) {
+        TerminalGrid emptyGrid = new TerminalGrid(1, 1);
+        emptyGrid.set(0, 0, ' ', WHITE, CLEAR);
+        Layer layer = layers.add(emptyGrid, crispGlyphs);
+        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
+        clipToSceneInner(layer, mainGlyphs);
+        return layer;
+    }
+
+    private GlyphSprite addCrispPlayer() {
+        GlyphSprite sprite = crispPlayerLayer.addSprite('@', GOLD, 0f, 0f);
+        sprite.setVisible(false);
+        return sprite;
     }
 
     private void drawPlankIfBreakChanged(float time) {
@@ -275,18 +426,18 @@ class ShowcaseScene extends GridScene {
 
     private void drawBrokenPlank() {
         drawDamagedPlanks(CRACKED_PLANK_CODE_POINT);
-        bridgeGrid.set(BROKEN_PLANK_COLUMN, BRIDGE_PLANK_ROW, ' ', WHITE, CLEAR);
+        bridgeGrid.set(bridgeGridColumn(BROKEN_PLANK_COLUMN), BRIDGE_PLANK_ROW, ' ', WHITE, CLEAR);
     }
 
     /** The broken plank and its two neighbors, so the crack still shows while the player stands on the middle one. */
     private void drawDamagedPlanks(int codePoint) {
         for (int column = BROKEN_PLANK_COLUMN - 1; column <= BROKEN_PLANK_COLUMN + 1; column++) {
-            bridgeGrid.set(column, BRIDGE_PLANK_ROW, codePoint, PLANK_COLOR, PLANK_BACKGROUND_COLOR);
+            bridgeGrid.set(bridgeGridColumn(column), BRIDGE_PLANK_ROW, codePoint, PLANK_COLOR, PLANK_BACKGROUND_COLOR);
         }
     }
 
     private GlyphSprite addGhost() {
-        GlyphSprite sprite = bridgeLayer.addSprite(GHOST_CODE_POINT, GHOST_COLOR, GHOST_START_COLUMN * cellWidth, BRIDGE_PLANK_ROW * cellHeight);
+        GlyphSprite sprite = bridgeLayer.addSprite(GHOST_CODE_POINT, GHOST_COLOR, bridgeLayerX(GHOST_START_COLUMN), BRIDGE_PLANK_ROW * cellHeight);
         sprite.setVisible(false);
         return sprite;
     }
@@ -298,7 +449,7 @@ class ShowcaseScene extends GridScene {
             return;
         }
         float row = BRIDGE_PLANK_ROW + ghostPath.wobbleRowsAt(time);
-        ghostSprite.setPosition(ghostPath.columnAt(time) * cellWidth, row * cellHeight);
+        ghostSprite.setPosition(bridgeLayerX(ghostPath.columnAt(time)), row * cellHeight);
         ghostSprite.setAlpha(ghostPath.alphaAt(time));
     }
 
@@ -383,7 +534,9 @@ class ShowcaseScene extends GridScene {
         if (!visible) {
             return;
         }
-        layer.setZoom(camera.zoomFor(depth));
+        float zoom = camera.zoomFor(depth);
+        layer.setZoom(zoom);
+        layer.setParallax(zoom);
         layer.setAlpha(camera.alphaFor(depth));
     }
 

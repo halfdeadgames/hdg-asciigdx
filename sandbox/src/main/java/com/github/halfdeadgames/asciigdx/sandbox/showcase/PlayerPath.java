@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.badlogic.gdx.math.Interpolation;
 
-/** Where the player is at a loop time: whole-cell backing slides, then a hop off the broken plank. Positions are in cells. */
+/**
+ * Where the player is at a loop time: whole-cell backing slides, then a hop in place (scale arc only) over the
+ * broken plank. Positions are in cells.
+ */
 public final class PlayerPath {
 
     private static final float FIRST_STEP_START_SECONDS = 4.8f;
@@ -11,12 +14,9 @@ public final class PlayerPath {
 
     private static final float HOP_START_SECONDS = 5.6f;
     private static final float HOP_SECONDS = 0.4f;
-    private static final int HOP_COLUMN_OFFSET = 1;
-    private static final int HOP_ROW_OFFSET = 2;
     private static final float HOP_PEAK_SCALE_GAIN = 0.4f;
 
     private final Beat[] slides;
-    private final Beat hopPosition = new Beat(HOP_START_SECONDS, HOP_SECONDS, Interpolation.sine);
     private final Beat hopArc = new Beat(HOP_START_SECONDS, HOP_SECONDS);
     private final int startColumn;
     private final int startRow;
@@ -39,11 +39,11 @@ public final class PlayerPath {
         for (int step = 0; step < slides.length; step++) {
             column += slides[step].progress(timeSeconds);
         }
-        return column + HOP_COLUMN_OFFSET * hopPosition.progress(timeSeconds);
+        return column;
     }
 
     public float rowAt(float timeSeconds) {
-        return startRow + HOP_ROW_OFFSET * hopPosition.progress(timeSeconds);
+        return startRow;
     }
 
     public float scaleAt(float timeSeconds) {

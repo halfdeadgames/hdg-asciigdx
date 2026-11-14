@@ -44,19 +44,20 @@ class PlayerPathTest {
     }
 
     @Test
-    void landsPastTheLowerRopeAtNormalScale() {
-        assertEquals(19f, path.columnAt(6.0f), EPSILON);
-        assertEquals(9f, path.rowAt(6.0f), EPSILON);
+    void endsOverTheBrokenPlankAtNormalScale() {
+        assertEquals(18f, path.columnAt(6.0f), EPSILON);
+        assertEquals(7f, path.rowAt(6.0f), EPSILON);
         assertEquals(1f, path.scaleAt(6.0f), EPSILON);
-        assertEquals(19f, path.columnAt(11f), EPSILON);
-        assertEquals(9f, path.rowAt(11f), EPSILON);
+        assertEquals(18f, path.columnAt(11f), EPSILON);
+        assertEquals(7f, path.rowAt(11f), EPSILON);
         assertEquals(1f, path.scaleAt(11f), EPSILON);
     }
 
     @Test
-    void isBetweenTwoRowsMidHop() {
-        float row = path.rowAt(5.75f);
-        assertTrue(row > 7f && row < 9f, "row " + row);
+    void hopsStraightUpWithoutMoving() {
+        assertEquals(18f, path.columnAt(5.75f), EPSILON);
+        assertEquals(7f, path.rowAt(5.75f), EPSILON);
+        assertTrue(path.scaleAt(5.75f) > 1f);
     }
 
     @Test
