@@ -1,0 +1,6 @@
+row ASC 3 lowercase
+row CAP 4 all
+row X-HT 7 all
+row BASE 12 all
+bar BAR 7 1 uppercase,digits
+bar BAR 9 1 lowercase
