@@ -11,14 +11,17 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.EighthBar;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.RainSet;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
 
 import java.util.Arrays;
+import java.util.Random;
 
 /** A small roguelike screen assembled in steps: scene frame, stats panel, and message log. */
 class ShowcaseScene extends GridScene {
@@ -88,6 +91,19 @@ class ShowcaseScene extends GridScene {
     private static final int GHOST_COLOR = 0xD8E4F0FF;
     private static final float GHOST_START_COLUMN = -1f;
     private static final float GHOST_END_COLUMN = 9f;
+    private static final float LIGHTNING_STRENGTH = 0.85f;
+
+    private static final int RAIN_SET_COUNT = 3;
+    private static final int RAIN_DROPS_PER_SET = 12;
+    private static final int RAIN_SLIDE_CELLS = 3;
+    private static final int RAIN_COLUMNS = SCENE_INNER_WIDTH + RAIN_SLIDE_CELLS;
+    private static final int RAIN_ROWS = SCENE_INNER_HEIGHT + RAIN_SLIDE_CELLS;
+    private static final int RAIN_CYCLES_PER_LOOP = 12;
+    private static final float RAIN_CYCLE_SECONDS = LOOP_SECONDS / RAIN_CYCLES_PER_LOOP;
+    private static final float RAIN_PEAK_ALPHA = 0.6f;
+    private static final float RAIN_RAMP_FRACTION = 0.25f;
+    private static final int RAIN_DROP_CODE_POINT = '/';
+    private static final int RAIN_COLOR = 0x8CB4E6C0;
 
     private static final Beat HP_DRAIN = new Beat(3.4f, 1.0f, Interpolation.pow2Out);
     private static final float HP_AFTER_WAIL = 0.55f;
@@ -118,6 +134,18 @@ class ShowcaseScene extends GridScene {
     private PlankBreak drawnPlankBreak = PlankBreak.INTACT;
     private final PlayerPath playerPath = new PlayerPath(PLAYER_COLUMN, BRIDGE_PLANK_ROW, PLAYER_BACKOFF_STEPS);
     private final GhostPath ghostPath = new GhostPath(GHOST_START_COLUMN, GHOST_END_COLUMN);
+    private final LightningFlash lightning = new LightningFlash(
+        LIGHTNING_STRENGTH,
+        new LightningFlash.Flicker(3.40f, 3.48f),
+        new LightningFlash.Flicker(3.56f, 3.66f));
+    private final TerminalGrid[] rainGrids = new TerminalGrid[RAIN_SET_COUNT];
+    private final Layer[] rainLayers = new Layer[RAIN_SET_COUNT];
+    private final RainSet[] rainSets = new RainSet[RAIN_SET_COUNT];
+    private final int[] drawnRainCycles = new int[RAIN_SET_COUNT];
+    private final int[] rainDropColumns = new int[RAIN_DROPS_PER_SET];
+    private final int[] rainDropRows = new int[RAIN_DROPS_PER_SET];
+    private final Random rainRandom = new Random();
+    private final Layer[] lightningLayers;
     private final float cellWidth;
     private final float cellHeight;
     private final GlyphSprite playerSprite;
@@ -145,6 +173,8 @@ class ShowcaseScene extends GridScene {
         cellHeight = glyphs.getCellHeight();
         playerSprite = addPlayer();
         ghostSprite = addGhost();
+        addRainLayers(glyphs);
+        lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
         pinClockIfRequested(showcaseTimeSetting);
@@ -162,6 +192,8 @@ class ShowcaseScene extends GridScene {
         updatePlayer(time);
         updateGhost(time);
         updateHp(time);
+        updateRain(time);
+        applyLightning(time);
         drawLog(time);
         overlayLayer.setAlpha(fade.alphaAt(time));
     }
@@ -268,6 +300,49 @@ class ShowcaseScene extends GridScene {
         float row = BRIDGE_PLANK_ROW + ghostPath.wobbleRowsAt(time);
         ghostSprite.setPosition(ghostPath.columnAt(time) * cellWidth, row * cellHeight);
         ghostSprite.setAlpha(ghostPath.alphaAt(time));
+    }
+
+    /**
+     * Each grid is RAIN_SLIDE_CELLS wider and taller than the inner area. It starts with its extra columns on the
+     * right and extra rows on top, so sliding down-left never uncovers the inner area's top or right edge.
+     */
+    private void addRainLayers(GlyphSource glyphs) {
+        for (int set = 0; set < RAIN_SET_COUNT; set++) {
+            rainSets[set] = new RainSet(RAIN_CYCLE_SECONDS, RAIN_CYCLES_PER_LOOP, set / (float) RAIN_SET_COUNT, -RAIN_SLIDE_CELLS, RAIN_SLIDE_CELLS, RAIN_PEAK_ALPHA, RAIN_RAMP_FRACTION);
+            rainGrids[set] = new TerminalGrid(RAIN_COLUMNS, RAIN_ROWS);
+            rainLayers[set] = layers.add(rainGrids[set], glyphs);
+            clipToSceneInner(rainLayers[set], glyphs);
+            drawnRainCycles[set] = Integer.MIN_VALUE;
+        }
+    }
+
+    private void updateRain(float time) {
+        for (int set = 0; set < RAIN_SET_COUNT; set++) {
+            redrawRainIfCycleChanged(set, rainSets[set].cycleIndexAt(time));
+            rainLayers[set].setAlpha(rainSets[set].alphaAt(time));
+            rainLayers[set].setOffset(
+                (SCENE_INNER_LEFT + rainSets[set].slideColumnsAt(time)) * cellWidth,
+                (SCENE_INNER_TOP - RAIN_SLIDE_CELLS + rainSets[set].slideRowsAt(time)) * cellHeight);
+        }
+    }
+
+    private void redrawRainIfCycleChanged(int set, int cycleIndex) {
+        if (cycleIndex == drawnRainCycles[set]) {
+            return;
+        }
+        drawnRainCycles[set] = cycleIndex;
+        rainSets[set].fillDropPositions(rainRandom, RainSet.seedFor(set, cycleIndex), RAIN_COLUMNS, RAIN_ROWS, rainDropColumns, rainDropRows);
+        GridDrawing.fill(rainGrids[set], 0, 0, RAIN_COLUMNS, RAIN_ROWS, ' ', WHITE, CLEAR);
+        for (int drop = 0; drop < RAIN_DROPS_PER_SET; drop++) {
+            rainGrids[set].set(rainDropColumns[drop], rainDropRows[drop], RAIN_DROP_CODE_POINT, RAIN_COLOR, CLEAR);
+        }
+    }
+
+    private void applyLightning(float time) {
+        float amount = lightning.amountAt(time);
+        for (int index = 0; index < lightningLayers.length; index++) {
+            lightningLayers[index].setInvert(amount);
+        }
     }
 
     private void updateHp(float time) {
