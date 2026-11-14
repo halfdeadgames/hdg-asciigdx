@@ -180,9 +180,11 @@ public final class Layer {
      * Default is white (1, 1, 1, 1), which leaves colors unchanged. Values are not
      * clamped.
      *
-     * <p>Alpha applies per cell, not to the layer as one flat image: a glyph's own
-     * background shows through a semi-transparent glyph, and the layers below show
-     * through both.
+     * <p>Alpha fades each cell as one flat color, so a glyph's own background does
+     * not show through it; the layers below show through the whole faded layer.
+     * Inside a cell, glyph and background always combine with normal "over"
+     * blending. The batch's blend functions decide only how the finished cell
+     * combines with what is below.
      *
      * @throws IllegalStateException if the layer was removed
      */

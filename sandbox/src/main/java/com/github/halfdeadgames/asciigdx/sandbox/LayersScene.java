@@ -10,8 +10,9 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /**
- * A clipped, shaking map under a sliding popup, a hopping marker, fading rain that jumps by whole cells,
- * a drifting banner, and a frame that always stays on top.
+ * A clipped, shaking map under a sliding popup that fades as one flat image (half see-through
+ * in ghost mode), a hopping marker, fading rain that jumps by whole cells, a drifting banner,
+ * and a frame that always stays on top.
  */
 class LayersScene extends GridScene {
     private static final int COLUMNS = 40;
@@ -40,6 +41,7 @@ class LayersScene extends GridScene {
     private static final float POPUP_CYCLE = 7f;
     private static final float POPUP_SLIDE = 1.2f;
     private static final float POPUP_HOLD = 3f;
+    private static final float GHOST_ALPHA = 0.5f;
     private static final float FADE_PERIOD = 4f;
     private static final float TINT_PERIOD = 9f;
     private static final float BOSS_STEP_PERIOD = 0.8f;
@@ -76,6 +78,7 @@ class LayersScene extends GridScene {
     private final StringBuilder status = new StringBuilder();
     private float elapsed;
     private boolean rainVisible = true;
+    private boolean ghostPopup = true;
     private int bossColumn = -1;
     private int bossStep = -1;
     private boolean startled;
@@ -142,11 +145,11 @@ class LayersScene extends GridScene {
     @Override
     public String statusText() {
         status.setLength(0);
-        status.append("order ");
         for (int i = 0; i < layers.size(); i++) {
             status.append(LETTERS.charAt(idAt(i)));
         }
         status.append(" rain ").append(rainVisible ? "on" : "off")
+            .append(" ghost ").append(ghostPopup ? "on" : "off")
             .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off");
         return status.toString();
     }
@@ -165,18 +168,24 @@ class LayersScene extends GridScene {
             layers.setPixelSnapping(!layers.isPixelSnapping());
             return true;
         }
+        if (keycode == Input.Keys.F) {
+            ghostPopup = !ghostPopup;
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean touchDown(int screenX, int screenY) {
-        int third = Gdx.graphics.getWidth() / 3;
-        if (screenX < third) {
+        int quarter = Gdx.graphics.getWidth() / 4;
+        if (screenX < quarter) {
             rotateOrder();
-        } else if (screenX < third * 2) {
+        } else if (screenX < quarter * 2) {
             toggleRain();
-        } else {
+        } else if (screenX < quarter * 3) {
             layers.setPixelSnapping(!layers.isPixelSnapping());
+        } else {
+            ghostPopup = !ghostPopup;
         }
         return true;
     }
@@ -276,8 +285,9 @@ class LayersScene extends GridScene {
             progress = 0f;
         }
         float eased = progress * progress * (3f - 2f * progress);
-        layerById[POPUP].setOffset(MathUtils.lerp(hiddenX, restX, eased),
-            POPUP_REST_ROW * glyphs.getCellHeight());
+        Layer popup = layerById[POPUP];
+        popup.setOffset(MathUtils.lerp(hiddenX, restX, eased), POPUP_REST_ROW * glyphs.getCellHeight());
+        popup.setAlpha(eased * (ghostPopup ? GHOST_ALPHA : 1f));
     }
 
     private void applyRain() {
@@ -361,7 +371,7 @@ class LayersScene extends GridScene {
                 }
             }
         }
-        GridDrawing.text(frame, 2, ROWS - 1, "R order  V rain  P snap", GOLD, FRAME_OUTER);
+        GridDrawing.text(frame, 2, ROWS - 1, "R order  V rain  P snap  F ghost", GOLD, FRAME_OUTER);
     }
 
     private static int frameGlyph(int column, int row) {

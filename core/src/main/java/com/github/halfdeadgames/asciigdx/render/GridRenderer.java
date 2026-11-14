@@ -13,9 +13,10 @@ import java.util.Objects;
 
 /**
  * Draws a {@link TerminalView} with a {@link GlyphSource} into a caller-managed
- * {@link SpriteBatch}: all cell backgrounds first, then all glyphs.
+ * {@link SpriteBatch}: one quad per cell, with the shader mixing the glyph over
+ * the cell's background.
  *
- * <p>Vertices are kept in a {@link GridVertexCache} and mirrored in GPU meshes.
+ * <p>Vertices are kept in a {@link CellVertexCache} and mirrored in GPU meshes.
  * Each frame only the cells changed since the last draw are rewritten in the
  * cache; if any changed, the meshes are re-uploaded. Vertices are built around
  * a fixed origin and the draw position is applied as a translation on the GPU
@@ -39,11 +40,10 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     private GlyphSource glyphSource;
     private final GridRenderResources resources;
     private final boolean ownsResources;
-    private final Texture whitePixel;
     private Texture glyphTexture;
     private boolean glyphSourceChanged;
     private final DirtyTracker tracker;
-    private GridVertexCache cache;
+    private CellVertexCache cache;
     private GridMesh mesh;
     private int cachedColumns;
     private int cachedRows;
@@ -69,7 +69,6 @@ public final class GridRenderer implements Disposable, LayerRenderer {
         this.glyphSource = glyphSource;
         this.resources = resources;
         this.ownsResources = ownsResources;
-        whitePixel = resources.getWhitePixel();
         glyphTexture = glyphSource.glyph(' ').getTexture();
         tracker = grid.createDirtyTracker();
         createCacheAndMesh();
@@ -78,7 +77,7 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     private void createCacheAndMesh() {
         cachedColumns = grid.getWidth();
         cachedRows = grid.getHeight();
-        cache = new GridVertexCache(cachedColumns, cachedRows,
+        cache = new CellVertexCache(cachedColumns, cachedRows,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
         mesh = new GridMesh(cachedColumns * cachedRows, resources.getShader());
     }
@@ -97,8 +96,8 @@ public final class GridRenderer implements Disposable, LayerRenderer {
 
     /**
      * Draws the grid like {@link #draw(SpriteBatch, float, float)}, multiplying
-     * every cell color by the tint on the GPU. Changing the tint costs no vertex
-     * rewrite or upload.
+     * every cell color by the tint on the GPU. Alpha fades each cell as one flat
+     * color. Changing the tint costs no vertex rewrite or upload.
      */
     @Override
     public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
@@ -115,15 +114,14 @@ public final class GridRenderer implements Disposable, LayerRenderer {
             }
             cache.markRebuilt();
             tracker.clear();
-            mesh.upload(cache.getBackgroundVertices(), cache.getGlyphVertices());
+            mesh.upload(cache.getVertices());
         } else if (tracker.hasDirtyCells()) {
             tracker.forEachDirtyCell(cellWriter);
             tracker.clear();
-            mesh.upload(cache.getBackgroundVertices(), cache.getGlyphVertices());
+            mesh.upload(cache.getVertices());
         }
-        mesh.draw(batch, whitePixel, glyphTexture, x, y, tintR, tintG, tintB, tintA,
-                cache.getTranslucentBackgroundCount() == 0,
-                cache.getVisibleBackgroundCount() > 0, cache.getVisibleGlyphCount() > 0);
+        mesh.draw(batch, glyphTexture, x, y, tintR, tintG, tintB, tintA,
+                cache.getNotOpaqueCellCount() == 0, cache.getVisibleCellCount() > 0);
     }
 
     /**
@@ -142,25 +140,23 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     }
 
     private static boolean isBlankGlyph(int codePoint, int foreground) {
-        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || GridVertexCache.isFullyTransparent(foreground);
+        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || CellVertexCache.isFullyTransparent(foreground);
     }
 
     private void writeCell(int column, int row) {
-        cache.writeBackground(column, row, grid.getBackground(column, row), 0f, 0f, 1f, 1f);
+        int background = grid.getBackground(column, row);
         int codePoint = grid.getGlyph(column, row);
         int foreground = grid.getForeground(column, row);
         if (isBlankGlyph(codePoint, foreground)) {
-            cache.writeGlyph(column, row, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
+            cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
             return;
         }
         TextureRegion region = glyphSource.glyph(codePoint);
-        cache.writeGlyph(column, row, foreground, region.getU(), region.getV(), region.getU2(), region.getV2());
+        cache.writeCell(column, row, background, foreground,
+                region.getU(), region.getV(), region.getU2(), region.getV2());
     }
 
-    /**
-     * Releases the dirty tracker and frees the meshes. The shader and the white pixel
-     * texture are freed only if this renderer created them.
-     */
+    /** Releases the dirty tracker and frees the meshes. The shader is freed only if this renderer created it. */
     @Override
     public void dispose() {
         tracker.release();

@@ -1,32 +1,32 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Disposable;
 
-/** The shader and white pixel texture that grid renderers can share. Needs a GL context to create. */
+/** The cell shader that grid renderers can share. Needs a GL context to create. */
 final class GridRenderResources implements Disposable {
 
     private static final String VERTEX_SOURCE =
             "attribute vec4 " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
-            + "attribute vec4 " + ShaderProgram.COLOR_ATTRIBUTE + ";\n"
-            + "attribute vec2 " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
+            + "attribute vec4 " + CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE + ";\n"
+            + "attribute vec4 " + CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE + ";\n"
+            + "attribute vec2 " + CellVertexLayout.TEXCOORD_ATTRIBUTE + ";\n"
             + "uniform mat4 u_projTrans;\n"
-            + "uniform vec4 u_tint;\n"
-            + "varying vec4 v_color;\n"
+            + "varying vec4 v_background;\n"
+            + "varying vec4 v_foreground;\n"
             + "varying vec2 v_texCoords;\n"
             + "\n"
             + "void main()\n"
             + "{\n"
-            + "   v_color = " + ShaderProgram.COLOR_ATTRIBUTE + ";\n"
-            + "   v_color.a = v_color.a * (255.0/254.0);\n"
-            + "   v_color = v_color * u_tint;\n"
-            + "   v_texCoords = " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
+            + "   v_background = " + CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE + ";\n"
+            + "   v_background.a = v_background.a * (255.0/254.0);\n"
+            + "   v_foreground = " + CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE + ";\n"
+            + "   v_foreground.a = v_foreground.a * (255.0/254.0);\n"
+            + "   v_texCoords = " + CellVertexLayout.TEXCOORD_ATTRIBUTE + ";\n"
             + "   gl_Position = u_projTrans * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
             + "}\n";
 
+    // Glyph over background (Porter-Duff over), then the layer tint, so alpha fades the cell as one color.
     private static final String FRAGMENT_SOURCE =
             "#ifdef GL_ES\n"
             + "#define LOWP lowp\n"
@@ -34,24 +34,24 @@ final class GridRenderResources implements Disposable {
             + "#else\n"
             + "#define LOWP \n"
             + "#endif\n"
-            + "varying LOWP vec4 v_color;\n"
+            + "varying LOWP vec4 v_background;\n"
+            + "varying LOWP vec4 v_foreground;\n"
             + "varying vec2 v_texCoords;\n"
             + "uniform sampler2D u_texture;\n"
+            + "uniform vec4 u_tint;\n"
             + "void main()\n"
             + "{\n"
-            + "  gl_FragColor = v_color * texture2D(u_texture, v_texCoords);\n"
+            + "  vec4 glyph = v_foreground * texture2D(u_texture, v_texCoords);\n"
+            + "  float alpha = glyph.a + v_background.a * (1.0 - glyph.a);\n"
+            + "  vec3 premultiplied = glyph.rgb * glyph.a + v_background.rgb * v_background.a * (1.0 - glyph.a);\n"
+            + "  vec3 rgb = alpha > 0.0 ? premultiplied / alpha : vec3(0.0);\n"
+            + "  gl_FragColor = vec4(rgb * u_tint.rgb, alpha * u_tint.a);\n"
             + "}";
 
     private final ShaderProgram shader;
-    private final Texture whitePixel;
 
     GridRenderResources() {
         shader = createShader();
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        whitePixel = new Texture(pixmap);
-        pixmap.dispose();
     }
 
     private static ShaderProgram createShader() {
@@ -68,13 +68,8 @@ final class GridRenderResources implements Disposable {
         return shader;
     }
 
-    Texture getWhitePixel() {
-        return whitePixel;
-    }
-
     @Override
     public void dispose() {
         shader.dispose();
-        whitePixel.dispose();
     }
 }
