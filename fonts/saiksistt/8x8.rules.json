@@ -22,7 +22,7 @@
                    "U+1F34E", "U+1F356", "U+1F451", "U+1F48E", "U+1F4B0", "U+1F9B4", "U+1F9EA", "U+1FA99",
                    "U+1F332", "U+1F344", "U+1F4A7", "U+1F525", "U+1F56F", "U+1F578", "U+1F6AA", "U+1FAA8",
                    "U+1F47B", "U+1F577" ],
-    accented:    [ "Ä", "Å", "Ç", "É", "Ñ", "Ö", "Ü",
+    accented:    [ "Ä", "Å", "Ç", "É", "Ñ", "Ö", "Ü", "U+E841", "U+E845", "U+E84E", "U+E84F", "U+E855",
                    "à", "á", "â", "ä", "å", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï", "ñ", "ò", "ó", "ô", "ö", "ù", "ú", "û", "ü", "ÿ" ],
     marks:       [ "¨", "´", "¸", "ˆ", "ˋ", "˚", "˜" ],
     tiling:      [ "U+2500-U+259F", "U+1FB40-U+1FB9B", "U+1FBA0-U+1FBAE", "U+1FBD0-U+1FBDF" ]
@@ -48,6 +48,7 @@
       appliesTo: [ uppercase, lowercase, digits, punctuation, marks, accented ],
       except: [
         { glyphs: [ "¸" ], why: "hangs under the letter, not the cell" },
+        { glyphs: [ "´", "ˋ" ], why: "two 2 px steps make a 3 px wide mark" },
         { glyphs: [ "M", "W", "m", "w" ], why: "7 columns wide, can't center" },
         { glyphs: [ "/", "\\" ], why: "four even steps need an odd width" },
         { glyphs: [ ",", ";" ], why: "tail steps left of the dot" },
