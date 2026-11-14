@@ -27,8 +27,9 @@ final class GridRenderResources implements Disposable {
             + "}\n";
 
     // Glyph over background (Porter-Duff over), then the layer effects in this order: saturation,
-    // tint, mix, then alpha. Alpha fades the cell as one color; mix and saturation never touch it.
-    // Mix comes last so a flash can reach its color even on a darkly tinted layer.
+    // tint, mix, invert, then alpha. Alpha fades the cell as one color; mix, saturation, and invert
+    // never touch it. Mix comes before invert so a flash can reach its color even on a darkly tinted
+    // layer; invert comes last so it negates the finished look.
     private static final String FRAGMENT_SOURCE =
             "#ifdef GL_ES\n"
             + "#define LOWP lowp\n"
@@ -43,6 +44,7 @@ final class GridRenderResources implements Disposable {
             + "uniform vec4 u_tint;\n"
             + "uniform vec4 u_mix;\n"
             + "uniform float u_saturation;\n"
+            + "uniform float u_invert;\n"
             + "void main()\n"
             + "{\n"
             + "  vec4 glyph = v_foreground * texture2D(u_texture, v_texCoords);\n"
@@ -53,6 +55,7 @@ final class GridRenderResources implements Disposable {
             + "  rgb = mix(vec3(gray), rgb, u_saturation);\n"
             + "  rgb = rgb * u_tint.rgb;\n"
             + "  rgb = mix(rgb, u_mix.rgb, u_mix.a);\n"
+            + "  rgb = mix(rgb, 1.0 - rgb, u_invert);\n"
             + "  gl_FragColor = vec4(rgb, alpha * u_tint.a);\n"
             + "}";
 

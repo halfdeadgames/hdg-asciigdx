@@ -37,6 +37,13 @@ class CellColorTest {
     }
 
     @Test
+    void invertFlipsRgbAndKeepsAlpha() {
+        assertEquals(0xEEDDCC44, CellColor.invert(0x11223344));
+        assertEquals(0xEEDDCC00, CellColor.invert(0x11223300));
+        assertEquals(0xEEDDCCFF, CellColor.invert(0x112233FF));
+    }
+
+    @Test
     void withAlphaReplacesOnlyAlpha() {
         assertEquals(0x11223380, CellColor.withAlpha(0x112233FF, 0x80));
     }

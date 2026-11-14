@@ -118,8 +118,8 @@ public final class GridRenderer implements Disposable {
 
     /**
      * Draws the grid like {@link #draw(SpriteBatch, float, float)}, applying the effects on
-     * the GPU in this order: saturation, tint, mix, then alpha. Alpha fades each cell as one
-     * flat color; mix and saturation never change it. Changing the effects costs no vertex
+     * the GPU in this order: saturation, tint, mix, invert, then alpha. Alpha fades each
+     * cell as one flat color; mix, saturation, and invert never change it. Changing the effects costs no vertex
      * rewrite or upload.
      */
     void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects) {

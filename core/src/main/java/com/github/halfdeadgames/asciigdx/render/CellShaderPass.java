@@ -54,6 +54,7 @@ final class CellShaderPass {
         shader.setUniformf("u_tint", effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
         shader.setUniformf("u_mix", effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount());
         shader.setUniformf("u_saturation", effects.getSaturation());
+        shader.setUniformf("u_invert", effects.getInvert());
     }
 
     private static void applyBlend(SpriteBatch batch, CellBlend blend, boolean opaque) {

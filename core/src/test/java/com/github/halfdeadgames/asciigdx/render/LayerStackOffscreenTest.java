@@ -109,7 +109,8 @@ class LayerStackOffscreenTest {
         @Override
         public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            events.add("drawPremultiplied alpha " + effects.getTintA() + " sat " + effects.getSaturation());
+            events.add("drawPremultiplied alpha " + effects.getTintA() + " sat " + effects.getSaturation()
+                    + " invert " + effects.getInvert());
         }
 
         @Override
@@ -140,10 +141,26 @@ class LayerStackOffscreenTest {
 
         assertEquals(List.of(
                 "begin 100,50,600,500",
-                "drawPremultiplied alpha 1.0 sat 0.5",
+                "drawPremultiplied alpha 1.0 sat 0.5 invert 0.0",
                 "end 100,50,600,500",
                 "composite 0.4 100,50,600,500"), events);
         assertEquals(0.4f, layer.getTintA());
+    }
+
+    @Test
+    void fadedLayerKeepsItsInvertOnTheOffscreenDraw() {
+        Layer layer = addLayer();
+        layer.addSprite('a', 0, 0f, 0f);
+        layer.setAlpha(0.4f);
+        layer.setInvert(0.75f);
+
+        stack.draw(null, 0f, 0f);
+
+        assertEquals(List.of(
+                "begin 100,50,600,500",
+                "drawPremultiplied alpha 1.0 sat 1.0 invert 0.75",
+                "end 100,50,600,500",
+                "composite 0.4 100,50,600,500"), events);
     }
 
     @Test
@@ -171,7 +188,7 @@ class LayerStackOffscreenTest {
         assertEquals(List.of(
                 "clip push 100,125,8,9",
                 "begin 100,50,600,500",
-                "drawPremultiplied alpha 1.0 sat 1.0",
+                "drawPremultiplied alpha 1.0 sat 1.0 invert 0.0",
                 "end 100,50,600,500",
                 "composite 0.5 100,50,600,500",
                 "clip pop"), events);

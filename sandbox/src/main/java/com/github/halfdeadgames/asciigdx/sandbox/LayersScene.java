@@ -11,7 +11,7 @@ import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /**
  * A clipped, shaking map that flashes white on each dragon step and can be toggled to grayscale
- * (G), under a sliding popup that fades as one flat image (half see-through in ghost mode), a
+ * (G) or a whole-screen negative (N), under a sliding popup that fades as one flat image (half see-through in ghost mode), a
  * hopping marker, fading rain that jumps by whole cells, a drifting banner, and a frame that
  * always stays on top.
  */
@@ -82,6 +82,7 @@ class LayersScene extends GridScene {
     private boolean rainVisible = true;
     private boolean ghostPopup = true;
     private boolean grayMap;
+    private boolean negative;
     private int bossColumn = -1;
     private int bossStep = -1;
     private boolean startled;
@@ -142,8 +143,7 @@ class LayersScene extends GridScene {
         elapsed = 0f;
         rainCycle = -1;
         super.show();
-        applyAnimation();
-    }
+        applyAnimation();    }
 
     @Override
     public String statusText() {
@@ -153,7 +153,8 @@ class LayersScene extends GridScene {
         }
         status.append(" rain ").append(rainVisible ? "on" : "off")
             .append(" ghost ").append(ghostPopup ? "on" : "off")
-            .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off");
+            .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off")
+            .append(" neg ").append(negative ? "on" : "off");
         return status.toString();
     }
 
@@ -177,6 +178,10 @@ class LayersScene extends GridScene {
         }
         if (keycode == Input.Keys.G) {
             toggleGrayMap();
+            return true;
+        }
+        if (keycode == Input.Keys.N) {
+            toggleNegative();
             return true;
         }
         return false;
@@ -228,6 +233,13 @@ class LayersScene extends GridScene {
     private void toggleGrayMap() {
         grayMap = !grayMap;
         layerById[MAP].setSaturation(grayMap ? 0f : 1f);
+    }
+
+    private void toggleNegative() {
+        negative = !negative;
+        for (Layer layer : layerById) {
+            layer.setInvert(negative ? 1f : 0f);
+        }
     }
 
     private void applyAnimation() {

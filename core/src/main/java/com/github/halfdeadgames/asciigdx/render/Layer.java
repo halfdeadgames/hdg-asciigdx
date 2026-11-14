@@ -312,8 +312,8 @@ public final class Layer {
      * Default is white (1, 1, 1, 1), which leaves colors unchanged. Values are not
      * clamped.
      *
-     * <p>The tint is applied after saturation and before the mix (see
-     * {@link #setSaturation} and {@link #setMix}).
+     * <p>The tint is applied after saturation and before the mix and the invert (see
+     * {@link #setSaturation}, {@link #setMix}, and {@link #setInvert}).
      *
      * <p>Alpha fades each cell as one flat color, so a glyph's own background does
      * not show through it; the layers below show through the whole faded layer.
@@ -376,8 +376,8 @@ public final class Layer {
      * everything drawn into the color. Only colors change: alpha is untouched, so transparent
      * parts stay transparent. Values are not clamped.
      *
-     * <p>The mix is applied last, after saturation and the tint, so a flash can reach its pure
-     * color even on a darkly tinted layer.
+     * <p>The mix is applied after saturation and the tint, so a flash can reach its pure
+     * color even on a darkly tinted layer. Only the invert follows it (see {@link #setInvert}).
      *
      * @throws IllegalStateException if the layer was removed
      */
@@ -407,14 +407,35 @@ public final class Layer {
      * grayscale, and values above 1 oversaturate. Changing it rewrites and uploads nothing.
      * Values are not clamped.
      *
-     * <p>Saturation is applied first, before the tint and the mix. Saturation 0 plus a tint
-     * gives a one-hue look, such as sepia or night vision.
+     * <p>Saturation is applied first, before the tint, the mix, and the invert. Saturation 0
+     * plus a tint gives a one-hue look, such as sepia or night vision.
      *
      * @throws IllegalStateException if the layer was removed
      */
     public void setSaturation(float saturation) {
         requireAttached();
         effects.setSaturation(saturation);
+    }
+
+    /** Returns the invert amount, 0 for normal. */
+    public float getInvert() {
+        return effects.getInvert();
+    }
+
+    /**
+     * Sets how far every drawn color is turned into its negative on the GPU each frame: 0 leaves
+     * colors unchanged (the default) and 1 is a full negative. Changing it rewrites and uploads
+     * nothing. Alpha is untouched. Values are not clamped.
+     *
+     * <p>The invert is applied last, after saturation, the tint, and the mix. Inverting every
+     * layer of a stack equals inverting the whole screen as long as the bottom layer is opaque;
+     * transparent parts stay transparent, so they are not inverted.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setInvert(float amount) {
+        requireAttached();
+        effects.setInvert(amount);
     }
 
     /** Returns whether the layer is clipped, by a rectangle or to the stack's size. */

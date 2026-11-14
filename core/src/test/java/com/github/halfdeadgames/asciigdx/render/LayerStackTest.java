@@ -62,6 +62,7 @@ class LayerStackTest {
         final List<float[]> tints = new ArrayList<>();
         final List<float[]> mixes = new ArrayList<>();
         final List<Float> saturations = new ArrayList<>();
+        final List<Float> inverts = new ArrayList<>();
         final List<GlyphSource> glyphSources = new ArrayList<>();
         int disposeCount;
 
@@ -79,6 +80,7 @@ class LayerStackTest {
             tints.add(new float[] {effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA()});
             mixes.add(new float[] {effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount()});
             saturations.add(effects.getSaturation());
+            inverts.add(effects.getInvert());
         }
 
         @Override
@@ -666,6 +668,41 @@ class LayerStackTest {
         assertEquals(0f, lastSaturation(0));
         assertArrayEquals(new float[] {1f, 1f, 1f, 0f}, lastMix(1));
         assertEquals(1f, lastSaturation(1));
+    }
+
+    private float lastInvert(int rendererIndex) {
+        List<Float> inverts = renderers.get(rendererIndex).inverts;
+        return inverts.get(inverts.size() - 1);
+    }
+
+    @Test
+    void invertHasNeutralDefault() {
+        assertEquals(0f, addLayer().getInvert());
+    }
+
+    @Test
+    void invertSetterStoresValueUnclamped() {
+        Layer layer = addLayer();
+        layer.setInvert(1.5f);
+        assertEquals(1.5f, layer.getInvert());
+    }
+
+    @Test
+    void invertCannotChangeAfterRemoval() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setInvert(1f));
+        assertEquals(0f, layer.getInvert());
+    }
+
+    @Test
+    void stackPassesEachLayersInvertToItsOwnRenderer() {
+        Layer first = addLayer();
+        addLayer();
+        first.setInvert(1f);
+        stack.draw(null, 0f, 0f);
+        assertEquals(1f, lastInvert(0));
+        assertEquals(0f, lastInvert(1));
     }
 
     @Test

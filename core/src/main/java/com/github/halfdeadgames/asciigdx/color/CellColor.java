@@ -57,6 +57,17 @@ public final class CellColor {
     }
 
     /**
+     * Inverts a color into its negative: red, green, and blue become 255 minus their value, and
+     * alpha is kept.
+     *
+     * @param rgba color as RGBA8888
+     * @return the negative color with the same alpha
+     */
+    public static int invert(int rgba) {
+        return ((~rgba) & RGB_ONLY_MASK) | (rgba & ALPHA_MASK);
+    }
+
+    /**
      * Blends two colors in Oklab, which gives perceptually even mixes. Alpha is interpolated
      * linearly and rounded.
      *

@@ -2,7 +2,7 @@ package com.github.halfdeadgames.asciigdx.render;
 
 /**
  * The per-layer color effects the cell shader applies each frame: saturation, then tint, then
- * mix, with alpha from the tint. Each layer owns one and reuses it every frame.
+ * mix, then invert, with alpha from the tint. Each layer owns one and reuses it every frame.
  * Values are not clamped.
  */
 final class LayerEffects {
@@ -16,6 +16,7 @@ final class LayerEffects {
     private float mixB = 1f;
     private float mixAmount;
     private float saturation = 1f;
+    private float invert;
 
     float getTintR() {
         return tintR;
@@ -75,15 +76,25 @@ final class LayerEffects {
         this.saturation = saturation;
     }
 
+    float getInvert() {
+        return invert;
+    }
+
+    void setInvert(float invert) {
+        this.invert = invert;
+    }
+
     void copyFrom(LayerEffects other) {
         setTint(other.tintR, other.tintG, other.tintB, other.tintA);
         setMix(other.mixR, other.mixG, other.mixB, other.mixAmount);
         saturation = other.saturation;
+        invert = other.invert;
     }
 
     void reset() {
         setTint(1f, 1f, 1f, 1f);
         setMix(1f, 1f, 1f, 0f);
         saturation = 1f;
+        invert = 0f;
     }
 }
