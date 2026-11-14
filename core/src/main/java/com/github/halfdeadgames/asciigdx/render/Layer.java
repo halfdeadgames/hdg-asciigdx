@@ -1,6 +1,8 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.LongMap;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
@@ -15,6 +17,9 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  */
 public final class Layer {
 
+    /** The most free sprites one layer can hold: 16383. */
+    public static final int MAX_SPRITES = CellVertexLayout.MAX_QUADS_PER_MESH;
+
     private final TerminalView grid;
     private GlyphSource glyphSource;
     private final LayerRenderer renderer;
@@ -28,6 +33,11 @@ public final class Layer {
     private float clipY;
     private float clipWidth;
     private float clipHeight;
+    private final Array<GlyphSprite> sprites = new Array<>();
+    private final Array<CellTransform> cellTransforms = new Array<>();
+    private final LongMap<CellTransform> cellsByPosition = new LongMap<>();
+    private int syncedColumns;
+    private int syncedRows;
 
     private enum ClipMode { NONE, RECT, STACK }
 
@@ -36,6 +46,8 @@ public final class Layer {
         this.grid = grid;
         this.glyphSource = glyphSource;
         this.renderer = renderer;
+        syncedColumns = grid.getWidth();
+        syncedRows = grid.getHeight();
     }
 
     /** Returns the grid this layer draws. */
@@ -70,6 +82,7 @@ public final class Layer {
         }
         renderer.setGlyphSource(glyphSource);
         this.glyphSource = glyphSource;
+        forgetHiddenFlags();
     }
 
     /** Returns the horizontal offset in virtual pixels, growing to the right. */
@@ -377,6 +390,192 @@ public final class Layer {
     }
 
     /**
+     * Adds a sprite glyph on top of the layer's existing sprites; sprites draw in the order they
+     * were added, after the grid. Sprites use the layer's glyph source, effects, offset, clip,
+     * and visibility. A layer holds at most {@link #MAX_SPRITES} (16383) sprites.
+     *
+     * <p>Both {@code codePoint} and {@code rgba} are ints, so swapping them compiles; check the
+     * argument order.
+     *
+     * @param codePoint the glyph's Unicode code point
+     * @param rgba the glyph color as RGBA8888, the same format as {@code TerminalGrid} colors
+     * @param x left edge of the cell box, in virtual pixels from the layer's top-left corner
+     * @param y top edge of the cell box, growing downward
+     * @return the new sprite
+     * @throws IllegalStateException if the layer was removed or already holds {@link #MAX_SPRITES}
+     *     sprites
+     */
+    public GlyphSprite addSprite(int codePoint, int rgba, float x, float y) {
+        requireAttached();
+        if (sprites.size >= MAX_SPRITES) {
+            throw new IllegalStateException("A layer holds at most " + MAX_SPRITES + " sprites");
+        }
+        GlyphSprite sprite = new GlyphSprite(this, codePoint, rgba);
+        sprite.setPosition(x, y);
+        sprites.add(sprite);
+        return sprite;
+    }
+
+    /**
+     * Removes a sprite from this layer. The sprite stops drawing and can no longer be changed.
+     *
+     * <p>Later sprites shift down one index; when removing in a loop, iterate backward.
+     *
+     * @param sprite the sprite to remove; must not be null
+     * @throws IllegalArgumentException if the sprite is null or belongs to another layer
+     * @throws IllegalStateException if the layer or the sprite was already removed
+     */
+    public void removeSprite(GlyphSprite sprite) {
+        requireAttached();
+        requireOwnedSprite(sprite);
+        sprites.removeValue(sprite, true);
+        sprite.detach();
+    }
+
+    /** Returns the number of sprites. Indices shift when a sprite is removed. */
+    public int getSpriteCount() {
+        return sprites.size;
+    }
+
+    /**
+     * Returns the sprite at a position, in the order the sprites were added. Indices shift when a
+     * sprite is removed; iterate backward when removing in a loop.
+     *
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
+    public GlyphSprite getSprite(int index) {
+        if (index < 0 || index >= sprites.size) {
+            throw new IndexOutOfBoundsException("Index " + index + ", size " + sprites.size);
+        }
+        return sprites.get(index);
+    }
+
+    /**
+     * Returns the handle that lifts one cell's glyph off the grid, creating it on the first
+     * request (the only time this allocates). The same handle is returned every time, until it is
+     * detached. See {@link CellTransform} for what lifting does.
+     *
+     * <p>If the grid shrinks so the cell no longer exists, the handle is detached at the next
+     * draw and dropped; request a new one after the grid grows back.
+     *
+     * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
+     * @throws IllegalStateException if the layer was removed
+     */
+    public CellTransform cell(int column, int row) {
+        requireAttached();
+        if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
+            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
+                    + grid.getWidth() + "x" + grid.getHeight());
+        }
+        CellTransform existing = cellsByPosition.get(cellKey(column, row));
+        if (existing != null) {
+            return existing;
+        }
+        return createCellTransform(column, row);
+    }
+
+    /**
+     * Resets every cell handle to its defaults, so all lifted glyphs settle back into the grid.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void resetLiftedCells() {
+        requireAttached();
+        for (int i = 0; i < cellTransforms.size; i++) {
+            cellTransforms.get(i).reset();
+        }
+    }
+
+    /**
+     * Removes every free sprite (those added with {@link #addSprite}), like calling
+     * {@link #removeSprite} on each. Lifted cells are not touched; see {@link #resetLiftedCells}.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void removeFreeSprites() {
+        requireAttached();
+        for (int i = sprites.size - 1; i >= 0; i--) {
+            sprites.get(i).detach();
+        }
+        sprites.clear();
+    }
+
+    /**
+     * Settles every lifted glyph back into the grid ({@link #resetLiftedCells}) and removes every
+     * free sprite ({@link #removeFreeSprites}).
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void clearAllSprites() {
+        resetLiftedCells();
+        removeFreeSprites();
+    }
+
+    private CellTransform createCellTransform(int column, int row) {
+        if (cellTransforms.size == 0) {
+            renderer.setCellTransforms(cellTransforms);
+        }
+        CellTransform created = new CellTransform(column, row);
+        cellsByPosition.put(cellKey(column, row), created);
+        cellTransforms.add(created);
+        return created;
+    }
+
+    private static long cellKey(int column, int row) {
+        return ((long) row << Integer.SIZE) | (column & 0xFFFFFFFFL);
+    }
+
+    /**
+     * Brings the renderer in line with the cell handles before drawing: detaches handles whose
+     * cell left the grid, then hides or shows the glyph of each handle whose lifted state changed.
+     */
+    void syncCellTransforms() {
+        if (cellTransforms.size == 0) {
+            syncedColumns = grid.getWidth();
+            syncedRows = grid.getHeight();
+            return;
+        }
+        if (grid.getWidth() != syncedColumns || grid.getHeight() != syncedRows) {
+            syncedColumns = grid.getWidth();
+            syncedRows = grid.getHeight();
+            detachCellsOutsideGrid();
+            forgetHiddenFlags();
+        }
+        applyLiftedFlags();
+    }
+
+    private void detachCellsOutsideGrid() {
+        for (int i = cellTransforms.size - 1; i >= 0; i--) {
+            CellTransform cell = cellTransforms.get(i);
+            if (cell.getColumn() < syncedColumns && cell.getRow() < syncedRows) {
+                continue;
+            }
+            cellTransforms.removeIndex(i);
+            cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
+            cell.detach();
+        }
+    }
+
+    /** The renderer clears its hidden flags when it rebuilds, so every handle starts shown again. */
+    private void forgetHiddenFlags() {
+        for (int i = 0; i < cellTransforms.size; i++) {
+            cellTransforms.get(i).setGlyphHidden(false);
+        }
+    }
+
+    private void applyLiftedFlags() {
+        for (int i = 0; i < cellTransforms.size; i++) {
+            CellTransform cell = cellTransforms.get(i);
+            boolean lifted = cell.isLifted();
+            if (lifted == cell.isGlyphHidden()) {
+                continue;
+            }
+            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), lifted);
+            cell.setGlyphHidden(lifted);
+        }
+    }
+
+    /**
      * Moves the layer to a position in its stack.
      *
      * @see LayerStack#moveTo(Layer, int)
@@ -406,8 +605,37 @@ public final class Layer {
         return renderer;
     }
 
+    Array<GlyphSprite> getSprites() {
+        return sprites;
+    }
+
+    Array<CellTransform> getCellTransforms() {
+        return cellTransforms;
+    }
+
     void detach() {
         owner = null;
+        for (int i = sprites.size - 1; i >= 0; i--) {
+            sprites.get(i).detach();
+        }
+        sprites.clear();
+        for (int i = cellTransforms.size - 1; i >= 0; i--) {
+            cellTransforms.get(i).detach();
+        }
+        cellTransforms.clear();
+        cellsByPosition.clear();
+    }
+
+    private void requireOwnedSprite(GlyphSprite sprite) {
+        if (sprite == null) {
+            throw new IllegalArgumentException("sprite must not be null");
+        }
+        if (sprite.getOwner() == null) {
+            throw new IllegalStateException("Sprite was removed from its layer");
+        }
+        if (sprite.getOwner() != this) {
+            throw new IllegalArgumentException("Sprite belongs to another layer");
+        }
     }
 
     private LayerStack requireAttached() {

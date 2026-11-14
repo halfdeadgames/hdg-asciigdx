@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
@@ -68,7 +69,8 @@ class LayerStackTest {
         }
 
         @Override
-        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
+        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects,
+                Array<GlyphSprite> sprites, boolean pixelSnapping) {
             drawLog.add(name);
             positions.add(new float[] {x, y});
             tints.add(new float[] {effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA()});

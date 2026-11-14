@@ -1,12 +1,10 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Disposable;
 
 /**
@@ -18,13 +16,12 @@ final class GridMesh implements Disposable {
 
     private final int quadCount;
     private final Mesh[] chunks;
-    private final ShaderProgram shader;
-    private final Matrix4 combinedMatrix = new Matrix4();
+    private final CellShaderPass pass;
 
     /** The shader is shared and not owned; it is not disposed with the mesh. */
     GridMesh(int quadCount, ShaderProgram shader) {
         this.quadCount = quadCount;
-        this.shader = shader;
+        this.pass = new CellShaderPass(shader);
         short[] indices = createQuadIndices(Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH));
         chunks = createChunks(CellVertexLayout.chunkCountFor(quadCount), indices);
     }
@@ -41,7 +38,7 @@ final class GridMesh implements Disposable {
         return created;
     }
 
-    private static short[] createQuadIndices(int quads) {
+    static short[] createQuadIndices(int quads) {
         short[] indices = new short[quads * CellVertexLayout.INDICES_PER_QUAD];
         for (int quad = 0, index = 0, vertex = 0; quad < quads; quad++, vertex += CellVertexLayout.VERTICES_PER_QUAD) {
             indices[index++] = (short) vertex;
@@ -71,43 +68,19 @@ final class GridMesh implements Disposable {
      * Leaves the batch's shader bound.
      */
     void draw(SpriteBatch batch, Texture glyphTexture, float offsetX, float offsetY,
-            LayerEffects effects, boolean allCellsOpaque, boolean hasVisibleCells) {
+            LayerEffects effects, boolean allCellsOpaque, boolean hasVisibleCells, CellBlend blend) {
         if (!hasVisibleCells) {
             return;
         }
-        batch.flush();
-        if (batch.isBlendingEnabled() && !(allCellsOpaque && effects.getTintA() == 1f)) {
-            applyBatchBlend(batch);
-        } else {
-            Gdx.gl.glDisable(GL20.GL_BLEND);
-        }
-        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix())
-                .translate(offsetX, offsetY, 0f);
-        shader.bind();
-        shader.setUniformMatrix("u_projTrans", combinedMatrix);
-        shader.setUniformi("u_texture", 0);
-        setEffectUniforms(effects);
-        renderChunks(glyphTexture);
-        batch.getShader().bind();
+        pass.begin(batch, glyphTexture, offsetX, offsetY, effects, allCellsOpaque, blend);
+        renderChunks();
+        pass.end(batch);
     }
 
-    private void setEffectUniforms(LayerEffects effects) {
-        shader.setUniformf("u_tint", effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
-        shader.setUniformf("u_mix", effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount());
-        shader.setUniformf("u_saturation", effects.getSaturation());
-    }
-
-    private static void applyBatchBlend(SpriteBatch batch) {
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFuncSeparate(batch.getBlendSrcFunc(), batch.getBlendDstFunc(),
-                batch.getBlendSrcFuncAlpha(), batch.getBlendDstFuncAlpha());
-    }
-
-    private void renderChunks(Texture texture) {
-        texture.bind(0);
+    private void renderChunks() {
         for (int chunk = 0; chunk < chunks.length; chunk++) {
             int indexCount = CellVertexLayout.quadsInChunk(quadCount, chunk) * CellVertexLayout.INDICES_PER_QUAD;
-            chunks[chunk].render(shader, GL20.GL_TRIANGLES, 0, indexCount);
+            chunks[chunk].render(pass.getShader(), GL20.GL_TRIANGLES, 0, indexCount);
         }
     }
 

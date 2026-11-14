@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
@@ -84,7 +85,8 @@ class LayerStackClipTest {
         String name = "L" + created++;
         return new LayerRenderer() {
             @Override
-            public void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
+            public void draw(SpriteBatch batch, float x, float y, LayerEffects effects,
+                    Array<GlyphSprite> sprites, boolean pixelSnapping) {
                 log.add(name);
             }
 

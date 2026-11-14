@@ -123,6 +123,8 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new GlyphShowcaseScene(glyphs, SaiksisttSize.SQUARE_16X16));
         scenes.add(new GlyphShowcaseScene(tallGlyphs, SaiksisttSize.TALL_16X32));
         scenes.add(new LayersScene(glyphs));
+        scenes.add(new SpritesScene(glyphs, false));
+        scenes.add(new SpritesScene(glyphs, true));
         scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),

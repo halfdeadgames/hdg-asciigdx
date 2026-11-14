@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
@@ -45,8 +46,12 @@ public final class GridRenderer implements Disposable {
     private final DirtyTracker tracker;
     private CellVertexCache cache;
     private GridMesh mesh;
+    private SpriteMesh spriteMesh;
     private int cachedColumns;
     private int cachedRows;
+    private boolean[] hiddenGlyphs;
+    private boolean uploadPending;
+    private Array<CellTransform> cellTransforms = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
     private final LayerEffects tintOnlyEffects = new LayerEffects();
 
@@ -81,6 +86,8 @@ public final class GridRenderer implements Disposable {
         cache = new CellVertexCache(cachedColumns, cachedRows,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
         mesh = new GridMesh(cachedColumns * cachedRows, resources.getShader());
+        hiddenGlyphs = new boolean[cachedColumns * cachedRows];
+        uploadPending = false;
     }
 
     /**
@@ -113,11 +120,85 @@ public final class GridRenderer implements Disposable {
      * rewrite or upload.
      */
     void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
-        if (glyphSourceChanged || grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
-            glyphSourceChanged = false;
-            mesh.dispose();
-            createCacheAndMesh();
+        drawGrid(batch, x, y, effects, CellBlend.BATCH);
+    }
+
+    /**
+     * Draws the grid, then the lifted cells, then the visible sprites in order with the same
+     * effects. Sprites are drawn even when no cell is visible, and always with the batch's
+     * blending. With pixel snapping on, sprite and lifted cell positions are rounded; rotation and
+     * scale are not.
+     */
+    void draw(SpriteBatch batch, float x, float y, LayerEffects effects, Array<GlyphSprite> sprites,
+            boolean pixelSnapping) {
+        drawGrid(batch, x, y, effects, CellBlend.BATCH);
+        drawSprites(batch, x, y, effects, sprites, pixelSnapping, CellBlend.BATCH);
+    }
+
+    /**
+     * Like {@link #draw(SpriteBatch, float, float, LayerEffects, Array, boolean)}, but blends into
+     * a transparent offscreen target as premultiplied color, whatever the batch's blending is.
+     */
+    void drawPremultiplied(SpriteBatch batch, float x, float y, LayerEffects effects,
+            Array<GlyphSprite> sprites, boolean pixelSnapping) {
+        drawGrid(batch, x, y, effects, CellBlend.PREMULTIPLIED_TARGET);
+        drawSprites(batch, x, y, effects, sprites, pixelSnapping, CellBlend.PREMULTIPLIED_TARGET);
+    }
+
+    private void drawSprites(SpriteBatch batch, float x, float y, LayerEffects effects,
+            Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
+        int quadCount = SpriteMesh.countDrawnLifted(cellTransforms, grid) + SpriteMesh.countVisible(sprites);
+        if (quadCount == 0) {
+            return;
         }
+        if (spriteMesh == null) {
+            spriteMesh = new SpriteMesh(resources.getShader());
+        }
+        spriteMesh.upload(cellTransforms, sprites, grid, quadCount, glyphSource, pixelSnapping);
+        spriteMesh.draw(batch, glyphTexture, x, y, effects, blend);
+    }
+
+    private void rebuildIfStale() {
+        if (!glyphSourceChanged && grid.getWidth() == cachedColumns && grid.getHeight() == cachedRows) {
+            return;
+        }
+        glyphSourceChanged = false;
+        mesh.dispose();
+        createCacheAndMesh();
+    }
+
+    /**
+     * Hides or shows one cell's glyph in the cell mesh; the background stays. Only that cell is
+     * rewritten, and the meshes are uploaded at the next draw. If the grid size or glyph source
+     * changed, the rebuild happens first and clears every hidden flag, so callers re-apply theirs.
+     *
+     * @throws IndexOutOfBoundsException if the cell is outside the grid
+     */
+    void setCellGlyphHidden(int column, int row, boolean hidden) {
+        rebuildIfStale();
+        if (column < 0 || column >= cachedColumns || row < 0 || row >= cachedRows) {
+            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
+                    + cachedColumns + "x" + cachedRows);
+        }
+        int cell = row * cachedColumns + column;
+        if (hiddenGlyphs[cell] == hidden) {
+            return;
+        }
+        hiddenGlyphs[cell] = hidden;
+        if (cache.isFullRebuildNeeded()) {
+            return;
+        }
+        writeCell(column, row);
+        uploadPending = true;
+    }
+
+    /** Sets the layer's live handle list; lifted ones draw as sprites. Not owned. */
+    void setCellTransforms(Array<CellTransform> cellTransforms) {
+        this.cellTransforms = Objects.requireNonNull(cellTransforms, "cellTransforms");
+    }
+
+    private void drawGrid(SpriteBatch batch, float x, float y, LayerEffects effects, CellBlend blend) {
+        rebuildIfStale();
         if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getHeight(); row++) {
                 for (int column = 0; column < grid.getWidth(); column++) {
@@ -126,14 +207,16 @@ public final class GridRenderer implements Disposable {
             }
             cache.markRebuilt();
             tracker.clear();
+            uploadPending = false;
             mesh.upload(cache.getVertices());
-        } else if (tracker.hasDirtyCells()) {
+        } else if (tracker.hasDirtyCells() || uploadPending) {
             tracker.forEachDirtyCell(cellWriter);
             tracker.clear();
+            uploadPending = false;
             mesh.upload(cache.getVertices());
         }
         mesh.draw(batch, glyphTexture, x, y, effects,
-                cache.getNotOpaqueCellCount() == 0, cache.getVisibleCellCount() > 0);
+                cache.getNotOpaqueCellCount() == 0, cache.getVisibleCellCount() > 0, blend);
     }
 
     /**
@@ -150,7 +233,7 @@ public final class GridRenderer implements Disposable {
         glyphSourceChanged = true;
     }
 
-    private static boolean isBlankGlyph(int codePoint, int foreground) {
+    static boolean isBlankGlyph(int codePoint, int foreground) {
         return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || CellVertexCache.isFullyTransparent(foreground);
     }
 
@@ -158,7 +241,7 @@ public final class GridRenderer implements Disposable {
         int background = grid.getBackground(column, row);
         int codePoint = grid.getGlyph(column, row);
         int foreground = grid.getForeground(column, row);
-        if (isBlankGlyph(codePoint, foreground)) {
+        if (hiddenGlyphs[row * cachedColumns + column] || isBlankGlyph(codePoint, foreground)) {
             cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
             return;
         }
@@ -172,6 +255,9 @@ public final class GridRenderer implements Disposable {
     public void dispose() {
         tracker.release();
         mesh.dispose();
+        if (spriteMesh != null) {
+            spriteMesh.dispose();
+        }
         if (ownsResources) {
             resources.dispose();
         }

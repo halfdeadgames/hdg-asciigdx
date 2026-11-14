@@ -75,6 +75,12 @@ final class LayerEffects {
         this.saturation = saturation;
     }
 
+    void copyFrom(LayerEffects other) {
+        setTint(other.tintR, other.tintG, other.tintB, other.tintA);
+        setMix(other.mixR, other.mixG, other.mixB, other.mixAmount);
+        saturation = other.saturation;
+    }
+
     void reset() {
         setTint(1f, 1f, 1f, 1f);
         setMix(1f, 1f, 1f, 0f);

@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -10,7 +11,7 @@ import com.github.halfdeadgames.asciigdx.render.GridRenderer;
 /** fps / frame time / cell count line drawn over whichever scene is open, at the top-left of the screen. */
 class PerfOverlay {
     private static final float SAMPLE_WINDOW_SECONDS = 0.5f;
-    private static final int WIDTH = 32;
+    private static final int WIDTH = 40;
 
     private final TerminalGrid grid = new TerminalGrid(WIDTH, 2);
     private final GridRenderer renderer;
@@ -70,6 +71,21 @@ class PerfOverlay {
         renderer.dispose();
     }
 
+    /** Reads the count out of Mesh.getManagedStatus(), which looks like "Managed meshes/app: { 3 }". */
+    private static int managedMeshCount() {
+        String managedStatus = Mesh.getManagedStatus();
+        int count = 0;
+        for (int i = managedStatus.indexOf('{') + 1; i > 0 && i < managedStatus.length(); i++) {
+            char digit = managedStatus.charAt(i);
+            if (digit >= '0' && digit <= '9') {
+                count = count * 10 + (digit - '0');
+            } else if (count > 0) {
+                break;
+            }
+        }
+        return count;
+    }
+
     private void rebuildReadout() {
         readout.setLength(0);
         if (sampleFrames > 0) {
@@ -80,7 +96,7 @@ class PerfOverlay {
         } else {
             readout.append("measuring ");
         }
-        readout.append(cellCount).append(" cells");
+        readout.append(cellCount).append(" cells meshes ").append(managedMeshCount());
         SceneDrawing.writePadded(grid, 0, 0, WIDTH, readout, GridScene.WHITE, GridScene.BLACK);
     }
 }

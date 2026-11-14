@@ -9,8 +9,9 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 ## Current features
 
 - Terminal grid: a grid of cells, each holding a glyph plus foreground and background colors. The grid tracks changed cells, and each renderer keeps its own record of what it still has to redraw.
-- Grid renderer: draws a grid in two passes, backgrounds first and then glyphs. Cell data lives in GPU vertex buffers, and only changed cells are rewritten, so a mostly static screen costs almost nothing to redraw. Background and glyph passes are skipped when they have nothing to draw, and fully opaque backgrounds are drawn without blending, which saves GPU work on phones.
-- Layers: stack several grids and draw them bottom to top in one call. Layers can differ in size and font, and each one has its own offset in pixels or cells, visibility, tint, and alpha. Moving, tinting, or fading a layer is cheap because none of it rewrites the layer's cells. Every visible layer is drawn every frame in stack order, whether or not its cells changed. A layer can be clipped to a rectangle or to the stack's area, and by default it may extend past the edges, which suits shakes and floating effects.
+- Grid renderer: draws each cell as one quad, with the shader placing the glyph over the cell's background in a single pass. Cell data lives in GPU vertex buffers, and only changed cells are rewritten, so a mostly static screen costs almost nothing to redraw. Fully opaque layers are drawn without blending, which saves GPU work on phones.
+- Layers: stack several grids and draw them bottom to top in one call. Layers can differ in size and font, and each one has its own offset in pixels or cells, visibility, tint, alpha, saturation, and a mix toward any color, for flashes or grayscale. A faded layer fades as one flat image. Moving, tinting, or fading a layer is cheap because none of it rewrites the layer's cells. Every visible layer is drawn every frame in stack order, whether or not its cells changed. A layer can be clipped to a rectangle or to the stack's area, and by default it may extend past the edges, which suits shakes and floating effects.
+- Sprite glyphs: glyphs that leave the grid, with rotation, scaling, mirroring, and their own alpha. Free sprites are placed anywhere on a layer, for projectiles or floating text. A grid cell's glyph can also be lifted with `Layer.cell(column, row)`: give it an offset, rotation, or scale and it becomes a sprite, while its background stays in the grid; set everything back and it settles into the grid again. Sprites belong to their layer, so they move with it and get its tint, fade, saturation, mix, and clip. The engine decides when a glyph needs to be a sprite, and layers without sprites pay nothing extra.
 - Integer scaling: a libGDX `Scaling` that scales the view by whole numbers only, so pixel fonts stay crisp. Leftover space becomes letterbox bars. The scale never goes below 1x, so a view too large for the window is centered and cropped. To show more on a small screen, use a smaller font.
 - Flexible grids: `GridFit` finds the largest whole-number scale that still shows a minimum number of columns and rows, and how many cells fit at that scale, so a game can fill the window instead of showing wide bars. `TerminalGrid.resize` changes a grid's size in place and keeps its contents, with an optional shift to add space on any side or keep content centered. Renderers and layers pick up the new size on their next draw.
 - Font ladder: `FontFit` takes several fonts in your order of preference and returns the first one that fits the minimum columns and rows at 1x or more, along with its scale and cell count. `Layer.setGlyphSource` swaps a layer's font; the grid keeps its contents, and the layer redraws at the new cell size.
@@ -25,7 +26,7 @@ It targets desktop (LWJGL3) and Android, with a Java 17 core.
 
 - Sub-terminals with their own coordinates
 - Smooth camera pan and zoom, and parallax layers
-- Glyphs that move freely off the grid, with rotation, scaling, fading, and screen shake
+- Zoom for single layers, smooth or in whole steps
 - Light and tint maps, palette swaps, and color grading
 - Box drawing that connects automatically, 9-slice panels, and screen transitions
 - Post-processing shaders, such as CRT and scanline effects
@@ -50,6 +51,8 @@ The sandbox is a demo app for checking features by eye. It opens to a menu of te
 | --- | --- |
 | Renderer basics | Grid orientation, colors, transparent backgrounds, and box drawing |
 | Layers | A pacing boss shakes the map under a frame, rain fades in and out, a popup slides in, and a character hops. R changes the layer order, V hides the rain, and P toggles pixel snapping. On Android, tap the left, middle, or right third. |
+| Sprites | Glyphs off the grid on one map layer: an orbiting ring, a spinning glyph at double size, a mirrored glyph, a stream of short-lived sprites, and monsters that bump or wiggle out of their cells and settle back. G grays the layer, F flashes it white, P toggles pixel snapping, A fades the layer to half, M slides it, K shrinks the grid, and R settles every lifted glyph. On Android, tap the left, middle, or right third for G, F, or P. |
+| Sprites: faded layer | The same scene with the layer at half alpha, so sprites and cells fade as one image |
 | Stress: full rewrite | A 240x135 grid rewritten every frame |
 | Large grid: sparse updates | The same grid with a small share of cells changing each frame. L switches between 1, 2, and 4 layers. |
 | Glyph sheet showcase 8x8, 16x16, and 16x32 | Every glyph of the bundled font in that cell size, plus cards, chess, dice, shades, and animated meters, some drawn in two colors across two layers. Scroll with the arrow keys, the mouse wheel, or by dragging. |

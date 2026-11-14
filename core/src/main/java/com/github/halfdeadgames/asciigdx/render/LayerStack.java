@@ -26,6 +26,9 @@ public final class LayerStack implements Disposable {
 
     private final LayerRendererFactory rendererFactory;
     private final ClipBackend clipBackend;
+    private final OffscreenBackend offscreenBackend;
+    private final LayerEffects opaqueEffects = new LayerEffects();
+    private boolean viewportQueried;
     private final Array<Layer> layers = new Array<>();
     private final Matrix4 clipMatrix = new Matrix4();
     private final Vector3 clipCorner = new Vector3();
@@ -40,16 +43,21 @@ public final class LayerStack implements Disposable {
 
     /** Creates an empty stack that draws layers with {@link GridRenderer}. */
     public LayerStack() {
-        this(LayerRendererFactory.SHARED_GRID_RENDERERS, new GlClipBackend());
+        this(LayerRendererFactory.SHARED_GRID_RENDERERS, new GlClipBackend(), new GlOffscreenBackend());
     }
 
     LayerStack(LayerRendererFactory rendererFactory) {
-        this(rendererFactory, new GlClipBackend());
+        this(rendererFactory, new GlClipBackend(), new GlOffscreenBackend());
     }
 
     LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend) {
+        this(rendererFactory, clipBackend, new GlOffscreenBackend());
+    }
+
+    LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend, OffscreenBackend offscreenBackend) {
         this.rendererFactory = rendererFactory;
         this.clipBackend = clipBackend;
+        this.offscreenBackend = offscreenBackend;
     }
 
     /**
@@ -204,12 +212,21 @@ public final class LayerStack implements Disposable {
      * outward to whole backbuffer pixels, then to whole logical pixels on HDPI
      * displays.
      *
+     * <p>Offscreen fade: a layer whose tint alpha is below 1 and that has at least one visible
+     * free sprite or lifted cell is drawn at full alpha into a shared offscreen target, then
+     * composited with its alpha, so the grid, sprites, and lifted cells fade as one image. This
+     * costs one offscreen target switch per such layer per frame. The layer's own clip still
+     * applies. The batch stays begun with its shader bound. The composite does not use the
+     * batch's blend functions; it always blends premultiplied. Do not draw while another
+     * framebuffer is bound. To skip the offscreen pass, keep the tint alpha at 1. Other layers draw
+     * directly.
+     *
      * @param batch the active batch
      * @param x screen x of the stack's top-left corner
      * @param y screen y of the stack's top-left corner (y grows upward)
      */
     public void draw(SpriteBatch batch, float x, float y) {
-        boolean viewportQueried = false;
+        viewportQueried = false;
         for (int i = 0; i < layers.size; i++) {
             Layer layer = layers.get(i);
             if (!layer.isVisible()) {
@@ -225,11 +242,7 @@ public final class LayerStack implements Disposable {
                 drawLayer(layer, batch, screenX, screenY);
                 continue;
             }
-            if (!viewportQueried) {
-                clipBackend.getCombinedMatrix(batch, clipMatrix);
-                clipBackend.getViewport(viewport);
-                viewportQueried = true;
-            }
+            queryViewportOnce(batch);
             float clipX = layer.getClipX();
             float clipY = layer.getClipY();
             float clipWidth = layer.getClipWidth();
@@ -243,11 +256,7 @@ public final class LayerStack implements Disposable {
                 clipWidth = width;
                 clipHeight = height;
             }
-            ClipMath.stackToWorld(x, y, clipX, clipY, clipWidth, clipHeight, pixelSnapping, worldRect);
-            ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2], viewport[3],
-                    clipCorner, windowRect);
-            clipBackend.flush(batch);
-            if (!clipBackend.push(windowRect)) {
+            if (!pushScissor(batch, x, y, clipX, clipY, clipWidth, clipHeight)) {
                 continue;
             }
             drawLayer(layer, batch, screenX, screenY);
@@ -256,8 +265,52 @@ public final class LayerStack implements Disposable {
         }
     }
 
+    private void queryViewportOnce(SpriteBatch batch) {
+        if (viewportQueried) {
+            return;
+        }
+        clipBackend.getCombinedMatrix(batch, clipMatrix);
+        clipBackend.getViewport(viewport);
+        viewportQueried = true;
+    }
+
+    /** Flushes the batch and pushes a stack-space rectangle as a scissor; false if nothing is left of it. */
+    private boolean pushScissor(SpriteBatch batch, float stackX, float stackY,
+            float rectX, float rectY, float rectWidth, float rectHeight) {
+        ClipMath.stackToWorld(stackX, stackY, rectX, rectY, rectWidth, rectHeight, pixelSnapping, worldRect);
+        ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2], viewport[3],
+                clipCorner, windowRect);
+        clipBackend.flush(batch);
+        return clipBackend.push(windowRect);
+    }
+
     private void drawLayer(Layer layer, SpriteBatch batch, float screenX, float screenY) {
-        layer.getRenderer().draw(batch, screenX, screenY, layer.getEffects());
+        layer.syncCellTransforms();
+        LayerEffects effects = layer.getEffects();
+        if (OffscreenFade.isNeeded(effects.getTintA(), layer.getSprites(), layer.getCellTransforms())) {
+            drawFadedLayer(layer, batch, screenX, screenY);
+            return;
+        }
+        layer.getRenderer().draw(batch, screenX, screenY, effects, layer.getSprites(), pixelSnapping);
+    }
+
+    /**
+     * Draws the layer at full alpha into the shared offscreen target, then fades that image onto
+     * the screen in one go, so overlapping cells and sprites do not show through each other.
+     */
+    // The pass is deliberately not scissored to the layer's bounds: measured on a phone GPU, that
+    // scissor added about 2 ms per frame and saved nothing (2026-11-13). Only the layer's own clip
+    // applies.
+    private void drawFadedLayer(Layer layer, SpriteBatch batch, float screenX, float screenY) {
+        queryViewportOnce(batch);
+        LayerEffects effects = layer.getEffects();
+        opaqueEffects.copyFrom(effects);
+        opaqueEffects.setTintAlpha(1f);
+        offscreenBackend.begin(batch, viewport);
+        layer.getRenderer().drawPremultiplied(batch, screenX, screenY, opaqueEffects, layer.getSprites(),
+                pixelSnapping);
+        offscreenBackend.end(viewport);
+        offscreenBackend.composite(batch, effects.getTintA(), viewport);
     }
 
     /**
@@ -276,6 +329,7 @@ public final class LayerStack implements Disposable {
             layer.getRenderer().dispose();
         }
         layers.clear();
+        offscreenBackend.dispose();
         if (sharedResources != null) {
             sharedResources.dispose();
             sharedResources = null;
