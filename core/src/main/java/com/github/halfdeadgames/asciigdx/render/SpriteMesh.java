@@ -13,9 +13,9 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * GPU quads for a layer's lifted cells and sprites, one quad per drawn lifted cell and per visible
- * sprite, lifted cells first. The mesh is created on the first upload and grows by doubling.
- * Frames that need no growth allocate nothing.
+ * GPU quads for a layer's lifted cells and sprites, one quad per drawn lifted cell and per drawn
+ * sprite (visible, color alpha above 0), lifted cells first. The mesh is created on the first
+ * upload and grows by doubling. Frames that need no growth allocate nothing.
  */
 final class SpriteMesh implements Disposable {
 
@@ -41,14 +41,19 @@ final class SpriteMesh implements Disposable {
         return Math.min(grown, CellVertexLayout.MAX_QUADS_PER_MESH);
     }
 
-    static int countVisible(Array<GlyphSprite> sprites) {
-        int visible = 0;
+    /** A sprite draws only when it is visible and its color alpha is above 0. */
+    static boolean isDrawn(GlyphSprite sprite) {
+        return sprite.isVisible() && sprite.getAlpha() > 0f;
+    }
+
+    static int countDrawn(Array<GlyphSprite> sprites) {
+        int drawn = 0;
         for (int i = 0; i < sprites.size; i++) {
-            if (sprites.get(i).isVisible()) {
-                visible++;
+            if (isDrawn(sprites.get(i))) {
+                drawn++;
             }
         }
-        return visible;
+        return drawn;
     }
 
     /** Returns whether any handle is lifted; used by the fade rule, so a blank lifted cell counts too. */
@@ -82,7 +87,7 @@ final class SpriteMesh implements Disposable {
     }
 
     /**
-     * Writes the quads of the lifted cells (in handle creation order) and then every visible
+     * Writes the quads of the lifted cells (in handle creation order) and then every drawn
      * sprite (in order), and uploads only the used floats. Quads beyond {@code quadCount}, which
      * is capped at the mesh limit, are dropped.
      */
@@ -116,7 +121,7 @@ final class SpriteMesh implements Disposable {
         int quad = firstQuad;
         for (int i = 0; i < sprites.size && quad < limit; i++) {
             GlyphSprite sprite = sprites.get(i);
-            if (!sprite.isVisible()) {
+            if (!isDrawn(sprite)) {
                 continue;
             }
             writeSprite(quad++, sprite, glyphSource, cellWidth, cellHeight, pixelSnapping);

@@ -254,9 +254,12 @@ public final class LayerStack implements Disposable {
      * outward to whole backbuffer pixels, then to whole logical pixels on HDPI
      * displays.
      *
-     * <p>Offscreen fade: a layer whose tint alpha is below 1 and that has at least one visible
-     * free sprite or lifted cell is drawn at full alpha into a shared offscreen target, then
-     * composited with its alpha, so the grid, sprites, and lifted cells fade as one image. This
+     * <p>A hidden layer, or a layer whose tint alpha is 0, is skipped entirely: no draw, no clip
+     * work, and no offscreen pass.
+     *
+     * <p>Offscreen fade: a layer whose tint alpha is below 1 and that has at least one drawn
+     * free sprite (visible, color alpha above 0) or lifted cell is drawn at full alpha into a
+     * shared offscreen target, then composited with its alpha, so the grid, sprites, and lifted cells fade as one image. This
      * costs one offscreen target switch per such layer per frame. The layer's own clip still
      * applies. The batch stays begun with its shader bound. The composite does not use the
      * batch's blend functions; it always blends premultiplied. Do not draw while another
@@ -271,7 +274,7 @@ public final class LayerStack implements Disposable {
         viewportQueried = false;
         for (int i = 0; i < layers.size; i++) {
             Layer layer = layers.get(i);
-            if (!layer.isVisible()) {
+            if (!isDrawn(layer)) {
                 continue;
             }
             composeLayerTransform(layer, x, y, layerTransform);
@@ -288,6 +291,10 @@ public final class LayerStack implements Disposable {
             clipBackend.flush(batch);
             clipBackend.pop();
         }
+    }
+
+    private static boolean isDrawn(Layer layer) {
+        return layer.isVisible() && layer.getTintA() > 0f;
     }
 
     /**

@@ -128,6 +128,17 @@ class LayerStackTest {
     }
 
     @Test
+    void layerWithZeroTintAlphaIsNotDrawn() {
+        Layer faded = addLayer();
+        addLayer();
+        faded.setAlpha(0f);
+        assertOrder("L1");
+
+        faded.setAlpha(0.01f);
+        assertOrder("L0", "L1");
+    }
+
+    @Test
     void moveToChangesOrder() {
         Layer bottom = addLayer();
         addLayer();

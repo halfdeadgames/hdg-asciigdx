@@ -133,7 +133,7 @@ class LayerStackOffscreenTest {
     @Test
     void fadedLayerWithASpriteDrawsOffscreenThenComposites() {
         Layer layer = addLayer();
-        layer.addSprite('a', 0, 0f, 0f);
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         layer.setAlpha(0.4f);
         layer.setSaturation(0.5f);
 
@@ -150,7 +150,7 @@ class LayerStackOffscreenTest {
     @Test
     void fadedLayerKeepsItsInvertOnTheOffscreenDraw() {
         Layer layer = addLayer();
-        layer.addSprite('a', 0, 0f, 0f);
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         layer.setAlpha(0.4f);
         layer.setInvert(0.75f);
 
@@ -166,7 +166,7 @@ class LayerStackOffscreenTest {
     @Test
     void fadedLayerIsSkippedWhenItsClipIsEmpty() {
         Layer layer = addLayer();
-        layer.addSprite('a', 0, 0f, 0f);
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         layer.setAlpha(0.5f);
         layer.setClip(0f, 0f, 10f, 10f);
         pushesRemainingToAccept = 0;
@@ -179,7 +179,7 @@ class LayerStackOffscreenTest {
     @Test
     void clippedFadedLayerRunsInsideTheClip() {
         Layer layer = addLayer();
-        layer.addSprite('a', 0, 0f, 0f);
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         layer.setAlpha(0.5f);
         layer.setClip(0f, 0f, 10f, 10f);
 
@@ -199,10 +199,10 @@ class LayerStackOffscreenTest {
         Layer faded = addLayer();
         faded.setAlpha(0.5f);
         Layer opaqueWithSprite = addLayer();
-        opaqueWithSprite.addSprite('a', 0, 0f, 0f);
+        opaqueWithSprite.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         Layer hiddenSprite = addLayer();
         hiddenSprite.setAlpha(0.5f);
-        hiddenSprite.addSprite('a', 0, 0f, 0f).setVisible(false);
+        hiddenSprite.addSprite('a', 0xFFFFFFFF, 0f, 0f).setVisible(false);
 
         stack.draw(null, 0f, 0f);
 
@@ -212,9 +212,20 @@ class LayerStackOffscreenTest {
     @Test
     void hiddenLayersAreSkippedEvenWhenTheyQualify() {
         Layer layer = addLayer();
-        layer.addSprite('a', 0, 0f, 0f);
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         layer.setAlpha(0.5f);
         layer.setVisible(false);
+
+        stack.draw(null, 0f, 0f);
+
+        assertTrue(events.isEmpty());
+    }
+
+    @Test
+    void layersWithZeroTintAlphaDrawNothingEvenWithSprites() {
+        Layer layer = addLayer();
+        layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
+        layer.setAlpha(0f);
 
         stack.draw(null, 0f, 0f);
 

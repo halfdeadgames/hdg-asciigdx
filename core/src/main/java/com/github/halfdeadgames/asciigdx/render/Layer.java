@@ -103,7 +103,7 @@ public final class Layer {
         return offsetY;
     }
 
-    /** Returns whether the layer is drawn. */
+    /** Returns whether the layer is shown. A shown layer with tint alpha 0 is still skipped when drawing. */
     public boolean isVisible() {
         return visible;
     }

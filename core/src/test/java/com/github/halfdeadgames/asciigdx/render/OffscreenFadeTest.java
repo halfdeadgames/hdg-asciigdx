@@ -19,7 +19,7 @@ class OffscreenFadeTest {
     private Layer layerWithSprites(int count) {
         Layer layer = stack.add(new TerminalGrid(2, 2), new NoGlyphs());
         for (int i = 0; i < count; i++) {
-            layer.addSprite('a', 0, 0f, 0f);
+            layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         }
         return layer;
     }
@@ -98,9 +98,17 @@ class OffscreenFadeTest {
     }
 
     @Test
-    void spriteColorAlphaIsIgnored() {
+    void spriteWithZeroColorAlphaDoesNotCount() {
         Layer layer = layerWithSprites(1);
         layer.getSprite(0).setAlpha(0f);
+
+        assertFalse(isNeeded(0.5f, layer));
+    }
+
+    @Test
+    void spriteWithPartialColorAlphaStillCounts() {
+        Layer layer = layerWithSprites(1);
+        layer.getSprite(0).setAlpha(0.5f);
 
         assertTrue(isNeeded(0.5f, layer));
     }

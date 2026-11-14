@@ -13,15 +13,16 @@ final class OffscreenFade {
     }
 
     /**
-     * A faded layer needs the offscreen path only when a visible sprite or a lifted cell could
-     * overlap something; a sprite's own color alpha does not matter. Without them the cells never
-     * overlap, so the direct path fades them correctly.
+     * A faded layer needs the offscreen path only when a drawn sprite or a lifted cell could
+     * overlap something. A sprite with color alpha 0 draws nothing, so it cannot overlap; partial
+     * alpha still counts. Without them the cells never overlap, so the direct path fades them
+     * correctly.
      */
     static boolean isNeeded(float tintAlpha, Array<GlyphSprite> sprites, Array<CellTransform> cells) {
         if (tintAlpha >= 1f) {
             return false;
         }
-        return SpriteMesh.countVisible(sprites) > 0 || SpriteMesh.hasLifted(cells);
+        return SpriteMesh.countDrawn(sprites) > 0 || SpriteMesh.hasLifted(cells);
     }
 
     /**

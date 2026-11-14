@@ -212,7 +212,7 @@ public final class GlyphSprite implements SpriteTransform {
         this.pivotY = pivotY;
     }
 
-    /** Whether the sprite is drawn. */
+    /** Whether the sprite is shown. A visible sprite whose color alpha is 0 is skipped too. */
     public boolean isVisible() {
         return visible;
     }

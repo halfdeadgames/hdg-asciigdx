@@ -37,11 +37,30 @@ class SpriteMeshTest {
 
     @Test
     void countsOnlyVisibleSprites() {
-        Array<GlyphSprite> sprites = new Array<>();
-        sprites.add(new GlyphSprite('a', 0));
-        sprites.add(new GlyphSprite('b', 0));
-        sprites.add(new GlyphSprite('c', 0));
+        Array<GlyphSprite> sprites = spritesWithColor(3, 0xFFFFFFFF);
         sprites.get(1).setVisible(false);
-        assertEquals(2, SpriteMesh.countVisible(sprites));
+        assertEquals(2, SpriteMesh.countDrawn(sprites));
+    }
+
+    @Test
+    void doesNotCountFullyTransparentSprites() {
+        Array<GlyphSprite> sprites = spritesWithColor(3, 0xFFFFFFFF);
+        sprites.get(1).setAlpha(0f);
+        assertEquals(2, SpriteMesh.countDrawn(sprites));
+    }
+
+    @Test
+    void countsNearlyTransparentSprites() {
+        Array<GlyphSprite> sprites = spritesWithColor(1, 0xFFFFFFFF);
+        sprites.get(0).setAlpha(0.01f);
+        assertEquals(1, SpriteMesh.countDrawn(sprites));
+    }
+
+    private static Array<GlyphSprite> spritesWithColor(int count, int color) {
+        Array<GlyphSprite> sprites = new Array<>();
+        for (int i = 0; i < count; i++) {
+            sprites.add(new GlyphSprite('a' + i, color));
+        }
+        return sprites;
     }
 }

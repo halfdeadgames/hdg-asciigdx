@@ -127,7 +127,7 @@ public final class GridRenderer implements Disposable {
     }
 
     /**
-     * Draws the grid, then the lifted cells, then the visible sprites in order with the same
+     * Draws the grid, then the lifted cells, then the drawn sprites in order with the same
      * effects. Sprites are drawn even when no cell is visible, and always with the batch's
      * blending. With pixel snapping on, sprite and lifted cell positions are rounded; rotation and
      * scale are not.
@@ -150,7 +150,7 @@ public final class GridRenderer implements Disposable {
 
     private void drawSprites(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
-        int quadCount = SpriteMesh.countDrawnLifted(cellTransforms, grid) + SpriteMesh.countVisible(sprites);
+        int quadCount = SpriteMesh.countDrawnLifted(cellTransforms, grid) + SpriteMesh.countDrawn(sprites);
         if (quadCount == 0) {
             return;
         }
