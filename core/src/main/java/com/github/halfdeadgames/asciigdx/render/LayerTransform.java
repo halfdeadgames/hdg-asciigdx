@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.math.Affine2;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * Math for a layer's zoom and rotation.
@@ -50,6 +51,19 @@ final class LayerTransform {
         if (snapCorner) {
             snapTranslation(out);
         }
+    }
+
+    /**
+     * Maps a batch-world point back into the layer's pixels, measured from its top-left corner
+     * with y growing down.
+     *
+     * @param worldToLayer the inverse of a transform written by {@link #compose}
+     * @param out receives the point in layer pixels
+     */
+    static void worldToLayerPixels(Affine2 worldToLayer, float worldX, float worldY, Vector2 out) {
+        out.set(worldX, worldY);
+        worldToLayer.applyTo(out);
+        out.y = -out.y;
     }
 
     private static void setLinearPart(float zoom, float rotationDegrees, Affine2 out) {

@@ -2,8 +2,10 @@ package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Affine2;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
@@ -34,6 +36,9 @@ public final class LayerStack implements Disposable {
     private final Matrix4 clipMatrix = new Matrix4();
     private final Vector3 clipCorner = new Vector3();
     private final Affine2 layerTransform = new Affine2();
+    private final Affine2 inverseTransform = new Affine2();
+    private final Vector2 layerPixel = new Vector2();
+    private final Rectangle clipRect = new Rectangle();
     private final Rectangle worldRect = new Rectangle();
     private final Rectangle windowRect = new Rectangle();
     private final int[] viewport = new int[4];
@@ -236,26 +241,14 @@ public final class LayerStack implements Disposable {
             if (!layer.isVisible()) {
                 continue;
             }
-            composeLayerTransform(layer, x, y);
+            composeLayerTransform(layer, x, y, layerTransform);
             if (!layer.hasClip()) {
                 drawLayer(layer, batch);
                 continue;
             }
             queryViewportOnce(batch);
-            float clipX = layer.getClipX();
-            float clipY = layer.getClipY();
-            float clipWidth = layer.getClipWidth();
-            float clipHeight = layer.getClipHeight();
-            if (layer.isClippedToStack()) {
-                if (!hasSize()) {
-                    throw new IllegalStateException("Layer is clipped to the stack but the stack size is not set");
-                }
-                clipX = 0f;
-                clipY = 0f;
-                clipWidth = width;
-                clipHeight = height;
-            }
-            if (!pushScissor(batch, x, y, clipX, clipY, clipWidth, clipHeight)) {
+            resolveClipRect(layer);
+            if (!pushScissor(batch, x, y, clipRect)) {
                 continue;
             }
             drawLayer(layer, batch);
@@ -264,12 +257,98 @@ public final class LayerStack implements Disposable {
         }
     }
 
-    private void composeLayerTransform(Layer layer, float stackX, float stackY) {
+    /**
+     * Finds which cell of a layer's grid lies under a point, using the same transform
+     * {@link #draw} uses: offset, zoom, rotation about the pivot, and corner snapping.
+     *
+     * <p>This takes two steps. The caller first turns a window pixel into batch world space
+     * with its viewport, for example {@code viewport.unproject}, then passes that point here
+     * with the same stack position it gives to {@code draw}.
+     *
+     * <p>The result is always written to {@code out}, even outside the grid, so the column and
+     * row can be negative or at or past the grid size. Check {@code grid.contains(column, row)}
+     * before using them. A point exactly on a cell border belongs to the cell to its right or
+     * below it. Visibility and clip are ignored; use {@link #isShownAt} for those.
+     *
+     * @param layer a layer of this stack
+     * @param stackX the x passed to {@link #draw}
+     * @param stackY the y passed to {@link #draw} (y grows upward)
+     * @param worldX x of the point in batch world space
+     * @param worldY y of the point in batch world space
+     * @param out receives the column in x and the row in y, row 0 at the top
+     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void cellAt(Layer layer, float stackX, float stackY, float worldX, float worldY, GridPoint2 out) {
+        requireOwned(layer);
+        if (out == null) {
+            throw new IllegalArgumentException("out must not be null");
+        }
+        composeLayerTransform(layer, stackX, stackY, inverseTransform);
+        inverseTransform.inv();
+        LayerTransform.worldToLayerPixels(inverseTransform, worldX, worldY, layerPixel);
+        GlyphSource source = layer.getGlyphSource();
+        out.x = (int) Math.floor(layerPixel.x / source.getCellWidth());
+        out.y = (int) Math.floor(layerPixel.y / source.getCellHeight());
+    }
+
+    /**
+     * Tells whether a layer is visible and a point is inside its clip window. A layer without a
+     * clip counts as inside everywhere. The clip is in stack space, from the stack's top-left
+     * corner with y down, and is not zoomed or rotated. The right and bottom edges are outside.
+     * With pixel snapping on, the edges are rounded to whole pixels, as in {@link #draw}.
+     *
+     * <p>Tint alpha and other layers covering this one are ignored; the game decides those.
+     *
+     * @param layer a layer of this stack
+     * @param stackX the x passed to {@link #draw}
+     * @param stackY the y passed to {@link #draw} (y grows upward)
+     * @param worldX x of the point in batch world space
+     * @param worldY y of the point in batch world space
+     * @throws IllegalArgumentException if the layer belongs to another stack
+     * @throws IllegalStateException if the layer was removed, or is clipped to the stack while
+     *     the stack size is unset
+     */
+    public boolean isShownAt(Layer layer, float stackX, float stackY, float worldX, float worldY) {
+        requireOwned(layer);
+        if (!layer.isVisible()) {
+            return false;
+        }
+        if (!layer.hasClip()) {
+            return true;
+        }
+        resolveClipRect(layer);
+        ClipMath.stackToWorld(stackX, stackY, clipRect.x, clipRect.y, clipRect.width, clipRect.height,
+                pixelSnapping, worldRect);
+        return isInsideClipWindow(worldRect, worldX, worldY);
+    }
+
+    /**
+     * Rectangle.contains includes every edge, but a clip window keeps its top and left edges
+     * and drops its right and bottom ones. World y grows up, so the bottom edge is rect.y.
+     */
+    private static boolean isInsideClipWindow(Rectangle world, float worldX, float worldY) {
+        return worldX >= world.x && worldX < world.x + world.width
+                && worldY > world.y && worldY <= world.y + world.height;
+    }
+
+    private void resolveClipRect(Layer layer) {
+        if (!layer.isClippedToStack()) {
+            clipRect.set(layer.getClipX(), layer.getClipY(), layer.getClipWidth(), layer.getClipHeight());
+            return;
+        }
+        if (!hasSize()) {
+            throw new IllegalStateException("Layer is clipped to the stack but the stack size is not set");
+        }
+        clipRect.set(0f, 0f, width, height);
+    }
+
+    private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
         float screenX = stackX + layer.getOffsetX();
         float screenY = stackY - layer.getOffsetY();
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
         LayerTransform.compose(screenX, screenY, layer.getPivotX(), layer.getPivotY(),
-                layer.getEffectiveZoom(), layer.getRotation(), snapCorner, layerTransform);
+                layer.getEffectiveZoom(), layer.getRotation(), snapCorner, out);
     }
 
     private void queryViewportOnce(SpriteBatch batch) {
@@ -282,9 +361,9 @@ public final class LayerStack implements Disposable {
     }
 
     /** Flushes the batch and pushes a stack-space rectangle as a scissor; false if nothing is left of it. */
-    private boolean pushScissor(SpriteBatch batch, float stackX, float stackY,
-            float rectX, float rectY, float rectWidth, float rectHeight) {
-        ClipMath.stackToWorld(stackX, stackY, rectX, rectY, rectWidth, rectHeight, pixelSnapping, worldRect);
+    private boolean pushScissor(SpriteBatch batch, float stackX, float stackY, Rectangle stackRect) {
+        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width, stackRect.height,
+                pixelSnapping, worldRect);
         ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2], viewport[3],
                 clipCorner, windowRect);
         clipBackend.flush(batch);

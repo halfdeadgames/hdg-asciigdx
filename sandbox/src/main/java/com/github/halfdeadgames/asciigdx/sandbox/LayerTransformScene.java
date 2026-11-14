@@ -2,8 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -13,7 +15,7 @@ import com.github.halfdeadgames.asciigdx.render.ZoomMode;
 /**
  * A dungeon map that zooms and rotates about the hero inside a clipped window, under a frame and
  * help row that stay put. Runs a looping zoom-and-spin tour on its own until a manual key or tap
- * takes over.
+ * takes over. Where the map is visible, the cell under the mouse or last touch is highlighted.
  */
 class LayerTransformScene extends GridScene {
     private static final int COLUMNS = 40;
@@ -33,6 +35,8 @@ class LayerTransformScene extends GridScene {
     private static final float[] KEY_ZOOMS = {1f, 1f, 1.5f, 1.5f, 2f, 2f, 3f, 3f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
     private static final float[] KEY_ROTATIONS = {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 90f, 90f, 0f, 360f};
 
+    static final String KEY_HOVER = "hover";
+
     private static final String HELP_TEXT = "+- zoom QE turn W mode A auto 0 reset";
 
     private static final int WALL = 0x8C8C9CFF;
@@ -45,16 +49,28 @@ class LayerTransformScene extends GridScene {
     private static final int POTION = 0xFF60FFFF;
     private static final int SCROLL = 0xE0C890FF;
     private static final int DRAGON = 0xFF2020FF;
+    private static final int HIGHLIGHT = 0x3060C0FF;
 
     private final float cellWidth;
     private final float cellHeight;
     private final Layer mapLayer;
     private final StringBuilder status = new StringBuilder();
+    private final float[] hoverFractions;
+    private final Vector2 pointerWorld = new Vector2();
+    private final GridPoint2 hoveredCell = new GridPoint2();
     private float elapsed;
     private boolean auto = true;
+    private boolean hasRealPointer;
+    private int pointerScreenX;
+    private int pointerScreenY;
+    private int highlightColumn = -1;
+    private int highlightRow = -1;
+    private int highlightOriginalBackground;
 
-    LayerTransformScene(GlyphSource glyphs) {
+    /** @param hoverSetting fake pointer as "fx,fy" window fractions from the top-left, or null for none */
+    LayerTransformScene(GlyphSource glyphs, String hoverSetting) {
         super(glyphs, COLUMNS, ROWS);
+        hoverFractions = parseHoverFractions(hoverSetting);
         cellWidth = glyphs.getCellWidth();
         cellHeight = glyphs.getCellHeight();
         layers.setSize(COLUMNS * cellWidth, ROWS * cellHeight);
@@ -96,21 +112,43 @@ class LayerTransformScene extends GridScene {
     public void show() {
         elapsed = 0f;
         auto = true;
+        hasRealPointer = false;
+        clearHighlight();
         super.show();
         applyAutoKeyframe();
     }
 
     @Override
+    public void hide() {
+        clearHighlight();
+        super.hide();
+    }
+
+    @Override
     public String statusText() {
         status.setLength(0);
-        status.append("zoom ");
+        status.append('z');
         appendTwoDecimals(mapLayer.getZoom());
-        status.append(" -> ");
+        status.append('>');
         appendZoom(mapLayer.getEffectiveZoom());
-        status.append(" turn ").append(Math.round(wrapDegrees(mapLayer.getRotation())))
-            .append(' ').append(mapLayer.getZoomMode().name())
-            .append(" auto ").append(auto ? "on" : "off");
+        status.append(' ').append(Math.round(wrapDegrees(mapLayer.getRotation()))).append('°')
+            .append(' ').append(mapLayer.getZoomMode() == ZoomMode.SMOOTH ? 'S' : 'W');
+        if (auto) {
+            status.append(" auto");
+        }
         return status.toString();
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        storeRealPointer(screenX, screenY);
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY) {
+        storeRealPointer(screenX, screenY);
+        return false;
     }
 
     @Override
@@ -132,6 +170,7 @@ class LayerTransformScene extends GridScene {
 
     @Override
     public boolean touchDown(int screenX, int screenY) {
+        storeRealPointer(screenX, screenY);
         int fifth = Gdx.graphics.getWidth() / 5;
         if (screenX < fifth) {
             zoomBy(-ZOOM_STEP);
@@ -153,6 +192,76 @@ class LayerTransformScene extends GridScene {
         if (auto) {
             applyAutoKeyframe();
         }
+        updateHighlight();
+    }
+
+    private void storeRealPointer(int screenX, int screenY) {
+        hasRealPointer = true;
+        pointerScreenX = screenX;
+        pointerScreenY = screenY;
+    }
+
+    private static float[] parseHoverFractions(String setting) {
+        if (setting == null || setting.isEmpty()) {
+            return null;
+        }
+        String[] parts = setting.split(",");
+        if (parts.length != 2) {
+            return null;
+        }
+        try {
+            return new float[] {Float.parseFloat(parts[0].trim()), Float.parseFloat(parts[1].trim())};
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private boolean hasPointer() {
+        return hasRealPointer || hoverFractions != null;
+    }
+
+    private void updateHighlight() {
+        if (!hasPointer()) {
+            clearHighlight();
+            return;
+        }
+        if (hasRealPointer) {
+            pointerWorld.set(pointerScreenX, pointerScreenY);
+        } else {
+            pointerWorld.set(hoverFractions[0] * Gdx.graphics.getWidth(), hoverFractions[1] * Gdx.graphics.getHeight());
+        }
+        viewport.unproject(pointerWorld);
+        float stackY = viewport.getWorldHeight();
+        if (!layers.isShownAt(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y)) {
+            clearHighlight();
+            return;
+        }
+        layers.cellAt(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y, hoveredCell);
+        if (!grid.contains(hoveredCell.x, hoveredCell.y)) {
+            clearHighlight();
+            return;
+        }
+        moveHighlightTo(hoveredCell.x, hoveredCell.y);
+    }
+
+    private void moveHighlightTo(int column, int row) {
+        if (column == highlightColumn && row == highlightRow) {
+            return;
+        }
+        clearHighlight();
+        highlightColumn = column;
+        highlightRow = row;
+        highlightOriginalBackground = grid.getBackground(column, row);
+        grid.setBackground(column, row, HIGHLIGHT);
+    }
+
+    private void clearHighlight() {
+        if (highlightColumn < 0) {
+            return;
+        }
+        grid.setBackground(highlightColumn, highlightRow, highlightOriginalBackground);
+        highlightColumn = -1;
+        highlightRow = -1;
     }
 
     private void zoomBy(float step) {

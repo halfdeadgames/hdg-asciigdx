@@ -68,6 +68,11 @@ run {
       systemProperty 'asciigdx.window', project.property('window')
     }
   }
+  if (project.hasProperty('hover')) {
+    doFirst {
+      systemProperty 'asciigdx.hover', project.property('hover')
+    }
+  }
   if (project.hasProperty('capture')) {
     def captureDirectory = rootProject.layout.buildDirectory.dir('captures').get().asFile
     doFirst {

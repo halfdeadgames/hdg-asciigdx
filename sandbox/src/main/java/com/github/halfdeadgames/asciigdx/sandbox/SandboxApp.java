@@ -79,6 +79,11 @@ public class SandboxApp extends ApplicationAdapter {
             }
 
             @Override
+            public boolean mouseMoved(int screenX, int screenY) {
+                return activeScene != null && activeScene.mouseMoved(screenX, screenY);
+            }
+
+            @Override
             public boolean touchUp(int screenX, int screenY, int pointer, int button) {
                 if (activeScene == null) {
                     return false;
@@ -125,7 +130,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new LayersScene(glyphs));
         scenes.add(new SpritesScene(glyphs, false));
         scenes.add(new SpritesScene(glyphs, true));
-        scenes.add(new LayerTransformScene(glyphs));
+        scenes.add(new LayerTransformScene(glyphs, settings.apply(LayerTransformScene.KEY_HOVER)));
         scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),

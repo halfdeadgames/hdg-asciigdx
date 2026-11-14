@@ -46,6 +46,11 @@ interface SandboxScene {
         return false;
     }
 
+    /** Mouse moved with no button down, in screen pixels; return true if handled. */
+    default boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
     /** Finger or button released, in screen pixels; return true if handled. */
     default boolean touchUp(int screenX, int screenY) {
         return false;
