@@ -10,7 +10,8 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  * One grid in a {@link LayerStack}, with an offset, a parallax factor, a zoom, a rotation, a visibility flag,
  * color effects (tint, mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
  *
- * <p>The offset is in virtual pixels, measured from the stack's top-left corner,
+ * <p>The offset is in virtual pixels, measured from the stack's top-left corner, or from the
+ * top-left corner of the layer's {@link Panel} if it has one (see {@link #setPanel}),
  * with y growing downward like grid rows. Once the layer is removed from its
  * stack, getters keep working but every method that changes or uses the layer
  * throws {@link IllegalStateException}.
@@ -36,6 +37,7 @@ public final class Layer {
     private boolean visible = true;
     private boolean pickable = true;
     private final LayerEffects effects = new LayerEffects();
+    private Panel panel;
     private ClipMode clipMode = ClipMode.NONE;
     private float clipX;
     private float clipY;
@@ -113,8 +115,46 @@ public final class Layer {
         return pickable;
     }
 
+    /** Returns the panel this layer is placed in, or null if it is measured from the stack's corner. */
+    public Panel getPanel() {
+        return panel;
+    }
+
     /**
-     * Sets the offset from the stack's top-left corner. The stack camera is applied on top; see
+     * Places the layer in a panel, or takes it out with null. A member layer's offset is measured
+     * from the panel's top-left corner, and the layer is clipped to the panel's rectangle; see
+     * {@link #setClip} and {@link #clipToStack} for how its own clip combines with that.
+     *
+     * <p>The offset value is not changed, so the layer moves on screen by the panel's corner (or
+     * back by it when leaving a panel). Setting the current panel does nothing.
+     *
+     * <p>Member layers currently follow the stack camera and their parallax; this will change when
+     * panels get their own camera.
+     *
+     * @param panel a panel of this layer's stack, or null to leave the panel
+     * @throws IllegalArgumentException if the panel belongs to another stack
+     * @throws IllegalStateException if the layer or the panel was removed
+     */
+    public void setPanel(Panel panel) {
+        LayerStack stack = requireAttached();
+        if (panel != null) {
+            requireAttachedPanelOf(panel, stack);
+        }
+        this.panel = panel;
+    }
+
+    private static void requireAttachedPanelOf(Panel panel, LayerStack stack) {
+        if (panel.getOwner() == null) {
+            throw new IllegalStateException("Panel was removed from its stack");
+        }
+        if (panel.getOwner() != stack) {
+            throw new IllegalArgumentException("Panel belongs to another stack");
+        }
+    }
+
+    /**
+     * Sets the offset from the stack's top-left corner, or from the panel's top-left corner for a
+     * member of a {@link Panel}. The stack camera is applied on top; see
      * {@link LayerStack#setCamera}.
      *
      * @param x virtual pixels to the right
@@ -531,7 +571,10 @@ public final class Layer {
         effects.setInvert(amount);
     }
 
-    /** Returns whether the layer is clipped, by a rectangle or to the stack's size. */
+    /**
+     * Returns whether the layer has its own clip, by a rectangle or to the stack's size. A member
+     * of a {@link Panel} is clipped to the panel even when this is false.
+     */
     public boolean hasClip() {
         return clipMode != ClipMode.NONE;
     }
@@ -541,12 +584,18 @@ public final class Layer {
         return clipMode == ClipMode.STACK;
     }
 
-    /** Returns the clip rectangle's left edge in stack space; 0 unless set by {@link #setClip}. */
+    /**
+     * Returns the clip rectangle's left edge as passed to {@link #setClip}, 0 unless set. For a
+     * panel member this is measured from the panel's corner.
+     */
     public float getClipX() {
         return clipX;
     }
 
-    /** Returns the clip rectangle's top edge in stack space; 0 unless set by {@link #setClip}. */
+    /**
+     * Returns the clip rectangle's top edge as passed to {@link #setClip}, 0 unless set. For a
+     * panel member this is measured from the panel's corner.
+     */
     public float getClipY() {
         return clipY;
     }
@@ -565,9 +614,10 @@ public final class Layer {
      * Clips the layer to a rectangle. By default layers are not clipped and may
      * overhang the stack.
      *
-     * <p>The rectangle is in stack space, the same space as layer offsets: virtual
-     * pixels from the stack's top-left corner, y growing downward. It does not move
-     * with this layer's own offset.
+     * <p>The rectangle is in the same space as layer offsets: virtual pixels from the stack's
+     * top-left corner, y growing downward. It does not move with this layer's own offset. For a
+     * member of a {@link Panel} it is measured from the panel's top-left corner instead, and the
+     * clip is also intersected with the panel's rectangle.
      *
      * <p>Clipping is an axis-aligned screen rectangle (a GL scissor). If the batch
      * transform rotates, the clip becomes the bounding box of the rotated rectangle,
@@ -594,7 +644,8 @@ public final class Layer {
     /**
      * Clips the layer to the stack's area, from its top-left corner with the size set
      * by {@link LayerStack#setSize}. The size is read at draw time, so later size
-     * changes apply.
+     * changes apply. For a member of a {@link Panel} the clip is the stack's area intersected with
+     * the panel's rectangle.
      *
      * @throws IllegalStateException if the layer was removed, or if the stack's size
      *     is not set yet. Drawing also throws if the size has been reset to 0 since.

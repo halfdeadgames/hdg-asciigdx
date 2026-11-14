@@ -24,6 +24,9 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  * <p>Layer offsets are measured from the stack's top-left corner with y growing
  * downward, like grid rows. The stack position passed to {@link #draw} is a screen
  * position with y growing upward.
+ *
+ * <p>A layer can be placed in a {@link Panel} made by {@link #addPanel}: its offset and clip are then
+ * measured from the panel's top-left corner, and it is clipped to the panel's rectangle.
  */
 public final class LayerStack implements Disposable {
 
@@ -33,6 +36,7 @@ public final class LayerStack implements Disposable {
     private final LayerEffects opaqueEffects = new LayerEffects();
     private boolean viewportQueried;
     private final Array<Layer> layers = new Array<>();
+    private final Array<Panel> panels = new Array<>();
     private final Matrix4 clipMatrix = new Matrix4();
     private final Vector3 clipCorner = new Vector3();
     private final Affine2 layerTransform = new Affine2();
@@ -187,6 +191,79 @@ public final class LayerStack implements Disposable {
         return layers.get(index);
     }
 
+    /**
+     * Creates a panel, a rectangle layers can be placed in with {@link Layer#setPanel}.
+     *
+     * @param x left edge in virtual pixels from the stack's left edge
+     * @param y top edge in virtual pixels from the stack's top edge, growing downward
+     * @param width width in virtual pixels
+     * @param height height in virtual pixels
+     * @return the new panel
+     * @throws IllegalArgumentException if a value is not finite, or width or height is negative
+     * @throws IllegalStateException if the stack was disposed
+     */
+    public Panel addPanel(float x, float y, float width, float height) {
+        requireNotDisposed();
+        Panel panel = new Panel(this, x, y, width, height);
+        panels.add(panel);
+        return panel;
+    }
+
+    /**
+     * Creates a panel measured in whole cells of a glyph source, stored in pixels as the cell counts
+     * times the source's cell size. The source is not kept, so a later change of font does not
+     * resize the panel.
+     *
+     * @param column cells from the stack's left edge; may be negative
+     * @param row cells from the stack's top edge, growing downward; may be negative
+     * @param widthInCells width in cells
+     * @param heightInCells height in cells
+     * @param cellSource supplies the cell size
+     * @return the new panel
+     * @throws IllegalArgumentException if the source is null, or widthInCells or heightInCells is negative
+     * @throws IllegalStateException if the stack was disposed
+     */
+    public Panel addPanelInCells(int column, int row, int widthInCells, int heightInCells,
+            GlyphSource cellSource) {
+        if (cellSource == null) {
+            throw new IllegalArgumentException("cellSource must not be null");
+        }
+        float cellWidth = cellSource.getCellWidth();
+        float cellHeight = cellSource.getCellHeight();
+        return addPanel(column * cellWidth, row * cellHeight, widthInCells * cellWidth,
+                heightInCells * cellHeight);
+    }
+
+    /**
+     * Removes a panel. The panel stays readable but can no longer be changed.
+     *
+     * @throws IllegalArgumentException if the panel is null or belongs to another stack
+     * @throws IllegalStateException if the panel was already removed, or a layer of this stack is
+     *     still placed in it
+     */
+    public void removePanel(Panel panel) {
+        requirePanelOwned(panel);
+        for (int i = 0; i < layers.size; i++) {
+            if (layers.get(i).getPanel() == panel) {
+                throw new IllegalStateException("Panel still has layers; move them out with setPanel(null) first");
+            }
+        }
+        panels.removeValue(panel, true);
+        panel.detach();
+    }
+
+    private void requirePanelOwned(Panel panel) {
+        if (panel == null) {
+            throw new IllegalArgumentException("panel must not be null");
+        }
+        if (panel.getOwner() == null) {
+            throw new IllegalStateException("Panel was removed from its stack");
+        }
+        if (panel.getOwner() != this) {
+            throw new IllegalArgumentException("Panel belongs to another stack");
+        }
+    }
+
     /** Returns the position of a layer, or -1 if it is not in this stack. */
     public int indexOf(Layer layer) {
         return layers.indexOf(layer, true);
@@ -248,9 +325,11 @@ public final class LayerStack implements Disposable {
      * {@link Layer#setPivot}. The camera and each layer's parallax shift the offset first; see
      * {@link #setCamera}.
      *
-     * <p>A clipped layer (see {@link Layer#setClip}) flushes the batch, draws inside a
-     * scissor, and flushes again, so each clipped layer costs an extra draw call. The
-     * scissor is intersected with any {@code ScissorStack} scissor the caller has
+     * <p>A clipped layer (see {@link Layer#setClip}), or a member of a {@link Panel}, flushes the
+     * batch, draws inside a scissor, and flushes again, so each such layer costs an extra draw
+     * call. A panel member is clipped to the panel's rectangle intersected with its own clip, which
+     * is measured from the panel's corner; if that is empty, the layer is skipped without a flush.
+     * The scissor is intersected with any {@code ScissorStack} scissor the caller has
      * pushed; if nothing is left, the layer is skipped. Scissor edges are rounded
      * outward to whole backbuffer pixels, then to whole logical pixels on HDPI
      * displays.
@@ -279,12 +358,15 @@ public final class LayerStack implements Disposable {
                 continue;
             }
             composeLayerTransform(layer, x, y, layerTransform);
-            if (!layer.hasClip()) {
+            if (!isClipped(layer)) {
                 drawLayer(layer, batch);
                 continue;
             }
             queryViewportOnce(batch);
             resolveClipRect(layer);
+            if (layer.getPanel() != null && isClipRectEmpty()) {
+                continue;
+            }
             if (!pushScissor(batch, x, y, clipRect)) {
                 continue;
             }
@@ -298,10 +380,18 @@ public final class LayerStack implements Disposable {
         return layer.isVisible() && layer.getTintA() > 0f;
     }
 
+    private static boolean isClipped(Layer layer) {
+        return layer.hasClip() || layer.getPanel() != null;
+    }
+
+    private boolean isClipRectEmpty() {
+        return clipRect.width <= 0f || clipRect.height <= 0f;
+    }
+
     /**
      * Finds which cell of a layer's grid lies under a point, using the same transform
-     * {@link #draw} uses: offset shifted by camera and parallax, zoom, rotation about the
-     * pivot, and corner snapping.
+     * {@link #draw} uses: offset (plus the panel's corner for a panel member) shifted by camera
+     * and parallax, zoom, rotation about the pivot, and corner snapping.
      *
      * <p>This takes two steps. The caller first turns a window pixel into batch world space
      * with its viewport, for example {@code viewport.unproject}, then passes that point here
@@ -402,8 +492,10 @@ public final class LayerStack implements Disposable {
 
     /**
      * Tells whether a layer is visible, pickable, and a point is inside its clip window. A layer
-     * without a clip counts as inside everywhere. The clip is in stack space, from the stack's top-left
-     * corner with y down, and is not zoomed or rotated. The right and bottom edges are outside.
+     * without a clip and without a panel counts as inside everywhere. The window is in stack space,
+     * from the stack's top-left corner with y down, and is not zoomed or rotated. For a panel
+     * member it is the panel's rectangle intersected with the layer's clip, and an empty window
+     * never matches. The right and bottom edges are outside.
      * With pixel snapping on, the edges are rounded to whole pixels, as in {@link #draw}.
      *
      * <p>Tint alpha and other layers covering this one are ignored; the game decides those.
@@ -425,10 +517,13 @@ public final class LayerStack implements Disposable {
         if (!layer.isPickable()) {
             return false;
         }
-        if (!layer.hasClip()) {
+        if (!isClipped(layer)) {
             return true;
         }
         resolveClipRect(layer);
+        if (isClipRectEmpty()) {
+            return false;
+        }
         ClipMath.stackToWorld(stackX, stackY, clipRect.x, clipRect.y, clipRect.width, clipRect.height,
                 pixelSnapping, worldRect);
         return isInsideClipWindow(worldRect, worldX, worldY);
@@ -443,20 +538,51 @@ public final class LayerStack implements Disposable {
                 && worldY > world.y && worldY <= world.y + world.height;
     }
 
+    /** Writes the layer's final clip in stack space into {@code clipRect}; the layer must be clipped. */
     private void resolveClipRect(Layer layer) {
-        if (!layer.isClippedToStack()) {
-            clipRect.set(layer.getClipX(), layer.getClipY(), layer.getClipWidth(), layer.getClipHeight());
+        Panel panel = layer.getPanel();
+        if (layer.isClippedToStack()) {
+            resolveStackAreaClip();
+        } else if (layer.hasClip()) {
+            clipRect.set(layer.getClipX() + panelCornerX(panel), layer.getClipY() + panelCornerY(panel),
+                    layer.getClipWidth(), layer.getClipHeight());
+        } else {
+            clipRect.set(panel.getX(), panel.getY(), panel.getWidth(), panel.getHeight());
             return;
         }
+        if (panel != null) {
+            intersectClipRectWithPanel(panel);
+        }
+    }
+
+    private void resolveStackAreaClip() {
         if (!hasSize()) {
             throw new IllegalStateException("Layer is clipped to the stack but the stack size is not set");
         }
         clipRect.set(0f, 0f, width, height);
     }
 
+    /** Leaves a zero-size rectangle when nothing overlaps, never a negative one. */
+    private void intersectClipRectWithPanel(Panel panel) {
+        float left = Math.max(clipRect.x, panel.getX());
+        float top = Math.max(clipRect.y, panel.getY());
+        float right = Math.min(clipRect.x + clipRect.width, panel.getX() + panel.getWidth());
+        float bottom = Math.min(clipRect.y + clipRect.height, panel.getY() + panel.getHeight());
+        clipRect.set(left, top, Math.max(0f, right - left), Math.max(0f, bottom - top));
+    }
+
+    private static float panelCornerX(Panel panel) {
+        return panel == null ? 0f : panel.getX();
+    }
+
+    private static float panelCornerY(Panel panel) {
+        return panel == null ? 0f : panel.getY();
+    }
+
     private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
-        float effectiveOffsetX = layer.getOffsetX() - cameraX * layer.getParallaxX();
-        float effectiveOffsetY = layer.getOffsetY() - cameraY * layer.getParallaxY();
+        Panel panel = layer.getPanel();
+        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - cameraX * layer.getParallaxX();
+        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - cameraY * layer.getParallaxY();
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
@@ -528,6 +654,10 @@ public final class LayerStack implements Disposable {
             layer.getRenderer().dispose();
         }
         layers.clear();
+        for (int i = panels.size - 1; i >= 0; i--) {
+            panels.get(i).detach();
+        }
+        panels.clear();
         offscreenBackend.dispose();
         if (sharedResources != null) {
             sharedResources.dispose();
