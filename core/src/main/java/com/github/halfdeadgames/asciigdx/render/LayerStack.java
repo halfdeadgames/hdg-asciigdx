@@ -274,6 +274,9 @@ public final class LayerStack implements Disposable {
      * downward). Each layer shifts by minus the camera times its parallax factor (see
      * {@link Layer#setParallax(float, float)}). Default (0, 0).
      *
+     * <p>Layers in a {@link Panel} ignore this camera and follow the panel's own camera instead; see
+     * {@link Panel#setCamera}.
+     *
      * <p>The clip does not move with the camera: it stays in stack space.
      *
      * <p>Pixel snapping rounds each layer's corner on its own, so layers with different parallax
@@ -322,8 +325,8 @@ public final class LayerStack implements Disposable {
      * <p>With pixel snapping on, or when a layer uses {@link ZoomMode#WHOLE}, the screen
      * position of each layer's top-left corner, after zoom and rotation, is rounded with
      * {@code floor(v + 0.5)}. Zoom and rotation are applied about the layer's pivot; see
-     * {@link Layer#setPivot}. The camera and each layer's parallax shift the offset first; see
-     * {@link #setCamera}.
+     * {@link Layer#setPivot}. The camera (the panel's camera for a panel member) and each
+     * layer's parallax shift the offset first; see {@link #setCamera}.
      *
      * <p>A clipped layer (see {@link Layer#setClip}), or a member of a {@link Panel}, flushes the
      * batch, draws inside a scissor, and flushes again, so each such layer costs an extra draw
@@ -581,8 +584,10 @@ public final class LayerStack implements Disposable {
 
     private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
         Panel panel = layer.getPanel();
-        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - cameraX * layer.getParallaxX();
-        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - cameraY * layer.getParallaxY();
+        float activeCameraX = panel == null ? cameraX : panel.getCameraX();
+        float activeCameraY = panel == null ? cameraY : panel.getCameraY();
+        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - activeCameraX * layer.getParallaxX();
+        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - activeCameraY * layer.getParallaxY();
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;

@@ -128,8 +128,8 @@ public final class Layer {
      * <p>The offset value is not changed, so the layer moves on screen by the panel's corner (or
      * back by it when leaving a panel). Setting the current panel does nothing.
      *
-     * <p>Member layers currently follow the stack camera and their parallax; this will change when
-     * panels get their own camera.
+     * <p>A member layer follows the panel's camera instead of the stack camera, scaled by its
+     * parallax; see {@link Panel#setCamera}.
      *
      * @param panel a panel of this layer's stack, or null to leave the panel
      * @throws IllegalArgumentException if the panel belongs to another stack
@@ -154,8 +154,8 @@ public final class Layer {
 
     /**
      * Sets the offset from the stack's top-left corner, or from the panel's top-left corner for a
-     * member of a {@link Panel}. The stack camera is applied on top; see
-     * {@link LayerStack#setCamera}.
+     * member of a {@link Panel}. The stack camera, or the panel's camera for a member, is applied on
+     * top; see {@link LayerStack#setCamera} and {@link Panel#setCamera}.
      *
      * @param x virtual pixels to the right
      * @param y virtual pixels downward
@@ -178,7 +178,8 @@ public final class Layer {
     }
 
     /**
-     * Sets how much the stack camera moves this layer per axis. 1 moves fully with the camera
+     * Sets how much the camera moves this layer per axis: the stack camera, or the panel's camera
+     * for a panel member. 1 moves fully with the camera
      * (the default), 0 stays fixed on screen (a HUD), values between 0 and 1 suit distant
      * backgrounds, and values above 1 suit near foregrounds. Negative values are allowed.
      *

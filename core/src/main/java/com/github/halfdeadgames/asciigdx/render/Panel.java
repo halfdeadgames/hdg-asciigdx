@@ -8,8 +8,8 @@ package com.github.halfdeadgames.asciigdx.render;
  * downward. Its width and height are never negative. Member layers read the rectangle every time
  * they draw or are queried, so moving or resizing a panel moves and clips its members at once.
  *
- * <p>Member layers currently follow the stack camera and their parallax; this will change when
- * panels get their own camera.
+ * <p>Member layers follow the panel's camera, not the stack camera, scaled by their parallax. The
+ * panel's clip does not move with its camera.
  *
  * <p>Once the panel is removed from its stack, getters keep working and the setters throw
  * {@link IllegalStateException}.
@@ -21,6 +21,8 @@ public final class Panel {
     private float y;
     private float width;
     private float height;
+    private float cameraX;
+    private float cameraY;
 
     Panel(LayerStack owner, float x, float y, float width, float height) {
         requireValidBounds(x, y, width, height);
@@ -77,6 +79,33 @@ public final class Panel {
         this.y = y;
         this.width = width;
         this.height = height;
+    }
+
+    /**
+     * Sets the camera position in virtual pixels, in the same space and direction as
+     * {@link LayerStack#setCamera} (y grows downward). Each member layer shifts by minus the camera
+     * times its parallax factor. Default (0, 0).
+     *
+     * @throws IllegalArgumentException if x or y is not finite
+     * @throws IllegalStateException if the panel was removed
+     */
+    public void setCamera(float x, float y) {
+        requireAttached();
+        if (!Float.isFinite(x) || !Float.isFinite(y)) {
+            throw new IllegalArgumentException("camera must be finite: " + x + ", " + y);
+        }
+        cameraX = x;
+        cameraY = y;
+    }
+
+    /** Returns the camera's x in virtual pixels, 0 by default. */
+    public float getCameraX() {
+        return cameraX;
+    }
+
+    /** Returns the camera's y in virtual pixels, growing downward, 0 by default. */
+    public float getCameraY() {
+        return cameraY;
     }
 
     LayerStack getOwner() {
