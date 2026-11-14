@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.IntArray;
+import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -294,17 +295,16 @@ final class GlyphReviewScene extends GridScene {
 
     private void drawReasonMenu() {
         int menuColumn = MENU_COLUMN;
-        writeText(menuColumn + 1, menuTitleRow(), "Reason", GOLD, CLEAR);
+        GridDrawing.text(grid, menuColumn + 1, menuTitleRow(), "Reason", GOLD, CLEAR);
         FailReason[] reasons = FailReason.values();
         for (int i = 0; i < REASON_MENU_ITEMS; i++) {
             boolean selected = i == reasonMenuCursor;
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = menuFirstItemRow() + i;
-            for (int column = menuColumn; column < grid.getWidth(); column++) {
-                grid.set(column, row, ' ', foreground, background);
-            }
-            writeText(menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]), foreground, background);
+            GridDrawing.fill(grid, menuColumn, row, grid.getWidth() - menuColumn, 1, ' ', foreground, background);
+            GridDrawing.text(grid, menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]),
+                foreground, background);
         }
     }
 

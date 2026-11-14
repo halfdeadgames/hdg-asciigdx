@@ -27,18 +27,6 @@ abstract class GridScene implements SandboxScene {
             columns * glyphs.getCellWidth(), rows * glyphs.getCellHeight());
     }
 
-    static void writeText(TerminalGrid target, int column, int row, CharSequence text, int foreground, int background) {
-        for (int i = 0; i < text.length(); ) {
-            int codePoint = Character.codePointAt(text, i);
-            target.set(column++, row, codePoint, foreground, background);
-            i += Character.charCount(codePoint);
-        }
-    }
-
-    protected void writeText(int column, int row, CharSequence text, int foreground, int background) {
-        writeText(grid, column, row, text, foreground, background);
-    }
-
     @Override
     public void show() {
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());

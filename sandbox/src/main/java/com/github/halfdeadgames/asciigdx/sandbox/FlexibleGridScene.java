@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.render.GridFit;
 
@@ -86,7 +87,7 @@ class FlexibleGridScene extends GridScene {
             Gdx.gl.glFinish();
             double milliseconds = (System.nanoTime() - resizeStartNanos) / NANOS_PER_MILLISECOND;
             timingResize = false;
-            writeText(1, MS_ROW, String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
+            GridDrawing.text(grid, 1, MS_ROW, String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
         }
     }
 
@@ -111,11 +112,12 @@ class FlexibleGridScene extends GridScene {
                 grid.set(left + column, top + row, ' ', WHITE, color);
             }
         }
-        writeText(left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT", WHITE, MARKER_COLORS[0]);
+        GridDrawing.text(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT", WHITE,
+            MARKER_COLORS[0]);
     }
 
     private void drawBorder() {
-        SceneDrawing.box(grid, 0, 0, grid.getWidth(), grid.getHeight(), WHITE, CLEAR);
+        GridDrawing.box(grid, 0, 0, grid.getWidth(), grid.getHeight(), WHITE, CLEAR);
     }
 
     private void eraseBorderAndStatus() {
@@ -143,13 +145,13 @@ class FlexibleGridScene extends GridScene {
     }
 
     private void drawStatus(GridFit fit) {
-        writeText(1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
+        GridDrawing.text(grid, 1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
             fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
-        writeText(1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
+        GridDrawing.text(grid, 1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
             fit.getLeftoverX(), fit.getLeftoverY()), CYAN, CLEAR);
-        writeText(1, 3, fit.meetsMinimum() ? "minimum ok" : "below minimum", GOLD, CLEAR);
-        writeText(1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
+        GridDrawing.text(grid, 1, 3, fit.meetsMinimum() ? "minimum ok" : "below minimum", GOLD, CLEAR);
+        GridDrawing.text(grid, 1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
             font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
-        writeText(1, MS_ROW, "resize -- ms", WHITE, CLEAR);
+        GridDrawing.text(grid, 1, MS_ROW, "resize -- ms", WHITE, CLEAR);
     }
 }

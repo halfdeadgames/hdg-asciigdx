@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
 /** The scene list, drawn with the engine itself. Selected row is shown with inverted colors. */
@@ -23,8 +24,8 @@ class MenuScene extends GridScene {
         super(glyphs, COLUMNS, FIRST_ITEM_ROW + scenes.size + ROWS_BELOW_ITEMS);
         this.scenes = scenes;
         cellHeight = glyphs.getCellHeight();
-        writeText(TEXT_COLUMN, TITLE_ROW, "HDG-AsciiGDX sandbox", GOLD, CLEAR);
-        writeText(TEXT_COLUMN, grid.getHeight() - 2, helpText(), CYAN, CLEAR);
+        GridDrawing.text(grid, TEXT_COLUMN, TITLE_ROW, "HDG-AsciiGDX sandbox", GOLD, CLEAR);
+        GridDrawing.text(grid, TEXT_COLUMN, grid.getHeight() - 2, helpText(), CYAN, CLEAR);
         drawItems();
     }
 
@@ -69,10 +70,8 @@ class MenuScene extends GridScene {
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = FIRST_ITEM_ROW + i;
-            for (int column = 1; column < COLUMNS - 1; column++) {
-                grid.set(column, row, ' ', foreground, background);
-            }
-            writeText(TEXT_COLUMN, row, scenes.get(i).title(), foreground, background);
+            GridDrawing.fill(grid, 1, row, COLUMNS - 2, 1, ' ', foreground, background);
+            GridDrawing.text(grid, TEXT_COLUMN, row, scenes.get(i).title(), foreground, background);
         }
     }
 }

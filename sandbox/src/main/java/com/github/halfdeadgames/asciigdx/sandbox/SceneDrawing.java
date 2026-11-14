@@ -20,24 +20,6 @@ final class SceneDrawing {
     private SceneDrawing() {
     }
 
-    /** Draws only the border cells of a box with single-line glyphs; the inside is left untouched. */
-    static void box(TerminalGrid grid, int left, int top, int width, int height, int foreground, int background) {
-        int right = left + width - 1;
-        int bottom = top + height - 1;
-        for (int column = left + 1; column < right; column++) {
-            grid.set(column, top, '─', foreground, background);
-            grid.set(column, bottom, '─', foreground, background);
-        }
-        for (int row = top + 1; row < bottom; row++) {
-            grid.set(left, row, '│', foreground, background);
-            grid.set(right, row, '│', foreground, background);
-        }
-        grid.set(left, top, '┌', foreground, background);
-        grid.set(right, top, '┐', foreground, background);
-        grid.set(left, bottom, '└', foreground, background);
-        grid.set(right, bottom, '┘', foreground, background);
-    }
-
     /** Writes {@code text} from {@code column}, cut off or padded with spaces to exactly {@code width} cells. */
     static void writePadded(TerminalGrid grid, int column, int row, int width, CharSequence text,
                             int foreground, int background) {

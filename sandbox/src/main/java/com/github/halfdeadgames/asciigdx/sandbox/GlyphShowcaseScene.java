@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -224,7 +225,8 @@ final class GlyphShowcaseScene extends GridScene {
         grid.clear();
         GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(size.characterListPath()).readString("UTF-8"),
             SHEET_COLUMNS);
-        writeText(0, 0, "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL, CLEAR);
+        GridDrawing.text(grid, 0, 0, "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL,
+            CLEAR);
         writeSheet(order);
         writeCards(1);
         writeChess(5);
@@ -254,7 +256,7 @@ final class GlyphShowcaseScene extends GridScene {
     }
 
     private void writeCards(int top) {
-        writeText(PANEL, top, "Cards", LABEL, CLEAR);
+        GridDrawing.text(grid, PANEL, top, "Cards", LABEL, CLEAR);
         int[][] hand = {
             {'A', SPADE}, {'K', HEART_FULL}, {'Q', DIAMOND}, {'J', CLUB}, {'T', HEART_HOLLOW}, {'9', SPADE_HOLLOW}
         };
@@ -273,7 +275,7 @@ final class GlyphShowcaseScene extends GridScene {
     }
 
     private void writeChess(int top) {
-        writeText(PANEL, top, "Chess", LABEL, CLEAR);
+        GridDrawing.text(grid, PANEL, top, "Chess", LABEL, CLEAR);
         String blackBack = "♜♞♝♛♚♝♞♜";
         String whiteBack = "♖♘♗♕♔♗♘♖";
         for (int row = 0; row < 8; row++) {
@@ -313,7 +315,7 @@ final class GlyphShowcaseScene extends GridScene {
 
     // Each row lists its stages from empty to full, then one cell that fills and empties again.
     private void writeMeters(int top) {
-        writeText(PANEL, top, "Meters", LABEL, CLEAR);
+        GridDrawing.text(grid, PANEL, top, "Meters", LABEL, CLEAR);
         meterStages = new int[][] {VERTICAL_BAR_STAGES, HORIZONTAL_BAR_STAGES, SHADE_STAGES, HEART_STAGES};
         meterColors = new int[] {CYAN, GOLD, WHITE, RED};
         meterRows = new int[meterStages.length];
@@ -330,7 +332,7 @@ final class GlyphShowcaseScene extends GridScene {
     }
 
     private void writeDice(int top) {
-        writeText(PANEL, top, "Dice", LABEL, CLEAR);
+        GridDrawing.text(grid, PANEL, top, "Dice", LABEL, CLEAR);
         for (int face = 0; face < 6; face++) {
             grid.set(PANEL + face * 2, top + 1, FIRST_DIE_FACE + face, WHITE, CLEAR);
         }
@@ -338,7 +340,7 @@ final class GlyphShowcaseScene extends GridScene {
 
     // One strip stepping from empty to solid through the three shades.
     private void writeShades(int top) {
-        writeText(PANEL, top, "Shades", LABEL, CLEAR);
+        GridDrawing.text(grid, PANEL, top, "Shades", LABEL, CLEAR);
         for (int column = 0; column < SHADE_STRIP_WIDTH; column++) {
             int level = Math.round(column * (SHADE_STAGES.length - 1f) / (SHADE_STRIP_WIDTH - 1));
             grid.set(PANEL + column, top + 1, SHADE_STAGES[level], WHITE, CLEAR);
