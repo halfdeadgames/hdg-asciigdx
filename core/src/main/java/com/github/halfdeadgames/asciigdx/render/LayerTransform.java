@@ -33,14 +33,16 @@ final class LayerTransform {
 
     /**
      * Writes the layer-local to batch-world transform into {@code out}: translate to the screen
-     * corner, then rotate counterclockwise and scale about the pivot.
+     * corner, then rotate clockwise on screen and scale about the pivot. The result lives in y-up
+     * world space, where a clockwise turn on screen is a negative angle, so the angle is negated
+     * when the matrix is built.
      *
      * @param screenX the layer's top-left corner on screen, x
      * @param screenY the layer's top-left corner on screen, y (up)
      * @param pivotX pivot in layer pixels from the left edge
      * @param pivotY pivot in layer pixels from the top edge (down)
      * @param zoom the effective zoom
-     * @param rotationDegrees counterclockwise rotation in degrees
+     * @param rotationDegrees rotation in degrees, positive is clockwise on screen
      * @param snapCorner whether to round the image of the local origin to whole pixels
      * @param out receives the transform
      */
@@ -83,7 +85,7 @@ final class LayerTransform {
             out.setToScaling(zoom, zoom);
             return;
         }
-        out.setToRotation(rotationDegrees);
+        out.setToRotation(-rotationDegrees);
         out.scale(zoom, zoom);
     }
 

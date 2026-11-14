@@ -27,13 +27,13 @@ class LayerTransformScene extends GridScene {
     private static final float ZOOM_STEP = 0.25f;
     private static final float MIN_ZOOM = 0.25f;
     private static final float MAX_ZOOM = 8f;
-    private static final float TURN_STEP_DEGREES = 15f;
+    private static final float TURN_STEP_DEGREES = -15f;
     private static final float FULL_TURN_DEGREES = 360f;
 
     private static final float CYCLE_SECONDS = 16f;
     private static final float[] KEY_TIMES = {0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 16f};
     private static final float[] KEY_ZOOMS = {1f, 1f, 1.5f, 1.5f, 2f, 2f, 3f, 3f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
-    private static final float[] KEY_ROTATIONS = {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 90f, 90f, 0f, 360f};
+    private static final float[] KEY_ROTATIONS = {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, -90f, -90f, 0f, -360f};
 
     static final String KEY_HOVER = "hover";
 

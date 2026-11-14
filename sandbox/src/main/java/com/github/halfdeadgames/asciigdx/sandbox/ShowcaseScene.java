@@ -94,12 +94,12 @@ class ShowcaseScene extends GridScene {
     private static final float FALL_CAMERA_DEPTH = 2.5f;
     private static final Tween CAMERA_DEPTH_FALL = new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f, Interpolation.pow2In);
     private static final float SPIN_SECONDS = 1.3f;
-    private static final float SPIN_DEGREES = 720f;
+    private static final float SPIN_DEGREES = -720f;
     private static final float SHRUNK_SCALE = 0.5f;
     private static final FallSpin FALL_SPIN = new FallSpin(
         new Tween(FALL_START_SECONDS, SPIN_SECONDS, 0f, 1f, Interpolation.sine), SPIN_DEGREES, SHRUNK_SCALE);
     private static final Tween CAMERA_PAN = new Tween(FALL_START_SECONDS, PAN_SECONDS, 0f, 1f, Interpolation.sine);
-    private static final float WATER_SWAY_DEGREES = 3f;
+    private static final float WATER_SWAY_DEGREES = -3f;
     private static final float WATER_SWAY_CYCLES_PER_SECOND = 1.25f;
     private static final WaterSway WATER_SWAY = new WaterSway(
         new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f), WATER_SWAY_DEGREES, WATER_SWAY_CYCLES_PER_SECOND);

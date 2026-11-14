@@ -427,7 +427,7 @@ class LayerStackTest {
     @Test
     void rotatedLayerPassesRotationAndKeepsPivotFixed() {
         Layer layer = addLayer();
-        layer.setRotation(90f);
+        layer.setRotation(-90f);
         layer.setPivot(10f, 4f);
 
         stack.draw(null, 100f, 200f);
@@ -443,7 +443,7 @@ class LayerStackTest {
     @Test
     void rotationCombinesWithZoom() {
         Layer layer = addLayer();
-        layer.setRotation(90f);
+        layer.setRotation(-90f);
         layer.setZoom(2f);
         layer.setPivot(10f, 4f);
 

@@ -20,8 +20,8 @@ class GlyphFilterScene extends GridScene {
     private static final int HALF_COLUMNS = COLUMNS / 2;
 
     private static final int BACKGROUND = 0x303840FF;
-    private static final float FAST_DEGREES_PER_SECOND = 30f;
-    private static final float SLOW_DEGREES_PER_SECOND = 12f;
+    private static final float FAST_DEGREES_PER_SECOND = -30f;
+    private static final float SLOW_DEGREES_PER_SECOND = -12f;
     private static final float CAPPED_DELTA = 0.1f;
 
     private static final float[] STATIC_SCALES = {0.37f, 0.5f, 1.3f, 2.5f};

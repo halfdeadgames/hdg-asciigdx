@@ -67,11 +67,11 @@ class LayerTransformTest {
     }
 
     @Test
-    void rotationRunsCounterclockwiseAboutPivot() {
+    void rotationRunsClockwiseOnScreenAboutPivot() {
         LayerTransform.compose(0f, 0f, 10f, 10f, 1f, 90f, false, transform);
 
-        // One unit right of the pivot turns to one unit above it.
-        assertMapsTo(10f, -9f, 11f, -10f);
+        // One unit right of the pivot turns to one unit below it (world y is up).
+        assertMapsTo(10f, -11f, 11f, -10f);
     }
 
     @Test

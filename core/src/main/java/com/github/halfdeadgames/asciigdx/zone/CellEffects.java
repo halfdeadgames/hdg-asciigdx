@@ -98,7 +98,7 @@ public final class CellEffects {
     /**
      * Turns each glyph at a steady speed. The rotation added is {@code degreesPerSecond * time}, reduced
      * modulo 360 in double precision so it stays precise at large times, minus {@code 360 * phase}, so a
-     * bigger phase lags behind. Positive degrees turn counterclockwise on screen.
+     * bigger phase lags behind. Positive degrees turn clockwise on screen.
      *
      * @param degreesPerSecond turning speed; finite, may be negative
      * @param phase offset between cells, in turns

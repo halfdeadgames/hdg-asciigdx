@@ -189,7 +189,7 @@ class LayerStackPointMappingTest {
 
     private void zoomTwoRotateQuarterTurn(float pivotX, float pivotY) {
         layer.setZoom(2f);
-        layer.setRotation(90f);
+        layer.setRotation(-90f);
         layer.setPivot(pivotX, pivotY);
     }
 

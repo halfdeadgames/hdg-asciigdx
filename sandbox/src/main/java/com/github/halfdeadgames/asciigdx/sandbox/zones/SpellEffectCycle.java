@@ -27,7 +27,7 @@ public final class SpellEffectCycle {
         Phase slowRings = Phase.byDistance(SLOW_RING_CELLS_PER_CYCLE);
         effects = new CellEffect[] {
             CellEffects.combine(
-                CellEffects.spin(90f, Phase.scattered(1)),
+                CellEffects.spin(-90f, Phase.scattered(1)),
                 CellEffects.pulse(0.15f, 1.2f, Phase.scattered(2)),
                 CellEffects.bounce(0.3f, 1f, Phase.scattered(3)),
                 CellEffects.flash(WARM_GOLD, 0.6f, 1.2f, Phase.scattered(4))),
@@ -35,7 +35,7 @@ public final class SpellEffectCycle {
             CellEffects.bounce(0.4f, 1f, rings),
             CellEffects.shake(0.15f, 12f, SHAKE_SEED),
             CellEffects.pulse(0.4f, 1.2f, rings),
-            CellEffects.spin(120f, slowRings),
+            CellEffects.spin(-120f, slowRings),
             CellEffects.flash(WHITE, 0.8f, 1.2f, rings),
             CellEffects.rainbow(0.7f, 2f, slowRings)
         };

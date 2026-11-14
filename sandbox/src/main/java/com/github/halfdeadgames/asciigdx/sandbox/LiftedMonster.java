@@ -13,7 +13,7 @@ final class LiftedMonster {
     private static final float PERIOD_SECONDS = 1.5f;
     private static final float MOTION_SECONDS = 0.25f;
     private static final float BUMP_CELL_FRACTION = 1f / 3f;
-    private static final float WIGGLE_DEGREES = 90f;
+    private static final float WIGGLE_DEGREES = -90f;
 
     private final int column;
     private final int row;

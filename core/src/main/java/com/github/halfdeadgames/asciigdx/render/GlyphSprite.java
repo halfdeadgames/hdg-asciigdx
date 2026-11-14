@@ -136,13 +136,13 @@ public final class GlyphSprite implements SpriteTransform {
         y += dy;
     }
 
-    /** Rotation in degrees; positive is counterclockwise on screen. */
+    /** Rotation in degrees; positive is clockwise on screen. */
     public float getRotation() {
         return rotation;
     }
 
     /**
-     * Sets the rotation in degrees; positive is counterclockwise on screen.
+     * Sets the rotation in degrees; positive is clockwise on screen.
      *
      * @throws IllegalStateException if the sprite was removed
      */

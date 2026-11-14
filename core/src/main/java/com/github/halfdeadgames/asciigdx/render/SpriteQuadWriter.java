@@ -40,8 +40,10 @@ final class SpriteQuadWriter {
     /** Like the overload with a sprite, for any transform and an explicit glyph color (RGBA8888). */
     static void writeQuad(float[] vertices, int start, SpriteTransform sprite, int color, float x, float y,
                           float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
-        float sin = exactSin(sprite.getRotation());
-        float cos = exactCos(sprite.getRotation());
+        // Public rotation is clockwise on screen; the quad math here is y-up, where positive is counterclockwise.
+        float yUpDegrees = -sprite.getRotation();
+        float sin = exactSin(yUpDegrees);
+        float cos = exactCos(yUpDegrees);
         float pivotX = pivotX(sprite, x, cellWidth);
         float pivotY = pivotY(sprite, y, cellHeight);
         float leftOffset = leftOffset(sprite, cellWidth);

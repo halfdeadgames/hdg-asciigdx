@@ -18,7 +18,7 @@ public final class WaterSway {
         this.cyclesPerSecond = cyclesPerSecond;
     }
 
-    /** Counterclockwise degrees; exactly 0 outside the sway. */
+    /** Rotation in degrees, positive is clockwise on screen; exactly 0 outside the sway. */
     public float degreesAt(float timeSeconds) {
         if (!sway.isActiveAt(timeSeconds)) {
             return 0f;

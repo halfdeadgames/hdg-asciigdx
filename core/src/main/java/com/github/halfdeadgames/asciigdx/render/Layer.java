@@ -245,13 +245,13 @@ public final class Layer {
         this.zoom = zoom;
     }
 
-    /** Returns the counterclockwise rotation in degrees, 0 by default. */
+    /** Returns the rotation in degrees, 0 by default; positive is clockwise on screen. */
     public float getRotation() {
         return rotation;
     }
 
     /**
-     * Rotates the layer counterclockwise about its pivot (see {@link #setPivot}), which stays
+     * Rotates the layer clockwise on screen about its pivot (see {@link #setPivot}), which stays
      * fixed on screen. 0 is normal (the default).
      *
      * <p>The pivot is shared with zoom. The offset and the clip do not rotate: the clip stays an
@@ -261,7 +261,7 @@ public final class Layer {
      * {@link ZoomMode#WHOLE} only round the layer's corner, so pixels are crisp only at multiples
      * of 90. At 90 and 270 degrees, cells of tall fonts lie sideways.
      *
-     * @param degrees the counterclockwise angle in degrees; must be finite
+     * @param degrees the angle in degrees, positive is clockwise on screen; must be finite
      * @throws IllegalArgumentException if the angle is not finite
      * @throws IllegalStateException if the layer was removed
      */

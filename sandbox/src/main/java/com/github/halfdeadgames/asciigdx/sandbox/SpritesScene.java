@@ -30,7 +30,7 @@ class SpritesScene extends GridScene {
     private static final int RING_SIZE = 8;
     private static final float RING_RADIUS_ROWS = 6f;
     private static final float RING_DEGREES_PER_SECOND = 45f;
-    private static final float SPIN_DEGREES_PER_SECOND = 30f;
+    private static final float SPIN_DEGREES_PER_SECOND = -30f;
 
     private static final int CHURN_CAPACITY = 40;
     private static final float CHURN_SPAWN_PERIOD = 0.05f;

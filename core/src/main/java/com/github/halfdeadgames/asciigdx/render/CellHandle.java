@@ -27,7 +27,7 @@ import com.github.halfdeadgames.asciigdx.color.CellColor;
  * layer like sprites.
  *
  * <p>Offsets are in virtual pixels with y growing downward, like layer offsets. Rotation is in
- * degrees, counterclockwise on screen. Values are not clamped, except alpha. Once the handle is
+ * degrees, clockwise on screen. Values are not clamped, except alpha. Once the handle is
  * detached (the layer was removed, or the grid shrank so the cell no longer exists), getters keep
  * working but every mutator throws {@link IllegalStateException}; ask the layer for a new handle.
  */
@@ -131,14 +131,14 @@ public final class CellHandle implements SpriteTransform {
         setOffset(offsetX + dx, offsetY + dy);
     }
 
-    /** Rotation in degrees; positive is counterclockwise on screen. */
+    /** Rotation in degrees; positive is clockwise on screen. */
     @Override
     public float getRotation() {
         return rotation;
     }
 
     /**
-     * Sets the rotation in degrees; positive is counterclockwise on screen.
+     * Sets the rotation in degrees; positive is clockwise on screen.
      *
      * @throws IllegalStateException if the handle was detached
      */

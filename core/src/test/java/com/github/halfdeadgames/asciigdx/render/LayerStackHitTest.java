@@ -126,7 +126,7 @@ class LayerStackHitTest {
     @Test
     void rotationQuarterTurnAboutPivotCell() {
         layer.setPivotCell(1, 1);
-        layer.setRotation(90f);
+        layer.setRotation(-90f);
         float pivotWorldX = CORNER_X + 1.5f * CELL_WIDTH;
         float pivotWorldY = CORNER_Y - 1.5f * CELL_HEIGHT;
 
