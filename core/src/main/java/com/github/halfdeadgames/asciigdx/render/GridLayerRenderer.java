@@ -37,6 +37,11 @@ final class GridLayerRenderer implements LayerRenderer {
     }
 
     @Override
+    public void refreshCell(int column, int row) {
+        renderer.refreshCell(column, row);
+    }
+
+    @Override
     public void setGlyphSource(GlyphSource glyphSource) {
         renderer.setGlyphSource(glyphSource);
     }

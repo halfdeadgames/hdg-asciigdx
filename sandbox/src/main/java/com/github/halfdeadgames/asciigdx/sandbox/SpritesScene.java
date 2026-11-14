@@ -17,6 +17,9 @@ import com.github.halfdeadgames.asciigdx.render.Layer;
  * R resets every lifted cell; bumps resume on their next cycle. M slides the layer left and right,
  * and the sprites and lifted cells move with it. K shrinks the map grid by ten columns, so
  * monsters there lose their handles; they get fresh ones when the grid grows back.
+ *
+ * <p>The word at the bottom runs the {@link OverrideDemo} cycle: flat and lifted letters must
+ * look identical in every phase.
  */
 class SpritesScene extends GridScene {
     private static final int COLUMNS = 40;
@@ -71,6 +74,7 @@ class SpritesScene extends GridScene {
         new LiftedMonster(34, 8, 'D', 0xFF40FFFF, -1, 0, false, 0.2f),
         new LiftedMonster(36, 13, 'r', 0xC0FF60FF, 0, -1, false, 1f)
     };
+    private final OverrideDemo overrideDemo;
     private GlyphSprite spinner;
     private float monsterClock;
     private float slideClock;
@@ -99,6 +103,7 @@ class SpritesScene extends GridScene {
         mapLayer = layers.get(0);
         drawMap();
         placeMonsters();
+        overrideDemo = new OverrideDemo(grid, mapLayer);
         createRing();
         createFixedSprites();
         updateRing();
@@ -190,6 +195,7 @@ class SpritesScene extends GridScene {
         updateFlash(step);
         updateMonsters(step);
         updateSlide(step);
+        overrideDemo.update(step);
     }
 
     private void updateMonsters(float step) {
@@ -227,6 +233,7 @@ class SpritesScene extends GridScene {
         grid.resize(shrunk ? COLUMNS - SHRINK_COLUMNS : COLUMNS, ROWS);
         drawMap();
         placeMonsters();
+        overrideDemo.draw();
     }
 
     private void placeMonsters() {

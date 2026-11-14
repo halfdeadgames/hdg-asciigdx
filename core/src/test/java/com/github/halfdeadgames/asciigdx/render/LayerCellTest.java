@@ -69,6 +69,11 @@ class LayerCellTest {
         }
 
         @Override
+        public void refreshCell(int column, int row) {
+            events.add("refresh " + column + "," + row);
+        }
+
+        @Override
         public void setGlyphSource(GlyphSource glyphSource) {
         }
 
@@ -321,6 +326,50 @@ class LayerCellTest {
         assertEquals(0, layer.getSpriteCount());
         assertThrows(IllegalStateException.class, () -> sprite.setVisible(false));
         assertSame(handle, layer.cell(0, 0));
+    }
+
+    @Test
+    void changedOverrideRefreshesItsCellOnceAndNothingWhenUnchanged() {
+        CellHandle handle = layer.cell(2, 1);
+        handle.setForegroundMix(0xFF0000FF, 0.5f);
+
+        draw();
+        draw();
+        handle.setForegroundMix(0xFF0000FF, 0.5f);
+        draw();
+
+        assertEquals(List.of("refresh 2,1"), renderer.events);
+    }
+
+    @Test
+    void eachChangeOfAnOverrideRefreshesTheCellAgain() {
+        CellHandle handle = layer.cell(0, 3);
+        handle.setCodePoint('x');
+        draw();
+        handle.clearCodePoint();
+        draw();
+
+        assertEquals(List.of("refresh 0,3", "refresh 0,3"), renderer.events);
+    }
+
+    @Test
+    void handleWithoutOverrideChangesNeverRefreshes() {
+        layer.cell(1, 1);
+        draw();
+
+        assertTrue(renderer.events.isEmpty());
+    }
+
+    @Test
+    void handleDetachedByShrinkingDoesNotRefreshACellThatNoLongerExists() {
+        CellHandle outside = layer.cell(5, 3);
+        outside.setCodePoint('x');
+        grid.resize(3, 2);
+
+        draw();
+
+        assertTrue(outside.isDetached());
+        assertTrue(renderer.events.isEmpty());
     }
 
     @Test

@@ -145,6 +145,92 @@ class SpriteMeshLiftedCellTest {
         assertEquals(ColorTools.fromRGBA8888(expected), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
 
+    private static final int TARGET = 0xAABBCC00;
+
+    private float writtenForeground() {
+        return vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET];
+    }
+
+    private static Array<CellHandle> arrayOf(CellHandle cell) {
+        Array<CellHandle> cells = new Array<>();
+        cells.add(cell);
+        return cells;
+    }
+
+    @Test
+    void foregroundMixIsWrittenForALiftedCell() {
+        grid.set(2, 1, '@', 0x112233FF, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setForegroundMix(TARGET, 1f);
+
+        write(cell);
+
+        assertEquals(ColorTools.fromRGBA8888(0xAABBCCFF), writtenForeground(), 1e-6f);
+    }
+
+    @Test
+    void codePointOverrideDrawsTheOverrideGlyph() {
+        grid.set(2, 1, '@', FOREGROUND, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setCodePoint('z');
+
+        write(cell);
+
+        assertEquals('z' / 256f, vertices[CellVertexLayout.UV_OFFSET], 0f);
+    }
+
+    @Test
+    void overrideMakingABlankCellVisibleIsCountedAndWritten() {
+        grid.set(2, 1, ' ', FOREGROUND, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setCodePoint('z');
+
+        assertEquals(1, SpriteMesh.countDrawnLifted(arrayOf(cell), grid));
+        write(cell);
+        assertEquals('z' / 256f, vertices[CellVertexLayout.UV_OFFSET], 0f);
+    }
+
+    @Test
+    void overrideSpaceHidesALiftedGlyph() {
+        grid.set(2, 1, '@', FOREGROUND, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setCodePoint(' ');
+
+        assertEquals(0, SpriteMesh.countDrawnLifted(arrayOf(cell), grid));
+    }
+
+    @Test
+    void detachedHandleOverridesAreIgnored() {
+        grid.set(2, 1, '@', 0x112233FF, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setCodePoint('z');
+        cell.setForegroundMix(TARGET, 1f);
+        cell.detach();
+
+        write(cell);
+
+        assertEquals('@' / 256f, vertices[CellVertexLayout.UV_OFFSET], 0f);
+        assertEquals(ColorTools.fromRGBA8888(0x112233FF), writtenForeground(), 0f);
+    }
+
+    @Test
+    void foregroundMixAndAlphaMultiplierBothApply() {
+        grid.set(2, 1, '@', 0x112233FF, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setForegroundMix(TARGET, 1f);
+        cell.setAlphaMultiplier(0.5f);
+
+        write(cell);
+
+        int expected = CellHandle.withAlphaScaled(0xAABBCCFF, 0.5f);
+        assertEquals(ColorTools.fromRGBA8888(expected), writtenForeground(), 1e-6f);
+    }
+
     @Test
     void blankCellsDrawNothingAndRestingHandlesAreNotCounted() {
         CellHandle blank = new CellHandle(0, 0);

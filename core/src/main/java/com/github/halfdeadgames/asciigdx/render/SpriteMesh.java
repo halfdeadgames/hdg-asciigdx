@@ -81,9 +81,15 @@ final class SpriteMesh implements Disposable {
         if (!cell.isLifted()) {
             return false;
         }
-        int column = cell.getColumn();
-        int row = cell.getRow();
-        return !GridRenderer.isBlankGlyph(grid.getGlyph(column, row), grid.getForeground(column, row));
+        return !GridRenderer.isBlankGlyph(resolvedCodePoint(cell, grid), resolvedForeground(cell, grid));
+    }
+
+    private static int resolvedCodePoint(CellHandle cell, TerminalView grid) {
+        return CellResolver.codePoint(grid.getGlyph(cell.getColumn(), cell.getRow()), cell);
+    }
+
+    private static int resolvedForeground(CellHandle cell, TerminalView grid) {
+        return CellResolver.foreground(grid.getForeground(cell.getColumn(), cell.getRow()), cell);
     }
 
     /**
@@ -130,17 +136,17 @@ final class SpriteMesh implements Disposable {
     }
 
     /**
-     * Writes one quad for a lifted cell: the cell's current glyph and foreground, placed at the
-     * cell's position plus the handle's offset, with the handle's rotation, scale, and pivot, and
-     * its alpha multiplied into the glyph alpha. The cell must not be blank.
+     * Writes one quad for a lifted cell: the cell's current glyph and foreground with the handle's
+     * temporary overrides applied, placed at the cell's position plus the handle's offset, with the
+     * handle's rotation, scale, and pivot, and its alpha multiplied into the glyph alpha. The cell
+     * must not be blank.
      */
     static void writeLiftedCell(float[] vertices, int quad, CellHandle cell, TerminalView grid,
             GlyphSource glyphSource, boolean pixelSnapping) {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
-        TextureRegion region = glyphSource.glyph(grid.getGlyph(cell.getColumn(), cell.getRow()));
-        int color = CellHandle.withAlphaScaled(grid.getForeground(cell.getColumn(), cell.getRow()),
-                cell.getAlphaMultiplier());
+        TextureRegion region = glyphSource.glyph(resolvedCodePoint(cell, grid));
+        int color = CellHandle.withAlphaScaled(resolvedForeground(cell, grid), cell.getAlphaMultiplier());
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();
         if (pixelSnapping) {

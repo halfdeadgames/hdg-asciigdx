@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
@@ -11,6 +10,7 @@ import com.github.halfdeadgames.asciigdx.grid.DirtyCellVisitor;
 import com.github.halfdeadgames.asciigdx.grid.DirtyTracker;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -52,6 +52,9 @@ public final class GridRenderer implements Disposable {
     private int cachedRows;
     private boolean[] hiddenGlyphs;
     private boolean uploadPending;
+    private FlatCellWriter flatWriter;
+    private CellHandle[] handlesByCell;
+    private int indexedHandleCount;
     private Array<CellHandle> cellHandles = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
     private final LayerEffects tintOnlyEffects = new LayerEffects();
@@ -89,6 +92,9 @@ public final class GridRenderer implements Disposable {
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
         mesh = new GridMesh(cachedColumns * cachedRows, resources.getShader());
         hiddenGlyphs = new boolean[cachedColumns * cachedRows];
+        flatWriter = new FlatCellWriter(grid, cache, glyphSource);
+        handlesByCell = new CellHandle[cachedColumns * cachedRows];
+        indexedHandleCount = 0;
         uploadPending = false;
     }
 
@@ -162,12 +168,34 @@ public final class GridRenderer implements Disposable {
     }
 
     private void rebuildIfStale() {
-        if (!glyphSourceChanged && grid.getWidth() == cachedColumns && grid.getHeight() == cachedRows) {
+        if (glyphSourceChanged || grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
+            glyphSourceChanged = false;
+            mesh.dispose();
+            createCacheAndMesh();
+        }
+        indexNewHandles();
+    }
+
+    /**
+     * Handles are only appended to the live list, and any removal comes with a grid size change,
+     * which rebuilds the index from scratch. So indexing the tail since the last call is enough.
+     */
+    private void indexNewHandles() {
+        if (cellHandles.size < indexedHandleCount) {
+            Arrays.fill(handlesByCell, null);
+            indexedHandleCount = 0;
+        }
+        for (int i = indexedHandleCount; i < cellHandles.size; i++) {
+            indexHandle(cellHandles.get(i));
+        }
+        indexedHandleCount = cellHandles.size;
+    }
+
+    private void indexHandle(CellHandle handle) {
+        if (handle.isDetached() || handle.getColumn() >= cachedColumns || handle.getRow() >= cachedRows) {
             return;
         }
-        glyphSourceChanged = false;
-        mesh.dispose();
-        createCacheAndMesh();
+        handlesByCell[handle.getRow() * cachedColumns + handle.getColumn()] = handle;
     }
 
     /**
@@ -179,15 +207,35 @@ public final class GridRenderer implements Disposable {
      */
     void setCellGlyphHidden(int column, int row, boolean hidden) {
         rebuildIfStale();
-        if (column < 0 || column >= cachedColumns || row < 0 || row >= cachedRows) {
-            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
-                    + cachedColumns + "x" + cachedRows);
-        }
+        requireInsideGrid(column, row);
         int cell = row * cachedColumns + column;
         if (hiddenGlyphs[cell] == hidden) {
             return;
         }
         hiddenGlyphs[cell] = hidden;
+        rewriteSingleCell(column, row);
+    }
+
+    /**
+     * Rewrites one cell from the grid and its handle's current overrides, and uploads at the next
+     * draw. Does nothing if a full rebuild is pending, since that rewrites every cell anyway.
+     *
+     * @throws IndexOutOfBoundsException if the cell is outside the grid
+     */
+    void refreshCell(int column, int row) {
+        rebuildIfStale();
+        requireInsideGrid(column, row);
+        rewriteSingleCell(column, row);
+    }
+
+    private void requireInsideGrid(int column, int row) {
+        if (column < 0 || column >= cachedColumns || row < 0 || row >= cachedRows) {
+            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
+                    + cachedColumns + "x" + cachedRows);
+        }
+    }
+
+    private void rewriteSingleCell(int column, int row) {
         if (cache.isFullRebuildNeeded()) {
             return;
         }
@@ -198,6 +246,8 @@ public final class GridRenderer implements Disposable {
     /** Sets the layer's live handle list; lifted ones draw as sprites. Not owned. */
     void setCellHandles(Array<CellHandle> cellHandles) {
         this.cellHandles = Objects.requireNonNull(cellHandles, "cellHandles");
+        indexedHandleCount = 0;
+        Arrays.fill(handlesByCell, null);
     }
 
     private void drawGrid(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, CellBlend blend) {
@@ -241,16 +291,8 @@ public final class GridRenderer implements Disposable {
     }
 
     private void writeCell(int column, int row) {
-        int background = grid.getBackground(column, row);
-        int codePoint = grid.getGlyph(column, row);
-        int foreground = grid.getForeground(column, row);
-        if (hiddenGlyphs[row * cachedColumns + column] || isBlankGlyph(codePoint, foreground)) {
-            cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
-            return;
-        }
-        TextureRegion region = glyphSource.glyph(codePoint);
-        cache.writeCell(column, row, background, foreground,
-                region.getU(), region.getV(), region.getU2(), region.getV2());
+        int cell = row * cachedColumns + column;
+        flatWriter.write(column, row, hiddenGlyphs[cell], handlesByCell[cell]);
     }
 
     /** Releases the dirty tracker and frees the meshes. The shader is freed only if this renderer created it. */

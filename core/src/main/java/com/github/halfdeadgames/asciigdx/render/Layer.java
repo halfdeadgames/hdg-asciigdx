@@ -744,8 +744,24 @@ public final class Layer {
             forgetHiddenFlags();
         }
         applyLiftedFlags();
+        refreshChangedOverrides();
     }
 
+    private void refreshChangedOverrides() {
+        for (int i = 0; i < cellHandles.size; i++) {
+            CellHandle cell = cellHandles.get(i);
+            if (!cell.areOverridesChanged()) {
+                continue;
+            }
+            renderer.refreshCell(cell.getColumn(), cell.getRow());
+            cell.clearOverridesChanged();
+        }
+    }
+
+    /*
+     * A handle is only detached when its cell left the grid, so there is never a surviving cell
+     * to rewrite; the renderer's rebuild on the size change drops it from its index.
+     */
     private void detachCellsOutsideGrid() {
         for (int i = cellHandles.size - 1; i >= 0; i--) {
             CellHandle cell = cellHandles.get(i);

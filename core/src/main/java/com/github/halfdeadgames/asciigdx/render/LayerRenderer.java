@@ -36,6 +36,14 @@ interface LayerRenderer {
     default void setCellGlyphHidden(int column, int row, boolean hidden) {
     }
 
+    /**
+     * Rewrites one cell in the grid drawing from the grid value and its handle's current
+     * overrides. Called once per change of a handle's overrides. A grid size or glyph source
+     * change rewrites every cell anyway, so the renderer may skip this call's work then.
+     */
+    default void refreshCell(int column, int row) {
+    }
+
     void setGlyphSource(GlyphSource glyphSource);
 
     void dispose();
