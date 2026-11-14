@@ -39,7 +39,9 @@
         { glyphs: [ "∞" ], why: "two loops need the whole cell" },
         { glyphs: [ "½", "¼" ], why: "a fraction needs the whole cell" },
         { glyphs: [ "_", "…", "—" ], why: "joins its neighbors into one line" },
-        { glyphs: [ "€" ], why: "bars cross the left edge" }
+        { glyphs: [ "€" ], why: "bars cross the left edge" },
+        { glyphs: [ "π" ], why: "bar overhangs the legs so it doesn't read as n" },
+        { glyphs: [ "Ω" ], why: "feet reach out past the bowl" }
       ]
     },
     {
