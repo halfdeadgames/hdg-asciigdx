@@ -1,14 +1,21 @@
 package com.github.halfdeadgames.asciigdx.draw;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.shape.CellShape;
+import com.github.halfdeadgames.asciigdx.shape.ShapeCellVisitor;
 
 /**
- * Static helpers that draw text, filled rectangles, and boxes into a {@link TerminalGrid}.
+ * Static helpers that draw text, filled rectangles, boxes, and cell shapes into a {@link TerminalGrid}.
  *
  * <p>All drawing is clipped to the grid: cells outside it are skipped, so shapes may start or end off-grid.
  * Colors are packed RGBA8888 ints. None of the methods allocate.
+ *
+ * <p>Not thread-safe, because shape drawing reuses one shared visitor. Call these from the render thread, like
+ * {@link TerminalGrid}.
  */
 public final class GridDrawing {
+
+    private static final ShapeWriter SHAPE_WRITER = new ShapeWriter();
 
     private static final int HORIZONTAL_GLYPH = '─';
     private static final int VERTICAL_GLYPH = '│';
@@ -73,6 +80,32 @@ public final class GridDrawing {
                 grid.set(column, row, codePoint, foreground, background);
             }
         }
+    }
+
+    /**
+     * Sets every cell of a shape to the same glyph and colors. Cells outside the grid are skipped.
+     *
+     * @param grid grid to write to
+     * @param shape cells to write
+     * @param codePoint glyph as a Unicode code point
+     * @param foreground foreground color as RGBA8888
+     * @param background background color as RGBA8888
+     */
+    public static void fill(TerminalGrid grid, CellShape shape, int codePoint, int foreground, int background) {
+        if (!overlapsGrid(grid, shape)) {
+            return;
+        }
+        SHAPE_WRITER.configure(grid, codePoint, foreground, background);
+        try {
+            shape.forEachCell(SHAPE_WRITER);
+        } finally {
+            SHAPE_WRITER.release();
+        }
+    }
+
+    private static boolean overlapsGrid(TerminalGrid grid, CellShape shape) {
+        return shape.getRight() >= 0 && shape.getBottom() >= 0
+                && shape.getLeft() < grid.getWidth() && shape.getTop() < grid.getHeight();
     }
 
     /**
@@ -145,6 +178,31 @@ public final class GridDrawing {
     private static void requireNonNegativeSize(int width, int height) {
         if (width < 0 || height < 0) {
             throw new IllegalArgumentException("Size must not be negative, was " + width + "x" + height);
+        }
+    }
+
+    /** Writes one glyph and color pair to each visited cell; the grid ignores writes outside itself. */
+    private static final class ShapeWriter implements ShapeCellVisitor {
+
+        private TerminalGrid grid;
+        private int codePoint;
+        private int foreground;
+        private int background;
+
+        void configure(TerminalGrid targetGrid, int targetCodePoint, int targetForeground, int targetBackground) {
+            grid = targetGrid;
+            codePoint = targetCodePoint;
+            foreground = targetForeground;
+            background = targetBackground;
+        }
+
+        void release() {
+            grid = null;
+        }
+
+        @Override
+        public void visit(int column, int row, float distance, float distanceFraction) {
+            grid.set(column, row, codePoint, foreground, background);
         }
     }
 }
