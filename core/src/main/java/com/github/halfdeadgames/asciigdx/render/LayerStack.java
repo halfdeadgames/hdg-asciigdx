@@ -418,9 +418,9 @@ public final class LayerStack implements Disposable {
     }
 
     private void drawLayer(Layer layer, SpriteBatch batch) {
-        layer.syncCellTransforms();
+        layer.syncCellHandles();
         LayerEffects effects = layer.getEffects();
-        if (OffscreenFade.isNeeded(effects.getTintA(), layer.getSprites(), layer.getCellTransforms())) {
+        if (OffscreenFade.isNeeded(effects.getTintA(), layer.getSprites(), layer.getCellHandles())) {
             drawFadedLayer(layer, batch);
             return;
         }

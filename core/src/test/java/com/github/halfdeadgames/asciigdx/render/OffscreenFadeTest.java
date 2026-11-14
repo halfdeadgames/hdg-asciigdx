@@ -51,7 +51,7 @@ class OffscreenFadeTest {
     }
 
     private static boolean isNeeded(float tintAlpha, Layer layer) {
-        return OffscreenFade.isNeeded(tintAlpha, layer.getSprites(), layer.getCellTransforms());
+        return OffscreenFade.isNeeded(tintAlpha, layer.getSprites(), layer.getCellHandles());
     }
 
     private Layer layerWithRecordingRenderer() {
@@ -116,7 +116,7 @@ class OffscreenFadeTest {
     @Test
     void liftedCellsCountButRestingHandlesDoNot() {
         Layer layer = layerWithRecordingRenderer();
-        CellTransform handle = layer.cell(1, 1);
+        CellHandle handle = layer.cell(1, 1);
         assertFalse(isNeeded(0.5f, layer));
 
         handle.setOffset(2f, 0f);

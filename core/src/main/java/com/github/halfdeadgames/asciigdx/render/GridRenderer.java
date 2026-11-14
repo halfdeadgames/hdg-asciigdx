@@ -52,7 +52,7 @@ public final class GridRenderer implements Disposable {
     private int cachedRows;
     private boolean[] hiddenGlyphs;
     private boolean uploadPending;
-    private Array<CellTransform> cellTransforms = new Array<>(0);
+    private Array<CellHandle> cellHandles = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
     private final LayerEffects tintOnlyEffects = new LayerEffects();
     private final Affine2 translation = new Affine2();
@@ -150,14 +150,14 @@ public final class GridRenderer implements Disposable {
 
     private void drawSprites(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
-        int quadCount = SpriteMesh.countDrawnLifted(cellTransforms, grid) + SpriteMesh.countDrawn(sprites);
+        int quadCount = SpriteMesh.countDrawnLifted(cellHandles, grid) + SpriteMesh.countDrawn(sprites);
         if (quadCount == 0) {
             return;
         }
         if (spriteMesh == null) {
             spriteMesh = new SpriteMesh(resources.getShader());
         }
-        spriteMesh.upload(cellTransforms, sprites, grid, quadCount, glyphSource, pixelSnapping);
+        spriteMesh.upload(cellHandles, sprites, grid, quadCount, glyphSource, pixelSnapping);
         spriteMesh.draw(batch, glyphTexture, layerTransform, effects, blend);
     }
 
@@ -196,8 +196,8 @@ public final class GridRenderer implements Disposable {
     }
 
     /** Sets the layer's live handle list; lifted ones draw as sprites. Not owned. */
-    void setCellTransforms(Array<CellTransform> cellTransforms) {
-        this.cellTransforms = Objects.requireNonNull(cellTransforms, "cellTransforms");
+    void setCellHandles(Array<CellHandle> cellHandles) {
+        this.cellHandles = Objects.requireNonNull(cellHandles, "cellHandles");
     }
 
     private void drawGrid(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, CellBlend blend) {

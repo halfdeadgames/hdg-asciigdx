@@ -27,8 +27,8 @@ final class GridLayerRenderer implements LayerRenderer {
     }
 
     @Override
-    public void setCellTransforms(Array<CellTransform> cellTransforms) {
-        renderer.setCellTransforms(cellTransforms);
+    public void setCellHandles(Array<CellHandle> cellHandles) {
+        renderer.setCellHandles(cellHandles);
     }
 
     @Override

@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-class CellTransformTest {
+class CellHandleTest {
 
-    private final CellTransform cell = new CellTransform(3, 2);
+    private final CellHandle cell = new CellHandle(3, 2);
 
     @Test
     void startsAtDefaultsAndIsNotLifted() {
@@ -120,6 +120,6 @@ class CellTransformTest {
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class, cell::reset);
 
-        assertEquals("Cell transform was detached from its layer", thrown.getMessage());
+        assertEquals("Cell handle was detached from its layer", thrown.getMessage());
     }
 }

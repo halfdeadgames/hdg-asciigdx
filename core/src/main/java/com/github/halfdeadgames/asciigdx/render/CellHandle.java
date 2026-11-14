@@ -20,7 +20,7 @@ package com.github.halfdeadgames.asciigdx.render;
  * detached (the layer was removed, or the grid shrank so the cell no longer exists), getters keep
  * working but every mutator throws {@link IllegalStateException}; ask the layer for a new handle.
  */
-public final class CellTransform implements SpriteTransform {
+public final class CellHandle implements SpriteTransform {
 
     private static final float FULL_TURN_DEGREES = 360f;
     private static final int ALPHA_MASK = 0xFF;
@@ -38,7 +38,7 @@ public final class CellTransform implements SpriteTransform {
     private float pivotY = 0.5f;
     private float alpha = 1f;
 
-    CellTransform(int column, int row) {
+    CellHandle(int column, int row) {
         this.column = column;
         this.row = row;
     }
@@ -64,7 +64,7 @@ public final class CellTransform implements SpriteTransform {
 
     private void requireAttached() {
         if (detached) {
-            throw new IllegalStateException("Cell transform was detached from its layer");
+            throw new IllegalStateException("Cell handle was detached from its layer");
         }
     }
 

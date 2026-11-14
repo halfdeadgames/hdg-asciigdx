@@ -42,8 +42,8 @@ public final class Layer {
     private float clipWidth;
     private float clipHeight;
     private final Array<GlyphSprite> sprites = new Array<>();
-    private final Array<CellTransform> cellTransforms = new Array<>();
-    private final LongMap<CellTransform> cellsByPosition = new LongMap<>();
+    private final Array<CellHandle> cellHandles = new Array<>();
+    private final LongMap<CellHandle> cellsByPosition = new LongMap<>();
     private int syncedColumns;
     private int syncedRows;
 
@@ -652,7 +652,7 @@ public final class Layer {
     /**
      * Returns the handle that lifts one cell's glyph off the grid, creating it on the first
      * request (the only time this allocates). The same handle is returned every time, until it is
-     * detached. See {@link CellTransform} for what lifting does.
+     * detached. See {@link CellHandle} for what lifting does.
      *
      * <p>If the grid shrinks so the cell no longer exists, the handle is detached at the next
      * draw and dropped; request a new one after the grid grows back.
@@ -660,17 +660,17 @@ public final class Layer {
      * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
      * @throws IllegalStateException if the layer was removed
      */
-    public CellTransform cell(int column, int row) {
+    public CellHandle cell(int column, int row) {
         requireAttached();
         if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
             throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
                     + grid.getWidth() + "x" + grid.getHeight());
         }
-        CellTransform existing = cellsByPosition.get(cellKey(column, row));
+        CellHandle existing = cellsByPosition.get(cellKey(column, row));
         if (existing != null) {
             return existing;
         }
-        return createCellTransform(column, row);
+        return createCellHandle(column, row);
     }
 
     /**
@@ -680,8 +680,8 @@ public final class Layer {
      */
     public void resetLiftedCells() {
         requireAttached();
-        for (int i = 0; i < cellTransforms.size; i++) {
-            cellTransforms.get(i).reset();
+        for (int i = 0; i < cellHandles.size; i++) {
+            cellHandles.get(i).reset();
         }
     }
 
@@ -710,13 +710,13 @@ public final class Layer {
         removeFreeSprites();
     }
 
-    private CellTransform createCellTransform(int column, int row) {
-        if (cellTransforms.size == 0) {
-            renderer.setCellTransforms(cellTransforms);
+    private CellHandle createCellHandle(int column, int row) {
+        if (cellHandles.size == 0) {
+            renderer.setCellHandles(cellHandles);
         }
-        CellTransform created = new CellTransform(column, row);
+        CellHandle created = new CellHandle(column, row);
         cellsByPosition.put(cellKey(column, row), created);
-        cellTransforms.add(created);
+        cellHandles.add(created);
         return created;
     }
 
@@ -728,8 +728,8 @@ public final class Layer {
      * Brings the renderer in line with the cell handles before drawing: detaches handles whose
      * cell left the grid, then hides or shows the glyph of each handle whose lifted state changed.
      */
-    void syncCellTransforms() {
-        if (cellTransforms.size == 0) {
+    void syncCellHandles() {
+        if (cellHandles.size == 0) {
             syncedColumns = grid.getWidth();
             syncedRows = grid.getHeight();
             return;
@@ -744,12 +744,12 @@ public final class Layer {
     }
 
     private void detachCellsOutsideGrid() {
-        for (int i = cellTransforms.size - 1; i >= 0; i--) {
-            CellTransform cell = cellTransforms.get(i);
+        for (int i = cellHandles.size - 1; i >= 0; i--) {
+            CellHandle cell = cellHandles.get(i);
             if (cell.getColumn() < syncedColumns && cell.getRow() < syncedRows) {
                 continue;
             }
-            cellTransforms.removeIndex(i);
+            cellHandles.removeIndex(i);
             cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
             cell.detach();
         }
@@ -757,14 +757,14 @@ public final class Layer {
 
     /** The renderer clears its hidden flags when it rebuilds, so every handle starts shown again. */
     private void forgetHiddenFlags() {
-        for (int i = 0; i < cellTransforms.size; i++) {
-            cellTransforms.get(i).setGlyphHidden(false);
+        for (int i = 0; i < cellHandles.size; i++) {
+            cellHandles.get(i).setGlyphHidden(false);
         }
     }
 
     private void applyLiftedFlags() {
-        for (int i = 0; i < cellTransforms.size; i++) {
-            CellTransform cell = cellTransforms.get(i);
+        for (int i = 0; i < cellHandles.size; i++) {
+            CellHandle cell = cellHandles.get(i);
             boolean lifted = cell.isLifted();
             if (lifted == cell.isGlyphHidden()) {
                 continue;
@@ -808,8 +808,8 @@ public final class Layer {
         return sprites;
     }
 
-    Array<CellTransform> getCellTransforms() {
-        return cellTransforms;
+    Array<CellHandle> getCellHandles() {
+        return cellHandles;
     }
 
     void detach() {
@@ -818,10 +818,10 @@ public final class Layer {
             sprites.get(i).detach();
         }
         sprites.clear();
-        for (int i = cellTransforms.size - 1; i >= 0; i--) {
-            cellTransforms.get(i).detach();
+        for (int i = cellHandles.size - 1; i >= 0; i--) {
+            cellHandles.get(i).detach();
         }
-        cellTransforms.clear();
+        cellHandles.clear();
         cellsByPosition.clear();
     }
 

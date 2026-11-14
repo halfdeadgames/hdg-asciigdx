@@ -18,7 +18,7 @@ final class OffscreenFade {
      * alpha still counts. Without them the cells never overlap, so the direct path fades them
      * correctly.
      */
-    static boolean isNeeded(float tintAlpha, Array<GlyphSprite> sprites, Array<CellTransform> cells) {
+    static boolean isNeeded(float tintAlpha, Array<GlyphSprite> sprites, Array<CellHandle> cells) {
         if (tintAlpha >= 1f) {
             return false;
         }

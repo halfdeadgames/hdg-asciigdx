@@ -57,7 +57,7 @@ final class SpriteMesh implements Disposable {
     }
 
     /** Returns whether any handle is lifted; used by the fade rule, so a blank lifted cell counts too. */
-    static boolean hasLifted(Array<CellTransform> cells) {
+    static boolean hasLifted(Array<CellHandle> cells) {
         for (int i = 0; i < cells.size; i++) {
             if (cells.get(i).isLifted()) {
                 return true;
@@ -67,7 +67,7 @@ final class SpriteMesh implements Disposable {
     }
 
     /** Counts lifted cells that have a glyph to draw; blank cells draw nothing. */
-    static int countDrawnLifted(Array<CellTransform> cells, TerminalView grid) {
+    static int countDrawnLifted(Array<CellHandle> cells, TerminalView grid) {
         int drawn = 0;
         for (int i = 0; i < cells.size; i++) {
             if (isDrawnLifted(cells.get(i), grid)) {
@@ -77,7 +77,7 @@ final class SpriteMesh implements Disposable {
         return drawn;
     }
 
-    private static boolean isDrawnLifted(CellTransform cell, TerminalView grid) {
+    private static boolean isDrawnLifted(CellHandle cell, TerminalView grid) {
         if (!cell.isLifted()) {
             return false;
         }
@@ -91,7 +91,7 @@ final class SpriteMesh implements Disposable {
      * sprite (in order), and uploads only the used floats. Quads beyond {@code quadCount}, which
      * is capped at the mesh limit, are dropped.
      */
-    void upload(Array<CellTransform> cells, Array<GlyphSprite> sprites, TerminalView grid, int quadCount,
+    void upload(Array<CellHandle> cells, Array<GlyphSprite> sprites, TerminalView grid, int quadCount,
             GlyphSource glyphSource, boolean pixelSnapping) {
         int limit = Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH);
         ensureCapacity(limit);
@@ -103,11 +103,11 @@ final class SpriteMesh implements Disposable {
         mesh.setVertices(vertices, 0, usedQuads * CellVertexLayout.FLOATS_PER_QUAD);
     }
 
-    private int writeLiftedCells(Array<CellTransform> cells, TerminalView grid, int limit,
+    private int writeLiftedCells(Array<CellHandle> cells, TerminalView grid, int limit,
             GlyphSource glyphSource, boolean pixelSnapping) {
         int quad = 0;
         for (int i = 0; i < cells.size && quad < limit; i++) {
-            CellTransform cell = cells.get(i);
+            CellHandle cell = cells.get(i);
             if (!isDrawnLifted(cell, grid)) {
                 continue;
             }
@@ -134,12 +134,12 @@ final class SpriteMesh implements Disposable {
      * cell's position plus the handle's offset, with the handle's rotation, scale, and pivot, and
      * its alpha multiplied into the glyph alpha. The cell must not be blank.
      */
-    static void writeLiftedCell(float[] vertices, int quad, CellTransform cell, TerminalView grid,
+    static void writeLiftedCell(float[] vertices, int quad, CellHandle cell, TerminalView grid,
             GlyphSource glyphSource, boolean pixelSnapping) {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
         TextureRegion region = glyphSource.glyph(grid.getGlyph(cell.getColumn(), cell.getRow()));
-        int color = CellTransform.withAlphaScaled(grid.getForeground(cell.getColumn(), cell.getRow()),
+        int color = CellHandle.withAlphaScaled(grid.getForeground(cell.getColumn(), cell.getRow()),
                 cell.getAlphaMultiplier());
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();

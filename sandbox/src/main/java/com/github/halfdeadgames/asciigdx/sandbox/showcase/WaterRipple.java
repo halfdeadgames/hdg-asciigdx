@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-import com.github.halfdeadgames.asciigdx.render.CellTransform;
+import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /**
@@ -11,7 +11,7 @@ public final class WaterRipple {
 
     private final RippleRings rings;
     private final float maxScaleBump;
-    private final CellTransform[] cells;
+    private final CellHandle[] cells;
     private final float[] distancesCells;
     private boolean atRest = true;
 
@@ -38,7 +38,7 @@ public final class WaterRipple {
         int lastRow = clampedLastCell(splashRow + halfHeightCells, waterLayer.getGrid().getHeight());
         int columnCount = Math.max(0, lastColumn - firstColumn + 1);
         int rowCount = Math.max(0, lastRow - firstRow + 1);
-        cells = new CellTransform[columnCount * rowCount];
+        cells = new CellHandle[columnCount * rowCount];
         distancesCells = new float[cells.length];
         for (int row = 0; row < rowCount; row++) {
             for (int column = 0; column < columnCount; column++) {

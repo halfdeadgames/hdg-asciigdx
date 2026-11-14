@@ -67,7 +67,7 @@ class SpriteMeshLiftedCellTest {
     private final TerminalGrid grid = new TerminalGrid(6, 4);
     private final float[] vertices = new float[QUAD];
 
-    private void write(CellTransform cell) {
+    private void write(CellHandle cell) {
         SpriteMesh.writeLiftedCell(vertices, 0, cell, grid, source, true);
     }
 
@@ -98,7 +98,7 @@ class SpriteMeshLiftedCellTest {
     void identityTransformMatchesTheCellsOwnQuad() {
         grid.set(2, 1, '@', FOREGROUND, 0x00000000);
 
-        write(new CellTransform(2, 1));
+        write(new CellHandle(2, 1));
 
         assertPositionsAndUvsMatch(ownQuadOf(2, 1));
         assertEquals(ColorTools.fromRGBA8888(FOREGROUND), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
@@ -107,7 +107,7 @@ class SpriteMeshLiftedCellTest {
     @Test
     void offsetMovesTheQuadDownAndRight() {
         grid.set(2, 1, '@', FOREGROUND, 0x00000000);
-        CellTransform cell = new CellTransform(2, 1);
+        CellHandle cell = new CellHandle(2, 1);
         cell.setOffset(3f, 5f);
 
         write(cell);
@@ -119,7 +119,7 @@ class SpriteMeshLiftedCellTest {
 
     @Test
     void followsTheGridsCurrentGlyphAndForeground() {
-        CellTransform cell = new CellTransform(2, 1);
+        CellHandle cell = new CellHandle(2, 1);
         grid.set(2, 1, '@', FOREGROUND, 0x00000000);
         write(cell);
         float firstU = vertices[CellVertexLayout.UV_OFFSET];
@@ -135,27 +135,27 @@ class SpriteMeshLiftedCellTest {
     @Test
     void handleAlphaIsMultipliedIntoTheGlyphAlpha() {
         grid.set(2, 1, '@', 0xFF8040C0, 0x00000000);
-        CellTransform cell = new CellTransform(2, 1);
+        CellHandle cell = new CellHandle(2, 1);
         cell.setAlphaMultiplier(0.5f);
 
         write(cell);
 
-        int expected = CellTransform.withAlphaScaled(0xFF8040C0, 0.5f);
+        int expected = CellHandle.withAlphaScaled(0xFF8040C0, 0.5f);
         assertEquals(0xFF8040 << 8 | 0x60, expected);
         assertEquals(ColorTools.fromRGBA8888(expected), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
 
     @Test
     void blankCellsDrawNothingAndRestingHandlesAreNotCounted() {
-        CellTransform blank = new CellTransform(0, 0);
-        CellTransform resting = new CellTransform(1, 0);
-        CellTransform drawn = new CellTransform(2, 0);
+        CellHandle blank = new CellHandle(0, 0);
+        CellHandle resting = new CellHandle(1, 0);
+        CellHandle drawn = new CellHandle(2, 0);
         blank.setOffset(1f, 1f);
         drawn.setOffset(1f, 1f);
         grid.set(0, 0, ' ', FOREGROUND, 0x00000000);
         grid.set(1, 0, '@', FOREGROUND, 0x00000000);
         grid.set(2, 0, '@', FOREGROUND, 0x00000000);
-        Array<CellTransform> cells = new Array<>();
+        Array<CellHandle> cells = new Array<>();
         cells.add(blank);
         cells.add(resting);
         cells.add(drawn);

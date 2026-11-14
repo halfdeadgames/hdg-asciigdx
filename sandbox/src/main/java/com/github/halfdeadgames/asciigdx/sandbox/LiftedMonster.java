@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.CellTransform;
+import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /**
@@ -23,7 +23,7 @@ final class LiftedMonster {
     private final int directionY;
     private final boolean wiggles;
     private final float staggerSeconds;
-    private CellTransform handle;
+    private CellHandle handle;
     private boolean lifted;
     private boolean suspended;
 

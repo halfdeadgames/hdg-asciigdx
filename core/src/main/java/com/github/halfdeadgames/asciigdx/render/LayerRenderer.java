@@ -25,7 +25,7 @@ interface LayerRenderer {
      * Gives the renderer the layer's live list of cell handles, in creation order; lifted ones
      * are drawn as sprites before the free sprites. Called once, before the first handle exists.
      */
-    default void setCellTransforms(Array<CellTransform> cellTransforms) {
+    default void setCellHandles(Array<CellHandle> cellHandles) {
     }
 
     /**
