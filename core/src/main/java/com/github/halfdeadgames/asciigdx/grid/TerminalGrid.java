@@ -108,6 +108,72 @@ public final class TerminalGrid implements TerminalView {
         markTrackers(index);
     }
 
+    /**
+     * Writes only the glyph of a cell. The colors are kept. Does nothing if
+     * {@code (x, y)} is outside the grid. The cell becomes dirty only if the
+     * stored glyph changes.
+     *
+     * <p>The code point is stored as-is without validation, like in
+     * {@link #set(int, int, int, int, int)}.
+     *
+     * @param x column
+     * @param y row
+     * @param codePoint glyph as a Unicode code point
+     */
+    public void setGlyph(int x, int y, int codePoint) {
+        if (!contains(x, y)) {
+            return;
+        }
+        int index = indexOf(x, y);
+        if (glyphs[index] == codePoint) {
+            return;
+        }
+        glyphs[index] = codePoint;
+        markTrackers(index);
+    }
+
+    /**
+     * Writes only the foreground color of a cell. The glyph and background are
+     * kept. Does nothing if {@code (x, y)} is outside the grid. The cell becomes
+     * dirty only if the stored color changes.
+     *
+     * @param x column
+     * @param y row
+     * @param foregroundRgba foreground color as RGBA8888
+     */
+    public void setForeground(int x, int y, int foregroundRgba) {
+        if (!contains(x, y)) {
+            return;
+        }
+        int index = indexOf(x, y);
+        if (foregrounds[index] == foregroundRgba) {
+            return;
+        }
+        foregrounds[index] = foregroundRgba;
+        markTrackers(index);
+    }
+
+    /**
+     * Writes only the background color of a cell. The glyph and foreground are
+     * kept. Does nothing if {@code (x, y)} is outside the grid. The cell becomes
+     * dirty only if the stored color changes.
+     *
+     * @param x column
+     * @param y row
+     * @param backgroundRgba background color as RGBA8888
+     */
+    public void setBackground(int x, int y, int backgroundRgba) {
+        if (!contains(x, y)) {
+            return;
+        }
+        int index = indexOf(x, y);
+        if (backgrounds[index] == backgroundRgba) {
+            return;
+        }
+        backgrounds[index] = backgroundRgba;
+        markTrackers(index);
+    }
+
     @Override
     public DirtyTracker createDirtyTracker() {
         var tracker = new DirtyTracker(this);

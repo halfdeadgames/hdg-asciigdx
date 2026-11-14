@@ -280,4 +280,93 @@ class TerminalGridTest {
         assertFalse(tracker.hasDirtyCells());
         assertEquals(0, tracker.getDirtyCellCount());
     }
+
+    @Test
+    void setGlyphChangesOnlyTheGlyph() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+
+        grid.setGlyph(1, 1, '#');
+
+        assertEquals('#', grid.getGlyph(1, 1));
+        assertEquals(RED, grid.getForeground(1, 1));
+        assertEquals(BLUE, grid.getBackground(1, 1));
+    }
+
+    @Test
+    void setForegroundChangesOnlyTheForeground() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+
+        grid.setForeground(1, 1, BLUE);
+
+        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals(BLUE, grid.getForeground(1, 1));
+        assertEquals(BLUE, grid.getBackground(1, 1));
+    }
+
+    @Test
+    void setBackgroundChangesOnlyTheBackground() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+
+        grid.setBackground(1, 1, RED);
+
+        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals(RED, grid.getForeground(1, 1));
+        assertEquals(RED, grid.getBackground(1, 1));
+    }
+
+    @Test
+    void singleFieldSettersMarkTheCellDirtyOnRealChange() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.setGlyph(1, 1, '#');
+        assertEquals(1, tracker.getDirtyCellCount());
+
+        tracker.clear();
+        grid.setForeground(1, 1, BLUE);
+        assertEquals(1, tracker.getDirtyCellCount());
+
+        tracker.clear();
+        grid.setBackground(1, 1, RED);
+        assertEquals(1, tracker.getDirtyCellCount());
+    }
+
+    @Test
+    void singleFieldSettersDoNotMarkDirtyForIdenticalValue() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.setGlyph(1, 1, '@');
+        grid.setForeground(1, 1, RED);
+        grid.setBackground(1, 1, BLUE);
+
+        assertFalse(tracker.hasDirtyCells());
+    }
+
+    @Test
+    void singleFieldSettersIgnoreOutOfBoundsWrites() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        grid.set(1, 1, '@', RED, BLUE);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.clear();
+
+        grid.setGlyph(-1, 0, '#');
+        grid.setGlyph(3, 0, '#');
+        grid.setForeground(0, -1, BLUE);
+        grid.setForeground(0, 2, BLUE);
+        grid.setBackground(-1, -1, RED);
+        grid.setBackground(3, 2, RED);
+
+        assertFalse(tracker.hasDirtyCells());
+        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals(RED, grid.getForeground(1, 1));
+        assertEquals(BLUE, grid.getBackground(1, 1));
+    }
 }
