@@ -65,18 +65,18 @@ final class GridMesh implements Disposable {
 
     /**
      * Draws every cell in one pass using the batch's projection, transform, and
-     * blending, translated by the given offset. The shader mixes each glyph over its
-     * background and then applies the tint; the batch's blend functions decide only
+     * blending, translated by the given offset. The shader draws each glyph over its
+     * background and then applies the layer effects; the batch's blend functions decide only
      * how the finished cell combines with what is below. The batch must be begun.
      * Leaves the batch's shader bound.
      */
     void draw(SpriteBatch batch, Texture glyphTexture, float offsetX, float offsetY,
-            float tintR, float tintG, float tintB, float tintA, boolean allCellsOpaque, boolean hasVisibleCells) {
+            LayerEffects effects, boolean allCellsOpaque, boolean hasVisibleCells) {
         if (!hasVisibleCells) {
             return;
         }
         batch.flush();
-        if (batch.isBlendingEnabled() && !(allCellsOpaque && tintA == 1f)) {
+        if (batch.isBlendingEnabled() && !(allCellsOpaque && effects.getTintA() == 1f)) {
             applyBatchBlend(batch);
         } else {
             Gdx.gl.glDisable(GL20.GL_BLEND);
@@ -86,9 +86,15 @@ final class GridMesh implements Disposable {
         shader.bind();
         shader.setUniformMatrix("u_projTrans", combinedMatrix);
         shader.setUniformi("u_texture", 0);
-        shader.setUniformf("u_tint", tintR, tintG, tintB, tintA);
+        setEffectUniforms(effects);
         renderChunks(glyphTexture);
         batch.getShader().bind();
+    }
+
+    private void setEffectUniforms(LayerEffects effects) {
+        shader.setUniformf("u_tint", effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
+        shader.setUniformf("u_mix", effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount());
+        shader.setUniformf("u_saturation", effects.getSaturation());
     }
 
     private static void applyBatchBlend(SpriteBatch batch) {

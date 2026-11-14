@@ -257,8 +257,7 @@ public final class LayerStack implements Disposable {
     }
 
     private void drawLayer(Layer layer, SpriteBatch batch, float screenX, float screenY) {
-        layer.getRenderer().draw(batch, screenX, screenY,
-                layer.getTintR(), layer.getTintG(), layer.getTintB(), layer.getTintA());
+        layer.getRenderer().draw(batch, screenX, screenY, layer.getEffects());
     }
 
     /**

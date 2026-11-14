@@ -26,7 +26,9 @@ final class GridRenderResources implements Disposable {
             + "   gl_Position = u_projTrans * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
             + "}\n";
 
-    // Glyph over background (Porter-Duff over), then the layer tint, so alpha fades the cell as one color.
+    // Glyph over background (Porter-Duff over), then the layer effects in this order: saturation,
+    // tint, mix, then alpha. Alpha fades the cell as one color; mix and saturation never touch it.
+    // Mix comes last so a flash can reach its color even on a darkly tinted layer.
     private static final String FRAGMENT_SOURCE =
             "#ifdef GL_ES\n"
             + "#define LOWP lowp\n"
@@ -39,13 +41,19 @@ final class GridRenderResources implements Disposable {
             + "varying vec2 v_texCoords;\n"
             + "uniform sampler2D u_texture;\n"
             + "uniform vec4 u_tint;\n"
+            + "uniform vec4 u_mix;\n"
+            + "uniform float u_saturation;\n"
             + "void main()\n"
             + "{\n"
             + "  vec4 glyph = v_foreground * texture2D(u_texture, v_texCoords);\n"
             + "  float alpha = glyph.a + v_background.a * (1.0 - glyph.a);\n"
             + "  vec3 premultiplied = glyph.rgb * glyph.a + v_background.rgb * v_background.a * (1.0 - glyph.a);\n"
             + "  vec3 rgb = alpha > 0.0 ? premultiplied / alpha : vec3(0.0);\n"
-            + "  gl_FragColor = vec4(rgb * u_tint.rgb, alpha * u_tint.a);\n"
+            + "  float gray = dot(rgb, vec3(0.2126, 0.7152, 0.0722));\n"
+            + "  rgb = mix(vec3(gray), rgb, u_saturation);\n"
+            + "  rgb = rgb * u_tint.rgb;\n"
+            + "  rgb = mix(rgb, u_mix.rgb, u_mix.a);\n"
+            + "  gl_FragColor = vec4(rgb, alpha * u_tint.a);\n"
             + "}";
 
     private final ShaderProgram shader;

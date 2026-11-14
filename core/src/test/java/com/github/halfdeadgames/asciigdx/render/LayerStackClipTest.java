@@ -84,7 +84,7 @@ class LayerStackClipTest {
         String name = "L" + created++;
         return new LayerRenderer() {
             @Override
-            public void draw(SpriteBatch batch, float x, float y, float r, float g, float b, float a) {
+            public void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
                 log.add(name);
             }
 

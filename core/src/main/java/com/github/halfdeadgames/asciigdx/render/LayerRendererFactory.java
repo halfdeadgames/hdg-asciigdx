@@ -15,5 +15,5 @@ interface LayerRendererFactory {
 
     /** Creates {@link GridRenderer}s that borrow the stack's shared resources. */
     LayerRendererFactory SHARED_GRID_RENDERERS =
-        (grid, source, shared) -> new GridRenderer(grid, source, shared.get());
+        (grid, source, shared) -> new GridLayerRenderer(new GridRenderer(grid, source, shared.get()));
 }

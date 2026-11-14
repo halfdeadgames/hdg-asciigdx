@@ -6,7 +6,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 /** Test seam for {@link LayerStack}: what a layer needs from its renderer. */
 interface LayerRenderer {
 
-    void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA);
+    void draw(SpriteBatch batch, float x, float y, LayerEffects effects);
 
     void setGlyphSource(GlyphSource glyphSource);
 

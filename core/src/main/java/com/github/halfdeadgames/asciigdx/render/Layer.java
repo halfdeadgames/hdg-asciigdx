@@ -5,8 +5,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * One grid in a {@link LayerStack}, with an offset, a visibility flag, a tint, a clip,
- * and a switchable glyph source. Created only by the stack.
+ * One grid in a {@link LayerStack}, with an offset, a visibility flag, color effects (tint,
+ * mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner,
  * with y growing downward like grid rows. Once the layer is removed from its
@@ -22,10 +22,7 @@ public final class Layer {
     private float offsetX;
     private float offsetY;
     private boolean visible = true;
-    private float tintR = 1f;
-    private float tintG = 1f;
-    private float tintB = 1f;
-    private float tintA = 1f;
+    private final LayerEffects effects = new LayerEffects();
     private ClipMode clipMode = ClipMode.NONE;
     private float clipX;
     private float clipY;
@@ -151,27 +148,27 @@ public final class Layer {
 
     /** Returns the tint's red component. */
     public float getTintR() {
-        return tintR;
+        return effects.getTintR();
     }
 
     /** Returns the tint's green component. */
     public float getTintG() {
-        return tintG;
+        return effects.getTintG();
     }
 
     /** Returns the tint's blue component. */
     public float getTintB() {
-        return tintB;
+        return effects.getTintB();
     }
 
     /** Returns the tint's alpha component. */
     public float getTintA() {
-        return tintA;
+        return effects.getTintA();
     }
 
     /** Copies the tint into {@code out} and returns it. */
     public Color getTint(Color out) {
-        return out.set(tintR, tintG, tintB, tintA);
+        return out.set(effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
     }
 
     /**
@@ -179,6 +176,9 @@ public final class Layer {
      * colors on the GPU each frame. Changing it rewrites and uploads nothing.
      * Default is white (1, 1, 1, 1), which leaves colors unchanged. Values are not
      * clamped.
+     *
+     * <p>The tint is applied after saturation and before the mix (see
+     * {@link #setSaturation} and {@link #setMix}).
      *
      * <p>Alpha fades each cell as one flat color, so a glyph's own background does
      * not show through it; the layers below show through the whole faded layer.
@@ -190,10 +190,7 @@ public final class Layer {
      */
     public void setTint(float r, float g, float b, float a) {
         requireAttached();
-        tintR = r;
-        tintG = g;
-        tintB = b;
-        tintA = a;
+        effects.setTint(r, g, b, a);
     }
 
     /**
@@ -214,7 +211,75 @@ public final class Layer {
      */
     public void setAlpha(float alpha) {
         requireAttached();
-        tintA = alpha;
+        effects.setTintAlpha(alpha);
+    }
+
+    /** Returns the mix color's red component. */
+    public float getMixR() {
+        return effects.getMixR();
+    }
+
+    /** Returns the mix color's green component. */
+    public float getMixG() {
+        return effects.getMixG();
+    }
+
+    /** Returns the mix color's blue component. */
+    public float getMixB() {
+        return effects.getMixB();
+    }
+
+    /** Returns how far the layer is mixed toward the mix color, 0 for not at all. */
+    public float getMixAmount() {
+        return effects.getMixAmount();
+    }
+
+    /**
+     * Mixes every drawn color toward the given color on the GPU each frame, for hit flashes
+     * (white, amount fading to 0) and fog washes. Changing it rewrites and uploads nothing.
+     * Amount 0 leaves colors unchanged (the default, with white as the color); 1 turns
+     * everything drawn into the color. Only colors change: alpha is untouched, so transparent
+     * parts stay transparent. Values are not clamped.
+     *
+     * <p>The mix is applied last, after saturation and the tint, so a flash can reach its pure
+     * color even on a darkly tinted layer.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setMix(float r, float g, float b, float amount) {
+        requireAttached();
+        effects.setMix(r, g, b, amount);
+    }
+
+    /**
+     * Sets the mix from a color's red, green, and blue; its alpha is ignored. The values are
+     * copied; no reference is kept.
+     *
+     * @see #setMix(float, float, float, float)
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setMix(Color color, float amount) {
+        setMix(color.r, color.g, color.b, amount);
+    }
+
+    /** Returns the saturation, 1 for normal. */
+    public float getSaturation() {
+        return effects.getSaturation();
+    }
+
+    /**
+     * Sets the saturation applied on the GPU each frame: 1 is normal (the default), 0 is
+     * grayscale, and values above 1 oversaturate. Changing it rewrites and uploads nothing.
+     * Values are not clamped.
+     *
+     * <p>Saturation is applied first, before the tint and the mix. Saturation 0 plus a tint
+     * gives a one-hue look, such as sepia or night vision.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setSaturation(float saturation) {
+        requireAttached();
+        effects.setSaturation(saturation);
     }
 
     /** Returns whether the layer is clipped, by a rectangle or to the stack's size. */
@@ -331,6 +396,10 @@ public final class Layer {
 
     LayerStack getOwner() {
         return owner;
+    }
+
+    LayerEffects getEffects() {
+        return effects;
     }
 
     LayerRenderer getRenderer() {

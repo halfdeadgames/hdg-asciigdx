@@ -57,6 +57,8 @@ class LayerStackTest {
         final List<String> drawLog;
         final List<float[]> positions = new ArrayList<>();
         final List<float[]> tints = new ArrayList<>();
+        final List<float[]> mixes = new ArrayList<>();
+        final List<Float> saturations = new ArrayList<>();
         final List<GlyphSource> glyphSources = new ArrayList<>();
         int disposeCount;
 
@@ -66,10 +68,12 @@ class LayerStackTest {
         }
 
         @Override
-        public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
+        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
             drawLog.add(name);
             positions.add(new float[] {x, y});
-            tints.add(new float[] {tintR, tintG, tintB, tintA});
+            tints.add(new float[] {effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA()});
+            mixes.add(new float[] {effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount()});
+            saturations.add(effects.getSaturation());
         }
 
         @Override
@@ -389,6 +393,75 @@ class LayerStackTest {
         assertThrows(IllegalStateException.class, () -> layer.setTint(Color.RED));
         assertThrows(IllegalStateException.class, () -> layer.setAlpha(0.5f));
         assertEquals(1f, layer.getTintA());
+    }
+
+    private float[] lastMix(int rendererIndex) {
+        List<float[]> mixes = renderers.get(rendererIndex).mixes;
+        return mixes.get(mixes.size() - 1);
+    }
+
+    private float lastSaturation(int rendererIndex) {
+        List<Float> saturations = renderers.get(rendererIndex).saturations;
+        return saturations.get(saturations.size() - 1);
+    }
+
+    @Test
+    void mixAndSaturationHaveNeutralDefaults() {
+        Layer layer = addLayer();
+        assertEquals(1f, layer.getMixR());
+        assertEquals(1f, layer.getMixG());
+        assertEquals(1f, layer.getMixB());
+        assertEquals(0f, layer.getMixAmount());
+        assertEquals(1f, layer.getSaturation());
+    }
+
+    @Test
+    void mixAndSaturationSettersStoreValuesUnclamped() {
+        Layer layer = addLayer();
+        layer.setMix(0.1f, 0.2f, 0.3f, 1.5f);
+        layer.setSaturation(2.5f);
+        assertEquals(0.1f, layer.getMixR());
+        assertEquals(0.2f, layer.getMixG());
+        assertEquals(0.3f, layer.getMixB());
+        assertEquals(1.5f, layer.getMixAmount());
+        assertEquals(2.5f, layer.getSaturation());
+    }
+
+    @Test
+    void setMixFromColorCopiesRgbAndIgnoresAlpha() {
+        Layer layer = addLayer();
+        Color color = new Color(0.1f, 0.2f, 0.3f, 0.4f);
+        layer.setMix(color, 0.6f);
+        color.set(1f, 1f, 1f, 1f);
+        assertEquals(0.1f, layer.getMixR());
+        assertEquals(0.2f, layer.getMixG());
+        assertEquals(0.3f, layer.getMixB());
+        assertEquals(0.6f, layer.getMixAmount());
+        assertEquals(1f, layer.getTintA());
+    }
+
+    @Test
+    void mixAndSaturationCannotChangeAfterRemoval() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setMix(1f, 0f, 0f, 0.5f));
+        assertThrows(IllegalStateException.class, () -> layer.setMix(Color.RED, 0.5f));
+        assertThrows(IllegalStateException.class, () -> layer.setSaturation(0f));
+        assertEquals(0f, layer.getMixAmount());
+        assertEquals(1f, layer.getSaturation());
+    }
+
+    @Test
+    void stackPassesEachLayersEffectsToItsOwnRenderer() {
+        Layer first = addLayer();
+        addLayer();
+        first.setMix(1f, 0.5f, 0.25f, 0.75f);
+        first.setSaturation(0f);
+        stack.draw(null, 0f, 0f);
+        assertArrayEquals(new float[] {1f, 0.5f, 0.25f, 0.75f}, lastMix(0));
+        assertEquals(0f, lastSaturation(0));
+        assertArrayEquals(new float[] {1f, 1f, 1f, 0f}, lastMix(1));
+        assertEquals(1f, lastSaturation(1));
     }
 
     @Test

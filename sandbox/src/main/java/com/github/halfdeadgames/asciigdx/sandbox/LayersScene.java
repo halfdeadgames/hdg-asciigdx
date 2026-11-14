@@ -10,9 +10,10 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 
 /**
- * A clipped, shaking map under a sliding popup that fades as one flat image (half see-through
- * in ghost mode), a hopping marker, fading rain that jumps by whole cells, a drifting banner,
- * and a frame that always stays on top.
+ * A clipped, shaking map that flashes white on each dragon step and can be toggled to grayscale
+ * (G), under a sliding popup that fades as one flat image (half see-through in ghost mode), a
+ * hopping marker, fading rain that jumps by whole cells, a drifting banner, and a frame that
+ * always stays on top.
  */
 class LayersScene extends GridScene {
     private static final int COLUMNS = 40;
@@ -47,6 +48,7 @@ class LayersScene extends GridScene {
     private static final float BOSS_STEP_PERIOD = 0.8f;
     private static final float REACTION_DURATION = 0.35f;
     private static final float SHAKE_AMPLITUDE = 3.3f;
+    private static final float FLASH_STRENGTH = 0.6f;
 
     private static final int WALL = 0x8C8C9CFF;
     private static final int WALL_BACKGROUND = 0x2A2A36FF;
@@ -79,6 +81,7 @@ class LayersScene extends GridScene {
     private float elapsed;
     private boolean rainVisible = true;
     private boolean ghostPopup = true;
+    private boolean grayMap;
     private int bossColumn = -1;
     private int bossStep = -1;
     private boolean startled;
@@ -172,20 +175,26 @@ class LayersScene extends GridScene {
             ghostPopup = !ghostPopup;
             return true;
         }
+        if (keycode == Input.Keys.G) {
+            toggleGrayMap();
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean touchDown(int screenX, int screenY) {
-        int quarter = Gdx.graphics.getWidth() / 4;
-        if (screenX < quarter) {
+        int fifth = Gdx.graphics.getWidth() / 5;
+        if (screenX < fifth) {
             rotateOrder();
-        } else if (screenX < quarter * 2) {
+        } else if (screenX < fifth * 2) {
             toggleRain();
-        } else if (screenX < quarter * 3) {
+        } else if (screenX < fifth * 3) {
             layers.setPixelSnapping(!layers.isPixelSnapping());
-        } else {
+        } else if (screenX < fifth * 4) {
             ghostPopup = !ghostPopup;
+        } else {
+            toggleGrayMap();
         }
         return true;
     }
@@ -216,6 +225,11 @@ class LayersScene extends GridScene {
         layerById[RAIN].setVisible(rainVisible);
     }
 
+    private void toggleGrayMap() {
+        grayMap = !grayMap;
+        layerById[MAP].setSaturation(grayMap ? 0f : 1f);
+    }
+
     private void applyAnimation() {
         int step = (int) (elapsed / BOSS_STEP_PERIOD);
         float reaction = (elapsed - step * BOSS_STEP_PERIOD) / REACTION_DURATION;
@@ -224,6 +238,7 @@ class LayersScene extends GridScene {
         }
         moveBoss(step);
         applyMapShake(reaction);
+        applyFlash(reaction);
         applyHop(reaction);
         applyPopup();
         applyRain();
@@ -254,6 +269,11 @@ class LayersScene extends GridScene {
             shakeY = SHAKE_AMPLITUDE * 0.6f * falloff * MathUtils.sin(seconds * 53f + 1f);
         }
         layerById[MAP].setOffset(shakeX, shakeY);
+    }
+
+    private void applyFlash(float reaction) {
+        float amount = reaction >= 0f ? FLASH_STRENGTH * (1f - reaction) : 0f;
+        layerById[MAP].setMix(1f, 1f, 1f, amount);
     }
 
     private void applyHop(float reaction) {
@@ -371,7 +391,7 @@ class LayersScene extends GridScene {
                 }
             }
         }
-        GridDrawing.text(frame, 2, ROWS - 1, "R order  V rain  P snap  F ghost", GOLD, FRAME_OUTER);
+        GridDrawing.text(frame, 2, ROWS - 1, "R order V rain P snap F ghost G gray", GOLD, FRAME_OUTER);
     }
 
     private static int frameGlyph(int column, int row) {

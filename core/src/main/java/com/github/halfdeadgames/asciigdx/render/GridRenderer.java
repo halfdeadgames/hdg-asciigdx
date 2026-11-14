@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * <p>The grid and glyph source are not owned and are not disposed.
  */
-public final class GridRenderer implements Disposable, LayerRenderer {
+public final class GridRenderer implements Disposable {
 
     private final TerminalView grid;
     private GlyphSource glyphSource;
@@ -48,6 +48,7 @@ public final class GridRenderer implements Disposable, LayerRenderer {
     private int cachedColumns;
     private int cachedRows;
     private final DirtyCellVisitor cellWriter = this::writeCell;
+    private final LayerEffects tintOnlyEffects = new LayerEffects();
 
     /**
      * @param grid the grid to draw
@@ -99,8 +100,19 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      * every cell color by the tint on the GPU. Alpha fades each cell as one flat
      * color. Changing the tint costs no vertex rewrite or upload.
      */
-    @Override
     public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
+        tintOnlyEffects.reset();
+        tintOnlyEffects.setTint(tintR, tintG, tintB, tintA);
+        draw(batch, x, y, tintOnlyEffects);
+    }
+
+    /**
+     * Draws the grid like {@link #draw(SpriteBatch, float, float)}, applying the effects on
+     * the GPU in this order: saturation, tint, mix, then alpha. Alpha fades each cell as one
+     * flat color; mix and saturation never change it. Changing the effects costs no vertex
+     * rewrite or upload.
+     */
+    void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
         if (glyphSourceChanged || grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
             glyphSourceChanged = false;
             mesh.dispose();
@@ -120,7 +132,7 @@ public final class GridRenderer implements Disposable, LayerRenderer {
             tracker.clear();
             mesh.upload(cache.getVertices());
         }
-        mesh.draw(batch, glyphTexture, x, y, tintR, tintG, tintB, tintA,
+        mesh.draw(batch, glyphTexture, x, y, effects,
                 cache.getNotOpaqueCellCount() == 0, cache.getVisibleCellCount() > 0);
     }
 
@@ -130,7 +142,6 @@ public final class GridRenderer implements Disposable, LayerRenderer {
      * allocates, once per switch). The grid keeps its contents and its cell count. Glyphs
      * missing from the new source draw as its fallback. The source is not owned.
      */
-    @Override
     public void setGlyphSource(GlyphSource glyphSource) {
         Objects.requireNonNull(glyphSource, "glyphSource");
         Texture newGlyphTexture = glyphSource.glyph(' ').getTexture();
