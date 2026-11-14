@@ -26,6 +26,11 @@ interface SandboxScene {
         return "";
     }
 
+    /** Whether the status changes without input, so the app re-reads {@link #statusText()} every frame. */
+    default boolean hasLiveStatus() {
+        return false;
+    }
+
     /** Key press forwarded by the app while this scene is open; return true if handled. */
     default boolean keyDown(int keycode) {
         return false;

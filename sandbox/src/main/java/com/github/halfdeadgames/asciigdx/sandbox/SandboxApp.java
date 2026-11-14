@@ -125,6 +125,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new LayersScene(glyphs));
         scenes.add(new SpritesScene(glyphs, false));
         scenes.add(new SpritesScene(glyphs, true));
+        scenes.add(new LayerTransformScene(glyphs));
         scenes.add(new FlexibleGridScene(glyphs));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),
@@ -249,6 +250,9 @@ public class SandboxApp extends ApplicationAdapter {
             if (captureScript != null) {
                 Gdx.gl.glFinish();
                 renderNanos = System.nanoTime() - renderStartNanos;
+            }
+            if (activeScene.hasLiveStatus()) {
+                refreshStatus();
             }
             perfOverlay.update(delta);
             perfOverlay.render(batch);

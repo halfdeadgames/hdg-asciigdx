@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -32,6 +33,7 @@ public final class LayerStack implements Disposable {
     private final Array<Layer> layers = new Array<>();
     private final Matrix4 clipMatrix = new Matrix4();
     private final Vector3 clipCorner = new Vector3();
+    private final Affine2 layerTransform = new Affine2();
     private final Rectangle worldRect = new Rectangle();
     private final Rectangle windowRect = new Rectangle();
     private final int[] viewport = new int[4];
@@ -202,8 +204,10 @@ public final class LayerStack implements Disposable {
      * its grid changed. Dirty tracking only decides whether a layer's GPU data is
      * re-uploaded inside its renderer.
      *
-     * <p>With pixel snapping on, each layer's final screen position is rounded with
-     * {@code floor(v + 0.5)}.
+     * <p>With pixel snapping on, or when a layer uses {@link ZoomMode#WHOLE}, the screen
+     * position of each layer's top-left corner, after zoom and rotation, is rounded with
+     * {@code floor(v + 0.5)}. Zoom and rotation are applied about the layer's pivot; see
+     * {@link Layer#setPivot}.
      *
      * <p>A clipped layer (see {@link Layer#setClip}) flushes the batch, draws inside a
      * scissor, and flushes again, so each clipped layer costs an extra draw call. The
@@ -232,14 +236,9 @@ public final class LayerStack implements Disposable {
             if (!layer.isVisible()) {
                 continue;
             }
-            float screenX = x + layer.getOffsetX();
-            float screenY = y - layer.getOffsetY();
-            if (pixelSnapping) {
-                screenX = ClipMath.snap(screenX);
-                screenY = ClipMath.snap(screenY);
-            }
+            composeLayerTransform(layer, x, y);
             if (!layer.hasClip()) {
-                drawLayer(layer, batch, screenX, screenY);
+                drawLayer(layer, batch);
                 continue;
             }
             queryViewportOnce(batch);
@@ -259,10 +258,18 @@ public final class LayerStack implements Disposable {
             if (!pushScissor(batch, x, y, clipX, clipY, clipWidth, clipHeight)) {
                 continue;
             }
-            drawLayer(layer, batch, screenX, screenY);
+            drawLayer(layer, batch);
             clipBackend.flush(batch);
             clipBackend.pop();
         }
+    }
+
+    private void composeLayerTransform(Layer layer, float stackX, float stackY) {
+        float screenX = stackX + layer.getOffsetX();
+        float screenY = stackY - layer.getOffsetY();
+        boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
+        LayerTransform.compose(screenX, screenY, layer.getPivotX(), layer.getPivotY(),
+                layer.getEffectiveZoom(), layer.getRotation(), snapCorner, layerTransform);
     }
 
     private void queryViewportOnce(SpriteBatch batch) {
@@ -284,14 +291,14 @@ public final class LayerStack implements Disposable {
         return clipBackend.push(windowRect);
     }
 
-    private void drawLayer(Layer layer, SpriteBatch batch, float screenX, float screenY) {
+    private void drawLayer(Layer layer, SpriteBatch batch) {
         layer.syncCellTransforms();
         LayerEffects effects = layer.getEffects();
         if (OffscreenFade.isNeeded(effects.getTintA(), layer.getSprites(), layer.getCellTransforms())) {
-            drawFadedLayer(layer, batch, screenX, screenY);
+            drawFadedLayer(layer, batch);
             return;
         }
-        layer.getRenderer().draw(batch, screenX, screenY, effects, layer.getSprites(), pixelSnapping);
+        layer.getRenderer().draw(batch, layerTransform, effects, layer.getSprites(), pixelSnapping);
     }
 
     /**
@@ -301,13 +308,13 @@ public final class LayerStack implements Disposable {
     // The pass is deliberately not scissored to the layer's bounds: measured on a phone GPU, that
     // scissor added about 2 ms per frame and saved nothing (2026-11-13). Only the layer's own clip
     // applies.
-    private void drawFadedLayer(Layer layer, SpriteBatch batch, float screenX, float screenY) {
+    private void drawFadedLayer(Layer layer, SpriteBatch batch) {
         queryViewportOnce(batch);
         LayerEffects effects = layer.getEffects();
         opaqueEffects.copyFrom(effects);
         opaqueEffects.setTintAlpha(1f);
         offscreenBackend.begin(batch, viewport);
-        layer.getRenderer().drawPremultiplied(batch, screenX, screenY, opaqueEffects, layer.getSprites(),
+        layer.getRenderer().drawPremultiplied(batch, layerTransform, opaqueEffects, layer.getSprites(),
                 pixelSnapping);
         offscreenBackend.end(viewport);
         offscreenBackend.composite(batch, effects.getTintA(), viewport);

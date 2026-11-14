@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -57,6 +58,7 @@ class LayerStackTest {
         final String name;
         final List<String> drawLog;
         final List<float[]> positions = new ArrayList<>();
+        final List<Affine2> transforms = new ArrayList<>();
         final List<float[]> tints = new ArrayList<>();
         final List<float[]> mixes = new ArrayList<>();
         final List<Float> saturations = new ArrayList<>();
@@ -69,10 +71,11 @@ class LayerStackTest {
         }
 
         @Override
-        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             drawLog.add(name);
-            positions.add(new float[] {x, y});
+            positions.add(new float[] {layerTransform.m02, layerTransform.m12});
+            transforms.add(new Affine2(layerTransform));
             tints.add(new float[] {effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA()});
             mixes.add(new float[] {effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount()});
             saturations.add(effects.getSaturation());
@@ -292,6 +295,205 @@ class LayerStackTest {
 
         assertEquals(10.75f, lastPosition(0)[0]);
         assertEquals(20f, lastPosition(0)[1]);
+    }
+
+    private Affine2 lastTransform(int rendererIndex) {
+        List<Affine2> transforms = renderers.get(rendererIndex).transforms;
+        return transforms.get(transforms.size() - 1);
+    }
+
+    @Test
+    void zoomDefaultsAreNeutral() {
+        Layer layer = addLayer();
+        assertEquals(1f, layer.getZoom());
+        assertEquals(0f, layer.getPivotX());
+        assertEquals(0f, layer.getPivotY());
+        assertEquals(ZoomMode.SMOOTH, layer.getZoomMode());
+        assertEquals(1f, layer.getEffectiveZoom());
+    }
+
+    @Test
+    void zoomSettersStoreValues() {
+        Layer layer = addLayer();
+        layer.setZoom(2.5f);
+        layer.setPivot(4f, 6f);
+        layer.setZoomMode(ZoomMode.WHOLE);
+        assertEquals(2.5f, layer.getZoom());
+        assertEquals(4f, layer.getPivotX());
+        assertEquals(6f, layer.getPivotY());
+        assertEquals(ZoomMode.WHOLE, layer.getZoomMode());
+    }
+
+    @Test
+    void pivotCellPointsAtTheCellCenter() {
+        Layer layer = addLayer();
+        layer.setPivotCell(2, 1);
+        assertEquals(20f, layer.getPivotX());
+        assertEquals(18f, layer.getPivotY());
+    }
+
+    @Test
+    void pivotCellOutsideTheGridIsAllowed() {
+        Layer layer = addLayer();
+        layer.setPivotCell(-1, 10);
+        assertEquals(-4f, layer.getPivotX());
+        assertEquals(126f, layer.getPivotY());
+    }
+
+    @Test
+    void zoomRejectsValuesThatAreNotPositiveAndFinite() {
+        Layer layer = addLayer();
+        assertThrows(IllegalArgumentException.class, () -> layer.setZoom(0f));
+        assertThrows(IllegalArgumentException.class, () -> layer.setZoom(-1f));
+        assertThrows(IllegalArgumentException.class, () -> layer.setZoom(Float.NaN));
+        assertThrows(IllegalArgumentException.class, () -> layer.setZoom(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> layer.setZoomMode(null));
+        assertEquals(1f, layer.getZoom());
+        assertEquals(ZoomMode.SMOOTH, layer.getZoomMode());
+    }
+
+    @Test
+    void effectiveZoomFollowsTheMode() {
+        Layer layer = addLayer();
+        layer.setZoom(2.6f);
+        assertEquals(2.6f, layer.getEffectiveZoom());
+        layer.setZoomMode(ZoomMode.WHOLE);
+        assertEquals(3f, layer.getEffectiveZoom());
+        layer.setZoom(0.3f);
+        assertEquals(1f, layer.getEffectiveZoom());
+    }
+
+    @Test
+    void removedLayerCannotChangeZoom() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setZoom(2f));
+        assertThrows(IllegalStateException.class, () -> layer.setPivot(1f, 1f));
+        assertThrows(IllegalStateException.class, () -> layer.setPivotCell(1, 1));
+        assertThrows(IllegalStateException.class, () -> layer.setZoomMode(ZoomMode.WHOLE));
+        assertEquals(1f, layer.getZoom());
+    }
+
+    @Test
+    void zoomedLayerPassesScaleAndPivotFixedTranslation() {
+        Layer layer = addLayer();
+        layer.setZoom(2f);
+        layer.setPivot(10f, 4f);
+
+        stack.draw(null, 100f, 200f);
+
+        Affine2 transform = lastTransform(0);
+        assertEquals(2f, transform.m00);
+        assertEquals(2f, transform.m11);
+        assertEquals(90f, transform.m02);
+        assertEquals(204f, transform.m12);
+    }
+
+    @Test
+    void rotationDefaultsToZero() {
+        assertEquals(0f, addLayer().getRotation());
+    }
+
+    @Test
+    void rotationRejectsValuesThatAreNotFinite() {
+        Layer layer = addLayer();
+        assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.NaN));
+        assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.NEGATIVE_INFINITY));
+        assertEquals(0f, layer.getRotation());
+    }
+
+    @Test
+    void removedLayerCannotChangeRotation() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setRotation(45f));
+        assertEquals(0f, layer.getRotation());
+    }
+
+    @Test
+    void rotatedLayerPassesRotationAndKeepsPivotFixed() {
+        Layer layer = addLayer();
+        layer.setRotation(90f);
+        layer.setPivot(10f, 4f);
+
+        stack.draw(null, 100f, 200f);
+
+        Affine2 transform = lastTransform(0);
+        assertEquals(0f, transform.m00, 1e-4f);
+        assertEquals(-1f, transform.m01, 1e-4f);
+        assertEquals(1f, transform.m10, 1e-4f);
+        assertEquals(0f, transform.m11, 1e-4f);
+        assertPivotStaysFixed(transform, 100f, 200f, 10f, 4f);
+    }
+
+    @Test
+    void rotationCombinesWithZoom() {
+        Layer layer = addLayer();
+        layer.setRotation(90f);
+        layer.setZoom(2f);
+        layer.setPivot(10f, 4f);
+
+        stack.draw(null, 100f, 200f);
+
+        Affine2 transform = lastTransform(0);
+        assertEquals(0f, transform.m00, 1e-4f);
+        assertEquals(-2f, transform.m01, 1e-4f);
+        assertEquals(2f, transform.m10, 1e-4f);
+        assertEquals(0f, transform.m11, 1e-4f);
+        assertPivotStaysFixed(transform, 100f, 200f, 10f, 4f);
+    }
+
+    private static void assertPivotStaysFixed(Affine2 transform, float screenX, float screenY,
+            float pivotX, float pivotY) {
+        float localX = pivotX;
+        float localY = -pivotY;
+        float mappedX = transform.m00 * localX + transform.m01 * localY + transform.m02;
+        float mappedY = transform.m10 * localX + transform.m11 * localY + transform.m12;
+        assertEquals(screenX + pivotX, mappedX, 1e-3f);
+        assertEquals(screenY - pivotY, mappedY, 1e-3f);
+    }
+
+    @Test
+    void smoothZoomKeepsFractionsWhenSnappingIsOff() {
+        stack.setPixelSnapping(false);
+        Layer layer = addLayer();
+        layer.setZoom(1.5f);
+        layer.setPivot(5f, 0f);
+
+        stack.draw(null, 10f, 20f);
+
+        assertEquals(7.5f, lastTransform(0).m02);
+        assertEquals(20f, lastTransform(0).m12);
+    }
+
+    @Test
+    void wholeZoomSnapsTheCornerEvenWithSnappingOff() {
+        stack.setPixelSnapping(false);
+        Layer layer = addLayer();
+        layer.setZoomMode(ZoomMode.WHOLE);
+        layer.setZoom(1.4f);
+        layer.setOffset(0.25f, 0.5f);
+
+        stack.draw(null, 10.5f, 20.5f);
+
+        assertEquals(1f, lastTransform(0).m00);
+        assertEquals(11f, lastTransform(0).m02);
+        assertEquals(20f, lastTransform(0).m12);
+    }
+
+    @Test
+    void zoomOneWithSnappingMatchesSnappedPosition() {
+        Layer layer = addLayer();
+        layer.setOffset(0.4f, 0.4f);
+
+        stack.draw(null, 0.4f, 10.4f);
+
+        Affine2 transform = lastTransform(0);
+        assertEquals(1f, transform.m00);
+        assertEquals(1f, transform.m11);
+        assertEquals(1f, transform.m02);
+        assertEquals(10f, transform.m12);
     }
 
     @Test

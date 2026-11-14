@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -54,6 +55,7 @@ public final class GridRenderer implements Disposable {
     private Array<CellTransform> cellTransforms = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
     private final LayerEffects tintOnlyEffects = new LayerEffects();
+    private final Affine2 translation = new Affine2();
 
     /**
      * @param grid the grid to draw
@@ -110,7 +112,8 @@ public final class GridRenderer implements Disposable {
     public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
         tintOnlyEffects.reset();
         tintOnlyEffects.setTint(tintR, tintG, tintB, tintA);
-        draw(batch, x, y, tintOnlyEffects);
+        translation.setToTranslation(x, y);
+        draw(batch, translation, tintOnlyEffects);
     }
 
     /**
@@ -119,8 +122,8 @@ public final class GridRenderer implements Disposable {
      * flat color; mix and saturation never change it. Changing the effects costs no vertex
      * rewrite or upload.
      */
-    void draw(SpriteBatch batch, float x, float y, LayerEffects effects) {
-        drawGrid(batch, x, y, effects, CellBlend.BATCH);
+    void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects) {
+        drawGrid(batch, layerTransform, effects, CellBlend.BATCH);
     }
 
     /**
@@ -129,23 +132,23 @@ public final class GridRenderer implements Disposable {
      * blending. With pixel snapping on, sprite and lifted cell positions are rounded; rotation and
      * scale are not.
      */
-    void draw(SpriteBatch batch, float x, float y, LayerEffects effects, Array<GlyphSprite> sprites,
+    void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, Array<GlyphSprite> sprites,
             boolean pixelSnapping) {
-        drawGrid(batch, x, y, effects, CellBlend.BATCH);
-        drawSprites(batch, x, y, effects, sprites, pixelSnapping, CellBlend.BATCH);
+        drawGrid(batch, layerTransform, effects, CellBlend.BATCH);
+        drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.BATCH);
     }
 
     /**
-     * Like {@link #draw(SpriteBatch, float, float, LayerEffects, Array, boolean)}, but blends into
+     * Like {@link #draw(SpriteBatch, Affine2, LayerEffects, Array, boolean)}, but blends into
      * a transparent offscreen target as premultiplied color, whatever the batch's blending is.
      */
-    void drawPremultiplied(SpriteBatch batch, float x, float y, LayerEffects effects,
+    void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        drawGrid(batch, x, y, effects, CellBlend.PREMULTIPLIED_TARGET);
-        drawSprites(batch, x, y, effects, sprites, pixelSnapping, CellBlend.PREMULTIPLIED_TARGET);
+        drawGrid(batch, layerTransform, effects, CellBlend.PREMULTIPLIED_TARGET);
+        drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.PREMULTIPLIED_TARGET);
     }
 
-    private void drawSprites(SpriteBatch batch, float x, float y, LayerEffects effects,
+    private void drawSprites(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
         int quadCount = SpriteMesh.countDrawnLifted(cellTransforms, grid) + SpriteMesh.countVisible(sprites);
         if (quadCount == 0) {
@@ -155,7 +158,7 @@ public final class GridRenderer implements Disposable {
             spriteMesh = new SpriteMesh(resources.getShader());
         }
         spriteMesh.upload(cellTransforms, sprites, grid, quadCount, glyphSource, pixelSnapping);
-        spriteMesh.draw(batch, glyphTexture, x, y, effects, blend);
+        spriteMesh.draw(batch, glyphTexture, layerTransform, effects, blend);
     }
 
     private void rebuildIfStale() {
@@ -197,7 +200,7 @@ public final class GridRenderer implements Disposable {
         this.cellTransforms = Objects.requireNonNull(cellTransforms, "cellTransforms");
     }
 
-    private void drawGrid(SpriteBatch batch, float x, float y, LayerEffects effects, CellBlend blend) {
+    private void drawGrid(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, CellBlend blend) {
         rebuildIfStale();
         if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getHeight(); row++) {
@@ -215,7 +218,7 @@ public final class GridRenderer implements Disposable {
             uploadPending = false;
             mesh.upload(cache.getVertices());
         }
-        mesh.draw(batch, glyphTexture, x, y, effects,
+        mesh.draw(batch, glyphTexture, layerTransform, effects,
                 cache.getNotOpaqueCellCount() == 0, cache.getVisibleCellCount() > 0, blend);
     }
 

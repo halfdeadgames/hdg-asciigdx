@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Matrix4;
 
 /**
@@ -15,6 +16,7 @@ final class CellShaderPass {
 
     private final ShaderProgram shader;
     private final Matrix4 combinedMatrix = new Matrix4();
+    private final Matrix4 layerMatrix = new Matrix4();
 
     CellShaderPass(ShaderProgram shader) {
         this.shader = shader;
@@ -26,16 +28,16 @@ final class CellShaderPass {
 
     /**
      * Flushes the batch and prepares the cell shader with the batch's projection, transform, and
-     * blending (or the blend requested), translated by the given offset. Blending is switched off
+     * blending (or the blend requested), followed by the layer transform. Blending is switched off
      * only when the caller says everything drawn is opaque and the tint alpha is 1, or when the
      * batch has blending off and the batch blend is requested. The batch must be begun.
      */
-    void begin(SpriteBatch batch, Texture glyphTexture, float offsetX, float offsetY,
+    void begin(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
             LayerEffects effects, boolean allOpaque, CellBlend blend) {
         batch.flush();
         applyBlend(batch, blend, allOpaque && effects.getTintA() == 1f);
-        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix())
-                .translate(offsetX, offsetY, 0f);
+        layerMatrix.set(layerTransform);
+        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix()).mul(layerMatrix);
         shader.bind();
         shader.setUniformMatrix("u_projTrans", combinedMatrix);
         shader.setUniformi("u_texture", 0);

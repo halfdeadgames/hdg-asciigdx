@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -51,9 +52,9 @@ class LayerCellTest {
         int bindCount;
 
         @Override
-        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            positions.add(new float[] {x, y});
+            positions.add(new float[] {layerTransform.m02, layerTransform.m12});
         }
 
         @Override

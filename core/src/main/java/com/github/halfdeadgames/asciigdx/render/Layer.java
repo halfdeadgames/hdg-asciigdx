@@ -7,7 +7,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * One grid in a {@link LayerStack}, with an offset, a visibility flag, color effects (tint,
+ * One grid in a {@link LayerStack}, with an offset, a zoom, a rotation, a visibility flag, color effects (tint,
  * mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner,
@@ -26,6 +26,11 @@ public final class Layer {
     private LayerStack owner;
     private float offsetX;
     private float offsetY;
+    private float zoom = 1f;
+    private float rotation;
+    private float pivotX;
+    private float pivotY;
+    private ZoomMode zoomMode = ZoomMode.SMOOTH;
     private boolean visible = true;
     private final LayerEffects effects = new LayerEffects();
     private ClipMode clipMode = ClipMode.NONE;
@@ -146,6 +151,123 @@ public final class Layer {
      */
     public void cellOffsetBy(int columns, int rows) {
         offsetBy(columns * glyphSource.getCellWidth(), rows * glyphSource.getCellHeight());
+    }
+
+    /** Returns the requested zoom, 1 by default. See {@link #getEffectiveZoom()} for the applied one. */
+    public float getZoom() {
+        return zoom;
+    }
+
+    /** Returns the zoom and rotation pivot's x in layer pixels from the layer's left edge; 0 by default. */
+    public float getPivotX() {
+        return pivotX;
+    }
+
+    /** Returns the zoom and rotation pivot's y in layer pixels from the layer's top edge, growing down; 0 by default. */
+    public float getPivotY() {
+        return pivotY;
+    }
+
+    /** Returns how the zoom is applied, {@link ZoomMode#SMOOTH} by default. */
+    public ZoomMode getZoomMode() {
+        return zoomMode;
+    }
+
+    /** Returns the zoom actually drawn: the requested zoom for SMOOTH, or a whole number of at least 1 for WHOLE. */
+    public float getEffectiveZoom() {
+        return LayerTransform.effectiveZoom(zoom, zoomMode);
+    }
+
+    /**
+     * Scales the layer about its pivot. 1 is normal (the default).
+     *
+     * <p>The offset and the clip are not zoomed: moving the offset by 10 pixels moves the layer
+     * 10 screen pixels at any zoom, and the clip stays in stack space.
+     *
+     * <p>With {@link ZoomMode#SMOOTH} and nearest filtering, a fractional zoom gives uneven pixel
+     * widths. With {@link ZoomMode#WHOLE} the zoom is rounded to the nearest whole number, at least
+     * 1, and the zoomed layer's top-left corner always snaps to a whole pixel.
+     *
+     * @param zoom the scale factor; must be above 0 and finite
+     * @throws IllegalArgumentException if the zoom is not above 0 or not finite
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setZoom(float zoom) {
+        requireAttached();
+        if (!(zoom > 0f) || Float.isInfinite(zoom)) {
+            throw new IllegalArgumentException("zoom must be above 0 and finite: " + zoom);
+        }
+        this.zoom = zoom;
+    }
+
+    /** Returns the counterclockwise rotation in degrees, 0 by default. */
+    public float getRotation() {
+        return rotation;
+    }
+
+    /**
+     * Rotates the layer counterclockwise about its pivot (see {@link #setPivot}), which stays
+     * fixed on screen. 0 is normal (the default).
+     *
+     * <p>The pivot is shared with zoom. The offset and the clip do not rotate: the clip stays an
+     * axis-aligned rectangle in stack space.
+     *
+     * <p>With nearest filtering, angles other than multiples of 90 look jagged. Pixel snapping and
+     * {@link ZoomMode#WHOLE} only round the layer's corner, so pixels are crisp only at multiples
+     * of 90. At 90 and 270 degrees, cells of tall fonts lie sideways.
+     *
+     * @param degrees the counterclockwise angle in degrees; must be finite
+     * @throws IllegalArgumentException if the angle is not finite
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setRotation(float degrees) {
+        requireAttached();
+        if (Float.isNaN(degrees) || Float.isInfinite(degrees)) {
+            throw new IllegalArgumentException("rotation must be finite: " + degrees);
+        }
+        this.rotation = degrees;
+    }
+
+    /**
+     * Sets the point the layer zooms and rotates about, which stays fixed on screen. It moves with
+     * the offset.
+     *
+     * @param x layer pixels from the layer's left edge
+     * @param y layer pixels from the layer's top edge, growing down
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setPivot(float x, float y) {
+        requireAttached();
+        pivotX = x;
+        pivotY = y;
+    }
+
+    /**
+     * Sets the pivot to the center of a cell of this layer's glyph source, equal to
+     * {@code setPivot((column + 0.5f) * cellWidth, (row + 0.5f) * cellHeight)}. The pivot is
+     * stored in pixels: after switching to a glyph source with another cell size, call this again.
+     * The cell does not have to be inside the grid.
+     *
+     * @param column cells from the layer's left edge
+     * @param row cells from the layer's top edge, growing down
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setPivotCell(int column, int row) {
+        setPivot((column + 0.5f) * glyphSource.getCellWidth(), (row + 0.5f) * glyphSource.getCellHeight());
+    }
+
+    /**
+     * Chooses how the zoom is applied. Default {@link ZoomMode#SMOOTH}.
+     *
+     * @throws IllegalArgumentException if the mode is null
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setZoomMode(ZoomMode mode) {
+        requireAttached();
+        if (mode == null) {
+            throw new IllegalArgumentException("mode must not be null");
+        }
+        zoomMode = mode;
     }
 
     /**

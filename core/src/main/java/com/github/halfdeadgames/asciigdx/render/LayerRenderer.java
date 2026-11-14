@@ -1,22 +1,24 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
 /** Test seam for {@link LayerStack}: what a layer needs from its renderer. */
 interface LayerRenderer {
 
-    void draw(SpriteBatch batch, float x, float y, LayerEffects effects, Array<GlyphSprite> sprites,
+    /** Draws with {@code layerTransform} mapping layer-local space to batch world space. */
+    void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, Array<GlyphSprite> sprites,
             boolean pixelSnapping);
 
     /**
      * Draws like {@link #draw} into a transparent offscreen target, blending as premultiplied
      * color. Renderers without an offscreen path may keep this default.
      */
-    default void drawPremultiplied(SpriteBatch batch, float x, float y, LayerEffects effects,
+    default void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        draw(batch, x, y, effects, sprites, pixelSnapping);
+        draw(batch, layerTransform, effects, sprites, pixelSnapping);
     }
 
     /**

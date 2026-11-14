@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Disposable;
 
 /**
@@ -62,17 +63,17 @@ final class GridMesh implements Disposable {
 
     /**
      * Draws every cell in one pass using the batch's projection, transform, and
-     * blending, translated by the given offset. The shader draws each glyph over its
+     * blending, followed by the layer transform. The shader draws each glyph over its
      * background and then applies the layer effects; the batch's blend functions decide only
      * how the finished cell combines with what is below. The batch must be begun.
      * Leaves the batch's shader bound.
      */
-    void draw(SpriteBatch batch, Texture glyphTexture, float offsetX, float offsetY,
+    void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
             LayerEffects effects, boolean allCellsOpaque, boolean hasVisibleCells, CellBlend blend) {
         if (!hasVisibleCells) {
             return;
         }
-        pass.begin(batch, glyphTexture, offsetX, offsetY, effects, allCellsOpaque, blend);
+        pass.begin(batch, glyphTexture, layerTransform, effects, allCellsOpaque, blend);
         renderChunks();
         pass.end(batch);
     }

@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
@@ -14,15 +15,15 @@ final class GridLayerRenderer implements LayerRenderer {
     }
 
     @Override
-    public void draw(SpriteBatch batch, float x, float y, LayerEffects effects, Array<GlyphSprite> sprites,
-            boolean pixelSnapping) {
-        renderer.draw(batch, x, y, effects, sprites, pixelSnapping);
+    public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+            Array<GlyphSprite> sprites, boolean pixelSnapping) {
+        renderer.draw(batch, layerTransform, effects, sprites, pixelSnapping);
     }
 
     @Override
-    public void drawPremultiplied(SpriteBatch batch, float x, float y, LayerEffects effects,
+    public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        renderer.drawPremultiplied(batch, x, y, effects, sprites, pixelSnapping);
+        renderer.drawPremultiplied(batch, layerTransform, effects, sprites, pixelSnapping);
     }
 
     @Override

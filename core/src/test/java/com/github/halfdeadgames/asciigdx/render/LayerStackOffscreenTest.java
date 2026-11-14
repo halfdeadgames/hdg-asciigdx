@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
@@ -100,13 +101,13 @@ class LayerStackOffscreenTest {
 
     private final LayerStack stack = new LayerStack((grid, source, shared) -> new LayerRenderer() {
         @Override
-        public void draw(SpriteBatch batch, float x, float y, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             events.add("draw alpha " + effects.getTintA());
         }
 
         @Override
-        public void drawPremultiplied(SpriteBatch batch, float x, float y, LayerEffects effects,
+        public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             events.add("drawPremultiplied alpha " + effects.getTintA() + " sat " + effects.getSaturation());
         }
