@@ -116,7 +116,7 @@ class LayerCellTest {
         assertEquals(1f, handle.getOffsetX());
         assertThrows(IllegalStateException.class, () -> handle.setOffset(0f, 0f));
         assertThrows(IllegalStateException.class, () -> layer.cell(0, 0));
-        assertThrows(IllegalStateException.class, layer::resetLiftedCells);
+        assertThrows(IllegalStateException.class, layer::resetCellHandles);
     }
 
     @Test
@@ -129,16 +129,19 @@ class LayerCellTest {
     }
 
     @Test
-    void resetLiftedCellsResetsEveryHandle() {
+    void resetCellHandlesResetsEveryHandle() {
         CellHandle a = layer.cell(0, 0);
         CellHandle b = layer.cell(1, 0);
         a.setOffset(3f, 0f);
         b.setRotation(45f);
+        b.setMix(0xFF0000FF, 0.5f);
+        b.setCodePoint('x');
 
-        layer.resetLiftedCells();
+        layer.resetCellHandles();
 
         assertFalse(a.isLifted());
         assertFalse(b.isLifted());
+        assertFalse(b.hasOverrides());
     }
 
     @Test
@@ -156,7 +159,7 @@ class LayerCellTest {
         draw();
         assertEquals(List.of("hide 1,1"), renderer.events);
 
-        layer.resetLiftedCells();
+        layer.resetCellHandles();
         draw();
         draw();
         assertEquals(List.of("hide 1,1", "show 1,1"), renderer.events);

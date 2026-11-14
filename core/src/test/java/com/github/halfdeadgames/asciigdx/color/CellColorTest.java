@@ -12,6 +12,30 @@ class CellColorTest {
     private static final int BLUE = 0x0000FFFF;
 
     @Test
+    void linearMixEndpointsAreExact() {
+        assertEquals(0x102030AA, CellColor.mixRgb(0x102030AA, 0xF0E0D011, 0f));
+        assertEquals(0xF0E0D0AA, CellColor.mixRgb(0x102030AA, 0xF0E0D011, 1f));
+    }
+
+    @Test
+    void linearMixMidpointRoundsToNearest() {
+        assertEquals(0x808080FF, CellColor.mixRgb(0x000000FF, 0xFFFFFFFF, 0.5f));
+        assertEquals(0x0A0A0AFF, CellColor.mixRgb(0x000000FF, 0x636363FF, 0.1f));
+    }
+
+    @Test
+    void linearMixKeepsTheFromAlpha() {
+        assertEquals(0x80, CellColor.mixRgb(0xFF000080, 0x0000FF00, 0.3f) & 0xFF);
+    }
+
+    @Test
+    void linearMixClampsAmountAndTreatsNaNAsZero() {
+        assertEquals(RED, CellColor.mixRgb(RED, BLUE, -0.5f));
+        assertEquals(BLUE, CellColor.mixRgb(RED, BLUE, 1.5f));
+        assertEquals(RED, CellColor.mixRgb(RED, BLUE, Float.NaN));
+    }
+
+    @Test
     void rgbAddsFullAlpha() {
         assertEquals(0xFF4040FF, CellColor.rgb(0xFF4040));
     }

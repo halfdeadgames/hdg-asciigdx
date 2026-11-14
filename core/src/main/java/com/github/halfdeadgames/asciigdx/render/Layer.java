@@ -436,6 +436,8 @@ public final class Layer {
      * color even on a darkly tinted layer. Only the invert follows it (see {@link #setInvert}).
      *
      * @throws IllegalStateException if the layer was removed
+     * @see CellHandle#setMix(int, float) the cell-level mix, which takes an RGBA8888 int and
+     *     changes one cell's own colors before the layer effects run
      */
     public void setMix(float r, float g, float b, float amount) {
         requireAttached();
@@ -674,11 +676,12 @@ public final class Layer {
     }
 
     /**
-     * Resets every cell handle to its defaults, so all lifted glyphs settle back into the grid.
+     * Resets everything on every cell handle: lifted glyphs settle back into the grid, and the
+     * temporary colors and glyphs on them are cleared.
      *
      * @throws IllegalStateException if the layer was removed
      */
-    public void resetLiftedCells() {
+    public void resetCellHandles() {
         requireAttached();
         for (int i = 0; i < cellHandles.size; i++) {
             cellHandles.get(i).reset();
@@ -687,7 +690,7 @@ public final class Layer {
 
     /**
      * Removes every free sprite (those added with {@link #addSprite}), like calling
-     * {@link #removeSprite} on each. Lifted cells are not touched; see {@link #resetLiftedCells}.
+     * {@link #removeSprite} on each. Cell handles are not touched; see {@link #resetCellHandles}.
      *
      * @throws IllegalStateException if the layer was removed
      */
@@ -700,13 +703,13 @@ public final class Layer {
     }
 
     /**
-     * Settles every lifted glyph back into the grid ({@link #resetLiftedCells}) and removes every
-     * free sprite ({@link #removeFreeSprites}).
+     * Resets every cell handle ({@link #resetCellHandles}), which also clears their temporary
+     * colors and glyphs, and removes every free sprite ({@link #removeFreeSprites}).
      *
      * @throws IllegalStateException if the layer was removed
      */
     public void clearAllSprites() {
-        resetLiftedCells();
+        resetCellHandles();
         removeFreeSprites();
     }
 

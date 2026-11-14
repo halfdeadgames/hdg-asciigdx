@@ -208,7 +208,7 @@ class SpritesScene extends GridScene {
     }
 
     private void resetLiftedCells() {
-        mapLayer.resetLiftedCells();
+        mapLayer.resetCellHandles();
         for (int i = 0; i < monsters.length; i++) {
             monsters[i].suspendUntilNextCycle();
         }

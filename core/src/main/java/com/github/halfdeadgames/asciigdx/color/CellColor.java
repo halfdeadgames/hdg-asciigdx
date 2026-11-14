@@ -89,6 +89,38 @@ public final class CellColor {
         return withAlpha(OklabMix.mixRgb(fromRgba, toRgba, amount), alpha);
     }
 
+    /**
+     * Interpolates the red, green, and blue bytes of the stored RGBA8888 values per channel,
+     * rounding each to the nearest value. This is not gamma-correct. The alpha of
+     * {@code fromRgba} is kept unchanged.
+     *
+     * @see #mixOklab
+     *
+     * @param fromRgba color at amount 0, as RGBA8888
+     * @param toRgba color at amount 1, as RGBA8888; its alpha is ignored
+     * @param amount mix factor, clamped to 0 to 1; NaN counts as 0
+     * @return the blended color; exactly {@code fromRgba} at 0, and the rgb of {@code toRgba} with
+     *     the alpha of {@code fromRgba} at 1
+     */
+    public static int mixRgb(int fromRgba, int toRgba, float amount) {
+        if (!(amount > 0f)) {
+            return fromRgba;
+        }
+        if (amount >= 1f) {
+            return (toRgba & RGB_ONLY_MASK) | (fromRgba & ALPHA_MASK);
+        }
+        int red = mixChannel(fromRgba, toRgba, 24, amount);
+        int green = mixChannel(fromRgba, toRgba, 16, amount);
+        int blue = mixChannel(fromRgba, toRgba, 8, amount);
+        return (red << 24) | (green << 16) | (blue << 8) | (fromRgba & ALPHA_MASK);
+    }
+
+    private static int mixChannel(int fromRgba, int toRgba, int shift, float amount) {
+        int from = (fromRgba >>> shift) & ALPHA_MASK;
+        int to = (toRgba >>> shift) & ALPHA_MASK;
+        return Math.round(from + (to - from) * amount);
+    }
+
     private static void requireChannel(String name, int value) {
         if (value < 0 || value > 255) {
             throw new IllegalArgumentException(
