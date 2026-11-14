@@ -19,9 +19,14 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.RainSet;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.RippleRings;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterRipple;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.Splash;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.SplashColor;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
@@ -144,6 +149,22 @@ class ShowcaseScene extends GridScene {
     private static final float HP_AFTER_WAIL = 0.55f;
     private static final float HP_LOST_AT_END = 1f - HP_AFTER_WAIL;
 
+    private static final float SPLASH_SECONDS = 7.6f;
+    private static final float SPRAY_SECONDS = 0.7f;
+    private static final float FLASH_SECONDS = 0.25f;
+    private static final int SPRAY_DROPLET_COUNT = 8;
+    private static final float SPRAY_MAX_DISTANCE_CELLS = 4f;
+    private static final float SPRAY_PEAK_SCALE = 1.8f;
+
+    private static final float RIPPLE_STAGGER_SECONDS = 0.15f;
+    private static final int RIPPLE_RING_COUNT = 3;
+    private static final float RIPPLE_RING_LIFE_SECONDS = 0.9f;
+    private static final float RIPPLE_SPEED_CELLS_PER_SECOND = 9f;
+    private static final float RIPPLE_HALF_WIDTH_CELLS = 1.2f;
+    private static final float RIPPLE_MAX_SCALE_BUMP = 0.6f;
+    private static final float RIPPLE_COVER_MARGIN_CELLS = 1f;
+    private static final float WATER_ZOOM_AT_SPLASH = 1f;
+
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
     private final LoopClock clock = new LoopClock(LOOP_SECONDS, MAX_FRAME_SECONDS);
@@ -193,6 +214,9 @@ class ShowcaseScene extends GridScene {
     private final TextureGlyphSource smoothGlyphs;
     private final TextureGlyphSource crispGlyphs;
     private final Layer crispPlayerLayer;
+    private final Layer dropletLayer;
+    private Splash splash;
+    private final WaterRipple waterRipple;
     private final GlyphSprite crispPlayerSprite;
     private final float fallStartX;
     private final float fallStartY;
@@ -228,6 +252,7 @@ class ShowcaseScene extends GridScene {
         waterLayer = addWaterLayer(glyphs);
         playerLayer = addInnerLayer(smoothGlyphs);
         crispPlayerLayer = addCrispPlayerLayer(glyphs);
+        dropletLayer = addInnerLayer(glyphs);
         bridgeLayer = addBridgeLayer(glyphs);
         playerSprite = addPlayer();
         fallStartX = playerPath.columnAt(FALL_START_SECONDS) * cellWidth;
@@ -240,6 +265,8 @@ class ShowcaseScene extends GridScene {
         ghostSprite = addGhost();
         addRainLayers(glyphs);
         lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
+        splash = createSplash();
+        waterRipple = createWaterRipple();
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
         pinAllLayersToScreen();
@@ -254,6 +281,7 @@ class ShowcaseScene extends GridScene {
         float time = clock.time();
         applyCamera(time);
         applyWaterSway(time);
+        waterRipple.update(time);
         drawWaterIfStepChanged(time);
         drawPlankIfBreakChanged(time);
         updatePlayer(time);
@@ -261,6 +289,7 @@ class ShowcaseScene extends GridScene {
         updateHp(time);
         updateRain(time);
         applyLightning(time);
+        splash.update(time);
         drawLog(time);
         overlayLayer.setAlpha(fade.alphaAt(time));
     }
@@ -542,6 +571,41 @@ class ShowcaseScene extends GridScene {
         for (int drop = 0; drop < RAIN_DROPS_PER_SET; drop++) {
             rainGrids[set].set(rainDropColumns[drop], rainDropRows[drop], RAIN_DROP_CODE_POINT, RAIN_COLOR, CLEAR);
         }
+    }
+
+    /** The splash point is the center of the player's final cell; the frame, stats, and log are not tinted. */
+    private Splash createSplash() {
+        DropletSpray spray = new DropletSpray(
+            new Beat(SPLASH_SECONDS, SPRAY_SECONDS), SPRAY_DROPLET_COUNT, SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
+        SplashColor color = new SplashColor(SPLASH_SECONDS, new Beat(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out));
+        return new Splash(
+            dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth, cellHeight, spray, color,
+            waterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]);
+    }
+
+    private WaterRipple createWaterRipple() {
+        RippleRings rings = new RippleRings(
+            SPLASH_SECONDS, RIPPLE_STAGGER_SECONDS, RIPPLE_RING_COUNT, RIPPLE_RING_LIFE_SECONDS,
+            RIPPLE_SPEED_CELLS_PER_SECOND, RIPPLE_HALF_WIDTH_CELLS);
+        return new WaterRipple(
+            waterLayer, splashWaterColumn(), splashWaterRow(), cellHeight / cellWidth,
+            SCENE_INNER_WIDTH / 2f + RIPPLE_COVER_MARGIN_CELLS, SCENE_INNER_HEIGHT / 2f + RIPPLE_COVER_MARGIN_CELLS,
+            rings, RIPPLE_MAX_SCALE_BUMP);
+    }
+
+    /** The water cell-unit column under the @'s center at the splash, where the water is unrotated at zoom 1. */
+    private float splashWaterColumn() {
+        float stackX = SCENE_INNER_LEFT * cellWidth + fallEndX + cellWidth / 2f;
+        float pixelX = waterPixelAt(
+            stackX, waterRestOffsetX + waterCenterX, cameraPan.cameraXAt(SPLASH_SECONDS), WATER_ZOOM_AT_SPLASH, waterCenterX);
+        return pixelX / cellWidth;
+    }
+
+    private float splashWaterRow() {
+        float stackY = SCENE_INNER_TOP * cellHeight + fallEndY + cellHeight / 2f;
+        float pixelY = waterPixelAt(
+            stackY, waterRestOffsetY + waterCenterY, cameraPan.cameraYAt(SPLASH_SECONDS), WATER_ZOOM_AT_SPLASH, waterCenterY);
+        return pixelY / cellHeight;
     }
 
     private void applyLightning(float time) {
