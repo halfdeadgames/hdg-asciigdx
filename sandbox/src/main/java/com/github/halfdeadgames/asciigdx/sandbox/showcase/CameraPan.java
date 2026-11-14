@@ -1,17 +1,19 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-/** A camera pan from (0, 0) to a target over a beat, in layer pixels relative to the layer pivot. */
+import com.github.halfdeadgames.asciigdx.tween.Tween;
+
+/** A camera pan from (0, 0) to a target over a time span, in layer pixels relative to the layer pivot. */
 public final class CameraPan {
 
-    private final Beat beat;
+    private final Tween pan;
     private final float targetX;
     private final float targetY;
 
-    public CameraPan(Beat beat, float targetX, float targetY) {
-        if (beat == null) {
-            throw new IllegalArgumentException("beat must not be null");
+    public CameraPan(Tween pan, float targetX, float targetY) {
+        if (pan == null) {
+            throw new IllegalArgumentException("pan must not be null");
         }
-        this.beat = beat;
+        this.pan = pan;
         this.targetX = targetX;
         this.targetY = targetY;
     }
@@ -22,11 +24,11 @@ public final class CameraPan {
     }
 
     public float cameraXAt(float timeSeconds) {
-        return targetX * beat.progress(timeSeconds);
+        return targetX * pan.progressAt(timeSeconds);
     }
 
     public float cameraYAt(float timeSeconds) {
-        return targetY * beat.progress(timeSeconds);
+        return targetY * pan.progressAt(timeSeconds);
     }
 
     /**
@@ -36,6 +38,6 @@ public final class CameraPan {
      * (from - to) * (1 - progress) * zoom.
      */
     public float followAt(float timeSeconds, float from, float to, float zoom) {
-        return to + (from - to) * (1f - beat.progress(timeSeconds)) * zoom;
+        return to + (from - to) * (1f - pan.progressAt(timeSeconds)) * zoom;
     }
 }

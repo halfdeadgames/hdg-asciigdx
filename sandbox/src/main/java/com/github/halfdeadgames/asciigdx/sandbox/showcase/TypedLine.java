@@ -1,11 +1,13 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
+import com.github.halfdeadgames.asciigdx.tween.Tween;
+
 /** A message that types out at a fixed speed, read as a function of loop time. */
 public final class TypedLine {
 
     private final float startSeconds;
     private final String text;
-    private final Beat typing;
+    private final Tween typing;
 
     public TypedLine(float startSeconds, String text, float charactersPerSecond) {
         if (text == null) {
@@ -16,12 +18,12 @@ public final class TypedLine {
         }
         this.startSeconds = startSeconds;
         this.text = text;
-        this.typing = new Beat(startSeconds, text.length() / charactersPerSecond);
+        this.typing = new Tween(startSeconds, text.length() / charactersPerSecond, 0f, 1f);
     }
 
     public int visibleCharacters(float timeSeconds) {
         int length = text.length();
-        int visible = (int) Math.floor(typing.progress(timeSeconds) * length);
+        int visible = (int) Math.floor(typing.progressAt(timeSeconds) * length);
         return Math.max(0, Math.min(length, visible));
     }
 

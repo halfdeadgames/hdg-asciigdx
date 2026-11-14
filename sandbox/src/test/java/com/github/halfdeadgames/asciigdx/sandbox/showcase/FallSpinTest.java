@@ -6,13 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.math.Interpolation;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import org.junit.jupiter.api.Test;
 
 class FallSpinTest {
 
     private static final float EPSILON = 1e-4f;
 
-    private final FallSpin spin = new FallSpin(new Beat(6f, 1.3f, Interpolation.sine), 720f, 0.5f);
+    private final FallSpin spin = new FallSpin(new Tween(6f, 1.3f, 0f, 1f, Interpolation.sine), 720f, 0.5f);
 
     @Test
     void isUprightAndFullSizeBeforeStart() {
@@ -34,7 +35,7 @@ class FallSpinTest {
     }
 
     @Test
-    void swapsToCrispWhenTheBeatEnds() {
+    void swapsToCrispWhenTheSpinEnds() {
         assertFalse(spin.isCrispAt(5f));
         assertFalse(spin.isCrispAt(7.29f));
         assertTrue(spin.isCrispAt(7.31f));
@@ -42,7 +43,7 @@ class FallSpinTest {
     }
 
     @Test
-    void rejectsNullBeat() {
+    void rejectsNullTween() {
         assertThrows(IllegalArgumentException.class, () -> new FallSpin(null, 0f, 1f));
     }
 }

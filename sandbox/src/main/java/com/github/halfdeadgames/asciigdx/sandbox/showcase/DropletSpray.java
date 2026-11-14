@@ -1,10 +1,11 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.badlogic.gdx.math.Interpolation;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /**
  * Droplets thrown radially outward from one point in a top-down view. Every value is a pure function of the
- * droplet index and the time, so repeated runs match. The beat should be linear: its progress is the spray's
+ * droplet index and the time, so repeated runs match. The spray tween should be linear: its progress is the spray's
  * linear progress, and the outward easing is applied here.
  */
 public final class DropletSpray {
@@ -16,7 +17,7 @@ public final class DropletSpray {
     private static final float GOLDEN_FRACTION = 0.618034f;
     private static final float FULL_ALPHA_UNTIL = 0.5f;
 
-    private final Beat beat;
+    private final Tween spray;
     private final int count;
     private final float maxDistanceCells;
     private final float peakScale;
@@ -24,16 +25,16 @@ public final class DropletSpray {
     private final float[] directionsY;
     private final float[] distanceMultipliers;
 
-    public DropletSpray(Beat beat, int count, float maxDistanceCells, float peakScale) {
-        if (beat == null) {
-            throw new IllegalArgumentException("beat must not be null");
+    public DropletSpray(Tween spray, int count, float maxDistanceCells, float peakScale) {
+        if (spray == null) {
+            throw new IllegalArgumentException("spray must not be null");
         }
         if (count < 1) {
             throw new IllegalArgumentException("count must be >= 1: " + count);
         }
         requireFinitePositive(maxDistanceCells, "maxDistanceCells");
         requireFinitePositive(peakScale, "peakScale");
-        this.beat = beat;
+        this.spray = spray;
         this.count = count;
         this.maxDistanceCells = maxDistanceCells;
         this.peakScale = peakScale;
@@ -77,21 +78,21 @@ public final class DropletSpray {
     }
 
     public float distanceCellsAt(int index, float timeSeconds) {
-        return Interpolation.pow2Out.apply(beat.progress(timeSeconds)) * maxDistanceCells * distanceMultipliers[index];
+        return Interpolation.pow2Out.apply(spray.progressAt(timeSeconds)) * maxDistanceCells * distanceMultipliers[index];
     }
 
-    /** Rises from 1 to the peak at mid-beat, then falls back to 1. */
+    /** Rises from 1 to the peak at mid-spray, then falls back to 1. */
     public float scaleAt(float timeSeconds) {
-        float progress = beat.progress(timeSeconds);
+        float progress = spray.progressAt(timeSeconds);
         return 1f + (peakScale - 1f) * 4f * progress * (1f - progress);
     }
 
-    /** 0 outside the beat; 1 for the first half, then linear down to 0 at the end. */
+    /** 0 outside the spray; 1 for the first half, then linear down to 0 at the end. */
     public float alphaAt(float timeSeconds) {
         if (!isVisibleAt(timeSeconds)) {
             return 0f;
         }
-        float progress = beat.progress(timeSeconds);
+        float progress = spray.progressAt(timeSeconds);
         if (progress <= FULL_ALPHA_UNTIL) {
             return 1f;
         }
@@ -99,6 +100,6 @@ public final class DropletSpray {
     }
 
     public boolean isVisibleAt(float timeSeconds) {
-        return beat.isActive(timeSeconds);
+        return spray.isActiveAt(timeSeconds);
     }
 }

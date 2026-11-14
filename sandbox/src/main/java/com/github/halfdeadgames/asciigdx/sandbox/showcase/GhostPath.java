@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.badlogic.gdx.math.Interpolation;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /** Where a ghost is, how much it bobs, and how opaque it is at a loop time. Positions are in cells. */
 public final class GhostPath {
@@ -18,8 +19,8 @@ public final class GhostPath {
     private static final float FLICKER_RANGE = 1f - FLICKER_FLOOR;
     private static final float TWO_PI = (float) (2.0 * Math.PI);
 
-    private final Beat drift = new Beat(DRIFT_START_SECONDS, DRIFT_SECONDS, Interpolation.sineOut);
-    private final Beat wail = new Beat(WAIL_START_SECONDS, WAIL_SECONDS);
+    private final Tween drift = new Tween(DRIFT_START_SECONDS, DRIFT_SECONDS, 0f, 1f, Interpolation.sineOut);
+    private final Tween wail = new Tween(WAIL_START_SECONDS, WAIL_SECONDS, 0f, 1f);
     private final float startColumn;
     private final float endColumn;
 
@@ -37,7 +38,7 @@ public final class GhostPath {
     }
 
     public float columnAt(float timeSeconds) {
-        return startColumn + (endColumn - startColumn) * drift.progress(timeSeconds);
+        return startColumn + (endColumn - startColumn) * drift.progressAt(timeSeconds);
     }
 
     public float wobbleRowsAt(float timeSeconds) {
@@ -48,8 +49,8 @@ public final class GhostPath {
         if (!isVisibleAt(timeSeconds)) {
             return 0f;
         }
-        float baseAlpha = SETTLED_ALPHA * drift.progress(timeSeconds);
-        if (!wail.isActive(timeSeconds)) {
+        float baseAlpha = SETTLED_ALPHA * drift.progressAt(timeSeconds);
+        if (!wail.isActiveAt(timeSeconds)) {
             return baseAlpha;
         }
         return baseAlpha * flickerAt(timeSeconds);

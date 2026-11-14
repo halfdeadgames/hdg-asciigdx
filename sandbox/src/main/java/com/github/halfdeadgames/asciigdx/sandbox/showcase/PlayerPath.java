@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.badlogic.gdx.math.Interpolation;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /**
  * Where the player is at a loop time: whole-cell backing slides, then a hop in place (scale arc only) over the
@@ -16,8 +17,8 @@ public final class PlayerPath {
     private static final float HOP_SECONDS = 0.4f;
     private static final float HOP_PEAK_SCALE_GAIN = 0.4f;
 
-    private final Beat[] slides;
-    private final Beat hopArc = new Beat(HOP_START_SECONDS, HOP_SECONDS);
+    private final Tween[] slides;
+    private final Tween hopArc = new Tween(HOP_START_SECONDS, HOP_SECONDS, 0f, 1f);
     private final int startColumn;
     private final int startRow;
 
@@ -27,17 +28,17 @@ public final class PlayerPath {
         }
         this.startColumn = startColumn;
         this.startRow = startRow;
-        this.slides = new Beat[stepCount];
+        this.slides = new Tween[stepCount];
         for (int step = 0; step < stepCount; step++) {
             float slideStart = FIRST_STEP_START_SECONDS + step * STEP_INTERVAL_SECONDS;
-            slides[step] = new Beat(slideStart, SLIDE_SECONDS, Interpolation.sineOut);
+            slides[step] = new Tween(slideStart, SLIDE_SECONDS, 0f, 1f, Interpolation.sineOut);
         }
     }
 
     public float columnAt(float timeSeconds) {
         float column = startColumn;
         for (int step = 0; step < slides.length; step++) {
-            column += slides[step].progress(timeSeconds);
+            column += slides[step].progressAt(timeSeconds);
         }
         return column;
     }
@@ -47,6 +48,6 @@ public final class PlayerPath {
     }
 
     public float scaleAt(float timeSeconds) {
-        return 1f + HOP_PEAK_SCALE_GAIN * (float) Math.sin(Math.PI * hopArc.progress(timeSeconds));
+        return 1f + HOP_PEAK_SCALE_GAIN * (float) Math.sin(Math.PI * hopArc.progressAt(timeSeconds));
     }
 }

@@ -18,13 +18,35 @@ public final class SplashColor {
             .build();
     }
 
-    /** 1 before the splash, 0 from the splash through the sink, then eased back up to 1 over the surfacing. */
-    public static FloatTrack saturationTrack(
-            float splashSeconds, float sinkSeconds, float surfaceSeconds, Interpolation easing) {
-        return TweenSequence.startingAt(splashSeconds, 1f)
-            .to(0f, 0f)
-            .hold(sinkSeconds)
-            .to(1f, surfaceSeconds, easing)
-            .build();
+    /** 1 before the splash, 0 from the splash through the sink, then eased back up to 1 over the dive's surfacing. */
+    public static FloatTrack saturationTrack(UnderwaterDive dive) {
+        return new SaturationTrack(dive);
+    }
+
+    private static final class SaturationTrack implements FloatTrack {
+
+        private final UnderwaterDive dive;
+
+        SaturationTrack(UnderwaterDive dive) {
+            this.dive = dive;
+        }
+
+        @Override
+        public float valueAt(float timeSeconds) {
+            if (timeSeconds < dive.sinkStartSeconds()) {
+                return 1f;
+            }
+            return dive.surfaceProgressAt(timeSeconds);
+        }
+
+        @Override
+        public float start() {
+            return dive.sinkStartSeconds();
+        }
+
+        @Override
+        public float end() {
+            return dive.surfaceEndSeconds();
+        }
     }
 }

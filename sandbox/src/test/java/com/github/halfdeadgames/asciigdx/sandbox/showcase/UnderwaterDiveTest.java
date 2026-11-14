@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.math.Interpolation;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import org.junit.jupiter.api.Test;
 
 class UnderwaterDiveTest {
@@ -13,7 +14,7 @@ class UnderwaterDiveTest {
     private static final float EPSILON = 1e-5f;
     private static final float MINIMUM_SEE_THROUGH = 0.35f;
     private final UnderwaterDive dive = new UnderwaterDive(
-        new Beat(7.6f, 0.4f, Interpolation.sineOut), new Beat(8.0f, 0.6f, Interpolation.sine));
+        new Tween(7.6f, 0.4f, 0f, 1f, Interpolation.sineOut), new Tween(8.0f, 0.6f, 0f, 1f, Interpolation.sine));
 
     @Test
     void isUnderwaterOnlyInsideTheWindow() {
@@ -102,10 +103,10 @@ class UnderwaterDiveTest {
 
     @Test
     void rejectsInvalidArguments() {
-        Beat beat = new Beat(7.6f, 0.4f);
-        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(null, beat));
-        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(beat, null));
-        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(beat, new Beat(7.9f, 0.6f)));
+        Tween sink = new Tween(7.6f, 0.4f, 0f, 1f);
+        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(null, sink));
+        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(sink, null));
+        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(sink, new Tween(7.9f, 0.6f, 0f, 1f)));
         assertThrows(IllegalArgumentException.class, () -> dive.waterAlphaAt(-1f, 8.0f));
         assertThrows(IllegalArgumentException.class, () -> dive.waterAlphaAt(Float.NaN, 8.0f));
     }

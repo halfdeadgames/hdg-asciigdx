@@ -5,13 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.tween.FloatTrack;
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import org.junit.jupiter.api.Test;
 
 class SplashColorTest {
 
     private static final float EPSILON = 1e-5f;
     private final FloatTrack flash = SplashColor.flashTrack(7.6f, 0.25f, Interpolation.pow2Out);
-    private final FloatTrack saturation = SplashColor.saturationTrack(7.6f, 0.4f, 0.6f, Interpolation.sine);
+    private final FloatTrack saturation = SplashColor.saturationTrack(new UnderwaterDive(
+        new Tween(7.6f, 0.4f, 0f, 1f, Interpolation.sineOut),
+        new Tween(7.6f + 0.4f, 0.6f, 0f, 1f, Interpolation.sine)));
 
     @Test
     void flashIsZeroBeforeTheSplash() {

@@ -10,7 +10,6 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.Beat;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
@@ -92,17 +91,17 @@ class ShowcaseScene extends GridScene {
     private static final float FALL_SECONDS = 1.6f;
     private static final float PAN_SECONDS = 0.8f;
     private static final float FALL_CAMERA_DEPTH = 2.5f;
-    private static final Beat CAMERA_DEPTH_FALL = new Beat(FALL_START_SECONDS, FALL_SECONDS, Interpolation.pow2In);
+    private static final Tween CAMERA_DEPTH_FALL = new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f, Interpolation.pow2In);
     private static final float SPIN_SECONDS = 1.3f;
     private static final float SPIN_DEGREES = 720f;
     private static final float SHRUNK_SCALE = 0.5f;
     private static final FallSpin FALL_SPIN = new FallSpin(
-        new Beat(FALL_START_SECONDS, SPIN_SECONDS, Interpolation.sine), SPIN_DEGREES, SHRUNK_SCALE);
-    private static final Beat CAMERA_PAN_BEAT = new Beat(FALL_START_SECONDS, PAN_SECONDS, Interpolation.sine);
+        new Tween(FALL_START_SECONDS, SPIN_SECONDS, 0f, 1f, Interpolation.sine), SPIN_DEGREES, SHRUNK_SCALE);
+    private static final Tween CAMERA_PAN = new Tween(FALL_START_SECONDS, PAN_SECONDS, 0f, 1f, Interpolation.sine);
     private static final float WATER_SWAY_DEGREES = 3f;
     private static final float WATER_SWAY_CYCLES_PER_SECOND = 1.25f;
     private static final WaterSway WATER_SWAY = new WaterSway(
-        new Beat(FALL_START_SECONDS, FALL_SECONDS), WATER_SWAY_DEGREES, WATER_SWAY_CYCLES_PER_SECOND);
+        new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f), WATER_SWAY_DEGREES, WATER_SWAY_CYCLES_PER_SECOND);
 
     /**
      * Sized so the water covers the inner area at its zoom of 1 / WATER_DEPTH. The pan shifts it by up to
@@ -175,8 +174,8 @@ class ShowcaseScene extends GridScene {
     private static final float SINK_SECONDS = 0.4f;
     private static final float SURFACE_SECONDS = 0.6f;
     private static final UnderwaterDive UNDERWATER_DIVE = new UnderwaterDive(
-        new Beat(SPLASH_SECONDS, SINK_SECONDS, Interpolation.sineOut),
-        new Beat(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, Interpolation.sine));
+        new Tween(SPLASH_SECONDS, SINK_SECONDS, 0f, 1f, Interpolation.sineOut),
+        new Tween(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, 0f, 1f, Interpolation.sine));
 
     private static final String TITLE_TEXT = "AsciiGDX";
     private static final float TITLE_START_SECONDS = 8.6f;
@@ -359,9 +358,7 @@ class ShowcaseScene extends GridScene {
 
     private void bindSplashColors() {
         timeline.bind(SplashColor.flashTrack(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out), this::mixSplashLayersWithWhite);
-        timeline.bind(
-            SplashColor.saturationTrack(SPLASH_SECONDS, SINK_SECONDS, SURFACE_SECONDS, Interpolation.sine),
-            this::saturateSplashLayers);
+        timeline.bind(SplashColor.saturationTrack(UNDERWATER_DIVE), this::saturateSplashLayers);
     }
 
     private void mixSplashLayersWithWhite(float amount) {
@@ -476,7 +473,7 @@ class ShowcaseScene extends GridScene {
     private CameraPan createCameraPan() {
         float targetX = CameraPan.cellCenterFromPivot(playerPath.columnAt(FALL_START_SECONDS), cellWidth, SCENE_INNER_WIDTH * cellWidth / 2f);
         float targetY = CameraPan.cellCenterFromPivot(playerPath.rowAt(FALL_START_SECONDS), cellHeight, SCENE_INNER_HEIGHT * cellHeight / 2f);
-        return new CameraPan(CAMERA_PAN_BEAT, targetX, targetY);
+        return new CameraPan(CAMERA_PAN, targetX, targetY);
     }
 
     /** Stops every layer from following the camera. Depth layers then get their parallax from their zoom each frame. */
@@ -487,7 +484,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private void applyCamera(float time) {
-        camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.progress(time));
+        camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.progressAt(time));
         layers.setCamera(cameraPan.cameraXAt(time), cameraPan.cameraYAt(time));
         applyDepth();
     }
@@ -714,7 +711,7 @@ class ShowcaseScene extends GridScene {
     /** The splash point is the center of the player's final cell; the frame, stats, and log are not tinted. */
     private Splash createSplash() {
         DropletSpray spray = new DropletSpray(
-            new Beat(SPLASH_SECONDS, SPRAY_SECONDS), SPRAY_DROPLET_COUNT, SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
+            new Tween(SPLASH_SECONDS, SPRAY_SECONDS, 0f, 1f), SPRAY_DROPLET_COUNT, SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
         return new Splash(
             dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth, cellHeight, spray);
     }

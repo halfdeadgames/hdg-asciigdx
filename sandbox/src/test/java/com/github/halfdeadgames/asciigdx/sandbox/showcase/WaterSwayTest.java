@@ -5,16 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import org.junit.jupiter.api.Test;
 
 class WaterSwayTest {
 
     private static final float PEAK_DEGREES = 3f;
     private static final float EPSILON = 1e-5f;
-    private final WaterSway sway = new WaterSway(new Beat(6.0f, 1.6f), PEAK_DEGREES, 1.25f);
+    private final WaterSway sway = new WaterSway(new Tween(6.0f, 1.6f, 0f, 1f), PEAK_DEGREES, 1.25f);
 
     @Test
-    void isZeroOutsideTheBeat() {
+    void isZeroOutsideTheSway() {
         assertEquals(0f, sway.degreesAt(0f), EPSILON);
         assertEquals(0f, sway.degreesAt(5.99f), EPSILON);
         assertEquals(0f, sway.degreesAt(7.6f), EPSILON);
@@ -42,14 +43,14 @@ class WaterSwayTest {
     }
 
     @Test
-    void rocksBothWaysDuringTheBeat() {
+    void rocksBothWaysDuringTheSway() {
         assertTrue(sway.degreesAt(6.2f) > 0f);
         assertTrue(sway.degreesAt(6.6f) < 0f);
         assertNotEquals(0f, sway.degreesAt(6.7f));
     }
 
     @Test
-    void rejectsNullBeat() {
+    void rejectsNullTween() {
         assertThrows(IllegalArgumentException.class, () -> new WaterSway(null, 1f, 1f));
     }
 }

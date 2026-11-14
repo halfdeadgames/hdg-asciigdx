@@ -3,13 +3,14 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.github.halfdeadgames.asciigdx.tween.Tween;
 import org.junit.jupiter.api.Test;
 
 class CameraPanTest {
 
     private static final float EPSILON = 1e-4f;
 
-    private final CameraPan pan = new CameraPan(new Beat(2f, 4f), 40f, -20f);
+    private final CameraPan pan = new CameraPan(new Tween(2f, 4f, 0f, 1f), 40f, -20f);
 
     @Test
     void staysAtOriginBeforeStart() {
@@ -24,7 +25,7 @@ class CameraPanTest {
     }
 
     @Test
-    void isHalfwayAtMiddleOfLinearBeat() {
+    void isHalfwayAtMiddleOfLinearPan() {
         assertEquals(20f, pan.cameraXAt(4f), EPSILON);
         assertEquals(-10f, pan.cameraYAt(4f), EPSILON);
     }
@@ -39,7 +40,7 @@ class CameraPanTest {
     void followMatchesTheZoomedLayerSpot() {
         float from = 90f;
         float to = 50f;
-        CameraPan towardSpot = new CameraPan(new Beat(2f, 4f), from - to, 0f);
+        CameraPan towardSpot = new CameraPan(new Tween(2f, 4f, 0f, 1f), from - to, 0f);
         float zoom = 1.75f;
         float layerSpotOnScreen = to + (from - to - towardSpot.cameraXAt(3f)) * zoom;
         assertEquals(layerSpotOnScreen, towardSpot.followAt(3f, from, to, zoom), EPSILON);
@@ -51,7 +52,7 @@ class CameraPanTest {
     }
 
     @Test
-    void rejectsNullBeat() {
+    void rejectsNullTween() {
         assertThrows(IllegalArgumentException.class, () -> new CameraPan(null, 0f, 0f));
     }
 }
