@@ -232,7 +232,7 @@ class LayerTransformScene extends GridScene {
         }
         viewport.unproject(pointerWorld);
         float stackY = viewport.getWorldHeight();
-        if (!layers.isShownAt(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y)) {
+        if (!layers.isPickableAt(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y)) {
             clearHighlight();
             return;
         }

@@ -34,6 +34,7 @@ public final class Layer {
     private float parallaxX = 1f;
     private float parallaxY = 1f;
     private boolean visible = true;
+    private boolean pickable = true;
     private final LayerEffects effects = new LayerEffects();
     private ClipMode clipMode = ClipMode.NONE;
     private float clipX;
@@ -105,6 +106,11 @@ public final class Layer {
     /** Returns whether the layer is drawn. */
     public boolean isVisible() {
         return visible;
+    }
+
+    /** Returns whether the stack's pick test can hit the layer. */
+    public boolean isPickable() {
+        return pickable;
     }
 
     /**
@@ -318,6 +324,17 @@ public final class Layer {
     public void setVisible(boolean visible) {
         requireAttached();
         this.visible = visible;
+    }
+
+    /**
+     * Sets whether the stack's pick test, {@link LayerStack#isPickableAt}, can hit this layer. A
+     * non-pickable layer still draws; it is only ignored by the pick test.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setPickable(boolean pickable) {
+        requireAttached();
+        this.pickable = pickable;
     }
 
     /** Returns the tint's red component. */

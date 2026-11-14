@@ -245,7 +245,7 @@ class ParallaxScene extends GridScene {
         pointerWorld.set(pointerScreenX, pointerScreenY);
         viewport.unproject(pointerWorld);
         float stackY = viewport.getWorldHeight();
-        if (!layers.isShownAt(groundLayer, 0f, stackY, pointerWorld.x, pointerWorld.y)) {
+        if (!layers.isPickableAt(groundLayer, 0f, stackY, pointerWorld.x, pointerWorld.y)) {
             clearHighlight();
             return;
         }

@@ -215,7 +215,7 @@ class LayerStackHitTest {
 
     @Test
     void shownWithoutClip() {
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, -5000f, 5000f));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, -5000f, 5000f));
     }
 
     @Test
@@ -224,12 +224,12 @@ class LayerStackHitTest {
         float left = STACK_X + 10f;
         float top = STACK_Y - 20f;
 
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, left, top));
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, left + 29.9f, top - 39.9f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, left + 30f, top - 10f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, left + 10f, top - 40f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, left - 0.1f, top - 10f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, left + 10f, top + 0.1f));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, left, top));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, left + 29.9f, top - 39.9f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, left + 30f, top - 10f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, left + 10f, top - 40f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, left - 0.1f, top - 10f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, left + 10f, top + 0.1f));
     }
 
     @Test
@@ -239,9 +239,9 @@ class LayerStackHitTest {
         float pointBetweenEdges = 110.2f;
 
         stack.setPixelSnapping(true);
-        assertTrue(stack.isShownAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
+        assertTrue(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
         stack.setPixelSnapping(false);
-        assertFalse(stack.isShownAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
+        assertFalse(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
     }
 
     @Test
@@ -250,14 +250,28 @@ class LayerStackHitTest {
         layer.setZoom(3f);
         layer.setRotation(45f);
 
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 9f, STACK_Y - 9f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 1f, STACK_Y - 9f));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 9f, STACK_Y - 9f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 1f, STACK_Y - 9f));
     }
 
     @Test
     void hiddenLayerIsNeverShown() {
         layer.setVisible(false);
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X, STACK_Y));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X, STACK_Y));
+    }
+
+    @Test
+    void layersArePickableByDefault() {
+        assertTrue(layer.isPickable());
+    }
+
+    @Test
+    void nonPickableLayerIsNeverPicked() {
+        layer.setPickable(false);
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X, STACK_Y));
+
+        layer.setPickable(true);
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X, STACK_Y));
     }
 
     @Test
@@ -265,9 +279,9 @@ class LayerStackHitTest {
         stack.setSize(50f, 30f);
         layer.clipToStack();
 
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 49f, STACK_Y - 29f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 50f, STACK_Y - 10f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 10f, STACK_Y - 30f));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 49f, STACK_Y - 29f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 50f, STACK_Y - 10f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 10f, STACK_Y - 30f));
     }
 
     @Test
@@ -276,7 +290,7 @@ class LayerStackHitTest {
         layer.clipToStack();
         stack.setSize(0f, 0f);
 
-        assertThrows(IllegalStateException.class, () -> stack.isShownAt(layer, STACK_X, STACK_Y, 0f, 0f));
+        assertThrows(IllegalStateException.class, () -> stack.isPickableAt(layer, STACK_X, STACK_Y, 0f, 0f));
     }
 
     @Test
@@ -285,7 +299,7 @@ class LayerStackHitTest {
         Layer foreign = other.add(new TerminalGrid(1, 1), new FakeSource());
 
         assertThrows(IllegalArgumentException.class, () -> stack.cellAt(foreign, 0f, 0f, 0f, 0f, cell));
-        assertThrows(IllegalArgumentException.class, () -> stack.isShownAt(foreign, 0f, 0f, 0f, 0f));
+        assertThrows(IllegalArgumentException.class, () -> stack.isPickableAt(foreign, 0f, 0f, 0f, 0f));
     }
 
     @Test
@@ -293,7 +307,7 @@ class LayerStackHitTest {
         stack.remove(layer);
 
         assertThrows(IllegalStateException.class, () -> stack.cellAt(layer, 0f, 0f, 0f, 0f, cell));
-        assertThrows(IllegalStateException.class, () -> stack.isShownAt(layer, 0f, 0f, 0f, 0f));
+        assertThrows(IllegalStateException.class, () -> stack.isPickableAt(layer, 0f, 0f, 0f, 0f));
     }
 
     @Test

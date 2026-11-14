@@ -302,7 +302,8 @@ public final class LayerStack implements Disposable {
      * <p>The result is always written to {@code out}, even outside the grid, so the column and
      * row can be negative or at or past the grid size. Check {@code grid.contains(column, row)}
      * before using them. A point exactly on a cell border belongs to the cell to its right or
-     * below it. Visibility and clip are ignored; use {@link #isShownAt} for those.
+     * below it. Visibility, the pickable flag, and clip are ignored; use {@link #isPickableAt}
+     * for those.
      *
      * @param layer a layer of this stack
      * @param stackX the x passed to {@link #draw}
@@ -327,8 +328,8 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Tells whether a layer is visible and a point is inside its clip window. A layer without a
-     * clip counts as inside everywhere. The clip is in stack space, from the stack's top-left
+     * Tells whether a layer is visible, pickable, and a point is inside its clip window. A layer
+     * without a clip counts as inside everywhere. The clip is in stack space, from the stack's top-left
      * corner with y down, and is not zoomed or rotated. The right and bottom edges are outside.
      * With pixel snapping on, the edges are rounded to whole pixels, as in {@link #draw}.
      *
@@ -343,9 +344,12 @@ public final class LayerStack implements Disposable {
      * @throws IllegalStateException if the layer was removed, or is clipped to the stack while
      *     the stack size is unset
      */
-    public boolean isShownAt(Layer layer, float stackX, float stackY, float worldX, float worldY) {
+    public boolean isPickableAt(Layer layer, float stackX, float stackY, float worldX, float worldY) {
         requireOwned(layer);
         if (!layer.isVisible()) {
+            return false;
+        }
+        if (!layer.isPickable()) {
             return false;
         }
         if (!layer.hasClip()) {

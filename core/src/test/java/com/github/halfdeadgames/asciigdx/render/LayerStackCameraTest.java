@@ -167,8 +167,8 @@ class LayerStackCameraTest {
         layer.setClip(10f, 20f, 30f, 40f);
         stack.setCamera(500f, 500f);
 
-        assertTrue(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 11f, STACK_Y - 21f));
-        assertFalse(stack.isShownAt(layer, STACK_X, STACK_Y, STACK_X + 500f, STACK_Y - 21f));
+        assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 11f, STACK_Y - 21f));
+        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 500f, STACK_Y - 21f));
     }
 
     @Test
