@@ -65,6 +65,7 @@
         { glyphs: [ "M", "W", "m", "w", "æ", "Æ" ], why: "7 columns wide, can't center" },
         { glyphs: [ "/", "\\" ], why: "four even steps need an odd width" },
         { glyphs: [ ",", ";" ], why: "tail steps left of the dot" },
+        { glyphs: [ "´", "ˋ" ], why: "two 2 px steps make a 3 px wide mark" },
         { glyphs: [ "€" ], why: "bars cross the left edge" }
       ]
     },
