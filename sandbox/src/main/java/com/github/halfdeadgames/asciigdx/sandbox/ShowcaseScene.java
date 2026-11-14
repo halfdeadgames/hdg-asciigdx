@@ -18,7 +18,6 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.FallSpin;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
@@ -34,6 +33,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterSwap;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterRipple;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
+import com.github.halfdeadgames.asciigdx.tween.TweenClock;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -189,7 +189,7 @@ class ShowcaseScene extends GridScene {
 
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
-    private final LoopClock clock = new LoopClock(LOOP_SECONDS, MAX_FRAME_SECONDS);
+    private final TweenClock clock = TweenClock.looping(LOOP_SECONDS, MAX_FRAME_SECONDS);
     private final Fade fade = new Fade(FADE_IN_SECONDS, FADE_OUT_START_SECONDS, FADE_OUT_SECONDS);
     private final MessageLog log = new MessageLog(
         typedLine(0.6f, "You step onto the old rope bridge."),
@@ -307,7 +307,7 @@ class ShowcaseScene extends GridScene {
     @Override
     protected void update(float delta) {
         if (!clockPinned) {
-            clock.advance(delta);
+            clock.update(delta);
         }
         float time = clock.time();
         applyCamera(time);
