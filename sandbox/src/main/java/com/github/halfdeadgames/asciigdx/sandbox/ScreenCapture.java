@@ -85,9 +85,19 @@ class ScreenCapture {
         Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0,
             Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
         try {
+            makeOpaque(pixmap);
             PixmapIO.writePNG(outputDirectory.child(fileName), pixmap, Deflater.DEFAULT_COMPRESSION, true);
         } finally {
             pixmap.dispose();
+        }
+    }
+
+    /** Blending leaves the framebuffer alpha below 1 while the screen ignores it, so captures would look partly transparent. */
+    private static void makeOpaque(Pixmap rgba8888Pixmap) {
+        ByteBuffer pixels = rgba8888Pixmap.getPixels();
+        int byteCount = rgba8888Pixmap.getWidth() * rgba8888Pixmap.getHeight() * 4;
+        for (int alphaIndex = 3; alphaIndex < byteCount; alphaIndex += 4) {
+            pixels.put(alphaIndex, (byte) 0xFF);
         }
     }
 
@@ -110,6 +120,7 @@ class ScreenCapture {
         source.rewind();
         target.rewind();
         bottomUp.dispose();
+        makeOpaque(topDown);
         return topDown;
     }
 
