@@ -44,6 +44,8 @@ public final class LayerStack implements Disposable {
     private final int[] viewport = new int[4];
     private float width;
     private float height;
+    private float cameraX;
+    private float cameraY;
     private boolean pixelSnapping = true;
     private boolean disposed;
     private GridRenderResources sharedResources;
@@ -190,6 +192,36 @@ public final class LayerStack implements Disposable {
     }
 
     /**
+     * Sets the camera position in virtual pixels, in the same space as layer offsets (y grows
+     * downward). Each layer shifts by minus the camera times its parallax factor (see
+     * {@link Layer#setParallax(float, float)}). Default (0, 0).
+     *
+     * <p>The clip does not move with the camera: it stays in stack space.
+     *
+     * <p>Pixel snapping rounds each layer's corner on its own, so layers with different parallax
+     * factors can be 1 pixel apart during slow pans. Turn snapping off for smooth motion.
+     *
+     * @throws IllegalArgumentException if x or y is not finite
+     */
+    public void setCamera(float x, float y) {
+        if (!Float.isFinite(x) || !Float.isFinite(y)) {
+            throw new IllegalArgumentException("camera must be finite: " + x + ", " + y);
+        }
+        cameraX = x;
+        cameraY = y;
+    }
+
+    /** Returns the camera's x in virtual pixels, 0 by default. */
+    public float getCameraX() {
+        return cameraX;
+    }
+
+    /** Returns the camera's y in virtual pixels, growing downward, 0 by default. */
+    public float getCameraY() {
+        return cameraY;
+    }
+
+    /**
      * Sets whether final layer positions are rounded to whole pixels. Default true.
      */
     public void setPixelSnapping(boolean pixelSnapping) {
@@ -212,7 +244,8 @@ public final class LayerStack implements Disposable {
      * <p>With pixel snapping on, or when a layer uses {@link ZoomMode#WHOLE}, the screen
      * position of each layer's top-left corner, after zoom and rotation, is rounded with
      * {@code floor(v + 0.5)}. Zoom and rotation are applied about the layer's pivot; see
-     * {@link Layer#setPivot}.
+     * {@link Layer#setPivot}. The camera and each layer's parallax shift the offset first; see
+     * {@link #setCamera}.
      *
      * <p>A clipped layer (see {@link Layer#setClip}) flushes the batch, draws inside a
      * scissor, and flushes again, so each clipped layer costs an extra draw call. The
@@ -259,7 +292,8 @@ public final class LayerStack implements Disposable {
 
     /**
      * Finds which cell of a layer's grid lies under a point, using the same transform
-     * {@link #draw} uses: offset, zoom, rotation about the pivot, and corner snapping.
+     * {@link #draw} uses: offset shifted by camera and parallax, zoom, rotation about the
+     * pivot, and corner snapping.
      *
      * <p>This takes two steps. The caller first turns a window pixel into batch world space
      * with its viewport, for example {@code viewport.unproject}, then passes that point here
@@ -344,8 +378,10 @@ public final class LayerStack implements Disposable {
     }
 
     private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
-        float screenX = stackX + layer.getOffsetX();
-        float screenY = stackY - layer.getOffsetY();
+        float effectiveOffsetX = layer.getOffsetX() - cameraX * layer.getParallaxX();
+        float effectiveOffsetY = layer.getOffsetY() - cameraY * layer.getParallaxY();
+        float screenX = stackX + effectiveOffsetX;
+        float screenY = stackY - effectiveOffsetY;
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
         LayerTransform.compose(screenX, screenY, layer.getPivotX(), layer.getPivotY(),
                 layer.getEffectiveZoom(), layer.getRotation(), snapCorner, out);

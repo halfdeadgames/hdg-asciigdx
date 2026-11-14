@@ -7,8 +7,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * One grid in a {@link LayerStack}, with an offset, a zoom, a rotation, a visibility flag, color effects (tint,
- * mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
+ * One grid in a {@link LayerStack}, with an offset, a parallax factor, a zoom, a rotation, a visibility flag,
+ * color effects (tint, mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner,
  * with y growing downward like grid rows. Once the layer is removed from its
@@ -31,6 +31,8 @@ public final class Layer {
     private float pivotX;
     private float pivotY;
     private ZoomMode zoomMode = ZoomMode.SMOOTH;
+    private float parallaxX = 1f;
+    private float parallaxY = 1f;
     private boolean visible = true;
     private final LayerEffects effects = new LayerEffects();
     private ClipMode clipMode = ClipMode.NONE;
@@ -106,7 +108,8 @@ public final class Layer {
     }
 
     /**
-     * Sets the offset from the stack's top-left corner.
+     * Sets the offset from the stack's top-left corner. The stack camera is applied on top; see
+     * {@link LayerStack#setCamera}.
      *
      * @param x virtual pixels to the right
      * @param y virtual pixels downward
@@ -116,6 +119,42 @@ public final class Layer {
         requireAttached();
         offsetX = x;
         offsetY = y;
+    }
+
+    /** Returns the horizontal parallax factor, 1 by default. */
+    public float getParallaxX() {
+        return parallaxX;
+    }
+
+    /** Returns the vertical parallax factor, 1 by default. */
+    public float getParallaxY() {
+        return parallaxY;
+    }
+
+    /**
+     * Sets how much the stack camera moves this layer per axis. 1 moves fully with the camera
+     * (the default), 0 stays fixed on screen (a HUD), values between 0 and 1 suit distant
+     * backgrounds, and values above 1 suit near foregrounds. Negative values are allowed.
+     *
+     * @throws IllegalArgumentException if a factor is not finite
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setParallax(float factorX, float factorY) {
+        requireAttached();
+        if (!Float.isFinite(factorX) || !Float.isFinite(factorY)) {
+            throw new IllegalArgumentException("parallax must be finite: " + factorX + ", " + factorY);
+        }
+        parallaxX = factorX;
+        parallaxY = factorY;
+    }
+
+    /**
+     * Sets the same parallax factor on both axes.
+     *
+     * @see #setParallax(float, float)
+     */
+    public void setParallax(float factor) {
+        setParallax(factor, factor);
     }
 
     /**
