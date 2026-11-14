@@ -336,6 +336,26 @@ class CellHandleTest {
     }
 
     @Test
+    void scaleByMultipliesTheCurrentScale() {
+        cell.setScale(2f, 3f);
+
+        cell.scaleBy(2f);
+        cell.scaleBy(0.5f, -1f);
+
+        assertEquals(2f, cell.getScaleX());
+        assertEquals(-6f, cell.getScaleY());
+        assertTrue(cell.isLifted());
+    }
+
+    @Test
+    void scaleByThrowsWhenDetached() {
+        cell.detach();
+
+        assertThrows(IllegalStateException.class, () -> cell.scaleBy(2f));
+        assertThrows(IllegalStateException.class, () -> cell.scaleBy(2f, 1f));
+    }
+
+    @Test
     void detachMessageNamesTheCause() {
         cell.detach();
 

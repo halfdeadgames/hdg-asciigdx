@@ -188,6 +188,24 @@ public final class CellHandle implements SpriteTransform {
         this.scaleY = scaleY;
     }
 
+    /**
+     * Multiplies the scale on both axes by {@code factor}, so several effects can stack.
+     *
+     * @throws IllegalStateException if the handle was detached
+     */
+    public void scaleBy(float factor) {
+        scaleBy(factor, factor);
+    }
+
+    /**
+     * Multiplies the scale on each axis by its own factor; negative factors mirror.
+     *
+     * @throws IllegalStateException if the handle was detached
+     */
+    public void scaleBy(float factorX, float factorY) {
+        setScale(scaleX * factorX, scaleY * factorY);
+    }
+
     /** Horizontal pivot as a fraction of the cell box: 0 is left, 1 is right. */
     @Override
     public float getPivotX() {

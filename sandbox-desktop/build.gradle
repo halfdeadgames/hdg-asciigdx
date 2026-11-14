@@ -78,6 +78,16 @@ run {
       systemProperty 'asciigdx.showcaseTime', project.property('showcaseTime')
     }
   }
+  if (project.hasProperty('zonesTime')) {
+    doFirst {
+      systemProperty 'asciigdx.zonesTime', project.property('zonesTime')
+    }
+  }
+  if (project.hasProperty('zonesStart')) {
+    doFirst {
+      systemProperty 'asciigdx.zonesStart', project.property('zonesStart')
+    }
+  }
   if (project.hasProperty('capture')) {
     def captureDirectory = rootProject.layout.buildDirectory.dir('captures').get().asFile
     doFirst {

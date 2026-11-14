@@ -11,6 +11,9 @@ import java.util.Objects;
  * <p>Unlike the other shapes, the aspect (cell height divided by cell width) is required and has no
  * default, because it changes the circle's shape: tall cells give a circle spanning fewer rows.
  *
+ * <p>Tip: a whole-number radius leaves a single cell sticking out at each of the four axis points of the
+ * outline. A radius about 0.4 below a whole number (for example, 6.6 instead of 7) gives a rounder outline.
+ *
  * <p>The center plus the reach (the radius in columns, the radius divided by the aspect in rows) must stay
  * within {@link #COORDINATE_LIMIT} cells of the origin; circles that reach farther are rejected.
  *

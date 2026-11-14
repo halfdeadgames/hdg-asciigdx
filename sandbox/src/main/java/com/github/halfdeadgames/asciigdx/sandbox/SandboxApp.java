@@ -137,6 +137,8 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new LayerTransformScene(glyphs, settings.apply(LayerTransformScene.KEY_HOVER)));
         scenes.add(new ParallaxScene(glyphs));
         scenes.add(new FlexibleGridScene(glyphs));
+        scenes.add(new ZonesScene(glyphs, narrowTallGlyphs, settings.apply(ZonesScene.KEY_ZONES_TIME),
+            settings.apply(ZonesScene.KEY_ZONES_START)));
         scenes.add(new ShowcaseScene(glyphs, tallGlyphs, settings.apply(ShowcaseScene.KEY_SHOWCASE_TIME)));
         scenes.add(new GlyphReviewScene(glyphs,
             settings.apply(GlyphReviewScene.KEY_REVIEW_CHARS),
