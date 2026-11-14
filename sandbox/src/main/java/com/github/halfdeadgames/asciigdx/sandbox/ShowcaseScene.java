@@ -12,6 +12,7 @@ import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Beat;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.EighthBar;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.FallSpin;
@@ -19,16 +20,18 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.RainSet;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.RippleRings;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterRipple;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.SeeThroughWater;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Splash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.SplashColor;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterDive;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterSwap;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterRipple;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
 
 import java.util.Arrays;
@@ -165,6 +168,12 @@ class ShowcaseScene extends GridScene {
     private static final float RIPPLE_COVER_MARGIN_CELLS = 1f;
     private static final float WATER_ZOOM_AT_SPLASH = 1f;
 
+    private static final float SINK_SECONDS = 0.4f;
+    private static final float SURFACE_SECONDS = 0.6f;
+    private static final UnderwaterDive UNDERWATER_DIVE = new UnderwaterDive(
+        new Beat(SPLASH_SECONDS, SINK_SECONDS, Interpolation.sineOut),
+        new Beat(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, Interpolation.sine));
+
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
     private final LoopClock clock = new LoopClock(LOOP_SECONDS, MAX_FRAME_SECONDS);
@@ -217,6 +226,8 @@ class ShowcaseScene extends GridScene {
     private final Layer dropletLayer;
     private Splash splash;
     private final WaterRipple waterRipple;
+    private final Layer underwaterLayer;
+    private final UnderwaterSwap underwaterSwap;
     private final GlyphSprite crispPlayerSprite;
     private final float fallStartX;
     private final float fallStartY;
@@ -250,6 +261,7 @@ class ShowcaseScene extends GridScene {
         waterRestOffsetX = innerCenterX(glyphs) - waterCenterX;
         waterRestOffsetY = innerCenterY(glyphs) - waterCenterY;
         waterLayer = addWaterLayer(glyphs);
+        underwaterLayer = addUnderwaterLayer(glyphs);
         playerLayer = addInnerLayer(smoothGlyphs);
         crispPlayerLayer = addCrispPlayerLayer(glyphs);
         dropletLayer = addInnerLayer(glyphs);
@@ -267,6 +279,7 @@ class ShowcaseScene extends GridScene {
         lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
         splash = createSplash();
         waterRipple = createWaterRipple();
+        underwaterSwap = createUnderwaterSwap();
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
         pinAllLayersToScreen();
@@ -285,6 +298,7 @@ class ShowcaseScene extends GridScene {
         drawWaterIfStepChanged(time);
         drawPlankIfBreakChanged(time);
         updatePlayer(time);
+        underwaterSwap.update(time);
         updateGhost(time);
         updateHp(time);
         updateRain(time);
@@ -411,10 +425,10 @@ class ShowcaseScene extends GridScene {
 
     private void updatePlayer(float time) {
         boolean fallen = time >= FALL_START_SECONDS;
-        boolean crisp = fallen && FALL_SPIN.isCrispAt(time);
+        boolean spinDone = fallen && FALL_SPIN.isCrispAt(time);
         playerSprite.setVisible(!fallen);
-        fallingPlayerSprite.setVisible(fallen && !crisp);
-        crispPlayerSprite.setVisible(crisp);
+        fallingPlayerSprite.setVisible(fallen && !spinDone);
+        crispPlayerSprite.setVisible(spinDone && !UNDERWATER_DIVE.isUnderwaterAt(time));
         if (fallen) {
             updateFallingPlayer(time);
             return;
@@ -487,6 +501,34 @@ class ShowcaseScene extends GridScene {
         layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
         clipToSceneInner(layer, mainGlyphs);
         return layer;
+    }
+
+    /**
+     * Inserted just below the water, so the water draws over it. Filled with the water's background color so
+     * see-through water cells blend water over water instead of darkening toward the black behind the stack.
+     */
+    private Layer addUnderwaterLayer(GlyphSource mainGlyphs) {
+        int columns = (int) Math.ceil(SCENE_INNER_WIDTH * mainGlyphs.getCellWidth() / crispGlyphs.getCellWidth());
+        int rows = (int) Math.ceil(SCENE_INNER_HEIGHT * mainGlyphs.getCellHeight() / crispGlyphs.getCellHeight());
+        TerminalGrid underwaterGrid = new TerminalGrid(columns, rows);
+        GridDrawing.fill(underwaterGrid, 0, 0, columns, rows, ' ', WHITE, WATER_BACKGROUND_COLOR);
+        Layer layer = layers.insert(layers.indexOf(waterLayer), underwaterGrid, crispGlyphs);
+        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
+        clipToSceneInner(layer, mainGlyphs);
+        return layer;
+    }
+
+    /** The sprite sits where the crisp @ does at the splash, and scales about its own center. */
+    private UnderwaterSwap createUnderwaterSwap() {
+        GlyphSprite sprite = underwaterLayer.addSprite(
+            '@', GOLD,
+            fallEndX + (cellWidth - crispGlyphs.getCellWidth()) / 2f,
+            fallEndY + (cellHeight - crispGlyphs.getCellHeight()) / 2f);
+        sprite.setVisible(false);
+        SeeThroughWater seeThroughWater = new SeeThroughWater(
+            UNDERWATER_DIVE, waterGrid, splashWaterColumn(), splashWaterRow(), cellHeight / cellWidth,
+            WATER_GLYPH_COLOR, WATER_BACKGROUND_COLOR);
+        return new UnderwaterSwap(UNDERWATER_DIVE, sprite, seeThroughWater);
     }
 
     private GlyphSprite addCrispPlayer() {
@@ -577,10 +619,10 @@ class ShowcaseScene extends GridScene {
     private Splash createSplash() {
         DropletSpray spray = new DropletSpray(
             new Beat(SPLASH_SECONDS, SPRAY_SECONDS), SPRAY_DROPLET_COUNT, SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
-        SplashColor color = new SplashColor(SPLASH_SECONDS, new Beat(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out));
+        SplashColor color = new SplashColor(SPLASH_SECONDS, new Beat(SPLASH_SECONDS, FLASH_SECONDS, Interpolation.pow2Out), UNDERWATER_DIVE);
         return new Splash(
             dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth, cellHeight, spray, color,
-            waterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]);
+            waterLayer, underwaterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]);
     }
 
     private WaterRipple createWaterRipple() {
