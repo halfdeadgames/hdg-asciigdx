@@ -373,6 +373,114 @@ class LayerCellTest {
     }
 
     @Test
+    void releaseDropsIdleHandlesAndDetachesThem() {
+        CellHandle idle = layer.cell(0, 0);
+        layer.cell(1, 0);
+        assertEquals(2, layer.getCellHandleCount());
+
+        layer.releaseIdleCellHandles();
+
+        assertEquals(0, layer.getCellHandleCount());
+        assertTrue(idle.isDetached());
+        assertThrows(IllegalStateException.class, () -> idle.setOffset(1f, 0f));
+    }
+
+    @Test
+    void releaseKeepsLiftedMixedAndCodePointHandles() {
+        CellHandle lifted = layer.cell(0, 0);
+        CellHandle foregroundMixed = layer.cell(1, 0);
+        CellHandle backgroundMixed = layer.cell(2, 0);
+        CellHandle withCodePoint = layer.cell(3, 0);
+        CellHandle idle = layer.cell(4, 0);
+        lifted.setOffset(2f, 0f);
+        foregroundMixed.setForegroundMix(0xFF0000FF, 0.5f);
+        backgroundMixed.setBackgroundMix(0xFF0000FF, 0.5f);
+        withCodePoint.setCodePoint('x');
+
+        layer.releaseIdleCellHandles();
+
+        assertEquals(4, layer.getCellHandleCount());
+        assertSame(lifted, layer.cell(0, 0));
+        assertSame(foregroundMixed, layer.cell(1, 0));
+        assertSame(backgroundMixed, layer.cell(2, 0));
+        assertSame(withCodePoint, layer.cell(3, 0));
+        assertTrue(idle.isDetached());
+    }
+
+    @Test
+    void cellAfterReleaseReturnsAFreshHandle() {
+        CellHandle old = layer.cell(2, 2);
+        layer.releaseIdleCellHandles();
+
+        CellHandle fresh = layer.cell(2, 2);
+
+        assertNotSame(old, fresh);
+        assertFalse(fresh.isDetached());
+        assertEquals(1, layer.getCellHandleCount());
+    }
+
+    @Test
+    void releaseRebindsTheRendererSoItsIndexIsRebuiltEvenWhenTheCountIsUnchanged() {
+        layer.cell(1, 1).setOffset(1f, 0f);
+        layer.cell(2, 2);
+        int bindsBefore = renderer.bindCount;
+
+        layer.releaseIdleCellHandles();
+        layer.cell(3, 3);
+
+        assertEquals(bindsBefore + 1, renderer.bindCount);
+        assertEquals(2, renderer.cellHandles.size);
+    }
+
+    @Test
+    void releaseWithNothingIdleDoesNotRebind() {
+        layer.cell(2, 2).setOffset(1f, 0f);
+        int bindsBefore = renderer.bindCount;
+
+        layer.releaseIdleCellHandles();
+
+        assertEquals(bindsBefore, renderer.bindCount);
+    }
+
+    @Test
+    void releaseUnhidesAndRefreshesCellsOfHandlesResetButNotYetSynced() {
+        CellHandle handle = layer.cell(1, 1);
+        handle.setOffset(2f, 0f);
+        handle.setCodePoint('x');
+        draw();
+        renderer.events.clear();
+        layer.resetCellHandles();
+
+        layer.releaseIdleCellHandles();
+
+        assertEquals(List.of("show 1,1", "refresh 1,1"), renderer.events);
+        assertTrue(handle.isDetached());
+    }
+
+    @Test
+    void releaseSkipsTheRendererForACellThatLeftTheGridSinceTheLastDraw() {
+        CellHandle outside = layer.cell(5, 3);
+        outside.setOffset(2f, 0f);
+        draw();
+        layer.resetCellHandles();
+        grid.resize(3, 2);
+        renderer.events.clear();
+
+        layer.releaseIdleCellHandles();
+
+        assertEquals(0, layer.getCellHandleCount());
+        assertTrue(outside.isDetached());
+        assertTrue(renderer.events.isEmpty());
+    }
+
+    @Test
+    void releaseOnARemovedLayerThrows() {
+        layer.remove();
+
+        assertThrows(IllegalStateException.class, layer::releaseIdleCellHandles);
+    }
+
+    @Test
     void removeFreeSpritesAndClearAllSpritesThrowOnARemovedLayer() {
         layer.remove();
 

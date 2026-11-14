@@ -17,6 +17,8 @@ import com.github.halfdeadgames.asciigdx.render.Layer;
  * R resets every lifted cell; bumps resume on their next cycle. M slides the layer left and right,
  * and the sprites and lifted cells move with it. K shrinks the map grid by ten columns, so
  * monsters there lose their handles; they get fresh ones when the grid grows back.
+ * H releases the layer's idle cell handles; the status line shows the handle count, and the
+ * monsters and the word at the bottom ask for fresh handles when theirs are released.
  *
  * <p>The word at the bottom runs the {@link OverrideDemo} cycle: flat and lifted letters must
  * look identical in every phase.
@@ -135,7 +137,8 @@ class SpritesScene extends GridScene {
             .append(" P:").append(layers.isPixelSnapping() ? "on" : "off")
             .append(" A:").append(halfAlpha ? "0.5" : "1")
             .append(" M:").append(sliding ? "on" : "off")
-            .append(" K:").append(shrunk ? "on" : "off");
+            .append(" K:").append(shrunk ? "on" : "off")
+            .append(" H:").append(mapLayer.getCellHandleCount());
         return status.toString();
     }
 
@@ -167,6 +170,10 @@ class SpritesScene extends GridScene {
         }
         if (keycode == Input.Keys.K) {
             toggleShrink();
+            return true;
+        }
+        if (keycode == Input.Keys.H) {
+            mapLayer.releaseIdleCellHandles();
             return true;
         }
         return false;

@@ -654,7 +654,8 @@ public final class Layer {
     /**
      * Returns the handle that lifts one cell's glyph off the grid, creating it on the first
      * request (the only time this allocates). The same handle is returned every time, until it is
-     * detached. See {@link CellHandle} for what lifting does.
+     * detached or released by {@link #releaseIdleCellHandles}. See {@link CellHandle} for what
+     * lifting does.
      *
      * <p>If the grid shrinks so the cell no longer exists, the handle is detached at the next
      * draw and dropped; request a new one after the grid grows back.
@@ -677,7 +678,8 @@ public final class Layer {
 
     /**
      * Resets everything on every cell handle: lifted glyphs settle back into the grid, and the
-     * temporary colors and glyphs on them are cleared.
+     * temporary colors and glyphs on them are cleared. The handles stay in the layer; to also drop
+     * them, follow with {@link #releaseIdleCellHandles}.
      *
      * @throws IllegalStateException if the layer was removed
      */
@@ -685,6 +687,70 @@ public final class Layer {
         requireAttached();
         for (int i = 0; i < cellHandles.size; i++) {
             cellHandles.get(i).reset();
+        }
+    }
+
+    /**
+     * Drops every idle cell handle, so handles requested by sweeping effects do not pile up. A
+     * handle is idle when it is not lifted, has no temporary glyph, and both of its mix amounts
+     * are 0. The cells of released handles draw as plain grid cells.
+     *
+     * <p>A released handle is detached: its getters keep working and its setters throw
+     * {@link IllegalStateException}. Call {@link #cell} again for a fresh handle. Call this when an
+     * effect ends or moves on, not every frame, because each re-request allocates a new handle.
+     *
+     * <p>Settings that do not lift the cell, such as a custom pivot, do not keep a handle from
+     * being released, and they are lost with it.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void releaseIdleCellHandles() {
+        requireAttached();
+        boolean released = false;
+        for (int i = cellHandles.size - 1; i >= 0; i--) {
+            CellHandle cell = cellHandles.get(i);
+            if (!isIdle(cell)) {
+                continue;
+            }
+            settleRendererForCell(cell);
+            cellHandles.removeIndex(i);
+            cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
+            cell.detach();
+            released = true;
+        }
+        if (released) {
+            renderer.setCellHandles(cellHandles);
+        }
+    }
+
+    /** Returns how many cell handles the layer currently holds. */
+    public int getCellHandleCount() {
+        return cellHandles.size;
+    }
+
+    private static boolean isIdle(CellHandle cell) {
+        return !cell.isLifted()
+                && !cell.hasCodePoint()
+                && cell.getForegroundMixAmount() == 0f
+                && cell.getBackgroundMixAmount() == 0f;
+    }
+
+    /**
+     * Sends the renderer any reset this handle has not synced yet, since a released handle gets
+     * no later sync.
+     */
+    private void settleRendererForCell(CellHandle cell) {
+        if (cell.getColumn() >= grid.getWidth() || cell.getRow() >= grid.getHeight()) {
+            // The grid shrank since the last draw; the renderer's rebuild already forgets this cell.
+            return;
+        }
+        if (cell.isGlyphHidden()) {
+            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), false);
+            cell.setGlyphHidden(false);
+        }
+        if (cell.areOverridesChanged()) {
+            renderer.refreshCell(cell.getColumn(), cell.getRow());
+            cell.clearOverridesChanged();
         }
     }
 

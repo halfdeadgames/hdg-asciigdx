@@ -41,16 +41,25 @@ final class OverrideDemo {
     private static final float HIDE_SECONDS = 0.5f;
 
     private final TerminalGrid grid;
+    private final Layer layer;
     private final CellHandle[] handles = new CellHandle[WORD.length()];
     private float clock;
     private boolean gameWriteActive;
 
     OverrideDemo(TerminalGrid grid, Layer layer) {
         this.grid = grid;
-        for (int i = 0; i < handles.length; i++) {
-            handles[i] = layer.cell(WORD_COLUMN + i, WORD_ROW);
-        }
+        this.layer = layer;
+        refreshDetachedHandles();
         draw();
+    }
+
+    /** Replaces detached handles, for example after the scene releases the layer's idle handles. */
+    private void refreshDetachedHandles() {
+        for (int i = 0; i < handles.length; i++) {
+            if (handles[i] == null || handles[i].isDetached()) {
+                handles[i] = layer.cell(WORD_COLUMN + i, WORD_ROW);
+            }
+        }
     }
 
     /** Writes the label and word into the grid; call again after anything overwrites the area. */
@@ -64,6 +73,7 @@ final class OverrideDemo {
     }
 
     void update(float step) {
+        refreshDetachedHandles();
         clock = (clock + step) % CYCLE_SECONDS;
         updateBob();
         int phase = (int) (clock / PHASE_SECONDS);
