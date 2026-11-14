@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.math.Affine2;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 /**
@@ -78,6 +79,37 @@ final class LayerTransform {
     static void layerPixelsToWorld(Affine2 layerToWorld, float layerX, float layerY, Vector2 out) {
         out.set(layerX, -layerY);
         layerToWorld.applyTo(out);
+    }
+
+    /**
+     * Returns the x offset that keeps the drawn picture in place when the pivot moves by
+     * (pivotShiftX, pivotShiftY), all in y-down layer pixels. A layer point q is drawn at
+     * offset + pivot + M(q - pivot), so the new offset is offset - (I - M)(pivotShift), where M is
+     * the clockwise rotation scaled by the zoom.
+     */
+    static float offsetXKeepingPlacement(float offsetX, float pivotShiftX, float pivotShiftY,
+            float zoom, float rotationDegrees) {
+        float cos = cosine(rotationDegrees);
+        float sin = sine(rotationDegrees);
+        return offsetX - (pivotShiftX - zoom * (cos * pivotShiftX - sin * pivotShiftY));
+    }
+
+    /** The y counterpart of {@link #offsetXKeepingPlacement}. */
+    static float offsetYKeepingPlacement(float offsetY, float pivotShiftX, float pivotShiftY,
+            float zoom, float rotationDegrees) {
+        float cos = cosine(rotationDegrees);
+        float sin = sine(rotationDegrees);
+        return offsetY - (pivotShiftY - zoom * (sin * pivotShiftX + cos * pivotShiftY));
+    }
+
+    // Same lookup-table calls as setLinearPart's setToRotation(-degrees), so the kept placement
+    // matches the drawn one exactly.
+    private static float cosine(float degrees) {
+        return degrees == 0f ? 1f : MathUtils.cosDeg(-degrees);
+    }
+
+    private static float sine(float degrees) {
+        return degrees == 0f ? 0f : -MathUtils.sinDeg(-degrees);
     }
 
     private static void setLinearPart(float zoom, float rotationDegrees, Affine2 out) {

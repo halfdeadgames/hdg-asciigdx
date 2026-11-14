@@ -561,26 +561,18 @@ class ShowcaseScene extends GridScene {
     }
 
     /**
-     * Rocks the water about the pixel under the falling @'s center, measured in the water's rest placement. The
-     * unrotated screen position of a water pixel q is offset - camera * zoom + (1 - zoom) * pivot + zoom * q, so
-     * moving the pivot by d needs the offset to move by -(1 - zoom) * d to leave the placement unchanged.
+     * Rocks the water about the pixel under the falling @'s center, measured in the water's rest placement.
      * Without a sway the rest values are used as is. Needs the camera and water zoom of this frame applied first.
      */
     private void applyWaterSway(float time) {
         float degrees = WATER_SWAY.degreesAt(time);
         placeWaterAtRest();
-        float zoom = camera.zoomFor(WATER_DEPTH);
-        if (degrees == 0f || zoom <= 0f) {
+        if (degrees == 0f || camera.zoomFor(WATER_DEPTH) <= 0f) {
             return;
         }
         findWaterPixelUnder(playerCenterStackX(time), playerCenterStackY(time));
-        float anchorX = waterPixel.x;
-        float anchorY = waterPixel.y;
+        waterLayer.setPivotKeepingPlacement(waterPixel.x, waterPixel.y);
         waterLayer.setRotation(degrees);
-        waterLayer.setPivot(anchorX, anchorY);
-        waterLayer.setOffset(
-            waterRestOffsetX - (1f - zoom) * (anchorX - waterCenterX),
-            waterRestOffsetY - (1f - zoom) * (anchorY - waterCenterY));
     }
 
     private void placeWaterAtRest() {

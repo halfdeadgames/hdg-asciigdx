@@ -288,6 +288,28 @@ public final class Layer {
     }
 
     /**
+     * Moves the pivot and adjusts the offset so the picture stays where it is drawn now. Placement
+     * is kept for the zoom and rotation set at the time of the call; later changes to either
+     * happen about the new pivot. {@link #setPivot} alone moves the picture when the layer is
+     * zoomed or rotated. With pixel snapping or {@link ZoomMode#WHOLE}, the snapped corner can
+     * still shift the picture by up to 1 pixel.
+     *
+     * @param x layer pixels from the layer's left edge
+     * @param y layer pixels from the layer's top edge, growing down
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setPivotKeepingPlacement(float x, float y) {
+        requireAttached();
+        float shiftX = x - pivotX;
+        float shiftY = y - pivotY;
+        float zoomApplied = getEffectiveZoom();
+        float newOffsetX = LayerTransform.offsetXKeepingPlacement(offsetX, shiftX, shiftY, zoomApplied, rotation);
+        float newOffsetY = LayerTransform.offsetYKeepingPlacement(offsetY, shiftX, shiftY, zoomApplied, rotation);
+        setPivot(x, y);
+        setOffset(newOffsetX, newOffsetY);
+    }
+
+    /**
      * Sets the pivot to the center of a cell of this layer's glyph source, equal to
      * {@code setPivot((column + 0.5f) * cellWidth, (row + 0.5f) * cellHeight)}. The pivot is
      * stored in pixels: after switching to a glyph source with another cell size, call this again.
@@ -299,6 +321,19 @@ public final class Layer {
      */
     public void setPivotCell(int column, int row) {
         setPivot((column + 0.5f) * glyphSource.getCellWidth(), (row + 0.5f) * glyphSource.getCellHeight());
+    }
+
+    /**
+     * Moves the pivot to the center of a cell as {@link #setPivotCell} does, keeping the picture
+     * in place as {@link #setPivotKeepingPlacement} does.
+     *
+     * @param column cells from the layer's left edge
+     * @param row cells from the layer's top edge, growing down
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setPivotCellKeepingPlacement(int column, int row) {
+        setPivotKeepingPlacement((column + 0.5f) * glyphSource.getCellWidth(),
+                (row + 0.5f) * glyphSource.getCellHeight());
     }
 
     /**
