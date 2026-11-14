@@ -7,6 +7,7 @@ package com.github.halfdeadgames.asciigdx.glyph;
 public enum SaiksisttSize {
     SQUARE_8X8(8, 8),
     SQUARE_16X16(16, 16),
+    TALL_8X16(8, 16),
     TALL_16X32(16, 32);
 
     private static final String FOLDER = "com/github/halfdeadgames/asciigdx/fonts/saiksistt/";

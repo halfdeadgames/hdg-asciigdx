@@ -75,3 +75,25 @@ Terminal feel with some nostalgia, but none of the old fonts' frustrations. Read
   - Dice are 7x7, so the pips have 1 px gaps.
   - 🦴 lies flat. A diagonal bone read as 🍖. 🧪 has 1 px walls.
   - Stick figures reach columns 0 and 7. Segmented digits use rows 0-6.
+
+# Metrics (8x16)
+- Same 8 columns, letter widths, and strokes as 8x8. Only the heights change.
+- Ascender row 3, capitals rows 4-11, x-height rows 7-11, descenders rows 12-14. Rows 0 and 15 stay blank as line spacing.
+- Capitals center on rows 7-8, the middle of the cell, so symbols centered in the cell line up with text.
+- Bars: B E F H on row 7, A P on row 8. Lowercase bars on row 9.
+- Accented capitals keep full height. Accent marks sit on rows 1-2 over capitals and rows 4-5 over lowercase, like the i dot. The ring is 3 rows and touches the letter in Å.
+- Row numbers in the other sections of this file are for 16x16.
+
+# Glyph classes (8x16)
+- Text: drafts start from the 8x8 glyph, with straight stem rows repeated. Diagonal and round glyphs that would stretch badly (k x z K M N Q and similar) get drawn by hand instead.
+  - Choices driven by width stay from 8x8: 1 px strokes in # @, and 7-wide M W m w.
+  - Choices driven by height are judged again. Dots are 2x2, including on i and j (rows 4-5). 0 keeps a slash, on rows 6-9: a dot still fills the 2 px counter.
+  - Q has a 1-row tail on row 12.
+- Connecting: rows mapped from 8x8. Single lines are 2 px on columns 3-4 and rows 7-8. Doubles are 1 px at columns 2 and 5 and rows 6 and 9. Heavy lines are columns 2-5 and rows 6-9. Eighths are 2 rows.
+  - ╎ is 3 on and 1 off. ┊ is 1 on and 1 off, to match ╌ and ┈.
+  - ╱ ╲ and the box diagonals are 2 px wide and step one column every 2 rows. Where a box diagonal ends at the middle of an edge, it fills both pixels of the box line it meets.
+  - ◢ ◣ ◤ ◥ and the diagonal fills run corner to corner, 2 rows per column, the same as 16x32 at half size.
+  - Shades, checkers, and the stripe fills 🮗 🮘 🮙 repeat the 8x8 pattern twice, so they tile like 8x8.
+- Pictorial: copied from 8x8 to rows 4-11, centered in the cell.
+  - ◘ and ◙ fill the whole tall cell.
+  - Segmented digits span rows 4-11 to match the text digits. The middle bar is on row 7, so the upper segments are 2 rows and the lower ones 3.
