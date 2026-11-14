@@ -27,6 +27,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.RippleRings;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.SeeThroughWater;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.Splash;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.SplashColor;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.TitlePop;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterDive;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.UnderwaterSwap;
@@ -174,6 +175,18 @@ class ShowcaseScene extends GridScene {
         new Beat(SPLASH_SECONDS, SINK_SECONDS, Interpolation.sineOut),
         new Beat(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, Interpolation.sine));
 
+    private static final String TITLE_TEXT = "AsciiGDX";
+    private static final float TITLE_START_SECONDS = 8.6f;
+    private static final float TITLE_STAGGER_SECONDS = 0.06f;
+    private static final float TITLE_POP_SECONDS = 0.3f;
+    private static final float TITLE_OVERSHOOT = 3.5f;
+    private static final int TITLE_FROM_COLOR = 0xFFD45CFF;
+    private static final int TITLE_TO_COLOR = 0xFF6E8AFF;
+    private static final float TITLE_CENTER_HEIGHT_FRACTION = 0.25f;
+    private static final TitlePop TITLE_POP = new TitlePop(
+        TITLE_START_SECONDS, TITLE_STAGGER_SECONDS, TITLE_POP_SECONDS, TITLE_OVERSHOOT,
+        TITLE_TEXT.length(), TITLE_FROM_COLOR, TITLE_TO_COLOR);
+
     static final String KEY_SHOWCASE_TIME = "showcaseTime";
 
     private final LoopClock clock = new LoopClock(LOOP_SECONDS, MAX_FRAME_SECONDS);
@@ -184,7 +197,8 @@ class ShowcaseScene extends GridScene {
         typedLine(3.4f, "The ghost wails. Cold seeps in."),
         typedLine(4.8f, "You back away. The planks crack!"),
         typedLine(6.0f, "You fall!"),
-        typedLine(7.6f, "SPLASH!"));
+        typedLine(7.6f, "SPLASH!"),
+        typedLine(8.6f, "You surface, gasping."));
     private final TerminalGrid logGrid = new TerminalGrid(LOG_TEXT_WIDTH, LOG_ROWS);
     private final DepthCamera camera = new DepthCamera(HIDDEN_DISTANCE, FADE_DISTANCE);
     private final TerminalGrid waterGrid = new TerminalGrid(WATER_COLUMNS, WATER_ROWS);
@@ -222,6 +236,8 @@ class ShowcaseScene extends GridScene {
     private final GlyphSprite fallingPlayerSprite;
     private final TextureGlyphSource smoothGlyphs;
     private final TextureGlyphSource crispGlyphs;
+    private final TextureGlyphSource titleGlyphs;
+    private final GlyphSprite[] titleLetters = new GlyphSprite[TITLE_TEXT.length()];
     private final Layer crispPlayerLayer;
     private final Layer dropletLayer;
     private Splash splash;
@@ -256,6 +272,7 @@ class ShowcaseScene extends GridScene {
         cellHeight = glyphs.getCellHeight();
         smoothGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
         crispGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_8X8, GlyphFilter.NEAREST);
+        titleGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_16X32, GlyphFilter.LINEAR);
         waterCenterX = WATER_COLUMNS * cellWidth / 2f;
         waterCenterY = WATER_ROWS * cellHeight / 2f;
         waterRestOffsetX = innerCenterX(glyphs) - waterCenterX;
@@ -280,6 +297,7 @@ class ShowcaseScene extends GridScene {
         splash = createSplash();
         waterRipple = createWaterRipple();
         underwaterSwap = createUnderwaterSwap();
+        addTitleLetters(addTitleLayer(glyphs));
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
         pinAllLayersToScreen();
@@ -305,6 +323,7 @@ class ShowcaseScene extends GridScene {
         applyLightning(time);
         splash.update(time);
         drawLog(time);
+        updateTitle(time);
         overlayLayer.setAlpha(fade.alphaAt(time));
     }
 
@@ -421,6 +440,46 @@ class ShowcaseScene extends GridScene {
         super.dispose();
         smoothGlyphs.dispose();
         crispGlyphs.dispose();
+        titleGlyphs.dispose();
+    }
+
+    /** An empty layer at the inner area's top-left, in the same spot as the crisp player layer; the letters are its sprites. */
+    private Layer addTitleLayer(GlyphSource mainGlyphs) {
+        TerminalGrid emptyGrid = new TerminalGrid(1, 1);
+        emptyGrid.set(0, 0, ' ', WHITE, CLEAR);
+        Layer layer = layers.add(emptyGrid, titleGlyphs);
+        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
+        clipToSceneInner(layer, mainGlyphs);
+        return layer;
+    }
+
+    /**
+     * Sprites scale about their cell center by default. The row is centered horizontally in the inner area, and
+     * vertically on a quarter of its height so it stays above the @ that surfaces at the center.
+     */
+    private void addTitleLetters(Layer titleLayer) {
+        float letterWidth = titleGlyphs.getCellWidth();
+        float letterHeight = titleGlyphs.getCellHeight();
+        float left = (SCENE_INNER_WIDTH * cellWidth - titleLetters.length * letterWidth) / 2f;
+        float top = SCENE_INNER_HEIGHT * cellHeight * TITLE_CENTER_HEIGHT_FRACTION - letterHeight / 2f;
+        for (int letter = 0; letter < titleLetters.length; letter++) {
+            GlyphSprite sprite = titleLayer.addSprite(TITLE_TEXT.charAt(letter), TITLE_POP.colorAt(letter), left + letter * letterWidth, top);
+            sprite.setVisible(false);
+            titleLetters[letter] = sprite;
+        }
+    }
+
+    private void updateTitle(float time) {
+        for (int letter = 0; letter < titleLetters.length; letter++) {
+            GlyphSprite sprite = titleLetters[letter];
+            boolean shown = TITLE_POP.isShownAt(letter, time);
+            sprite.setVisible(shown);
+            if (!shown) {
+                continue;
+            }
+            sprite.setScale(TITLE_POP.scaleAt(letter, time));
+            sprite.setAlpha(TITLE_POP.alphaAt(letter, time));
+        }
     }
 
     private void updatePlayer(float time) {
