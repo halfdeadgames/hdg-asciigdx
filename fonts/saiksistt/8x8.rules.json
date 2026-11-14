@@ -63,7 +63,8 @@
         { glyphs: [ "♪" ], why: "3 px head and flag give an odd width" },
         { glyphs: [ "♙", "♟" ], why: "stands on the chess base line" },
         { glyphs: [ "♢" ], why: "1 px diagonals meet at a single point, so 7 px wide" },
-        { glyphs: [ "⚀", "⚁", "⚂", "⚃", "⚄", "⚅" ], why: "three pip rows with 1 px gaps need 7 px" }
+        { glyphs: [ "⚀", "⚁", "⚂", "⚃", "⚄", "⚅" ], why: "three pip rows with 1 px gaps need 7 px" },
+        { glyphs: [ "U+1F4A3" ], why: "spark sticks out past the round body" }
       ]
     },
     {
