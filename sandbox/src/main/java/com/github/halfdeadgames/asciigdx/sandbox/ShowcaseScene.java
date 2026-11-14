@@ -13,6 +13,8 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.Fade;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LoopClock;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.MessageLog;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlankBreak;
+import com.github.halfdeadgames.asciigdx.sandbox.showcase.PlayerPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.TypedLine;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterPattern;
 
@@ -78,7 +80,10 @@ class ShowcaseScene extends GridScene {
     private static final int PLANK_COLOR = 0x6B4423FF;
     private static final int PLANK_BACKGROUND_COLOR = 0x8B5A2BFF;
 
+    private static final int BROKEN_PLANK_COLUMN = 18;
+    private static final int CRACKED_PLANK_CODE_POINT = 0x250A;
     private static final int PLAYER_COLUMN = 15;
+    private static final int PLAYER_BACKOFF_STEPS = 3;
     private static final int GHOST_CODE_POINT = 0x1F47B;
     private static final int GHOST_COLOR = 0xD8E4F0FF;
     private static final float GHOST_START_COLUMN = -1f;
@@ -110,9 +115,12 @@ class ShowcaseScene extends GridScene {
     private final int[] rowLine = new int[LOG_ROWS];
     private final int[] rowVisible = new int[LOG_ROWS];
     private final boolean[] rowNewest = new boolean[LOG_ROWS];
+    private PlankBreak drawnPlankBreak = PlankBreak.INTACT;
+    private final PlayerPath playerPath = new PlayerPath(PLAYER_COLUMN, BRIDGE_PLANK_ROW, PLAYER_BACKOFF_STEPS);
     private final GhostPath ghostPath = new GhostPath(GHOST_START_COLUMN, GHOST_END_COLUMN);
     private final float cellWidth;
     private final float cellHeight;
+    private final GlyphSprite playerSprite;
     private final GlyphSprite ghostSprite;
     private float lastHpFraction = 1f;
     private boolean clockPinned;
@@ -135,7 +143,7 @@ class ShowcaseScene extends GridScene {
         bridgeLayer = addBridgeLayer(glyphs);
         cellWidth = glyphs.getCellWidth();
         cellHeight = glyphs.getCellHeight();
-        addPlayer();
+        playerSprite = addPlayer();
         ghostSprite = addGhost();
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
@@ -150,6 +158,8 @@ class ShowcaseScene extends GridScene {
         float time = clock.time();
         applyDepth();
         drawWaterIfStepChanged(time);
+        drawPlankIfBreakChanged(time);
+        updatePlayer(time);
         updateGhost(time);
         updateHp(time);
         drawLog(time);
@@ -209,8 +219,38 @@ class ShowcaseScene extends GridScene {
     }
 
     /** Sprite positions are the cell box's top-left corner in layer pixels, y down, so a cell's origin is its column and row times the cell size. */
-    private void addPlayer() {
-        bridgeLayer.addSprite('@', GOLD, PLAYER_COLUMN * cellWidth, BRIDGE_PLANK_ROW * cellHeight);
+    private GlyphSprite addPlayer() {
+        return bridgeLayer.addSprite('@', GOLD, PLAYER_COLUMN * cellWidth, BRIDGE_PLANK_ROW * cellHeight);
+    }
+
+    private void updatePlayer(float time) {
+        playerSprite.setPosition(playerPath.columnAt(time) * cellWidth, playerPath.rowAt(time) * cellHeight);
+        playerSprite.setScale(playerPath.scaleAt(time));
+    }
+
+    private void drawPlankIfBreakChanged(float time) {
+        PlankBreak state = PlankBreak.at(time);
+        if (state == drawnPlankBreak) {
+            return;
+        }
+        drawnPlankBreak = state;
+        switch (state) {
+            case INTACT -> drawDamagedPlanks('║');
+            case CRACKED -> drawDamagedPlanks(CRACKED_PLANK_CODE_POINT);
+            case BROKEN -> drawBrokenPlank();
+        }
+    }
+
+    private void drawBrokenPlank() {
+        drawDamagedPlanks(CRACKED_PLANK_CODE_POINT);
+        bridgeGrid.set(BROKEN_PLANK_COLUMN, BRIDGE_PLANK_ROW, ' ', WHITE, CLEAR);
+    }
+
+    /** The broken plank and its two neighbors, so the crack still shows while the player stands on the middle one. */
+    private void drawDamagedPlanks(int codePoint) {
+        for (int column = BROKEN_PLANK_COLUMN - 1; column <= BROKEN_PLANK_COLUMN + 1; column++) {
+            bridgeGrid.set(column, BRIDGE_PLANK_ROW, codePoint, PLANK_COLOR, PLANK_BACKGROUND_COLOR);
+        }
     }
 
     private GlyphSprite addGhost() {
