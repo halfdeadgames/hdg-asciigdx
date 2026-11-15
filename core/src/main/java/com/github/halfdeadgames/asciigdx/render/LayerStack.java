@@ -277,7 +277,21 @@ public final class LayerStack implements Disposable {
     public void removeGroup(LayerGroup group) {
         requireGroupOwned(group);
         groups.removeValue(group, true);
+        orphanChildrenOf(group);
         group.detach();
+    }
+
+    /**
+     * Leaves the removed group's children with no parent rather than moving them up to its parent,
+     * so no group picks up an ancestor it was never given.
+     */
+    private void orphanChildrenOf(LayerGroup removed) {
+        for (int i = 0; i < groups.size; i++) {
+            LayerGroup candidate = groups.get(i);
+            if (candidate.getParent() == removed) {
+                candidate.clearParent();
+            }
+        }
     }
 
     private void requireGroupOwned(LayerGroup group) {
@@ -378,8 +392,10 @@ public final class LayerStack implements Disposable {
      * displays.
      *
      * <p>A layer's effective alpha is its tint alpha times the alpha of every {@link LayerGroup}
-     * it belongs to. A hidden layer, or a layer whose effective alpha is 0, is skipped entirely:
-     * no draw, no clip work, and no offscreen pass.
+     * it belongs to, and of every ancestor group of those (the parents, grandparents, and so on); a
+     * group reached more than once counts once. A group with alpha 0 anywhere in a layer's chain
+     * makes the effective alpha 0. A hidden layer, or a layer whose effective alpha is 0, is
+     * skipped entirely: no draw, no clip work, and no offscreen pass.
      *
      * <p>Offscreen fade: a layer whose effective alpha is below 1 and that has at least one drawn
      * free sprite (visible, color alpha above 0) or lifted cell is drawn at full alpha into a

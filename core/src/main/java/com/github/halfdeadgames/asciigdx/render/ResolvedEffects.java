@@ -12,6 +12,7 @@ final class ResolvedEffects {
     private final ColorMatrix matrix = new ColorMatrix();
     private final ColorMatrix groupMatrix = new ColorMatrix();
     private float alpha = 1f;
+    private long resolveStamp;
 
     ColorMatrix getMatrix() {
         return matrix;
@@ -32,13 +33,29 @@ final class ResolvedEffects {
     }
 
     /**
-     * Resolves the layer's own effects, then each group's in the order the layer joined them: the
-     * color transforms run in that sequence and the alphas multiply.
+     * Resolves the layer's own effects, then each group's in the order the layer joined them, each
+     * followed by its ancestors up to the root: the color transforms run in that sequence and the
+     * alphas multiply. A group reached twice is applied only the first time.
      */
     void resolve(LayerEffects own, Array<LayerGroup> groups) {
         resolveOwn(own);
+        resolveStamp++;
         for (int i = 0; i < groups.size; i++) {
-            foldGroup(groups.get(i).getEffects());
+            foldChain(groups.get(i));
+        }
+    }
+
+    /**
+     * Stops at the first group already applied during this resolve: its own chain was walked then,
+     * so everything above it is applied too.
+     */
+    private void foldChain(LayerGroup start) {
+        for (LayerGroup group = start; group != null; group = group.getParent()) {
+            if (group.getResolveStamp() == resolveStamp) {
+                return;
+            }
+            group.setResolveStamp(resolveStamp);
+            foldGroup(group.getEffects());
         }
     }
 

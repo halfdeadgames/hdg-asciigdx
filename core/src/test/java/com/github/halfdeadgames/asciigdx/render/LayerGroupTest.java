@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -316,6 +317,181 @@ class LayerGroupTest {
 
         assertEquals(1f, layer.getTintA());
         assertEquals(0f, layer.getInvert());
+    }
+
+    @Test
+    void parentEffectsApplyAfterTheChild() {
+        LayerEffects own = saturation(0.5f);
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        child.setParent(parent);
+
+        resolved.resolve(own, groupsOf(child));
+
+        assertAppliesInSequence(resolved.getMatrix(), own, childEffects, parentEffects);
+        assertSame(parent, child.getParent());
+    }
+
+    @Test
+    void grandparentChainAppliesInOrder() {
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerEffects grandparentEffects = saturation(0.3f);
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        LayerGroup grandparent = stack.addGroup();
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        copyEffects(grandparentEffects, grandparent);
+        child.setParent(parent);
+        parent.setParent(grandparent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(child));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects,
+                grandparentEffects);
+    }
+
+    @Test
+    void sharedParentOfTwoGroupsAppliesOnce() {
+        LayerEffects sharedEffects = invert(1f);
+        LayerGroup first = stack.addGroup();
+        LayerGroup second = stack.addGroup();
+        LayerGroup shared = stack.addGroup();
+        copyEffects(sharedEffects, shared);
+        shared.setAlpha(0.5f);
+        first.setParent(shared);
+        second.setParent(shared);
+
+        resolved.resolve(new LayerEffects(), groupsOf(first, second));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), sharedEffects);
+        assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
+    }
+
+    @Test
+    void groupJoinedDirectlyAndAsAncestorAppliesOnce() {
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        parent.setAlpha(0.5f);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(child, parent));
+        assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
+
+        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+        assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
+    }
+
+    @Test
+    void resolvingAgainAppliesTheSameGroupsAgain() {
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        parent.setAlpha(0.5f);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(child));
+        resolved.resolve(new LayerEffects(), groupsOf(child));
+
+        assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
+    }
+
+    @Test
+    void alphaMultipliesThroughTheChain() {
+        LayerEffects own = new LayerEffects();
+        own.setTintAlpha(0.5f);
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        LayerGroup grandparent = stack.addGroup();
+        child.setAlpha(0.5f);
+        parent.setAlpha(0.4f);
+        grandparent.setAlpha(0.5f);
+        child.setParent(parent);
+        parent.setParent(grandparent);
+
+        resolved.resolve(own, groupsOf(child));
+
+        assertEquals(0.05f, resolved.getAlpha(), TOLERANCE);
+    }
+
+    @Test
+    void ancestorAlphaZeroZeroesTheLayer() {
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        parent.setAlpha(0f);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(child));
+
+        assertEquals(0f, resolved.getAlpha(), 0f);
+    }
+
+    @Test
+    void cycleIsRejectedAndLeavesStateUnchanged() {
+        LayerGroup top = stack.addGroup();
+        LayerGroup child = stack.addGroup();
+        LayerGroup grandchild = stack.addGroup();
+        child.setParent(top);
+        grandchild.setParent(child);
+
+        assertThrows(IllegalArgumentException.class, () -> top.setParent(top));
+        assertThrows(IllegalArgumentException.class, () -> top.setParent(child));
+        assertThrows(IllegalArgumentException.class, () -> top.setParent(grandchild));
+        assertThrows(IllegalArgumentException.class, () -> child.setParent(grandchild));
+
+        assertNull(top.getParent());
+        assertSame(top, child.getParent());
+        assertSame(child, grandchild.getParent());
+    }
+
+    @Test
+    void parentFromAnotherStackIsRejected() {
+        LayerStack other = new LayerStack((grid, source, shared) -> new SilentRenderer());
+        LayerGroup foreign = other.addGroup();
+        LayerGroup group = stack.addGroup();
+
+        assertThrows(IllegalArgumentException.class, () -> group.setParent(foreign));
+        assertNull(group.getParent());
+    }
+
+    @Test
+    void removedGroupCannotBeAParent() {
+        LayerGroup removed = stack.addGroup();
+        LayerGroup group = stack.addGroup();
+        stack.removeGroup(removed);
+
+        assertThrows(IllegalStateException.class, () -> group.setParent(removed));
+        assertNull(group.getParent());
+    }
+
+    @Test
+    void removingTheParentLeavesChildrenParentless() {
+        LayerGroup grandparent = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        LayerGroup child = stack.addGroup();
+        parent.setParent(grandparent);
+        child.setParent(parent);
+
+        stack.removeGroup(parent);
+
+        assertNull(child.getParent());
+        assertNull(parent.getParent());
+        assertNull(grandparent.getParent());
+    }
+
+    @Test
+    void settingNullClearsTheParent() {
+        LayerGroup parent = stack.addGroup();
+        LayerGroup child = stack.addGroup();
+        child.setParent(parent);
+
+        child.setParent(null);
+
+        assertNull(child.getParent());
     }
 
     private static Array<LayerGroup> groupsOf(LayerGroup... groups) {

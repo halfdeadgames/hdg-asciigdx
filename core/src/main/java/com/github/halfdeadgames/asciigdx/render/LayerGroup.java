@@ -11,6 +11,11 @@ import com.badlogic.gdx.utils.Array;
  * belongs to, in the order the layer joined them. The color transforms run in that sequence and the
  * alphas multiply. A layer can be in several groups. A layer in no group draws with only its own effects.
  *
+ * <p>A group can have one parent group ({@link #setParent}), which forms a tree. After a group's
+ * effects, the effects of its parent run, then the grandparent's, and so on up to the root, for every
+ * layer in the group. A layer reaching the same ancestor through several groups gets that ancestor
+ * applied once, at the first point it is reached. Removing a group makes its children parentless.
+ *
  * <p>The group's tint alpha fades each member layer on its own, not the members as one image: the
  * overlap of two member layers still shows both. Once the group is removed from its stack, getters
  * keep working but every method that changes or uses the group throws {@link IllegalStateException}.
@@ -20,9 +25,36 @@ public final class LayerGroup {
     private final LayerEffects effects = new LayerEffects();
     private final Array<Layer> members = new Array<>();
     private LayerStack owner;
+    private LayerGroup parent;
+    private long resolveStamp;
 
     LayerGroup(LayerStack owner) {
         this.owner = owner;
+    }
+
+    /** Returns the parent group, or null if this group has none. */
+    public LayerGroup getParent() {
+        return parent;
+    }
+
+    /**
+     * Nests this group in a parent group of the same stack, or takes it out of its parent with null.
+     * A group has at most one parent; setting a new one replaces the old. The parent's effects apply
+     * to every layer that is in this group or in any of its descendants, after this group's own.
+     * If the parent is removed from the stack, this group's parent becomes null.
+     *
+     * @throws IllegalArgumentException if the parent is this group or one of its descendants, or
+     *     belongs to another stack; the parent is left unchanged
+     * @throws IllegalStateException if this group or the parent was removed
+     */
+    public void setParent(LayerGroup newParent) {
+        LayerStack stack = requireAttached();
+        if (newParent == null) {
+            parent = null;
+            return;
+        }
+        requireParentCandidate(newParent, stack);
+        parent = newParent;
     }
 
     /**
@@ -223,9 +255,23 @@ public final class LayerGroup {
         return effects;
     }
 
+    long getResolveStamp() {
+        return resolveStamp;
+    }
+
+    void setResolveStamp(long resolveStamp) {
+        this.resolveStamp = resolveStamp;
+    }
+
+    /** Called by the stack when this group's parent is removed. */
+    void clearParent() {
+        parent = null;
+    }
+
     /** Empties the group and releases it from its stack; the members keep their own effects. */
     void detach() {
         owner = null;
+        parent = null;
         for (int i = members.size - 1; i >= 0; i--) {
             members.get(i).leaveGroup(this);
         }
@@ -246,6 +292,20 @@ public final class LayerGroup {
         }
         if (layer.getOwner() != stack) {
             throw new IllegalArgumentException("Layer belongs to another stack");
+        }
+    }
+
+    private void requireParentCandidate(LayerGroup candidate, LayerStack stack) {
+        if (candidate.owner == null) {
+            throw new IllegalStateException("Parent LayerGroup was removed from its stack");
+        }
+        if (candidate.owner != stack) {
+            throw new IllegalArgumentException("Parent LayerGroup belongs to another stack");
+        }
+        for (LayerGroup ancestor = candidate; ancestor != null; ancestor = ancestor.parent) {
+            if (ancestor == this) {
+                throw new IllegalArgumentException("Parent would create a cycle");
+            }
         }
     }
 
