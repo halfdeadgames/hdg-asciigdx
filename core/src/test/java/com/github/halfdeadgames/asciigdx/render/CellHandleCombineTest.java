@@ -159,11 +159,11 @@ class CellHandleCombineTest {
 
     private static void assertComposedMatchesSequence(int cell, int lastingColor, float lastingAmount,
             int frameColor, float frameAmount) {
-        int sequential = CellColor.mixRgb(CellColor.mixRgb(cell, lastingColor, lastingAmount), frameColor,
-                frameAmount);
+        int sequential = CellColor.mixRgbKeepingAlpha(
+                CellColor.mixRgbKeepingAlpha(cell, lastingColor, lastingAmount), frameColor, frameAmount);
         int composedColor = CellHandleCombine.mixColor(lastingColor, lastingAmount, frameColor, frameAmount);
         float composedAmount = CellHandleCombine.mixAmount(lastingAmount, frameAmount);
-        int composed = CellColor.mixRgb(cell, composedColor, composedAmount);
+        int composed = CellColor.mixRgbKeepingAlpha(cell, composedColor, composedAmount);
 
         assertEquals(sequential & CHANNEL_MASK, composed & CHANNEL_MASK);
         for (int shift = 8; shift <= 24; shift += 8) {

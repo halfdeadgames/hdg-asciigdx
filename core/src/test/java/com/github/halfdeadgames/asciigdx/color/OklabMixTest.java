@@ -25,14 +25,14 @@ class OklabMixTest {
 
     @Test
     void resultHasZeroAlphaByte() {
-        int mixed = OklabMix.mixRgb(0x4080C0FF, 0xC08040FF, 0.5f);
+        int mixed = OklabMix.mixRgbChannels(0x4080C0FF, 0xC08040FF, 0.5f);
 
         assertEquals(0, mixed & 0xFF);
     }
 
     @Test
     void blackToWhiteMidpointIsMidGray() {
-        int mixed = OklabMix.mixRgb(0x000000FF, 0xFFFFFFFF, 0.5f);
+        int mixed = OklabMix.mixRgbChannels(0x000000FF, 0xFFFFFFFF, 0.5f);
 
         int red = (mixed >>> 24) & 0xFF;
         int green = (mixed >>> 16) & 0xFF;
@@ -44,7 +44,7 @@ class OklabMixTest {
 
     @Test
     void redMixedWithItselfStaysRed() {
-        int mixed = OklabMix.mixRgb(0xFF0000FF, 0xFF0000FF, 0.3f);
+        int mixed = OklabMix.mixRgbChannels(0xFF0000FF, 0xFF0000FF, 0.3f);
 
         assertTrue(Math.abs(((mixed >>> 24) & 0xFF) - 255) <= 1);
         assertTrue(((mixed >>> 16) & 0xFF) <= 1);
@@ -54,7 +54,7 @@ class OklabMixTest {
     private static void assertSelfMixWithinOne(int red, int green, int blue) {
         int color = (red << 24) | (green << 16) | (blue << 8) | 0xFF;
 
-        int mixed = OklabMix.mixRgb(color, color, 0.5f);
+        int mixed = OklabMix.mixRgbChannels(color, color, 0.5f);
 
         String label = Integer.toHexString(color);
         assertTrue(Math.abs(red - ((mixed >>> 24) & 0xFF)) <= 1, "red of " + label);

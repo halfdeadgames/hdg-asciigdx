@@ -1,10 +1,16 @@
 package com.github.halfdeadgames.asciigdx.color;
 
 /**
- * Full-precision Oklab blending of 8-bit sRGB colors. Oklab by Björn Ottosson, matrices from
- * 2021-01-25.
+ * Full-precision Oklab blending of 8-bit sRGB colors. Follows Björn Ottosson, "A perceptual color
+ * space for image processing", 2020, https://bottosson.github.io/posts/oklab/ (matrices from
+ * 2021-01-25).
  */
 final class OklabMix {
+
+    private static final int RED_SHIFT = 24;
+    private static final int GREEN_SHIFT = 16;
+    private static final int BLUE_SHIFT = 8;
+    private static final int CHANNEL_MASK = 0xFF;
 
     private static final double SRGB_DECODE_THRESHOLD = 0.04045;
     private static final double SRGB_ENCODE_THRESHOLD = 0.0031308;
@@ -17,16 +23,16 @@ final class OklabMix {
      *
      * @param fromRgba color at amount 0
      * @param toRgba color at amount 1
-     * @param amount mix factor
+     * @param amount mix factor, expected in the open range 0 to 1
      * @return blended color as 0xRRGGBB00 (alpha byte 0)
      */
-    static int mixRgb(int fromRgba, int toRgba, float amount) {
-        double fromRed = toLinear(fromRgba >>> 24);
-        double fromGreen = toLinear((fromRgba >>> 16) & 0xFF);
-        double fromBlue = toLinear((fromRgba >>> 8) & 0xFF);
-        double toRed = toLinear(toRgba >>> 24);
-        double toGreen = toLinear((toRgba >>> 16) & 0xFF);
-        double toBlue = toLinear((toRgba >>> 8) & 0xFF);
+    static int mixRgbChannels(int fromRgba, int toRgba, float amount) {
+        double fromRed = toLinear(channelOf(fromRgba, RED_SHIFT));
+        double fromGreen = toLinear(channelOf(fromRgba, GREEN_SHIFT));
+        double fromBlue = toLinear(channelOf(fromRgba, BLUE_SHIFT));
+        double toRed = toLinear(channelOf(toRgba, RED_SHIFT));
+        double toGreen = toLinear(channelOf(toRgba, GREEN_SHIFT));
+        double toBlue = toLinear(channelOf(toRgba, BLUE_SHIFT));
 
         double fromL = cbrtL(fromRed, fromGreen, fromBlue);
         double fromM = cbrtM(fromRed, fromGreen, fromBlue);
@@ -54,7 +60,12 @@ final class OklabMix {
         double green = -1.2684380046 * lCubed + 2.6097574011 * mCubed - 0.3413193965 * sCubed;
         double blue = -0.0041960863 * lCubed - 0.7034186147 * mCubed + 1.7076147010 * sCubed;
 
-        return (toChannel(red) << 24) | (toChannel(green) << 16) | (toChannel(blue) << 8);
+        return (toChannel(red) << RED_SHIFT) | (toChannel(green) << GREEN_SHIFT)
+            | (toChannel(blue) << BLUE_SHIFT);
+    }
+
+    private static int channelOf(int rgba, int shift) {
+        return (rgba >>> shift) & CHANNEL_MASK;
     }
 
     private static double cbrtL(double red, double green, double blue) {

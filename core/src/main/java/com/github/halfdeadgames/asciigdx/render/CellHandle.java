@@ -525,7 +525,7 @@ public final class CellHandle implements SpriteTransform {
         if (foregroundMixAmount <= 0f) {
             return cellForegroundRgba;
         }
-        return CellColor.mixRgb(cellForegroundRgba, foregroundMixColor, foregroundMixAmount);
+        return CellColor.mixRgbKeepingAlpha(cellForegroundRgba, foregroundMixColor, foregroundMixAmount);
     }
 
     /** The background to draw for a cell whose grid background is {@code cellBackgroundRgba}. */
@@ -533,7 +533,7 @@ public final class CellHandle implements SpriteTransform {
         if (backgroundMixAmount <= 0f) {
             return cellBackgroundRgba;
         }
-        return CellColor.mixRgb(cellBackgroundRgba, backgroundMixColor, backgroundMixAmount);
+        return CellColor.mixRgbKeepingAlpha(cellBackgroundRgba, backgroundMixColor, backgroundMixAmount);
     }
 
     /** The glyph to draw for a cell whose grid glyph is {@code cellCodePoint}. */

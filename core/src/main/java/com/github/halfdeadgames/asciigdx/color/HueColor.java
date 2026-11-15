@@ -1,6 +1,11 @@
 package com.github.halfdeadgames.asciigdx.color;
 
-/** Builds fully saturated, full-brightness colors from a hue. */
+/**
+ * Builds fully saturated, full-brightness colors from a hue, as opaque RGBA8888 ints
+ * ({@code 0xRRGGBBAA}). The methods are pure, allocation-free, and safe to call from any thread.
+ *
+ * <p>Example: {@code int green = HueColor.fromHue(1f / 3f);} gives {@code 0x00FF00FF}.
+ */
 public final class HueColor {
 
     private static final int SECTORS = 6;
@@ -11,10 +16,12 @@ public final class HueColor {
     }
 
     /**
-     * Returns the opaque RGBA8888 color at {@code hueCycles} around the color wheel: 0 is red, 1/3 is
-     * green, and 2/3 is blue. Values outside 0 to 1 wrap around, so 1.25 is the same as 0.25.
+     * Returns the color at {@code hueCycles} around the color wheel: 0 is red, 1/3 is green, and
+     * 2/3 is blue, with full saturation and full brightness. Any finite value is accepted and
+     * wraps around, so 1.25 and -0.75 both give the same color as 0.25.
      *
-     * @param hueCycles hue in cycles around the wheel; must be finite
+     * @param hueCycles hue in cycles around the wheel, where 1 is one full turn; must be finite
+     * @return the opaque color as RGBA8888 ({@code 0xRRGGBBFF})
      * @throws IllegalArgumentException if {@code hueCycles} is NaN or infinite
      */
     public static int fromHue(float hueCycles) {
