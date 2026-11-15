@@ -17,6 +17,7 @@ final class CellShaderPass {
     private final ShaderProgram shader;
     private final Matrix4 combinedMatrix = new Matrix4();
     private final Matrix4 layerMatrix = new Matrix4();
+    private final ColorMatrix colorMatrix = new ColorMatrix();
 
     CellShaderPass(ShaderProgram shader) {
         this.shader = shader;
@@ -51,10 +52,9 @@ final class CellShaderPass {
     }
 
     private void setEffectUniforms(LayerEffects effects) {
-        shader.setUniformf("u_tint", effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
-        shader.setUniformf("u_mix", effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount());
-        shader.setUniformf("u_saturation", effects.getSaturation());
-        shader.setUniformf("u_invert", effects.getInvert());
+        effects.writeColorMatrix(colorMatrix);
+        shader.setUniformMatrix4fv("u_colorMatrix", colorMatrix.getValues(), 0, ColorMatrix.SIZE);
+        shader.setUniformf("u_alpha", effects.getTintA());
     }
 
     private static void applyBlend(SpriteBatch batch, CellBlend blend, boolean opaque) {

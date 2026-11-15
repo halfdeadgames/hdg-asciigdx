@@ -26,10 +26,10 @@ final class GridRenderResources implements Disposable {
             + "   gl_Position = u_projTrans * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
             + "}\n";
 
-    // Glyph over background (Porter-Duff over), then the layer effects in this order: saturation,
-    // tint, mix, invert, then alpha. Alpha fades the cell as one color; mix, saturation, and invert
-    // never touch it. Mix comes before invert so a flash can reach its color even on a darkly tinted
-    // layer; invert comes last so it negates the finished look.
+    // Glyph over background (Porter-Duff over), then the layer effects as one color matrix built from
+    // saturation, tint, mix, and invert in that order (see LayerEffects), then alpha. Alpha fades the
+    // cell as one color; the matrix never touches it. Mix comes before invert so a flash can reach its
+    // color even on a darkly tinted layer; invert comes last so it negates the finished look.
     private static final String FRAGMENT_SOURCE =
             "#ifdef GL_ES\n"
             + "#define LOWP lowp\n"
@@ -41,22 +41,16 @@ final class GridRenderResources implements Disposable {
             + "varying LOWP vec4 v_foreground;\n"
             + "varying vec2 v_texCoords;\n"
             + "uniform sampler2D u_texture;\n"
-            + "uniform vec4 u_tint;\n"
-            + "uniform vec4 u_mix;\n"
-            + "uniform float u_saturation;\n"
-            + "uniform float u_invert;\n"
+            + "uniform mat4 u_colorMatrix;\n"
+            + "uniform float u_alpha;\n"
             + "void main()\n"
             + "{\n"
             + "  vec4 glyph = v_foreground * texture2D(u_texture, v_texCoords);\n"
             + "  float alpha = glyph.a + v_background.a * (1.0 - glyph.a);\n"
             + "  vec3 premultiplied = glyph.rgb * glyph.a + v_background.rgb * v_background.a * (1.0 - glyph.a);\n"
             + "  vec3 rgb = alpha > 0.0 ? premultiplied / alpha : vec3(0.0);\n"
-            + "  float gray = dot(rgb, vec3(0.2126, 0.7152, 0.0722));\n"
-            + "  rgb = mix(vec3(gray), rgb, u_saturation);\n"
-            + "  rgb = rgb * u_tint.rgb;\n"
-            + "  rgb = mix(rgb, u_mix.rgb, u_mix.a);\n"
-            + "  rgb = mix(rgb, 1.0 - rgb, u_invert);\n"
-            + "  gl_FragColor = vec4(rgb, alpha * u_tint.a);\n"
+            + "  rgb = (u_colorMatrix * vec4(rgb, 1.0)).rgb;\n"
+            + "  gl_FragColor = vec4(rgb, alpha * u_alpha);\n"
             + "}";
 
     private final ShaderProgram shader;

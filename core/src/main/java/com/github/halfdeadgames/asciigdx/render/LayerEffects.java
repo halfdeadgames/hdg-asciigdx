@@ -84,6 +84,14 @@ final class LayerEffects {
         this.invert = invert;
     }
 
+    /** Overwrites {@code out} with saturation, then tint, mix, and invert folded into one transform. */
+    void writeColorMatrix(ColorMatrix out) {
+        out.setSaturation(saturation);
+        out.thenScale(tintR, tintG, tintB);
+        out.thenMixToward(mixR, mixG, mixB, mixAmount);
+        out.thenInvert(invert);
+    }
+
     void copyFrom(LayerEffects other) {
         setTint(other.tintR, other.tintG, other.tintB, other.tintA);
         setMix(other.mixR, other.mixG, other.mixB, other.mixAmount);
