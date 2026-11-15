@@ -38,7 +38,7 @@ class FontFitTest {
     void tinyWindowPicksLastFontWithoutMeetingMinimum() {
         int[] sizes = {16, 8};
         assertEquals(1, pick(300, 200, 80, 45, sizes, sizes));
-        assertEquals(false, GridFit.calculate(300, 200, 8, 8, 80, 45).meetsMinimum());
+        assertEquals(false, GridFit.calculate(300, 200, 8, 8, 80, 45).isMinimumMet());
     }
 
     @Test

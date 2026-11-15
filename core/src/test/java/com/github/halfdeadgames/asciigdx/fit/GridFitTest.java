@@ -18,9 +18,9 @@ class GridFitTest {
         assertEquals(2, fit.getScale());
         assertEquals(100, fit.getColumns());
         assertEquals(56, fit.getRows());
-        assertEquals(0, fit.getLeftoverX());
-        assertEquals(4, fit.getLeftoverY());
-        assertTrue(fit.meetsMinimum());
+        assertEquals(0, fit.getLeftoverWidth());
+        assertEquals(4, fit.getLeftoverHeight());
+        assertTrue(fit.isMinimumMet());
         assertFalse(fit.isEmpty());
     }
 
@@ -30,8 +30,8 @@ class GridFitTest {
         assertEquals(3, fit.getScale());
         assertEquals(80, fit.getColumns());
         assertEquals(45, fit.getRows());
-        assertEquals(0, fit.getLeftoverX());
-        assertEquals(0, fit.getLeftoverY());
+        assertEquals(0, fit.getLeftoverWidth());
+        assertEquals(0, fit.getLeftoverHeight());
     }
 
     @Test
@@ -48,8 +48,8 @@ class GridFitTest {
         assertEquals(2, fit.getScale());
         assertEquals(62, fit.getColumns());
         assertEquals(21, fit.getRows());
-        assertEquals(8, fit.getLeftoverX());
-        assertEquals(28, fit.getLeftoverY());
+        assertEquals(8, fit.getLeftoverWidth());
+        assertEquals(28, fit.getLeftoverHeight());
         assertEquals(62 * 8, fit.getWorldWidth());
         assertEquals(21 * 16, fit.getWorldHeight());
         assertEquals(8, fit.getCellWidth());
@@ -62,9 +62,9 @@ class GridFitTest {
         assertEquals(1, fit.getScale());
         assertEquals(62, fit.getColumns());
         assertEquals(37, fit.getRows());
-        assertEquals(4, fit.getLeftoverX());
-        assertEquals(4, fit.getLeftoverY());
-        assertFalse(fit.meetsMinimum());
+        assertEquals(4, fit.getLeftoverWidth());
+        assertEquals(4, fit.getLeftoverHeight());
+        assertFalse(fit.isMinimumMet());
         assertFalse(fit.isEmpty());
     }
 
@@ -75,7 +75,7 @@ class GridFitTest {
         assertEquals(1, fit.getScale());
         assertEquals(0, fit.getColumns());
         assertEquals(0, fit.getRows());
-        assertFalse(fit.meetsMinimum());
+        assertFalse(fit.isMinimumMet());
     }
 
     @Test
@@ -91,12 +91,12 @@ class GridFitTest {
         for (int[] window : windows) {
             GridFit fit = GridFit.calculate(window[0], window[1], 8, 8, 10, 10);
             assertTrue(fit.isEmpty());
-            assertFalse(fit.meetsMinimum());
+            assertFalse(fit.isMinimumMet());
             assertEquals(0, fit.getScale());
             assertEquals(0, fit.getColumns());
             assertEquals(0, fit.getRows());
-            assertEquals(0, fit.getLeftoverX());
-            assertEquals(0, fit.getLeftoverY());
+            assertEquals(0, fit.getLeftoverWidth());
+            assertEquals(0, fit.getLeftoverHeight());
         }
     }
 
@@ -124,7 +124,7 @@ class GridFitTest {
                 Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertEquals(1, fit.getScale());
         assertEquals(Integer.MAX_VALUE / 65536, fit.getColumns());
-        assertFalse(fit.meetsMinimum());
+        assertFalse(fit.isMinimumMet());
     }
 
     @Test
@@ -132,7 +132,7 @@ class GridFitTest {
         GridFit fit = GridFit.calculate(Integer.MAX_VALUE, Integer.MAX_VALUE, 1 << 20, 1 << 20, 1, 1);
         assertEquals(2047, fit.getScale());
         assertEquals(1, fit.getColumns());
-        assertTrue(fit.getLeftoverX() >= 0);
+        assertTrue(fit.getLeftoverWidth() >= 0);
     }
 
     @Test
@@ -147,10 +147,10 @@ class GridFitTest {
                                 minimum[0], minimum[1]);
                         int scaledWidth = cell[0] * fit.getScale();
                         int scaledHeight = cell[1] * fit.getScale();
-                        assertEquals(width, fit.getColumns() * scaledWidth + fit.getLeftoverX());
-                        assertEquals(height, fit.getRows() * scaledHeight + fit.getLeftoverY());
-                        assertTrue(fit.getLeftoverX() < scaledWidth);
-                        assertTrue(fit.getLeftoverY() < scaledHeight);
+                        assertEquals(width, fit.getColumns() * scaledWidth + fit.getLeftoverWidth());
+                        assertEquals(height, fit.getRows() * scaledHeight + fit.getLeftoverHeight());
+                        assertTrue(fit.getLeftoverWidth() < scaledWidth);
+                        assertTrue(fit.getLeftoverHeight() < scaledHeight);
                     }
                 }
             }
@@ -163,9 +163,9 @@ class GridFitTest {
         assertEquals(2, fit.getScale());
         assertEquals(60, fit.getColumns());
         assertEquals(33, fit.getRows());
-        assertEquals(0, fit.getLeftoverX());
-        assertEquals(24, fit.getLeftoverY());
-        assertTrue(fit.meetsMinimum());
+        assertEquals(0, fit.getLeftoverWidth());
+        assertEquals(24, fit.getLeftoverHeight());
+        assertTrue(fit.isMinimumMet());
     }
 
     @Test
@@ -176,8 +176,8 @@ class GridFitTest {
         assertEquals(unlimited.getScale(), capped.getScale());
         assertEquals(unlimited.getColumns(), capped.getColumns());
         assertEquals(unlimited.getRows(), capped.getRows());
-        assertEquals(unlimited.getLeftoverX(), capped.getLeftoverX());
-        assertEquals(unlimited.getLeftoverY(), capped.getLeftoverY());
+        assertEquals(unlimited.getLeftoverWidth(), capped.getLeftoverWidth());
+        assertEquals(unlimited.getLeftoverHeight(), capped.getLeftoverHeight());
     }
 
     @Test
@@ -202,7 +202,7 @@ class GridFitTest {
         assertEquals(3, fit.getScale());
         assertEquals(1, fit.getColumns());
         assertEquals(1, fit.getRows());
-        assertEquals(7, fit.getLeftoverX());
+        assertEquals(7, fit.getLeftoverWidth());
     }
 
     @Test

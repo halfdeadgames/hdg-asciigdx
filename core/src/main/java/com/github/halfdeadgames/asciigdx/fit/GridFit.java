@@ -4,12 +4,23 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 
 /**
  * Result of fitting a glyph grid into a window: a whole-number pixel scale, the number of columns
- * and rows that fit at that scale, and the leftover screen pixels on each axis.
+ * and rows that fit at that scale, and the leftover window pixels on each axis.
  *
- * <p>The scale is the largest one that still leaves room for the requested minimum columns and
- * rows, capped at an optional maximum scale, and never less than 1. A lower cap leaves room for
- * more columns and rows. A {@code TerminalGrid} cannot have zero size, so check
- * {@link #isEmpty()} before building a grid from {@link #getColumns()} and {@link #getRows()}.
+ * <p>All window sizes and leftovers are in pixels. Column and row counts are in cells. Instances
+ * are immutable and safe to share. Create one with
+ * {@link #calculate(int, int, int, int, int, int)} whenever the window size changes.
+ *
+ * <p>For a non-empty window (width and height both above 0), the scale is the largest whole number
+ * that still leaves room for the requested minimum columns and rows, capped at an optional maximum
+ * scale, and never less than 1. A lower cap leaves room for more columns and rows. If even scale 1
+ * cannot hold the minimum, the grid is smaller than the minimum and {@link #isMinimumMet()} is
+ * false.
+ *
+ * <p>For an empty window (width or height of 0 or less), the scale, columns, rows, and leftovers
+ * are all 0. A window that is non-empty but smaller than one cell has scale 1 and 0 columns or
+ * rows. In both cases {@link #isEmpty()} is true. A {@code TerminalGrid} cannot have zero size, so
+ * check {@link #isEmpty()} before building a grid from {@link #getColumns()} and
+ * {@link #getRows()}.
  */
 public final class GridFit {
 
@@ -42,8 +53,17 @@ public final class GridFit {
     }
 
     /**
-     * Fits cells of the given size into the window with no scale limit.
+     * Fits cells of the given size into the window with no scale limit. Equivalent to
+     * {@link #calculate(int, int, int, int, int, int, int)} with a maximum scale of
+     * {@link Integer#MAX_VALUE}. Call it on resize, not per frame.
      *
+     * @param windowWidth window width in pixels; 0 or less gives an empty result
+     * @param windowHeight window height in pixels; 0 or less gives an empty result
+     * @param cellWidth unscaled cell width in pixels; must be above 0
+     * @param cellHeight unscaled cell height in pixels; must be above 0
+     * @param minColumns minimum columns to leave room for, in cells; must be above 0
+     * @param minRows minimum rows to leave room for, in cells; must be above 0
+     * @return the fit; never null
      * @throws IllegalArgumentException if a cell size or minimum is zero or negative
      */
     public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
@@ -53,10 +73,23 @@ public final class GridFit {
     }
 
     /**
-     * Fits cells of the given size into the window. The scale is the largest one that still fits
-     * the minimum columns and rows, capped at {@code maxScale}, and never below 1. A lower cap
-     * leaves room for more columns and rows.
+     * Fits cells of the given size into the window. For a non-empty window, the scale is the
+     * largest whole number that still fits the minimum columns and rows, capped at
+     * {@code maxScale}, and never below 1. A lower cap leaves room for more columns and rows. If
+     * the minimum does not fit even at scale 1, the grid is smaller than the minimum and
+     * {@link #isMinimumMet()} is false.
      *
+     * <p>If the window width or height is 0 or less, the result has scale 0, 0 columns, 0 rows,
+     * and 0 leftovers. Call this method on resize, not per frame.
+     *
+     * @param windowWidth window width in pixels; 0 or less gives an empty result
+     * @param windowHeight window height in pixels; 0 or less gives an empty result
+     * @param cellWidth unscaled cell width in pixels; must be above 0
+     * @param cellHeight unscaled cell height in pixels; must be above 0
+     * @param minColumns minimum columns to leave room for, in cells; must be above 0
+     * @param minRows minimum rows to leave room for, in cells; must be above 0
+     * @param maxScale largest whole-number scale allowed; must be above 0
+     * @return the fit; never null
      * @throws IllegalArgumentException if a cell size, minimum, or maxScale is zero or negative
      */
     public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
@@ -85,59 +118,126 @@ public final class GridFit {
                 minColumns, minRows, scale, columns, rows, leftoverX, leftoverY);
     }
 
+    /**
+     * Returns the whole-number factor each cell pixel is enlarged by on screen.
+     *
+     * @return the scale: 0 for a window with width or height of 0 or less, otherwise 1 or more
+     */
     public int getScale() {
         return scale;
     }
 
+    /**
+     * Returns how many columns fit in the window at this scale.
+     *
+     * @return the column count in cells; 0 if the window is empty or narrower than one scaled cell
+     */
     public int getColumns() {
         return columns;
     }
 
+    /**
+     * Returns how many rows fit in the window at this scale.
+     *
+     * @return the row count in cells; 0 if the window is empty or shorter than one scaled cell
+     */
     public int getRows() {
         return rows;
     }
 
-    /** Unused window pixels to the side of the grid. */
-    public int getLeftoverX() {
+    /**
+     * Returns the unused window width: the pixels the grid does not cover horizontally, summed
+     * over both sides. A game that centers the grid splits this value itself.
+     *
+     * @return the unused width in pixels; 0 or more, and less than one scaled cell width unless
+     *     the window is empty
+     */
+    public int getLeftoverWidth() {
         return leftoverX;
     }
 
-    /** Unused window pixels above or below the grid. */
-    public int getLeftoverY() {
+    /**
+     * Returns the unused window height: the pixels the grid does not cover vertically, summed
+     * over top and bottom. A game that centers the grid splits this value itself.
+     *
+     * @return the unused height in pixels; 0 or more, and less than one scaled cell height unless
+     *     the window is empty
+     */
+    public int getLeftoverHeight() {
         return leftoverY;
     }
 
+    /**
+     * Returns the unscaled cell width this fit was calculated with.
+     *
+     * @return the cell width in pixels; above 0
+     */
     public int getCellWidth() {
         return cellWidth;
     }
 
+    /**
+     * Returns the unscaled cell height this fit was calculated with.
+     *
+     * @return the cell height in pixels; above 0
+     */
     public int getCellHeight() {
         return cellHeight;
     }
 
-    /** Grid width in unscaled cell pixels. */
+    /**
+     * Returns the grid width in unscaled pixels ({@code columns * cellWidth}). This matches the
+     * world width a libGDX viewport uses before scaling.
+     *
+     * @return the world width in pixels; 0 if there are no columns
+     */
     public int getWorldWidth() {
         return columns * cellWidth;
     }
 
-    /** Grid height in unscaled cell pixels. */
+    /**
+     * Returns the grid height in unscaled pixels ({@code rows * cellHeight}). This matches the
+     * world height a libGDX viewport uses before scaling.
+     *
+     * @return the world height in pixels; 0 if there are no rows
+     */
     public int getWorldHeight() {
         return rows * cellHeight;
     }
 
-    /** Whether the grid has at least the requested minimum columns and rows. */
-    public boolean meetsMinimum() {
+    /**
+     * Tells whether the grid has at least the requested minimum columns and rows.
+     *
+     * @return true if columns and rows both reach their minimums; always false for an empty window
+     */
+    public boolean isMinimumMet() {
         return columns >= minColumns && rows >= minRows;
     }
 
-    /** Whether no column or no row fits. */
+    /**
+     * Tells whether no column or no row fits, so no grid can be built from this fit.
+     *
+     * @return true if the column count or the row count is 0
+     */
     public boolean isEmpty() {
         return columns == 0 || rows == 0;
     }
 
     /**
-     * Configures the viewport to use exactly this scale and world size, then updates it.
-     * Does nothing if the result is empty. Call it on resize, not every frame.
+     * Configures the viewport to draw this grid at exactly this scale, then updates it. Replaces
+     * the viewport's {@code Scaling} with an exact whole-number scaling, sets the viewport's world
+     * size to {@link #getWorldWidth()} by {@link #getWorldHeight()}, and calls
+     * {@code viewport.update(windowWidth, windowHeight, centerCamera)} with the window size this
+     * fit was calculated for.
+     *
+     * <p>Does nothing when {@link #isEmpty()} is true. Creates one small object per call, so call
+     * it on resize, not per frame. Call it on the GL/render thread, because the viewport update
+     * changes the GL viewport.
+     *
+     * @param viewport the viewport to configure; must not be null
+     * @param centerCamera true to center the viewport's camera on the world, false to leave the
+     *     camera position unchanged
+     * @throws NullPointerException if the viewport is null and this fit is not empty
      */
     public void applyTo(ScalingViewport viewport, boolean centerCamera) {
         if (isEmpty()) {

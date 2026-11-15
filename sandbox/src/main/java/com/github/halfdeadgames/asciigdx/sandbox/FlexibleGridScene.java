@@ -148,8 +148,8 @@ class FlexibleGridScene extends GridScene {
         GridDrawing.text(grid, 1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
             fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
         GridDrawing.text(grid, 1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
-            fit.getLeftoverX(), fit.getLeftoverY()), CYAN, CLEAR);
-        GridDrawing.text(grid, 1, 3, fit.meetsMinimum() ? "minimum ok" : "below minimum", GOLD, CLEAR);
+            fit.getLeftoverWidth(), fit.getLeftoverHeight()), CYAN, CLEAR);
+        GridDrawing.text(grid, 1, 3, fit.isMinimumMet() ? "minimum ok" : "below minimum", GOLD, CLEAR);
         GridDrawing.text(grid, 1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
             font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
         GridDrawing.text(grid, 1, MS_ROW, "resize -- ms", WHITE, CLEAR);
