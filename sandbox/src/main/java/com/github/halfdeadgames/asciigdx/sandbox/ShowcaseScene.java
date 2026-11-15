@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.Panel;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
@@ -233,6 +234,7 @@ class ShowcaseScene extends GridScene {
     private final Layer[] lightningLayers;
     private final float cellWidth;
     private final float cellHeight;
+    private final Panel scenePanel;
     private final float waterCenterX;
     private final float waterCenterY;
     private final float waterRestOffsetX;
@@ -276,6 +278,7 @@ class ShowcaseScene extends GridScene {
         drawStats();
         cellWidth = glyphs.getCellWidth();
         cellHeight = glyphs.getCellHeight();
+        scenePanel = layers.addPanelInCells(SCENE_INNER_LEFT, SCENE_INNER_TOP, SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT, glyphs);
         smoothGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
         crispGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_8X8, GlyphFilter.NEAREST);
         titleGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_16X32, GlyphFilter.LINEAR);
@@ -286,7 +289,7 @@ class ShowcaseScene extends GridScene {
         waterLayer = addWaterLayer(glyphs);
         underwaterLayer = addUnderwaterLayer(glyphs);
         playerLayer = addInnerLayer(smoothGlyphs);
-        crispPlayerLayer = addCrispPlayerLayer(glyphs);
+        crispPlayerLayer = addCrispPlayerLayer();
         dropletLayer = addInnerLayer(glyphs);
         bridgeLayer = addBridgeLayer(glyphs);
         playerSprite = addPlayer();
@@ -307,7 +310,7 @@ class ShowcaseScene extends GridScene {
         splash = createSplash();
         waterRipple = createWaterRipple();
         underwaterSwap = createUnderwaterSwap();
-        addTitleLetters(addTitleLayer(glyphs));
+        addTitleLetters(addTitleLayer());
         addLogLayer(glyphs, tallGlyphs);
         overlayLayer = addOverlay(glyphs);
         bindTimeline();
@@ -422,7 +425,7 @@ class ShowcaseScene extends GridScene {
         Layer layer = layers.add(waterGrid, glyphs);
         layer.setPivot(waterCenterX, waterCenterY);
         layer.setOffset(waterRestOffsetX, waterRestOffsetY);
-        clipToSceneInner(layer, glyphs);
+        layer.setPanel(scenePanel);
         return layer;
     }
 
@@ -448,8 +451,8 @@ class ShowcaseScene extends GridScene {
         Layer layer = layers.add(layerGrid, glyphs);
         float gridColumns = SCENE_INNER_WIDTH + 2 * marginColumns;
         layer.setPivot(gridColumns * glyphs.getCellWidth() / 2f, SCENE_INNER_HEIGHT * glyphs.getCellHeight() / 2f);
-        layer.setOffset((SCENE_INNER_LEFT - marginColumns) * glyphs.getCellWidth(), SCENE_INNER_TOP * glyphs.getCellHeight());
-        clipToSceneInner(layer, glyphs);
+        layer.setOffset(-marginColumns * glyphs.getCellWidth(), 0f);
+        layer.setPanel(scenePanel);
         return layer;
     }
 
@@ -481,7 +484,7 @@ class ShowcaseScene extends GridScene {
         return new CameraPan(CAMERA_PAN, targetX, targetY);
     }
 
-    /** Stops every layer from following the camera. Depth layers then get their parallax from their zoom each frame. */
+    /** Sets every layer's parallax to 0, so only depth layers follow the scene panel's camera; they get their parallax from their zoom each frame. */
     private void pinAllLayersToScreen() {
         for (int index = 0; index < layers.size(); index++) {
             layers.get(index).setParallax(0f);
@@ -490,7 +493,7 @@ class ShowcaseScene extends GridScene {
 
     private void applyCamera(float time) {
         camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.progressAt(time));
-        layers.setCamera(cameraPan.cameraXAt(time), cameraPan.cameraYAt(time));
+        scenePanel.setCamera(cameraPan.cameraXAt(time), cameraPan.cameraYAt(time));
         applyDepth();
     }
 
@@ -503,12 +506,11 @@ class ShowcaseScene extends GridScene {
     }
 
     /** An empty layer at the inner area's top-left, in the same spot as the crisp player layer; the letters are its sprites. */
-    private Layer addTitleLayer(GlyphSource mainGlyphs) {
+    private Layer addTitleLayer() {
         TerminalGrid emptyGrid = new TerminalGrid(1, 1);
         emptyGrid.set(0, 0, ' ', WHITE, CLEAR);
         Layer layer = layers.add(emptyGrid, titleGlyphs);
-        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
-        clipToSceneInner(layer, mainGlyphs);
+        layer.setPanel(scenePanel);
         return layer;
     }
 
@@ -598,20 +600,19 @@ class ShowcaseScene extends GridScene {
     }
 
     private float playerCenterStackX(float time) {
-        return SCENE_INNER_LEFT * cellWidth + fallingPlayerX(time) + cellWidth / 2f;
+        return scenePanel.getX() + fallingPlayerX(time) + cellWidth / 2f;
     }
 
     private float playerCenterStackY(float time) {
-        return SCENE_INNER_TOP * cellHeight + fallingPlayerY(time) + cellHeight / 2f;
+        return scenePanel.getY() + fallingPlayerY(time) + cellHeight / 2f;
     }
 
     /** An empty layer in the same screen-space spot as the player layer, so sprite coordinates match. */
-    private Layer addCrispPlayerLayer(GlyphSource mainGlyphs) {
+    private Layer addCrispPlayerLayer() {
         TerminalGrid emptyGrid = new TerminalGrid(1, 1);
         emptyGrid.set(0, 0, ' ', WHITE, CLEAR);
         Layer layer = layers.add(emptyGrid, crispGlyphs);
-        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
-        clipToSceneInner(layer, mainGlyphs);
+        layer.setPanel(scenePanel);
         return layer;
     }
 
@@ -625,8 +626,7 @@ class ShowcaseScene extends GridScene {
         TerminalGrid underwaterGrid = new TerminalGrid(columns, rows);
         GridDrawing.fill(underwaterGrid, 0, 0, columns, rows, ' ', WHITE, WATER_BACKGROUND_COLOR);
         Layer layer = layers.insert(layers.indexOf(waterLayer), underwaterGrid, crispGlyphs);
-        layer.setOffset(SCENE_INNER_LEFT * mainGlyphs.getCellWidth(), SCENE_INNER_TOP * mainGlyphs.getCellHeight());
-        clipToSceneInner(layer, mainGlyphs);
+        layer.setPanel(scenePanel);
         return layer;
     }
 
@@ -696,7 +696,7 @@ class ShowcaseScene extends GridScene {
             rainSets[set] = new RainSet(RAIN_CYCLE_SECONDS, RAIN_CYCLES_PER_LOOP, set / (float) RAIN_SET_COUNT, -RAIN_SLIDE_CELLS, RAIN_SLIDE_CELLS, RAIN_PEAK_ALPHA, RAIN_RAMP_FRACTION);
             rainGrids[set] = new TerminalGrid(RAIN_COLUMNS, RAIN_ROWS);
             rainLayers[set] = layers.add(rainGrids[set], glyphs);
-            clipToSceneInner(rainLayers[set], glyphs);
+            rainLayers[set].setPanel(scenePanel);
             drawnRainCycles[set] = Integer.MIN_VALUE;
         }
     }
@@ -706,8 +706,8 @@ class ShowcaseScene extends GridScene {
             redrawRainIfCycleChanged(set, rainSets[set].cycleIndexAt(time));
             rainLayers[set].setAlpha(rainSets[set].alphaAt(time));
             rainLayers[set].setOffset(
-                (SCENE_INNER_LEFT + rainSets[set].slideColumnsAt(time)) * cellWidth,
-                (SCENE_INNER_TOP - RAIN_SLIDE_CELLS + rainSets[set].slideRowsAt(time)) * cellHeight);
+                rainSets[set].slideColumnsAt(time) * cellWidth,
+                (rainSets[set].slideRowsAt(time) - RAIN_SLIDE_CELLS) * cellHeight);
         }
     }
 
@@ -753,11 +753,11 @@ class ShowcaseScene extends GridScene {
     }
 
     private float splashStackX() {
-        return SCENE_INNER_LEFT * cellWidth + fallEndX + cellWidth / 2f;
+        return scenePanel.getX() + fallEndX + cellWidth / 2f;
     }
 
     private float splashStackY() {
-        return SCENE_INNER_TOP * cellHeight + fallEndY + cellHeight / 2f;
+        return scenePanel.getY() + fallEndY + cellHeight / 2f;
     }
 
     private void applyLightning(float time) {
@@ -767,21 +767,13 @@ class ShowcaseScene extends GridScene {
         }
     }
 
-    /** The clip is in stack pixels and ignores the layer's offset and zoom. */
-    private static void clipToSceneInner(Layer layer, GlyphSource glyphs) {
-        layer.setClip(
-            SCENE_INNER_LEFT * glyphs.getCellWidth(),
-            SCENE_INNER_TOP * glyphs.getCellHeight(),
-            SCENE_INNER_WIDTH * glyphs.getCellWidth(),
-            SCENE_INNER_HEIGHT * glyphs.getCellHeight());
-    }
-
+    /** Center of the scene panel, measured from the panel's corner. */
     private static float innerCenterX(GlyphSource glyphs) {
-        return (SCENE_INNER_LEFT + SCENE_INNER_WIDTH / 2f) * glyphs.getCellWidth();
+        return SCENE_INNER_WIDTH / 2f * glyphs.getCellWidth();
     }
 
     private static float innerCenterY(GlyphSource glyphs) {
-        return (SCENE_INNER_TOP + SCENE_INNER_HEIGHT / 2f) * glyphs.getCellHeight();
+        return SCENE_INNER_HEIGHT / 2f * glyphs.getCellHeight();
     }
 
     private void applyDepth() {
@@ -815,13 +807,15 @@ class ShowcaseScene extends GridScene {
         }
     }
 
-    /** Offset is in main-grid pixels, so it is computed from the main glyph source, not the tall one. */
+    /** The panel's corner is in main-grid pixels, and its size is in tall cells so it matches the log grid. */
     private void addLogLayer(GlyphSource mainGlyphs, GlyphSource tallGlyphs) {
         GridDrawing.fill(logGrid, 0, 0, LOG_TEXT_WIDTH, LOG_ROWS, ' ', WHITE, CLEAR);
-        Layer logLayer = layers.add(logGrid, tallGlyphs);
-        logLayer.setOffset(
+        Panel logPanel = layers.addPanel(
             LOG_INNER_COLUMN * mainGlyphs.getCellWidth(),
-            LOG_INNER_ROW * mainGlyphs.getCellHeight());
+            LOG_INNER_ROW * mainGlyphs.getCellHeight(),
+            LOG_TEXT_WIDTH * tallGlyphs.getCellWidth(),
+            LOG_ROWS * tallGlyphs.getCellHeight());
+        layers.add(logGrid, tallGlyphs).setPanel(logPanel);
     }
 
     private Layer addOverlay(GlyphSource glyphs) {
