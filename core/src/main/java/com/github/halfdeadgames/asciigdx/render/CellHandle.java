@@ -23,7 +23,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  *
  * <p>Handles are keyed by cell position. If {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid}
  * is resized with a content shift, handles do not move: the transform applies to whatever is now at
- * that position. Lifting and settling take effect at the next draw. Lifted cells draw before the
+ * that position. {@link Layer#scroll} instead moves the handles together with the content.
+ * Lifting and settling take effect at the next draw. Lifted cells draw before the
  * layer's free sprites, in the order their handles were created, and are positioned relative to the
  * layer like sprites.
  *
@@ -43,8 +44,8 @@ public final class CellHandle implements SpriteTransform {
      */
     public static final int NO_CODE_POINT = Integer.MIN_VALUE;
 
-    private final int column;
-    private final int row;
+    private int column;
+    private int row;
     private boolean detached;
     private boolean glyphHidden;
     private float offsetX;
@@ -76,6 +77,12 @@ public final class CellHandle implements SpriteTransform {
 
     void detach() {
         detached = true;
+    }
+
+    /** Moves the handle's position; owned by {@link Layer#scroll}, which keeps the layer's index in step. */
+    void moveBy(int columns, int rows) {
+        column += columns;
+        row += rows;
     }
 
     /** Whether the renderer currently hides this cell's glyph; owned by the layer's sync. */

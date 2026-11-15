@@ -9,6 +9,9 @@ import java.util.Objects;
 /**
  * Runs a {@link CellEffect} on every cell of a {@link CellShape} that lies inside a layer's grid.
  *
+ * <p>On a map-window layer the shape is read in map coordinates, not grid coordinates, so the zone stays
+ * fixed to the world as the camera moves.
+ *
  * <p>The zone holds no cell handles between calls: each {@link #apply} asks the layer for the handles it
  * needs, so {@link Layer#releaseIdleCellHandles()} is always safe in between. Applying allocates nothing
  * itself; the layer only allocates when it creates a cell's handle for the first time. The shape and the
@@ -55,6 +58,8 @@ public final class EffectZone {
 
     /**
      * Runs the effect once on every shape cell inside the layer's grid. Cells outside the grid are skipped.
+     * On a {@linkplain Layer#isMapWindow() map-window layer} the shape is in map coordinates: it stays on
+     * its map cells while the window scrolls, and only cells inside the window are affected.
      * Call {@link Layer#resetCellHandles()} once per frame before the first zone is applied.
      *
      * @param layer layer whose cells are affected
@@ -67,10 +72,13 @@ public final class EffectZone {
             throw new IllegalStateException("EffectZone.apply is not reentrant");
         }
         TerminalView grid = layer.getGrid();
-        if (!overlaps(grid)) {
+        boolean mapWindow = layer.isMapWindow();
+        int originColumn = mapWindow ? layer.getMapWindow().getOriginColumn() : 0;
+        int originRow = mapWindow ? layer.getMapWindow().getOriginRow() : 0;
+        if (!overlaps(grid, originColumn, originRow)) {
             return;
         }
-        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop());
+        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
         try {
             shape.forEachCell(visitor);
         } finally {
@@ -78,9 +86,11 @@ public final class EffectZone {
         }
     }
 
-    private boolean overlaps(TerminalView grid) {
-        return shape.getRight() >= 0 && shape.getBottom() >= 0
-                && shape.getLeft() < grid.getWidth() && shape.getTop() < grid.getHeight();
+    /** Tests the shape's bounds against the rectangle of shape coordinates the grid shows. */
+    private boolean overlaps(TerminalView grid, int originColumn, int originRow) {
+        return shape.getRight() >= originColumn && shape.getBottom() >= originRow
+                && shape.getLeft() < (long) originColumn + grid.getWidth()
+                && shape.getTop() < (long) originRow + grid.getHeight();
     }
 
     private static final class ZoneVisitor implements ShapeCellVisitor {
@@ -93,17 +103,23 @@ public final class EffectZone {
         private int shapeTop;
         private int gridWidth;
         private int gridHeight;
+        private int originColumn;
+        private int originRow;
 
         boolean isRunning() {
             return layer != null;
         }
 
-        void start(Layer targetLayer, CellEffect targetEffect, float time, int left, int top) {
+        /** The origin is the map cell at grid (0, 0), or 0 when the layer is not a map window. */
+        void start(Layer targetLayer, CellEffect targetEffect, float time, int left, int top,
+                int mapOriginColumn, int mapOriginRow) {
             layer = targetLayer;
             effect = targetEffect;
             timeSeconds = time;
             shapeLeft = left;
             shapeTop = top;
+            originColumn = mapOriginColumn;
+            originRow = mapOriginRow;
             gridWidth = targetLayer.getGrid().getWidth();
             gridHeight = targetLayer.getGrid().getHeight();
             zoneCell.setCellSize(targetLayer.getGlyphSource().getCellWidth(),
@@ -117,11 +133,13 @@ public final class EffectZone {
 
         @Override
         public void visit(int column, int row, float distance, float distanceFraction) {
-            if (column < 0 || row < 0 || column >= gridWidth || row >= gridHeight) {
+            int gridColumn = column - originColumn;
+            int gridRow = row - originRow;
+            if (gridColumn < 0 || gridRow < 0 || gridColumn >= gridWidth || gridRow >= gridHeight) {
                 return;
             }
             zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance, distanceFraction);
-            effect.apply(layer.cell(column, row), zoneCell, timeSeconds);
+            effect.apply(layer.cell(gridColumn, gridRow), zoneCell, timeSeconds);
         }
     }
 }

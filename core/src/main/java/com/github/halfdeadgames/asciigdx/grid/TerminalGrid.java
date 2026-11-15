@@ -313,6 +313,93 @@ public final class TerminalGrid implements TerminalView {
         }
     }
 
+    /**
+     * Moves the content inside the grid without changing its size: every cell {@code (x, y)} moves to
+     * {@code (x + shiftX, y + shiftY)}. Cells that land outside are discarded and do not come back. Cells that
+     * scroll in are empty ({@link #EMPTY_GLYPH}, {@link #TRANSPARENT_RGBA}), as after {@link #clear()}.
+     *
+     * <p>This moves content inside the grid, not the layer on screen, and callers must shift their own stored
+     * coordinates by the same amount. It does not allocate, so it is safe for per-step camera scrolling. Use
+     * {@link #resize(int, int, int, int)} for the allocating variant that also changes the size.
+     *
+     * <p>A zero shift does nothing. Any other shift marks every cell of every registered {@link DirtyTracker}
+     * dirty. A shift of at least the width or height empties the grid.
+     *
+     * @param shiftX columns to move the content to the right (negative moves left)
+     * @param shiftY rows to move the content down (negative moves up)
+     */
+    public void scroll(int shiftX, int shiftY) {
+        if (shiftX == 0 && shiftY == 0) {
+            return;
+        }
+        if (Math.abs((long) shiftX) >= width || Math.abs((long) shiftY) >= height) {
+            fillCells(0, glyphs.length);
+        } else {
+            copyShiftedRows(shiftX, shiftY);
+            clearExposedColumns(shiftX);
+            clearExposedRows(shiftY);
+        }
+        markAllTrackers();
+    }
+
+    private void copyShiftedRows(int shiftX, int shiftY) {
+        int copyLength = width - Math.abs(shiftX);
+        int sourceColumn = Math.max(0, -shiftX);
+        int targetColumn = Math.max(0, shiftX);
+        int firstRow = Math.max(0, -shiftY);
+        int endRow = height - Math.max(0, shiftY);
+        // Copy against the direction of travel so source rows are read before they are overwritten.
+        if (shiftY > 0) {
+            for (int row = endRow - 1; row >= firstRow; row--) {
+                copyRow(row, sourceColumn, row + shiftY, targetColumn, copyLength);
+            }
+            return;
+        }
+        for (int row = firstRow; row < endRow; row++) {
+            copyRow(row, sourceColumn, row + shiftY, targetColumn, copyLength);
+        }
+    }
+
+    private void copyRow(int sourceRow, int sourceColumn, int targetRow, int targetColumn, int length) {
+        int source = sourceRow * width + sourceColumn;
+        int target = targetRow * width + targetColumn;
+        System.arraycopy(glyphs, source, glyphs, target, length);
+        System.arraycopy(foregrounds, source, foregrounds, target, length);
+        System.arraycopy(backgrounds, source, backgrounds, target, length);
+    }
+
+    private void clearExposedColumns(int shiftX) {
+        if (shiftX == 0) {
+            return;
+        }
+        int firstColumn = shiftX > 0 ? 0 : width + shiftX;
+        int length = Math.abs(shiftX);
+        for (int row = 0; row < height; row++) {
+            int start = row * width + firstColumn;
+            fillCells(start, start + length);
+        }
+    }
+
+    private void clearExposedRows(int shiftY) {
+        if (shiftY == 0) {
+            return;
+        }
+        int firstRow = shiftY > 0 ? 0 : height + shiftY;
+        fillCells(firstRow * width, (firstRow + Math.abs(shiftY)) * width);
+    }
+
+    private void fillCells(int fromIndex, int toIndex) {
+        Arrays.fill(glyphs, fromIndex, toIndex, EMPTY_GLYPH);
+        Arrays.fill(foregrounds, fromIndex, toIndex, TRANSPARENT_RGBA);
+        Arrays.fill(backgrounds, fromIndex, toIndex, TRANSPARENT_RGBA);
+    }
+
+    private void markAllTrackers() {
+        for (int i = 0, count = trackers.size(); i < count; i++) {
+            trackers.get(i).markAll();
+        }
+    }
+
     private static int cellCountOf(int width, int height) {
         try {
             return Math.multiplyExact(width, height);

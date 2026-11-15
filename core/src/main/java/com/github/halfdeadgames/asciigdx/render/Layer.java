@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.LongMap;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
@@ -39,6 +40,7 @@ public final class Layer {
     private final LayerEffects effects = new LayerEffects();
     private final Array<LayerGroup> groups = new Array<>(true, 2);
     private Panel panel;
+    private MapWindow mapWindow;
     private ClipMode clipMode = ClipMode.NONE;
     private float clipX;
     private float clipY;
@@ -80,6 +82,9 @@ public final class Layer {
      * from the new source draw as its fallback glyph. The layer does not own the source and
      * never disposes it. The offset is not changed.
      *
+     * <p>On a {@linkplain #enableMapWindow() map window}, changing the source changes the cell size
+     * and with it the origin, so every cell is flagged as needing a refill.
+     *
      * @throws IllegalArgumentException if the source is null
      * @throws IllegalStateException if the layer was removed
      */
@@ -94,6 +99,11 @@ public final class Layer {
         renderer.setGlyphSource(glyphSource);
         this.glyphSource = glyphSource;
         forgetHiddenFlags();
+        followCamera();
+        if (mapWindow != null) {
+            // The origin changed unit, so surviving cells hold unrelated map cells.
+            mapWindow.markAllNeedFill();
+        }
     }
 
     /** Returns the horizontal offset in virtual pixels, growing to the right. */
@@ -142,6 +152,7 @@ public final class Layer {
             requireAttachedPanelOf(panel, stack);
         }
         this.panel = panel;
+        followCamera();
     }
 
     private static void requireAttachedPanelOf(Panel panel, LayerStack stack) {
@@ -194,6 +205,7 @@ public final class Layer {
         }
         parallaxX = factorX;
         parallaxY = factorY;
+        followCamera();
     }
 
     /**
@@ -317,7 +329,10 @@ public final class Layer {
 
     /**
      * Sets the point the layer zooms and rotates about, which stays fixed on screen. It moves with
-     * the offset.
+     * the offset. In {@linkplain #enableMapWindow() map window} mode the pivot is measured in map
+     * pixels, so it does not jump when the window scrolls. The default pivot (0, 0) is then the
+     * map's top-left corner, so a game that zooms or rotates a map window should set the pivot to
+     * the map point it wants to stay fixed, for example the player.
      *
      * @param x layer pixels from the layer's left edge
      * @param y layer pixels from the layer's top edge, growing down
@@ -331,7 +346,8 @@ public final class Layer {
 
     /**
      * Moves the pivot and adjusts the offset so the picture stays where it is drawn now. Placement
-     * is kept for the zoom and rotation set at the time of the call; later changes to either
+     * is kept for the zoom and rotation set at the time of the call. In map window mode the pivot
+     * is in map pixels, as for {@link #setPivot}. Later changes to zoom or rotation
      * happen about the new pivot. {@link #setPivot} alone moves the picture when the layer is
      * zoomed or rotated. With pixel snapping or {@link ZoomMode#WHOLE}, the snapped corner can
      * still shift the picture by up to 1 pixel.
@@ -355,10 +371,11 @@ public final class Layer {
      * Sets the pivot to the center of a cell of this layer's glyph source, equal to
      * {@code setPivot((column + 0.5f) * cellWidth, (row + 0.5f) * cellHeight)}. The pivot is
      * stored in pixels: after switching to a glyph source with another cell size, call this again.
-     * The cell does not have to be inside the grid.
+     * The cell does not have to be inside the grid. In map window mode the cell is a map cell,
+     * because the pivot is in map pixels; the default pivot is the map's top-left corner.
      *
-     * @param column cells from the layer's left edge
-     * @param row cells from the layer's top edge, growing down
+     * @param column cells from the layer's left edge (map cells in map window mode)
+     * @param row cells from the layer's top edge, growing down (map cells in map window mode)
      * @throws IllegalStateException if the layer was removed
      */
     public void setPivotCell(int column, int row) {
@@ -367,7 +384,7 @@ public final class Layer {
 
     /**
      * Moves the pivot to the center of a cell as {@link #setPivotCell} does, keeping the picture
-     * in place as {@link #setPivotKeepingPlacement} does.
+     * in place as {@link #setPivotKeepingPlacement} does. In map window mode the cell is a map cell.
      *
      * @param column cells from the layer's left edge
      * @param row cells from the layer's top edge, growing down
@@ -811,6 +828,215 @@ public final class Layer {
         }
     }
 
+    /**
+     * Moves the grid content and the cell handles together, so a handle keeps following the same
+     * content: every cell {@code (x, y)} and its handle move to {@code (x + columns, y + rows)}.
+     * Exposed cells are empty, as after {@link TerminalGrid#scroll}.
+     *
+     * <p>Unlike {@link TerminalGrid#scroll}, which moves content only and leaves handles keyed to
+     * their positions, this keeps each handle's motion and overrides with its content. Handles
+     * pushed out of the grid are detached as after a shrink: getters work, setters throw, and
+     * {@link #cell} gives a new handle. Free sprites are pixel-positioned and stay where they are.
+     *
+     * <p>Nothing is allocated except a possible rehash of the position index. A zero shift does
+     * nothing.
+     *
+     * <p>Not available in {@linkplain #enableMapWindow() map window} mode, where the camera alone
+     * moves the content so it cannot drift away from the map origin.
+     *
+     * @param columns columns to move to the right (negative moves left)
+     * @param rows rows to move down (negative moves up)
+     * @throws IllegalStateException if the layer was removed or is a map window
+     */
+    public void scroll(int columns, int rows) {
+        requireAttached();
+        if (mapWindow != null) {
+            throw new IllegalStateException("A map window scrolls with the camera, not by scroll()");
+        }
+        scrollContent(columns, rows);
+    }
+
+    private void scrollContent(int columns, int rows) {
+        if (columns == 0 && rows == 0) {
+            return;
+        }
+        // Order matters: unhide at old positions first, then move content, then handles.
+        showGlyphsAtOldPositions();
+        asTerminalGrid().scroll(columns, rows);
+        moveCellHandles(columns, rows);
+        rebuildCellIndex();
+        renderer.setCellHandles(cellHandles);
+        if (mapWindow != null) {
+            mapWindow.shiftFillFlags(columns, rows);
+        }
+    }
+
+    /**
+     * Turns on map window mode with no margins.
+     *
+     * @see #enableMapWindow(int, int)
+     */
+    public void enableMapWindow() {
+        enableMapWindow(0, 0);
+    }
+
+    /**
+     * Makes the grid a window onto a larger map. The map origin is the whole map cell shown at grid
+     * cell (0,0). It follows the active camera (the stack camera, or the panel's camera for a panel
+     * member) times the parallax factor, in cells of this layer's glyph source, so layers with
+     * different cell sizes follow one camera with different origin numbers.
+     *
+     * <p>Enabling only places the window: the grid content is taken to already show the map at the
+     * current origin, and nothing scrolls. Calling this again replaces the margins the same way.
+     * Afterward, a change of camera, panel camera, parallax, panel, or glyph source that moves the
+     * origin scrolls the content and the cell handles as {@link #scroll} does: exposed cells become
+     * empty, handles pushed out are detached, and free sprites do not move. The drawing position
+     * compensates, so only the sub-cell remainder of the camera moves on screen. The shift happens
+     * inside the setter, so the game can refill the exposed cells before drawing.
+     *
+     * <p>Make the grid at least the window size plus one column and one row, so the sub-cell
+     * offset never exposes an edge, plus the margins for zoom or rotation.
+     *
+     * <p>In this mode the pivot (see {@link #setPivot}) is measured in map pixels, and the default
+     * pivot (0, 0) is the map's top-left corner. A game that zooms or rotates a map window should set
+     * the pivot to the map point it wants to stay fixed, for example the player. Cell queries
+     * still return grid cells.
+     *
+     * <p>Changing the glyph source of a map window changes the cell size, so it asks for a full
+     * refill: every cell is flagged by {@link MapWindow#forEachCellToFill}.
+     *
+     * @param marginColumns extra cells kept before the visible left edge; not negative
+     * @param marginRows extra cells kept before the visible top edge; not negative
+     * @throws IllegalArgumentException if a margin is negative
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void enableMapWindow(int marginColumns, int marginRows) {
+        requireAttached();
+        var newWindow = new MapWindow(this, asTerminalGrid(), new MapWindowOrigin(marginColumns, marginRows));
+        detachMapWindow();
+        mapWindow = newWindow;
+        updateMapWindowOrigin();
+    }
+
+    /**
+     * Turns off map window mode and detaches the {@link MapWindow}. The content is not touched.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void disableMapWindow() {
+        requireAttached();
+        detachMapWindow();
+    }
+
+    /**
+     * Returns the {@link MapWindow} created by the latest {@link #enableMapWindow()}.
+     *
+     * @throws IllegalStateException if the layer was removed or is not a map window
+     */
+    public MapWindow getMapWindow() {
+        requireAttached();
+        if (mapWindow == null) {
+            throw new IllegalStateException("Layer is not a map window");
+        }
+        return mapWindow;
+    }
+
+    private void detachMapWindow() {
+        if (mapWindow == null) {
+            return;
+        }
+        mapWindow.detach();
+        mapWindow = null;
+    }
+
+    /**
+     * Returns whether the layer is in map window mode.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public boolean isMapWindow() {
+        requireAttached();
+        return mapWindow != null;
+    }
+
+    /** Re-reads the camera and scrolls the content by any origin change; does nothing outside map window mode. */
+    void followCamera() {
+        if (mapWindow == null) {
+            return;
+        }
+        updateMapWindowOrigin();
+        MapWindowOrigin origin = mapWindow.origin();
+        if (origin.hasShifted()) {
+            // Origins are bounded by MapWindowOrigin.MAX_ORIGIN, so negating the shift cannot overflow.
+            scrollContent(-origin.getShiftColumns(), -origin.getShiftRows());
+        }
+    }
+
+    /** Pixels the map origin column sits from the map's left edge, or 0 outside map window mode. */
+    float getMapOriginPixelsX() {
+        return mapWindow == null ? 0f : mapWindow.origin().getOriginColumn() * glyphSource.getCellWidth();
+    }
+
+    /** Pixels the map origin row sits from the map's top edge, or 0 outside map window mode. */
+    float getMapOriginPixelsY() {
+        return mapWindow == null ? 0f : mapWindow.origin().getOriginRow() * glyphSource.getCellHeight();
+    }
+
+    private void updateMapWindowOrigin() {
+        LayerStack stack = requireAttached();
+        float cameraX = panel == null ? stack.getCameraX() : panel.getCameraX();
+        float cameraY = panel == null ? stack.getCameraY() : panel.getCameraY();
+        mapWindow.origin().follow(cameraX * parallaxX, cameraY * parallaxY,
+                glyphSource.getCellWidth(), glyphSource.getCellHeight());
+    }
+
+    /** Safe because {@link TerminalView} is sealed and permits only {@link TerminalGrid}. */
+    private TerminalGrid asTerminalGrid() {
+        return (TerminalGrid) grid;
+    }
+
+    /** Clears hidden flags before moving, so none is left on a position that will hold other content. */
+    private void showGlyphsAtOldPositions() {
+        for (int i = 0; i < cellHandles.size; i++) {
+            CellHandle cell = cellHandles.get(i);
+            if (!cell.isGlyphHidden()) {
+                continue;
+            }
+            if (!isInsideGrid(cell)) {
+                // The grid shrank since the last draw; the renderer's rebuild already forgets this flag.
+                cell.setGlyphHidden(false);
+                continue;
+            }
+            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), false);
+            cell.setGlyphHidden(false);
+        }
+    }
+
+    private void moveCellHandles(int columns, int rows) {
+        for (int i = cellHandles.size - 1; i >= 0; i--) {
+            CellHandle cell = cellHandles.get(i);
+            cell.moveBy(columns, rows);
+            if (isInsideGrid(cell)) {
+                continue;
+            }
+            cellHandles.removeIndex(i);
+            cell.detach();
+        }
+    }
+
+    private boolean isInsideGrid(CellHandle cell) {
+        return cell.getColumn() >= 0 && cell.getColumn() < grid.getWidth()
+                && cell.getRow() >= 0 && cell.getRow() < grid.getHeight();
+    }
+
+    private void rebuildCellIndex() {
+        cellsByPosition.clear();
+        for (int i = 0; i < cellHandles.size; i++) {
+            CellHandle cell = cellHandles.get(i);
+            cellsByPosition.put(cellKey(cell.getColumn(), cell.getRow()), cell);
+        }
+    }
+
     /** Returns how many cell handles the layer currently holds. */
     public int getCellHandleCount() {
         return cellHandles.size;
@@ -1000,6 +1226,7 @@ public final class Layer {
 
     void detach() {
         owner = null;
+        detachMapWindow();
         leaveAllGroups();
         for (int i = sprites.size - 1; i >= 0; i--) {
             sprites.get(i).detach();

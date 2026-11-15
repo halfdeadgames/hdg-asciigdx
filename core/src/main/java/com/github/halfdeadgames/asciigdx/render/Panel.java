@@ -96,6 +96,7 @@ public final class Panel {
         }
         cameraX = x;
         cameraY = y;
+        owner.followCameraOfLayersIn(this);
     }
 
     /** Returns the camera's x in virtual pixels, 0 by default. */

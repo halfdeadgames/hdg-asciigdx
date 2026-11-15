@@ -35,12 +35,12 @@ public final class ZoneCell {
         this.distanceFraction = distanceFraction;
     }
 
-    /** The cell's column in the layer's grid. */
+    /** The cell's column in the layer's grid, or in the map when the layer is a map window. */
     public int getColumn() {
         return column;
     }
 
-    /** The cell's row in the layer's grid. */
+    /** The cell's row in the layer's grid, or in the map when the layer is a map window. */
     public int getRow() {
         return row;
     }

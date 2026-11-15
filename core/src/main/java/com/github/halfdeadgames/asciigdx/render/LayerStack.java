@@ -344,6 +344,17 @@ public final class LayerStack implements Disposable {
         }
         cameraX = x;
         cameraY = y;
+        followCameraOfLayersIn(null);
+    }
+
+    /** Re-follows the camera for map window layers that are in {@code panel} (null: in no panel). */
+    void followCameraOfLayersIn(Panel panel) {
+        for (int i = 0; i < layers.size; i++) {
+            Layer layer = layers.get(i);
+            if (layer.getPanel() == panel) {
+                layer.followCamera();
+            }
+        }
     }
 
     /** Returns the camera's x in virtual pixels, 0 by default. */
@@ -643,12 +654,17 @@ public final class LayerStack implements Disposable {
         Panel panel = layer.getPanel();
         float activeCameraX = panel == null ? cameraX : panel.getCameraX();
         float activeCameraY = panel == null ? cameraY : panel.getCameraY();
-        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - activeCameraX * layer.getParallaxX();
-        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - activeCameraY * layer.getParallaxY();
+        // Zero for plain layers; for map windows it cancels the whole cells the content already scrolled.
+        float mapOriginX = layer.getMapOriginPixelsX();
+        float mapOriginY = layer.getMapOriginPixelsY();
+        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - activeCameraX * layer.getParallaxX()
+                + mapOriginX;
+        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - activeCameraY * layer.getParallaxY()
+                + mapOriginY;
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
-        LayerTransform.compose(screenX, screenY, layer.getPivotX(), layer.getPivotY(),
+        LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX, layer.getPivotY() - mapOriginY,
                 layer.getEffectiveZoom(), layer.getRotation(), snapCorner, out);
     }
 

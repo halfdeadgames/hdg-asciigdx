@@ -78,6 +78,11 @@ run {
       systemProperty 'asciigdx.showcaseTime', project.property('showcaseTime')
     }
   }
+  if (project.hasProperty('pondTime')) {
+    doFirst {
+      systemProperty 'asciigdx.pondTime', project.property('pondTime')
+    }
+  }
   if (project.hasProperty('zonesTime')) {
     doFirst {
       systemProperty 'asciigdx.zonesTime', project.property('zonesTime')

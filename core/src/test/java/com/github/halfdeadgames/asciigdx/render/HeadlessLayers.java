@@ -15,7 +15,16 @@ public final class HeadlessLayers {
 
     /** Creates a layer over {@code grid} in a new stack whose renderer ignores everything. */
     public static Layer create(TerminalGrid grid) {
-        LayerStack stack = new LayerStack((targetGrid, source, shared) -> new SilentRenderer());
+        return add(createStack(), grid);
+    }
+
+    /** Creates a stack whose renderer ignores everything, for tests that move the camera. */
+    public static LayerStack createStack() {
+        return new LayerStack((targetGrid, source, shared) -> new SilentRenderer());
+    }
+
+    /** Adds a layer over {@code grid} to a stack from {@link #createStack()}; cells are 8 by 12. */
+    public static Layer add(LayerStack stack, TerminalGrid grid) {
         return stack.add(grid, new EmptyGlyphSource());
     }
 
