@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.LayerGroup;
 import com.github.halfdeadgames.asciigdx.render.Panel;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
@@ -231,7 +232,7 @@ class ShowcaseScene extends GridScene {
     private final int[] rainDropColumns = new int[RAIN_DROPS_PER_SET];
     private final int[] rainDropRows = new int[RAIN_DROPS_PER_SET];
     private final Random rainRandom = new Random();
-    private final Layer[] lightningLayers;
+    private final LayerGroup lightningGroup;
     private final float cellWidth;
     private final float cellHeight;
     private final Panel scenePanel;
@@ -258,7 +259,7 @@ class ShowcaseScene extends GridScene {
     private final float fallEndY;
     private final CameraPan cameraPan;
     private final GlyphSprite ghostSprite;
-    private final Layer[] splashTintedLayers;
+    private final LayerGroup splashGroup;
     private boolean clockPinned;
     private final Vector2 waterPixel = new Vector2();
 
@@ -302,10 +303,8 @@ class ShowcaseScene extends GridScene {
         cameraPan = createCameraPan();
         ghostSprite = addGhost();
         addRainLayers(glyphs);
-        lightningLayers = new Layer[] {waterLayer, bridgeLayer, rainLayers[0], rainLayers[1], rainLayers[2]};
-        splashTintedLayers = new Layer[] {
-            waterLayer, underwaterLayer, playerLayer, crispPlayerLayer, dropletLayer, bridgeLayer,
-            rainLayers[0], rainLayers[1], rainLayers[2]};
+        splashGroup = createSplashGroup();
+        lightningGroup = createLightningGroup(splashGroup);
         poseStackAt(SPLASH_SECONDS);
         splash = createSplash();
         waterRipple = createWaterRipple();
@@ -370,15 +369,35 @@ class ShowcaseScene extends GridScene {
     }
 
     private void mixSplashLayersWithWhite(float amount) {
-        for (int index = 0; index < splashTintedLayers.length; index++) {
-            splashTintedLayers[index].setMix(Color.WHITE, amount);
-        }
+        splashGroup.setMix(Color.WHITE, amount);
     }
 
     private void saturateSplashLayers(float saturation) {
-        for (int index = 0; index < splashTintedLayers.length; index++) {
-            splashTintedLayers[index].setSaturation(saturation);
+        splashGroup.setSaturation(saturation);
+    }
+
+    /**
+     * Holds the underwater, player, crisp player, and droplet layers directly. The lightning group
+     * nests inside, so splash effects reach all nine layers.
+     */
+    private LayerGroup createSplashGroup() {
+        LayerGroup group = layers.addGroup();
+        group.add(underwaterLayer);
+        group.add(playerLayer);
+        group.add(crispPlayerLayer);
+        group.add(dropletLayer);
+        return group;
+    }
+
+    private LayerGroup createLightningGroup(LayerGroup parent) {
+        LayerGroup group = layers.addGroup();
+        group.add(waterLayer);
+        group.add(bridgeLayer);
+        for (int set = 0; set < RAIN_SET_COUNT; set++) {
+            group.add(rainLayers[set]);
         }
+        group.setParent(parent);
+        return group;
     }
 
     /**
@@ -761,10 +780,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private void applyLightning(float time) {
-        float amount = lightning.amountAt(time);
-        for (int index = 0; index < lightningLayers.length; index++) {
-            lightningLayers[index].setInvert(amount);
-        }
+        lightningGroup.setInvert(lightning.amountAt(time));
     }
 
     /** Center of the scene panel, measured from the panel's corner. */

@@ -8,12 +8,17 @@ import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.LayerGroup;
 
 /**
  * A clipped, shaking map that flashes white on each dragon step and can be toggled to grayscale
- * (G) or a whole-screen negative (N), under a sliding popup that fades as one flat image (half see-through in ghost mode), a
+ * (G), under a sliding popup that fades as one flat image (half see-through in ghost mode), a
  * hopping marker, fading rain that jumps by whole cells, a drifting banner, and a frame that
  * always stays on top.
+ *
+ * <p>D dims a world group (every layer except the frame), and N inverts a screen group that holds
+ * the frame and has the world group inside it, so with both on, the world is dimmed first and
+ * then inverted. The map's own flash and gray stay per-layer, so they stack under the groups.
  */
 class LayersScene extends GridScene {
     private static final int COLUMNS = 40;
@@ -49,6 +54,7 @@ class LayersScene extends GridScene {
     private static final float REACTION_DURATION = 0.35f;
     private static final float SHAKE_AMPLITUDE = 3.3f;
     private static final float FLASH_STRENGTH = 0.6f;
+    private static final float DIM_AMOUNT = 0.5f;
 
     private static final int WALL = 0x8C8C9CFF;
     private static final int WALL_BACKGROUND = 0x2A2A36FF;
@@ -83,6 +89,9 @@ class LayersScene extends GridScene {
     private boolean ghostPopup = true;
     private boolean grayMap;
     private boolean negative;
+    private boolean dimWorld;
+    private final LayerGroup screenGroup;
+    private final LayerGroup worldGroup;
     private int bossColumn = -1;
     private int bossStep = -1;
     private boolean startled;
@@ -120,6 +129,8 @@ class LayersScene extends GridScene {
         drawFrame(frameGrid);
         layerById[FRAME] = layers.add(frameGrid, glyphs);
 
+        screenGroup = createScreenGroup();
+        worldGroup = createWorldGroup(screenGroup);
         applyAnimation();
     }
 
@@ -154,7 +165,8 @@ class LayersScene extends GridScene {
         status.append(" rain ").append(rainVisible ? "on" : "off")
             .append(" ghost ").append(ghostPopup ? "on" : "off")
             .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off")
-            .append(" neg ").append(negative ? "on" : "off");
+            .append(" neg ").append(negative ? "on" : "off")
+            .append(" dim ").append(dimWorld ? "on" : "off");
         return status.toString();
     }
 
@@ -182,6 +194,10 @@ class LayersScene extends GridScene {
         }
         if (keycode == Input.Keys.N) {
             toggleNegative();
+            return true;
+        }
+        if (keycode == Input.Keys.D) {
+            toggleDimWorld();
             return true;
         }
         return false;
@@ -237,9 +253,30 @@ class LayersScene extends GridScene {
 
     private void toggleNegative() {
         negative = !negative;
-        for (Layer layer : layerById) {
-            layer.setInvert(negative ? 1f : 0f);
+        screenGroup.setInvert(negative ? 1f : 0f);
+    }
+
+    private void toggleDimWorld() {
+        dimWorld = !dimWorld;
+        worldGroup.setMix(0f, 0f, 0f, dimWorld ? DIM_AMOUNT : 0f);
+    }
+
+    /** Holds only the frame directly; the world layers reach it through the world group. */
+    private LayerGroup createScreenGroup() {
+        LayerGroup group = layers.addGroup();
+        group.add(layerById[FRAME]);
+        return group;
+    }
+
+    private LayerGroup createWorldGroup(LayerGroup parent) {
+        LayerGroup group = layers.addGroup();
+        for (int id = 0; id < layerById.length; id++) {
+            if (id != FRAME) {
+                group.add(layerById[id]);
+            }
         }
+        group.setParent(parent);
+        return group;
     }
 
     private void applyAnimation() {
