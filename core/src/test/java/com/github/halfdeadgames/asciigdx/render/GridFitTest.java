@@ -158,6 +158,45 @@ class GridFitTest {
     }
 
     @Test
+    void maxScaleHoldsScaleDownAndFitsMoreCells() {
+        GridFit fit = GridFit.calculate(1920, 1080, 16, 16, 40, 22, 2);
+        assertEquals(2, fit.getScale());
+        assertEquals(60, fit.getColumns());
+        assertEquals(33, fit.getRows());
+        assertEquals(0, fit.getLeftoverX());
+        assertEquals(24, fit.getLeftoverY());
+        assertTrue(fit.meetsMinimum());
+    }
+
+    @Test
+    void maxScaleAboveNaturalScaleChangesNothing() {
+        GridFit unlimited = GridFit.calculate(1920, 1080, 16, 16, 40, 22);
+        GridFit capped = GridFit.calculate(1920, 1080, 16, 16, 40, 22, 5);
+        assertEquals(3, unlimited.getScale());
+        assertEquals(unlimited.getScale(), capped.getScale());
+        assertEquals(unlimited.getColumns(), capped.getColumns());
+        assertEquals(unlimited.getRows(), capped.getRows());
+        assertEquals(unlimited.getLeftoverX(), capped.getLeftoverX());
+        assertEquals(unlimited.getLeftoverY(), capped.getLeftoverY());
+    }
+
+    @Test
+    void maxScaleOneGivesScaleOne() {
+        GridFit fit = GridFit.calculate(1920, 1080, 16, 16, 40, 22, 1);
+        assertEquals(1, fit.getScale());
+        assertEquals(120, fit.getColumns());
+        assertEquals(67, fit.getRows());
+    }
+
+    @Test
+    void zeroAndNegativeMaxScaleThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> GridFit.calculate(100, 100, 8, 8, 1, 1, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> GridFit.calculate(100, 100, 8, 8, 1, 1, -2));
+    }
+
+    @Test
     void thirtyOneSquareWindowPicksScaleThree() {
         GridFit fit = GridFit.calculate(31, 31, 8, 8, 1, 1);
         assertEquals(3, fit.getScale());

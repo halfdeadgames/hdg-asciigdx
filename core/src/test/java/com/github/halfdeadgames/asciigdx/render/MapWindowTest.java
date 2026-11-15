@@ -362,6 +362,39 @@ class MapWindowTest {
     }
 
     @Test
+    void gridResizeAfterAScrollKeepsTheOriginAndFlagsEveryCell() {
+        stack.setCamera(48f, 32f);
+        MapWindow window = enable();
+        window.markAllFilled();
+        stack.setCamera(64f, 32f);
+        window.markAllFilled();
+
+        grid.resize(8, 5);
+
+        assertEquals(4, window.getOriginColumn());
+        assertEquals(2, window.getOriginRow());
+        assertEquals(rectangleCells(4, 11, 2, 6), collectToFill(window));
+        assertTrue(window.contains(11, 6));
+        assertFalse(window.contains(12, 2));
+        assertFalse(window.contains(4, 7));
+    }
+
+    @Test
+    void scrollAfterAResizeFlagsOnlyTheExposedColumn() {
+        stack.setCamera(48f, 32f);
+        MapWindow window = enable();
+        window.markAllFilled();
+        stack.setCamera(64f, 32f);
+        window.markAllFilled();
+        grid.resize(8, 5);
+        window.markAllFilled();
+
+        stack.setCamera(80f, 32f);
+
+        assertEquals(columnCells(12, 2, 6), collectToFill(window));
+    }
+
+    @Test
     void disableDetachesTheWindow() {
         MapWindow window = enable();
 

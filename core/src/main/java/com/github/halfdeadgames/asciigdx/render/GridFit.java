@@ -7,7 +7,8 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
  * and rows that fit at that scale, and the leftover screen pixels on each axis.
  *
  * <p>The scale is the largest one that still leaves room for the requested minimum columns and
- * rows, and never less than 1. A {@code TerminalGrid} cannot have zero size, so check
+ * rows, capped at an optional maximum scale, and never less than 1. A lower cap leaves room for
+ * more columns and rows. A {@code TerminalGrid} cannot have zero size, so check
  * {@link #isEmpty()} before building a grid from {@link #getColumns()} and {@link #getRows()}.
  */
 public final class GridFit {
@@ -41,16 +42,30 @@ public final class GridFit {
     }
 
     /**
-     * Fits cells of the given size into the window.
+     * Fits cells of the given size into the window with no scale limit.
      *
      * @throws IllegalArgumentException if a cell size or minimum is zero or negative
      */
     public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
                                     int minColumns, int minRows) {
-        if (cellWidth <= 0 || cellHeight <= 0 || minColumns <= 0 || minRows <= 0) {
-            throw new IllegalArgumentException("Cell size and minimums must be positive: cellWidth="
+        return calculate(windowWidth, windowHeight, cellWidth, cellHeight,
+                minColumns, minRows, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Fits cells of the given size into the window. The scale is the largest one that still fits
+     * the minimum columns and rows, capped at {@code maxScale}, and never below 1. A lower cap
+     * leaves room for more columns and rows.
+     *
+     * @throws IllegalArgumentException if a cell size, minimum, or maxScale is zero or negative
+     */
+    public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
+                                    int minColumns, int minRows, int maxScale) {
+        if (cellWidth <= 0 || cellHeight <= 0 || minColumns <= 0 || minRows <= 0 || maxScale <= 0) {
+            throw new IllegalArgumentException("Cell size, minimums, and max scale must be positive: cellWidth="
                     + cellWidth + ", cellHeight=" + cellHeight
-                    + ", minColumns=" + minColumns + ", minRows=" + minRows);
+                    + ", minColumns=" + minColumns + ", minRows=" + minRows
+                    + ", maxScale=" + maxScale);
         }
         if (windowWidth <= 0 || windowHeight <= 0) {
             return new GridFit(windowWidth, windowHeight, cellWidth, cellHeight,
@@ -58,7 +73,8 @@ public final class GridFit {
         }
         long scaleByWidth = windowWidth / ((long) cellWidth * minColumns);
         long scaleByHeight = windowHeight / ((long) cellHeight * minRows);
-        int scale = (int) Math.max(1L, Math.min(scaleByWidth, scaleByHeight));
+        long fittingScale = Math.min(Math.min(scaleByWidth, scaleByHeight), maxScale);
+        int scale = (int) Math.max(1L, fittingScale);
         long scaledCellWidth = (long) cellWidth * scale;
         long scaledCellHeight = (long) cellHeight * scale;
         int columns = (int) (windowWidth / scaledCellWidth);
