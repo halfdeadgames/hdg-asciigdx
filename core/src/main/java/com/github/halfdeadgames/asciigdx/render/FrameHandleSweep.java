@@ -3,31 +3,27 @@ package com.github.halfdeadgames.asciigdx.render;
 import com.badlogic.gdx.utils.Array;
 
 /**
- * The per-frame pass for a layer in transient cell handle mode. It counts how long each handle has
- * been idle, releases handles idle for at least the layer's release time, and resets the rest.
+ * The per-frame pass over a layer's frame handles. It counts how long each handle has been idle,
+ * releases handles idle for at least the release time, and resets the rest. Lasting handles are
+ * never touched. The caller rebinds the renderer afterward with
+ * {@link CellHandleSet#rebindRendererIfChanged()}.
  */
-final class TransientHandleSweep {
+final class FrameHandleSweep {
 
-    private TransientHandleSweep() {
+    private FrameHandleSweep() {
     }
 
-    static void run(Layer layer, float deltaSeconds) {
+    static void runOnFrameHandles(CellHandleSet handles, float releaseSeconds, float deltaSeconds) {
+        Array<CellHandle> frameHandles = handles.frameHandles();
         float countedSeconds = countedSecondsOf(deltaSeconds);
-        float releaseSeconds = layer.getTransientReleaseSeconds();
-        Array<CellHandle> handles = layer.getCellHandles();
-        boolean released = false;
-        for (int i = handles.size - 1; i >= 0; i--) {
-            CellHandle handle = handles.get(i);
+        for (int i = frameHandles.size - 1; i >= 0; i--) {
+            CellHandle handle = frameHandles.get(i);
             updateUnusedSeconds(handle, countedSeconds);
             if (handle.getUnusedSeconds() >= releaseSeconds) {
-                layer.releaseCellHandleAt(i);
-                released = true;
+                handles.releaseFrameAt(i);
                 continue;
             }
             handle.reset();
-        }
-        if (released) {
-            layer.rebindCellHandles();
         }
     }
 
@@ -40,7 +36,7 @@ final class TransientHandleSweep {
     }
 
     private static void updateUnusedSeconds(CellHandle handle, float countedSeconds) {
-        if (Layer.isIdle(handle)) {
+        if (CellHandleSet.isIdle(handle)) {
             handle.addUnusedSeconds(countedSeconds);
             return;
         }

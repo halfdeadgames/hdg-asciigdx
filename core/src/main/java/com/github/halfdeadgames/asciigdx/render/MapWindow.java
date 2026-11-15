@@ -89,12 +89,29 @@ public final class MapWindow {
      * Returns the handle of the cell at map coordinates, as {@link Layer#cell} does for the grid
      * position.
      *
+     * <p>A lasting handle is dropped when its cell leaves the window. Lasting handles are meant for
+     * display-owned animation such as tweens, flashes, and bumps. Game state that must survive
+     * scrolling belongs in the grid, set through the window's filler; per-frame effects belong in
+     * {@link #frameCell frame handles}.
+     *
      * @throws IndexOutOfBoundsException if the cell is outside the window
      * @throws IllegalStateException if this window is detached
      */
     public CellHandle cell(int mapColumn, int mapRow) {
         requireAttached();
         return layer.cell(toGridColumn(mapColumn), toGridRow(mapRow));
+    }
+
+    /**
+     * Returns the frame handle of the cell at map coordinates, as {@link Layer#frameCell} does for
+     * the grid position.
+     *
+     * @throws IndexOutOfBoundsException if the cell is outside the window
+     * @throws IllegalStateException if this window is detached
+     */
+    public CellHandle frameCell(int mapColumn, int mapRow) {
+        requireAttached();
+        return layer.frameCell(toGridColumn(mapColumn), toGridRow(mapRow));
     }
 
     /** Converts a map column to a grid column, without a bounds check. */

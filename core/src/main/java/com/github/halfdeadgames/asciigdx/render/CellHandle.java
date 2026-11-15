@@ -21,6 +21,17 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  *
  * <p>A detached handle keeps its getters working, but it draws nothing: no motion and no overrides.
  *
+ * <p>There are two kinds of handle. A lasting handle ({@link Layer#cell}) stays until the game
+ * releases it. A frame handle ({@link Layer#frameCell}) is for effects applied again every frame:
+ * {@link LayerStack#beginCellEffects} resets it each frame and releases it after it stays unused for
+ * a while. A cell can have both; they are separate objects and never change each other's values. A
+ * frame handle has no pivot of its own; it uses the lasting handle's pivot.
+ *
+ * <p>When a cell has both, the cell is drawn with their effects together: offsets and rotations add,
+ * scales and alpha multiply, a frame glyph wins over a lasting glyph, and the frame's
+ * color mix is applied on top of the lasting one. Two mixes at once can differ from applying them
+ * one after the other by 1 in a color channel, because they are combined into a single mix.
+ *
  * <p>Handles are keyed by cell position. If {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid}
  * is resized with a content shift, handles do not move: the transform applies to whatever is now at
  * that position. {@link Layer#scroll} instead moves the handles together with the content.
@@ -65,22 +76,36 @@ public final class CellHandle implements SpriteTransform {
     private float unusedSeconds;
 
     private final Layer owner;
+    private final boolean frameHandle;
 
     CellHandle(int column, int row) {
-        this(null, column, row);
+        this(null, column, row, false);
     }
 
     CellHandle(Layer owner, int column, int row) {
+        this(owner, column, row, false);
+    }
+
+    CellHandle(Layer owner, int column, int row, boolean frameHandle) {
         this.owner = owner;
         this.column = column;
         this.row = row;
+        this.frameHandle = frameHandle;
+    }
+
+    /**
+     * Whether this is a frame handle, from {@link Layer#frameCell(int, int)}, rather than a lasting
+     * handle from {@link Layer#cell(int, int)}.
+     */
+    public boolean isFrameHandle() {
+        return frameHandle;
     }
 
     void detach() {
         detached = true;
     }
 
-    /** Seconds this handle has stayed idle, counted by {@link TransientHandleSweep}. */
+    /** Seconds this handle has stayed idle, counted by {@link FrameHandleSweep}. */
     float getUnusedSeconds() {
         return unusedSeconds;
     }
@@ -117,6 +142,13 @@ public final class CellHandle implements SpriteTransform {
     private void requireAttached() {
         if (detached) {
             throw new IllegalStateException("Cell handle was detached from its layer");
+        }
+    }
+
+    private void requireLastingHandleForPivot() {
+        if (frameHandle) {
+            throw new IllegalStateException(
+                    "Frame handles use the lasting handle's pivot; set it on Layer.cell(column, row)");
         }
     }
 
@@ -235,13 +267,19 @@ public final class CellHandle implements SpriteTransform {
         setScale(scaleX * factorX, scaleY * factorY);
     }
 
-    /** Horizontal pivot as a fraction of the cell box: 0 is left, 1 is right. */
+    /**
+     * Horizontal pivot as a fraction of the cell box: 0 is left, 1 is right. A frame handle has no
+     * pivot of its own and always returns 0.5; the effective pivot is the lasting handle's.
+     */
     @Override
     public float getPivotX() {
         return pivotX;
     }
 
-    /** Vertical pivot as a fraction of the cell box: 0 is top, 1 is bottom. */
+    /**
+     * Vertical pivot as a fraction of the cell box: 0 is top, 1 is bottom. A frame handle has no
+     * pivot of its own and always returns 0.5; the effective pivot is the lasting handle's.
+     */
     @Override
     public float getPivotY() {
         return pivotY;
@@ -251,10 +289,11 @@ public final class CellHandle implements SpriteTransform {
      * Sets the pivot for rotation and scale, as fractions of the cell box. Defaults to the center.
      * The pivot alone does not lift the glyph.
      *
-     * @throws IllegalStateException if the handle was detached
+     * @throws IllegalStateException if the handle was detached, or is a frame handle
      */
     public void setPivot(float pivotX, float pivotY) {
         requireAttached();
+        requireLastingHandleForPivot();
         this.pivotX = pivotX;
         this.pivotY = pivotY;
     }
@@ -268,10 +307,11 @@ public final class CellHandle implements SpriteTransform {
      *
      * @param pivotX horizontal pivot as a fraction of the cell box
      * @param pivotY vertical pivot as a fraction of the cell box
-     * @throws IllegalStateException if the handle was detached
+     * @throws IllegalStateException if the handle was detached, or is a frame handle
      */
     public void setPivotKeepingPlacement(float pivotX, float pivotY) {
         requireAttached();
+        requireLastingHandleForPivot();
         GlyphSource glyphSource = owner.getGlyphSource();
         float shiftX = (pivotX - this.pivotX) * glyphSource.getCellWidth();
         float shiftY = (pivotY - this.pivotY) * glyphSource.getCellHeight();
@@ -515,6 +555,11 @@ public final class CellHandle implements SpriteTransform {
 
     void clearOverridesChanged() {
         overridesChanged = false;
+    }
+
+    /** Asks the layer's sync to rewrite this cell even though no override value changed. */
+    void markOverridesChanged() {
+        overridesChanged = true;
     }
 
     private static float clampAmount(float amount) {

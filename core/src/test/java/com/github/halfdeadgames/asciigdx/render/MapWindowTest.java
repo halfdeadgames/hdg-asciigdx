@@ -198,6 +198,25 @@ class MapWindowTest {
     }
 
     @Test
+    void frameCellReturnsTheFrameHandleAtTheGridPosition() {
+        stack.setCamera(32f, 16f);
+        MapWindow window = enable();
+
+        assertSame(layer.frameCell(1, 2), window.frameCell(3, 3));
+        assertTrue(window.frameCell(3, 3).isFrameHandle());
+    }
+
+    @Test
+    void frameCellOutsideTheWindowThrows() {
+        stack.setCamera(32f, 16f);
+        MapWindow window = enable();
+
+        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(1, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(2 + COLUMNS, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(2, 1 + ROWS));
+    }
+
+    @Test
     void conversionsAreOffsetsWithoutBoundsChecks() {
         stack.setCamera(48f, 32f);
         MapWindow window = enable();

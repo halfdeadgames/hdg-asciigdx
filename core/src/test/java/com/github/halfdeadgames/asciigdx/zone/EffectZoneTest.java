@@ -223,6 +223,30 @@ class EffectZoneTest {
     }
 
     @Test
+    void zoneUsesLastingHandlesByDefault() {
+        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
+
+        zone.apply(layer, 0f);
+
+        assertFalse(zone.usesFrameHandles());
+        assertEquals(2f, layer.cell(1, 1).getOffsetX(), 0.0001f);
+        assertEquals(0, layer.getFrameCellHandleCount());
+    }
+
+    @Test
+    void frameModeWritesFrameHandlesAndLeavesLastingHandlesUntouched() {
+        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
+        zone.setUsesFrameHandles(true);
+
+        zone.apply(layer, 0f);
+
+        assertTrue(zone.usesFrameHandles());
+        assertEquals(2f, layer.frameCell(1, 1).getOffsetX(), 0.0001f);
+        assertEquals(0, layer.getCellHandleCount());
+        assertEquals(1, layer.getFrameCellHandleCount());
+    }
+
+    @Test
     void applyingFromInsideAnEffectThrowsAndTheZoneStaysUsable() {
         EffectZone[] holder = new EffectZone[1];
         holder[0] = new EffectZone(filledRectangle(0, 0, 1, 1),

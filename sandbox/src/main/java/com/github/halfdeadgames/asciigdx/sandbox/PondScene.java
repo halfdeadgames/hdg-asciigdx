@@ -13,6 +13,7 @@ import com.github.halfdeadgames.asciigdx.render.MapCellVisitor;
 import com.github.halfdeadgames.asciigdx.render.MapWindow;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.ActorLayerFiller;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.AutoMotion;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyFlashes;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyLayerFiller;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.Lily;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyPusher;
@@ -20,6 +21,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.pond.ManualMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.MovingLilies;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PlayerMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondCamera;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.PondCell;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondGenerator;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondMap;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondPlayer;
@@ -74,6 +76,7 @@ class PondScene implements SandboxScene {
     private final PondMap map;
     private final MovingLilies movingLilies = new MovingLilies();
     private final LilyPusher lilyPusher;
+    private final LilyFlashes lilyFlashes;
     private final int cellCount;
     private final boolean clockPinned;
     private final WakeRipples wakeRipples = new WakeRipples();
@@ -147,7 +150,9 @@ class PondScene implements SandboxScene {
         waterFiller = new WaterLayerFiller(map, waterLayer.getMapWindow());
         lilyFiller = new LilyLayerFiller(map, lilyLayer.getMapWindow());
         actorFiller = new ActorLayerFiller(actorLayer.getMapWindow());
+        lilyFlashes = new LilyFlashes(map, lilyLayer);
         wakeZone = new EffectZone(wakeArea, new WakeRippleEffect(map, wakeRipples));
+        wakeZone.setUsesFrameHandles(true);
         cellCount = waterGrid.getWidth() * waterGrid.getHeight() + lilyGrid.getWidth() * lilyGrid.getHeight()
             + actorGrid.getWidth() * actorGrid.getHeight();
         clockPinned = pinClockIfRequested(pondTimeSetting);
@@ -255,7 +260,6 @@ class PondScene implements SandboxScene {
     private Layer addMapWindowLayer(TerminalGrid mapGrid, GlyphSource source) {
         Layer layer = layers.add(mapGrid, source);
         layer.enableMapWindow();
-        layer.setTransientCellHandles(true);
         layer.clipToStack();
         return layer;
     }
@@ -269,6 +273,10 @@ class PondScene implements SandboxScene {
     private void restartLilies() {
         movingLilies.resetAll();
         wakeRipples.clear();
+        lilyFlashes.clear();
+        map.clearVisited();
+        lilyFiller.redrawWindow((WINDOW_COLUMNS + 1) * LILIES_PER_GAME_CELL_AXIS,
+            (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
@@ -305,12 +313,24 @@ class PondScene implements SandboxScene {
         if (deltaColumn == 0 && deltaRow == 0) {
             return;
         }
+        markVisited(motion.getColumn(), motion.getRow());
         if (Math.abs(deltaColumn) + Math.abs(deltaRow) == 1) {
             lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow);
             wakeRipples.start(motion.getColumn(), motion.getRow(), stepSeconds);
+            lilyFlashes.start(motion.getColumn(), motion.getRow(), stepSeconds);
         }
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
+    }
+
+    /** Remembers the visit in the game cell and repaints its lilies, which the filler draws paler. */
+    private void markVisited(int gameColumn, int gameRow) {
+        PondCell gameCell = map.cell(gameColumn, gameRow);
+        if (gameCell.isVisited()) {
+            return;
+        }
+        gameCell.markVisited();
+        lilyFiller.redrawGameCell(gameColumn, gameRow);
     }
 
     /** The ring lift is a pure function of time; handles were reset at the start of the frame. */
@@ -336,6 +356,7 @@ class PondScene implements SandboxScene {
         fillExposedCells();
         applyWakeRipples();
         applyLilyOffsets();
+        lilyFlashes.apply(elapsed);
         drawPlayer();
         slidePlayerGlyph(remaining);
         showStatus();
@@ -371,7 +392,7 @@ class PondScene implements SandboxScene {
         if (!actorWindow.contains(motion.getColumn(), motion.getRow())) {
             return;
         }
-        actorWindow.cell(motion.getColumn(), motion.getRow()).setOffset(
+        actorWindow.frameCell(motion.getColumn(), motion.getRow()).setOffset(
             -motion.getStepColumn() * gameCellWidth * remaining,
             -motion.getStepRow() * gameCellHeight * remaining);
     }
@@ -401,7 +422,7 @@ class PondScene implements SandboxScene {
                 continue;
             }
             Lily lily = movingLilies.lilyAt(i);
-            lilyWindow.cell(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
+            lilyWindow.frameCell(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
                 lily.getOffsetY() * lilyCellHeight);
         }
     }

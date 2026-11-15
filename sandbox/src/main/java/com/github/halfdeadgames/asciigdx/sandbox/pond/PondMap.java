@@ -29,6 +29,13 @@ public final class PondMap {
         return cells[row * width + column];
     }
 
+    /** Forgets every visited mark, as when a walk starts over. */
+    public void clearVisited() {
+        for (PondCell cell : cells) {
+            cell.clearVisited();
+        }
+    }
+
     /** Returns whether the position is inside the map. */
     public boolean contains(int column, int row) {
         return column >= 0 && column < width && row >= 0 && row < height;

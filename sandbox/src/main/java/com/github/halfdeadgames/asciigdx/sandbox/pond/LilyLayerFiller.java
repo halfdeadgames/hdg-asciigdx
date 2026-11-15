@@ -28,12 +28,34 @@ public final class LilyLayerFiller implements MapCellVisitor {
             writeBlank(mapColumn, mapRow);
             return;
         }
-        Lily lily = map.cell(gameColumn, gameRow).lilyAt(slotAt(mapColumn, mapRow));
+        PondCell gameCell = map.cell(gameColumn, gameRow);
+        Lily lily = gameCell.lilyAt(slotAt(mapColumn, mapRow));
         if (lily == null) {
             writeBlank(mapColumn, mapRow);
             return;
         }
-        window.set(mapColumn, mapRow, lily.codePoint(), lily.getColor(), TerminalGrid.TRANSPARENT_RGBA);
+        int color = gameCell.isVisited() ? LilyPalette.paler(lily.getColor()) : lily.getColor();
+        window.set(mapColumn, mapRow, lily.codePoint(), color, TerminalGrid.TRANSPARENT_RGBA);
+    }
+
+    /** Draws the lily cells of one game cell again, for when its game state changed. */
+    public void redrawGameCell(int gameColumn, int gameRow) {
+        for (int southBit = 0; southBit < SLOTS_PER_AXIS; southBit++) {
+            for (int eastBit = 0; eastBit < SLOTS_PER_AXIS; eastBit++) {
+                visit(gameColumn * SLOTS_PER_AXIS + eastBit, gameRow * SLOTS_PER_AXIS + southBit);
+            }
+        }
+    }
+
+    /** Draws every cell of the window again, for when the game state changed everywhere. */
+    public void redrawWindow(int windowColumns, int windowRows) {
+        int originColumn = window.getOriginColumn();
+        int originRow = window.getOriginRow();
+        for (int row = 0; row < windowRows; row++) {
+            for (int column = 0; column < windowColumns; column++) {
+                visit(originColumn + column, originRow + row);
+            }
+        }
     }
 
     private LilySlot slotAt(int mapColumn, int mapRow) {

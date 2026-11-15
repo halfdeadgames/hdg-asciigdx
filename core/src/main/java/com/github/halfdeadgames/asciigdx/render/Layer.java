@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.render;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.LongMap;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
@@ -47,12 +46,8 @@ public final class Layer {
     private float clipWidth;
     private float clipHeight;
     private final Array<GlyphSprite> sprites = new Array<>();
-    private final Array<CellHandle> cellHandles = new Array<>();
-    private boolean transientCellHandles;
-    private float transientReleaseSeconds = 1f;
-    private final LongMap<CellHandle> cellsByPosition = new LongMap<>();
-    private int syncedColumns;
-    private int syncedRows;
+    private final CellHandleSet cellHandleSet;
+    private float frameReleaseSeconds = 1f;
 
     private enum ClipMode { NONE, RECT, STACK }
 
@@ -61,8 +56,7 @@ public final class Layer {
         this.grid = grid;
         this.glyphSource = glyphSource;
         this.renderer = renderer;
-        syncedColumns = grid.getWidth();
-        syncedRows = grid.getHeight();
+        cellHandleSet = new CellHandleSet(this, grid, renderer);
     }
 
     /** Returns the grid this layer draws. */
@@ -100,7 +94,7 @@ public final class Layer {
         }
         renderer.setGlyphSource(glyphSource);
         this.glyphSource = glyphSource;
-        forgetHiddenFlags();
+        cellHandleSet.forgetHiddenFlags();
         followCamera();
         if (mapWindow != null) {
             // The origin changed unit, so surviving cells hold unrelated map cells.
@@ -767,34 +761,54 @@ public final class Layer {
      * <p>If the grid shrinks so the cell no longer exists, the handle is detached at the next
      * draw and dropped; request a new one after the grid grows back.
      *
+     * <p>In a {@linkplain #enableMapWindow() map window} layer, a lasting handle is dropped when
+     * its cell leaves the window. Lasting handles are meant for display-owned animation such as
+     * tweens, flashes, and bumps. Game state that must survive scrolling belongs in the grid, set
+     * through the map window's filler; per-frame effects belong in {@link #frameCell frame handles}.
+     *
      * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
      * @throws IllegalStateException if the layer was removed
      */
     public CellHandle cell(int column, int row) {
         requireAttached();
-        if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
-            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
-                    + grid.getWidth() + "x" + grid.getHeight());
-        }
-        CellHandle existing = cellsByPosition.get(cellKey(column, row));
-        if (existing != null) {
-            return existing;
-        }
-        return createCellHandle(column, row);
+        requireCellInsideGrid(column, row);
+        return cellHandleSet.getOrCreateLasting(column, row);
     }
 
     /**
-     * Resets everything on every cell handle: lifted glyphs settle back into the grid, and the
-     * temporary colors and glyphs on them are cleared. The handles stay in the layer; to also drop
-     * them, follow with {@link #releaseIdleCellHandles}.
+     * Returns the frame handle for one cell, creating it on the first request (the only time this
+     * allocates). It is meant for effects applied again every frame: {@link LayerStack#beginCellEffects}
+     * resets it, and releases it once it stays unused for {@link #getFrameReleaseSeconds()}. The
+     * same handle is returned until it is released or detached, so request it again after a release.
+     *
+     * <p>A cell can have both a lasting handle ({@link #cell}) and a frame handle. They are separate
+     * objects and never change each other's values; the cell is drawn with both effects combined, as
+     * described in {@link CellHandle}. A frame handle has no pivot of its own, and its pivot setters
+     * throw; the effective pivot is the lasting handle's.
+     *
+     * <p>Frame handles move with {@link #scroll} and are detached by a grid shrink or layer removal,
+     * like lasting handles. {@link #resetCellHandles} and {@link #releaseIdleCellHandles} do not
+     * touch them; {@link LayerStack#beginCellEffects} manages them.
+     *
+     * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
+     * @throws IllegalStateException if the layer was removed
+     */
+    public CellHandle frameCell(int column, int row) {
+        requireAttached();
+        requireCellInsideGrid(column, row);
+        return cellHandleSet.getOrCreateFrame(column, row);
+    }
+
+    /**
+     * Resets everything on every lasting cell handle: lifted glyphs settle back into the grid, and
+     * the temporary colors and glyphs on them are cleared. The handles stay in the layer; to also
+     * drop them, follow with {@link #releaseIdleCellHandles}. Frame handles are not touched.
      *
      * @throws IllegalStateException if the layer was removed
      */
     public void resetCellHandles() {
         requireAttached();
-        for (int i = 0; i < cellHandles.size; i++) {
-            cellHandles.get(i).reset();
-        }
+        cellHandleSet.resetLasting();
     }
 
     /**
@@ -813,80 +827,31 @@ public final class Layer {
      */
     public void releaseIdleCellHandles() {
         requireAttached();
-        boolean released = false;
-        for (int i = cellHandles.size - 1; i >= 0; i--) {
-            if (!isIdle(cellHandles.get(i))) {
-                continue;
-            }
-            releaseCellHandleAt(i);
-            released = true;
-        }
-        if (released) {
-            rebindCellHandles();
-        }
-    }
-
-    /** Settles, removes, and detaches one handle; the caller must then call {@link #rebindCellHandles}. */
-    void releaseCellHandleAt(int index) {
-        CellHandle cell = cellHandles.get(index);
-        settleRendererForCell(cell);
-        cellHandles.removeIndex(index);
-        cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
-        cell.detach();
-    }
-
-    void rebindCellHandles() {
-        renderer.setCellHandles(cellHandles);
+        cellHandleSet.releaseIdleLasting();
     }
 
     /**
-     * Turns transient cell handle mode on or off. Off by default. In this mode, each call to
-     * {@link LayerStack#beginCellEffects} resets every handle and releases handles that stayed idle
-     * for at least {@link #getTransientReleaseSeconds()}. Switching the mode either way keeps the
-     * current handles and clears their idle time.
-     */
-    public void setTransientCellHandles(boolean transientCellHandles) {
-        if (this.transientCellHandles == transientCellHandles) {
-            return;
-        }
-        this.transientCellHandles = transientCellHandles;
-        clearUnusedSecondsOfCellHandles();
-    }
-
-    private void clearUnusedSecondsOfCellHandles() {
-        for (int i = 0; i < cellHandles.size; i++) {
-            cellHandles.get(i).clearUnusedSeconds();
-        }
-    }
-
-    /** Whether transient cell handle mode is on. Off by default. */
-    public boolean isTransientCellHandles() {
-        return transientCellHandles;
-    }
-
-    /**
-     * Sets how many seconds a handle must stay idle before transient mode releases it. Default 1.
+     * Sets how many seconds a frame handle must stay idle before {@link LayerStack#beginCellEffects}
+     * releases it. Lasting handles are not affected. Default 1.
      *
      * @throws IllegalArgumentException if {@code seconds} is not a finite number above 0
      */
-    public void setTransientReleaseSeconds(float seconds) {
+    public void setFrameReleaseSeconds(float seconds) {
         if (Float.isNaN(seconds) || Float.isInfinite(seconds) || seconds <= 0f) {
             throw new IllegalArgumentException("Release seconds must be finite and above 0: " + seconds);
         }
-        transientReleaseSeconds = seconds;
+        frameReleaseSeconds = seconds;
     }
 
-    /** Returns the idle time before transient mode releases a handle, in seconds. */
-    public float getTransientReleaseSeconds() {
-        return transientReleaseSeconds;
+    /** Returns the idle time before a frame handle is released, in seconds. */
+    public float getFrameReleaseSeconds() {
+        return frameReleaseSeconds;
     }
 
-    /** Runs the transient sweep if this layer is in transient mode; see {@link LayerStack#beginCellEffects}. */
-    void sweepTransientCellHandles(float deltaSeconds) {
-        if (!transientCellHandles) {
-            return;
-        }
-        TransientHandleSweep.run(this, deltaSeconds);
+    /** Sweeps the frame handles; see {@link LayerStack#beginCellEffects}. */
+    void sweepCellHandles(float deltaSeconds) {
+        FrameHandleSweep.runOnFrameHandles(cellHandleSet, frameReleaseSeconds, deltaSeconds);
+        cellHandleSet.rebindRendererIfChanged();
     }
 
     /**
@@ -922,11 +887,9 @@ public final class Layer {
             return;
         }
         // Order matters: unhide at old positions first, then move content, then handles.
-        showGlyphsAtOldPositions();
+        cellHandleSet.showGlyphsAtOldPositions();
         asTerminalGrid().scroll(columns, rows);
-        moveCellHandles(columns, rows);
-        rebuildCellIndex();
-        renderer.setCellHandles(cellHandles);
+        cellHandleSet.moveWithContent(columns, rows);
         if (mapWindow != null) {
             mapWindow.shiftFillFlags(columns, rows);
         }
@@ -1056,77 +1019,14 @@ public final class Layer {
         return (TerminalGrid) grid;
     }
 
-    /** Clears hidden flags before moving, so none is left on a position that will hold other content. */
-    private void showGlyphsAtOldPositions() {
-        for (int i = 0; i < cellHandles.size; i++) {
-            CellHandle cell = cellHandles.get(i);
-            if (!cell.isGlyphHidden()) {
-                continue;
-            }
-            if (!isInsideGrid(cell)) {
-                // The grid shrank since the last draw; the renderer's rebuild already forgets this flag.
-                cell.setGlyphHidden(false);
-                continue;
-            }
-            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), false);
-            cell.setGlyphHidden(false);
-        }
-    }
-
-    private void moveCellHandles(int columns, int rows) {
-        for (int i = cellHandles.size - 1; i >= 0; i--) {
-            CellHandle cell = cellHandles.get(i);
-            cell.moveBy(columns, rows);
-            if (isInsideGrid(cell)) {
-                continue;
-            }
-            cellHandles.removeIndex(i);
-            cell.detach();
-        }
-    }
-
-    private boolean isInsideGrid(CellHandle cell) {
-        return cell.getColumn() >= 0 && cell.getColumn() < grid.getWidth()
-                && cell.getRow() >= 0 && cell.getRow() < grid.getHeight();
-    }
-
-    private void rebuildCellIndex() {
-        cellsByPosition.clear();
-        for (int i = 0; i < cellHandles.size; i++) {
-            CellHandle cell = cellHandles.get(i);
-            cellsByPosition.put(cellKey(cell.getColumn(), cell.getRow()), cell);
-        }
-    }
-
-    /** Returns how many cell handles the layer currently holds. */
+    /** Returns how many lasting cell handles the layer currently holds. */
     public int getCellHandleCount() {
-        return cellHandles.size;
+        return cellHandleSet.lastingCount();
     }
 
-    static boolean isIdle(CellHandle cell) {
-        return !cell.isLifted()
-                && !cell.hasCodePoint()
-                && cell.getForegroundMixAmount() == 0f
-                && cell.getBackgroundMixAmount() == 0f;
-    }
-
-    /**
-     * Sends the renderer any reset this handle has not synced yet, since a released handle gets
-     * no later sync.
-     */
-    private void settleRendererForCell(CellHandle cell) {
-        if (cell.getColumn() >= grid.getWidth() || cell.getRow() >= grid.getHeight()) {
-            // The grid shrank since the last draw; the renderer's rebuild already forgets this cell.
-            return;
-        }
-        if (cell.isGlyphHidden()) {
-            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), false);
-            cell.setGlyphHidden(false);
-        }
-        if (cell.areOverridesChanged()) {
-            renderer.refreshCell(cell.getColumn(), cell.getRow());
-            cell.clearOverridesChanged();
-        }
+    /** Returns how many frame cell handles the layer currently holds. */
+    public int getFrameCellHandleCount() {
+        return cellHandleSet.frameCount();
     }
 
     /**
@@ -1154,84 +1054,16 @@ public final class Layer {
         removeFreeSprites();
     }
 
-    private CellHandle createCellHandle(int column, int row) {
-        if (cellHandles.size == 0) {
-            renderer.setCellHandles(cellHandles);
+    private void requireCellInsideGrid(int column, int row) {
+        if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
+            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
+                    + grid.getWidth() + "x" + grid.getHeight());
         }
-        CellHandle created = new CellHandle(this, column, row);
-        cellsByPosition.put(cellKey(column, row), created);
-        cellHandles.add(created);
-        return created;
     }
 
-    private static long cellKey(int column, int row) {
-        return ((long) row << Integer.SIZE) | (column & 0xFFFFFFFFL);
-    }
-
-    /**
-     * Brings the renderer in line with the cell handles before drawing: detaches handles whose
-     * cell left the grid, then hides or shows the glyph of each handle whose lifted state changed.
-     */
+    /** Brings the renderer in line with the cell handles before drawing; see {@link CellHandleSet#syncBeforeDraw}. */
     void syncCellHandles() {
-        if (cellHandles.size == 0) {
-            syncedColumns = grid.getWidth();
-            syncedRows = grid.getHeight();
-            return;
-        }
-        if (grid.getWidth() != syncedColumns || grid.getHeight() != syncedRows) {
-            syncedColumns = grid.getWidth();
-            syncedRows = grid.getHeight();
-            detachCellsOutsideGrid();
-            forgetHiddenFlags();
-        }
-        applyLiftedFlags();
-        refreshChangedOverrides();
-    }
-
-    private void refreshChangedOverrides() {
-        for (int i = 0; i < cellHandles.size; i++) {
-            CellHandle cell = cellHandles.get(i);
-            if (!cell.areOverridesChanged()) {
-                continue;
-            }
-            renderer.refreshCell(cell.getColumn(), cell.getRow());
-            cell.clearOverridesChanged();
-        }
-    }
-
-    /*
-     * A handle is only detached when its cell left the grid, so there is never a surviving cell
-     * to rewrite; the renderer's rebuild on the size change drops it from its index.
-     */
-    private void detachCellsOutsideGrid() {
-        for (int i = cellHandles.size - 1; i >= 0; i--) {
-            CellHandle cell = cellHandles.get(i);
-            if (cell.getColumn() < syncedColumns && cell.getRow() < syncedRows) {
-                continue;
-            }
-            cellHandles.removeIndex(i);
-            cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
-            cell.detach();
-        }
-    }
-
-    /** The renderer clears its hidden flags when it rebuilds, so every handle starts shown again. */
-    private void forgetHiddenFlags() {
-        for (int i = 0; i < cellHandles.size; i++) {
-            cellHandles.get(i).setGlyphHidden(false);
-        }
-    }
-
-    private void applyLiftedFlags() {
-        for (int i = 0; i < cellHandles.size; i++) {
-            CellHandle cell = cellHandles.get(i);
-            boolean lifted = cell.isLifted();
-            if (lifted == cell.isGlyphHidden()) {
-                continue;
-            }
-            renderer.setCellGlyphHidden(cell.getColumn(), cell.getRow(), lifted);
-            cell.setGlyphHidden(lifted);
-        }
+        cellHandleSet.syncBeforeDraw();
     }
 
     /**
@@ -1281,8 +1113,9 @@ public final class Layer {
         return sprites;
     }
 
+    /** The handles the renderer draws: one per cell that has a lasting or a frame handle. */
     Array<CellHandle> getCellHandles() {
-        return cellHandles;
+        return cellHandleSet.drawnHandles();
     }
 
     void detach() {
@@ -1293,11 +1126,7 @@ public final class Layer {
             sprites.get(i).detach();
         }
         sprites.clear();
-        for (int i = cellHandles.size - 1; i >= 0; i--) {
-            cellHandles.get(i).detach();
-        }
-        cellHandles.clear();
-        cellsByPosition.clear();
+        cellHandleSet.detachAll();
     }
 
     private void leaveAllGroups() {

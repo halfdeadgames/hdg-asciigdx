@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.zone;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeCellVisitor;
@@ -17,6 +18,11 @@ import java.util.Objects;
  * itself; the layer only allocates when it creates a cell's handle for the first time. The shape and the
  * effect can be swapped between calls with {@link #setShape} and {@link #setEffect}.
  *
+ * <p>By default the zone writes to lasting handles ({@link Layer#cell}). Pick frame handles with
+ * {@link #setUsesFrameHandles} for effects recomputed every frame from time: call
+ * {@link com.github.halfdeadgames.asciigdx.render.LayerStack#beginCellEffects} each frame, and the
+ * handles reset and release themselves, so no {@link Layer#resetCellHandles()} is needed.
+ *
  * <p>Not reentrant and not thread-safe: call it from the render thread, and never from inside an effect.
  */
 public final class EffectZone {
@@ -24,6 +30,7 @@ public final class EffectZone {
     private final ZoneVisitor visitor = new ZoneVisitor();
     private CellShape shape;
     private CellEffect effect;
+    private boolean usesFrameHandles;
 
     /**
      * Creates a zone.
@@ -56,6 +63,22 @@ public final class EffectZone {
         this.effect = Objects.requireNonNull(effect, "effect");
     }
 
+    /** Returns whether the zone writes to frame handles; false means lasting handles. */
+    public boolean usesFrameHandles() {
+        return usesFrameHandles;
+    }
+
+    /**
+     * Chooses which handles the effect writes to. False, the default, uses lasting handles
+     * ({@link Layer#cell}). True uses frame handles ({@link Layer#frameCell}).
+     *
+     * <p>Switching does not reset handles the zone already wrote. After switching away from lasting
+     * handles, call {@link Layer#resetCellHandles()} once to clear what the zone left on them.
+     */
+    public void setUsesFrameHandles(boolean usesFrameHandles) {
+        this.usesFrameHandles = usesFrameHandles;
+    }
+
     /**
      * Runs the effect once on every shape cell inside the layer's grid. Cells outside the grid are skipped.
      * On a {@linkplain Layer#isMapWindow() map-window layer} the shape is in map coordinates: it stays on
@@ -78,7 +101,7 @@ public final class EffectZone {
         if (!overlaps(grid, originColumn, originRow)) {
             return;
         }
-        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
+        visitor.start(layer, effect, usesFrameHandles, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
         try {
             shape.forEachCell(visitor);
         } finally {
@@ -98,6 +121,7 @@ public final class EffectZone {
         private final ZoneCell zoneCell = new ZoneCell();
         private Layer layer;
         private CellEffect effect;
+        private boolean usesFrameHandles;
         private float timeSeconds;
         private int shapeLeft;
         private int shapeTop;
@@ -111,9 +135,10 @@ public final class EffectZone {
         }
 
         /** The origin is the map cell at grid (0, 0), or 0 when the layer is not a map window. */
-        void start(Layer targetLayer, CellEffect targetEffect, float time, int left, int top,
-                int mapOriginColumn, int mapOriginRow) {
+        void start(Layer targetLayer, CellEffect targetEffect, boolean frameHandles, float time, int left,
+                int top, int mapOriginColumn, int mapOriginRow) {
             layer = targetLayer;
+            usesFrameHandles = frameHandles;
             effect = targetEffect;
             timeSeconds = time;
             shapeLeft = left;
@@ -139,7 +164,14 @@ public final class EffectZone {
                 return;
             }
             zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance, distanceFraction);
-            effect.apply(layer.cell(gridColumn, gridRow), zoneCell, timeSeconds);
+            effect.apply(handleAt(gridColumn, gridRow), zoneCell, timeSeconds);
+        }
+
+        private CellHandle handleAt(int gridColumn, int gridRow) {
+            if (usesFrameHandles) {
+                return layer.frameCell(gridColumn, gridRow);
+            }
+            return layer.cell(gridColumn, gridRow);
         }
     }
 }

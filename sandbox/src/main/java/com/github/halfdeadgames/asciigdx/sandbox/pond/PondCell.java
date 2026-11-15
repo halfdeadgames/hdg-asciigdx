@@ -7,6 +7,20 @@ public final class PondCell {
 
     private final Lily[] lilies = new Lily[LilySlot.values().length];
     private Terrain terrain = Terrain.WATER;
+    private boolean visited;
+
+    /** Returns whether the player has stepped into this cell. */
+    public boolean isVisited() {
+        return visited;
+    }
+
+    public void markVisited() {
+        visited = true;
+    }
+
+    public void clearVisited() {
+        visited = false;
+    }
 
     public Terrain getTerrain() {
         return terrain;
