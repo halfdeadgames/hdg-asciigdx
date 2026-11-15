@@ -145,19 +145,10 @@ public final class Layer {
     public void setPanel(Panel panel) {
         LayerStack stack = requireAttached();
         if (panel != null) {
-            requireAttachedPanelOf(panel, stack);
+            Guards.requireOwnedBy(panel.getOwner(), stack, "Panel", "stack");
         }
         this.panel = panel;
         followCamera();
-    }
-
-    private static void requireAttachedPanelOf(Panel panel, LayerStack stack) {
-        if (panel.getOwner() == null) {
-            throw new IllegalStateException("Panel was removed from its stack");
-        }
-        if (panel.getOwner() != stack) {
-            throw new IllegalArgumentException("Panel belongs to another stack");
-        }
     }
 
     /**
@@ -746,9 +737,7 @@ public final class Layer {
      * @throws IndexOutOfBoundsException if the index is out of range
      */
     public GlyphSprite getSprite(int index) {
-        if (index < 0 || index >= sprites.size) {
-            throw new IndexOutOfBoundsException("Index " + index + ", size " + sprites.size);
-        }
+        Guards.requireIndexInRange(index, sprites.size);
         return sprites.get(index);
     }
 
@@ -1055,10 +1044,7 @@ public final class Layer {
     }
 
     private void requireCellInsideGrid(int column, int row) {
-        if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
-            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
-                    + grid.getWidth() + "x" + grid.getHeight());
-        }
+        Guards.requireCellInside(column, row, grid.getWidth(), grid.getHeight());
     }
 
     /** Brings the renderer in line with the cell handles before drawing; see {@link CellHandleSet#syncBeforeDraw}. */
@@ -1137,15 +1123,8 @@ public final class Layer {
     }
 
     private void requireOwnedSprite(GlyphSprite sprite) {
-        if (sprite == null) {
-            throw new IllegalArgumentException("sprite must not be null");
-        }
-        if (sprite.getOwner() == null) {
-            throw new IllegalStateException("Sprite was removed from its layer");
-        }
-        if (sprite.getOwner() != this) {
-            throw new IllegalArgumentException("Sprite belongs to another layer");
-        }
+        Guards.requireNotNull(sprite, "sprite");
+        Guards.requireOwnedBy(sprite.getOwner(), this, "Sprite", "layer");
     }
 
     private LayerStack requireAttached() {

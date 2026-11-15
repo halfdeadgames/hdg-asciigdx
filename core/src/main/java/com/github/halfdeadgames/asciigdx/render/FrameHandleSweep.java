@@ -36,7 +36,7 @@ final class FrameHandleSweep {
     }
 
     private static void updateUnusedSeconds(CellHandle handle, float countedSeconds) {
-        if (CellHandleSet.isIdle(handle)) {
+        if (handle.isIdle()) {
             handle.addUnusedSeconds(countedSeconds);
             return;
         }

@@ -81,8 +81,7 @@ final class IndexedHandles {
     }
 
     private static boolean isInside(CellHandle handle, int columns, int rows) {
-        return handle.getColumn() >= 0 && handle.getColumn() < columns
-                && handle.getRow() >= 0 && handle.getRow() < rows;
+        return Guards.isCellInside(handle.getColumn(), handle.getRow(), columns, rows);
     }
 
     private static long keyOf(int column, int row) {

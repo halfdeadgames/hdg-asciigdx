@@ -4,8 +4,7 @@ final class FloatBinding implements Binding {
 
     private final FloatTrack track;
     private final FloatSetter setter;
-    private boolean hasWritten;
-    private float lastValue;
+    private final ChangeGate gate = new ChangeGate(1);
 
     FloatBinding(FloatTrack track, FloatSetter setter) {
         this.track = track;
@@ -15,17 +14,17 @@ final class FloatBinding implements Binding {
     @Override
     public void applyAt(float timeSeconds) {
         float value = track.valueAt(timeSeconds);
-        if (hasWritten && Float.compare(value, lastValue) == 0) {
+        int bits = ChangeGate.bitsOf(value);
+        if (gate.isUnchanged(bits)) {
             return;
         }
         setter.set(value);
-        lastValue = value;
-        hasWritten = true;
+        gate.remember(bits);
     }
 
     @Override
     public void forceNext() {
-        hasWritten = false;
+        gate.forgetAll();
     }
 
     @Override

@@ -57,6 +57,18 @@ public final class CellColor {
     }
 
     /**
+     * Multiplies the alpha of a color by a factor and keeps its red, green, and blue.
+     *
+     * @param rgba color as RGBA8888
+     * @param factor multiplier for the alpha byte; the result is rounded
+     * @return the color with the scaled alpha
+     */
+    public static int withAlphaScaled(int rgba, float factor) {
+        int alphaByte = Math.round((rgba & ALPHA_MASK) * factor);
+        return (rgba & ~ALPHA_MASK) | alphaByte;
+    }
+
+    /**
      * Inverts a color into its negative: red, green, and blue become 255 minus their value, and
      * alpha is kept.
      *

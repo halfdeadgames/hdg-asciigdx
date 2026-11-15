@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
+import com.github.halfdeadgames.asciigdx.color.CellColor;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.tommyettinger.colorful.rgb.ColorTools;
@@ -140,7 +141,7 @@ class SpriteMeshLiftedCellTest {
 
         write(cell);
 
-        int expected = CellHandle.withAlphaScaled(0xFF8040C0, 0.5f);
+        int expected = CellColor.withAlphaScaled(0xFF8040C0, 0.5f);
         assertEquals(0xFF8040 << 8 | 0x60, expected);
         assertEquals(ColorTools.fromRGBA8888(expected), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
@@ -227,7 +228,7 @@ class SpriteMeshLiftedCellTest {
 
         write(cell);
 
-        int expected = CellHandle.withAlphaScaled(0xAABBCCFF, 0.5f);
+        int expected = CellColor.withAlphaScaled(0xAABBCCFF, 0.5f);
         assertEquals(ColorTools.fromRGBA8888(expected), writtenForeground(), 1e-6f);
     }
 

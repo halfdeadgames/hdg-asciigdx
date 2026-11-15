@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.github.halfdeadgames.asciigdx.color.CellColor;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
@@ -146,7 +147,7 @@ final class SpriteMesh implements Disposable {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
         TextureRegion region = glyphSource.glyph(resolvedCodePoint(cell, grid));
-        int color = CellHandle.withAlphaScaled(resolvedForeground(cell, grid), cell.getAlphaMultiplier());
+        int color = CellColor.withAlphaScaled(resolvedForeground(cell, grid), cell.getAlphaMultiplier());
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();
         if (pixelSnapping) {

@@ -80,9 +80,7 @@ final class CellVertexCache {
      */
     public void writeCell(int column, int row, int backgroundRgba, int foregroundRgba,
                           float u, float v, float u2, float v2) {
-        if (column < 0 || column >= columns || row < 0 || row >= rows) {
-            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside " + columns + "x" + rows);
-        }
+        Guards.requireCellInside(column, row, columns, rows);
         int cell = row * columns + column;
         boolean backgroundVisible = !isFullyTransparent(backgroundRgba);
         boolean glyphVisible = !isFullyTransparent(foregroundRgba);

@@ -71,7 +71,7 @@ public final class LayerGroup {
      */
     public void add(Layer layer) {
         LayerStack stack = requireAttached();
-        requireMemberCandidate(layer, stack);
+        stack.requireOwned(layer);
         if (members.contains(layer, true)) {
             return;
         }
@@ -112,9 +112,7 @@ public final class LayerGroup {
      * @throws IndexOutOfBoundsException if the index is out of range
      */
     public Layer get(int index) {
-        if (index < 0 || index >= members.size) {
-            throw new IndexOutOfBoundsException("Index " + index + ", size " + members.size);
-        }
+        Guards.requireIndexInRange(index, members.size);
         return members.get(index);
     }
 
@@ -311,18 +309,6 @@ public final class LayerGroup {
     /** Called by a layer that is leaving its stack; the layer drops its own side of the link. */
     void forgetMember(Layer layer) {
         members.removeValue(layer, true);
-    }
-
-    private static void requireMemberCandidate(Layer layer, LayerStack stack) {
-        if (layer == null) {
-            throw new IllegalArgumentException("layer must not be null");
-        }
-        if (layer.getOwner() == null) {
-            throw new IllegalStateException("Layer was removed from its stack");
-        }
-        if (layer.getOwner() != stack) {
-            throw new IllegalArgumentException("Layer belongs to another stack");
-        }
     }
 
     private void requireParentCandidate(LayerGroup candidate, LayerStack stack) {

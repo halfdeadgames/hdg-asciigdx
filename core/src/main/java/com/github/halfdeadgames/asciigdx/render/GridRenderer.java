@@ -231,10 +231,7 @@ public final class GridRenderer implements Disposable {
     }
 
     private void requireInsideGrid(int column, int row) {
-        if (column < 0 || column >= cachedColumns || row < 0 || row >= cachedRows) {
-            throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "
-                    + cachedColumns + "x" + cachedRows);
-        }
+        Guards.requireCellInside(column, row, cachedColumns, cachedRows);
     }
 
     private void rewriteSingleCell(int column, int row) {

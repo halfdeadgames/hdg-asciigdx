@@ -37,14 +37,6 @@ final class CellHandleSet {
         syncedRows = grid.getHeight();
     }
 
-    /** A handle is idle when it is not lifted, has no temporary glyph, and both mix amounts are 0. */
-    static boolean isIdle(CellHandle cell) {
-        return !cell.isLifted()
-                && !cell.hasCodePoint()
-                && cell.getForegroundMixAmount() == 0f
-                && cell.getBackgroundMixAmount() == 0f;
-    }
-
     Array<CellHandle> frameHandles() {
         return frame.list();
     }
@@ -130,7 +122,7 @@ final class CellHandleSet {
     /** Releases every idle lasting handle, then rebinds the renderer once if the draw list changed. */
     void releaseIdleLasting() {
         for (int i = lasting.size() - 1; i >= 0; i--) {
-            if (isIdle(lasting.get(i))) {
+            if (lasting.get(i).isIdle()) {
                 releaseLastingAt(i);
             }
         }
@@ -321,8 +313,7 @@ final class CellHandleSet {
     }
 
     private boolean isInsideGrid(CellHandle cell) {
-        return cell.getColumn() >= 0 && cell.getColumn() < grid.getWidth()
-                && cell.getRow() >= 0 && cell.getRow() < grid.getHeight();
+        return Guards.isCellInside(cell.getColumn(), cell.getRow(), grid.getWidth(), grid.getHeight());
     }
 
     /**

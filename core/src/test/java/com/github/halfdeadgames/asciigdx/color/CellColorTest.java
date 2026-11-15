@@ -36,6 +36,18 @@ class CellColorTest {
     }
 
     @Test
+    void scaledAlphaRoundsAndKeepsRgb() {
+        assertEquals(0xFF804060, CellColor.withAlphaScaled(0xFF8040C0, 0.5f));
+        assertEquals(0x11223333, CellColor.withAlphaScaled(0x112233FF, 0.2f));
+    }
+
+    @Test
+    void scaledAlphaFactorZeroClearsAndOneKeeps() {
+        assertEquals(0xFF804000, CellColor.withAlphaScaled(0xFF8040C0, 0f));
+        assertEquals(0xFF8040C0, CellColor.withAlphaScaled(0xFF8040C0, 1f));
+    }
+
+    @Test
     void rgbAddsFullAlpha() {
         assertEquals(0xFF4040FF, CellColor.rgb(0xFF4040));
     }

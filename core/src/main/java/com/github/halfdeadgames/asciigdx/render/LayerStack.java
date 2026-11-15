@@ -167,9 +167,7 @@ public final class LayerStack implements Disposable {
      */
     public void moveTo(Layer layer, int index) {
         requireOwned(layer);
-        if (index < 0 || index >= layers.size) {
-            throw new IndexOutOfBoundsException("Index " + index + ", size " + layers.size);
-        }
+        Guards.requireIndexInRange(index, layers.size);
         layers.removeValue(layer, true);
         layers.insert(index, layer);
     }
@@ -186,9 +184,7 @@ public final class LayerStack implements Disposable {
      * @throws IndexOutOfBoundsException if the index is out of range
      */
     public Layer get(int index) {
-        if (index < 0 || index >= layers.size) {
-            throw new IndexOutOfBoundsException("Index " + index + ", size " + layers.size);
-        }
+        Guards.requireIndexInRange(index, layers.size);
         return layers.get(index);
     }
 
@@ -295,27 +291,13 @@ public final class LayerStack implements Disposable {
     }
 
     private void requireGroupOwned(LayerGroup group) {
-        if (group == null) {
-            throw new IllegalArgumentException("group must not be null");
-        }
-        if (group.getOwner() == null) {
-            throw new IllegalStateException("LayerGroup was removed from its stack");
-        }
-        if (group.getOwner() != this) {
-            throw new IllegalArgumentException("LayerGroup belongs to another stack");
-        }
+        Guards.requireNotNull(group, "group");
+        Guards.requireOwnedBy(group.getOwner(), this, "LayerGroup", "stack");
     }
 
     private void requirePanelOwned(Panel panel) {
-        if (panel == null) {
-            throw new IllegalArgumentException("panel must not be null");
-        }
-        if (panel.getOwner() == null) {
-            throw new IllegalStateException("Panel was removed from its stack");
-        }
-        if (panel.getOwner() != this) {
-            throw new IllegalArgumentException("Panel belongs to another stack");
-        }
+        Guards.requireNotNull(panel, "panel");
+        Guards.requireOwnedBy(panel.getOwner(), this, "Panel", "stack");
     }
 
     /** Returns the position of a layer, or -1 if it is not in this stack. */
@@ -768,15 +750,8 @@ public final class LayerStack implements Disposable {
         }
     }
 
-    private void requireOwned(Layer layer) {
-        if (layer == null) {
-            throw new IllegalArgumentException("layer must not be null");
-        }
-        if (layer.getOwner() == null) {
-            throw new IllegalStateException("Layer was removed from its stack");
-        }
-        if (layer.getOwner() != this) {
-            throw new IllegalArgumentException("Layer belongs to another stack");
-        }
+    void requireOwned(Layer layer) {
+        Guards.requireNotNull(layer, "layer");
+        Guards.requireOwnedBy(layer.getOwner(), this, "Layer", "stack");
     }
 }

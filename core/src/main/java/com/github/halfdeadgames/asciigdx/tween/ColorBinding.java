@@ -4,8 +4,7 @@ final class ColorBinding implements Binding {
 
     private final ColorTrack track;
     private final ColorSetter setter;
-    private boolean hasWritten;
-    private int lastRgba;
+    private final ChangeGate gate = new ChangeGate(1);
 
     ColorBinding(ColorTrack track, ColorSetter setter) {
         this.track = track;
@@ -15,17 +14,16 @@ final class ColorBinding implements Binding {
     @Override
     public void applyAt(float timeSeconds) {
         int rgba = track.colorAt(timeSeconds);
-        if (hasWritten && rgba == lastRgba) {
+        if (gate.isUnchanged(rgba)) {
             return;
         }
         setter.set(rgba);
-        lastRgba = rgba;
-        hasWritten = true;
+        gate.remember(rgba);
     }
 
     @Override
     public void forceNext() {
-        hasWritten = false;
+        gate.forgetAll();
     }
 
     @Override

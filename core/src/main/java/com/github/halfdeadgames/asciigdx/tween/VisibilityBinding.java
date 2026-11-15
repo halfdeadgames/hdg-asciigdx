@@ -5,8 +5,7 @@ final class VisibilityBinding implements Binding {
     private final float startSeconds;
     private final float endSeconds;
     private final BooleanSetter setter;
-    private boolean hasWritten;
-    private boolean lastVisible;
+    private final ChangeGate gate = new ChangeGate(1);
 
     VisibilityBinding(float startSeconds, float endSeconds, BooleanSetter setter) {
         this.startSeconds = startSeconds;
@@ -17,17 +16,17 @@ final class VisibilityBinding implements Binding {
     @Override
     public void applyAt(float timeSeconds) {
         boolean visible = timeSeconds >= startSeconds && timeSeconds < endSeconds;
-        if (hasWritten && visible == lastVisible) {
+        int bits = ChangeGate.bitsOf(visible);
+        if (gate.isUnchanged(bits)) {
             return;
         }
         setter.set(visible);
-        lastVisible = visible;
-        hasWritten = true;
+        gate.remember(bits);
     }
 
     @Override
     public void forceNext() {
-        hasWritten = false;
+        gate.forgetAll();
     }
 
     @Override

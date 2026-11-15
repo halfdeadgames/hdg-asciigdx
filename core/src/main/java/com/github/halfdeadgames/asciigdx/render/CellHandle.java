@@ -47,7 +47,6 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 public final class CellHandle implements SpriteTransform {
 
     private static final float FULL_TURN_DEGREES = 360f;
-    private static final int ALPHA_MASK = 0xFF;
 
     /**
      * Marks "no temporary glyph". It is {@link Integer#MIN_VALUE} rather than -1 because grid
@@ -131,12 +130,6 @@ public final class CellHandle implements SpriteTransform {
 
     void setGlyphHidden(boolean glyphHidden) {
         this.glyphHidden = glyphHidden;
-    }
-
-    /** Returns {@code rgba} with its alpha byte multiplied by {@code factor}, rounded. */
-    static int withAlphaScaled(int rgba, float factor) {
-        int alphaByte = Math.round((rgba & ALPHA_MASK) * factor);
-        return (rgba & ~ALPHA_MASK) | alphaByte;
     }
 
     private void requireAttached() {
@@ -579,6 +572,14 @@ public final class CellHandle implements SpriteTransform {
                 || rotation % FULL_TURN_DEGREES != 0f
                 || scaleX != 1f || scaleY != 1f
                 || alpha != 1f;
+    }
+
+    /** A handle is idle when it is not lifted, has no temporary glyph, and both mix amounts are 0. */
+    boolean isIdle() {
+        return !isLifted()
+                && !hasCodePoint()
+                && foregroundMixAmount == 0f
+                && backgroundMixAmount == 0f;
     }
 
     /** Returns whether the handle was detached from its layer. */
