@@ -24,13 +24,18 @@ import com.github.halfdeadgames.asciigdx.sandbox.pond.PondGenerator;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondMap;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondPlayer;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PointerAim;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.WakeRippleEffect;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.WakeRipples;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.WaterLayerFiller;
+import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
+import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
+import com.github.halfdeadgames.asciigdx.zone.EffectZone;
 
 /**
  * A small roguelike over map-window layers: a player crosses an 80x44 pond while the camera follows.
  * What moves the player is a {@link PlayerMotion}: a fixed route or the keys and touch. With the route
- * the scene is a pure function of elapsed time, so the {@code pondTime} setting can hold it at one
- * moment for captures.
+ * the scene is a pure function of elapsed time (steps also send wake rings across the water), so the
+ * {@code pondTime} setting can hold it at one moment for captures.
  */
 class PondScene implements SandboxScene {
     static final String KEY_POND_TIME = "pondTime";
@@ -71,6 +76,9 @@ class PondScene implements SandboxScene {
     private final LilyPusher lilyPusher;
     private final int cellCount;
     private final boolean clockPinned;
+    private final WakeRipples wakeRipples = new WakeRipples();
+    private final RectangleShape wakeArea = new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED);
+    private final EffectZone wakeZone;
     private final PointerAim pointerAim = new PointerAim() {
         @Override
         public boolean isDown() {
@@ -87,6 +95,7 @@ class PondScene implements SandboxScene {
     };
 
     private float elapsed;
+    private boolean waterLifted;
     private int pointerScreenX;
     private int pointerScreenY;
     private boolean pointerPressedInScene;
@@ -139,6 +148,7 @@ class PondScene implements SandboxScene {
         waterFiller = new WaterLayerFiller(map, waterLayer.getMapWindow());
         lilyFiller = new LilyLayerFiller(map, lilyLayer.getMapWindow());
         actorFiller = new ActorLayerFiller(actorLayer.getMapWindow());
+        wakeZone = new EffectZone(wakeArea, new WakeRippleEffect(map, wakeRipples));
         cellCount = waterGrid.getWidth() * waterGrid.getHeight() + lilyGrid.getWidth() * lilyGrid.getHeight()
             + actorGrid.getWidth() * actorGrid.getHeight();
         clockPinned = pinClockIfRequested(pondTimeSetting);
@@ -258,8 +268,10 @@ class PondScene implements SandboxScene {
 
     private void restartLilies() {
         movingLilies.resetAll();
+        wakeRipples.clear();
         lilyLayer.resetCellHandles();
         lilyLayer.releaseIdleCellHandles();
+        settleWater();
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
@@ -275,16 +287,22 @@ class PondScene implements SandboxScene {
         lastStepRow = START_ROW;
         int frames = (int) (elapsed * REPLAY_FRAMES_PER_SECOND);
         for (int frame = 0; frame < frames; frame++) {
-            motion.update(frame / REPLAY_FRAMES_PER_SECOND);
-            trackPlayerStep();
+            float frameSeconds = frame / REPLAY_FRAMES_PER_SECOND;
+            motion.update(frameSeconds);
+            trackPlayerStep(frameSeconds);
             movingLilies.advance(1f / REPLAY_FRAMES_PER_SECOND);
         }
         motion.update(elapsed);
-        trackPlayerStep();
+        trackPlayerStep(elapsed);
     }
 
-    /** Starts the lily push for a one-cell step; a bigger jump, such as after a restart, only resyncs. */
-    private void trackPlayerStep() {
+    /**
+     * Starts the lily push and a wake ring for a one-cell step; a bigger jump, such as after a restart,
+     * only resyncs.
+     *
+     * @param stepSeconds scene clock time at which the step happened
+     */
+    private void trackPlayerStep(float stepSeconds) {
         int deltaColumn = motion.getColumn() - lastStepColumn;
         int deltaRow = motion.getRow() - lastStepRow;
         if (deltaColumn == 0 && deltaRow == 0) {
@@ -292,20 +310,50 @@ class PondScene implements SandboxScene {
         }
         if (Math.abs(deltaColumn) + Math.abs(deltaRow) == 1) {
             lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow);
+            wakeRipples.start(motion.getColumn(), motion.getRow(), stepSeconds);
         }
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
     }
 
+    /** Runs after the water fill, which does not touch handles; the ring lift is a pure function of time. */
+    private void applyWakeRipples() {
+        if (wakeRipples.isActiveAt(elapsed)) {
+            liftWaterUnderRings();
+            return;
+        }
+        settleWater();
+    }
+
+    private void liftWaterUnderRings() {
+        waterLayer.resetCellHandles();
+        int left = wakeRipples.activeLeft(elapsed);
+        int top = wakeRipples.activeTop(elapsed);
+        wakeArea.setPosition(left, top);
+        wakeArea.setSize(wakeRipples.activeRight(elapsed) - left + 1, wakeRipples.activeBottom(elapsed) - top + 1);
+        wakeZone.apply(waterLayer, elapsed);
+        waterLifted = true;
+    }
+
+    private void settleWater() {
+        if (!waterLifted) {
+            return;
+        }
+        waterLayer.resetCellHandles();
+        waterLayer.releaseIdleCellHandles();
+        waterLifted = false;
+    }
+
     private void updateWorld(float lilyDelta) {
         motion.update(elapsed);
-        trackPlayerStep();
+        trackPlayerStep(elapsed);
         movingLilies.advance(lilyDelta);
         float remaining = motion.getSlideRemaining();
         boolean cellChanged = motion.getColumn() != drawnPlayerColumn || motion.getRow() != drawnPlayerRow;
         layers.setCamera(cameraX(remaining), cameraY(remaining));
         eraseStalePlayer();
         fillExposedCells();
+        applyWakeRipples();
         applyLilyOffsets();
         drawPlayer();
         slidePlayerGlyph(remaining, cellChanged);
