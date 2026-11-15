@@ -62,6 +62,7 @@ public final class CellHandle implements SpriteTransform {
     private float backgroundMixAmount;
     private int overrideCodePoint = NO_CODE_POINT;
     private boolean overridesChanged;
+    private float unusedSeconds;
 
     private final Layer owner;
 
@@ -77,6 +78,19 @@ public final class CellHandle implements SpriteTransform {
 
     void detach() {
         detached = true;
+    }
+
+    /** Seconds this handle has stayed idle, counted by {@link TransientHandleSweep}. */
+    float getUnusedSeconds() {
+        return unusedSeconds;
+    }
+
+    void addUnusedSeconds(float seconds) {
+        unusedSeconds += seconds;
+    }
+
+    void clearUnusedSeconds() {
+        unusedSeconds = 0f;
     }
 
     /** Moves the handle's position; owned by {@link Layer#scroll}, which keeps the layer's index in step. */

@@ -745,6 +745,23 @@ public final class LayerStack implements Disposable {
         }
     }
 
+    /**
+     * Call once at the start of each update, before applying cell effects. For each layer in
+     * transient cell handle mode ({@link Layer#setTransientCellHandles}), handles that stayed idle
+     * since the last call add the delta to their unused time, and handles that were used start
+     * over at zero. Handles unused for at least {@link Layer#getTransientReleaseSeconds()} are
+     * released, and the rest are reset. Other layers are left alone. A zero, negative, NaN, or
+     * infinite delta adds no unused time, but the reset still happens.
+     *
+     * @throws IllegalStateException if the stack was disposed
+     */
+    public void beginCellEffects(float deltaSeconds) {
+        requireNotDisposed();
+        for (int i = 0; i < layers.size; i++) {
+            layers.get(i).sweepTransientCellHandles(deltaSeconds);
+        }
+    }
+
     private void requireNotDisposed() {
         if (disposed) {
             throw new IllegalStateException("LayerStack was disposed");

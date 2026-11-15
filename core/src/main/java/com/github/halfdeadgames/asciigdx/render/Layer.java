@@ -48,6 +48,8 @@ public final class Layer {
     private float clipHeight;
     private final Array<GlyphSprite> sprites = new Array<>();
     private final Array<CellHandle> cellHandles = new Array<>();
+    private boolean transientCellHandles;
+    private float transientReleaseSeconds = 1f;
     private final LongMap<CellHandle> cellsByPosition = new LongMap<>();
     private int syncedColumns;
     private int syncedRows;
@@ -813,19 +815,78 @@ public final class Layer {
         requireAttached();
         boolean released = false;
         for (int i = cellHandles.size - 1; i >= 0; i--) {
-            CellHandle cell = cellHandles.get(i);
-            if (!isIdle(cell)) {
+            if (!isIdle(cellHandles.get(i))) {
                 continue;
             }
-            settleRendererForCell(cell);
-            cellHandles.removeIndex(i);
-            cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
-            cell.detach();
+            releaseCellHandleAt(i);
             released = true;
         }
         if (released) {
-            renderer.setCellHandles(cellHandles);
+            rebindCellHandles();
         }
+    }
+
+    /** Settles, removes, and detaches one handle; the caller must then call {@link #rebindCellHandles}. */
+    void releaseCellHandleAt(int index) {
+        CellHandle cell = cellHandles.get(index);
+        settleRendererForCell(cell);
+        cellHandles.removeIndex(index);
+        cellsByPosition.remove(cellKey(cell.getColumn(), cell.getRow()));
+        cell.detach();
+    }
+
+    void rebindCellHandles() {
+        renderer.setCellHandles(cellHandles);
+    }
+
+    /**
+     * Turns transient cell handle mode on or off. Off by default. In this mode, each call to
+     * {@link LayerStack#beginCellEffects} resets every handle and releases handles that stayed idle
+     * for at least {@link #getTransientReleaseSeconds()}. Switching the mode either way keeps the
+     * current handles and clears their idle time.
+     */
+    public void setTransientCellHandles(boolean transientCellHandles) {
+        if (this.transientCellHandles == transientCellHandles) {
+            return;
+        }
+        this.transientCellHandles = transientCellHandles;
+        clearUnusedSecondsOfCellHandles();
+    }
+
+    private void clearUnusedSecondsOfCellHandles() {
+        for (int i = 0; i < cellHandles.size; i++) {
+            cellHandles.get(i).clearUnusedSeconds();
+        }
+    }
+
+    /** Whether transient cell handle mode is on. Off by default. */
+    public boolean isTransientCellHandles() {
+        return transientCellHandles;
+    }
+
+    /**
+     * Sets how many seconds a handle must stay idle before transient mode releases it. Default 1.
+     *
+     * @throws IllegalArgumentException if {@code seconds} is not a finite number above 0
+     */
+    public void setTransientReleaseSeconds(float seconds) {
+        if (Float.isNaN(seconds) || Float.isInfinite(seconds) || seconds <= 0f) {
+            throw new IllegalArgumentException("Release seconds must be finite and above 0: " + seconds);
+        }
+        transientReleaseSeconds = seconds;
+    }
+
+    /** Returns the idle time before transient mode releases a handle, in seconds. */
+    public float getTransientReleaseSeconds() {
+        return transientReleaseSeconds;
+    }
+
+    /** Runs the transient sweep if this layer is in transient mode; see {@link LayerStack#beginCellEffects}. */
+    void sweepTransientCellHandles(float deltaSeconds) {
+        if (!transientCellHandles) {
+            return;
+        }
+        TransientHandleSweep.run(this, deltaSeconds);
     }
 
     /**
@@ -1042,7 +1103,7 @@ public final class Layer {
         return cellHandles.size;
     }
 
-    private static boolean isIdle(CellHandle cell) {
+    static boolean isIdle(CellHandle cell) {
         return !cell.isLifted()
                 && !cell.hasCodePoint()
                 && cell.getForegroundMixAmount() == 0f

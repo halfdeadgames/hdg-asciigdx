@@ -11,7 +11,6 @@ public final class MovingLilies {
     private int[] columns = new int[START_CAPACITY];
     private int[] rows = new int[START_CAPACITY];
     private int size;
-    private boolean settledInLastAdvance;
 
     /** Adds a lily at its lily-layer map position; a lily already in the set is ignored. */
     public void add(Lily lily, int lilyColumn, int lilyRow) {
@@ -25,17 +24,15 @@ public final class MovingLilies {
         size++;
     }
 
-    /** Advances every lily, then drops those that are home and records whether any was dropped. */
+    /** Advances every lily, then drops those that are home. */
     public void advance(float deltaSeconds) {
         for (int i = 0; i < size; i++) {
             lilies[i].advance(deltaSeconds);
         }
-        settledInLastAdvance = false;
         // Backward, so the entry swapped into a removed slot was already checked.
         for (int i = size - 1; i >= 0; i--) {
             if (lilies[i].isHome()) {
                 removeBySwappingLast(i);
-                settledInLastAdvance = true;
             }
         }
     }
@@ -47,7 +44,6 @@ public final class MovingLilies {
             lilies[i] = null;
         }
         size = 0;
-        settledInLastAdvance = false;
     }
 
     public int size() {
@@ -64,11 +60,6 @@ public final class MovingLilies {
 
     public int rowAt(int index) {
         return rows[index];
-    }
-
-    /** Returns true when the last {@link #advance} removed at least one lily. */
-    public boolean settledInLastAdvance() {
-        return settledInLastAdvance;
     }
 
     private boolean contains(Lily lily) {

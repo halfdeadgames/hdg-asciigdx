@@ -95,7 +95,6 @@ class PondScene implements SandboxScene {
     };
 
     private float elapsed;
-    private boolean waterLifted;
     private int pointerScreenX;
     private int pointerScreenY;
     private boolean pointerPressedInScene;
@@ -256,6 +255,7 @@ class PondScene implements SandboxScene {
     private Layer addMapWindowLayer(TerminalGrid mapGrid, GlyphSource source) {
         Layer layer = layers.add(mapGrid, source);
         layer.enableMapWindow();
+        layer.setTransientCellHandles(true);
         layer.clipToStack();
         return layer;
     }
@@ -269,9 +269,6 @@ class PondScene implements SandboxScene {
     private void restartLilies() {
         movingLilies.resetAll();
         wakeRipples.clear();
-        lilyLayer.resetCellHandles();
-        lilyLayer.releaseIdleCellHandles();
-        settleWater();
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
@@ -316,47 +313,31 @@ class PondScene implements SandboxScene {
         lastStepRow = motion.getRow();
     }
 
-    /** Runs after the water fill, which does not touch handles; the ring lift is a pure function of time. */
+    /** The ring lift is a pure function of time; handles were reset at the start of the frame. */
     private void applyWakeRipples() {
-        if (wakeRipples.isActiveAt(elapsed)) {
-            liftWaterUnderRings();
+        if (!wakeRipples.isActiveAt(elapsed)) {
             return;
         }
-        settleWater();
-    }
-
-    private void liftWaterUnderRings() {
-        waterLayer.resetCellHandles();
         int left = wakeRipples.activeLeft(elapsed);
         int top = wakeRipples.activeTop(elapsed);
         wakeArea.setPosition(left, top);
         wakeArea.setSize(wakeRipples.activeRight(elapsed) - left + 1, wakeRipples.activeBottom(elapsed) - top + 1);
         wakeZone.apply(waterLayer, elapsed);
-        waterLifted = true;
-    }
-
-    private void settleWater() {
-        if (!waterLifted) {
-            return;
-        }
-        waterLayer.resetCellHandles();
-        waterLayer.releaseIdleCellHandles();
-        waterLifted = false;
     }
 
     private void updateWorld(float lilyDelta) {
+        layers.beginCellEffects(lilyDelta);
         motion.update(elapsed);
         trackPlayerStep(elapsed);
         movingLilies.advance(lilyDelta);
         float remaining = motion.getSlideRemaining();
-        boolean cellChanged = motion.getColumn() != drawnPlayerColumn || motion.getRow() != drawnPlayerRow;
         layers.setCamera(cameraX(remaining), cameraY(remaining));
         eraseStalePlayer();
         fillExposedCells();
         applyWakeRipples();
         applyLilyOffsets();
         drawPlayer();
-        slidePlayerGlyph(remaining, cellChanged);
+        slidePlayerGlyph(remaining);
         showStatus();
     }
 
@@ -385,11 +366,7 @@ class PondScene implements SandboxScene {
         return (fractionalRow(motion.getSlideRemaining()) + 0.5f) * gameCellHeight - layers.getCameraY();
     }
 
-    private void slidePlayerGlyph(float remaining, boolean cellChanged) {
-        actorLayer.resetCellHandles();
-        if (cellChanged) {
-            actorLayer.releaseIdleCellHandles();
-        }
+    private void slidePlayerGlyph(float remaining) {
         MapWindow actorWindow = actorLayer.getMapWindow();
         if (!actorWindow.contains(motion.getColumn(), motion.getRow())) {
             return;
@@ -416,7 +393,6 @@ class PondScene implements SandboxScene {
     }
 
     private void applyLilyOffsets() {
-        lilyLayer.resetCellHandles();
         MapWindow lilyWindow = lilyLayer.getMapWindow();
         for (int i = 0; i < movingLilies.size(); i++) {
             int column = movingLilies.columnAt(i);
@@ -427,9 +403,6 @@ class PondScene implements SandboxScene {
             Lily lily = movingLilies.lilyAt(i);
             lilyWindow.cell(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
                 lily.getOffsetY() * lilyCellHeight);
-        }
-        if (movingLilies.settledInLastAdvance()) {
-            lilyLayer.releaseIdleCellHandles();
         }
     }
 

@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +30,6 @@ class MovingLiliesTest {
         moving.add(lily, 0, 0);
         moving.advance(FRAME_SECONDS);
         assertEquals(1, moving.size());
-        assertFalse(moving.settledInLastAdvance());
 
         var advances = 0;
         while (moving.size() > 0 && advances < 1000) {
@@ -39,11 +37,7 @@ class MovingLiliesTest {
             advances++;
         }
         assertEquals(0, moving.size());
-        assertTrue(moving.settledInLastAdvance());
         assertTrue(lily.isHome());
-
-        moving.advance(FRAME_SECONDS);
-        assertFalse(moving.settledInLastAdvance());
     }
 
     @Test
@@ -100,6 +94,5 @@ class MovingLiliesTest {
         moving.add(otherHeld, 2, 2);
         moving.advance(FRAME_SECONDS);
         assertEquals(2, moving.size());
-        assertTrue(moving.settledInLastAdvance());
     }
 }
