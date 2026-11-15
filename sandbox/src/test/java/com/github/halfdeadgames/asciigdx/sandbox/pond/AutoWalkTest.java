@@ -10,8 +10,10 @@ class AutoWalkTest {
 
     private static final int START_COLUMN = 40;
     private static final int START_ROW = 22;
+    /** Steps 0 to 6: left, left, up, wait, right, right, down. */
+    private static final String ROUTE = "LLUWRRD";
 
-    private final AutoWalk walk = new AutoWalk();
+    private final AutoWalk walk = new AutoWalk(ROUTE);
     private final CellPoint point = new CellPoint();
 
     /** The logical cell during step k is the position after k + 1 steps, so sample at the start of step n - 1. */
@@ -19,6 +21,12 @@ class AutoWalkTest {
         walk.positionAt((stepsTaken - 1) * AutoWalk.STEP_SECONDS, START_COLUMN, START_ROW, point);
         assertEquals(column, point.getColumn(), "column after " + stepsTaken + " steps");
         assertEquals(row, point.getRow(), "row after " + stepsTaken + " steps");
+    }
+
+    private void assertDirectionAtStep(int step, int columnChange, int rowChange) {
+        walk.stepDirectionAt(startOfStep(step) + 0.1f, point);
+        assertEquals(columnChange, point.getColumn(), "column change of step " + step);
+        assertEquals(rowChange, point.getRow(), "row change of step " + step);
     }
 
     private static float startOfStep(int step) {
@@ -40,18 +48,18 @@ class AutoWalkTest {
 
     @Test
     void directionFollowsTheRoute() {
-        walk.stepDirectionAt(0f, point);
-        assertEquals(-1, point.getColumn());
-        assertEquals(0, point.getRow());
-        walk.stepDirectionAt(startOfStep(40) + 0.1f, point);
-        assertEquals(0, point.getColumn());
-        assertEquals(-1, point.getRow());
-        walk.stepDirectionAt(startOfStep(62), point);
-        assertEquals(1, point.getColumn());
-        walk.stepDirectionAt(startOfStep(102) + 0.1f, point);
-        assertEquals(1, point.getRow());
-        walk.stepDirectionAt(startOfStep(124), point);
-        assertEquals(-1, point.getColumn());
+        assertDirectionAtStep(0, -1, 0);
+        assertDirectionAtStep(2, 0, -1);
+        assertDirectionAtStep(4, 1, 0);
+        assertDirectionAtStep(6, 0, 1);
+        assertDirectionAtStep(7, -1, 0);
+    }
+
+    @Test
+    void waitStepKeepsThePositionAndReportsNoDirection() {
+        assertAtStep(3, 38, 21);
+        assertAtStep(4, 38, 21);
+        assertDirectionAtStep(3, 0, 0);
     }
 
     @Test
@@ -75,14 +83,14 @@ class AutoWalkTest {
 
     @Test
     void routeIsClosedOverTheLastStepOfALoop() {
-        walk.positionAt(startOfStep(123), START_COLUMN, START_ROW, point);
+        walk.positionAt(startOfStep(6), START_COLUMN, START_ROW, point);
         assertEquals(START_COLUMN, point.getColumn());
         assertEquals(START_ROW, point.getRow());
     }
 
     @Test
-    void routeLengthIsOneLoopAroundTheTour() {
-        assertEquals(124, walk.routeLength());
+    void routeLengthCountsEveryStepIncludingWaits() {
+        assertEquals(ROUTE.length(), walk.routeLength());
     }
 
     @Test
@@ -99,23 +107,16 @@ class AutoWalkTest {
     @Test
     void positionsAtChosenSteps() {
         assertAtStep(1, 39, 22);
-        assertAtStep(3, 37, 22);
-        assertAtStep(40, 0, 22);
-        assertAtStep(51, 0, 11);
-    }
-
-    @Test
-    void reachesTopLeftCornerThenTopRightThenReturns() {
-        assertAtStep(62, 0, 0);
-        assertAtStep(102, 40, 0);
-        assertAtStep(124, 40, 22);
+        assertAtStep(2, 38, 22);
+        assertAtStep(3, 38, 21);
+        assertAtStep(5, 39, 21);
     }
 
     @Test
     void routeIsClosedAndLoopsForever() {
-        assertAtStep(124, START_COLUMN, START_ROW);
-        assertAtStep(124 * 5, START_COLUMN, START_ROW);
-        assertAtStep(124 * 3 + 62, 0, 0);
+        assertAtStep(7, START_COLUMN, START_ROW);
+        assertAtStep(7 * 5, START_COLUMN, START_ROW);
+        assertAtStep(7 * 3 + 3, 38, 21);
     }
 
     @Test

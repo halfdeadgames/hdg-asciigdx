@@ -12,12 +12,15 @@ public final class AutoWalk {
 
     private final String route;
 
-    /** Creates the route for an 80x44 map started at (40, 22): left edge, top-left corner, and back. */
+    /**
+     * Creates the exploring loop for an 80x44 map started at (40, 22). It wanders on diagonal headings
+     * and swings near the top-left corner so both camera axes stop, without running along a wall.
+     */
     public AutoWalk() {
-        this(edgeTourRoute());
+        this(exploringLoopRoute());
     }
 
-    /** Creates a walk over a route of 'L', 'R', 'U', and 'D' steps that must return to its start. */
+    /** Creates a walk over a route of 'L', 'R', 'U', 'D', and 'W' (wait) steps that must return to its start. */
     public AutoWalk(String route) {
         if (route.isEmpty()) {
             throw new IllegalArgumentException("route must not be empty");
@@ -70,12 +73,20 @@ public final class AutoWalk {
         return (float) Math.max(0.0, Math.min(1.0, progress));
     }
 
-    private static String edgeTourRoute() {
-        return repeated('L', 40) + repeated('U', 22) + repeated('R', 40) + repeated('D', 22);
-    }
-
-    private static String repeated(char step, int count) {
-        return String.valueOf(step).repeat(count);
+    private static String exploringLoopRoute() {
+        return WaypointRoute.from(40, 22)
+                .to(30, 17)
+                .to(16, 9)
+                .to(8, 5)
+                .pause(2)
+                .to(12, 14)
+                .to(22, 26)
+                .to(38, 31)
+                .to(54, 30)
+                .to(56, 24)
+                .to(48, 16)
+                .back()
+                .route();
     }
 
     private static boolean isClosed(String route) {
@@ -92,7 +103,7 @@ public final class AutoWalk {
         return switch (step) {
             case 'L' -> -1;
             case 'R' -> 1;
-            case 'U', 'D' -> 0;
+            case 'U', 'D', 'W' -> 0;
             default -> throw new IllegalArgumentException("unknown step: " + step);
         };
     }
@@ -101,7 +112,7 @@ public final class AutoWalk {
         return switch (step) {
             case 'U' -> -1;
             case 'D' -> 1;
-            case 'L', 'R' -> 0;
+            case 'L', 'R', 'W' -> 0;
             default -> throw new IllegalArgumentException("unknown step: " + step);
         };
     }
