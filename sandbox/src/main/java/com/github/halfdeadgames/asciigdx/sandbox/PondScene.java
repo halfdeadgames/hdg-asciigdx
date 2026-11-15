@@ -14,7 +14,10 @@ import com.github.halfdeadgames.asciigdx.render.MapWindow;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.ActorLayerFiller;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.AutoMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyLayerFiller;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.Lily;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyPusher;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.ManualMotion;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.MovingLilies;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PlayerMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondGenerator;
@@ -40,6 +43,7 @@ class PondScene implements SandboxScene {
     private static final int START_COLUMN = 40;
     private static final int START_ROW = 22;
     private static final int LILIES_PER_GAME_CELL_AXIS = 2;
+    private static final float REPLAY_FRAMES_PER_SECOND = 60f;
     private static final int NO_PLAYER_YET = Integer.MIN_VALUE;
 
     /** Builds the motion once the map exists; the pointer source is for motions that follow touch. */
@@ -60,6 +64,11 @@ class PondScene implements SandboxScene {
     private final ActorLayerFiller actorFiller;
     private final float gameCellWidth;
     private final float gameCellHeight;
+    private final float lilyCellWidth;
+    private final float lilyCellHeight;
+    private final PondMap map;
+    private final MovingLilies movingLilies = new MovingLilies();
+    private final LilyPusher lilyPusher;
     private final int cellCount;
     private final boolean clockPinned;
     private final PointerAim pointerAim = new PointerAim() {
@@ -81,6 +90,8 @@ class PondScene implements SandboxScene {
     private int pointerScreenX;
     private int pointerScreenY;
     private boolean pointerPressedInScene;
+    private int lastStepColumn = START_COLUMN;
+    private int lastStepRow = START_ROW;
     private int drawnPlayerColumn = NO_PLAYER_YET;
     private int drawnPlayerRow = NO_PLAYER_YET;
     private int shownColumn = NO_PLAYER_YET;
@@ -113,7 +124,10 @@ class PondScene implements SandboxScene {
         viewport = new ScalingViewport(IntegerScaling.INSTANCE, windowWidth, windowHeight);
         layers.setSize(windowWidth, windowHeight);
 
-        PondMap map = PondGenerator.generate(WORLD_COLUMNS, WORLD_ROWS, SEED, START_COLUMN, START_ROW);
+        lilyCellWidth = smallGlyphs.getCellWidth();
+        lilyCellHeight = smallGlyphs.getCellHeight();
+        map = PondGenerator.generate(WORLD_COLUMNS, WORLD_ROWS, SEED, START_COLUMN, START_ROW);
+        lilyPusher = new LilyPusher(map, movingLilies);
         motion = motionFactory.create(map, pointerAim);
         TerminalGrid waterGrid = new TerminalGrid(WINDOW_COLUMNS + 1, WINDOW_ROWS + 1);
         TerminalGrid lilyGrid = new TerminalGrid((WINDOW_COLUMNS + 1) * LILIES_PER_GAME_CELL_AXIS,
@@ -128,6 +142,9 @@ class PondScene implements SandboxScene {
         cellCount = waterGrid.getWidth() * waterGrid.getHeight() + lilyGrid.getWidth() * lilyGrid.getHeight()
             + actorGrid.getWidth() * actorGrid.getHeight();
         clockPinned = pinClockIfRequested(pondTimeSetting);
+        if (clockPinned) {
+            replayLiliesUpToPinnedTime();
+        }
     }
 
     @Override
@@ -151,6 +168,7 @@ class PondScene implements SandboxScene {
         if (!clockPinned) {
             elapsed = 0f;
             motion.clockRestarted();
+            restartLilies();
         }
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
@@ -163,7 +181,7 @@ class PondScene implements SandboxScene {
     @Override
     public void render(SpriteBatch batch, float delta) {
         advanceClock(delta);
-        updateWorld();
+        updateWorld(clockPinned ? 0f : delta);
         SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
@@ -238,13 +256,57 @@ class PondScene implements SandboxScene {
         }
     }
 
-    private void updateWorld() {
+    private void restartLilies() {
+        movingLilies.resetAll();
+        lilyLayer.resetCellHandles();
+        lilyLayer.releaseIdleCellHandles();
         motion.update(elapsed);
+        lastStepColumn = motion.getColumn();
+        lastStepRow = motion.getRow();
+    }
+
+    /**
+     * Plays the lily logic from time 0 at 60 steps per second so a pinned scene shows the lilies as
+     * they would be at that time. The route is a pure function of time, so afterward the motion
+     * simply jumps to the pinned time.
+     */
+    private void replayLiliesUpToPinnedTime() {
+        lastStepColumn = START_COLUMN;
+        lastStepRow = START_ROW;
+        int frames = (int) (elapsed * REPLAY_FRAMES_PER_SECOND);
+        for (int frame = 0; frame < frames; frame++) {
+            motion.update(frame / REPLAY_FRAMES_PER_SECOND);
+            trackPlayerStep();
+            movingLilies.advance(1f / REPLAY_FRAMES_PER_SECOND);
+        }
+        motion.update(elapsed);
+        trackPlayerStep();
+    }
+
+    /** Starts the lily push for a one-cell step; a bigger jump, such as after a restart, only resyncs. */
+    private void trackPlayerStep() {
+        int deltaColumn = motion.getColumn() - lastStepColumn;
+        int deltaRow = motion.getRow() - lastStepRow;
+        if (deltaColumn == 0 && deltaRow == 0) {
+            return;
+        }
+        if (Math.abs(deltaColumn) + Math.abs(deltaRow) == 1) {
+            lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow);
+        }
+        lastStepColumn = motion.getColumn();
+        lastStepRow = motion.getRow();
+    }
+
+    private void updateWorld(float lilyDelta) {
+        motion.update(elapsed);
+        trackPlayerStep();
+        movingLilies.advance(lilyDelta);
         float remaining = motion.getSlideRemaining();
         boolean cellChanged = motion.getColumn() != drawnPlayerColumn || motion.getRow() != drawnPlayerRow;
         layers.setCamera(cameraX(remaining), cameraY(remaining));
         eraseStalePlayer();
         fillExposedCells();
+        applyLilyOffsets();
         drawPlayer();
         slidePlayerGlyph(remaining, cellChanged);
         showStatus();
@@ -303,6 +365,24 @@ class PondScene implements SandboxScene {
         fillLayer(waterLayer, waterFiller);
         fillLayer(lilyLayer, lilyFiller);
         fillLayer(actorLayer, actorFiller);
+    }
+
+    private void applyLilyOffsets() {
+        lilyLayer.resetCellHandles();
+        MapWindow lilyWindow = lilyLayer.getMapWindow();
+        for (int i = 0; i < movingLilies.size(); i++) {
+            int column = movingLilies.columnAt(i);
+            int row = movingLilies.rowAt(i);
+            if (!lilyWindow.contains(column, row)) {
+                continue;
+            }
+            Lily lily = movingLilies.lilyAt(i);
+            lilyWindow.cell(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
+                lily.getOffsetY() * lilyCellHeight);
+        }
+        if (movingLilies.settledInLastAdvance()) {
+            lilyLayer.releaseIdleCellHandles();
+        }
     }
 
     private static void fillLayer(Layer layer, MapCellVisitor filler) {
