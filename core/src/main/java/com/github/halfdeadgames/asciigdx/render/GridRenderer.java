@@ -58,6 +58,7 @@ public final class GridRenderer implements Disposable {
     private Array<CellHandle> cellHandles = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
     private final LayerEffects tintOnlyEffects = new LayerEffects();
+    private final ResolvedEffects resolvedTintOnlyEffects = new ResolvedEffects();
     private final Affine2 translation = new Affine2();
 
     /**
@@ -119,7 +120,8 @@ public final class GridRenderer implements Disposable {
         tintOnlyEffects.reset();
         tintOnlyEffects.setTint(tintR, tintG, tintB, tintA);
         translation.setToTranslation(x, y);
-        draw(batch, translation, tintOnlyEffects);
+        resolvedTintOnlyEffects.resolveOwn(tintOnlyEffects);
+        draw(batch, translation, resolvedTintOnlyEffects);
     }
 
     /**
@@ -128,7 +130,7 @@ public final class GridRenderer implements Disposable {
      * cell as one flat color; mix, saturation, and invert never change it. Changing the effects costs no vertex
      * rewrite or upload.
      */
-    void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects) {
+    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects) {
         drawGrid(batch, layerTransform, effects, CellBlend.BATCH);
     }
 
@@ -138,23 +140,23 @@ public final class GridRenderer implements Disposable {
      * blending. With pixel snapping on, sprite and lifted cell positions are rounded; rotation and
      * scale are not.
      */
-    void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, Array<GlyphSprite> sprites,
+    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites,
             boolean pixelSnapping) {
         drawGrid(batch, layerTransform, effects, CellBlend.BATCH);
         drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.BATCH);
     }
 
     /**
-     * Like {@link #draw(SpriteBatch, Affine2, LayerEffects, Array, boolean)}, but blends into
+     * Like {@link #draw(SpriteBatch, Affine2, ResolvedEffects, Array, boolean)}, but blends into
      * a transparent offscreen target as premultiplied color, whatever the batch's blending is.
      */
-    void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+    void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         drawGrid(batch, layerTransform, effects, CellBlend.PREMULTIPLIED_TARGET);
         drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.PREMULTIPLIED_TARGET);
     }
 
-    private void drawSprites(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+    private void drawSprites(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
         int quadCount = SpriteMesh.countDrawnLifted(cellHandles, grid) + SpriteMesh.countDrawn(sprites);
         if (quadCount == 0) {
@@ -250,7 +252,7 @@ public final class GridRenderer implements Disposable {
         Arrays.fill(handlesByCell, null);
     }
 
-    private void drawGrid(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects, CellBlend blend) {
+    private void drawGrid(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, CellBlend blend) {
         rebuildIfStale();
         if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getHeight(); row++) {

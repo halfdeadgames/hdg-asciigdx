@@ -17,7 +17,6 @@ final class CellShaderPass {
     private final ShaderProgram shader;
     private final Matrix4 combinedMatrix = new Matrix4();
     private final Matrix4 layerMatrix = new Matrix4();
-    private final ColorMatrix colorMatrix = new ColorMatrix();
 
     CellShaderPass(ShaderProgram shader) {
         this.shader = shader;
@@ -34,9 +33,9 @@ final class CellShaderPass {
      * batch has blending off and the batch blend is requested. The batch must be begun.
      */
     void begin(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
-            LayerEffects effects, boolean allOpaque, CellBlend blend) {
+            ResolvedEffects effects, boolean allOpaque, CellBlend blend) {
         batch.flush();
-        applyBlend(batch, blend, allOpaque && effects.getTintA() == 1f);
+        applyBlend(batch, blend, allOpaque && effects.getAlpha() == 1f);
         layerMatrix.set(layerTransform);
         combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix()).mul(layerMatrix);
         shader.bind();
@@ -51,10 +50,9 @@ final class CellShaderPass {
         batch.getShader().bind();
     }
 
-    private void setEffectUniforms(LayerEffects effects) {
-        effects.writeColorMatrix(colorMatrix);
-        shader.setUniformMatrix4fv("u_colorMatrix", colorMatrix.getValues(), 0, ColorMatrix.SIZE);
-        shader.setUniformf("u_alpha", effects.getTintA());
+    private void setEffectUniforms(ResolvedEffects effects) {
+        shader.setUniformMatrix4fv("u_colorMatrix", effects.getMatrix().getValues(), 0, ColorMatrix.SIZE);
+        shader.setUniformf("u_alpha", effects.getAlpha());
     }
 
     private static void applyBlend(SpriteBatch batch, CellBlend blend, boolean opaque) {

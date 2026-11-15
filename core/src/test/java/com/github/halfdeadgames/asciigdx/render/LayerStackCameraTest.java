@@ -54,7 +54,7 @@ class LayerStackCameraTest {
         private final Affine2 lastTransform = new Affine2();
 
         @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             lastTransform.set(layerTransform);
         }

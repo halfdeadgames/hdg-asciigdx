@@ -37,6 +37,7 @@ public final class Layer {
     private boolean visible = true;
     private boolean pickable = true;
     private final LayerEffects effects = new LayerEffects();
+    private final Array<LayerGroup> groups = new Array<>(true, 2);
     private Panel panel;
     private ClipMode clipMode = ClipMode.NONE;
     private float clipX;
@@ -972,6 +973,19 @@ public final class Layer {
         return effects;
     }
 
+    /** The groups this layer belongs to, in join order. */
+    Array<LayerGroup> getGroups() {
+        return groups;
+    }
+
+    void joinGroup(LayerGroup group) {
+        groups.add(group);
+    }
+
+    void leaveGroup(LayerGroup group) {
+        groups.removeValue(group, true);
+    }
+
     LayerRenderer getRenderer() {
         return renderer;
     }
@@ -986,6 +1000,7 @@ public final class Layer {
 
     void detach() {
         owner = null;
+        leaveAllGroups();
         for (int i = sprites.size - 1; i >= 0; i--) {
             sprites.get(i).detach();
         }
@@ -995,6 +1010,13 @@ public final class Layer {
         }
         cellHandles.clear();
         cellsByPosition.clear();
+    }
+
+    private void leaveAllGroups() {
+        for (int i = groups.size - 1; i >= 0; i--) {
+            groups.get(i).forgetMember(this);
+        }
+        groups.clear();
     }
 
     private void requireOwnedSprite(GlyphSprite sprite) {

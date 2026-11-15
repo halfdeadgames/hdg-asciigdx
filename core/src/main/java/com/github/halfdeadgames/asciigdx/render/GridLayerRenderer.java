@@ -15,13 +15,13 @@ final class GridLayerRenderer implements LayerRenderer {
     }
 
     @Override
-    public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+    public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         renderer.draw(batch, layerTransform, effects, sprites, pixelSnapping);
     }
 
     @Override
-    public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+    public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         renderer.drawPremultiplied(batch, layerTransform, effects, sprites, pixelSnapping);
     }

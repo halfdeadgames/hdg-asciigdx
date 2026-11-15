@@ -69,7 +69,7 @@ final class GridMesh implements Disposable {
      * Leaves the batch's shader bound.
      */
     void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
-            LayerEffects effects, boolean allCellsOpaque, boolean hasVisibleCells, CellBlend blend) {
+            ResolvedEffects effects, boolean allCellsOpaque, boolean hasVisibleCells, CellBlend blend) {
         if (!hasVisibleCells) {
             return;
         }

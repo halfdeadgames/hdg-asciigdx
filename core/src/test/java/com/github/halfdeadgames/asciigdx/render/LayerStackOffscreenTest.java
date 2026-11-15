@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -101,16 +102,16 @@ class LayerStackOffscreenTest {
 
     private final LayerStack stack = new LayerStack((grid, source, shared) -> new LayerRenderer() {
         @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            events.add("draw alpha " + effects.getTintA());
+            events.add("draw alpha " + effects.getAlpha());
         }
 
         @Override
-        public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            events.add("drawPremultiplied alpha " + effects.getTintA() + " sat " + effects.getSaturation()
-                    + " invert " + effects.getInvert());
+            events.add("drawPremultiplied alpha " + effects.getAlpha() + " "
+                    + Arrays.toString(effects.getMatrix().getValues()));
         }
 
         @Override
@@ -121,6 +122,15 @@ class LayerStackOffscreenTest {
         public void dispose() {
         }
     }, clipBackend, offscreenBackend);
+
+    private static String matrixOf(float saturation, float invert) {
+        LayerEffects effects = new LayerEffects();
+        effects.setSaturation(saturation);
+        effects.setInvert(invert);
+        ColorMatrix matrix = new ColorMatrix();
+        effects.writeColorMatrix(matrix);
+        return Arrays.toString(matrix.getValues());
+    }
 
     private static String rect(int[] viewport) {
         return viewport[0] + "," + viewport[1] + "," + viewport[2] + "," + viewport[3];
@@ -141,7 +151,7 @@ class LayerStackOffscreenTest {
 
         assertEquals(List.of(
                 "begin 100,50,600,500",
-                "drawPremultiplied alpha 1.0 sat 0.5 invert 0.0",
+                "drawPremultiplied alpha 1.0 " + matrixOf(0.5f, 0f),
                 "end 100,50,600,500",
                 "composite 0.4 100,50,600,500"), events);
         assertEquals(0.4f, layer.getTintA());
@@ -158,7 +168,7 @@ class LayerStackOffscreenTest {
 
         assertEquals(List.of(
                 "begin 100,50,600,500",
-                "drawPremultiplied alpha 1.0 sat 1.0 invert 0.75",
+                "drawPremultiplied alpha 1.0 " + matrixOf(1f, 0.75f),
                 "end 100,50,600,500",
                 "composite 0.4 100,50,600,500"), events);
     }
@@ -188,7 +198,7 @@ class LayerStackOffscreenTest {
         assertEquals(List.of(
                 "clip push 100,125,8,9",
                 "begin 100,50,600,500",
-                "drawPremultiplied alpha 1.0 sat 1.0 invert 0.0",
+                "drawPremultiplied alpha 1.0 " + matrixOf(1f, 0f),
                 "end 100,50,600,500",
                 "composite 0.5 100,50,600,500",
                 "clip pop"), events);

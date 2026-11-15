@@ -52,7 +52,7 @@ class LayerCellTest {
         int bindCount;
 
         @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             positions.add(new float[] {layerTransform.m02, layerTransform.m12});
         }

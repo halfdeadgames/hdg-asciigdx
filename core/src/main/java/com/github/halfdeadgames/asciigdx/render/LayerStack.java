@@ -33,10 +33,11 @@ public final class LayerStack implements Disposable {
     private final LayerRendererFactory rendererFactory;
     private final ClipBackend clipBackend;
     private final OffscreenBackend offscreenBackend;
-    private final LayerEffects opaqueEffects = new LayerEffects();
+    private final ResolvedEffects resolvedEffects = new ResolvedEffects();
     private boolean viewportQueried;
     private final Array<Layer> layers = new Array<>();
     private final Array<Panel> panels = new Array<>();
+    private final Array<LayerGroup> groups = new Array<>();
     private final Matrix4 clipMatrix = new Matrix4();
     private final Vector3 clipCorner = new Vector3();
     private final Affine2 layerTransform = new Affine2();
@@ -252,6 +253,45 @@ public final class LayerStack implements Disposable {
         panel.detach();
     }
 
+    /**
+     * Creates a group, a set of layers that share color effects on top of their own; see
+     * {@link LayerGroup}.
+     *
+     * @return the new, empty group
+     * @throws IllegalStateException if the stack was disposed
+     */
+    public LayerGroup addGroup() {
+        requireNotDisposed();
+        LayerGroup group = new LayerGroup(this);
+        groups.add(group);
+        return group;
+    }
+
+    /**
+     * Removes a group. Its member layers leave it and keep their own effects. The group stays
+     * readable but can no longer be changed.
+     *
+     * @throws IllegalArgumentException if the group is null or belongs to another stack
+     * @throws IllegalStateException if the group was already removed
+     */
+    public void removeGroup(LayerGroup group) {
+        requireGroupOwned(group);
+        groups.removeValue(group, true);
+        group.detach();
+    }
+
+    private void requireGroupOwned(LayerGroup group) {
+        if (group == null) {
+            throw new IllegalArgumentException("group must not be null");
+        }
+        if (group.getOwner() == null) {
+            throw new IllegalStateException("LayerGroup was removed from its stack");
+        }
+        if (group.getOwner() != this) {
+            throw new IllegalArgumentException("LayerGroup belongs to another stack");
+        }
+    }
+
     private void requirePanelOwned(Panel panel) {
         if (panel == null) {
             throw new IllegalArgumentException("panel must not be null");
@@ -337,16 +377,17 @@ public final class LayerStack implements Disposable {
      * outward to whole backbuffer pixels, then to whole logical pixels on HDPI
      * displays.
      *
-     * <p>A hidden layer, or a layer whose tint alpha is 0, is skipped entirely: no draw, no clip
-     * work, and no offscreen pass.
+     * <p>A layer's effective alpha is its tint alpha times the alpha of every {@link LayerGroup}
+     * it belongs to. A hidden layer, or a layer whose effective alpha is 0, is skipped entirely:
+     * no draw, no clip work, and no offscreen pass.
      *
-     * <p>Offscreen fade: a layer whose tint alpha is below 1 and that has at least one drawn
+     * <p>Offscreen fade: a layer whose effective alpha is below 1 and that has at least one drawn
      * free sprite (visible, color alpha above 0) or lifted cell is drawn at full alpha into a
      * shared offscreen target, then composited with its alpha, so the grid, sprites, and lifted cells fade as one image. This
      * costs one offscreen target switch per such layer per frame. The layer's own clip still
      * applies. The batch stays begun with its shader bound. The composite does not use the
      * batch's blend functions; it always blends premultiplied. Do not draw while another
-     * framebuffer is bound. To skip the offscreen pass, keep the tint alpha at 1. Other layers draw
+     * framebuffer is bound. To skip the offscreen pass, keep the effective alpha at 1. Other layers draw
      * directly.
      *
      * @param batch the active batch
@@ -357,7 +398,11 @@ public final class LayerStack implements Disposable {
         viewportQueried = false;
         for (int i = 0; i < layers.size; i++) {
             Layer layer = layers.get(i);
-            if (!isDrawn(layer)) {
+            if (!layer.isVisible()) {
+                continue;
+            }
+            resolvedEffects.resolve(layer.getEffects(), layer.getGroups());
+            if (resolvedEffects.getAlpha() <= 0f) {
                 continue;
             }
             composeLayerTransform(layer, x, y, layerTransform);
@@ -377,10 +422,6 @@ public final class LayerStack implements Disposable {
             clipBackend.flush(batch);
             clipBackend.pop();
         }
-    }
-
-    private static boolean isDrawn(Layer layer) {
-        return layer.isVisible() && layer.getTintA() > 0f;
     }
 
     private static boolean isClipped(Layer layer) {
@@ -616,12 +657,11 @@ public final class LayerStack implements Disposable {
 
     private void drawLayer(Layer layer, SpriteBatch batch) {
         layer.syncCellHandles();
-        LayerEffects effects = layer.getEffects();
-        if (OffscreenFade.isNeeded(effects.getTintA(), layer.getSprites(), layer.getCellHandles())) {
+        if (OffscreenFade.isNeeded(resolvedEffects.getAlpha(), layer.getSprites(), layer.getCellHandles())) {
             drawFadedLayer(layer, batch);
             return;
         }
-        layer.getRenderer().draw(batch, layerTransform, effects, layer.getSprites(), pixelSnapping);
+        layer.getRenderer().draw(batch, layerTransform, resolvedEffects, layer.getSprites(), pixelSnapping);
     }
 
     /**
@@ -633,14 +673,13 @@ public final class LayerStack implements Disposable {
     // applies.
     private void drawFadedLayer(Layer layer, SpriteBatch batch) {
         queryViewportOnce(batch);
-        LayerEffects effects = layer.getEffects();
-        opaqueEffects.copyFrom(effects);
-        opaqueEffects.setTintAlpha(1f);
+        float fadeAlpha = resolvedEffects.getAlpha();
+        resolvedEffects.setAlpha(1f);
         offscreenBackend.begin(batch, viewport);
-        layer.getRenderer().drawPremultiplied(batch, layerTransform, opaqueEffects, layer.getSprites(),
+        layer.getRenderer().drawPremultiplied(batch, layerTransform, resolvedEffects, layer.getSprites(),
                 pixelSnapping);
         offscreenBackend.end(viewport);
-        offscreenBackend.composite(batch, effects.getTintA(), viewport);
+        offscreenBackend.composite(batch, fadeAlpha, viewport);
     }
 
     /**
@@ -663,6 +702,10 @@ public final class LayerStack implements Disposable {
             panels.get(i).detach();
         }
         panels.clear();
+        for (int i = groups.size - 1; i >= 0; i--) {
+            groups.get(i).detach();
+        }
+        groups.clear();
         offscreenBackend.dispose();
         if (sharedResources != null) {
             sharedResources.dispose();

@@ -58,7 +58,7 @@ class OffscreenFadeTest {
         LayerStack cellStack = new LayerStack((grid, source, shared) -> new LayerRenderer() {
             @Override
             public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch,
-                    Affine2 layerTransform, LayerEffects effects, Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                    Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites, boolean pixelSnapping) {
             }
 
             @Override

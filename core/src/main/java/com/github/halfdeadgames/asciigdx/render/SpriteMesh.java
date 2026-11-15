@@ -182,7 +182,7 @@ final class SpriteMesh implements Disposable {
     }
 
     /** Draws the uploaded quads like {@link GridMesh#draw}, always blended (never treated as opaque). */
-    void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform, LayerEffects effects,
+    void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform, ResolvedEffects effects,
             CellBlend blend) {
         pass.begin(batch, glyphTexture, layerTransform, effects, false, blend);
         mesh.render(pass.getShader(), GL20.GL_TRIANGLES, 0, usedQuads * CellVertexLayout.INDICES_PER_QUAD);

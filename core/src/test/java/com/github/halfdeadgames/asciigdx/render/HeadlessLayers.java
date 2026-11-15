@@ -47,7 +47,7 @@ public final class HeadlessLayers {
 
     private static final class SilentRenderer implements LayerRenderer {
         @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
         }
 

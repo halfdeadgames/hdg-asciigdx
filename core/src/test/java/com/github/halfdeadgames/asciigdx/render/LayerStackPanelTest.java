@@ -96,7 +96,7 @@ class LayerStackPanelTest {
             String name = "L" + created++;
             return new LayerRenderer() {
                 @Override
-                public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                         Array<GlyphSprite> sprites, boolean pixelSnapping) {
                     log.add(name);
                 }

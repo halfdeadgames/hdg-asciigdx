@@ -59,10 +59,8 @@ class LayerStackTest {
         final List<String> drawLog;
         final List<float[]> positions = new ArrayList<>();
         final List<Affine2> transforms = new ArrayList<>();
-        final List<float[]> tints = new ArrayList<>();
-        final List<float[]> mixes = new ArrayList<>();
-        final List<Float> saturations = new ArrayList<>();
-        final List<Float> inverts = new ArrayList<>();
+        final List<Float> alphas = new ArrayList<>();
+        final List<float[]> matrices = new ArrayList<>();
         final List<GlyphSource> glyphSources = new ArrayList<>();
         int disposeCount;
 
@@ -72,15 +70,13 @@ class LayerStackTest {
         }
 
         @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, LayerEffects effects,
+        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             drawLog.add(name);
             positions.add(new float[] {layerTransform.m02, layerTransform.m12});
             transforms.add(new Affine2(layerTransform));
-            tints.add(new float[] {effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA()});
-            mixes.add(new float[] {effects.getMixR(), effects.getMixG(), effects.getMixB(), effects.getMixAmount()});
-            saturations.add(effects.getSaturation());
-            inverts.add(effects.getInvert());
+            alphas.add(effects.getAlpha());
+            matrices.add(effects.getMatrix().getValues().clone());
         }
 
         @Override
@@ -551,9 +547,20 @@ class LayerStackTest {
         assertEquals(1, renderers.get(0).disposeCount);
     }
 
-    private float[] lastTint(int rendererIndex) {
-        List<float[]> tints = renderers.get(rendererIndex).tints;
-        return tints.get(tints.size() - 1);
+    private float lastAlpha(int rendererIndex) {
+        List<Float> alphas = renderers.get(rendererIndex).alphas;
+        return alphas.get(alphas.size() - 1);
+    }
+
+    private float[] lastMatrix(int rendererIndex) {
+        List<float[]> matrices = renderers.get(rendererIndex).matrices;
+        return matrices.get(matrices.size() - 1);
+    }
+
+    private static float[] matrixOf(LayerEffects effects) {
+        ColorMatrix matrix = new ColorMatrix();
+        effects.writeColorMatrix(matrix);
+        return matrix.getValues();
     }
 
     @Test
@@ -564,7 +571,8 @@ class LayerStackTest {
         assertEquals(1f, layer.getTintB());
         assertEquals(1f, layer.getTintA());
         stack.draw(null, 0f, 0f);
-        assertArrayEquals(new float[] {1f, 1f, 1f, 1f}, lastTint(0));
+        assertEquals(1f, lastAlpha(0));
+        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(0));
     }
 
     @Test
@@ -573,8 +581,12 @@ class LayerStackTest {
         addLayer();
         first.setTint(0.25f, 0.5f, 0.75f, 0.5f);
         stack.draw(null, 0f, 0f);
-        assertArrayEquals(new float[] {0.25f, 0.5f, 0.75f, 0.5f}, lastTint(0));
-        assertArrayEquals(new float[] {1f, 1f, 1f, 1f}, lastTint(1));
+        LayerEffects expected = new LayerEffects();
+        expected.setTint(0.25f, 0.5f, 0.75f, 0.5f);
+        assertEquals(0.5f, lastAlpha(0));
+        assertArrayEquals(matrixOf(expected), lastMatrix(0));
+        assertEquals(1f, lastAlpha(1));
+        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
     }
 
     @Test
@@ -610,16 +622,6 @@ class LayerStackTest {
         assertThrows(IllegalStateException.class, () -> layer.setTint(Color.RED));
         assertThrows(IllegalStateException.class, () -> layer.setAlpha(0.5f));
         assertEquals(1f, layer.getTintA());
-    }
-
-    private float[] lastMix(int rendererIndex) {
-        List<float[]> mixes = renderers.get(rendererIndex).mixes;
-        return mixes.get(mixes.size() - 1);
-    }
-
-    private float lastSaturation(int rendererIndex) {
-        List<Float> saturations = renderers.get(rendererIndex).saturations;
-        return saturations.get(saturations.size() - 1);
     }
 
     @Test
@@ -675,15 +677,11 @@ class LayerStackTest {
         first.setMix(1f, 0.5f, 0.25f, 0.75f);
         first.setSaturation(0f);
         stack.draw(null, 0f, 0f);
-        assertArrayEquals(new float[] {1f, 0.5f, 0.25f, 0.75f}, lastMix(0));
-        assertEquals(0f, lastSaturation(0));
-        assertArrayEquals(new float[] {1f, 1f, 1f, 0f}, lastMix(1));
-        assertEquals(1f, lastSaturation(1));
-    }
-
-    private float lastInvert(int rendererIndex) {
-        List<Float> inverts = renderers.get(rendererIndex).inverts;
-        return inverts.get(inverts.size() - 1);
+        LayerEffects expected = new LayerEffects();
+        expected.setMix(1f, 0.5f, 0.25f, 0.75f);
+        expected.setSaturation(0f);
+        assertArrayEquals(matrixOf(expected), lastMatrix(0));
+        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
     }
 
     @Test
@@ -712,8 +710,10 @@ class LayerStackTest {
         addLayer();
         first.setInvert(1f);
         stack.draw(null, 0f, 0f);
-        assertEquals(1f, lastInvert(0));
-        assertEquals(0f, lastInvert(1));
+        LayerEffects expected = new LayerEffects();
+        expected.setInvert(1f);
+        assertArrayEquals(matrixOf(expected), lastMatrix(0));
+        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
     }
 
     @Test
