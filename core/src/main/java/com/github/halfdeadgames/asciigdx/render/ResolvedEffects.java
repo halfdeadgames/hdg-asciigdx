@@ -12,7 +12,7 @@ final class ResolvedEffects {
     private final ColorMatrix matrix = new ColorMatrix();
     private final ColorMatrix groupMatrix = new ColorMatrix();
     private float alpha = 1f;
-    private long resolveStamp;
+    private long resolveId;
 
     ColorMatrix getMatrix() {
         return matrix;
@@ -33,30 +33,56 @@ final class ResolvedEffects {
     }
 
     /**
-     * Resolves the layer's own effects, then each group's in the order the layer joined them, each
-     * followed by its ancestors up to the root: the color transforms run in that sequence and the
-     * alphas multiply. A group reached twice is applied only the first time.
+     * Resolves the layer's own effects, then the effects of every group it reaches, directly or as an
+     * ancestor: the color transforms run in sequence and the alphas multiply. A group's effects run
+     * after those of every descendant group the layer is in; groups that are not ancestors of each
+     * other run in the order the layer joined them. Each reached group is applied once.
      */
     void resolve(LayerEffects own, Array<LayerGroup> groups) {
         resolveOwn(own);
-        resolveStamp++;
+        resolveId++;
         for (int i = 0; i < groups.size; i++) {
-            foldChain(groups.get(i));
+            markChain(groups.get(i));
+        }
+        for (int i = 0; i < groups.size; i++) {
+            applyWhenReady(groups.get(i));
         }
     }
 
     /**
-     * Stops at the first group already applied during this resolve: its own chain was walked then,
-     * so everything above it is applied too.
+     * Marks the group and its ancestors as reached and counts, on each parent, how many reached
+     * children must be applied before it. Stops at an already marked group, since its ancestors are
+     * already counted.
      */
-    private void foldChain(LayerGroup start) {
-        for (LayerGroup group = start; group != null; group = group.getParent()) {
-            if (group.getResolveStamp() == resolveStamp) {
-                return;
+    private void markChain(LayerGroup start) {
+        for (LayerGroup group = start; group != null && !group.isMarkedIn(resolveId); group = group.getParent()) {
+            group.markIn(resolveId);
+            LayerGroup parent = group.getParent();
+            if (parent != null) {
+                parent.addPendingChildIn(resolveId);
             }
-            group.setResolveStamp(resolveStamp);
-            foldGroup(group.getEffects());
         }
+    }
+
+    /**
+     * Applies the group unless it is already applied or still waits on a child, then moves up to each
+     * parent that has no children left to wait on.
+     */
+    private void applyWhenReady(LayerGroup start) {
+        LayerGroup group = start;
+        while (group != null && !group.isAppliedIn(resolveId) && !group.hasPendingChildrenIn(resolveId)) {
+            applyGroup(group);
+            LayerGroup parent = group.getParent();
+            if (parent != null) {
+                parent.finishPendingChild();
+            }
+            group = parent;
+        }
+    }
+
+    private void applyGroup(LayerGroup group) {
+        group.markAppliedIn(resolveId);
+        foldGroup(group.getEffects());
     }
 
     private void foldGroup(LayerEffects groupEffects) {

@@ -388,6 +388,129 @@ class LayerGroupTest {
     }
 
     @Test
+    void parentJoinedFirstStillRunsAfterItsChild() {
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+    }
+
+    @Test
+    void childJoinedFirstRunsBeforeItsParent() {
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(child, parent));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+    }
+
+    @Test
+    void chainJoinedOutOfOrderRunsDescendantsFirst() {
+        LayerEffects grandchildEffects = invert(0.8f);
+        LayerEffects childEffects = tintAndMix();
+        LayerEffects parentEffects = saturation(0.3f);
+        LayerGroup parent = stack.addGroup();
+        LayerGroup child = stack.addGroup();
+        LayerGroup grandchild = stack.addGroup();
+        copyEffects(parentEffects, parent);
+        copyEffects(childEffects, child);
+        copyEffects(grandchildEffects, grandchild);
+        child.setParent(parent);
+        grandchild.setParent(child);
+
+        resolved.resolve(new LayerEffects(), groupsOf(parent, grandchild, child));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), grandchildEffects, childEffects,
+                parentEffects);
+    }
+
+    @Test
+    void diamondRunsSiblingsInJoinOrderThenSharedParentOnce() {
+        LayerEffects firstEffects = invert(0.8f);
+        LayerEffects secondEffects = tintAndMix();
+        LayerEffects sharedEffects = saturation(0.3f);
+        LayerGroup shared = stack.addGroup();
+        LayerGroup first = stack.addGroup();
+        LayerGroup second = stack.addGroup();
+        copyEffects(sharedEffects, shared);
+        shared.setAlpha(0.5f);
+        copyEffects(firstEffects, first);
+        copyEffects(secondEffects, second);
+        first.setParent(shared);
+        second.setParent(shared);
+
+        resolved.resolve(new LayerEffects(), groupsOf(first, second));
+
+        assertEquals(0.5f * 0.6f, resolved.getAlpha(), TOLERANCE);
+        resolved.resolve(new LayerEffects(), groupsOf(second, first));
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), secondEffects, firstEffects,
+                sharedEffects);
+    }
+
+    @Test
+    void unrelatedGroupsKeepJoinOrderNextToATree() {
+        LayerEffects loneEffects = saturation(0.3f);
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerGroup lone = stack.addGroup();
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        copyEffects(loneEffects, lone);
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(lone, child));
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), loneEffects, childEffects,
+                parentEffects);
+    }
+
+    @Test
+    void alphaProductIsTheSameForAnyJoinOrder() {
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        child.setAlpha(0.5f);
+        parent.setAlpha(0.4f);
+        child.setParent(parent);
+
+        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+
+        assertEquals(0.2f, resolved.getAlpha(), TOLERANCE);
+    }
+
+    @Test
+    void repeatedResolvesGiveTheSameMatrix() {
+        LayerEffects childEffects = invert(0.8f);
+        LayerEffects parentEffects = tintAndMix();
+        LayerGroup child = stack.addGroup();
+        LayerGroup parent = stack.addGroup();
+        copyEffects(childEffects, child);
+        copyEffects(parentEffects, parent);
+        child.setParent(parent);
+        Array<LayerGroup> groups = groupsOf(parent, child);
+
+        resolved.resolve(new LayerEffects(), groups);
+        resolved.resolve(new LayerEffects(), groups);
+        resolved.resolve(new LayerEffects(), groups);
+
+        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+    }
+
+    @Test
     void resolvingAgainAppliesTheSameGroupsAgain() {
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();

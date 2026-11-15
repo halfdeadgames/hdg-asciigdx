@@ -8,13 +8,14 @@ import com.badlogic.gdx.utils.Array;
  * invert), applied on top of each layer's own. Created by {@link LayerStack#addGroup()}.
  *
  * <p>For each member layer, the layer's own effects run first, then the effects of each group it
- * belongs to, in the order the layer joined them. The color transforms run in that sequence and the
- * alphas multiply. A layer can be in several groups. A layer in no group draws with only its own effects.
+ * belongs to. The color transforms run in sequence and the alphas multiply. A layer can be in several
+ * groups. A layer in no group draws with only its own effects.
  *
- * <p>A group can have one parent group ({@link #setParent}), which forms a tree. After a group's
- * effects, the effects of its parent run, then the grandparent's, and so on up to the root, for every
- * layer in the group. A layer reaching the same ancestor through several groups gets that ancestor
- * applied once, at the first point it is reached. Removing a group makes its children parentless.
+ * <p>A group can have one parent group ({@link #setParent}), which forms a tree. A group's effects
+ * run after those of every descendant group the layer is in, so a parent always runs after its
+ * children. A parent's effects reach every layer in any of its descendant groups. Groups that are not
+ * ancestors of each other run in the order the layer joined them. A group the layer reaches through
+ * several paths is applied once. Removing a group makes its children parentless.
  *
  * <p>The group's tint alpha fades each member layer on its own, not the members as one image: the
  * overlap of two member layers still shows both. Once the group is removed from its stack, getters
@@ -26,7 +27,11 @@ public final class LayerGroup {
     private final Array<Layer> members = new Array<>();
     private LayerStack owner;
     private LayerGroup parent;
-    private long resolveStamp;
+    // Per-resolve bookkeeping for ResolvedEffects; a stamp equal to the current resolve id means "this resolve".
+    private long markStamp;
+    private long appliedStamp;
+    private long pendingStamp;
+    private int pendingChildren;
 
     LayerGroup(LayerStack owner) {
         this.owner = owner;
@@ -40,7 +45,8 @@ public final class LayerGroup {
     /**
      * Nests this group in a parent group of the same stack, or takes it out of its parent with null.
      * A group has at most one parent; setting a new one replaces the old. The parent's effects apply
-     * to every layer that is in this group or in any of its descendants, after this group's own.
+     * to every layer that is in this group or in any of its descendants, after the
+     * effects of this group and its descendants.
      * If the parent is removed from the stack, this group's parent becomes null.
      *
      * @throws IllegalArgumentException if the parent is this group or one of its descendants, or
@@ -255,12 +261,36 @@ public final class LayerGroup {
         return effects;
     }
 
-    long getResolveStamp() {
-        return resolveStamp;
+    boolean isMarkedIn(long resolveId) {
+        return markStamp == resolveId;
     }
 
-    void setResolveStamp(long resolveStamp) {
-        this.resolveStamp = resolveStamp;
+    boolean isAppliedIn(long resolveId) {
+        return appliedStamp == resolveId;
+    }
+
+    boolean hasPendingChildrenIn(long resolveId) {
+        return pendingStamp == resolveId && pendingChildren > 0;
+    }
+
+    void markIn(long resolveId) {
+        markStamp = resolveId;
+    }
+
+    void markAppliedIn(long resolveId) {
+        appliedStamp = resolveId;
+    }
+
+    void addPendingChildIn(long resolveId) {
+        if (pendingStamp != resolveId) {
+            pendingStamp = resolveId;
+            pendingChildren = 0;
+        }
+        pendingChildren++;
+    }
+
+    void finishPendingChild() {
+        pendingChildren--;
     }
 
     /** Called by the stack when this group's parent is removed. */
