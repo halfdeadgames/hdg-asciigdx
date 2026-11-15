@@ -40,16 +40,10 @@ public final class Layer {
     private final Array<LayerGroup> groups = new Array<>(true, 2);
     private Panel panel;
     private MapWindow mapWindow;
-    private ClipMode clipMode = ClipMode.NONE;
-    private float clipX;
-    private float clipY;
-    private float clipWidth;
-    private float clipHeight;
+    private final LayerClip clip = new LayerClip();
     private final Array<GlyphSprite> sprites = new Array<>();
     private final CellHandleSet cellHandleSet;
     private float frameReleaseSeconds = 1f;
-
-    private enum ClipMode { NONE, RECT, STACK }
 
     Layer(LayerStack owner, TerminalGrid grid, GlyphSource glyphSource, LayerRenderer renderer) {
         this.owner = owner;
@@ -589,12 +583,12 @@ public final class Layer {
      * of a {@link Panel} is clipped to the panel even when this is false.
      */
     public boolean hasClip() {
-        return clipMode != ClipMode.NONE;
+        return clip.isSet();
     }
 
     /** Returns whether the clip follows the stack's size instead of a fixed rectangle. */
     public boolean isClippedToStack() {
-        return clipMode == ClipMode.STACK;
+        return clip.isStackArea();
     }
 
     /**
@@ -602,7 +596,7 @@ public final class Layer {
      * panel member this is measured from the panel's corner.
      */
     public float getClipX() {
-        return clipX;
+        return clip.getX();
     }
 
     /**
@@ -610,17 +604,17 @@ public final class Layer {
      * panel member this is measured from the panel's corner.
      */
     public float getClipY() {
-        return clipY;
+        return clip.getY();
     }
 
     /** Returns the clip rectangle's width; 0 unless set by {@link #setClip}. */
     public float getClipWidth() {
-        return clipWidth;
+        return clip.getWidth();
     }
 
     /** Returns the clip rectangle's height; 0 unless set by {@link #setClip}. */
     public float getClipHeight() {
-        return clipHeight;
+        return clip.getHeight();
     }
 
     /**
@@ -647,11 +641,7 @@ public final class Layer {
         if (width < 0f || height < 0f) {
             throw new IllegalArgumentException("clip width and height must not be negative");
         }
-        clipMode = ClipMode.RECT;
-        clipX = x;
-        clipY = y;
-        clipWidth = width;
-        clipHeight = height;
+        clip.setRect(x, y, width, height);
     }
 
     /**
@@ -668,11 +658,7 @@ public final class Layer {
         if (!stack.hasSize()) {
             throw new IllegalStateException("Set the stack size before clipping a layer to it");
         }
-        clipMode = ClipMode.STACK;
-        clipX = 0f;
-        clipY = 0f;
-        clipWidth = 0f;
-        clipHeight = 0f;
+        clip.setToStack();
     }
 
     /**
@@ -682,11 +668,7 @@ public final class Layer {
      */
     public void clearClip() {
         requireAttached();
-        clipMode = ClipMode.NONE;
-        clipX = 0f;
-        clipY = 0f;
-        clipWidth = 0f;
-        clipHeight = 0f;
+        clip.clear();
     }
 
     /**

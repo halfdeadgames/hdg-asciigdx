@@ -3,10 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -31,23 +28,16 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 public final class LayerStack implements Disposable {
 
     private final LayerRendererFactory rendererFactory;
-    private final ClipBackend clipBackend;
+    private final LayerClipper clipper;
     private final OffscreenBackend offscreenBackend;
     private final ResolvedEffects resolvedEffects = new ResolvedEffects();
-    private boolean viewportQueried;
     private final Array<Layer> layers = new Array<>();
     private final Array<Panel> panels = new Array<>();
     private final Array<LayerGroup> groups = new Array<>();
-    private final Matrix4 clipMatrix = new Matrix4();
-    private final Vector3 clipCorner = new Vector3();
     private final Affine2 layerTransform = new Affine2();
     private final Affine2 inverseTransform = new Affine2();
     private final Affine2 pointTransform = new Affine2();
     private final Vector2 layerPixel = new Vector2();
-    private final Rectangle clipRect = new Rectangle();
-    private final Rectangle worldRect = new Rectangle();
-    private final Rectangle windowRect = new Rectangle();
-    private final int[] viewport = new int[4];
     private float width;
     private float height;
     private float cameraX;
@@ -63,7 +53,7 @@ public final class LayerStack implements Disposable {
 
     LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend, OffscreenBackend offscreenBackend) {
         this.rendererFactory = rendererFactory;
-        this.clipBackend = clipBackend;
+        this.clipper = new LayerClipper(clipBackend);
         this.offscreenBackend = offscreenBackend;
     }
 
@@ -407,7 +397,7 @@ public final class LayerStack implements Disposable {
      * @param y screen y of the stack's top-left corner (y grows upward)
      */
     public void draw(SpriteBatch batch, float x, float y) {
-        viewportQueried = false;
+        clipper.beginFrame();
         for (int i = 0; i < layers.size; i++) {
             Layer layer = layers.get(i);
             if (!layer.isVisible()) {
@@ -418,30 +408,22 @@ public final class LayerStack implements Disposable {
                 continue;
             }
             composeLayerTransform(layer, x, y, layerTransform);
-            if (!isClipped(layer)) {
+            if (!LayerClipper.isClipped(layer)) {
                 drawLayer(layer, batch);
                 continue;
             }
-            queryViewportOnce(batch);
-            resolveClipRect(layer);
-            if (layer.getPanel() != null && isClipRectEmpty()) {
+            clipper.queryViewportOnce(batch);
+            clipper.resolve(layer, width, height, hasSize());
+            if (layer.getPanel() != null && clipper.isEmpty()) {
                 continue;
             }
-            if (!pushScissor(batch, x, y, clipRect)) {
+            clipper.pushScissor(batch, x, y, pixelSnapping);
+            if (!clipper.isScissorActive()) {
                 continue;
             }
             drawLayer(layer, batch);
-            clipBackend.flush(batch);
-            clipBackend.pop();
+            clipper.popScissor(batch);
         }
-    }
-
-    private static boolean isClipped(Layer layer) {
-        return layer.hasClip() || layer.getPanel() != null;
-    }
-
-    private boolean isClipRectEmpty() {
-        return clipRect.width <= 0f || clipRect.height <= 0f;
     }
 
     /**
@@ -573,66 +555,14 @@ public final class LayerStack implements Disposable {
         if (!layer.isPickable()) {
             return false;
         }
-        if (!isClipped(layer)) {
+        if (!LayerClipper.isClipped(layer)) {
             return true;
         }
-        resolveClipRect(layer);
-        if (isClipRectEmpty()) {
+        clipper.resolve(layer, width, height, hasSize());
+        if (clipper.isEmpty()) {
             return false;
         }
-        ClipMath.stackToWorld(stackX, stackY, clipRect.x, clipRect.y, clipRect.width, clipRect.height,
-                pixelSnapping, worldRect);
-        return isInsideClipWindow(worldRect, worldX, worldY);
-    }
-
-    /**
-     * Rectangle.contains includes every edge, but a clip window keeps its top and left edges
-     * and drops its right and bottom ones. World y grows up, so the bottom edge is rect.y.
-     */
-    private static boolean isInsideClipWindow(Rectangle world, float worldX, float worldY) {
-        return worldX >= world.x && worldX < world.x + world.width
-                && worldY > world.y && worldY <= world.y + world.height;
-    }
-
-    /** Writes the layer's final clip in stack space into {@code clipRect}; the layer must be clipped. */
-    private void resolveClipRect(Layer layer) {
-        Panel panel = layer.getPanel();
-        if (layer.isClippedToStack()) {
-            resolveStackAreaClip();
-        } else if (layer.hasClip()) {
-            clipRect.set(layer.getClipX() + panelCornerX(panel), layer.getClipY() + panelCornerY(panel),
-                    layer.getClipWidth(), layer.getClipHeight());
-        } else {
-            clipRect.set(panel.getX(), panel.getY(), panel.getWidth(), panel.getHeight());
-            return;
-        }
-        if (panel != null) {
-            intersectClipRectWithPanel(panel);
-        }
-    }
-
-    private void resolveStackAreaClip() {
-        if (!hasSize()) {
-            throw new IllegalStateException("Layer is clipped to the stack but the stack size is not set");
-        }
-        clipRect.set(0f, 0f, width, height);
-    }
-
-    /** Leaves a zero-size rectangle when nothing overlaps, never a negative one. */
-    private void intersectClipRectWithPanel(Panel panel) {
-        float left = Math.max(clipRect.x, panel.getX());
-        float top = Math.max(clipRect.y, panel.getY());
-        float right = Math.min(clipRect.x + clipRect.width, panel.getX() + panel.getWidth());
-        float bottom = Math.min(clipRect.y + clipRect.height, panel.getY() + panel.getHeight());
-        clipRect.set(left, top, Math.max(0f, right - left), Math.max(0f, bottom - top));
-    }
-
-    private static float panelCornerX(Panel panel) {
-        return panel == null ? 0f : panel.getX();
-    }
-
-    private static float panelCornerY(Panel panel) {
-        return panel == null ? 0f : panel.getY();
+        return clipper.isInside(stackX, stackY, worldX, worldY, pixelSnapping);
     }
 
     private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
@@ -642,34 +572,15 @@ public final class LayerStack implements Disposable {
         // Zero for plain layers; for map windows it cancels the whole cells the content already scrolled.
         float mapOriginX = layer.getMapOriginPixelsX();
         float mapOriginY = layer.getMapOriginPixelsY();
-        float effectiveOffsetX = panelCornerX(panel) + layer.getOffsetX() - activeCameraX * layer.getParallaxX()
-                + mapOriginX;
-        float effectiveOffsetY = panelCornerY(panel) + layer.getOffsetY() - activeCameraY * layer.getParallaxY()
-                + mapOriginY;
+        float effectiveOffsetX = LayerClipper.panelCornerX(panel) + layer.getOffsetX()
+                - activeCameraX * layer.getParallaxX() + mapOriginX;
+        float effectiveOffsetY = LayerClipper.panelCornerY(panel) + layer.getOffsetY()
+                - activeCameraY * layer.getParallaxY() + mapOriginY;
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
         boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
         LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX, layer.getPivotY() - mapOriginY,
                 layer.getEffectiveZoom(), layer.getRotation(), snapCorner, out);
-    }
-
-    private void queryViewportOnce(SpriteBatch batch) {
-        if (viewportQueried) {
-            return;
-        }
-        clipBackend.getCombinedMatrix(batch, clipMatrix);
-        clipBackend.getViewport(viewport);
-        viewportQueried = true;
-    }
-
-    /** Flushes the batch and pushes a stack-space rectangle as a scissor; false if nothing is left of it. */
-    private boolean pushScissor(SpriteBatch batch, float stackX, float stackY, Rectangle stackRect) {
-        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width, stackRect.height,
-                pixelSnapping, worldRect);
-        ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2], viewport[3],
-                clipCorner, windowRect);
-        clipBackend.flush(batch);
-        return clipBackend.push(windowRect);
     }
 
     private void drawLayer(Layer layer, SpriteBatch batch) {
@@ -689,7 +600,8 @@ public final class LayerStack implements Disposable {
     // scissor added about 2 ms per frame and saved nothing (2026-11-13). Only the layer's own clip
     // applies.
     private void drawFadedLayer(Layer layer, SpriteBatch batch) {
-        queryViewportOnce(batch);
+        clipper.queryViewportOnce(batch);
+        int[] viewport = clipper.getViewport();
         float fadeAlpha = resolvedEffects.getAlpha();
         resolvedEffects.setAlpha(1f);
         offscreenBackend.begin(batch, viewport);
