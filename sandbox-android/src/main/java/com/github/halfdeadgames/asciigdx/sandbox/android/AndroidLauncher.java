@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.android;
 
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -29,7 +30,7 @@ public class AndroidLauncher extends AndroidApplication {
         configuration.useWakelock = true;
         Bundle extras = getIntent().getExtras();
         applyRequestedOrientation(extras);
-        initialize(new SandboxApp(key -> readSetting(extras, key)), configuration);
+        initialize(new SandboxApp(key -> readSetting(extras, key), this::toggleOrientation), configuration);
         if (savedInstanceState == null) {
             scheduleRecreateForContextLossTest(extras);
         }
@@ -47,6 +48,17 @@ public class AndroidLauncher extends AndroidApplication {
             default -> throw new IllegalArgumentException(
                     "orientation must be landscape or portrait, was: " + orientation);
         }
+    }
+
+    /** Dev-only: swaps portrait and landscape; the app stays in the requested orientation until restarted. */
+    private void toggleOrientation() {
+        runOnUiThread(() -> {
+            boolean isLandscape = getResources().getConfiguration().orientation
+                    == Configuration.ORIENTATION_LANDSCAPE;
+            setRequestedOrientation(isLandscape
+                    ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        });
     }
 
     /**

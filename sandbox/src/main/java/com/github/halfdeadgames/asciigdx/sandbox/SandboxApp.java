@@ -21,6 +21,7 @@ public class SandboxApp extends ApplicationAdapter {
 
     private final Array<SandboxScene> scenes = new Array<>();
     private final Function<String, String> settings;
+    private final Runnable orientationToggle;
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
@@ -36,7 +37,15 @@ public class SandboxApp extends ApplicationAdapter {
 
     /** @param settings key to value lookup returning null when missing; see {@link CaptureConfig} */
     public SandboxApp(Function<String, String> settings) {
+        this(settings, () -> { });
+    }
+
+    /**
+     * @param orientationToggle called on the GL thread when the F9 dev key is pressed
+     */
+    public SandboxApp(Function<String, String> settings, Runnable orientationToggle) {
         this.settings = settings;
+        this.orientationToggle = orientationToggle;
     }
 
     @Override
@@ -155,6 +164,10 @@ public class SandboxApp extends ApplicationAdapter {
             } else {
                 Gdx.app.exit();
             }
+            return true;
+        }
+        if (keycode == Input.Keys.F9) {
+            orientationToggle.run();
             return true;
         }
         if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.BACKSPACE) {
