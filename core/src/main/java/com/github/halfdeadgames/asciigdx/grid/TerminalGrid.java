@@ -123,15 +123,7 @@ public final class TerminalGrid implements TerminalView {
      * @param codePoint glyph as a Unicode code point
      */
     public void setGlyph(int x, int y, int codePoint) {
-        if (!contains(x, y)) {
-            return;
-        }
-        int index = indexOf(x, y);
-        if (glyphs[index] == codePoint) {
-            return;
-        }
-        glyphs[index] = codePoint;
-        markTrackers(index);
+        writeChannel(glyphs, x, y, codePoint);
     }
 
     /**
@@ -144,15 +136,7 @@ public final class TerminalGrid implements TerminalView {
      * @param foregroundRgba foreground color as RGBA8888
      */
     public void setForeground(int x, int y, int foregroundRgba) {
-        if (!contains(x, y)) {
-            return;
-        }
-        int index = indexOf(x, y);
-        if (foregrounds[index] == foregroundRgba) {
-            return;
-        }
-        foregrounds[index] = foregroundRgba;
-        markTrackers(index);
+        writeChannel(foregrounds, x, y, foregroundRgba);
     }
 
     /**
@@ -165,14 +149,18 @@ public final class TerminalGrid implements TerminalView {
      * @param backgroundRgba background color as RGBA8888
      */
     public void setBackground(int x, int y, int backgroundRgba) {
+        writeChannel(backgrounds, x, y, backgroundRgba);
+    }
+
+    private void writeChannel(int[] channel, int x, int y, int value) {
         if (!contains(x, y)) {
             return;
         }
         int index = indexOf(x, y);
-        if (backgrounds[index] == backgroundRgba) {
+        if (channel[index] == value) {
             return;
         }
-        backgrounds[index] = backgroundRgba;
+        channel[index] = value;
         markTrackers(index);
     }
 

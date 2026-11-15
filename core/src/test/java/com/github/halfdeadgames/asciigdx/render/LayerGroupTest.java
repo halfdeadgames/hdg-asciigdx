@@ -8,9 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -49,22 +47,7 @@ class LayerGroupTest {
         }
     }
 
-    private static final class SilentRenderer implements LayerRenderer {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
-
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> new SilentRenderer());
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final FakeSource font = new FakeSource();
     private final ResolvedEffects resolved = new ResolvedEffects();
 
@@ -267,7 +250,7 @@ class LayerGroupTest {
 
     @Test
     void layerOfAnotherStackIsRejected() {
-        LayerStack other = new LayerStack((grid, source, shared) -> new SilentRenderer());
+        LayerStack other = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
         Layer foreign = other.add(new TerminalGrid(2, 2), font);
         LayerGroup group = stack.addGroup();
 
@@ -573,7 +556,7 @@ class LayerGroupTest {
 
     @Test
     void parentFromAnotherStackIsRejected() {
-        LayerStack other = new LayerStack((grid, source, shared) -> new SilentRenderer());
+        LayerStack other = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
         LayerGroup foreign = other.addGroup();
         LayerGroup group = stack.addGroup();
 

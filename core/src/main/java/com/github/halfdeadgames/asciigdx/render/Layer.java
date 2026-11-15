@@ -21,7 +21,7 @@ public final class Layer {
     /** The most free sprites one layer can hold: 16383. */
     public static final int MAX_SPRITES = CellVertexLayout.MAX_QUADS_PER_MESH;
 
-    private final TerminalView grid;
+    private final TerminalGrid grid;
     private GlyphSource glyphSource;
     private final LayerRenderer renderer;
     private LayerStack owner;
@@ -51,7 +51,7 @@ public final class Layer {
 
     private enum ClipMode { NONE, RECT, STACK }
 
-    Layer(LayerStack owner, TerminalView grid, GlyphSource glyphSource, LayerRenderer renderer) {
+    Layer(LayerStack owner, TerminalGrid grid, GlyphSource glyphSource, LayerRenderer renderer) {
         this.owner = owner;
         this.grid = grid;
         this.glyphSource = glyphSource;
@@ -59,7 +59,13 @@ public final class Layer {
         cellHandleSet = new CellHandleSet(this, grid, renderer);
     }
 
-    /** Returns the grid this layer draws. */
+    /**
+     * Returns the grid this layer draws, as a read-only view. The caller that passed the grid to
+     * {@link LayerStack#add} keeps the writable {@link TerminalGrid}; the layer only scrolls it
+     * (see {@link #scroll} and {@link #enableMapWindow()}).
+     *
+     * @return the same grid instance given when the layer was created; never null
+     */
     public TerminalView getGrid() {
         return grid;
     }
@@ -878,7 +884,7 @@ public final class Layer {
         }
         // Order matters: unhide at old positions first, then move content, then handles.
         cellHandleSet.showGlyphsAtOldPositions();
-        asTerminalGrid().scroll(columns, rows);
+        grid.scroll(columns, rows);
         cellHandleSet.moveWithContent(columns, rows);
         if (mapWindow != null) {
             mapWindow.shiftFillFlags(columns, rows);
@@ -926,7 +932,7 @@ public final class Layer {
      */
     public void enableMapWindow(int marginColumns, int marginRows) {
         requireAttached();
-        var newWindow = new MapWindow(this, asTerminalGrid(), new MapWindowOrigin(marginColumns, marginRows));
+        var newWindow = new MapWindow(this, grid, new MapWindowOrigin(marginColumns, marginRows));
         detachMapWindow();
         mapWindow = newWindow;
         updateMapWindowOrigin();
@@ -1002,11 +1008,6 @@ public final class Layer {
         float cameraY = panel == null ? stack.getCameraY() : panel.getCameraY();
         mapWindow.origin().follow(cameraX * parallaxX, cameraY * parallaxY,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
-    }
-
-    /** Safe because {@link TerminalView} is sealed and permits only {@link TerminalGrid}. */
-    private TerminalGrid asTerminalGrid() {
-        return (TerminalGrid) grid;
     }
 
     /** Returns how many lasting cell handles the layer currently holds. */

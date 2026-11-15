@@ -83,7 +83,7 @@ class LayerCellTest {
     }
 
     private final RecordingRenderer renderer = new RecordingRenderer();
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> renderer);
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> renderer);
     private final TerminalGrid grid = new TerminalGrid(6, 4);
     private final Layer layer = stack.add(grid, new FakeSource());
 

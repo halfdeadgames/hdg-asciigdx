@@ -1,9 +1,6 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Affine2;
-import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 
@@ -20,7 +17,7 @@ public final class HeadlessLayers {
 
     /** Creates a stack whose renderer ignores everything, for tests that move the camera. */
     public static LayerStack createStack() {
-        return new LayerStack((targetGrid, source, shared) -> new SilentRenderer());
+        return TestStacks.withRenderers((targetGrid, source, shared) -> new SilentRenderer());
     }
 
     /** Adds a layer over {@code grid} to a stack from {@link #createStack()}; cells are 8 by 12. */
@@ -47,33 +44,6 @@ public final class HeadlessLayers {
         @Override
         public boolean hasGlyph(int codePoint) {
             return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
-    private static final class SilentRenderer implements LayerRenderer {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
-
-        @Override
-        public void setCellHandles(Array<CellHandle> cellHandles) {
-        }
-
-        @Override
-        public void setCellGlyphHidden(int column, int row, boolean hidden) {
-        }
-
-        @Override
-        public void refreshCell(int column, int row) {
-        }
-
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
         }
 
         @Override

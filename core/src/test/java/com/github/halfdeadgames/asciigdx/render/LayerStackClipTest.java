@@ -82,7 +82,7 @@ class LayerStackClipTest {
         }
     };
 
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> {
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> {
         String name = "L" + created++;
         return new LayerRenderer() {
             @Override

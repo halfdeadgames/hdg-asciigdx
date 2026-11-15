@@ -7,10 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Affine2;
-import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
@@ -45,34 +42,7 @@ class FrameCellHandlesTest {
         }
     }
 
-    private static final class QuietRenderer implements LayerRenderer {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
-
-        @Override
-        public void setCellHandles(Array<CellHandle> cellHandles) {
-        }
-
-        @Override
-        public void setCellGlyphHidden(int column, int row, boolean hidden) {
-        }
-
-        @Override
-        public void refreshCell(int column, int row) {
-        }
-
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> new QuietRenderer());
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final Layer layer = stack.add(new TerminalGrid(6, 4), new FakeSource());
 
     @Test

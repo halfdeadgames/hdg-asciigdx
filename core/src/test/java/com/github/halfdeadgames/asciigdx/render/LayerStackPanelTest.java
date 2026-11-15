@@ -92,7 +92,7 @@ class LayerStackPanelTest {
     private final GridPoint2 cell = new GridPoint2();
 
     private LayerStack newStack(ClipBackend clipBackend) {
-        return new LayerStack((grid, source, shared) -> {
+        return TestStacks.withRenderers((grid, source, shared) -> {
             String name = "L" + created++;
             return new LayerRenderer() {
                 @Override

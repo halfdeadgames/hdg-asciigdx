@@ -14,7 +14,7 @@ class OffscreenFadeTest {
 
     private static final float EPSILON = 1e-6f;
 
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> null);
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> null);
 
     private Layer layerWithSprites(int count) {
         Layer layer = stack.add(new TerminalGrid(2, 2), new NoGlyphs());
@@ -55,7 +55,7 @@ class OffscreenFadeTest {
     }
 
     private Layer layerWithRecordingRenderer() {
-        LayerStack cellStack = new LayerStack((grid, source, shared) -> new LayerRenderer() {
+        LayerStack cellStack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
             @Override
             public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch,
                     Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites, boolean pixelSnapping) {

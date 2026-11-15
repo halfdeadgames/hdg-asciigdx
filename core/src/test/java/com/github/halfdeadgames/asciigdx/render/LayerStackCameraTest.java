@@ -69,7 +69,7 @@ class LayerStackCameraTest {
     }
 
     private final Array<RecordingRenderer> renderers = new Array<>();
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> {
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> {
         RecordingRenderer renderer = new RecordingRenderer();
         renderers.add(renderer);
         return renderer;

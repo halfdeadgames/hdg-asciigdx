@@ -10,7 +10,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 
 /**
  * An ordered stack of {@link Layer}s drawn into one {@link SpriteBatch}. Index 0
@@ -61,14 +61,6 @@ public final class LayerStack implements Disposable {
         this(LayerRendererFactory.SHARED_GRID_RENDERERS, new GlClipBackend(), new GlOffscreenBackend());
     }
 
-    LayerStack(LayerRendererFactory rendererFactory) {
-        this(rendererFactory, new GlClipBackend(), new GlOffscreenBackend());
-    }
-
-    LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend) {
-        this(rendererFactory, clipBackend, new GlOffscreenBackend());
-    }
-
     LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend, OffscreenBackend offscreenBackend) {
         this.rendererFactory = rendererFactory;
         this.clipBackend = clipBackend;
@@ -107,11 +99,16 @@ public final class LayerStack implements Disposable {
     /**
      * Appends a layer on top of the stack.
      *
-     * @param grid the grid to draw
-     * @param glyphSource supplies glyphs and the cell size
+     * @param grid the grid to draw; not null. The caller writes its cells, and the layer may
+     *     scroll it (see {@link Layer#scroll} and {@link Layer#enableMapWindow()}). The layer does
+     *     not own or dispose it
+     * @param glyphSource supplies glyphs and the cell size; not null. The layer does not own or
+     *     dispose it
      * @return the new layer
+     * @throws IllegalArgumentException if the grid or glyph source is null
+     * @throws IllegalStateException if the stack was disposed
      */
-    public Layer add(TerminalView grid, GlyphSource glyphSource) {
+    public Layer add(TerminalGrid grid, GlyphSource glyphSource) {
         return insert(layers.size, grid, glyphSource);
     }
 
@@ -119,11 +116,17 @@ public final class LayerStack implements Disposable {
      * Inserts a layer at a position; layers at and above it move up by one.
      *
      * @param index position from 0 (bottom) to {@link #size()} (top)
+     * @param grid the grid to draw; not null. The caller writes its cells, and the layer may
+     *     scroll it (see {@link Layer#scroll} and {@link Layer#enableMapWindow()}). The layer does
+     *     not own or dispose it
+     * @param glyphSource supplies glyphs and the cell size; not null. The layer does not own or
+     *     dispose it
      * @return the new layer
+     * @throws IllegalArgumentException if the grid or glyph source is null
      * @throws IndexOutOfBoundsException if the index is outside 0 to size
      * @throws IllegalStateException if the stack was disposed
      */
-    public Layer insert(int index, TerminalView grid, GlyphSource glyphSource) {
+    public Layer insert(int index, TerminalGrid grid, GlyphSource glyphSource) {
         requireNotDisposed();
         if (grid == null || glyphSource == null) {
             throw new IllegalArgumentException("grid and glyphSource must not be null");

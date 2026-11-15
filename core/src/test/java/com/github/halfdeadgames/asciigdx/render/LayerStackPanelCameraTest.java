@@ -82,7 +82,7 @@ class LayerStackPanelCameraTest {
         }
     };
 
-    private final LayerStack stack = new LayerStack((grid, source, shared) -> new LayerRenderer() {
+    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
         @Override
         public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
