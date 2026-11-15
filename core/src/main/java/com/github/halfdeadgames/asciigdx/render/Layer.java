@@ -74,8 +74,9 @@ public final class Layer {
      * the current source does nothing.
      *
      * <p>The grid keeps its contents. Its cell count is not changed; resizing the grid to the
-     * new cell size (for example from a {@link FontFit}) is up to the caller. Glyphs missing
-     * from the new source draw as its fallback glyph. The layer does not own the source and
+     * new cell size (for example from a
+     * {@link com.github.halfdeadgames.asciigdx.fit.FontFit}) is up to the caller. Glyphs
+     * missing from the new source draw as its fallback glyph. The layer does not own the source and
      * never disposes it. The offset is not changed.
      *
      * <p>On a {@linkplain #enableMapWindow() map window}, changing the source changes the cell size

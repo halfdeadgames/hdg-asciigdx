@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.render;
+package com.github.halfdeadgames.asciigdx.fit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

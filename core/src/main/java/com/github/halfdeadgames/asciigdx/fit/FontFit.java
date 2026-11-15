@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.render;
+package com.github.halfdeadgames.asciigdx.fit;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import java.util.Arrays;

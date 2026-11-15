@@ -3,9 +3,9 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.render.LayerStack;
 
 /** A scene drawn through an integer-scaled viewport. Holds a main grid and a {@link LayerStack} for extra layers; subclasses fill them and may change them in {@link #update(float)}. */

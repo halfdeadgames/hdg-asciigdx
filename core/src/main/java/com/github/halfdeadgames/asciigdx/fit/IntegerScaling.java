@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.render;
+package com.github.halfdeadgames.asciigdx.fit;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Scaling;

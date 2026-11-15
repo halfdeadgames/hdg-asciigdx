@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
+import com.github.halfdeadgames.asciigdx.fit.GridFit;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-import com.github.halfdeadgames.asciigdx.render.GridFit;
 
 import java.util.Locale;
 
