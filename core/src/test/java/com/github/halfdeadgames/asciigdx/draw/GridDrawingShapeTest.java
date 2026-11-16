@@ -40,7 +40,7 @@ class GridDrawingShapeTest {
     void outlineRectangleLeavesInsideUntouched() {
         TerminalGrid grid = new TerminalGrid(8, 8);
 
-        GridDrawing.fill(grid, new RectangleShape(1, 1, 5, 5, ShapeFill.OUTLINE), '#', RED, BLUE);
+        GridDrawing.fill(grid, RectangleShape.forSquareCells(1, 1, 5, 5, ShapeFill.OUTLINE), '#', RED, BLUE);
 
         assertEquals('#', grid.getCodePoint(1, 1));
         assertEquals('#', grid.getCodePoint(5, 5));
@@ -54,8 +54,8 @@ class GridDrawingShapeTest {
     @Test
     void shapePartlyOffGridWritesOnlyTheVisiblePart() {
         TerminalGrid grid = new TerminalGrid(4, 4);
-        RectangleShape topLeft = new RectangleShape(-2, -2, 4, 4, ShapeFill.FILLED);
-        RectangleShape bottomRight = new RectangleShape(3, 3, 5, 5, ShapeFill.FILLED);
+        RectangleShape topLeft = RectangleShape.forSquareCells(-2, -2, 4, 4, ShapeFill.FILLED);
+        RectangleShape bottomRight = RectangleShape.forSquareCells(3, 3, 5, 5, ShapeFill.FILLED);
 
         assertDoesNotThrow(() -> GridDrawing.fill(grid, topLeft, 'a', RED, BLUE));
         assertDoesNotThrow(() -> GridDrawing.fill(grid, bottomRight, 'b', RED, BLUE));
@@ -71,10 +71,10 @@ class GridDrawingShapeTest {
     void shapeEntirelyOffGridWritesNothing() {
         TerminalGrid grid = new TerminalGrid(4, 4);
 
-        GridDrawing.fill(grid, new RectangleShape(-10, 0, 5, 4, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fill(grid, new RectangleShape(4, 0, 3, 4, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fill(grid, new RectangleShape(0, -5, 4, 5, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fill(grid, new RectangleShape(0, 4, 4, 2, ShapeFill.FILLED), '#', RED, BLUE);
+        GridDrawing.fill(grid, RectangleShape.forSquareCells(-10, 0, 5, 4, ShapeFill.FILLED), '#', RED, BLUE);
+        GridDrawing.fill(grid, RectangleShape.forSquareCells(4, 0, 3, 4, ShapeFill.FILLED), '#', RED, BLUE);
+        GridDrawing.fill(grid, RectangleShape.forSquareCells(0, -5, 4, 5, ShapeFill.FILLED), '#', RED, BLUE);
+        GridDrawing.fill(grid, RectangleShape.forSquareCells(0, 4, 4, 2, ShapeFill.FILLED), '#', RED, BLUE);
 
         assertEquals(0, countGlyphs(grid, '#'));
     }
@@ -96,7 +96,7 @@ class GridDrawingShapeTest {
     void verticalLineWritesOneColumnAndClipsAtBottom() {
         TerminalGrid grid = new TerminalGrid(3, 4);
 
-        GridDrawing.fill(grid, new VerticalLineShape(1, 2, 10), '|', RED, BLUE);
+        GridDrawing.fill(grid, VerticalLineShape.forSquareCells(1, 2, 10), '|', RED, BLUE);
 
         assertEquals('|', grid.getCodePoint(1, 2));
         assertEquals('|', grid.getCodePoint(1, 3));
@@ -119,7 +119,7 @@ class GridDrawingShapeTest {
     void consecutiveCallsDoNotLeakVisitorState() {
         TerminalGrid first = new TerminalGrid(4, 4);
         TerminalGrid second = new TerminalGrid(4, 4);
-        RectangleShape shape = new RectangleShape(0, 0, 2, 2, ShapeFill.FILLED);
+        RectangleShape shape = RectangleShape.forSquareCells(0, 0, 2, 2, ShapeFill.FILLED);
 
         GridDrawing.fill(first, shape, 'a', RED, BLUE);
         GridDrawing.fill(second, shape, 'b', BLUE, RED);

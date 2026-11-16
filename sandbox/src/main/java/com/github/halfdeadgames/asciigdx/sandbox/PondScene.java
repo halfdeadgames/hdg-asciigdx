@@ -80,7 +80,7 @@ class PondScene implements SandboxScene {
     private final int cellCount;
     private final boolean clockPinned;
     private final WakeRipples wakeRipples = new WakeRipples();
-    private final RectangleShape wakeArea = new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED);
+    private final RectangleShape wakeArea = RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED);
     private final EffectZone wakeZone;
     private final PointerAim pointerAim = new PointerAim() {
         @Override

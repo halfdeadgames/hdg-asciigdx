@@ -41,7 +41,7 @@ class LineShapeTest {
 
     @Test
     void verticalLineScalesDistanceByAspect() {
-        final VerticalLineShape shape = new VerticalLineShape(1, 1, 3, 2f);
+        final VerticalLineShape shape = VerticalLineShape.forCellAspect(1, 1, 3, 2f);
         final RecordedVisits visits = RecordedVisits.of(shape);
 
         assertEquals(3, visits.count());
@@ -60,7 +60,7 @@ class LineShapeTest {
     @Test
     void lengthOneHasFractionZero() {
         final RecordedVisits horizontal = RecordedVisits.of(new HorizontalLineShape(0, 0, 1));
-        final RecordedVisits vertical = RecordedVisits.of(new VerticalLineShape(0, 0, 1));
+        final RecordedVisits vertical = RecordedVisits.of(VerticalLineShape.forSquareCells(0, 0, 1));
 
         assertEquals(1, horizontal.count());
         assertEquals(0f, horizontal.get(0).distanceFraction(), 0f);
@@ -78,7 +78,7 @@ class LineShapeTest {
         assertEquals(7, horizontal.getTop());
         assertEquals(-5, RecordedVisits.of(horizontal).get(0).column());
 
-        final VerticalLineShape vertical = new VerticalLineShape(0, 0, 2);
+        final VerticalLineShape vertical = VerticalLineShape.forSquareCells(0, 0, 2);
         vertical.setPosition(4, -6);
         vertical.setLength(4);
         assertEquals(4, vertical.getLeft());
@@ -90,15 +90,15 @@ class LineShapeTest {
     @Test
     void invalidArgumentsThrow() {
         assertThrows(IllegalArgumentException.class, () -> new HorizontalLineShape(0, 0, 0));
-        assertThrows(IllegalArgumentException.class, () -> new VerticalLineShape(0, 0, 0));
-        assertThrows(IllegalArgumentException.class, () -> new VerticalLineShape(0, 0, 1, 0f));
-        assertThrows(IllegalArgumentException.class, () -> new VerticalLineShape(0, 0, 1, Float.NaN));
+        assertThrows(IllegalArgumentException.class, () -> VerticalLineShape.forSquareCells(0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> VerticalLineShape.forCellAspect(0, 0, 1, 0f));
+        assertThrows(IllegalArgumentException.class, () -> VerticalLineShape.forCellAspect(0, 0, 1, Float.NaN));
         assertThrows(IllegalArgumentException.class, () -> new HorizontalLineShape(0, 0, 1).setLength(0));
         assertThrows(IllegalArgumentException.class,
                 () -> new HorizontalLineShape(Integer.MAX_VALUE, 0, 2));
         assertThrows(IllegalArgumentException.class,
                 () -> new HorizontalLineShape(Integer.MAX_VALUE - 2, 0, 3));
         assertThrows(IllegalArgumentException.class,
-                () -> new VerticalLineShape(0, Integer.MAX_VALUE - 2, 3));
+                () -> VerticalLineShape.forSquareCells(0, Integer.MAX_VALUE - 2, 3));
     }
 }

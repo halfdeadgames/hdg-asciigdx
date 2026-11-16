@@ -32,7 +32,7 @@ class EffectZoneMapWindowTest {
             cell.getRow(), where.getColumn(), where.getRow(), where.getZoneColumn(), where.getZoneRow()));
 
     private static RectangleShape filledRectangle(int left, int top, int width, int height) {
-        return new RectangleShape(left, top, width, height, ShapeFill.FILLED);
+        return RectangleShape.forSquareCells(left, top, width, height, ShapeFill.FILLED);
     }
 
     private void moveCameraToCell(int column, int row) {

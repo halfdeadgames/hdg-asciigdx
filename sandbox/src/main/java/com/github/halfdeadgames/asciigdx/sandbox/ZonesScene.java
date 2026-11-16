@@ -78,11 +78,11 @@ class ZonesScene extends GridScene {
         spellShape = createCircle(SPELL_START_X, SPELL_START_Y, ShapeFill.FILLED, squareGlyphs);
         spellZone = new EffectZone(spellShape, spellEffects.current());
         captionZone = new EffectZone(
-            new RectangleShape(ZonesBackdrop.CAPTION_COLUMN, ZonesBackdrop.CAPTION_ROW,
+            RectangleShape.forSquareCells(ZonesBackdrop.CAPTION_COLUMN, ZonesBackdrop.CAPTION_ROW,
                 ZonesBackdrop.CAPTION.length(), 1, ShapeFill.FILLED),
             CellEffects.wave(0.4f, 1.2f, Phase.alongColumns(10f)));
         fullScreenZone = new EffectZone(
-            new RectangleShape(0, 0, COLUMNS, ROWS, ShapeFill.FILLED),
+            RectangleShape.forSquareCells(0, 0, COLUMNS, ROWS, ShapeFill.FILLED),
             CellEffects.wave(0.2f, 1f, Phase.scattered(FULL_SCREEN_SEED)));
         redrawBackdrop();
         pinClockIfRequested(zonesTimeSetting);

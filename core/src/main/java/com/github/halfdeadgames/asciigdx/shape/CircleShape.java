@@ -8,6 +8,9 @@ import java.util.Objects;
  * containing the circle's center, so it is never empty. A single-cell shape always reports a distance
  * fraction of 0.
  *
+ * <p>The outline consists of the inside cells that have at least one of their four side neighbors outside,
+ * which gives a closed ring one cell thick.
+ *
  * <p>Unlike the other shapes, the aspect (cell height divided by cell width) is required and has no
  * default, because it changes the circle's shape: tall cells give a circle spanning fewer rows.
  *
@@ -17,8 +20,13 @@ import java.util.Objects;
  * <p>The center plus the reach (the radius in columns, the radius divided by the aspect in rows) must stay
  * within {@link #COORDINATE_LIMIT} cells of the origin; circles that reach farther are rejected.
  *
- * <p>The outline consists of the inside cells that have at least one of their four side neighbors outside,
- * which gives a closed ring one cell thick.
+ * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are visited row
+ * by row from top to bottom and left to right within a row, as guaranteed by {@link CellShape}.
+ * {@link #forEachCell(ShapeCellVisitor)} allocates nothing.
+ *
+ * <p>Instances are mutable and not thread-safe. A setter takes effect on the next
+ * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from inside
+ * its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape is unchanged.
  */
 public final class CircleShape implements CellShape {
 
@@ -50,8 +58,13 @@ public final class CircleShape implements CellShape {
      * @param centerX                 center in column units; 10.5f is the middle of column 10
      * @param centerY                 center in row units; 10.5f is the middle of row 10
      * @param radius                  radius in column widths; finite and above 0
-     * @param fill                    filled or outline
-     * @param rowHeightPerColumnWidth cell height divided by cell width; finite and above 0
+     * @param fill                    filled or outline; must not be {@code null}
+     * @param rowHeightPerColumnWidth cell height divided by cell width (2 for tall 1:2 cells); finite and
+     *                                above 0
+     * @throws NullPointerException     if {@code fill} is {@code null}
+     * @throws IllegalArgumentException if {@code rowHeightPerColumnWidth} or {@code radius} is not finite or
+     *                                  is not above 0, if {@code centerX} or {@code centerY} is not finite,
+     *                                  or if the circle's reach would go beyond {@link #COORDINATE_LIMIT}
      */
     public CircleShape(float centerX, float centerY, float radius, ShapeFill fill,
                        float rowHeightPerColumnWidth) {
@@ -65,45 +78,67 @@ public final class CircleShape implements CellShape {
     }
 
     /**
-     * Moves the circle.
+     * Moves the circle, keeping its radius.
      *
-     * @param newCenterX center in column units
-     * @param newCenterY center in row units
+     * @param centerX center in column units; finite
+     * @param centerY center in row units; finite
+     * @throws IllegalArgumentException if {@code centerX} or {@code centerY} is not finite, or if the
+     *                                  circle's reach would go beyond {@link #COORDINATE_LIMIT}; the shape
+     *                                  is then unchanged
      */
-    public void setCenter(float newCenterX, float newCenterY) {
-        requireReach(newCenterX, newCenterY, radius);
-        centerX = newCenterX;
-        centerY = newCenterY;
+    public void setCenter(float centerX, float centerY) {
+        requireReach(centerX, centerY, radius);
+        this.centerX = centerX;
+        this.centerY = centerY;
         recompute();
     }
 
     /**
-     * Changes the radius.
+     * Changes the radius, keeping the center.
      *
-     * @param newRadius radius in column widths; finite and above 0
+     * @param radius radius in column widths; finite and above 0
+     * @throws IllegalArgumentException if {@code radius} is not finite or is not above 0, or if the
+     *                                  circle's reach would go beyond {@link #COORDINATE_LIMIT}; the shape
+     *                                  is then unchanged
      */
-    public void setRadius(float newRadius) {
-        requireReach(centerX, centerY, requireValidRadius(newRadius));
-        radius = newRadius;
+    public void setRadius(float radius) {
+        requireReach(centerX, centerY, requireValidRadius(radius));
+        this.radius = radius;
         recompute();
     }
 
-    /** Returns the center in column units. */
+    /**
+     * Returns the center column.
+     *
+     * @return the center in column units
+     */
     public float getCenterX() {
         return centerX;
     }
 
-    /** Returns the center in row units. */
+    /**
+     * Returns the center row.
+     *
+     * @return the center in row units
+     */
     public float getCenterY() {
         return centerY;
     }
 
-    /** Returns the radius in column widths. */
+    /**
+     * Returns the radius.
+     *
+     * @return the radius in column widths
+     */
     public float getRadius() {
         return radius;
     }
 
-    /** Returns whether the circle is filled or outlined. */
+    /**
+     * Returns the fill mode.
+     *
+     * @return whether the circle is filled or outlined; never {@code null}
+     */
     public ShapeFill getFill() {
         return fill;
     }

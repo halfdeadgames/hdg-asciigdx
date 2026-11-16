@@ -11,7 +11,7 @@ class RectangleShapeTest {
 
     @Test
     void filledVisitsEveryCellInRowMajorOrder() {
-        final RectangleShape shape = new RectangleShape(2, 5, 4, 3, ShapeFill.FILLED);
+        final RectangleShape shape = RectangleShape.forSquareCells(2, 5, 4, 3, ShapeFill.FILLED);
         final RecordedVisits visits = RecordedVisits.of(shape);
 
         assertEquals(12, visits.count());
@@ -25,7 +25,7 @@ class RectangleShapeTest {
 
     @Test
     void boundsAreInclusive() {
-        final RectangleShape shape = new RectangleShape(2, 5, 4, 3, ShapeFill.FILLED);
+        final RectangleShape shape = RectangleShape.forSquareCells(2, 5, 4, 3, ShapeFill.FILLED);
 
         assertEquals(2, shape.getLeft());
         assertEquals(5, shape.getTop());
@@ -35,7 +35,7 @@ class RectangleShapeTest {
 
     @Test
     void centerCellHasZeroDistanceAndCornersHaveFractionOne() {
-        final RecordedVisits visits = RecordedVisits.of(new RectangleShape(0, 0, 3, 3, ShapeFill.FILLED));
+        final RecordedVisits visits = RecordedVisits.of(RectangleShape.forSquareCells(0, 0, 3, 3, ShapeFill.FILLED));
 
         assertEquals(0f, visits.at(1, 1).distance(), 0f);
         assertEquals(0f, visits.at(1, 1).distanceFraction(), 0f);
@@ -48,7 +48,8 @@ class RectangleShapeTest {
 
     @Test
     void rowDistanceIsScaledByAspect() {
-        final RecordedVisits visits = RecordedVisits.of(new RectangleShape(0, 0, 3, 3, ShapeFill.FILLED, 2f));
+        final RecordedVisits visits = RecordedVisits.of(
+                RectangleShape.forCellAspect(0, 0, 3, 3, ShapeFill.FILLED, 2f));
 
         assertEquals(2f, visits.at(1, 0).distance(), 1e-6f);
         assertEquals(1f, visits.largestFraction(), 0f);
@@ -56,7 +57,7 @@ class RectangleShapeTest {
 
     @Test
     void outlineHasBorderCellsOnly() {
-        final RectangleShape shape = new RectangleShape(0, 0, 5, 4, ShapeFill.OUTLINE);
+        final RectangleShape shape = RectangleShape.forSquareCells(0, 0, 5, 4, ShapeFill.OUTLINE);
         final RecordedVisits visits = RecordedVisits.of(shape);
 
         assertEquals(2 * 5 + 2 * 4 - 4, visits.count());
@@ -81,7 +82,8 @@ class RectangleShapeTest {
 
     @Test
     void singleCellFractionIsZero() {
-        final RecordedVisits visits = RecordedVisits.of(new RectangleShape(4, 4, 1, 1, ShapeFill.FILLED));
+        final RecordedVisits visits = RecordedVisits.of(
+                RectangleShape.forSquareCells(4, 4, 1, 1, ShapeFill.FILLED));
 
         assertEquals(1, visits.count());
         assertEquals(0f, visits.get(0).distanceFraction(), 0f);
@@ -89,7 +91,7 @@ class RectangleShapeTest {
 
     @Test
     void movingChangesVisitedCellsAndBounds() {
-        final RectangleShape shape = new RectangleShape(0, 0, 2, 2, ShapeFill.FILLED);
+        final RectangleShape shape = RectangleShape.forSquareCells(0, 0, 2, 2, ShapeFill.FILLED);
         shape.setPosition(10, 20);
         final RecordedVisits visits = RecordedVisits.of(shape);
 
@@ -106,7 +108,8 @@ class RectangleShapeTest {
 
     @Test
     void negativeCoordinatesAreVisitedAsIs() {
-        final RecordedVisits visits = RecordedVisits.of(new RectangleShape(-2, -1, 2, 2, ShapeFill.FILLED));
+        final RecordedVisits visits = RecordedVisits.of(
+                RectangleShape.forSquareCells(-2, -1, 2, 2, ShapeFill.FILLED));
 
         assertEquals(-2, visits.get(0).column());
         assertEquals(-1, visits.get(0).row());
@@ -115,24 +118,27 @@ class RectangleShapeTest {
 
     @Test
     void invalidArgumentsThrow() {
-        assertThrows(IllegalArgumentException.class, () -> new RectangleShape(0, 0, 0, 1, ShapeFill.FILLED));
-        assertThrows(IllegalArgumentException.class, () -> new RectangleShape(0, 0, 1, 0, ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED, 0f));
+                () -> RectangleShape.forSquareCells(0, 0, 0, 1, ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED, Float.NaN));
+                () -> RectangleShape.forSquareCells(0, 0, 1, 0, ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(Integer.MAX_VALUE, 0, 2, 1, ShapeFill.FILLED));
+                () -> RectangleShape.forCellAspect(0, 0, 1, 1, ShapeFill.FILLED, 0f));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(Integer.MAX_VALUE - 2, 0, 3, 1, ShapeFill.FILLED));
+                () -> RectangleShape.forCellAspect(0, 0, 1, 1, ShapeFill.FILLED, Float.NaN));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(0, Integer.MAX_VALUE - 2, 1, 3, ShapeFill.FILLED));
+                () -> RectangleShape.forSquareCells(Integer.MAX_VALUE, 0, 2, 1, ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED).setSize(0, 1));
+                () -> RectangleShape.forSquareCells(Integer.MAX_VALUE - 2, 0, 3, 1, ShapeFill.FILLED));
+        assertThrows(IllegalArgumentException.class,
+                () -> RectangleShape.forSquareCells(0, Integer.MAX_VALUE - 2, 1, 3, ShapeFill.FILLED));
+        assertThrows(IllegalArgumentException.class,
+                () -> RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED).setSize(0, 1));
     }
 
     private static int outlineCount(int width, int height) {
-        final RecordedVisits visits = RecordedVisits.of(new RectangleShape(0, 0, width, height, ShapeFill.OUTLINE));
+        final RecordedVisits visits = RecordedVisits.of(
+                RectangleShape.forSquareCells(0, 0, width, height, ShapeFill.OUTLINE));
         assertTrue(visits.hasNoDuplicates());
         return visits.count();
     }

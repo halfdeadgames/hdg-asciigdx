@@ -14,15 +14,31 @@ public interface CellShape {
      */
     void forEachCell(ShapeCellVisitor visitor);
 
-    /** Returns the smallest column of any visited cell (inclusive). */
+    /**
+     * Returns the left edge of the bounds.
+     *
+     * @return the smallest column of any visited cell (inclusive)
+     */
     int getLeft();
 
-    /** Returns the smallest row of any visited cell (inclusive). */
+    /**
+     * Returns the top edge of the bounds.
+     *
+     * @return the smallest row of any visited cell (inclusive)
+     */
     int getTop();
 
-    /** Returns the largest column of any visited cell (inclusive). */
+    /**
+     * Returns the right edge of the bounds.
+     *
+     * @return the largest column of any visited cell (inclusive)
+     */
     int getRight();
 
-    /** Returns the largest row of any visited cell (inclusive). */
+    /**
+     * Returns the bottom edge of the bounds.
+     *
+     * @return the largest row of any visited cell (inclusive)
+     */
     int getBottom();
 }

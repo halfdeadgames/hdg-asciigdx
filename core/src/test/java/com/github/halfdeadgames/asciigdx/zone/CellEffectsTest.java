@@ -318,7 +318,7 @@ class CellEffectsTest {
 
     @Test
     void combinedEffectComposesWithAnotherZoneAndUsesTheLayersCellSize() {
-        RectangleShape shape = new RectangleShape(2, 2, 1, 1, ShapeFill.FILLED);
+        RectangleShape shape = RectangleShape.forSquareCells(2, 2, 1, 1, ShapeFill.FILLED);
         EffectZone waveZone = new EffectZone(shape, CellEffects.combine(
                 CellEffects.wave(0.5f, 4f, Phase.sync())));
         EffectZone nudgeZone = new EffectZone(shape, (cell, cellWhere, time) -> cell.offsetBy(0f, 1f));
@@ -334,7 +334,7 @@ class CellEffectsTest {
     @Test
     void zoneFillsCellSizeFromTheLayersGlyphSource() {
         float[] seen = new float[2];
-        RectangleShape shape = new RectangleShape(0, 0, 1, 1, ShapeFill.FILLED);
+        RectangleShape shape = RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED);
 
         new EffectZone(shape, (cell, cellWhere, time) -> {
             seen[0] = cellWhere.getCellWidth();

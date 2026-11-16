@@ -43,7 +43,7 @@ class EffectZoneTest {
     private final RecordingEffect effect = new RecordingEffect();
 
     private static RectangleShape filledRectangle(int left, int top, int width, int height) {
-        return new RectangleShape(left, top, width, height, ShapeFill.FILLED);
+        return RectangleShape.forSquareCells(left, top, width, height, ShapeFill.FILLED);
     }
 
     private static List<Call> expectedCalls(CellShape shape, int gridWidth, int gridHeight, float time) {

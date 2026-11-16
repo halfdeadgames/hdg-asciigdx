@@ -2,7 +2,20 @@ package com.github.halfdeadgames.asciigdx.shape;
 
 import java.util.Objects;
 
-/** A rectangle of cells, filled or outlined. Its center is the geometric center of the rectangle. */
+/**
+ * A rectangle of cells, filled or outlined. Its center is the geometric center of the rectangle.
+ *
+ * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are visited row
+ * by row from top to bottom and left to right within a row, as guaranteed by {@link CellShape}.
+ * {@link #forEachCell(ShapeCellVisitor)} allocates nothing.
+ *
+ * <p>Instances are mutable and not thread-safe. A setter takes effect on the next
+ * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from inside
+ * its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape is unchanged.
+ *
+ * <p>Create instances with {@link #forSquareCells(int, int, int, int, ShapeFill)} or
+ * {@link #forCellAspect(int, int, int, int, ShapeFill, float)}.
+ */
 public final class RectangleShape implements CellShape {
 
     private final float rowHeightPerColumnWidth;
@@ -13,33 +26,8 @@ public final class RectangleShape implements CellShape {
     private int height;
     private float largestDistance;
 
-    /**
-     * Creates a rectangle with an aspect of 1, for square cells. The aspect only affects reported distances,
-     * never which cells are visited; for tall cells, use the other constructor so distances match the
-     * on-screen spacing.
-     *
-     * @param left   leftmost column
-     * @param top    top row
-     * @param width  width in cells, at least 1
-     * @param height height in cells, at least 1
-     * @param fill   filled or outline
-     */
-    public RectangleShape(int left, int top, int width, int height, ShapeFill fill) {
-        this(left, top, width, height, fill, 1f);
-    }
-
-    /**
-     * Creates a rectangle. The aspect only affects reported distances, never which cells are visited.
-     *
-     * @param left                    leftmost column
-     * @param top                     top row
-     * @param width                   width in cells, at least 1
-     * @param height                  height in cells, at least 1
-     * @param fill                    filled or outline
-     * @param rowHeightPerColumnWidth cell height divided by cell width; finite and above 0
-     */
-    public RectangleShape(int left, int top, int width, int height, ShapeFill fill,
-                          float rowHeightPerColumnWidth) {
+    private RectangleShape(int left, int top, int width, int height, ShapeFill fill,
+                           float rowHeightPerColumnWidth) {
         this.fill = Objects.requireNonNull(fill, "fill");
         this.rowHeightPerColumnWidth = ShapeMath.requireValidAspect(rowHeightPerColumnWidth);
         ShapeMath.requireSpan(left, width, "width");
@@ -52,43 +40,101 @@ public final class RectangleShape implements CellShape {
     }
 
     /**
+     * Creates a rectangle for square cells (an aspect of 1). The aspect only affects reported distances,
+     * never which cells are visited; for tall cells, use
+     * {@link #forCellAspect(int, int, int, int, ShapeFill, float)} so distances match the on-screen spacing.
+     *
+     * @param left   leftmost column, in cells; may be negative
+     * @param top    top row, in cells; may be negative
+     * @param width  width in cells, at least 1
+     * @param height height in cells, at least 1
+     * @param fill   filled or outline; must not be {@code null}
+     * @return a new rectangle
+     * @throws NullPointerException     if {@code fill} is {@code null}
+     * @throws IllegalArgumentException if {@code width} or {@code height} is below 1, or if the rectangle's
+     *                                  last column or row would reach {@link Integer#MAX_VALUE}
+     */
+    public static RectangleShape forSquareCells(int left, int top, int width, int height, ShapeFill fill) {
+        return new RectangleShape(left, top, width, height, fill, 1f);
+    }
+
+    /**
+     * Creates a rectangle for cells of any shape. The aspect only affects reported distances, never which
+     * cells are visited.
+     *
+     * @param left                    leftmost column, in cells; may be negative
+     * @param top                     top row, in cells; may be negative
+     * @param width                   width in cells, at least 1
+     * @param height                  height in cells, at least 1
+     * @param fill                    filled or outline; must not be {@code null}
+     * @param rowHeightPerColumnWidth cell height divided by cell width (2 for tall 1:2 cells); finite and
+     *                                above 0
+     * @return a new rectangle
+     * @throws NullPointerException     if {@code fill} is {@code null}
+     * @throws IllegalArgumentException if {@code rowHeightPerColumnWidth} is not finite or is not above 0,
+     *                                  if {@code width} or {@code height} is below 1, or if the rectangle's
+     *                                  last column or row would reach {@link Integer#MAX_VALUE}
+     */
+    public static RectangleShape forCellAspect(int left, int top, int width, int height, ShapeFill fill,
+                                               float rowHeightPerColumnWidth) {
+        return new RectangleShape(left, top, width, height, fill, rowHeightPerColumnWidth);
+    }
+
+    /**
      * Moves the rectangle, keeping its size.
      *
-     * @param newLeft leftmost column
-     * @param newTop  top row
+     * @param left leftmost column, in cells; may be negative
+     * @param top  top row, in cells; may be negative
+     * @throws IllegalArgumentException if the rectangle's last column or row would reach
+     *                                  {@link Integer#MAX_VALUE}; the shape is then unchanged
      */
-    public void setPosition(int newLeft, int newTop) {
-        ShapeMath.requireSpan(newLeft, width, "width");
-        ShapeMath.requireSpan(newTop, height, "height");
-        left = newLeft;
-        top = newTop;
+    public void setPosition(int left, int top) {
+        ShapeMath.requireSpan(left, width, "width");
+        ShapeMath.requireSpan(top, height, "height");
+        this.left = left;
+        this.top = top;
     }
 
     /**
      * Resizes the rectangle, keeping its top-left cell.
      *
-     * @param newWidth  width in cells, at least 1
-     * @param newHeight height in cells, at least 1
+     * @param width  width in cells, at least 1
+     * @param height height in cells, at least 1
+     * @throws IllegalArgumentException if {@code width} or {@code height} is below 1, or if the rectangle's
+     *                                  last column or row would reach {@link Integer#MAX_VALUE}; the shape
+     *                                  is then unchanged
      */
-    public void setSize(int newWidth, int newHeight) {
-        ShapeMath.requireSpan(left, newWidth, "width");
-        ShapeMath.requireSpan(top, newHeight, "height");
-        width = newWidth;
-        height = newHeight;
+    public void setSize(int width, int height) {
+        ShapeMath.requireSpan(left, width, "width");
+        ShapeMath.requireSpan(top, height, "height");
+        this.width = width;
+        this.height = height;
         refreshLargestDistance();
     }
 
-    /** Returns the width in cells. */
+    /**
+     * Returns the width.
+     *
+     * @return the width in cells, at least 1
+     */
     public int getWidth() {
         return width;
     }
 
-    /** Returns the height in cells. */
+    /**
+     * Returns the height.
+     *
+     * @return the height in cells, at least 1
+     */
     public int getHeight() {
         return height;
     }
 
-    /** Returns whether the rectangle is filled or outlined. */
+    /**
+     * Returns the fill mode.
+     *
+     * @return whether the rectangle is filled or outlined; never {@code null}
+     */
     public ShapeFill getFill() {
         return fill;
     }
