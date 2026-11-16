@@ -4,6 +4,10 @@ package com.github.halfdeadgames.asciigdx.tween;
 @FunctionalInterface
 public interface FloatSetter {
 
-    /** Writes the new value. */
+    /**
+     * Writes the new value to the target property.
+     *
+     * @param value the value to write
+     */
     void set(float value);
 }

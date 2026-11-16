@@ -13,6 +13,15 @@ public final class ColorTrack {
     private final int fromRgba;
     private final int toRgba;
 
+    /**
+     * Creates a color track.
+     *
+     * @param amount track giving the mix amount over time; not null. This track starts and ends
+     *     when {@code amount} does.
+     * @param fromRgba color at amount 0, packed as RGBA8888
+     * @param toRgba color at amount 1, packed as RGBA8888
+     * @throws IllegalArgumentException if {@code amount} is null
+     */
     public ColorTrack(FloatTrack amount, int fromRgba, int toRgba) {
         if (amount == null) {
             throw new IllegalArgumentException("amount must not be null");
@@ -22,22 +31,48 @@ public final class ColorTrack {
         this.toRgba = toRgba;
     }
 
+    /**
+     * Returns the color at the given time. Any time can be queried in any order.
+     *
+     * @param timeSeconds the time to query, in seconds
+     * @return the mixed color packed as RGBA8888
+     */
     public int getColorAt(float timeSeconds) {
         return CellColor.mixOklab(fromRgba, toRgba, amount.getValueAt(timeSeconds));
     }
 
+    /**
+     * Returns the time at which the color starts changing.
+     *
+     * @return the start time of the amount track, in seconds
+     */
     public float getStartSeconds() {
         return amount.getStartSeconds();
     }
 
+    /**
+     * Returns the time from which the color holds its last value.
+     *
+     * @return the end time of the amount track, in seconds
+     */
     public float getEndSeconds() {
         return amount.getEndSeconds();
     }
 
+    /**
+     * Returns the color at amount 0.
+     *
+     * @return the start color packed as RGBA8888
+     */
     public int getFromRgba() {
         return fromRgba;
     }
 
+    /**
+     * Returns the color at amount 1.
+     *
+     * @return the end color packed as RGBA8888
+     */
     public int getToRgba() {
         return toRgba;
     }

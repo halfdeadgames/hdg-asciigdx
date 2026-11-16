@@ -4,6 +4,11 @@ package com.github.halfdeadgames.asciigdx.tween;
 @FunctionalInterface
 public interface IndexedFloatSetter {
 
-    /** Writes {@code value} for the item at {@code index}. */
+    /**
+     * Writes the value for one item of the group.
+     *
+     * @param index the item position, from 0 up to the count given when binding
+     * @param value the value to write for that item
+     */
     void set(int index, float value);
 }

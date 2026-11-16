@@ -9,6 +9,14 @@ public final class StaggeredTrack {
     private final FloatTrack track;
     private final float stepSeconds;
 
+    /**
+     * Creates a staggered track.
+     *
+     * @param track the track every item plays; not null
+     * @param stepSeconds delay between consecutive items in seconds; finite and at least 0
+     * @throws IllegalArgumentException if the track is null or the step is NaN, infinite, or
+     *     negative
+     */
     public StaggeredTrack(FloatTrack track, float stepSeconds) {
         if (track == null) {
             throw new IllegalArgumentException("track must not be null");
@@ -21,18 +29,49 @@ public final class StaggeredTrack {
         this.stepSeconds = stepSeconds;
     }
 
+    /**
+     * Returns the value of one item at the given time. Item 0 plays the track as is, and item
+     * {@code n} plays it {@code n * stepSeconds} later.
+     *
+     * @param index the item position, 0 or greater
+     * @param timeSeconds the time to query, in seconds
+     * @return the item's value at that time
+     * @throws IllegalArgumentException if {@code index} is negative
+     */
     public float getValueAt(int index, float timeSeconds) {
         return track.getValueAt(timeSeconds - delayOf(index));
     }
 
+    /**
+     * Returns the time at which one item starts changing.
+     *
+     * @param index the item position, 0 or greater
+     * @return the item's start time in seconds
+     * @throws IllegalArgumentException if {@code index} is negative
+     */
     public float getStartSecondsOf(int index) {
         return track.getStartSeconds() + delayOf(index);
     }
 
+    /**
+     * Returns the time from which one item holds its last value.
+     *
+     * @param index the item position, 0 or greater
+     * @return the item's end time in seconds
+     * @throws IllegalArgumentException if {@code index} is negative
+     */
     public float getEndSecondsOf(int index) {
         return track.getEndSeconds() + delayOf(index);
     }
 
+    /**
+     * Returns whether one item has begun changing at the given time.
+     *
+     * @param index the item position, 0 or greater
+     * @param timeSeconds the time to query, in seconds
+     * @return true if {@code timeSeconds} is at or after the item's start
+     * @throws IllegalArgumentException if {@code index} is negative
+     */
     public boolean hasStartedAt(int index, float timeSeconds) {
         return timeSeconds >= getStartSecondsOf(index);
     }

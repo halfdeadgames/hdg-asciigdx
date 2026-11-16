@@ -65,7 +65,8 @@ public final class Timeline {
      *
      * <pre>{@code
      * Timeline timeline = Timeline.writingEveryApply();
-     * timeline.bind(track, degrees -> layer.obtainFrameCellHandle(column, row).setRotation(degrees));
+     * timeline.bind(track,
+     *         degrees -> layer.obtainFrameCellHandle(column, row).setRotation(degrees));
      * // each frame, after LayerStack.beginCellEffects
      * timeline.apply(elapsedSeconds);
      * }</pre>
@@ -77,8 +78,12 @@ public final class Timeline {
     }
 
     /**
-     * Writes the track value to the setter on every apply.
+     * Binds a float track to a setter. Each {@link #apply(float)} writes the track value at the
+     * applied time to the setter, skipping unchanged values unless this timeline writes every
+     * apply.
      *
+     * @param track the track to read; not null
+     * @param setter receives the value; not null and not already bound in this timeline
      * @throws IllegalArgumentException if an argument is null or the setter is already bound
      */
     public void bind(FloatTrack track, FloatSetter setter) {
@@ -88,8 +93,12 @@ public final class Timeline {
     }
 
     /**
-     * Writes the track color (RGBA8888) to the setter on every apply.
+     * Binds a color track to a setter. Each {@link #apply(float)} writes the track color
+     * (RGBA8888) at the applied time to the setter, skipping unchanged colors unless this
+     * timeline writes every apply.
      *
+     * @param track the track to read; not null
+     * @param setter receives the color; not null and not already bound in this timeline
      * @throws IllegalArgumentException if an argument is null or the setter is already bound
      */
     public void bind(ColorTrack track, ColorSetter setter) {
@@ -102,6 +111,10 @@ public final class Timeline {
      * Writes {@code track.getValueAt(index, time)} to the setter for every index from 0 to
      * {@code count - 1}. Skipping unchanged values is tracked per index.
      *
+     * @param track the staggered track to read; not null
+     * @param count number of items, at least 1
+     * @param setter receives each index and value; not null and not already bound in this
+     *     timeline
      * @throws IllegalArgumentException if an argument is null, count is below 1, or the setter is
      *     already bound
      */
@@ -118,6 +131,10 @@ public final class Timeline {
      * Writes true while {@code startSeconds <= time < endSeconds}, false otherwise. Equal start
      * and end means never visible.
      *
+     * @param startSeconds time from which the value is true, in seconds; must be finite
+     * @param endSeconds time from which the value is false again, in seconds; finite and not
+     *     before {@code startSeconds}
+     * @param setter receives the visibility; not null and not already bound in this timeline
      * @throws IllegalArgumentException if a time is not finite, end is before start, the setter is
      *     null, or the setter is already bound
      */
@@ -142,6 +159,10 @@ public final class Timeline {
      * <p>A timeline can have only one parent and be added once. Two parents would share its
      * memory of last written values and overwrite each other.
      *
+     * @param child the timeline to nest; not null, not this timeline, without a parent, and not
+     *     containing this timeline
+     * @param startSeconds parent time at which the child's local time is 0, in seconds; must be
+     *     finite
      * @throws IllegalArgumentException if the child is null, this timeline, already has a parent,
      *     or already contains this timeline (a cycle), or if startSeconds is not finite
      */
@@ -160,8 +181,11 @@ public final class Timeline {
 
     /**
      * Applies every binding, in the order added. A timeline made with {@link #writingEveryApply()}
-     * writes every binding; any other writes only changed values.
+     * writes every binding; any other writes only changed values. Call it once per frame with
+     * the game's elapsed time.
      *
+     * @param timeSeconds the time to apply, in seconds; must be finite. Any time may be applied in
+     *     any order.
      * @throws IllegalArgumentException if the time is not finite
      */
     public void apply(float timeSeconds) {
@@ -181,7 +205,11 @@ public final class Timeline {
         }
     }
 
-    /** Returns the number of bindings; a child timeline counts as one. */
+    /**
+     * Returns the number of bindings; a child timeline counts as one.
+     *
+     * @return the binding count, 0 or greater
+     */
     public int getBindingCount() {
         return bindings.size();
     }

@@ -17,10 +17,25 @@ public final class TweenSequence implements FloatTrack {
         this.pieces = pieces;
     }
 
+    /**
+     * Starts building a sequence.
+     *
+     * @param startSeconds time at which the first piece begins, in seconds; must be finite
+     * @param value the value held before and at the start; must be finite
+     * @return a new builder with no pieces yet
+     * @throws IllegalArgumentException if a number is NaN or infinite
+     */
     public static Builder startingAt(float startSeconds, float value) {
         return new Builder(startSeconds, value);
     }
 
+    /**
+     * Returns the value at the given time: the first value before the start, the last value from
+     * the end on, and the active piece's value in between. Any time can be queried in any order.
+     *
+     * @param timeSeconds the time to query, in seconds
+     * @return the value at that time
+     */
     @Override
     public float getValueAt(float timeSeconds) {
         for (int i = pieces.length - 1; i >= 0; i--) {
@@ -41,10 +56,18 @@ public final class TweenSequence implements FloatTrack {
         return pieces[pieces.length - 1].getEndSeconds();
     }
 
+    /**
+     * Returns the number of pieces, including holds.
+     *
+     * @return the piece count, at least 1
+     */
     public int getPieceCount() {
         return pieces.length;
     }
 
+    /**
+     * Collects the pieces of a {@link TweenSequence}. Not thread-safe; use it from one thread.
+     */
     public static final class Builder {
 
         private final Array<Tween> pieces = new Array<>();
@@ -58,19 +81,53 @@ public final class TweenSequence implements FloatTrack {
             this.startValue = value;
         }
 
+        /**
+         * Adds a piece that changes linearly from the current value to {@code value}.
+         *
+         * @param value the value reached at the end of the piece; must be finite
+         * @param durationSeconds length of the piece in seconds; finite and at least 0
+         * @return this builder
+         * @throws IllegalArgumentException if a number is NaN or infinite, or the duration is
+         *     negative
+         */
         public Builder to(float value, float durationSeconds) {
             return to(value, durationSeconds, Interpolation.linear);
         }
 
+        /**
+         * Adds a piece that changes from the current value to {@code value} along an easing
+         * curve. The piece starts where the previous piece ended.
+         *
+         * @param value the value reached at the end of the piece; must be finite
+         * @param durationSeconds length of the piece in seconds; finite and at least 0
+         * @param easing curve applied to the progress; not null
+         * @return this builder
+         * @throws IllegalArgumentException if a number is NaN or infinite, the duration is
+         *     negative, or the easing is null
+         */
         public Builder to(float value, float durationSeconds, Interpolation easing) {
             pieces.add(Tween.eased(currentEnd(), durationSeconds, currentValue(), value, easing));
             return this;
         }
 
+        /**
+         * Adds a piece that keeps the current value for the given duration.
+         *
+         * @param durationSeconds length of the hold in seconds; finite and at least 0
+         * @return this builder
+         * @throws IllegalArgumentException if the duration is NaN, infinite, or negative
+         */
         public Builder hold(float durationSeconds) {
             return to(currentValue(), durationSeconds);
         }
 
+        /**
+         * Creates the sequence from the pieces added so far. The builder stays usable and later
+         * changes do not affect sequences already built.
+         *
+         * @return a new immutable sequence
+         * @throws IllegalStateException if no piece was added
+         */
         public TweenSequence build() {
             if (pieces.size == 0) {
                 throw new IllegalStateException("a sequence needs at least one piece");
