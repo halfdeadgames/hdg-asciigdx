@@ -10,7 +10,7 @@ import java.util.List;
 final class NotesMarkdown {
 
     /** What a line of notes is. */
-    public enum Kind {HEADING, BULLET, TEXT, BLANK}
+    public enum Kind { HEADING, BULLET, TEXT, BLANK }
 
     /**
      * One line of notes.

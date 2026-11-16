@@ -28,7 +28,7 @@ final class GuideAddFlow {
         }
     }
 
-    enum State {CLOSED, PICKING, NAMING}
+    enum State { CLOSED, PICKING, NAMING }
 
     private final GuideListModel model;
     private State state = State.CLOSED;

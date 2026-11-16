@@ -9,7 +9,6 @@ import com.badlogic.gdx.utils.TimeUtils;
 import com.github.tommyettinger.anim8.AnimatedGif;
 import com.github.tommyettinger.anim8.Dithered;
 import com.github.tommyettinger.anim8.PaletteReducer;
-
 import java.nio.ByteBuffer;
 import java.util.zip.Deflater;
 

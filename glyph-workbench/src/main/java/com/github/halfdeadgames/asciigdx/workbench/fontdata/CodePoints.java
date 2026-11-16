@@ -43,6 +43,22 @@ public final class CodePoints {
         return readHexDigits(text, 0);
     }
 
+    private static int readHexDigits(String text, int start) {
+        int digitCount = text.length() - start;
+        if (digitCount < 1 || digitCount > MAX_HEX_DIGITS) {
+            return NOT_A_CODE;
+        }
+        long value = 0;
+        for (int i = start; i < text.length(); i++) {
+            int digit = hexValue(text.charAt(i));
+            if (digit < 0) {
+                return NOT_A_CODE;
+            }
+            value = value * 16 + digit;
+        }
+        return value > Character.MAX_CODE_POINT ? OUT_OF_UNICODE : (int) value;
+    }
+
     /**
      * Tells whether a code point can be a glyph: a valid Unicode code point that is not a surrogate
      * and not {@link SheetOrder#FILLER}.
@@ -65,22 +81,6 @@ public final class CodePoints {
      */
     public static String label(int codePoint) {
         return String.format("U+%04X", codePoint);
-    }
-
-    private static int readHexDigits(String text, int start) {
-        int digitCount = text.length() - start;
-        if (digitCount < 1 || digitCount > MAX_HEX_DIGITS) {
-            return NOT_A_CODE;
-        }
-        long value = 0;
-        for (int i = start; i < text.length(); i++) {
-            int digit = hexValue(text.charAt(i));
-            if (digit < 0) {
-                return NOT_A_CODE;
-            }
-            value = value * 16 + digit;
-        }
-        return value > Character.MAX_CODE_POINT ? OUT_OF_UNICODE : (int) value;
     }
 
     private static int hexValue(char c) {

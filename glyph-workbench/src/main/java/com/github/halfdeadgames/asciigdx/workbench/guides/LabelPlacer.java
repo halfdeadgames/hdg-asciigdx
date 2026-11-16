@@ -86,7 +86,7 @@ final class LabelPlacer {
         long wantedSum = 0;
         int offset = 0;
         for (int rankInside = firstOf[previous];
-             rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
+                rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
             int member = order[rankInside];
             wantedSum += wanted[member] - offset;
             offset += sizes[member] + gap;

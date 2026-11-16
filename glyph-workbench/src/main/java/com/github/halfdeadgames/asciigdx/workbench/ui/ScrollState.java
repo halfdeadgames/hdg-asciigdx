@@ -84,13 +84,6 @@ public final class ScrollState {
         return thumbSize(trackCells, totalRows, visibleRows);
     }
 
-    /**
-     * First thumb cell in the track; the thumb touches the track end exactly at the last offset.
-     */
-    public int thumbStart(int trackCells) {
-        return thumbStart(trackCells, totalRows, visibleRows, offset);
-    }
-
     /** Thumb length for raw numbers: total is at least 0 and visible at least 1. */
     public static int thumbSize(int trackCells, int totalRows, int visibleRows) {
         if (trackCells <= 0) {
@@ -103,6 +96,13 @@ public final class ScrollState {
         }
         int size = Math.round((float) trackCells * visible / total);
         return Math.max(1, Math.min(trackCells, size));
+    }
+
+    /**
+     * First thumb cell in the track; the thumb touches the track end exactly at the last offset.
+     */
+    public int thumbStart(int trackCells) {
+        return thumbStart(trackCells, totalRows, visibleRows, offset);
     }
 
     /** First thumb cell for raw numbers; the offset is clamped into range. */

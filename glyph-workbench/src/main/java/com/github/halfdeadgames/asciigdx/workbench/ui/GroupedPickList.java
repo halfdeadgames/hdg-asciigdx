@@ -145,7 +145,7 @@ public final class GroupedPickList<T> {
             return;
         }
         for (int i = selected == NOTHING && direction > 0 ? 0 : selected + direction;
-             i >= 0 && i < entries.size(); i += direction) {
+                i >= 0 && i < entries.size(); i += direction) {
             if (entries.get(i) != null) {
                 selected = i;
                 followCursor();

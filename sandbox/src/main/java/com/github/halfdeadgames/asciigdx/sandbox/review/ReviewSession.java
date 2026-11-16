@@ -1,15 +1,14 @@
 package com.github.halfdeadgames.asciigdx.sandbox.review;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.OptionalInt;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**

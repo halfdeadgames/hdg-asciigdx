@@ -12,7 +12,7 @@ import java.util.Set;
 final class RulesPageLines {
 
     /** How a line is colored. */
-    public enum Role {TEXT, HEADING, WARNING, INACTIVE}
+    public enum Role { TEXT, HEADING, WARNING, INACTIVE }
 
     /**
      * One line of the page.

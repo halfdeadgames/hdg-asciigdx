@@ -8,7 +8,7 @@ final class GuideListRows {
     static final int NONE = -1;
 
     /** What a click on a guide row does. */
-    enum Click {NONE, SELECT, OPEN_GROUPS}
+    enum Click { NONE, SELECT, OPEN_GROUPS }
 
     private GuideListRows() {
     }

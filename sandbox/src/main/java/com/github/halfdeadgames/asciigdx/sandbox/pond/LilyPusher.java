@@ -96,7 +96,7 @@ public final class LilyPusher {
             int deltaColumn, int deltaRow) {
         for (var offsetRow = -NEIGHBOR_RADIUS; offsetRow <= NEIGHBOR_RADIUS; offsetRow++) {
             for (var offsetColumn = -NEIGHBOR_RADIUS;
-                 offsetColumn <= NEIGHBOR_RADIUS; offsetColumn++) {
+                    offsetColumn <= NEIGHBOR_RADIUS; offsetColumn++) {
                 var column = destinationColumn + offsetColumn;
                 var row = destinationRow + offsetRow;
                 var isDestination = offsetColumn == 0 && offsetRow == 0;

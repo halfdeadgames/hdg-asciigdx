@@ -7,10 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.FailReason;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.Verdict;
-
 import java.util.Optional;
 import java.util.OptionalInt;
-
 import org.junit.jupiter.api.Test;
 
 class ReviewSessionTest {

@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-
 import java.util.Locale;
 
 /** Box, colors, transparency and the integer scale label. */

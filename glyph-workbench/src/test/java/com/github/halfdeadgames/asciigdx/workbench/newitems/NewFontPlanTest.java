@@ -8,10 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery;
-import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataParser;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphListFile;
+import com.github.halfdeadgames.asciigdx.workbench.newitems.NewSizePlan.SizeOption;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

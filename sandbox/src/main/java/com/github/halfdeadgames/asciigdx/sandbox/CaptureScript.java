@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
-
 import java.util.List;
 import java.util.Locale;
 
@@ -20,7 +19,9 @@ class CaptureScript {
     private static final int NOT_SWEEPING = -1;
     private static final String PERF_TAG = "CaptureScript";
 
-    private enum Phase {MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE}
+    private enum Phase {
+        MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE
+    }
 
     private final SandboxApp app;
     private final ScreenCapture capture;

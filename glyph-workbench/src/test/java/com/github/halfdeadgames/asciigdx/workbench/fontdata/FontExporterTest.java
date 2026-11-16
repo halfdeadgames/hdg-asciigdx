@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.fontdata;
 
-import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.file;
+import static com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataTexts.glyph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

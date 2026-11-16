@@ -35,10 +35,10 @@ import com.github.halfdeadgames.asciigdx.workbench.newitems.PaintNewFont;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PaintPreview;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RuleChecker;
+import com.github.halfdeadgames.asciigdx.workbench.rules.RuleWarning;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFile;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesFileLoad;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesLoadResult;
-import com.github.halfdeadgames.asciigdx.workbench.rules.RuleWarning;
 import com.github.halfdeadgames.asciigdx.workbench.rules.RulesScreen;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ArrowRepeats;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -1376,11 +1376,6 @@ public final class PaintScreen implements WorkbenchScreen {
         runAfterUnsavedCheck(action, question, UNSAVED_BUTTONS);
     }
 
-    private void exportFont() {
-        stroke.end();
-        runAfterUnsavedCheck(paintExport::run, EXPORT_QUESTION, SAVE_ONLY_BUTTONS);
-    }
-
     private void runAfterUnsavedCheck(Runnable action, String question,
             List<Dialog.Button> buttons) {
         if (editor.isModified()) {
@@ -1393,6 +1388,11 @@ public final class PaintScreen implements WorkbenchScreen {
         } else {
             action.run();
         }
+    }
+
+    private void exportFont() {
+        stroke.end();
+        runAfterUnsavedCheck(paintExport::run, EXPORT_QUESTION, SAVE_ONLY_BUTTONS);
     }
 
     private static boolean shiftDown() {

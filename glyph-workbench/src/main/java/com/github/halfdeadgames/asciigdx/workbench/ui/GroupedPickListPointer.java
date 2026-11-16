@@ -7,7 +7,7 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 public final class GroupedPickListPointer {
 
     /** What a frame's pointer did that the dialog must act on. */
-    public enum Click {NONE, OUTSIDE, PICK}
+    public enum Click { NONE, OUTSIDE, PICK }
 
     private boolean lastPointerKnown;
     private int lastPixelX;

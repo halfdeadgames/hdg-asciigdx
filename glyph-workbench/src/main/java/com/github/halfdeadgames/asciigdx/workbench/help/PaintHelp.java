@@ -76,7 +76,7 @@ public final class PaintHelp {
     public record UpscaleHelp(Stage stage, List<String> labels, int selected) {
 
         /** The upscale steps that have their own help. */
-        public enum Stage {PICK_SOURCE, CHOOSE_CANDIDATE}
+        public enum Stage { PICK_SOURCE, CHOOSE_CANDIDATE }
     }
 
     /**
@@ -84,7 +84,7 @@ public final class PaintHelp {
      * key and an action. WARNING is the highlighted overlay warning and INFO a table row of facts,
      * such as the shift range.
      */
-    enum Kind {TEXT, HEADING, CONTROL, PART, PENDING_PART, INFO, WARNING}
+    enum Kind { TEXT, HEADING, CONTROL, PART, PENDING_PART, INFO, WARNING }
 
     /**
      * One help row. A table row has a key and an action that starts at {@code actionColumn}; a text

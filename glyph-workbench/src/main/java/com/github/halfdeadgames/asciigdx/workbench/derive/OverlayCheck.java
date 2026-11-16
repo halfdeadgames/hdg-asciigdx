@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public final class OverlayCheck {
 
-    public enum Problem {NONE, SAME_AS_TARGET, EMPTY, OUTSIDE}
+    public enum Problem { NONE, SAME_AS_TARGET, EMPTY, OUTSIDE }
 
     /**
      * @param problem what is wrong with the pending part, or NONE
@@ -98,7 +98,7 @@ public final class OverlayCheck {
         return new Result(Problem.OUTSIDE, message, true, minShift, maxShift, minDown, maxDown);
     }
 
-    public enum OffGrid {NONE, LEFT, RIGHT, UP, DOWN}
+    public enum OffGrid { NONE, LEFT, RIGHT, UP, DOWN }
 
     /**
      * Which edge all moved ink lies beyond vertically, or NONE when some ink is still inside the

@@ -7,7 +7,7 @@ import java.util.List;
 /** A centered, focused panel over a dimmed screen, with a shadow and keycap buttons. */
 public final class Dialog {
 
-    public enum Tone {OK, WARN, DIM}
+    public enum Tone { OK, WARN, DIM }
 
     public record Button(String key, String label, Tone tone) {
 

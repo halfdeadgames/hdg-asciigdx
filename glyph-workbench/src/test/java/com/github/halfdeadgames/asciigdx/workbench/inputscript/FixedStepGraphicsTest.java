@@ -17,12 +17,12 @@ class FixedStepGraphicsTest {
                             Graphics.class.getClassLoader(),
                             new Class<?>[]{Graphics.class},
                             (proxy, method, args) ->
-                                    switch (method.getName()) {
-                                        case "getWidth" -> REAL_WIDTH;
-                                        case "getDeltaTime", "getRawDeltaTime" -> REAL_DELTA;
-                                        default -> throw new UnsupportedOperationException(
-                                                method.getName());
-                                    });
+                            switch (method.getName()) {
+                                case "getWidth" -> REAL_WIDTH;
+                                case "getDeltaTime", "getRawDeltaTime" -> REAL_DELTA;
+                                default -> throw new UnsupportedOperationException(
+                                        method.getName());
+                            });
 
     private final FixedStepGraphics fixed = new FixedStepGraphics(real);
 

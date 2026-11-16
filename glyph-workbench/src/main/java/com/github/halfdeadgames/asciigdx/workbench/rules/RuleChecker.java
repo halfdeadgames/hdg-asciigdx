@@ -62,7 +62,7 @@ public final class RuleChecker {
     private static BitSet inkedRows(PixelGrid pixels, BitSet watchedRows) {
         BitSet inked = new BitSet();
         for (int row = watchedRows.nextSetBit(0); row >= 0 && row < pixels.getHeight();
-             row = watchedRows.nextSetBit(row + 1)) {
+                row = watchedRows.nextSetBit(row + 1)) {
             if (InkBounds.rowHasInk(pixels, row)) {
                 inked.set(row);
             }
@@ -73,7 +73,7 @@ public final class RuleChecker {
     private static BitSet inkedColumns(PixelGrid pixels, BitSet watchedColumns) {
         BitSet inked = new BitSet();
         for (int column = watchedColumns.nextSetBit(0); column >= 0 && column < pixels.getWidth();
-             column = watchedColumns.nextSetBit(column + 1)) {
+                column = watchedColumns.nextSetBit(column + 1)) {
             if (InkBounds.columnHasInk(pixels, column)) {
                 inked.set(column);
             }

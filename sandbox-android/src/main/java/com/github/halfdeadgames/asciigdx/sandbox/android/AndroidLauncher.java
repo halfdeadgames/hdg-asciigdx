@@ -5,12 +5,10 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.github.halfdeadgames.asciigdx.sandbox.CaptureConfig;
 import com.github.halfdeadgames.asciigdx.sandbox.SandboxApp;
-
 import java.io.File;
 
 /**

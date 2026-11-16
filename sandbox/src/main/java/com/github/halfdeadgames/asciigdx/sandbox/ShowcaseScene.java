@@ -39,7 +39,6 @@ import com.github.halfdeadgames.asciigdx.sandbox.showcase.WaterSway;
 import com.github.halfdeadgames.asciigdx.tween.Timeline;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 import com.github.halfdeadgames.asciigdx.tween.TweenClock;
-
 import java.util.Arrays;
 import java.util.Random;
 

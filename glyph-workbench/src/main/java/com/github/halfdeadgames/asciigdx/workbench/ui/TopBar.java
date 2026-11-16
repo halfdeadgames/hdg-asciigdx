@@ -10,7 +10,7 @@ import java.util.List;
  */
 public final class TopBar {
 
-    public enum Kind {TITLE, TEXT, ACCENT, SEPARATOR}
+    public enum Kind { TITLE, TEXT, ACCENT, SEPARATOR }
 
     /** A piece of text at a cell column. */
     public record Segment(String text, int x, Kind kind) {

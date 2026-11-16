@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.glutils.HdpiUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-
 import java.util.Random;
 
 /** Drawing and random-fill helpers shared by the sandbox scenes. */

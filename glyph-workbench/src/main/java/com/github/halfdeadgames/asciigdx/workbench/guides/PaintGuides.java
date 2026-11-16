@@ -442,7 +442,7 @@ public final class PaintGuides {
         return PaintGuidesText.toText(this);
     }
 
-    public enum ListedKind {ROW, COLUMN, BAR, COLUMN_BAR}
+    public enum ListedKind { ROW, COLUMN, BAR, COLUMN_BAR }
 
     /**
      * One guide as the guide list shows it, whatever its kind.

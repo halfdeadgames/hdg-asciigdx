@@ -6,7 +6,9 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
  */
 public final class ScrollBarHit {
 
-    public enum Part {NONE, BACK_ARROW, FORWARD_ARROW, TRACK_BEFORE_THUMB, TRACK_AFTER_THUMB, THUMB}
+    public enum Part {
+        NONE, BACK_ARROW, FORWARD_ARROW, TRACK_BEFORE_THUMB, TRACK_AFTER_THUMB, THUMB
+    }
 
     private ScrollBarHit() {
     }

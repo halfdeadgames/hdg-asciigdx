@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  */
 public final class DeriveFlow {
 
-    public enum Mode {IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE}
+    public enum Mode { IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE }
 
     /** The operations offered by the menu, in menu order. */
     public static final List<GlyphOp.Kind> OPERATIONS = List.of(

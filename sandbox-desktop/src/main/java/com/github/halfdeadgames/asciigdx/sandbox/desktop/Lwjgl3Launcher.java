@@ -1,10 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.desktop;
 
-import com.github.halfdeadgames.asciigdx.sandbox.CaptureConfig;
-import com.github.halfdeadgames.asciigdx.sandbox.SandboxApp;
-
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.github.halfdeadgames.asciigdx.sandbox.CaptureConfig;
+import com.github.halfdeadgames.asciigdx.sandbox.SandboxApp;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {

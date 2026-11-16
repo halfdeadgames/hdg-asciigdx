@@ -13,7 +13,7 @@ import java.nio.file.Path;
 public record RulesLoadResult(Status status, RulesFile rulesFile, String errorText, Path path) {
 
     /** How the read ended. */
-    public enum Status {MISSING, LOADED, BAD}
+    public enum Status { MISSING, LOADED, BAD }
 
     static RulesLoadResult missing(Path path) {
         return new RulesLoadResult(Status.MISSING, RulesFile.empty(), "", path);

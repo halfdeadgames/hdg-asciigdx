@@ -6,7 +6,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.fit.GridFit;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-
 import java.util.Locale;
 
 /**

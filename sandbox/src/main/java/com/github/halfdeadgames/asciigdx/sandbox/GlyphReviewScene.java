@@ -10,17 +10,16 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.IntArray;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
-import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TransparencyMode;
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewCellSize;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewList;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.FailReason;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.Verdict;
-
 import java.util.Locale;
 import java.util.OptionalInt;
 

@@ -12,7 +12,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
-
 import java.util.function.Function;
 
 /** Sandbox application: a menu of test scenes for visually checking rendering features. */

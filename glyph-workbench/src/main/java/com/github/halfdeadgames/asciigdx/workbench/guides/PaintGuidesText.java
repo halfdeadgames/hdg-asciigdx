@@ -2,9 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.BarGuide;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.ColumnBarGuide;
+import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.ColumnGuide;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.RowGuide;
 import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.Scoped;
-import com.github.halfdeadgames.asciigdx.workbench.guides.PaintGuides.ColumnGuide;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;

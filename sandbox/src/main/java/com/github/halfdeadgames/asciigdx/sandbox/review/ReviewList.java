@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.sandbox.review;
 
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
-
 import java.util.Arrays;
 import java.util.function.IntPredicate;
 

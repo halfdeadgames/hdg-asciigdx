@@ -50,7 +50,7 @@ final class PaintScale {
     static int fittingFactor(int requested, int windowWidth, int windowHeight, int gap,
             GlyphSize glyph) {
         for (int factor = Math.min(requested, UiScale.MAX_FACTOR);
-             factor > UiScale.MIN_FACTOR; factor--) {
+                factor > UiScale.MIN_FACTOR; factor--) {
             if (minimumWidth(factor, gap, glyph.width(), glyph.height()) <= windowWidth
                     && minimumHeight(factor, glyph.height()) <= windowHeight) {
                 return factor;

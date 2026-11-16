@@ -1,10 +1,10 @@
 package com.github.halfdeadgames.asciigdx.workbench.inputscript;
 
 import com.badlogic.gdx.Gdx;
-import com.github.halfdeadgames.asciigdx.workbench.ScreenshotFile;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.github.halfdeadgames.asciigdx.workbench.ScreenshotFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

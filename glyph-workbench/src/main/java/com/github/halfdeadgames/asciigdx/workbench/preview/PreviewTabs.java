@@ -8,7 +8,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
  */
 public final class PreviewTabs {
 
-    public enum Tab {SCALES, TILE, TEXT}
+    public enum Tab { SCALES, TILE, TEXT }
 
     private static final int LABEL_GAP = 2;
     private static final int LEFT_PADDING = 2;
