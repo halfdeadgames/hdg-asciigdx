@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class TextureGlyphSourceFromPixmapTest {
 
     private static final GlyphOrder ORDER = GlyphOrder.ofString("?A");
-    private static final GlyphSheetLayout LAYOUT = GlyphSheetLayout.grid(8, 8, 2, 1);
+    private static final GlyphSheetLayout LAYOUT = GlyphSheetLayout.packed(8, 8, 2, 1);
 
     @BeforeAll
     static void loadNatives() {

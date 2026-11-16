@@ -79,8 +79,8 @@ public final class FontEditor {
     private static int[] buildSlots(Set<Integer> codePoints, boolean reserveCp437) {
         int[] ordered = SheetOrder.slotsFor(codePoints, reserveCp437);
         for (int slot = 0; slot < ordered.length; slot++) {
-            if (reserveCp437 && slot < GlyphOrder.CP437.size()) {
-                ordered[slot] = GlyphOrder.CP437.codePointAt(slot);
+            if (reserveCp437 && slot < GlyphOrder.CP437.getGlyphCount()) {
+                ordered[slot] = GlyphOrder.CP437.getCodePoint(slot);
             } else if (ordered[slot] == SheetOrder.FILLER) {
                 ordered[slot] = NO_GLYPH;
             }

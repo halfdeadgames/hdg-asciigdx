@@ -156,10 +156,10 @@ public final class FontDataParser {
 
     private static int decodeEscape(String token) {
         GlyphOrder decoded = GlyphOrderText.readAnyRowLength(token);
-        if (decoded.size() != 1) {
+        if (decoded.getGlyphCount() != 1) {
             throw new IllegalArgumentException("expected a single character");
         }
-        return decoded.codePointAt(0);
+        return decoded.getCodePoint(0);
     }
 
     private GlyphEntry readPixelGlyph(int codePoint, int headerIndex) {

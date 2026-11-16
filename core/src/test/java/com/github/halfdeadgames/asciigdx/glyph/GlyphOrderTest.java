@@ -12,25 +12,25 @@ class GlyphOrderTest {
     @Test
     void cp437HasKnownSlots() {
         var order = GlyphOrder.CP437;
-        assertEquals(256, order.size());
-        assertEquals(65, order.slotOf('A'));
-        assertEquals(219, order.slotOf(0x2588));
-        assertEquals(1, order.slotOf(0x263A));
-        assertEquals(32, order.slotOf(0x20));
-        assertEquals(0xA0, order.codePointAt(255));
-        assertEquals(0, order.codePointAt(0));
+        assertEquals(256, order.getGlyphCount());
+        assertEquals(65, order.findSlot('A'));
+        assertEquals(219, order.findSlot(0x2588));
+        assertEquals(1, order.findSlot(0x263A));
+        assertEquals(32, order.findSlot(0x20));
+        assertEquals(0xA0, order.getCodePoint(255));
+        assertEquals(0, order.getCodePoint(0));
     }
 
     @Test
     void cp437HasNoDuplicates() {
-        for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
-            assertEquals(slot, GlyphOrder.CP437.slotOf(GlyphOrder.CP437.codePointAt(slot)));
+        for (int slot = 0; slot < GlyphOrder.CP437.getGlyphCount(); slot++) {
+            assertEquals(slot, GlyphOrder.CP437.findSlot(GlyphOrder.CP437.getCodePoint(slot)));
         }
     }
 
     @Test
     void absentCodePointReturnsMinusOne() {
-        assertEquals(-1, GlyphOrder.CP437.slotOf(0x4E2D));
+        assertEquals(-1, GlyphOrder.CP437.findSlot(0x4E2D));
         assertFalse(GlyphOrder.CP437.contains(0x4E2D));
         assertTrue(GlyphOrder.CP437.contains('A'));
     }
@@ -38,64 +38,64 @@ class GlyphOrderTest {
     @Test
     void firstDuplicateWins() {
         var order = GlyphOrder.ofCodePoints('a', 'b', 'a');
-        assertEquals(3, order.size());
-        assertEquals(0, order.slotOf('a'));
-        assertEquals('a', order.codePointAt(2));
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(0, order.findSlot('a'));
+        assertEquals('a', order.getCodePoint(2));
     }
 
     @Test
     void supplementaryCodePointRoundTrips() {
         var order = GlyphOrder.ofCodePoints('x', 0x1FB4B);
-        assertEquals(1, order.slotOf(0x1FB4B));
-        assertEquals(0x1FB4B, order.codePointAt(1));
+        assertEquals(1, order.findSlot(0x1FB4B));
+        assertEquals(0x1FB4B, order.getCodePoint(1));
     }
 
     @Test
     void ofStringKeepsAsciiOrder() {
         var order = GlyphOrder.ofString("abc");
-        assertEquals(3, order.size());
-        assertEquals(0, order.slotOf('a'));
-        assertEquals(2, order.slotOf('c'));
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(0, order.findSlot('a'));
+        assertEquals(2, order.findSlot('c'));
     }
 
     @Test
     void ofStringSkipsLineTerminators() {
         var order = GlyphOrder.ofString("ab\ncd");
-        assertEquals(4, order.size());
-        assertEquals(2, order.slotOf('c'));
+        assertEquals(4, order.getGlyphCount());
+        assertEquals(2, order.findSlot('c'));
     }
 
     @Test
     void ofStringHandlesCarriageReturnLineFeed() {
         var order = GlyphOrder.ofString("ab\r\ncd\r\n");
-        assertEquals(4, order.size());
-        assertEquals(3, order.slotOf('d'));
+        assertEquals(4, order.getGlyphCount());
+        assertEquals(3, order.findSlot('d'));
     }
 
     @Test
     void ofStringTreatsSupplementaryCodePointAsOneSlot() {
         var order = GlyphOrder.ofString("x🭋A");
-        assertEquals(3, order.size());
-        assertEquals(1, order.slotOf(0x1FB4B));
-        assertEquals(2, order.slotOf('A'));
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(1, order.findSlot(0x1FB4B));
+        assertEquals(2, order.findSlot('A'));
     }
 
     @Test
     void ofStringSkipsVariationSelectors() {
         var order = GlyphOrder.ofString("❤️" + "A");
-        assertEquals(2, order.size());
-        assertEquals(1, order.slotOf('A'));
+        assertEquals(2, order.getGlyphCount());
+        assertEquals(1, order.findSlot('A'));
         var supplementary = GlyphOrder.ofString("x󠄀y");
-        assertEquals(2, supplementary.size());
-        assertEquals(1, supplementary.slotOf('y'));
+        assertEquals(2, supplementary.getGlyphCount());
+        assertEquals(1, supplementary.findSlot('y'));
     }
 
     @Test
     void ofStringKeepsSpaceAsSlot() {
         var order = GlyphOrder.ofString("a b");
-        assertEquals(3, order.size());
-        assertEquals(1, order.slotOf(' '));
-        assertEquals(2, order.slotOf('b'));
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(1, order.findSlot(' '));
+        assertEquals(2, order.findSlot('b'));
     }
 
     @Test
@@ -110,14 +110,14 @@ class GlyphOrderTest {
         int[] source = {'a', 'b'};
         var order = GlyphOrder.ofCodePoints(source);
         source[0] = 'z';
-        assertEquals('a', order.codePointAt(0));
-        assertEquals(-1, order.slotOf('z'));
+        assertEquals('a', order.getCodePoint(0));
+        assertEquals(-1, order.findSlot('z'));
     }
 
     @Test
     void badSlotAndInvalidCodePointThrow() {
         var order = GlyphOrder.ofCodePoints('a');
-        assertThrows(IndexOutOfBoundsException.class, () -> order.codePointAt(1));
+        assertThrows(IndexOutOfBoundsException.class, () -> order.getCodePoint(1));
         assertThrows(IllegalArgumentException.class, () -> GlyphOrder.ofCodePoints(-1));
     }
 }

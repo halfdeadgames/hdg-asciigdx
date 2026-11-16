@@ -7,7 +7,9 @@ package com.github.halfdeadgames.asciigdx.glyph;
  * <p>Coordinates are in image space: the origin is the top-left pixel and {@code y}
  * grows downward. Slots are numbered in reading order, left to right, then top to bottom.
  *
- * <p>Immutable and free of libGDX types.
+ * <p>Slot 0 is the top-left cell. Slot {@code columns} is the first cell of the second row.
+ *
+ * <p>Immutable, free of libGDX types, and safe to share between threads.
  */
 public final class GlyphSheetLayout {
 
@@ -65,83 +67,122 @@ public final class GlyphSheetLayout {
      * @return the layout
      * @throws IllegalArgumentException if a size or count is not positive
      */
-    public static GlyphSheetLayout grid(int cellWidth, int cellHeight, int columns, int rows) {
+    public static GlyphSheetLayout packed(int cellWidth, int cellHeight, int columns, int rows) {
         return new GlyphSheetLayout(cellWidth, cellHeight, columns, rows, 0, 0);
     }
 
-    /** Returns the width of one cell in pixels. */
+    /**
+     * Returns the width of one cell.
+     *
+     * @return the width in pixels; always positive
+     */
     public int getCellWidth() {
         return cellWidth;
     }
 
-    /** Returns the height of one cell in pixels. */
+    /**
+     * Returns the height of one cell.
+     *
+     * @return the height in pixels; always positive
+     */
     public int getCellHeight() {
         return cellHeight;
     }
 
-    /** Returns the number of cells per row. */
+    /**
+     * Returns the number of cells per row.
+     *
+     * @return the column count; always positive
+     */
     public int getColumns() {
         return columns;
     }
 
-    /** Returns the number of cell rows. */
+    /**
+     * Returns the number of cell rows.
+     *
+     * @return the row count; always positive
+     */
     public int getRows() {
         return rows;
     }
 
-    /** Returns the border around the whole grid in pixels. */
+    /**
+     * Returns the border around the whole grid. It is applied on all four sides.
+     *
+     * @return the margin in pixels; zero or more
+     */
     public int getMargin() {
         return margin;
     }
 
-    /** Returns the gap between neighboring cells in pixels. */
+    /**
+     * Returns the gap between neighboring cells, both horizontally and vertically. There is no
+     * gap between the margin and the first or last cell.
+     *
+     * @return the spacing in pixels; zero or more
+     */
     public int getSpacing() {
         return spacing;
     }
 
-    /** Returns the number of slots, {@code columns * rows}. */
-    public int slotCount() {
+    /**
+     * Returns the number of slots, {@code columns * rows}.
+     *
+     * @return the slot count; always positive
+     */
+    public int getSlotCount() {
         return columns * rows;
     }
 
     /**
-     * Returns the x pixel of the left edge of a slot.
+     * Returns the x pixel of the left edge of a slot. The slot spans {@link #getCellWidth()}
+     * pixels to the right of it.
      *
-     * @param slot slot index in reading order
-     * @return x in image space
-     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, slotCount())}
+     * @param slot slot index in reading order, from 0 at the top-left
+     * @return x in image space, in pixels from the left edge of the image
+     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, getSlotCount())}
      */
-    public int slotX(int slot) {
+    public int getSlotX(int slot) {
         checkSlot(slot);
         return margin + (slot % columns) * (cellWidth + spacing);
     }
 
     /**
-     * Returns the y pixel of the top edge of a slot.
+     * Returns the y pixel of the top edge of a slot. The slot spans {@link #getCellHeight()}
+     * pixels below it.
      *
-     * @param slot slot index in reading order
-     * @return y in image space, growing downward
-     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, slotCount())}
+     * @param slot slot index in reading order, from 0 at the top-left
+     * @return y in image space, in pixels from the top edge of the image, growing downward
+     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, getSlotCount())}
      */
-    public int slotY(int slot) {
+    public int getSlotY(int slot) {
         checkSlot(slot);
         return margin + (slot / columns) * (cellHeight + spacing);
     }
 
-    /** Returns the smallest image width in pixels that holds every slot. */
-    public int requiredImageWidth() {
+    /**
+     * Returns the smallest image width that holds every slot, including margins and spacing.
+     *
+     * @return the width in pixels
+     */
+    public int getRequiredImageWidth() {
         return extent(cellWidth, columns, margin, spacing);
     }
 
-    /** Returns the smallest image height in pixels that holds every slot. */
-    public int requiredImageHeight() {
+    /**
+     * Returns the smallest image height that holds every slot, including margins and spacing.
+     *
+     * @return the height in pixels
+     */
+    public int getRequiredImageHeight() {
         return extent(cellHeight, rows, margin, spacing);
     }
 
     private void checkSlot(int slot) {
-        if (slot < 0 || slot >= slotCount()) {
+        if (slot < 0 || slot >= getSlotCount()) {
             throw new IndexOutOfBoundsException(
-                "Slot " + slot + " is outside [0, " + slotCount() + ")");
+                "Slot " + slot + " is outside [0, " + getSlotCount() + ")");
         }
     }
 

@@ -21,7 +21,7 @@ final class FontSheet {
         this.glyphs = glyphs;
         this.slots = slots;
         int rows = (slots.length + SheetOrder.COLUMNS - 1) / SheetOrder.COLUMNS;
-        layout = GlyphSheetLayout.grid(data.cellWidth(), data.cellHeight(), SheetOrder.COLUMNS, rows);
+        layout = GlyphSheetLayout.packed(data.cellWidth(), data.cellHeight(), SheetOrder.COLUMNS, rows);
     }
 
     /**
@@ -68,7 +68,7 @@ final class FontSheet {
     /** Returns the sheet image: opaque white glyph pixels on a transparent background. */
     BufferedImage toImage() {
         BufferedImage image = new BufferedImage(
-            layout.requiredImageWidth(), layout.requiredImageHeight(), BufferedImage.TYPE_INT_ARGB);
+            layout.getRequiredImageWidth(), layout.getRequiredImageHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int slot = 0; slot < slots.length; slot++) {
             drawCell(image, slot);
         }
@@ -80,7 +80,7 @@ final class FontSheet {
         for (int y = 0; y < cell.getHeight(); y++) {
             for (int x = 0; x < cell.getWidth(); x++) {
                 if (cell.isLit(x, y)) {
-                    image.setRGB(layout.slotX(slot) + x, layout.slotY(slot) + y, LIT_PIXEL);
+                    image.setRGB(layout.getSlotX(slot) + x, layout.getSlotY(slot) + y, LIT_PIXEL);
                 }
             }
         }

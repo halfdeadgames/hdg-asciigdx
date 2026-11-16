@@ -16,15 +16,15 @@ class SheetOrderTest {
 
     @Test
     void cp437GlyphsKeepTheirStandardSlots() {
-        assertEquals(0x41, slots[GlyphOrder.CP437.slotOf(0x41)]);
+        assertEquals(0x41, slots[GlyphOrder.CP437.findSlot(0x41)]);
         assertEquals(0x263A, slots[1]);
-        assertEquals(0xE9, slots[GlyphOrder.CP437.slotOf(0xE9)]);
+        assertEquals(0xE9, slots[GlyphOrder.CP437.findSlot(0xE9)]);
     }
 
     @Test
     void missingCp437GlyphsLeaveFillerSlots() {
         assertEquals(FILLER, slots[0]);
-        assertEquals(FILLER, slots[GlyphOrder.CP437.slotOf(0x42)]);
+        assertEquals(FILLER, slots[GlyphOrder.CP437.findSlot(0x42)]);
     }
 
     @Test

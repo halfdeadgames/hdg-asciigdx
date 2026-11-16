@@ -322,12 +322,12 @@ final class GlyphReviewScene extends GridScene {
         int cellHeight = glyphs.getCellHeight();
         int panelTop = Math.round(viewport.getWorldHeight()) - PREVIEW_TOP_ROW * cellHeight;
         int panelBottom = panelTop - PREVIEW_ROWS * cellHeight;
-        TextureRegion solid = glyphs.glyph(FULL_BLOCK);
+        TextureRegion solid = glyphs.getGlyphRegion(FULL_BLOCK);
         int left = MARGIN_COLUMNS * cellWidth;
         setDrawColor(batch, PREVIEW_BACKGROUND);
         batch.draw(solid, left, panelBottom, PREVIEW_WIDTH, panelTop - panelBottom);
         setDrawColor(batch, PREVIEW_FOREGROUND);
-        TextureRegion region = (candidate != null ? candidate : glyphs).glyph(current.getAsInt());
+        TextureRegion region = (candidate != null ? candidate : glyphs).getGlyphRegion(current.getAsInt());
         for (int i = 0; i < PREVIEW_SCALES.length; i++) {
             batch.draw(region, left + PREVIEW_X[i], panelBottom + PREVIEW_PADDING,
                 cellWidth * PREVIEW_SCALES[i], cellHeight * PREVIEW_SCALES[i]);
@@ -336,7 +336,7 @@ final class GlyphReviewScene extends GridScene {
     }
 
     private void drawComparePreviews(SpriteBatch batch, int codePoint) {
-        TextureRegion solid = glyphs.glyph(FULL_BLOCK);
+        TextureRegion solid = glyphs.getGlyphRegion(FULL_BLOCK);
         int cellHeight = glyphs.getCellHeight();
         int top = Math.round(viewport.getWorldHeight()) - PREVIEW_TOP_ROW * cellHeight;
         int bottom = top - comparePanelRows * cellHeight;
@@ -357,12 +357,12 @@ final class GlyphReviewScene extends GridScene {
 
     private void drawPreviewGlyph(SpriteBatch batch, GlyphSource source, int codePoint, int x, int y, int scale) {
         if (source.hasGlyph(codePoint)) {
-            batch.draw(source.glyph(codePoint), x, y, source.getCellWidth() * scale, source.getCellHeight() * scale);
+            batch.draw(source.getGlyphRegion(codePoint), x, y, source.getCellWidth() * scale, source.getCellHeight() * scale);
             return;
         }
         int markerScale = Math.max(1, scale / MISSING_MARKER.length());
         for (int i = 0; i < MISSING_MARKER.length(); i++) {
-            batch.draw(source.glyph(MISSING_MARKER.charAt(i)), x + i * source.getCellWidth() * markerScale, y,
+            batch.draw(source.getGlyphRegion(MISSING_MARKER.charAt(i)), x + i * source.getCellWidth() * markerScale, y,
                 source.getCellWidth() * markerScale, source.getCellHeight() * markerScale);
         }
     }

@@ -25,7 +25,7 @@ final class PaddedSheet {
      */
     static Pixmap copy(Pixmap source, GlyphSheetLayout sourceLayout, GlyphSheetLayout paddedLayout, int slotCount) {
         Pixmap padded = new Pixmap(
-            paddedLayout.requiredImageWidth(), paddedLayout.requiredImageHeight(), Pixmap.Format.RGBA8888);
+            paddedLayout.getRequiredImageWidth(), paddedLayout.getRequiredImageHeight(), Pixmap.Format.RGBA8888);
         try {
             padded.setBlending(Pixmap.Blending.None);
             padded.setColor(CLEAR_WHITE);
@@ -42,10 +42,10 @@ final class PaddedSheet {
 
     private static void copySlot(
         Pixmap source, GlyphSheetLayout sourceLayout, Pixmap padded, GlyphSheetLayout paddedLayout, int slot) {
-        int sourceX = sourceLayout.slotX(slot);
-        int sourceY = sourceLayout.slotY(slot);
-        int paddedX = paddedLayout.slotX(slot);
-        int paddedY = paddedLayout.slotY(slot);
+        int sourceX = sourceLayout.getSlotX(slot);
+        int sourceY = sourceLayout.getSlotY(slot);
+        int paddedX = paddedLayout.getSlotX(slot);
+        int paddedY = paddedLayout.getSlotY(slot);
         for (int y = 0; y < sourceLayout.getCellHeight(); y++) {
             for (int x = 0; x < sourceLayout.getCellWidth(); x++) {
                 padded.drawPixel(paddedX + x, paddedY + y, cleanTexel(source.getPixel(sourceX + x, sourceY + y)));

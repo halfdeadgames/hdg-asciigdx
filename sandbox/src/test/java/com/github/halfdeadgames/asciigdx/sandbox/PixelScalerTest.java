@@ -108,9 +108,9 @@ class PixelScalerTest {
         int height = image.getHeight();
         int columns = width / cell;
         GlyphOrder order = GlyphOrderText.read(text, columns);
-        int[] codePoints = new int[order.size()];
+        int[] codePoints = new int[order.getGlyphCount()];
         for (int slot = 0; slot < codePoints.length; slot++) {
-            codePoints[slot] = order.codePointAt(slot);
+            codePoints[slot] = order.getCodePoint(slot);
         }
         int[] source = image.getRGB(0, 0, width, height, null, 0, width);
         int[] plain = PixelScaler.scale(source, width, height, 2);

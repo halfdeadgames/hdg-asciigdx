@@ -146,7 +146,7 @@ final class SpriteMesh implements Disposable {
             GlyphSource glyphSource, boolean pixelSnapping) {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
-        TextureRegion region = glyphSource.glyph(resolvedCodePoint(cell, grid));
+        TextureRegion region = glyphSource.getGlyphRegion(resolvedCodePoint(cell, grid));
         int color = CellColor.withAlphaScaled(resolvedForeground(cell, grid), cell.getAlphaMultiplier());
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();
@@ -160,7 +160,7 @@ final class SpriteMesh implements Disposable {
 
     private void writeSprite(int quad, GlyphSprite sprite, GlyphSource glyphSource, float cellWidth,
             float cellHeight, boolean pixelSnapping) {
-        TextureRegion region = glyphSource.glyph(sprite.getCodePoint());
+        TextureRegion region = glyphSource.getGlyphRegion(sprite.getCodePoint());
         float x = pixelSnapping ? ClipMath.snap(sprite.getX()) : sprite.getX();
         float y = pixelSnapping ? ClipMath.snap(sprite.getY()) : sprite.getY();
         SpriteQuadWriter.writeQuad(vertices, quad * CellVertexLayout.FLOATS_PER_QUAD, sprite, x, y,

@@ -36,7 +36,7 @@ class OffscreenFadeTest {
         }
 
         @Override
-        public com.badlogic.gdx.graphics.g2d.TextureRegion glyph(int codePoint) {
+        public com.badlogic.gdx.graphics.g2d.TextureRegion getGlyphRegion(int codePoint) {
             return null;
         }
 

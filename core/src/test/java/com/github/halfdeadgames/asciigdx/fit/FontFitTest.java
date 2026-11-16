@@ -93,7 +93,7 @@ class FontFitTest {
             }
 
             @Override
-            public TextureRegion glyph(int codePoint) {
+            public TextureRegion getGlyphRegion(int codePoint) {
                 throw new UnsupportedOperationException();
             }
 

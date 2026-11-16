@@ -107,7 +107,7 @@ final class GlyphShowcaseScene extends GridScene {
     }
 
     private String sizeLabel() {
-        return size.cellWidth() + "x" + size.cellHeight();
+        return size.getCellWidth() + "x" + size.getCellHeight();
     }
 
     @Override
@@ -203,7 +203,7 @@ final class GlyphShowcaseScene extends GridScene {
         scale = ScrollView.chooseScale(windowWidth, windowHeight, cellWidth, cellHeight);
         visibleColumns = ScrollView.visibleCells(windowWidth, cellWidth, scale);
         int visibleRows = ScrollView.visibleCells(windowHeight, cellHeight, scale);
-        int overlayCellHeight = SaiksisttSize.SQUARE_16X16.cellHeight();
+        int overlayCellHeight = SaiksisttSize.SQUARE_16X16.getCellHeight();
         int overlayPixels = OVERLAY_ROWS * overlayCellHeight * Math.max(1, Math.round(Gdx.graphics.getDensity()));
         overlayRows = Math.min(ScrollView.coveredCells(overlayPixels, cellHeight, scale), visibleRows - 1);
         visibleContentRows = visibleRows - overlayRows;
@@ -223,7 +223,7 @@ final class GlyphShowcaseScene extends GridScene {
 
     private void fillGrid() {
         grid.clear();
-        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(size.characterListPath()).readString("UTF-8"),
+        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(size.getCharacterListPath()).readString("UTF-8"),
             SHEET_COLUMNS);
         GridDrawing.text(grid, 0, 0, "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL,
             CLEAR);
@@ -237,8 +237,8 @@ final class GlyphShowcaseScene extends GridScene {
 
     private static int countGlyphs(GlyphOrder order) {
         int count = 0;
-        for (int slot = 0; slot < order.size(); slot++) {
-            if (order.codePointAt(slot) != EMPTY_SLOT_FILLER) {
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            if (order.getCodePoint(slot) != EMPTY_SLOT_FILLER) {
                 count++;
             }
         }
@@ -246,8 +246,8 @@ final class GlyphShowcaseScene extends GridScene {
     }
 
     private void writeSheet(GlyphOrder order) {
-        for (int slot = 0; slot < order.size(); slot++) {
-            int codePoint = order.codePointAt(slot);
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            int codePoint = order.getCodePoint(slot);
             if (codePoint == EMPTY_SLOT_FILLER) {
                 continue;
             }

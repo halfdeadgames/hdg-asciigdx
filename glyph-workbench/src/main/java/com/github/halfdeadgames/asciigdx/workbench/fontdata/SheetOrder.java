@@ -42,8 +42,8 @@ public final class SheetOrder {
     public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437, UnicodeFacts facts) {
         List<Integer> slots = new ArrayList<>();
         if (reserveCp437) {
-            for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
-                int codePoint = GlyphOrder.CP437.codePointAt(slot);
+            for (int slot = 0; slot < GlyphOrder.CP437.getGlyphCount(); slot++) {
+                int codePoint = GlyphOrder.CP437.getCodePoint(slot);
                 slots.add(codePoints.contains(codePoint) ? codePoint : FILLER);
             }
         }

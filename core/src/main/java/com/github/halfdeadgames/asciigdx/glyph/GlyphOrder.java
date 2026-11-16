@@ -6,15 +6,22 @@ import java.util.Objects;
 /**
  * Maps Unicode code points to glyph sheet slots and back. The slot of a code point is
  * its position in the order. If a code point appears more than once, the first
- * occurrence wins for {@link #slotOf(int)}.
+ * occurrence wins for {@link #findSlot(int)}.
  *
- * <p>Immutable.
+ * <p>Slots are numbered from 0 in reading order: left to right, then top to bottom on the sheet.
+ * Where a slot sits in the image is decided by a {@link GlyphSheetLayout}, not by the order.
+ *
+ * <p>Immutable and safe to share between threads.
  */
 public final class GlyphOrder {
 
     private static final int ABSENT = -1;
 
-    /** Code Page 437 in slot order: 256 slots, 16 per row. Slot 0 is NUL and slot 255 is U+00A0. */
+    /**
+     * Code Page 437 in slot order: 256 slots, laid out 16 per row for a 16 by 16 sheet. Slot 0
+     * is NUL (U+0000) and slot 255 is the no-break space (U+00A0). Slots 1 to 31 and slot 127
+     * hold the pictorial symbols of the original code page rather than control characters.
+     */
     public static final GlyphOrder CP437 = ofCodePoints(
         0x0000, 0x263A, 0x263B, 0x2665, 0x2666, 0x2663, 0x2660, 0x2022,
         0x25D8, 0x25CB, 0x25D9, 0x2642, 0x2640, 0x266A, 0x266B, 0x263C,
@@ -65,9 +72,11 @@ public final class GlyphOrder {
     /**
      * Creates an order where slot {@code i} holds {@code codePoints[i]}. The array is copied.
      *
-     * @param codePoints code points in slot order, must not be null
+     * @param codePoints code points in slot order; each must be in {@code [0, 0x10FFFF]}. May be
+     *        empty. Must not be null
      * @return the order
-     * @throws IllegalArgumentException if a value is not a valid Unicode code point
+     * @throws IllegalArgumentException if the array is null or a value is not a valid Unicode
+     *         code point
      */
     public static GlyphOrder ofCodePoints(int... codePoints) {
         if (codePoints == null) {
@@ -112,19 +121,24 @@ public final class GlyphOrder {
             || (codePoint >= 0xE0100 && codePoint <= 0xE01EF);
     }
 
-    /** Returns the number of slots. */
-    public int size() {
+    /**
+     * Returns the number of slots. Duplicated code points count once per slot.
+     *
+     * @return the slot count; zero or more (always positive for orders made by
+     *         {@link #ofString(String)}, {@link GlyphOrderText}, or the sheet loaders)
+     */
+    public int getGlyphCount() {
         return codePointsBySlot.length;
     }
 
     /**
      * Returns the code point stored in a slot.
      *
-     * @param slot slot index
+     * @param slot slot index, counted from 0 in reading order
      * @return the code point
-     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, size())}
+     * @throws IndexOutOfBoundsException if the slot is outside {@code [0, getGlyphCount())}
      */
-    public int codePointAt(int slot) {
+    public int getCodePoint(int slot) {
         if (slot < 0 || slot >= codePointsBySlot.length) {
             throw new IndexOutOfBoundsException(
                 "Slot " + slot + " is outside [0, " + codePointsBySlot.length + ")");
@@ -133,19 +147,19 @@ public final class GlyphOrder {
     }
 
     /**
-     * Returns the first slot holding a code point.
+     * Returns the first slot holding a code point. Does not throw for out-of-range values.
      *
-     * @param codePoint the code point to look up
-     * @return the slot, or -1 if the code point is absent
+     * @param codePoint the code point to look up; any int is accepted
+     * @return the slot, from 0, or -1 if the code point is absent
      */
-    public int slotOf(int codePoint) {
+    public int findSlot(int codePoint) {
         return slotsByCodePoint.get(codePoint, ABSENT);
     }
 
     /**
      * Returns whether a code point has a slot.
      *
-     * @param codePoint the code point to look up
+     * @param codePoint the code point to look up; any int is accepted
      * @return {@code true} if present
      */
     public boolean contains(int codePoint) {

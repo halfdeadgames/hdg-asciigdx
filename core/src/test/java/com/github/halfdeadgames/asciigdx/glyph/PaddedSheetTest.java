@@ -34,19 +34,19 @@ class PaddedSheetTest {
 
     @Test
     void layoutSlotPositionsAndSizeIncludeGutters() {
-        GlyphSheetLayout padded = PaddedSheet.layoutFor(GlyphSheetLayout.grid(16, 16, 16, 16));
+        GlyphSheetLayout padded = PaddedSheet.layoutFor(GlyphSheetLayout.packed(16, 16, 16, 16));
 
-        assertEquals(1, padded.slotX(0));
-        assertEquals(1, padded.slotY(0));
-        assertEquals(18, padded.slotX(1));
-        assertEquals(18, padded.slotY(16));
-        assertEquals(16 * 17 + 1, padded.requiredImageWidth());
-        assertEquals(16 * 17 + 1, padded.requiredImageHeight());
+        assertEquals(1, padded.getSlotX(0));
+        assertEquals(1, padded.getSlotY(0));
+        assertEquals(18, padded.getSlotX(1));
+        assertEquals(18, padded.getSlotY(16));
+        assertEquals(16 * 17 + 1, padded.getRequiredImageWidth());
+        assertEquals(16 * 17 + 1, padded.getRequiredImageHeight());
     }
 
     @Test
     void copyMovesEachUsedSlotToItsPaddedPosition() {
-        GlyphSheetLayout sourceLayout = GlyphSheetLayout.grid(2, 2, 2, 1);
+        GlyphSheetLayout sourceLayout = GlyphSheetLayout.packed(2, 2, 2, 1);
         Pixmap source = new Pixmap(4, 2, Pixmap.Format.RGBA8888);
         source.setBlending(Pixmap.Blending.None);
         source.drawPixel(0, 0, OPAQUE_RED);
@@ -57,17 +57,17 @@ class PaddedSheetTest {
 
         Pixmap padded = PaddedSheet.copy(source, sourceLayout, paddedLayout, 2);
 
-        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.slotX(0), paddedLayout.slotY(0)));
-        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.slotX(0) + 1, paddedLayout.slotY(0) + 1));
-        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.slotX(1), paddedLayout.slotY(1)));
-        assertEquals(HALF_BLUE, padded.getPixel(paddedLayout.slotX(1) + 1, paddedLayout.slotY(1) + 1));
+        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.getSlotX(0), paddedLayout.getSlotY(0)));
+        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.getSlotX(0) + 1, paddedLayout.getSlotY(0) + 1));
+        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.getSlotX(1), paddedLayout.getSlotY(1)));
+        assertEquals(HALF_BLUE, padded.getPixel(paddedLayout.getSlotX(1) + 1, paddedLayout.getSlotY(1) + 1));
         padded.dispose();
         source.dispose();
     }
 
     @Test
     void copyFillsGuttersAndTransparentTexelsWithClearWhite() {
-        GlyphSheetLayout sourceLayout = GlyphSheetLayout.grid(2, 2, 2, 1);
+        GlyphSheetLayout sourceLayout = GlyphSheetLayout.packed(2, 2, 2, 1);
         Pixmap source = new Pixmap(4, 2, Pixmap.Format.RGBA8888);
         source.setBlending(Pixmap.Blending.None);
         source.setColor(0x00000000);
@@ -89,15 +89,15 @@ class PaddedSheetTest {
     void copyReadsSourceWithItsOwnMarginAndSpacing() {
         GlyphSheetLayout sourceLayout = new GlyphSheetLayout(2, 2, 2, 1, 3, 2);
         Pixmap source = new Pixmap(
-            sourceLayout.requiredImageWidth(), sourceLayout.requiredImageHeight(), Pixmap.Format.RGBA8888);
+            sourceLayout.getRequiredImageWidth(), sourceLayout.getRequiredImageHeight(), Pixmap.Format.RGBA8888);
         source.setBlending(Pixmap.Blending.None);
-        source.drawPixel(sourceLayout.slotX(1), sourceLayout.slotY(1), OPAQUE_RED);
+        source.drawPixel(sourceLayout.getSlotX(1), sourceLayout.getSlotY(1), OPAQUE_RED);
         GlyphSheetLayout paddedLayout = PaddedSheet.layoutFor(sourceLayout);
 
         Pixmap padded = PaddedSheet.copy(source, sourceLayout, paddedLayout, 2);
 
-        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.slotX(1), paddedLayout.slotY(1)));
-        assertEquals(CLEAR_WHITE, padded.getPixel(paddedLayout.slotX(1) + 1, paddedLayout.slotY(1)));
+        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.getSlotX(1), paddedLayout.getSlotY(1)));
+        assertEquals(CLEAR_WHITE, padded.getPixel(paddedLayout.getSlotX(1) + 1, paddedLayout.getSlotY(1)));
         assertEquals(CLEAR_WHITE, padded.getPixel(0, 0));
         padded.dispose();
         source.dispose();
@@ -105,7 +105,7 @@ class PaddedSheetTest {
 
     @Test
     void copySkipsSlotsBeyondTheCount() {
-        GlyphSheetLayout sourceLayout = GlyphSheetLayout.grid(2, 2, 2, 1);
+        GlyphSheetLayout sourceLayout = GlyphSheetLayout.packed(2, 2, 2, 1);
         Pixmap source = new Pixmap(4, 2, Pixmap.Format.RGBA8888);
         source.setBlending(Pixmap.Blending.None);
         source.setColor(OPAQUE_RED);
@@ -114,8 +114,8 @@ class PaddedSheetTest {
 
         Pixmap padded = PaddedSheet.copy(source, sourceLayout, paddedLayout, 1);
 
-        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.slotX(0), paddedLayout.slotY(0)));
-        assertEquals(CLEAR_WHITE, padded.getPixel(paddedLayout.slotX(1), paddedLayout.slotY(1)));
+        assertEquals(OPAQUE_RED, padded.getPixel(paddedLayout.getSlotX(0), paddedLayout.getSlotY(0)));
+        assertEquals(CLEAR_WHITE, padded.getPixel(paddedLayout.getSlotX(1), paddedLayout.getSlotY(1)));
         padded.dispose();
         source.dispose();
     }

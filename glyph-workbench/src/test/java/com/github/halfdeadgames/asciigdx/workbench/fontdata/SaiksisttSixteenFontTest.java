@@ -60,8 +60,8 @@ class SaiksisttSixteenFontTest {
         BufferedImage image = sheet.toImage();
         int slot = indexOfSlot(sheet, '0');
         PixelGrid cell = sheet.cellAt(slot);
-        int originX = sheet.getLayout().slotX(slot);
-        int originY = sheet.getLayout().slotY(slot);
+        int originX = sheet.getLayout().getSlotX(slot);
+        int originY = sheet.getLayout().getSlotY(slot);
 
         for (int y = 0; y < cell.getHeight(); y++) {
             for (int x = 0; x < cell.getWidth(); x++) {

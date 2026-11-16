@@ -26,7 +26,7 @@ class FlatAndLiftedCellParityTest {
         }
 
         @Override
-        public TextureRegion glyph(int codePoint) {
+        public TextureRegion getGlyphRegion(int codePoint) {
             return new TextureRegion() {
                 @Override
                 public float getU() {

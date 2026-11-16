@@ -23,9 +23,9 @@ class GlyphOrderTextTest {
 
 
     private static int[] codePoints(GlyphOrder order) {
-        int[] result = new int[order.size()];
+        int[] result = new int[order.getGlyphCount()];
         for (int slot = 0; slot < result.length; slot++) {
-            result[slot] = order.codePointAt(slot);
+            result[slot] = order.getCodePoint(slot);
         }
         return result;
     }
@@ -58,8 +58,8 @@ class GlyphOrderTextTest {
     @Test
     void lastRowMayBeShorter() {
         GlyphOrder order = GlyphOrderText.read("ABC\nDE\n", 3);
-        assertEquals(5, order.size());
-        assertEquals('E', order.codePointAt(4));
+        assertEquals(5, order.getGlyphCount());
+        assertEquals('E', order.getCodePoint(4));
     }
 
     @Test

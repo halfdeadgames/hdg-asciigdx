@@ -81,7 +81,7 @@ public final class GridRenderer implements Disposable {
         this.glyphSource = glyphSource;
         this.resources = resources;
         this.ownsResources = ownsResources;
-        glyphTexture = glyphSource.glyph(' ').getTexture();
+        glyphTexture = glyphSource.getGlyphRegion(' ').getTexture();
         tracker = grid.createDirtyTracker();
         createCacheAndMesh();
     }
@@ -279,7 +279,7 @@ public final class GridRenderer implements Disposable {
      */
     public void setGlyphSource(GlyphSource glyphSource) {
         Objects.requireNonNull(glyphSource, "glyphSource");
-        Texture newGlyphTexture = glyphSource.glyph(' ').getTexture();
+        Texture newGlyphTexture = glyphSource.getGlyphRegion(' ').getTexture();
         this.glyphSource = glyphSource;
         glyphTexture = newGlyphTexture;
         glyphSourceChanged = true;

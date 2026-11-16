@@ -30,8 +30,8 @@ public final class FontDataWriter {
     // every other glyph follows in ascending code point order.
     private static List<Integer> fileOrder(FontData data) {
         List<Integer> order = new ArrayList<>();
-        for (int slot = 0; slot < GlyphOrder.CP437.size(); slot++) {
-            int codePoint = GlyphOrder.CP437.codePointAt(slot);
+        for (int slot = 0; slot < GlyphOrder.CP437.getGlyphCount(); slot++) {
+            int codePoint = GlyphOrder.CP437.getCodePoint(slot);
             if (data.entries().containsKey(codePoint)) {
                 order.add(codePoint);
             }

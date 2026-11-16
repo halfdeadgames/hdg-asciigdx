@@ -40,9 +40,9 @@ class FontSheetTest {
 
         int[] slots = sheet.getSlots();
         assertEquals(256, slots.length);
-        assertEquals(0x41, slots[GlyphOrder.CP437.slotOf(0x41)]);
-        assertEquals(0x42, slots[GlyphOrder.CP437.slotOf(0x42)]);
-        assertEquals(SheetOrder.FILLER, slots[GlyphOrder.CP437.slotOf(0x43)]);
+        assertEquals(0x41, slots[GlyphOrder.CP437.findSlot(0x41)]);
+        assertEquals(0x42, slots[GlyphOrder.CP437.findSlot(0x42)]);
+        assertEquals(SheetOrder.FILLER, slots[GlyphOrder.CP437.findSlot(0x43)]);
         assertEquals(SheetOrder.FILLER, slots[0]);
     }
 

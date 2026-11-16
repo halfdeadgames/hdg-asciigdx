@@ -47,7 +47,7 @@ public final class SheetExporter {
 
     private static void exportSheet(FileHandle font, int cellHeight, GlyphOrder order, int columns, int scale,
         FileHandle outputFolder, String name) {
-        FreeTypeGlyphBaker.Result baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
+        FreeTypeGlyphBaker.BakedSheet baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
         Pixmap output = null;
         try {
             output = scaled(baked.getPixmap(), scale);
@@ -56,7 +56,7 @@ public final class SheetExporter {
             PixmapIO.writePNG(png, output);
             txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
             verifyRoundTrip(output, order, columns, png, txt);
-            System.out.println("Exported " + order.size() + " glyphs, " + baked.getLayout().getCellWidth() * scale + "x"
+            System.out.println("Exported " + order.getGlyphCount() + " glyphs, " + baked.getLayout().getCellWidth() * scale + "x"
                 + baked.getLayout().getCellHeight() * scale + " cells, " + missingCount(baked, order) + " missing from the font");
             System.out.println("  " + png.file().getAbsolutePath());
             System.out.println("  " + txt.file().getAbsolutePath());
@@ -111,10 +111,10 @@ public final class SheetExporter {
         return file;
     }
 
-    private static int missingCount(FreeTypeGlyphBaker.Result baked, GlyphOrder order) {
+    private static int missingCount(FreeTypeGlyphBaker.BakedSheet baked, GlyphOrder order) {
         int missing = 0;
-        for (int slot = 0; slot < order.size(); slot++) {
-            if (!baked.hasGlyph(order.codePointAt(slot))) {
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            if (!baked.hasGlyph(order.getCodePoint(slot))) {
                 missing++;
             }
         }
@@ -124,11 +124,11 @@ public final class SheetExporter {
     private static void verifyRoundTrip(
         Pixmap original, GlyphOrder order, int columns, FileHandle png, FileHandle txt) {
         GlyphOrder reread = GlyphOrderText.read(new String(txt.readBytes(), StandardCharsets.UTF_8), columns);
-        if (reread.size() != order.size()) {
-            throw new IllegalStateException("Character list did not round-trip: size " + reread.size());
+        if (reread.getGlyphCount() != order.getGlyphCount()) {
+            throw new IllegalStateException("Character list did not round-trip: size " + reread.getGlyphCount());
         }
-        for (int slot = 0; slot < order.size(); slot++) {
-            if (reread.codePointAt(slot) != order.codePointAt(slot)) {
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            if (reread.getCodePoint(slot) != order.getCodePoint(slot)) {
                 throw new IllegalStateException("Character list did not round-trip at slot " + slot);
             }
         }

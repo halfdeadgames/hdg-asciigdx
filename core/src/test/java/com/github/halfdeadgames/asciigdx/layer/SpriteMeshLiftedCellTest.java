@@ -30,7 +30,7 @@ class SpriteMeshLiftedCellTest {
         }
 
         @Override
-        public TextureRegion glyph(int codePoint) {
+        public TextureRegion getGlyphRegion(int codePoint) {
             return new TextureRegion() {
                 @Override
                 public float getU() {
@@ -74,7 +74,7 @@ class SpriteMeshLiftedCellTest {
 
     private float[] ownQuadOf(int column, int row) {
         CellVertexCache cache = new CellVertexCache(grid.getColumns(), grid.getRows(), 8f, 12f);
-        TextureRegion region = source.glyph(grid.getCodePoint(column, row));
+        TextureRegion region = source.getGlyphRegion(grid.getCodePoint(column, row));
         cache.writeCell(column, row, 0, grid.getForeground(column, row),
                 region.getU(), region.getV(), region.getU2(), region.getV2());
         float[] own = new float[QUAD];

@@ -34,7 +34,7 @@ class LayerGroupTest {
         }
 
         @Override
-        public TextureRegion glyph(int codePoint) {
+        public TextureRegion getGlyphRegion(int codePoint) {
             return null;
         }
 

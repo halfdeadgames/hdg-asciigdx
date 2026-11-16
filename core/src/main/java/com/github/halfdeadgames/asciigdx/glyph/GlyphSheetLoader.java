@@ -26,8 +26,8 @@ final class GlyphSheetLoader {
             }
             GlyphOrder order = GlyphOrderText.read(text, columns);
             GlyphSheetLayout layout =
-                GlyphSheetLayout.grid(cellWidth, cellHeight, columns, (order.size() + columns - 1) / columns);
-            int fallbackSlot = order.slotOf(fallbackCodePoint);
+                GlyphSheetLayout.packed(cellWidth, cellHeight, columns, (order.getGlyphCount() + columns - 1) / columns);
+            int fallbackSlot = order.findSlot(fallbackCodePoint);
             if (fallbackSlot < 0) {
                 throw new IllegalArgumentException(
                     "Character list " + characterList.path() + " has no '?' to use as the fallback glyph");
@@ -40,40 +40,48 @@ final class GlyphSheetLoader {
     }
 
     static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {
-        if (order.size() > layout.slotCount()) {
+        if (order.getGlyphCount() > layout.getSlotCount()) {
             throw new IllegalArgumentException(
-                "Order has " + order.size() + " glyphs but the layout has only "
-                    + layout.slotCount() + " slots");
+                "Order has " + order.getGlyphCount() + " glyphs but the layout has only "
+                    + layout.getSlotCount() + " slots");
         }
     }
 
     static void requireImageFits(Pixmap image, String imageName, GlyphSheetLayout layout) {
-        if (image.getWidth() < layout.requiredImageWidth() || image.getHeight() < layout.requiredImageHeight()) {
+        if (image.getWidth() < layout.getRequiredImageWidth() || image.getHeight() < layout.getRequiredImageHeight()) {
             throw new IllegalArgumentException(
                 imageName + " is " + image.getWidth() + "x" + image.getHeight()
-                    + " but the layout needs at least " + layout.requiredImageWidth()
-                    + "x" + layout.requiredImageHeight());
+                    + " but the layout needs at least " + layout.getRequiredImageWidth()
+                    + "x" + layout.getRequiredImageHeight());
         }
     }
 
     // Returns the given pixmap when no conversion happens or it is already RGBA8888 (converted in
     // place). Otherwise returns a new RGBA8888 pixmap and disposes the given one. If it throws, the
     // given pixmap stays undisposed and still belongs to the caller. The caller owns the result.
-    static Pixmap applyTransparencyMode(Pixmap pixmap, TransparencyMode mode, Integer keyRgba8888OrNull) {
-        int key = keyRgba8888OrNull != null ? keyRgba8888OrNull : pixmap.getPixel(0, 0);
+    static Pixmap applyTransparencyMode(Pixmap pixmap, TransparencyMode mode, int keyRgba8888) {
         if (!mode.shouldConvert(hasNonOpaquePixel(pixmap))) {
             return pixmap;
         }
         Pixmap target = pixmap.getFormat() == Pixmap.Format.RGBA8888 ? pixmap : copyAsRgba8888(pixmap);
         try {
             target.setBlending(Pixmap.Blending.None);
-            convertToWhiteWithAlpha(target, key);
+            convertToWhiteWithAlpha(target, keyRgba8888);
         } catch (RuntimeException e) {
             disposeUnlessSame(target, pixmap);
             throw e;
         }
         disposeUnlessSame(pixmap, target);
         return target;
+    }
+
+    // Same as the explicit-key overload, with the top-left pixel (as RGBA8888) as the key.
+    static Pixmap applyTransparencyModeWithTopLeftKey(Pixmap pixmap, TransparencyMode mode) {
+        return applyTransparencyMode(pixmap, mode, readTopLeftKey(pixmap));
+    }
+
+    static int readTopLeftKey(Pixmap pixmap) {
+        return pixmap.getPixel(0, 0);
     }
 
     private static Pixmap copyAsRgba8888(Pixmap pixmap) {

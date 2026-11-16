@@ -14,17 +14,21 @@ import java.util.Objects;
  * <p>Glyphs are white with their coverage in the alpha channel, the same convention
  * {@link TextureGlyphSource} uses, so they can be tinted. All glyphs share one baseline and are
  * clipped to their cell. Code points the font has no glyph for leave a fully transparent cell and
- * are reported by {@link Result#hasGlyph(int)}.
+ * are reported by {@link BakedSheet#hasGlyph(int)}.
  *
- * <p>Prefer bitmap sheets where you can. Fonts drawn for a fixed grid usually look more polished
- * as hand-made bitmap sheets than as TTFs: authors often tune the bitmap version further, and
- * smooth (non-pixel) TTFs always look softer at small cell sizes. Baking does not lose detail; a
- * pixel-art TTF baked at a whole multiple of its design size reproduces its outlines exactly.
- * Use TTFs for special cases, such as large Unicode coverage no sheet provides, or as a starting
- * point for a sheet that is then touched up by hand.
+ * <p>Entry points: {@link #loadSource(FileHandle, int, GlyphOrder)} for a ready glyph source, or
+ * {@code bake} when the pixmap is needed first, for example to touch it up.
+ *
+ * <p>Prefer bitmap sheets where you can. A font drawn for a fixed grid usually looks better as a
+ * bitmap sheet than as a TTF, because font authors often tune the bitmap version by hand, and
+ * smooth (non-pixel) TTFs look softer at small cell sizes. A pixel-art TTF baked at a whole
+ * multiple of its design size loses no detail and reproduces its outlines exactly. Use TTFs for
+ * special cases, such as large Unicode coverage that no sheet provides, or as a starting point
+ * for a sheet that is then touched up by hand.
  *
  * <p>Needs the libGDX and gdx-freetype natives to be loaded. Allocates native memory, so call
- * it where {@link Pixmap} may be created and dispose the result's pixmap when done.
+ * it where {@link Pixmap} may be created and dispose the result's pixmap when done. Not
+ * thread-safe; use it from the render thread.
  */
 public final class FreeTypeGlyphBaker {
 
@@ -38,27 +42,49 @@ public final class FreeTypeGlyphBaker {
     }
 
     /**
-     * Bakes a font with pixel-font rendering and uploads it as a glyph source in one step.
-     * Code points the font lacks draw {@link TextureGlyphSource#DEFAULT_FALLBACK_CODE_POINT}.
-     * Must be called on the render thread.
+     * Bakes a font with {@value #DEFAULT_COLUMNS} columns and pixel-font rendering, and uploads
+     * it as a glyph source in one step. Code points the font lacks draw
+     * {@link TextureGlyphSource#DEFAULT_FALLBACK_CODE_POINT} and are reported as missing by
+     * {@link TextureGlyphSource#hasGlyph(int)}. The intermediate pixmap is disposed for you.
      *
-     * @throws IllegalArgumentException if {@code cellHeight} is not positive, or the order or
-     *         font lacks the fallback glyph
+     * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
+     * source and must dispose it.
+     *
+     * @param fontFile the TTF file; must not be null
+     * @param cellHeight cell height in pixels, must be positive (see
+     *        {@link #bake(FileHandle, int, GlyphOrder, int, boolean)} for how the font is scaled)
+     * @param order which code point goes in which slot; must not be null and must contain
+     *        {@code '?'}
+     * @return the glyph source
+     * @throws NullPointerException if {@code fontFile} or {@code order} is null
+     * @throws IllegalArgumentException if {@code cellHeight} is not positive, the font has no
+     *         usable ascent and descent, or the order or the font lacks the {@code '?'} fallback
+     *         glyph
      * @see #bake(FileHandle, int, GlyphOrder, int, boolean)
      */
     public static TextureGlyphSource loadSource(FileHandle fontFile, int cellHeight, GlyphOrder order) {
-        Result baked = bake(fontFile, cellHeight, order);
+        BakedSheet baked = bake(fontFile, cellHeight, order);
         return TextureGlyphSource.fromPixmap(
             baked.getPixmap(), baked.getLayout(), order, baked::hasGlyph,
             TextureGlyphSource.DEFAULT_FALLBACK_CODE_POINT);
     }
 
     /**
-     * Bakes with {@value #DEFAULT_COLUMNS} columns and pixel-font rendering.
+     * Bakes a font into a cell grid with {@value #DEFAULT_COLUMNS} columns and pixel-font
+     * rendering (hard-edged, without hinting).
      *
+     * <p>Allocates a native pixmap. The caller owns it and must dispose it.
+     *
+     * @param fontFile the TTF file; must not be null
+     * @param cellHeight cell height in pixels, must be positive
+     * @param order which code point goes in which slot; must not be null
+     * @return the baked sheet; the caller owns and must dispose its pixmap
+     * @throws NullPointerException if {@code fontFile} or {@code order} is null
+     * @throws IllegalArgumentException if {@code cellHeight} is not positive or the font has no
+     *         usable ascent and descent
      * @see #bake(FileHandle, int, GlyphOrder, int, boolean)
      */
-    public static Result bake(FileHandle fontFile, int cellHeight, GlyphOrder order) {
+    public static BakedSheet bake(FileHandle fontFile, int cellHeight, GlyphOrder order) {
         return bake(fontFile, cellHeight, order, DEFAULT_COLUMNS, true);
     }
 
@@ -70,19 +96,30 @@ public final class FreeTypeGlyphBaker {
      * rounded to the nearest pixel.
      *
      * <p>Pixel fonts stay crisp only when {@code cellHeight} is a whole multiple of the font's
-     * design cell height (8 for dungeon.mode). Other heights still bake, but some rows and
-     * columns of the pixel art get doubled or dropped.
+     * design cell height (for example 8 for a font designed on an 8 pixel grid). Other heights
+     * still bake, but some rows and columns of the pixel art get doubled or dropped.
      *
-     * @param fontFile the TTF file
+     * <p>Slot {@code i} of the order is drawn in cell {@code i} of the sheet, numbered from 0 at
+     * the top-left, left to right, then top to bottom. The sheet has
+     * {@code ceil(slotCount / columns)} rows; cells after the last slot stay transparent.
+     *
+     * <p>Allocates a native pixmap. The caller owns it and must dispose it. Needs the libGDX and
+     * gdx-freetype natives to be loaded.
+     *
+     * @param fontFile the TTF file; must not be null
      * @param cellHeight cell height in pixels, must be positive
-     * @param order which code point goes in which slot
+     * @param order which code point goes in which slot; must not be null
      * @param columns cells per row, must be positive
      * @param pixelFont {@code true} for hard-edged mono rendering without hinting, {@code false}
      *        for anti-aliased rendering
      * @return the baked sheet; the caller owns and must dispose its pixmap
-     * @throws IllegalArgumentException if {@code cellHeight} or {@code columns} is not positive
+     * @throws NullPointerException if {@code fontFile} or {@code order} is null
+     * @throws IllegalArgumentException if {@code cellHeight} or {@code columns} is not positive,
+     *         or the font has no usable ascent and descent
+     * @throws com.badlogic.gdx.utils.GdxRuntimeException if the font file cannot be read or is
+     *         not a valid font
      */
-    public static Result bake(
+    public static BakedSheet bake(
         FileHandle fontFile, int cellHeight, GlyphOrder order, int columns, boolean pixelFont) {
         Objects.requireNonNull(fontFile, "fontFile must not be null");
         Objects.requireNonNull(order, "order must not be null");
@@ -127,12 +164,12 @@ public final class FreeTypeGlyphBaker {
         return Math.round((float) ((long) probeEmPixels * SUBPIXEL_UNITS_PER_PIXEL * 65536L) / yScale);
     }
 
-    private static Result bake(
+    private static BakedSheet bake(
         FreeType.Face face, GlyphOrder order, int columns, int loadFlags, int renderMode, int cellHeight, int ascent) {
         IntSet present = new IntSet();
         int cellWidth = 1;
-        for (int slot = 0; slot < order.size(); slot++) {
-            int codePoint = order.codePointAt(slot);
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            int codePoint = order.getCodePoint(slot);
             if (face.getCharIndex(codePoint) == 0 || !face.loadChar(codePoint, loadFlags)) {
                 continue;
             }
@@ -141,20 +178,20 @@ public final class FreeTypeGlyphBaker {
             cellWidth = Math.max(cellWidth, advance);
         }
 
-        int rows = (order.size() + columns - 1) / columns;
-        GlyphSheetLayout layout = GlyphSheetLayout.grid(cellWidth, cellHeight, columns, rows);
-        Pixmap sheet = new Pixmap(layout.requiredImageWidth(), layout.requiredImageHeight(), Pixmap.Format.RGBA8888);
+        int rows = (order.getGlyphCount() + columns - 1) / columns;
+        GlyphSheetLayout layout = GlyphSheetLayout.packed(cellWidth, cellHeight, columns, rows);
+        Pixmap sheet = new Pixmap(layout.getRequiredImageWidth(), layout.getRequiredImageHeight(), Pixmap.Format.RGBA8888);
         try {
             sheet.setBlending(Pixmap.Blending.None);
             sheet.setColor(0f, 0f, 0f, 0f);
             sheet.fill();
-            for (int slot = 0; slot < order.size(); slot++) {
-                int codePoint = order.codePointAt(slot);
+            for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+                int codePoint = order.getCodePoint(slot);
                 if (present.contains(codePoint)) {
                     drawGlyph(face, codePoint, loadFlags, renderMode, sheet, layout, slot, ascent);
                 }
             }
-            return new Result(sheet, layout, present);
+            return new BakedSheet(sheet, layout, present);
         } catch (RuntimeException e) {
             sheet.dispose();
             throw e;
@@ -198,8 +235,8 @@ public final class FreeTypeGlyphBaker {
             }
             sheet.drawPixmap(
                 glyph,
-                layout.slotX(slot) + clippedLeft,
-                layout.slotY(slot) + clippedTop,
+                layout.getSlotX(slot) + clippedLeft,
+                layout.getSlotY(slot) + clippedTop,
                 clippedLeft - offsetX,
                 clippedTop - offsetY,
                 clippedRight - clippedLeft,
@@ -213,30 +250,51 @@ public final class FreeTypeGlyphBaker {
         return Math.floorDiv(subpixelUnits + SUBPIXEL_UNITS_PER_PIXEL / 2, SUBPIXEL_UNITS_PER_PIXEL);
     }
 
-    /** A baked glyph sheet. The caller owns the pixmap. */
-    public static final class Result {
+    /**
+     * A baked glyph sheet: the pixmap, the layout of its cells, and which code points the font
+     * had. Returned by the {@code bake} methods. Immutable except that the pixmap is
+     * a live native resource that the caller owns and must dispose.
+     */
+    public static final class BakedSheet {
 
         private final Pixmap pixmap;
         private final GlyphSheetLayout layout;
         private final IntSet presentCodePoints;
 
-        private Result(Pixmap pixmap, GlyphSheetLayout layout, IntSet presentCodePoints) {
+        private BakedSheet(Pixmap pixmap, GlyphSheetLayout layout, IntSet presentCodePoints) {
             this.pixmap = pixmap;
             this.layout = layout;
             this.presentCodePoints = presentCodePoints;
         }
 
-        /** Returns the RGBA8888 sheet. Dispose it when done; this result does not. */
+        /**
+         * Returns the sheet image. Glyphs are white with their coverage in the alpha channel.
+         * Calling this does not transfer ownership; the caller disposes the pixmap once, unless
+         * it is handed to {@link TextureGlyphSource#fromPixmap}, which disposes it.
+         *
+         * @return the RGBA8888 pixmap; never null
+         */
         public Pixmap getPixmap() {
             return pixmap;
         }
 
-        /** Returns where each slot's cell is in the pixmap. */
+        /**
+         * Returns where each slot's cell is in the pixmap. The layout has no margin and no
+         * spacing, and its slots are numbered like the baked {@link GlyphOrder}.
+         *
+         * @return the layout; never null
+         */
         public GlyphSheetLayout getLayout() {
             return layout;
         }
 
-        /** Returns whether the font had a glyph for the code point; if not, its cell is blank. */
+        /**
+         * Returns whether the font had a glyph for a code point. If not, its cell is blank.
+         *
+         * @param codePoint the Unicode code point; any int is accepted
+         * @return true if the font had a glyph for it and it was in the baked order; false for
+         *         every other code point
+         */
         public boolean hasGlyph(int codePoint) {
             return presentCodePoints.contains(codePoint);
         }

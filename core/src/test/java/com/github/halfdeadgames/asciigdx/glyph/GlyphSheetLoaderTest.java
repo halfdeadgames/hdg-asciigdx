@@ -35,7 +35,26 @@ class GlyphSheetLoaderTest {
     void keyedOpaqueSheetBecomesWhiteWithAlpha() {
         Pixmap sheet = twoPixelSheet(Pixmap.Format.RGBA8888, BLACK, RED);
 
-        Pixmap converted = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.AUTO, null);
+        Pixmap converted = GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(sheet, TransparencyMode.AUTO);
+
+        assertEquals(WHITE_TRANSPARENT, converted.getPixel(0, 0));
+        assertEquals(WHITE_OPAQUE, converted.getPixel(1, 0));
+        converted.dispose();
+    }
+
+    @Test
+    void topLeftKeyIsTheTopLeftPixelAsRgba8888() {
+        Pixmap sheet = twoPixelSheet(Pixmap.Format.RGB888, RED, BLACK);
+
+        assertEquals(RED, GlyphSheetLoader.readTopLeftKey(sheet));
+        sheet.dispose();
+    }
+
+    @Test
+    void explicitKeyAlphaIsIgnored() {
+        Pixmap sheet = twoPixelSheet(Pixmap.Format.RGBA8888, BLACK, RED);
+
+        Pixmap converted = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.AUTO, 0x00000000);
 
         assertEquals(WHITE_TRANSPARENT, converted.getPixel(0, 0));
         assertEquals(WHITE_OPAQUE, converted.getPixel(1, 0));
@@ -46,7 +65,7 @@ class GlyphSheetLoaderTest {
     void sheetWithTransparencyStaysUnchangedUnderAuto() {
         Pixmap sheet = twoPixelSheet(Pixmap.Format.RGBA8888, 0x00000000, RED);
 
-        Pixmap result = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.AUTO, null);
+        Pixmap result = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.AUTO, BLACK);
 
         assertSame(sheet, result);
         assertEquals(0x00000000, result.getPixel(0, 0));
@@ -58,7 +77,7 @@ class GlyphSheetLoaderTest {
     void neverModeKeepsOpaqueSheet() {
         Pixmap sheet = twoPixelSheet(Pixmap.Format.RGBA8888, BLACK, RED);
 
-        Pixmap result = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.NEVER, null);
+        Pixmap result = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.NEVER, RED);
 
         assertSame(sheet, result);
         assertEquals(RED, result.getPixel(1, 0));
@@ -69,7 +88,7 @@ class GlyphSheetLoaderTest {
     void alwaysModeConvertsSheetWithTransparency() {
         Pixmap sheet = twoPixelSheet(Pixmap.Format.RGBA8888, 0x000000, RED);
 
-        Pixmap converted = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.ALWAYS, null);
+        Pixmap converted = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.ALWAYS, BLACK);
 
         assertEquals(WHITE_OPAQUE, converted.getPixel(1, 0));
         converted.dispose();
@@ -79,7 +98,7 @@ class GlyphSheetLoaderTest {
     void nonRgba8888SheetIsCopiedAndOriginalDisposed() {
         Pixmap sheet = twoPixelSheet(Pixmap.Format.RGB888, BLACK, RED);
 
-        Pixmap converted = GlyphSheetLoader.applyTransparencyMode(sheet, TransparencyMode.AUTO, null);
+        Pixmap converted = GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(sheet, TransparencyMode.AUTO);
 
         assertEquals(Pixmap.Format.RGBA8888, converted.getFormat());
         assertTrue(sheet.isDisposed());
@@ -103,20 +122,20 @@ class GlyphSheetLoaderTest {
     @Test
     void orderWithMoreGlyphsThanSlotsThrows() {
         GlyphOrder order = GlyphOrder.ofString("?AB");
-        GlyphSheetLayout layout = GlyphSheetLayout.grid(8, 8, 2, 1);
+        GlyphSheetLayout layout = GlyphSheetLayout.packed(8, 8, 2, 1);
 
         assertThrows(IllegalArgumentException.class, () -> GlyphSheetLoader.requireOrderFits(order, layout));
     }
 
     @Test
     void orderThatFitsPasses() {
-        GlyphSheetLoader.requireOrderFits(GlyphOrder.ofString("?A"), GlyphSheetLayout.grid(8, 8, 2, 1));
+        GlyphSheetLoader.requireOrderFits(GlyphOrder.ofString("?A"), GlyphSheetLayout.packed(8, 8, 2, 1));
     }
 
     @Test
     void imageSmallerThanLayoutThrows() {
         Pixmap image = new Pixmap(8, 8, Pixmap.Format.RGBA8888);
-        GlyphSheetLayout layout = GlyphSheetLayout.grid(8, 8, 2, 1);
+        GlyphSheetLayout layout = GlyphSheetLayout.packed(8, 8, 2, 1);
 
         assertThrows(IllegalArgumentException.class, () -> GlyphSheetLoader.requireImageFits(image, "Image", layout));
         image.dispose();
@@ -126,7 +145,7 @@ class GlyphSheetLoaderTest {
     void imageLargeEnoughPasses() {
         Pixmap image = new Pixmap(16, 8, Pixmap.Format.RGBA8888);
 
-        GlyphSheetLoader.requireImageFits(image, "Image", GlyphSheetLayout.grid(8, 8, 2, 1));
+        GlyphSheetLoader.requireImageFits(image, "Image", GlyphSheetLayout.packed(8, 8, 2, 1));
         image.dispose();
     }
 }

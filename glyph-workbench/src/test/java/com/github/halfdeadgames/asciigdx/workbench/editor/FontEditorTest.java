@@ -134,7 +134,7 @@ class FontEditorTest {
     @Test
     void emptyCp437SlotsStayAndPaddingIsNotSelectable() {
         FontEditor editor = editor();
-        int slotOfD = GlyphOrder.CP437.slotOf(0x44);
+        int slotOfD = GlyphOrder.CP437.findSlot(0x44);
         assertEquals(0x44, editor.codePointAtSlot(slotOfD));
         assertEquals(0x100, editor.codePointAtSlot(256));
         assertEquals(FontEditor.NO_GLYPH, editor.codePointAtSlot(257));
@@ -381,8 +381,8 @@ class FontEditorTest {
         editor.addSlot(0x41);
         editor.addSlot(0x44);
         assertEquals(256, slotOf(editor, 0x100));
-        assertEquals(GlyphOrder.CP437.slotOf(0x41), slotOf(editor, 0x41));
-        assertEquals(GlyphOrder.CP437.slotOf(0x44), slotOf(editor, 0x44));
+        assertEquals(GlyphOrder.CP437.findSlot(0x41), slotOf(editor, 0x41));
+        assertEquals(GlyphOrder.CP437.findSlot(0x44), slotOf(editor, 0x44));
         assertEquals(slotCount, editor.slotCount());
     }
 
@@ -497,7 +497,7 @@ class FontEditorTest {
     @Test
     void startSlotOfAnEmptyFontIsTheExclamationMarkSlot() {
         FontEditor empty = editorWith("cell 8x8\n", CP437);
-        assertEquals(GlyphOrder.CP437.slotOf(0x21), empty.startSlot());
+        assertEquals(GlyphOrder.CP437.findSlot(0x21), empty.startSlot());
         assertEquals(0x21, empty.codePointAtSlot(empty.startSlot()));
     }
 
@@ -505,7 +505,7 @@ class FontEditorTest {
     void startSlotOfAFontWithGlyphsIsTheFirstSelectableSlot() {
         FontEditor editor = editor();
         assertEquals(0, editor.startSlot());
-        assertEquals(editor.codePointAtSlot(0), GlyphOrder.CP437.codePointAt(0));
+        assertEquals(editor.codePointAtSlot(0), GlyphOrder.CP437.getCodePoint(0));
     }
 
     @Test
@@ -564,7 +564,7 @@ class FontEditorTest {
         FontEditor editor = editorWith("cell 8x8\n", CP437);
         assertEquals(256, editor.slotCount());
         for (int slot = 0; slot < 256; slot++) {
-            assertEquals(GlyphOrder.CP437.codePointAt(slot), editor.codePointAtSlot(slot));
+            assertEquals(GlyphOrder.CP437.getCodePoint(slot), editor.codePointAtSlot(slot));
         }
     }
 

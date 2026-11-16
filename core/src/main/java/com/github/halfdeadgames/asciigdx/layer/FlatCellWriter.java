@@ -31,7 +31,7 @@ final class FlatCellWriter {
             cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
             return;
         }
-        TextureRegion region = glyphSource.glyph(codePoint);
+        TextureRegion region = glyphSource.getGlyphRegion(codePoint);
         cache.writeCell(column, row, background, foreground,
                 region.getU(), region.getV(), region.getU2(), region.getV2());
     }

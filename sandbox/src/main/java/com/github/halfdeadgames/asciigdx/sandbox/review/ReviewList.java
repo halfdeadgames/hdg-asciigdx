@@ -24,12 +24,12 @@ public final class ReviewList {
      */
     public static ReviewList fromText(String text, IntPredicate hasGlyph) {
         GlyphOrder order = GlyphOrderText.readAnyRowLength(text);
-        int[] kept = new int[order.size()];
+        int[] kept = new int[order.getGlyphCount()];
         int keptCount = 0;
         int missing = 0;
-        for (int slot = 0; slot < order.size(); slot++) {
-            int codePoint = order.codePointAt(slot);
-            if (order.slotOf(codePoint) != slot) {
+        for (int slot = 0; slot < order.getGlyphCount(); slot++) {
+            int codePoint = order.getCodePoint(slot);
+            if (order.findSlot(codePoint) != slot) {
                 continue;
             }
             if (hasGlyph.test(codePoint)) {
