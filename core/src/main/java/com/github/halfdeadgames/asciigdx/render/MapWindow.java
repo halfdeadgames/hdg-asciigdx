@@ -104,7 +104,10 @@ public final class MapWindow {
 
     /**
      * Returns the frame handle of the cell at map coordinates, as {@link Layer#frameCell} does for
-     * the grid position.
+     * the grid position. To drive it with a timeline, use
+     * {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a setter
+     * that calls this method on every write; a held handle can be released or detached between
+     * frames.
      *
      * @throws IndexOutOfBoundsException if the cell is outside the window
      * @throws IllegalStateException if this window is detached

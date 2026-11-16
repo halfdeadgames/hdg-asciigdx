@@ -103,6 +103,16 @@ class TimelineStaggerTest {
     }
 
     @Test
+    void writingEveryApplyRewritesAllIndicesEveryApply() {
+        Timeline timeline = Timeline.writingEveryApply();
+        IndexedRecorder recorder = new IndexedRecorder();
+        timeline.bind(staggeredTrack(), 3, recorder);
+        timeline.apply(50f);
+        timeline.apply(50f);
+        assertEquals(6, recorder.indices.size());
+    }
+
+    @Test
     void countBelowOneThrows() {
         Timeline timeline = new Timeline();
         assertThrows(IllegalArgumentException.class,

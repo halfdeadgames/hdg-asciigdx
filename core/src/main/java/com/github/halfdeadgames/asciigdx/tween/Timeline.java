@@ -20,16 +20,60 @@ import java.util.List;
  * the binding will not write it back until its own value changes. Call
  * {@link #forceNextApply()} then.
  *
+ * <p>A timeline made with {@link #writingEveryApply()} skips nothing: each apply forces every
+ * binding, so every setter is called on every apply, even when the value did not change. Use it
+ * for values written to a frame handle ({@code Layer.frameCell} or {@code MapWindow.frameCell}).
+ * {@code LayerStack.beginCellEffects} resets frame handles every frame, so a skipping timeline's
+ * effect would vanish after one frame. Such a timeline must be applied every frame, after
+ * {@code LayerStack.beginCellEffects}. The cost is one setter call per binding per apply.
+ *
  * <p>A staggered binding writes one value per index and skips unchanged values per index. A child
  * timeline added with {@link #add(Timeline, float)} runs on local time and is forced along with
- * its parent; the duplicate-setter check does not look inside children.
+ * its parent: a child under a write-every parent is written on every apply, and a write-every
+ * child forces itself under any parent. The duplicate-setter check does not look inside children.
  *
  * <p>{@link #apply(float)} does not allocate.
  */
 public final class Timeline {
 
     private final List<Binding> bindings = new ArrayList<>();
+    private final boolean writesEveryApply;
     private boolean hasParent;
+
+    /**
+     * Creates an empty timeline that skips setter calls for unchanged values. Not thread-safe;
+     * use it from one thread, normally the game loop.
+     */
+    public Timeline() {
+        this(false);
+    }
+
+    private Timeline(boolean writesEveryApply) {
+        this.writesEveryApply = writesEveryApply;
+    }
+
+    /**
+     * Creates an empty timeline that calls every setter on every {@link #apply(float)}, even when
+     * the value is unchanged. Use it for values written to a frame handle, which is reset every
+     * frame; apply it every frame after {@code LayerStack.beginCellEffects}. Not thread-safe.
+     *
+     * <p>Bind a setter that requests the frame handle on every write, as in the example below,
+     * instead of a setter that holds one handle. A frame handle whose values stay at their
+     * defaults counts as unused and is released, and a scroll or grid shrink detaches it; a held
+     * handle then throws on the next write. Requesting an existing frame handle does not allocate.
+     *
+     * <pre>{@code
+     * Timeline timeline = Timeline.writingEveryApply();
+     * timeline.bind(track, degrees -> layer.frameCell(column, row).setRotation(degrees));
+     * // each frame, after LayerStack.beginCellEffects
+     * timeline.apply(elapsedSeconds);
+     * }</pre>
+     *
+     * @return a new, empty timeline in write-every-apply mode
+     */
+    public static Timeline writingEveryApply() {
+        return new Timeline(true);
+    }
 
     /**
      * Writes the track value to the setter on every apply.
@@ -114,12 +158,16 @@ public final class Timeline {
     }
 
     /**
-     * Applies every binding, in the order added.
+     * Applies every binding, in the order added. A timeline made with {@link #writingEveryApply()}
+     * writes every binding; any other writes only changed values.
      *
      * @throws IllegalArgumentException if the time is not finite
      */
     public void apply(float timeSeconds) {
         TweenChecks.requireFinite("timeSeconds", timeSeconds);
+        if (writesEveryApply) {
+            forceNextApply();
+        }
         for (int i = 0; i < bindings.size(); i++) {
             bindings.get(i).applyAt(timeSeconds);
         }

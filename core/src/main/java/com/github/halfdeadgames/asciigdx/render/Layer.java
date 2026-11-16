@@ -768,6 +768,11 @@ public final class Layer {
      * like lasting handles. {@link #resetCellHandles} and {@link #releaseIdleCellHandles} do not
      * touch them; {@link LayerStack#beginCellEffects} manages them.
      *
+     * <p>To drive a frame handle with a timeline, use
+     * {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a setter
+     * that calls this method on every write. A held handle can be released or detached between
+     * frames, and then its setters throw.
+     *
      * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
      * @throws IllegalStateException if the layer was removed
      */

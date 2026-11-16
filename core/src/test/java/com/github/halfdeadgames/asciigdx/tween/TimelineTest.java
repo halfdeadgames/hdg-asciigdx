@@ -171,6 +171,55 @@ class TimelineTest {
     }
 
     @Test
+    void writingEveryApplyCallsSetterEvenWhenUnchanged() {
+        Timeline timeline = Timeline.writingEveryApply();
+        FloatRecorder recorder = new FloatRecorder();
+        timeline.bind(new RampTrack(), recorder);
+        timeline.apply(3f);
+        timeline.apply(3f);
+        timeline.apply(3f);
+        assertEquals(3, recorder.values.size());
+    }
+
+    @Test
+    void childUnderWriteEveryParentIsWrittenEveryApply() {
+        Timeline parent = Timeline.writingEveryApply();
+        Timeline child = new Timeline();
+        FloatRecorder recorder = new FloatRecorder();
+        child.bind(new RampTrack(), recorder);
+        parent.add(child, 0f);
+        parent.apply(3f);
+        parent.apply(3f);
+        assertEquals(2, recorder.values.size());
+    }
+
+    @Test
+    void grandchildUnderWriteEveryRootIsWrittenEveryApply() {
+        Timeline root = Timeline.writingEveryApply();
+        Timeline child = new Timeline();
+        Timeline grandchild = new Timeline();
+        FloatRecorder recorder = new FloatRecorder();
+        grandchild.bind(new RampTrack(), recorder);
+        child.add(grandchild, 0f);
+        root.add(child, 0f);
+        root.apply(3f);
+        root.apply(3f);
+        assertEquals(2, recorder.values.size());
+    }
+
+    @Test
+    void writeEveryChildUnderDefaultParentIsWrittenEveryApply() {
+        Timeline parent = new Timeline();
+        Timeline child = Timeline.writingEveryApply();
+        FloatRecorder recorder = new FloatRecorder();
+        child.bind(new RampTrack(), recorder);
+        parent.add(child, 0f);
+        parent.apply(3f);
+        parent.apply(3f);
+        assertEquals(2, recorder.values.size());
+    }
+
+    @Test
     void seekingBackwardsAndFarForwardHoldsEndValues() {
         Timeline timeline = new Timeline();
         FloatRecorder recorder = new FloatRecorder();
