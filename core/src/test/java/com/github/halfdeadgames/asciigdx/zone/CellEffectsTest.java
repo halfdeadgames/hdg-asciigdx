@@ -10,6 +10,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.HeadlessLayers;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.LayerStack;
 import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,8 @@ class CellEffectsTest {
     private static final float CELL_WIDTH = 8f;
     private static final float TALL_CELL_HEIGHT = 16f;
 
-    private final Layer layer = HeadlessLayers.create(new TerminalGrid(10, 10));
+    private final LayerStack stack = HeadlessLayers.createStack();
+    private final Layer layer = HeadlessLayers.add(stack, new TerminalGrid(10, 10));
     private final ZoneCell where = tallCellAt(0, 0, 0, 0f);
 
     private static ZoneCell tallCellAt(int column, int row, int zoneColumn, float distance) {
@@ -321,12 +323,12 @@ class CellEffectsTest {
                 CellEffects.wave(0.5f, 4f, Phase.sync())));
         EffectZone nudgeZone = new EffectZone(shape, (cell, cellWhere, time) -> cell.offsetBy(0f, 1f));
 
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         waveZone.apply(layer, 1f);
         nudgeZone.apply(layer, 1f);
 
         float layerCellHeight = layer.getGlyphSource().getCellHeight();
-        assertEquals(0.5f * layerCellHeight + 1f, layer.cell(2, 2).getOffsetY(), DELTA);
+        assertEquals(0.5f * layerCellHeight + 1f, layer.frameCell(2, 2).getOffsetY(), DELTA);
     }
 
     @Test

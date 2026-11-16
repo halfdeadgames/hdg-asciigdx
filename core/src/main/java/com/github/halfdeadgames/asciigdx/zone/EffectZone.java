@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.zone;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.LayerStack;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeCellVisitor;
 import java.util.Objects;
@@ -13,82 +14,98 @@ import java.util.Objects;
  * <p>On a map-window layer the shape is read in map coordinates, not grid coordinates, so the zone stays
  * fixed to the world as the camera moves.
  *
- * <p>The zone holds no cell handles between calls: each {@link #apply} asks the layer for the handles it
- * needs, so {@link Layer#releaseIdleCellHandles()} is always safe in between. Applying allocates nothing
- * itself; the layer only allocates when it creates a cell's handle for the first time. The shape and the
- * effect can be swapped between calls with {@link #setShape} and {@link #setEffect}.
+ * <p>The zone writes to frame handles ({@link Layer#frameCell}). The game must call
+ * {@link LayerStack#beginCellEffects} once per frame before applying zones; that call resets the frame
+ * handles and releases those left unused for {@link Layer#getFrameReleaseSeconds()}. Without it, the last written values stay on screen. Frame handles
+ * combine with the layer's lasting handles, so the zone never clears handles the game holds from
+ * {@link Layer#cell}.
  *
- * <p>By default the zone writes to lasting handles ({@link Layer#cell}). Pick frame handles with
- * {@link #setUsesFrameHandles} for effects recomputed every frame from time: call
- * {@link com.github.halfdeadgames.asciigdx.render.LayerStack#beginCellEffects} each frame, and the
- * handles reset and release themselves, so no {@link Layer#resetCellHandles()} is needed.
+ * <p>The zone holds no handles between calls: each {@link #apply} asks the layer for the handles it
+ * needs. Applying allocates nothing itself; the layer only allocates when it creates a cell's frame
+ * handle for the first time. The shape and the effect can be swapped between calls with
+ * {@link #setShape} and {@link #setEffect}.
  *
  * <p>Not reentrant and not thread-safe: call it from the render thread, and never from inside an effect.
+ *
+ * <p>Example:
+ * <pre>{@code
+ * EffectZone zone = new EffectZone(shape, CellEffects.bounce(0.5f, 1f, Phase.sync()));
+ * // each frame, on the render thread:
+ * stack.beginCellEffects(delta);
+ * zone.apply(layer, time);
+ * }</pre>
  */
 public final class EffectZone {
 
     private final ZoneVisitor visitor = new ZoneVisitor();
     private CellShape shape;
     private CellEffect effect;
-    private boolean usesFrameHandles;
 
     /**
      * Creates a zone.
      *
-     * @param shape cells the effect runs on
-     * @param effect what to do to each cell
+     * @param shape cells the effect runs on; not null
+     * @param effect what to do to each cell; not null
+     * @throws NullPointerException if {@code shape} or {@code effect} is null
      */
     public EffectZone(CellShape shape, CellEffect effect) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.effect = Objects.requireNonNull(effect, "effect");
     }
 
-    /** Returns the shape the effect runs on. */
+    /**
+     * Returns the shape the effect runs on.
+     *
+     * @return the current shape; never null
+     */
     public CellShape getShape() {
         return shape;
     }
 
-    /** Returns the effect. */
+    /**
+     * Returns the effect run on each cell.
+     *
+     * @return the current effect; never null
+     */
     public CellEffect getEffect() {
         return effect;
     }
 
-    /** Changes the cells the effect runs on. */
+    /**
+     * Changes the cells the effect runs on. Takes effect on the next {@link #apply}.
+     *
+     * @param shape the new shape; not null
+     * @throws NullPointerException if {@code shape} is null
+     */
     public void setShape(CellShape shape) {
         this.shape = Objects.requireNonNull(shape, "shape");
     }
 
-    /** Changes what is done to each cell. */
+    /**
+     * Changes what is done to each cell. Takes effect on the next {@link #apply}.
+     *
+     * @param effect the new effect; not null
+     * @throws NullPointerException if {@code effect} is null
+     */
     public void setEffect(CellEffect effect) {
         this.effect = Objects.requireNonNull(effect, "effect");
     }
 
-    /** Returns whether the zone writes to frame handles; false means lasting handles. */
-    public boolean usesFrameHandles() {
-        return usesFrameHandles;
-    }
-
     /**
-     * Chooses which handles the effect writes to. False, the default, uses lasting handles
-     * ({@link Layer#cell}). True uses frame handles ({@link Layer#frameCell}).
-     *
-     * <p>Switching does not reset handles the zone already wrote. After switching away from lasting
-     * handles, call {@link Layer#resetCellHandles()} once to clear what the zone left on them.
-     */
-    public void setUsesFrameHandles(boolean usesFrameHandles) {
-        this.usesFrameHandles = usesFrameHandles;
-    }
-
-    /**
-     * Runs the effect once on every shape cell inside the layer's grid. Cells outside the grid are skipped.
-     * On a {@linkplain Layer#isMapWindow() map-window layer} the shape is in map coordinates: it stays on
+     * Runs the effect once on every shape cell inside the layer's grid, on each cell's frame handle
+     * ({@link Layer#frameCell}). Cells outside the grid are skipped. On a
+     * {@linkplain Layer#isMapWindow() map-window layer} the shape is in map coordinates: it stays on
      * its map cells while the window scrolls, and only cells inside the window are affected.
-     * Call {@link Layer#resetCellHandles()} once per frame before the first zone is applied.
      *
-     * @param layer layer whose cells are affected
-     * @param timeSeconds time handed to the effect, e.g. seconds since the effect started
-     * @throws IllegalStateException if called from inside an effect, or if the layer was removed and the
-     *     shape's bounds overlap its grid
+     * <p>Call {@link LayerStack#beginCellEffects} once per frame before the first zone is applied.
+     * Frame handles have no pivot of their own, so an effect must not call
+     * {@link CellHandle#setPivot} or {@link CellHandle#setPivotKeepingPlacement}; both throw on a frame
+     * handle.
+     *
+     * @param layer layer whose cells are affected; not null
+     * @param timeSeconds time handed to the effect, in seconds, e.g. seconds since the effect started
+     * @throws IllegalStateException if called from inside an effect, if the layer was removed and the
+     *     shape's bounds overlap its grid, or if the effect sets a pivot on the handle it is given
      */
     public void apply(Layer layer, float timeSeconds) {
         if (visitor.isRunning()) {
@@ -101,7 +118,7 @@ public final class EffectZone {
         if (!overlaps(grid, originColumn, originRow)) {
             return;
         }
-        visitor.start(layer, effect, usesFrameHandles, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
+        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
         try {
             shape.forEachCell(visitor);
         } finally {
@@ -121,7 +138,6 @@ public final class EffectZone {
         private final ZoneCell zoneCell = new ZoneCell();
         private Layer layer;
         private CellEffect effect;
-        private boolean usesFrameHandles;
         private float timeSeconds;
         private int shapeLeft;
         private int shapeTop;
@@ -135,10 +151,9 @@ public final class EffectZone {
         }
 
         /** The origin is the map cell at grid (0, 0), or 0 when the layer is not a map window. */
-        void start(Layer targetLayer, CellEffect targetEffect, boolean frameHandles, float time, int left,
+        void start(Layer targetLayer, CellEffect targetEffect, float time, int left,
                 int top, int mapOriginColumn, int mapOriginRow) {
             layer = targetLayer;
-            usesFrameHandles = frameHandles;
             effect = targetEffect;
             timeSeconds = time;
             shapeLeft = left;
@@ -164,14 +179,7 @@ public final class EffectZone {
                 return;
             }
             zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance, distanceFraction);
-            effect.apply(handleAt(gridColumn, gridRow), zoneCell, timeSeconds);
-        }
-
-        private CellHandle handleAt(int gridColumn, int gridRow) {
-            if (usesFrameHandles) {
-                return layer.frameCell(gridColumn, gridRow);
-            }
-            return layer.cell(gridColumn, gridRow);
+            effect.apply(layer.frameCell(gridColumn, gridRow), zoneCell, timeSeconds);
         }
     }
 }

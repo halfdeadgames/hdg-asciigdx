@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.HeadlessLayers;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.LayerStack;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
@@ -37,7 +38,8 @@ class EffectZoneTest {
     }
 
     private final TerminalGrid grid = new TerminalGrid(6, 4);
-    private final Layer layer = HeadlessLayers.create(grid);
+    private final LayerStack stack = HeadlessLayers.createStack();
+    private final Layer layer = HeadlessLayers.add(stack, grid);
     private final RecordingEffect effect = new RecordingEffect();
 
     private static RectangleShape filledRectangle(int left, int top, int width, int height) {
@@ -105,7 +107,7 @@ class EffectZoneTest {
         new EffectZone(filledRectangle(0, 4, 2, 2), effect).apply(layer, 0f);
 
         assertTrue(effect.calls.isEmpty());
-        assertEquals(0, layer.getCellHandleCount());
+        assertEquals(0, layer.getFrameCellHandleCount());
     }
 
     @Test
@@ -122,18 +124,18 @@ class EffectZoneTest {
             cell.scaleBy(3f, 0.5f);
         });
 
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         first.apply(layer, 0f);
         second.apply(layer, 0f);
 
-        CellHandle cell = layer.cell(2, 2);
+        CellHandle cell = layer.frameCell(2, 2);
         assertEquals(4f, cell.getOffsetX());
         assertEquals(1f, cell.getOffsetY());
         assertEquals(15f, cell.getRotation());
         assertEquals(6f, cell.getScaleX());
         assertEquals(1f, cell.getScaleY());
 
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         first.apply(layer, 0f);
 
         assertEquals(1f, cell.getOffsetX());
@@ -152,30 +154,32 @@ class EffectZoneTest {
             cell.setCodePoint('b');
         });
 
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         first.apply(layer, 0f);
         second.apply(layer, 0f);
 
-        assertEquals(0x00FF00FF, layer.cell(0, 0).getForegroundMixColor());
-        assertEquals('b', layer.cell(0, 0).getCodePoint());
+        assertEquals(0x00FF00FF, layer.frameCell(0, 0).getForegroundMixColor());
+        assertEquals('b', layer.frameCell(0, 0).getCodePoint());
     }
 
     @Test
-    void applyResetReleaseApplyAgainLeavesNoStaleHandles() {
+    void idleFrameHandlesAreReleasedAndTheNextApplyCreatesFreshOnes() {
         EffectZone zone = new EffectZone(filledRectangle(0, 0, 2, 2),
                 (cell, where, time) -> cell.offsetBy(1f, 0f));
         zone.apply(layer, 0f);
-        CellHandle firstHandle = layer.cell(0, 0);
+        CellHandle firstHandle = layer.frameCell(0, 0);
 
-        layer.resetCellHandles();
-        layer.releaseIdleCellHandles();
+        float releaseSeconds = layer.getFrameReleaseSeconds();
+        stack.beginCellEffects(releaseSeconds);
+        stack.beginCellEffects(releaseSeconds);
+        stack.beginCellEffects(releaseSeconds);
         zone.apply(layer, 0f);
 
         assertTrue(firstHandle.isDetached());
-        CellHandle freshHandle = layer.cell(0, 0);
+        CellHandle freshHandle = layer.frameCell(0, 0);
         assertFalse(freshHandle.isDetached());
         assertEquals(1f, freshHandle.getOffsetX());
-        assertEquals(4, layer.getCellHandleCount());
+        assertEquals(4, layer.getFrameCellHandleCount());
     }
 
     @Test
@@ -223,27 +227,24 @@ class EffectZoneTest {
     }
 
     @Test
-    void zoneUsesLastingHandlesByDefault() {
+    void applyWritesFrameHandlesAndLeavesLastingHandlesUntouched() {
         EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
+        CellHandle lasting = layer.cell(1, 1);
+        lasting.setOffset(5f, 0f);
 
         zone.apply(layer, 0f);
 
-        assertFalse(zone.usesFrameHandles());
-        assertEquals(2f, layer.cell(1, 1).getOffsetX(), 0.0001f);
-        assertEquals(0, layer.getFrameCellHandleCount());
+        assertEquals(2f, layer.frameCell(1, 1).getOffsetX(), 0.0001f);
+        assertEquals(5f, lasting.getOffsetX(), 0.0001f);
+        assertEquals(1, layer.getCellHandleCount());
+        assertEquals(1, layer.getFrameCellHandleCount());
     }
 
     @Test
-    void frameModeWritesFrameHandlesAndLeavesLastingHandlesUntouched() {
-        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
-        zone.setUsesFrameHandles(true);
+    void effectSettingAPivotFailsBecauseFrameHandlesHaveNone() {
+        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setPivot(0f, 0f));
 
-        zone.apply(layer, 0f);
-
-        assertTrue(zone.usesFrameHandles());
-        assertEquals(2f, layer.frameCell(1, 1).getOffsetX(), 0.0001f);
-        assertEquals(0, layer.getCellHandleCount());
-        assertEquals(1, layer.getFrameCellHandleCount());
+        assertThrows(IllegalStateException.class, () -> zone.apply(layer, 0f));
     }
 
     @Test

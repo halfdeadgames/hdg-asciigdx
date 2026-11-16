@@ -19,8 +19,9 @@ public interface CellEffect {
     /**
      * Applies the effect to one cell.
      *
-     * @param cell the cell's handle, holding whatever earlier zones set since the last
-     *     {@link com.github.halfdeadgames.asciigdx.render.Layer#resetCellHandles()}
+     * @param cell the cell's frame handle, holding whatever earlier zones set since the last
+     *     {@link com.github.halfdeadgames.asciigdx.render.LayerStack#beginCellEffects}; it has no pivot,
+     *     so the effect must not set one
      * @param where the cell's position in the grid and in the zone's shape
      * @param timeSeconds the time passed to {@link EffectZone#apply}
      */

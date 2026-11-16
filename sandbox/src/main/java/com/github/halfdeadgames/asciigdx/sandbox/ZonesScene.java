@@ -22,7 +22,7 @@ import com.github.halfdeadgames.asciigdx.zone.Phase;
  * full-screen zone for a performance check.
  *
  * <p>Keys: arrow keys move the spell. E cycles the spell's effect: combined, wave, bounce, shake,
- * pulse, spin, flash, rainbow. F toggles the full-screen zone; the status line shows the layer's cell
+ * pulse, spin, flash, rainbow. F toggles the full-screen zone; the status line shows the layer's frame
  * handle count (H). T swaps between a square and a tall font, rebuilding the circles for the new cell
  * shape. On touch screens, a touch or drag above the bottom quarter moves the spell, and the bottom
  * quarter is split into thirds for E, F, and T.
@@ -59,7 +59,6 @@ class ZonesScene extends GridScene {
     private CircleShape spellShape;
     private boolean tall;
     private boolean fullScreenOn;
-    private boolean releaseHandlesPending;
     private boolean clockPinned;
 
     /**
@@ -116,7 +115,7 @@ class ZonesScene extends GridScene {
         status.append("E:").append(spellEffects.currentName())
             .append(" F:").append(fullScreenOn ? "on" : "off")
             .append(" T:").append(tall ? "tall" : "sq")
-            .append(" H:").append(layer.getCellHandleCount());
+            .append(" H:").append(layer.getFrameCellHandleCount());
         return status.toString();
     }
 
@@ -169,8 +168,7 @@ class ZonesScene extends GridScene {
             clock.update(delta);
         }
         moveSpellFromArrowKeys(delta);
-        layer.resetCellHandles();
-        releaseIdleHandlesIfRequested();
+        layers.beginCellEffects(delta);
         applyZones(clock.time());
     }
 
@@ -180,14 +178,6 @@ class ZonesScene extends GridScene {
         }
         spellZone.apply(layer, time);
         captionZone.apply(layer, time);
-    }
-
-    private void releaseIdleHandlesIfRequested() {
-        if (!releaseHandlesPending) {
-            return;
-        }
-        layer.releaseIdleCellHandles();
-        releaseHandlesPending = false;
     }
 
     private void moveSpellFromArrowKeys(float delta) {
@@ -263,9 +253,6 @@ class ZonesScene extends GridScene {
 
     private void toggleFullScreenZone() {
         fullScreenOn = !fullScreenOn;
-        if (!fullScreenOn) {
-            releaseHandlesPending = true;
-        }
     }
 
     /**
@@ -282,7 +269,6 @@ class ZonesScene extends GridScene {
         spellShape = createCircle(spellShape.getCenterX(), spellShape.getCenterY(), ShapeFill.FILLED, glyphs);
         spellZone.setShape(spellShape);
         redrawBackdrop();
-        releaseHandlesPending = true;
     }
 
     private void redrawBackdrop() {

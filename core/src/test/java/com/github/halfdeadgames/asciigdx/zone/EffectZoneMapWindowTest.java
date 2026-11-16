@@ -57,7 +57,7 @@ class EffectZoneMapWindowTest {
         moveCameraToCell(3, 1);
         zone.apply(layer, 0f);
         moveCameraToCell(4, 1);
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         zone.apply(layer, 0f);
 
         assertEquals(List.of(new Call(2, 1, 5, 2, 0, 0), new Call(1, 1, 5, 2, 0, 0)), calls);
@@ -90,7 +90,7 @@ class EffectZoneMapWindowTest {
         new EffectZone(filledRectangle(16, 14, 3, 3), recordingEffect).apply(layer, 0f);
 
         assertTrue(calls.isEmpty());
-        assertEquals(0, layer.getCellHandleCount());
+        assertEquals(0, layer.getFrameCellHandleCount());
     }
 
     @Test
@@ -117,7 +117,7 @@ class EffectZoneMapWindowTest {
         Map<Long, Float> beforeStep = new HashMap<>(phaseByMapCell);
         phaseByMapCell.clear();
         moveCameraToCell(4, 1);
-        layer.resetCellHandles();
+        stack.beginCellEffects(0f);
         zone.apply(layer, 0f);
 
         int shared = 0;

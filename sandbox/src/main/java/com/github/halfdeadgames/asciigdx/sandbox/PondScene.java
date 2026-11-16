@@ -152,7 +152,6 @@ class PondScene implements SandboxScene {
         actorFiller = new ActorLayerFiller(actorLayer.getMapWindow());
         lilyFlashes = new LilyFlashes(map, lilyLayer);
         wakeZone = new EffectZone(wakeArea, new WakeRippleEffect(map, wakeRipples));
-        wakeZone.setUsesFrameHandles(true);
         cellCount = waterGrid.getWidth() * waterGrid.getHeight() + lilyGrid.getWidth() * lilyGrid.getHeight()
             + actorGrid.getWidth() * actorGrid.getHeight();
         clockPinned = pinClockIfRequested(pondTimeSetting);
