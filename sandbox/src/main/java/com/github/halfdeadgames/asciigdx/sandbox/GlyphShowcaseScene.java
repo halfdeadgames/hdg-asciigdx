@@ -7,7 +7,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrder;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /** The whole Saiksistt sheet next to examples built from its cards, chess pieces, dice, and bar glyphs. */
 final class GlyphShowcaseScene extends GridScene {

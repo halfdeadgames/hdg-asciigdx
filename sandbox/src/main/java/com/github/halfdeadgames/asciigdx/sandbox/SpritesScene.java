@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.MathUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
  * Off-grid sprites on one map layer: an orbiting ring, a slowly spinning scaled marker, a mirrored

@@ -9,8 +9,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.render.ZoomMode;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.layer.ZoomMode;
 
 /**
  * A dungeon map that zooms and rotates about the hero inside a clipped window, under a frame and

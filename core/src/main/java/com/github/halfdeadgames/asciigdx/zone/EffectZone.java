@@ -1,9 +1,9 @@
 package com.github.halfdeadgames.asciigdx.zone;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.render.LayerStack;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeCellVisitor;
 import java.util.Objects;

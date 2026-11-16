@@ -5,7 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.sandbox.zones.SpellEffectCycle;
 import com.github.halfdeadgames.asciigdx.sandbox.zones.ZonesBackdrop;
 import com.github.halfdeadgames.asciigdx.shape.CircleShape;

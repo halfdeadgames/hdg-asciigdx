@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
-import com.github.halfdeadgames.asciigdx.render.MapCellVisitor;
-import com.github.halfdeadgames.asciigdx.render.MapWindow;
+import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
+import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 
 /** Draws the pond terrain, one map cell per game cell, into the map window of the water layer. */
 public final class WaterLayerFiller implements MapCellVisitor {

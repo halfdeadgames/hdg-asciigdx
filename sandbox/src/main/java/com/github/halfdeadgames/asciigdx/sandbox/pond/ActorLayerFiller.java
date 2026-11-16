@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.MapCellVisitor;
-import com.github.halfdeadgames.asciigdx.render.MapWindow;
+import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
+import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 
 /** Keeps the actor layer transparent except for the player. */
 public final class ActorLayerFiller implements MapCellVisitor {

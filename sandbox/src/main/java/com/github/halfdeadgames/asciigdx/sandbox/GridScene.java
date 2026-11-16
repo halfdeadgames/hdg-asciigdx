@@ -6,7 +6,7 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.LayerStack;
+import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 
 /** A scene drawn through an integer-scaled viewport. Holds a main grid and a {@link LayerStack} for extra layers; subclasses fill them and may change them in {@link #update(float)}. */
 abstract class GridScene implements SandboxScene {

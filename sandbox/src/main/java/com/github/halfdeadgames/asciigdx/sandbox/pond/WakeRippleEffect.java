@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 import com.github.halfdeadgames.asciigdx.zone.CellEffect;
 import com.github.halfdeadgames.asciigdx.zone.ZoneCell;
 

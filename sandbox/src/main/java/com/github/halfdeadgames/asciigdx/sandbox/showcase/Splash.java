@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /** Drives the splash droplet sprites. */
 public final class Splash {

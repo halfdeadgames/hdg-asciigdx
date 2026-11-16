@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.MapCellVisitor;
-import com.github.halfdeadgames.asciigdx.render.MapWindow;
+import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
+import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 
 /** Draws lilies into a map window whose cells are half a game cell on each axis, so four cover one game cell. */
 public final class LilyLayerFiller implements MapCellVisitor {

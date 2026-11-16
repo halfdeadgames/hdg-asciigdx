@@ -6,8 +6,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
  * Nearest filtering on the left half, linear on the right, with identical sprites in both. Scaled

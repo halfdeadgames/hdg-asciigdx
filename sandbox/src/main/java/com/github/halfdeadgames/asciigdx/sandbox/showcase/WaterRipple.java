@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
  * Swells the water glyphs near a splash point as rings pass. Only the scale of lifted cells is touched, so other

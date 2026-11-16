@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.GridRenderer;
+import com.github.halfdeadgames.asciigdx.layer.GridRenderer;
 
 /** fps / frame time / cell count line drawn over whichever scene is open, at the top-left of the screen. */
 class PerfOverlay {

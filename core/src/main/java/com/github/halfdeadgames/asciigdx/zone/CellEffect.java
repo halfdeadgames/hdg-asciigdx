@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.zone;
 
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 
 /**
  * An animated effect applied to each cell inside an {@link EffectZone}.
@@ -20,7 +20,7 @@ public interface CellEffect {
      * Applies the effect to one cell.
      *
      * @param cell the cell's frame handle, holding whatever earlier zones set since the last
-     *     {@link com.github.halfdeadgames.asciigdx.render.LayerStack#beginCellEffects}; it has no pivot,
+     *     {@link com.github.halfdeadgames.asciigdx.layer.LayerStack#beginCellEffects}; it has no pivot,
      *     so the effect must not set one
      * @param where the cell's position in the grid and in the zone's shape
      * @param timeSeconds the time passed to {@link EffectZone#apply}

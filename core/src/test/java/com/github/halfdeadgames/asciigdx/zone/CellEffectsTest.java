@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.color.HueColor;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.HeadlessLayers;
-import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.render.LayerStack;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.HeadlessLayers;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 import org.junit.jupiter.api.Test;

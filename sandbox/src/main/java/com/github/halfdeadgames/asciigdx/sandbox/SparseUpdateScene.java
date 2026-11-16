@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /** Fills a large grid once, then rewrites an adjustable share of distinct cells each frame (1% by default) in a fixed-seed shuffled order. */
 class SparseUpdateScene extends GridScene {

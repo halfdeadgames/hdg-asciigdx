@@ -2,10 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.utils.Array;
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.render.MapCellTarget;
-import com.github.halfdeadgames.asciigdx.render.MapWindow;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.layer.MapCellTarget;
+import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 import com.github.halfdeadgames.asciigdx.tween.Timeline;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 

@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
  * A glyph in the map grid that periodically lifts out of its cell: it either bumps a third of a

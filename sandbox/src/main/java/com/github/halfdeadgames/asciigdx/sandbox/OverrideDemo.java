@@ -2,8 +2,8 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.CellHandle;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.CellHandle;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
  * Proves temporary cell overrides look the same on flat and lifted cells. A word sits in the grid;

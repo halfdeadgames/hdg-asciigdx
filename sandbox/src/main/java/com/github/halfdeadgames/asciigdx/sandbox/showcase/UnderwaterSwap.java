@@ -1,6 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-import com.github.halfdeadgames.asciigdx.render.GlyphSprite;
+import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
 
 /** Shows the underwater @ and the translucent water above it for the length of the dive. */
 public final class UnderwaterSwap {

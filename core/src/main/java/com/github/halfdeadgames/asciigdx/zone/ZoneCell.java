@@ -70,7 +70,7 @@ public final class ZoneCell {
 
     /**
      * Width of one cell in virtual pixels. Multiply a horizontal amount in cell widths by it to get a
-     * {@link com.github.halfdeadgames.asciigdx.render.CellHandle} x offset.
+     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} x offset.
      */
     public float getCellWidth() {
         return cellWidth;
@@ -78,7 +78,7 @@ public final class ZoneCell {
 
     /**
      * Height of one cell in virtual pixels. Multiply a vertical amount in cell heights by it to get a
-     * {@link com.github.halfdeadgames.asciigdx.render.CellHandle} y offset.
+     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} y offset.
      */
     public float getCellHeight() {
         return cellHeight;

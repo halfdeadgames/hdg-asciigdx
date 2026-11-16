@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /** Far mountains, hills, and ground scrolling at different speeds under a fixed sky and status line. */
 class ParallaxScene extends GridScene {

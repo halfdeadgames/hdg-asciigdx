@@ -7,9 +7,9 @@ import com.badlogic.gdx.math.RandomXS128;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.render.ColorEffects;
-import com.github.halfdeadgames.asciigdx.render.Layer;
-import com.github.halfdeadgames.asciigdx.render.LayerGroup;
+import com.github.halfdeadgames.asciigdx.layer.ColorEffects;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.layer.LayerGroup;
 
 /**
  * A clipped, shaking map that flashes white on each dragon step and can be toggled to grayscale
