@@ -29,6 +29,7 @@ public final class FixedStepGraphics implements Graphics {
     }
 
     @Override
+    @Deprecated
     public float getRawDeltaTime() {
         return FRAME_SECONDS;
     }

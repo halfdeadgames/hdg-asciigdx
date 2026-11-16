@@ -10,9 +10,15 @@
  *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#loadSaiksistt()} or a
  *       chosen {@link com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize}.</li>
  *   <li>A sheet image plus a character list text file, with
- *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#loadSheet(com.badlogic.gdx.files.FileHandle, com.badlogic.gdx.files.FileHandle, int, int, com.github.halfdeadgames.asciigdx.glyph.TransparencyMode)}.</li>
+ *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#loadSheet(
+ *       com.badlogic.gdx.files.FileHandle, com.badlogic.gdx.files.FileHandle, int, int,
+ *       com.github.halfdeadgames.asciigdx.glyph.TransparencyMode)}.</li>
  *   <li>A sheet image plus an explicit layout and order, with
- *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#load(com.badlogic.gdx.files.FileHandle, com.github.halfdeadgames.asciigdx.glyph.GlyphSheetLayout, com.github.halfdeadgames.asciigdx.glyph.GlyphOrder, com.github.halfdeadgames.asciigdx.glyph.TransparencyMode)}.</li>
+ *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#load(
+ *       com.badlogic.gdx.files.FileHandle,
+ *       com.github.halfdeadgames.asciigdx.glyph.GlyphSheetLayout,
+ *       com.github.halfdeadgames.asciigdx.glyph.GlyphOrder,
+ *       com.github.halfdeadgames.asciigdx.glyph.TransparencyMode)}.</li>
  *   <li>A TrueType font rasterized to a sheet, with
  *       {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker}. Needs
  *       gdx-freetype.</li>

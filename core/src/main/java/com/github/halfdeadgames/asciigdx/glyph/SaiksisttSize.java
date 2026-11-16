@@ -50,7 +50,8 @@ public enum SaiksisttSize {
     /**
      * Returns the classpath resource path of the sheet image. Open it with
      * {@code Gdx.files.classpath(path)}. Use it with
-     * {@link TextureGlyphSource#loadSheet(com.badlogic.gdx.files.FileHandle, com.badlogic.gdx.files.FileHandle, int, int, TransparencyMode)}
+     * {@link TextureGlyphSource#loadSheet(com.badlogic.gdx.files.FileHandle,
+     * com.badlogic.gdx.files.FileHandle, int, int, TransparencyMode)}
      * to load the font with a transparency mode of your choice.
      *
      * @return the path, relative to the classpath root; never null

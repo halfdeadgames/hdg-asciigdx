@@ -132,7 +132,7 @@ public final class TweenSequence implements FloatTrack {
             if (pieces.size == 0) {
                 throw new IllegalStateException("a sequence needs at least one piece");
             }
-            return new TweenSequence(pieces.toArray(Tween.class));
+            return new TweenSequence(pieces.toArray(Tween[]::new));
         }
 
         private float currentEnd() {
