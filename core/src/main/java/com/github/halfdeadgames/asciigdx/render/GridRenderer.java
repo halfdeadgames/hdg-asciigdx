@@ -57,7 +57,7 @@ public final class GridRenderer implements Disposable {
     private int indexedHandleCount;
     private Array<CellHandle> cellHandles = new Array<>(0);
     private final DirtyCellVisitor cellWriter = this::writeCell;
-    private final LayerEffects tintOnlyEffects = new LayerEffects();
+    private final ColorEffects tintOnlyEffects = new ColorEffects();
     private final ResolvedEffects resolvedTintOnlyEffects = new ResolvedEffects();
     private final Affine2 translation = new Affine2();
 

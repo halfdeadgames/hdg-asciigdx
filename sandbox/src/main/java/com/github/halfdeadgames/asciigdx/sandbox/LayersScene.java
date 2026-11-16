@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.RandomXS128;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.render.ColorEffects;
 import com.github.halfdeadgames.asciigdx.render.Layer;
 import com.github.halfdeadgames.asciigdx.render.LayerGroup;
 
@@ -248,17 +249,17 @@ class LayersScene extends GridScene {
 
     private void toggleGrayMap() {
         grayMap = !grayMap;
-        layerById[MAP].setSaturation(grayMap ? 0f : 1f);
+        layerById[MAP].getColorEffects().setSaturation(grayMap ? 0f : 1f);
     }
 
     private void toggleNegative() {
         negative = !negative;
-        screenGroup.setInvert(negative ? 1f : 0f);
+        screenGroup.getColorEffects().setInvert(negative ? 1f : 0f);
     }
 
     private void toggleDimWorld() {
         dimWorld = !dimWorld;
-        worldGroup.setMix(0f, 0f, 0f, dimWorld ? DIM_AMOUNT : 0f);
+        worldGroup.getColorEffects().setMix(0f, 0f, 0f, dimWorld ? DIM_AMOUNT : 0f);
     }
 
     /** Holds only the frame directly; the world layers reach it through the world group. */
@@ -322,7 +323,7 @@ class LayersScene extends GridScene {
 
     private void applyFlash(float reaction) {
         float amount = reaction >= 0f ? FLASH_STRENGTH * (1f - reaction) : 0f;
-        layerById[MAP].setMix(1f, 1f, 1f, amount);
+        layerById[MAP].getColorEffects().setMix(1f, 1f, 1f, amount);
     }
 
     private void applyHop(float reaction) {
@@ -356,7 +357,7 @@ class LayersScene extends GridScene {
         float eased = progress * progress * (3f - 2f * progress);
         Layer popup = layerById[POPUP];
         popup.setOffset(MathUtils.lerp(hiddenX, restX, eased), POPUP_REST_ROW * glyphs.getCellHeight());
-        popup.setAlpha(eased * (ghostPopup ? GHOST_ALPHA : 1f));
+        popup.getColorEffects().setAlpha(eased * (ghostPopup ? GHOST_ALPHA : 1f));
     }
 
     private void applyRain() {
@@ -373,8 +374,9 @@ class LayersScene extends GridScene {
         float red = MathUtils.lerp(0.6f, 1f, mix);
         float green = MathUtils.lerp(0.8f, 0.7f, mix);
         float blue = MathUtils.lerp(1f, 0.4f, mix);
-        rain.setTint(red, green, blue, 1f);
-        rain.setAlpha(0.5f - 0.5f * MathUtils.cos(MathUtils.PI2 * elapsed / FADE_PERIOD));
+        ColorEffects rainEffects = rain.getColorEffects();
+        rainEffects.setTint(red, green, blue, 1f);
+        rainEffects.setAlpha(0.5f - 0.5f * MathUtils.cos(MathUtils.PI2 * elapsed / FADE_PERIOD));
     }
 
     private void applyBanner() {

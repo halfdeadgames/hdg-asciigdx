@@ -403,7 +403,7 @@ public final class LayerStack implements Disposable {
             if (!layer.isVisible()) {
                 continue;
             }
-            resolvedEffects.resolve(layer.getEffects(), layer.getGroups());
+            resolvedEffects.resolve(layer.getColorEffects(), layer.getGroups());
             if (resolvedEffects.getAlpha() <= 0f) {
                 continue;
             }

@@ -27,9 +27,9 @@ final class ResolvedEffects {
     }
 
     /** Resolves effects that belong to no group. */
-    void resolveOwn(LayerEffects own) {
+    void resolveOwn(ColorEffects own) {
         own.writeColorMatrix(matrix);
-        alpha = own.getTintA();
+        alpha = own.getTintAlpha();
     }
 
     /**
@@ -38,7 +38,7 @@ final class ResolvedEffects {
      * after those of every descendant group the layer is in; groups that are not ancestors of each
      * other run in the order the layer joined them. Each reached group is applied once.
      */
-    void resolve(LayerEffects own, Array<LayerGroup> groups) {
+    void resolve(ColorEffects own, Array<LayerGroup> groups) {
         resolveOwn(own);
         resolveId++;
         for (int i = 0; i < groups.size; i++) {
@@ -82,12 +82,12 @@ final class ResolvedEffects {
 
     private void applyGroup(LayerGroup group) {
         group.markAppliedIn(resolveId);
-        foldGroup(group.getEffects());
+        foldGroup(group.getColorEffects());
     }
 
-    private void foldGroup(LayerEffects groupEffects) {
+    private void foldGroup(ColorEffects groupEffects) {
         groupEffects.writeColorMatrix(groupMatrix);
         matrix.then(groupMatrix);
-        alpha *= groupEffects.getTintA();
+        alpha *= groupEffects.getTintAlpha();
     }
 }

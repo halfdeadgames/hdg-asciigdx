@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Array;
 
 /**
@@ -23,7 +22,7 @@ import com.badlogic.gdx.utils.Array;
  */
 public final class LayerGroup {
 
-    private final LayerEffects effects = new LayerEffects();
+    private final ColorEffects effects = new ColorEffects();
     private final Array<Layer> members = new Array<>();
     private LayerStack owner;
     private LayerGroup parent;
@@ -116,147 +115,28 @@ public final class LayerGroup {
         return members.get(index);
     }
 
-    /** Returns the tint's red component. */
-    public float getTintR() {
-        return effects.getTintR();
-    }
-
-    /** Returns the tint's green component. */
-    public float getTintG() {
-        return effects.getTintG();
-    }
-
-    /** Returns the tint's blue component. */
-    public float getTintB() {
-        return effects.getTintB();
-    }
-
-    /** Returns the tint's alpha component. */
-    public float getTintA() {
-        return effects.getTintA();
-    }
-
-    /** Copies the tint into {@code out} and returns it. */
-    public Color getTint(Color out) {
-        return out.set(effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
-    }
-
     /**
-     * Sets the tint multiplied into every member layer's colors, after the layer's own effects.
-     * Default is white (1, 1, 1, 1), which leaves colors unchanged. The alpha multiplies each
-     * member's own alpha. Values are not clamped. See {@link Layer#setTint(float, float, float, float)}
-     * for how alpha fades a layer.
+     * Returns this group's own color effects: tint, alpha, mix, saturation, and invert. The object
+     * is live and owned by the group; every call returns the same instance and allocates nothing.
+     * Changes apply on the next draw to every member layer, after the member's own effects: the
+     * color transforms run in sequence and the alphas multiply.
      *
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setTint(float r, float g, float b, float a) {
-        requireAttached();
-        effects.setTint(r, g, b, a);
-    }
-
-    /**
-     * Sets the tint from a color. The values are copied; no reference is kept.
+     * <p>The object stays readable after the group is removed from its stack, but its setters then
+     * throw {@link IllegalStateException}.
      *
-     * @see #setTint(float, float, float, float)
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setTint(Color color) {
-        setTint(color.r, color.g, color.b, color.a);
-    }
-
-    /**
-     * Sets only the tint's alpha, keeping red, green, and blue.
+     * <p>Example:
+     * <pre>{@code
+     * group.getColorEffects().setTint(0.4f, 0.4f, 0.6f, 1f);
+     * }</pre>
      *
-     * @see #setTint(float, float, float, float)
-     * @throws IllegalStateException if the group was removed
+     * @return the live color effects of this group; never null
      */
-    public void setAlpha(float alpha) {
-        requireAttached();
-        effects.setTintAlpha(alpha);
-    }
-
-    /** Returns the mix color's red component. */
-    public float getMixR() {
-        return effects.getMixR();
-    }
-
-    /** Returns the mix color's green component. */
-    public float getMixG() {
-        return effects.getMixG();
-    }
-
-    /** Returns the mix color's blue component. */
-    public float getMixB() {
-        return effects.getMixB();
-    }
-
-    /** Returns how far the members are mixed toward the mix color, 0 for not at all. */
-    public float getMixAmount() {
-        return effects.getMixAmount();
-    }
-
-    /**
-     * Mixes every member layer's drawn colors toward the given color, after the layer's own
-     * effects. Amount 0 leaves colors unchanged (the default). Only colors change, not alpha.
-     * Values are not clamped. See {@link Layer#setMix(float, float, float, float)}.
-     *
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setMix(float r, float g, float b, float amount) {
-        requireAttached();
-        effects.setMix(r, g, b, amount);
-    }
-
-    /**
-     * Sets the mix from a color's red, green, and blue; its alpha is ignored. The values are
-     * copied; no reference is kept.
-     *
-     * @see #setMix(float, float, float, float)
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setMix(Color color, float amount) {
-        setMix(color.r, color.g, color.b, amount);
-    }
-
-    /** Returns the saturation, 1 for normal. */
-    public float getSaturation() {
-        return effects.getSaturation();
-    }
-
-    /**
-     * Sets the saturation applied to every member layer's colors, after the layer's own effects:
-     * 1 is normal (the default), 0 is grayscale. Values are not clamped.
-     *
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setSaturation(float saturation) {
-        requireAttached();
-        effects.setSaturation(saturation);
-    }
-
-    /** Returns the invert amount, 0 for normal. */
-    public float getInvert() {
-        return effects.getInvert();
-    }
-
-    /**
-     * Sets how far every member layer's colors are turned into their negative, after the layer's
-     * own effects: 0 leaves colors unchanged (the default) and 1 is a full negative. Alpha is
-     * untouched. Values are not clamped.
-     *
-     * @throws IllegalStateException if the group was removed
-     */
-    public void setInvert(float amount) {
-        requireAttached();
-        effects.setInvert(amount);
+    public ColorEffects getColorEffects() {
+        return effects;
     }
 
     LayerStack getOwner() {
         return owner;
-    }
-
-    LayerEffects getEffects() {
-        return effects;
     }
 
     boolean isMarkedIn(long resolveId) {
@@ -300,6 +180,7 @@ public final class LayerGroup {
     void detach() {
         owner = null;
         parent = null;
+        effects.markDetached();
         for (int i = members.size - 1; i >= 0; i--) {
             members.get(i).leaveGroup(this);
         }

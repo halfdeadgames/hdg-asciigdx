@@ -124,7 +124,7 @@ class LayerStackOffscreenTest {
     }, clipBackend, offscreenBackend);
 
     private static String matrixOf(float saturation, float invert) {
-        LayerEffects effects = new LayerEffects();
+        ColorEffects effects = new ColorEffects();
         effects.setSaturation(saturation);
         effects.setInvert(invert);
         ColorMatrix matrix = new ColorMatrix();
@@ -144,8 +144,8 @@ class LayerStackOffscreenTest {
     void fadedLayerWithASpriteDrawsOffscreenThenComposites() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0.4f);
-        layer.setSaturation(0.5f);
+        layer.getColorEffects().setAlpha(0.4f);
+        layer.getColorEffects().setSaturation(0.5f);
 
         stack.draw(null, 0f, 0f);
 
@@ -154,15 +154,15 @@ class LayerStackOffscreenTest {
                 "drawPremultiplied alpha 1.0 " + matrixOf(0.5f, 0f),
                 "end 100,50,600,500",
                 "composite 0.4 100,50,600,500"), events);
-        assertEquals(0.4f, layer.getTintA());
+        assertEquals(0.4f, layer.getColorEffects().getTintAlpha());
     }
 
     @Test
     void fadedLayerKeepsItsInvertOnTheOffscreenDraw() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0.4f);
-        layer.setInvert(0.75f);
+        layer.getColorEffects().setAlpha(0.4f);
+        layer.getColorEffects().setInvert(0.75f);
 
         stack.draw(null, 0f, 0f);
 
@@ -177,7 +177,7 @@ class LayerStackOffscreenTest {
     void fadedLayerIsSkippedWhenItsClipIsEmpty() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0.5f);
+        layer.getColorEffects().setAlpha(0.5f);
         layer.setClip(0f, 0f, 10f, 10f);
         pushesRemainingToAccept = 0;
 
@@ -190,7 +190,7 @@ class LayerStackOffscreenTest {
     void clippedFadedLayerRunsInsideTheClip() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0.5f);
+        layer.getColorEffects().setAlpha(0.5f);
         layer.setClip(0f, 0f, 10f, 10f);
 
         stack.draw(null, 0f, 100f);
@@ -207,11 +207,11 @@ class LayerStackOffscreenTest {
     @Test
     void layersThatDoNotQualifyDrawDirectly() {
         Layer faded = addLayer();
-        faded.setAlpha(0.5f);
+        faded.getColorEffects().setAlpha(0.5f);
         Layer opaqueWithSprite = addLayer();
         opaqueWithSprite.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         Layer hiddenSprite = addLayer();
-        hiddenSprite.setAlpha(0.5f);
+        hiddenSprite.getColorEffects().setAlpha(0.5f);
         hiddenSprite.addSprite('a', 0xFFFFFFFF, 0f, 0f).setVisible(false);
 
         stack.draw(null, 0f, 0f);
@@ -223,7 +223,7 @@ class LayerStackOffscreenTest {
     void hiddenLayersAreSkippedEvenWhenTheyQualify() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0.5f);
+        layer.getColorEffects().setAlpha(0.5f);
         layer.setVisible(false);
 
         stack.draw(null, 0f, 0f);
@@ -235,7 +235,7 @@ class LayerStackOffscreenTest {
     void layersWithZeroTintAlphaDrawNothingEvenWithSprites() {
         Layer layer = addLayer();
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
-        layer.setAlpha(0f);
+        layer.getColorEffects().setAlpha(0f);
 
         stack.draw(null, 0f, 0f);
 
@@ -244,7 +244,7 @@ class LayerStackOffscreenTest {
 
     @Test
     void backendIsUntouchedUntilNeededAndDisposedOnce() {
-        addLayer().setAlpha(0.5f);
+        addLayer().getColorEffects().setAlpha(0.5f);
         stack.draw(null, 0f, 0f);
         assertEquals(List.of("draw alpha 0.5"), events);
 

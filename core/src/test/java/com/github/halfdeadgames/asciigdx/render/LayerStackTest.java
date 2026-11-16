@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -127,10 +128,10 @@ class LayerStackTest {
     void layerWithZeroTintAlphaIsNotDrawn() {
         Layer faded = addLayer();
         addLayer();
-        faded.setAlpha(0f);
+        faded.getColorEffects().setAlpha(0f);
         assertOrder("L1");
 
-        faded.setAlpha(0.01f);
+        faded.getColorEffects().setAlpha(0.01f);
         assertOrder("L0", "L1");
     }
 
@@ -557,7 +558,7 @@ class LayerStackTest {
         return matrices.get(matrices.size() - 1);
     }
 
-    private static float[] matrixOf(LayerEffects effects) {
+    private static float[] matrixOf(ColorEffects effects) {
         ColorMatrix matrix = new ColorMatrix();
         effects.writeColorMatrix(matrix);
         return matrix.getValues();
@@ -565,49 +566,49 @@ class LayerStackTest {
 
     @Test
     void tintDefaultsToWhite() {
-        Layer layer = addLayer();
-        assertEquals(1f, layer.getTintR());
-        assertEquals(1f, layer.getTintG());
-        assertEquals(1f, layer.getTintB());
-        assertEquals(1f, layer.getTintA());
+        ColorEffects effects = addLayer().getColorEffects();
+        assertEquals(1f, effects.getTintRed());
+        assertEquals(1f, effects.getTintGreen());
+        assertEquals(1f, effects.getTintBlue());
+        assertEquals(1f, effects.getTintAlpha());
         stack.draw(null, 0f, 0f);
         assertEquals(1f, lastAlpha(0));
-        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(0));
+        assertArrayEquals(matrixOf(new ColorEffects()), lastMatrix(0));
     }
 
     @Test
     void tintReachesItsOwnRendererOnly() {
         Layer first = addLayer();
         addLayer();
-        first.setTint(0.25f, 0.5f, 0.75f, 0.5f);
+        first.getColorEffects().setTint(0.25f, 0.5f, 0.75f, 0.5f);
         stack.draw(null, 0f, 0f);
-        LayerEffects expected = new LayerEffects();
+        ColorEffects expected = new ColorEffects();
         expected.setTint(0.25f, 0.5f, 0.75f, 0.5f);
         assertEquals(0.5f, lastAlpha(0));
         assertArrayEquals(matrixOf(expected), lastMatrix(0));
         assertEquals(1f, lastAlpha(1));
-        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
+        assertArrayEquals(matrixOf(new ColorEffects()), lastMatrix(1));
     }
 
     @Test
     void setAlphaKeepsRgb() {
-        Layer layer = addLayer();
-        layer.setTint(0.25f, 0.5f, 0.75f, 1f);
-        layer.setAlpha(0.4f);
-        assertEquals(0.25f, layer.getTintR());
-        assertEquals(0.5f, layer.getTintG());
-        assertEquals(0.75f, layer.getTintB());
-        assertEquals(0.4f, layer.getTintA());
+        ColorEffects effects = addLayer().getColorEffects();
+        effects.setTint(0.25f, 0.5f, 0.75f, 1f);
+        effects.setAlpha(0.4f);
+        assertEquals(0.25f, effects.getTintRed());
+        assertEquals(0.5f, effects.getTintGreen());
+        assertEquals(0.75f, effects.getTintBlue());
+        assertEquals(0.4f, effects.getTintAlpha());
     }
 
     @Test
     void setTintFromColorCopiesValues() {
-        Layer layer = addLayer();
+        ColorEffects effects = addLayer().getColorEffects();
         Color color = new Color(0.1f, 0.2f, 0.3f, 0.4f);
-        layer.setTint(color);
+        effects.setTint(color);
         color.set(1f, 1f, 1f, 1f);
         Color out = new Color();
-        layer.getTint(out);
+        effects.getTint(out);
         assertEquals(0.1f, out.r);
         assertEquals(0.2f, out.g);
         assertEquals(0.3f, out.b);
@@ -617,103 +618,128 @@ class LayerStackTest {
     @Test
     void tintCannotChangeAfterRemoval() {
         Layer layer = addLayer();
+        ColorEffects effects = layer.getColorEffects();
         stack.remove(layer);
-        assertThrows(IllegalStateException.class, () -> layer.setTint(0f, 0f, 0f, 0f));
-        assertThrows(IllegalStateException.class, () -> layer.setTint(Color.RED));
-        assertThrows(IllegalStateException.class, () -> layer.setAlpha(0.5f));
-        assertEquals(1f, layer.getTintA());
+        assertThrows(IllegalStateException.class, () -> effects.setTint(0f, 0f, 0f, 0f));
+        assertThrows(IllegalStateException.class, () -> effects.setTint(Color.RED));
+        assertThrows(IllegalStateException.class, () -> effects.setAlpha(0.5f));
+        assertEquals(1f, effects.getTintAlpha());
+    }
+
+    @Test
+    void colorEffectsIsTheSameInstanceEveryCall() {
+        Layer layer = addLayer();
+        assertSame(layer.getColorEffects(), layer.getColorEffects());
+        assertNotSame(layer.getColorEffects(), addLayer().getColorEffects());
+    }
+
+    @Test
+    void colorEffectsStayTheSameInstanceAfterRemoval() {
+        Layer layer = addLayer();
+        ColorEffects effects = layer.getColorEffects();
+        stack.remove(layer);
+        assertSame(effects, layer.getColorEffects());
+    }
+
+    @Test
+    void colorEffectsCannotChangeAfterStackDispose() {
+        ColorEffects effects = addLayer().getColorEffects();
+        stack.dispose();
+        assertThrows(IllegalStateException.class, () -> effects.setInvert(1f));
     }
 
     @Test
     void mixAndSaturationHaveNeutralDefaults() {
-        Layer layer = addLayer();
-        assertEquals(1f, layer.getMixR());
-        assertEquals(1f, layer.getMixG());
-        assertEquals(1f, layer.getMixB());
-        assertEquals(0f, layer.getMixAmount());
-        assertEquals(1f, layer.getSaturation());
+        ColorEffects effects = addLayer().getColorEffects();
+        assertEquals(1f, effects.getMixRed());
+        assertEquals(1f, effects.getMixGreen());
+        assertEquals(1f, effects.getMixBlue());
+        assertEquals(0f, effects.getMixAmount());
+        assertEquals(1f, effects.getSaturation());
     }
 
     @Test
     void mixAndSaturationSettersStoreValuesUnclamped() {
-        Layer layer = addLayer();
-        layer.setMix(0.1f, 0.2f, 0.3f, 1.5f);
-        layer.setSaturation(2.5f);
-        assertEquals(0.1f, layer.getMixR());
-        assertEquals(0.2f, layer.getMixG());
-        assertEquals(0.3f, layer.getMixB());
-        assertEquals(1.5f, layer.getMixAmount());
-        assertEquals(2.5f, layer.getSaturation());
+        ColorEffects effects = addLayer().getColorEffects();
+        effects.setMix(0.1f, 0.2f, 0.3f, 1.5f);
+        effects.setSaturation(2.5f);
+        assertEquals(0.1f, effects.getMixRed());
+        assertEquals(0.2f, effects.getMixGreen());
+        assertEquals(0.3f, effects.getMixBlue());
+        assertEquals(1.5f, effects.getMixAmount());
+        assertEquals(2.5f, effects.getSaturation());
     }
 
     @Test
     void setMixFromColorCopiesRgbAndIgnoresAlpha() {
-        Layer layer = addLayer();
+        ColorEffects effects = addLayer().getColorEffects();
         Color color = new Color(0.1f, 0.2f, 0.3f, 0.4f);
-        layer.setMix(color, 0.6f);
+        effects.setMix(color, 0.6f);
         color.set(1f, 1f, 1f, 1f);
-        assertEquals(0.1f, layer.getMixR());
-        assertEquals(0.2f, layer.getMixG());
-        assertEquals(0.3f, layer.getMixB());
-        assertEquals(0.6f, layer.getMixAmount());
-        assertEquals(1f, layer.getTintA());
+        assertEquals(0.1f, effects.getMixRed());
+        assertEquals(0.2f, effects.getMixGreen());
+        assertEquals(0.3f, effects.getMixBlue());
+        assertEquals(0.6f, effects.getMixAmount());
+        assertEquals(1f, effects.getTintAlpha());
     }
 
     @Test
     void mixAndSaturationCannotChangeAfterRemoval() {
         Layer layer = addLayer();
+        ColorEffects effects = layer.getColorEffects();
         stack.remove(layer);
-        assertThrows(IllegalStateException.class, () -> layer.setMix(1f, 0f, 0f, 0.5f));
-        assertThrows(IllegalStateException.class, () -> layer.setMix(Color.RED, 0.5f));
-        assertThrows(IllegalStateException.class, () -> layer.setSaturation(0f));
-        assertEquals(0f, layer.getMixAmount());
-        assertEquals(1f, layer.getSaturation());
+        assertThrows(IllegalStateException.class, () -> effects.setMix(1f, 0f, 0f, 0.5f));
+        assertThrows(IllegalStateException.class, () -> effects.setMix(Color.RED, 0.5f));
+        assertThrows(IllegalStateException.class, () -> effects.setSaturation(0f));
+        assertEquals(0f, effects.getMixAmount());
+        assertEquals(1f, effects.getSaturation());
     }
 
     @Test
     void stackPassesEachLayersEffectsToItsOwnRenderer() {
         Layer first = addLayer();
         addLayer();
-        first.setMix(1f, 0.5f, 0.25f, 0.75f);
-        first.setSaturation(0f);
+        first.getColorEffects().setMix(1f, 0.5f, 0.25f, 0.75f);
+        first.getColorEffects().setSaturation(0f);
         stack.draw(null, 0f, 0f);
-        LayerEffects expected = new LayerEffects();
+        ColorEffects expected = new ColorEffects();
         expected.setMix(1f, 0.5f, 0.25f, 0.75f);
         expected.setSaturation(0f);
         assertArrayEquals(matrixOf(expected), lastMatrix(0));
-        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
+        assertArrayEquals(matrixOf(new ColorEffects()), lastMatrix(1));
     }
 
     @Test
     void invertHasNeutralDefault() {
-        assertEquals(0f, addLayer().getInvert());
+        assertEquals(0f, addLayer().getColorEffects().getInvert());
     }
 
     @Test
     void invertSetterStoresValueUnclamped() {
-        Layer layer = addLayer();
-        layer.setInvert(1.5f);
-        assertEquals(1.5f, layer.getInvert());
+        ColorEffects effects = addLayer().getColorEffects();
+        effects.setInvert(1.5f);
+        assertEquals(1.5f, effects.getInvert());
     }
 
     @Test
     void invertCannotChangeAfterRemoval() {
         Layer layer = addLayer();
+        ColorEffects effects = layer.getColorEffects();
         stack.remove(layer);
-        assertThrows(IllegalStateException.class, () -> layer.setInvert(1f));
-        assertEquals(0f, layer.getInvert());
+        assertThrows(IllegalStateException.class, () -> effects.setInvert(1f));
+        assertEquals(0f, effects.getInvert());
     }
 
     @Test
     void stackPassesEachLayersInvertToItsOwnRenderer() {
         Layer first = addLayer();
         addLayer();
-        first.setInvert(1f);
+        first.getColorEffects().setInvert(1f);
         stack.draw(null, 0f, 0f);
-        LayerEffects expected = new LayerEffects();
+        ColorEffects expected = new ColorEffects();
         expected.setInvert(1f);
         assertArrayEquals(matrixOf(expected), lastMatrix(0));
-        assertArrayEquals(matrixOf(new LayerEffects()), lastMatrix(1));
+        assertArrayEquals(matrixOf(new ColorEffects()), lastMatrix(1));
     }
 
     @Test

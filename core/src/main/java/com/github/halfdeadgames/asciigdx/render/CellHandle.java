@@ -401,12 +401,12 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Mixes both the foreground and the background toward the same color by the same amount. The
-     * color is an RGBA8888 int, e.g. {@code 0xFF6E8AFF}, unlike {@link Layer#setMix(float, float,
+     * color is an RGBA8888 int, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float,
      * float, float)}, which takes float channels or a {@code Color}.
      *
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
-     * @see Layer#setMix(float, float, float, float) the layer-level mix, which applies to the whole
+     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
      *     layer after cell-level overrides
      */
     public void setMix(int rgba, float amount) {
@@ -415,12 +415,12 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Mixes the foreground and the background toward their own colors by their own amounts. Colors
-     * are RGBA8888 ints, e.g. {@code 0xFF6E8AFF}, unlike {@link Layer#setMix(float, float, float,
+     * are RGBA8888 ints, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float, float,
      * float)}, which takes float channels or a {@code Color}.
      *
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
-     * @see Layer#setMix(float, float, float, float) the layer-level mix, which applies to the whole
+     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
      *     layer after cell-level overrides
      */
     public void setMix(int foregroundRgba, float foregroundAmount,

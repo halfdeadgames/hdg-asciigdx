@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.render;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -55,30 +56,27 @@ class LayerGroupTest {
         return stack.add(new TerminalGrid(2, 2), font);
     }
 
-    private static LayerEffects saturation(float value) {
-        LayerEffects effects = new LayerEffects();
+    private static ColorEffects saturation(float value) {
+        ColorEffects effects = new ColorEffects();
         effects.setSaturation(value);
         return effects;
     }
 
-    private static LayerEffects tintAndMix() {
-        LayerEffects effects = new LayerEffects();
+    private static ColorEffects tintAndMix() {
+        ColorEffects effects = new ColorEffects();
         effects.setTint(0.5f, 0.8f, 1.2f, 0.6f);
         effects.setMix(0.2f, 0.9f, 0.1f, 0.35f);
         return effects;
     }
 
-    private static LayerEffects invert(float value) {
-        LayerEffects effects = new LayerEffects();
+    private static ColorEffects invert(float value) {
+        ColorEffects effects = new ColorEffects();
         effects.setInvert(value);
         return effects;
     }
 
-    private static void copyEffects(LayerEffects from, LayerGroup to) {
-        to.setTint(from.getTintR(), from.getTintG(), from.getTintB(), from.getTintA());
-        to.setMix(from.getMixR(), from.getMixG(), from.getMixB(), from.getMixAmount());
-        to.setSaturation(from.getSaturation());
-        to.setInvert(from.getInvert());
+    private static void copyEffects(ColorEffects from, LayerGroup to) {
+        to.getColorEffects().copyFrom(from);
     }
 
     private static void assertMatrixEquals(ColorMatrix expected, ColorMatrix actual) {
@@ -91,7 +89,7 @@ class LayerGroupTest {
         }
     }
 
-    private static ColorMatrix matrixOf(LayerEffects effects) {
+    private static ColorMatrix matrixOf(ColorEffects effects) {
         ColorMatrix matrix = new ColorMatrix();
         effects.writeColorMatrix(matrix);
         return matrix;
@@ -99,7 +97,7 @@ class LayerGroupTest {
 
     @Test
     void layerWithoutGroupsResolvesToItsOwnEffects() {
-        LayerEffects own = tintAndMix();
+        ColorEffects own = tintAndMix();
 
         resolved.resolve(own, new Array<>());
 
@@ -109,8 +107,8 @@ class LayerGroupTest {
 
     @Test
     void oneGroupRunsAfterTheLayersOwnEffects() {
-        LayerEffects own = saturation(0.5f);
-        LayerEffects groupEffects = tintAndMix();
+        ColorEffects own = saturation(0.5f);
+        ColorEffects groupEffects = tintAndMix();
         LayerGroup group = stack.addGroup();
         copyEffects(groupEffects, group);
 
@@ -121,9 +119,9 @@ class LayerGroupTest {
 
     @Test
     void twoGroupsRunInJoinOrder() {
-        LayerEffects own = saturation(0.5f);
-        LayerEffects firstEffects = invert(0.8f);
-        LayerEffects secondEffects = tintAndMix();
+        ColorEffects own = saturation(0.5f);
+        ColorEffects firstEffects = invert(0.8f);
+        ColorEffects secondEffects = tintAndMix();
         LayerGroup first = stack.addGroup();
         LayerGroup second = stack.addGroup();
         copyEffects(firstEffects, first);
@@ -136,7 +134,7 @@ class LayerGroupTest {
 
     @Test
     void groupOrderMattersBecauseInvertAndTintDoNotCommute() {
-        LayerEffects own = new LayerEffects();
+        ColorEffects own = new ColorEffects();
         LayerGroup invertGroup = stack.addGroup();
         LayerGroup tintGroup = stack.addGroup();
         copyEffects(invert(1f), invertGroup);
@@ -154,12 +152,12 @@ class LayerGroupTest {
 
     @Test
     void alphasMultiply() {
-        LayerEffects own = new LayerEffects();
-        own.setTintAlpha(0.5f);
+        ColorEffects own = new ColorEffects();
+        own.setAlpha(0.5f);
         LayerGroup first = stack.addGroup();
         LayerGroup second = stack.addGroup();
-        first.setAlpha(0.5f);
-        second.setAlpha(0.4f);
+        first.getColorEffects().setAlpha(0.5f);
+        second.getColorEffects().setAlpha(0.4f);
 
         resolved.resolve(own, groupsOf(first, second));
 
@@ -169,10 +167,10 @@ class LayerGroupTest {
     @Test
     void resolvingAgainDoesNotKeepEarlierGroups() {
         LayerGroup group = stack.addGroup();
-        group.setAlpha(0.5f);
-        resolved.resolve(new LayerEffects(), groupsOf(group));
+        group.getColorEffects().setAlpha(0.5f);
+        resolved.resolve(new ColorEffects(), groupsOf(group));
 
-        resolved.resolve(new LayerEffects(), new Array<>());
+        resolved.resolve(new ColorEffects(), new Array<>());
 
         assertEquals(1f, resolved.getAlpha(), 0f);
         assertMatrixEquals(new ColorMatrix(), resolved.getMatrix());
@@ -244,8 +242,41 @@ class LayerGroupTest {
         assertEquals(0, layer.getGroups().size);
         assertEquals(0, group.size());
         assertThrows(IllegalStateException.class, () -> group.add(layer));
-        assertThrows(IllegalStateException.class, () -> group.setAlpha(0.5f));
         assertThrows(IllegalStateException.class, () -> stack.removeGroup(group));
+    }
+
+    @Test
+    void colorEffectsIsTheSameInstanceEveryCall() {
+        LayerGroup group = stack.addGroup();
+
+        assertSame(group.getColorEffects(), group.getColorEffects());
+        assertNotSame(group.getColorEffects(), stack.addGroup().getColorEffects());
+    }
+
+    @Test
+    void colorEffectsCannotChangeAfterGroupRemovalButStayReadable() {
+        LayerGroup group = stack.addGroup();
+        ColorEffects effects = group.getColorEffects();
+        effects.setAlpha(0.5f);
+
+        stack.removeGroup(group);
+
+        assertSame(effects, group.getColorEffects());
+        assertThrows(IllegalStateException.class, () -> effects.setAlpha(0.25f));
+        assertThrows(IllegalStateException.class, () -> effects.setTint(1f, 1f, 1f, 1f));
+        assertThrows(IllegalStateException.class, () -> effects.setMix(1f, 1f, 1f, 0f));
+        assertThrows(IllegalStateException.class, () -> effects.setSaturation(1f));
+        assertThrows(IllegalStateException.class, () -> effects.setInvert(0f));
+        assertEquals(0.5f, effects.getTintAlpha());
+    }
+
+    @Test
+    void colorEffectsCannotChangeAfterStackDispose() {
+        ColorEffects effects = stack.addGroup().getColorEffects();
+
+        stack.dispose();
+
+        assertThrows(IllegalStateException.class, () -> effects.setInvert(1f));
     }
 
     @Test
@@ -270,23 +301,23 @@ class LayerGroupTest {
 
     @Test
     void groupEffectsStartNeutralAndStoreValues() {
-        LayerGroup group = stack.addGroup();
-        assertEquals(1f, group.getTintA());
-        assertEquals(1f, group.getSaturation());
-        assertEquals(0f, group.getInvert());
-        assertEquals(0f, group.getMixAmount());
+        ColorEffects effects = stack.addGroup().getColorEffects();
+        assertEquals(1f, effects.getTintAlpha());
+        assertEquals(1f, effects.getSaturation());
+        assertEquals(0f, effects.getInvert());
+        assertEquals(0f, effects.getMixAmount());
 
-        group.setTint(0.1f, 0.2f, 0.3f, 0.4f);
-        group.setMix(0.5f, 0.6f, 0.7f, 0.8f);
-        group.setSaturation(2f);
-        group.setInvert(0.25f);
+        effects.setTint(0.1f, 0.2f, 0.3f, 0.4f);
+        effects.setMix(0.5f, 0.6f, 0.7f, 0.8f);
+        effects.setSaturation(2f);
+        effects.setInvert(0.25f);
 
-        assertEquals(0.3f, group.getTintB());
-        assertEquals(0.4f, group.getTintA());
-        assertEquals(0.7f, group.getMixB());
-        assertEquals(0.8f, group.getMixAmount());
-        assertEquals(2f, group.getSaturation());
-        assertEquals(0.25f, group.getInvert());
+        assertEquals(0.3f, effects.getTintBlue());
+        assertEquals(0.4f, effects.getTintAlpha());
+        assertEquals(0.7f, effects.getMixBlue());
+        assertEquals(0.8f, effects.getMixAmount());
+        assertEquals(2f, effects.getSaturation());
+        assertEquals(0.25f, effects.getInvert());
     }
 
     @Test
@@ -295,18 +326,18 @@ class LayerGroupTest {
         LayerGroup group = stack.addGroup();
         group.add(layer);
 
-        group.setAlpha(0.3f);
-        group.setInvert(1f);
+        group.getColorEffects().setAlpha(0.3f);
+        group.getColorEffects().setInvert(1f);
 
-        assertEquals(1f, layer.getTintA());
-        assertEquals(0f, layer.getInvert());
+        assertEquals(1f, layer.getColorEffects().getTintAlpha());
+        assertEquals(0f, layer.getColorEffects().getInvert());
     }
 
     @Test
     void parentEffectsApplyAfterTheChild() {
-        LayerEffects own = saturation(0.5f);
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
+        ColorEffects own = saturation(0.5f);
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         copyEffects(childEffects, child);
@@ -321,9 +352,9 @@ class LayerGroupTest {
 
     @Test
     void grandparentChainAppliesInOrder() {
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
-        LayerEffects grandparentEffects = saturation(0.3f);
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
+        ColorEffects grandparentEffects = saturation(0.3f);
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         LayerGroup grandparent = stack.addGroup();
@@ -333,26 +364,26 @@ class LayerGroupTest {
         child.setParent(parent);
         parent.setParent(grandparent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(child));
+        resolved.resolve(new ColorEffects(), groupsOf(child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects,
                 grandparentEffects);
     }
 
     @Test
     void sharedParentOfTwoGroupsAppliesOnce() {
-        LayerEffects sharedEffects = invert(1f);
+        ColorEffects sharedEffects = invert(1f);
         LayerGroup first = stack.addGroup();
         LayerGroup second = stack.addGroup();
         LayerGroup shared = stack.addGroup();
         copyEffects(sharedEffects, shared);
-        shared.setAlpha(0.5f);
+        shared.getColorEffects().setAlpha(0.5f);
         first.setParent(shared);
         second.setParent(shared);
 
-        resolved.resolve(new LayerEffects(), groupsOf(first, second));
+        resolved.resolve(new ColorEffects(), groupsOf(first, second));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), sharedEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), sharedEffects);
         assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
     }
 
@@ -360,51 +391,51 @@ class LayerGroupTest {
     void groupJoinedDirectlyAndAsAncestorAppliesOnce() {
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
-        parent.setAlpha(0.5f);
+        parent.getColorEffects().setAlpha(0.5f);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(child, parent));
+        resolved.resolve(new ColorEffects(), groupsOf(child, parent));
         assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
 
-        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+        resolved.resolve(new ColorEffects(), groupsOf(parent, child));
         assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
     }
 
     @Test
     void parentJoinedFirstStillRunsAfterItsChild() {
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         copyEffects(childEffects, child);
         copyEffects(parentEffects, parent);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+        resolved.resolve(new ColorEffects(), groupsOf(parent, child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
     }
 
     @Test
     void childJoinedFirstRunsBeforeItsParent() {
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         copyEffects(childEffects, child);
         copyEffects(parentEffects, parent);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(child, parent));
+        resolved.resolve(new ColorEffects(), groupsOf(child, parent));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
     }
 
     @Test
     void chainJoinedOutOfOrderRunsDescendantsFirst() {
-        LayerEffects grandchildEffects = invert(0.8f);
-        LayerEffects childEffects = tintAndMix();
-        LayerEffects parentEffects = saturation(0.3f);
+        ColorEffects grandchildEffects = invert(0.8f);
+        ColorEffects childEffects = tintAndMix();
+        ColorEffects parentEffects = saturation(0.3f);
         LayerGroup parent = stack.addGroup();
         LayerGroup child = stack.addGroup();
         LayerGroup grandchild = stack.addGroup();
@@ -414,40 +445,40 @@ class LayerGroupTest {
         child.setParent(parent);
         grandchild.setParent(child);
 
-        resolved.resolve(new LayerEffects(), groupsOf(parent, grandchild, child));
+        resolved.resolve(new ColorEffects(), groupsOf(parent, grandchild, child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), grandchildEffects, childEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), grandchildEffects, childEffects,
                 parentEffects);
     }
 
     @Test
     void diamondRunsSiblingsInJoinOrderThenSharedParentOnce() {
-        LayerEffects firstEffects = invert(0.8f);
-        LayerEffects secondEffects = tintAndMix();
-        LayerEffects sharedEffects = saturation(0.3f);
+        ColorEffects firstEffects = invert(0.8f);
+        ColorEffects secondEffects = tintAndMix();
+        ColorEffects sharedEffects = saturation(0.3f);
         LayerGroup shared = stack.addGroup();
         LayerGroup first = stack.addGroup();
         LayerGroup second = stack.addGroup();
         copyEffects(sharedEffects, shared);
-        shared.setAlpha(0.5f);
+        shared.getColorEffects().setAlpha(0.5f);
         copyEffects(firstEffects, first);
         copyEffects(secondEffects, second);
         first.setParent(shared);
         second.setParent(shared);
 
-        resolved.resolve(new LayerEffects(), groupsOf(first, second));
+        resolved.resolve(new ColorEffects(), groupsOf(first, second));
 
         assertEquals(0.5f * 0.6f, resolved.getAlpha(), TOLERANCE);
-        resolved.resolve(new LayerEffects(), groupsOf(second, first));
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), secondEffects, firstEffects,
+        resolved.resolve(new ColorEffects(), groupsOf(second, first));
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), secondEffects, firstEffects,
                 sharedEffects);
     }
 
     @Test
     void unrelatedGroupsKeepJoinOrderNextToATree() {
-        LayerEffects loneEffects = saturation(0.3f);
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
+        ColorEffects loneEffects = saturation(0.3f);
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
         LayerGroup lone = stack.addGroup();
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
@@ -456,9 +487,9 @@ class LayerGroupTest {
         copyEffects(parentEffects, parent);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(lone, child));
+        resolved.resolve(new ColorEffects(), groupsOf(lone, child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), loneEffects, childEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), loneEffects, childEffects,
                 parentEffects);
     }
 
@@ -466,19 +497,19 @@ class LayerGroupTest {
     void alphaProductIsTheSameForAnyJoinOrder() {
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
-        child.setAlpha(0.5f);
-        parent.setAlpha(0.4f);
+        child.getColorEffects().setAlpha(0.5f);
+        parent.getColorEffects().setAlpha(0.4f);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(parent, child));
+        resolved.resolve(new ColorEffects(), groupsOf(parent, child));
 
         assertEquals(0.2f, resolved.getAlpha(), TOLERANCE);
     }
 
     @Test
     void repeatedResolvesGiveTheSameMatrix() {
-        LayerEffects childEffects = invert(0.8f);
-        LayerEffects parentEffects = tintAndMix();
+        ColorEffects childEffects = invert(0.8f);
+        ColorEffects parentEffects = tintAndMix();
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         copyEffects(childEffects, child);
@@ -486,36 +517,36 @@ class LayerGroupTest {
         child.setParent(parent);
         Array<LayerGroup> groups = groupsOf(parent, child);
 
-        resolved.resolve(new LayerEffects(), groups);
-        resolved.resolve(new LayerEffects(), groups);
-        resolved.resolve(new LayerEffects(), groups);
+        resolved.resolve(new ColorEffects(), groups);
+        resolved.resolve(new ColorEffects(), groups);
+        resolved.resolve(new ColorEffects(), groups);
 
-        assertAppliesInSequence(resolved.getMatrix(), new LayerEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
     }
 
     @Test
     void resolvingAgainAppliesTheSameGroupsAgain() {
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
-        parent.setAlpha(0.5f);
+        parent.getColorEffects().setAlpha(0.5f);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(child));
-        resolved.resolve(new LayerEffects(), groupsOf(child));
+        resolved.resolve(new ColorEffects(), groupsOf(child));
+        resolved.resolve(new ColorEffects(), groupsOf(child));
 
         assertEquals(0.5f, resolved.getAlpha(), TOLERANCE);
     }
 
     @Test
     void alphaMultipliesThroughTheChain() {
-        LayerEffects own = new LayerEffects();
-        own.setTintAlpha(0.5f);
+        ColorEffects own = new ColorEffects();
+        own.setAlpha(0.5f);
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
         LayerGroup grandparent = stack.addGroup();
-        child.setAlpha(0.5f);
-        parent.setAlpha(0.4f);
-        grandparent.setAlpha(0.5f);
+        child.getColorEffects().setAlpha(0.5f);
+        parent.getColorEffects().setAlpha(0.4f);
+        grandparent.getColorEffects().setAlpha(0.5f);
         child.setParent(parent);
         parent.setParent(grandparent);
 
@@ -528,10 +559,10 @@ class LayerGroupTest {
     void ancestorAlphaZeroZeroesTheLayer() {
         LayerGroup child = stack.addGroup();
         LayerGroup parent = stack.addGroup();
-        parent.setAlpha(0f);
+        parent.getColorEffects().setAlpha(0f);
         child.setParent(parent);
 
-        resolved.resolve(new LayerEffects(), groupsOf(child));
+        resolved.resolve(new ColorEffects(), groupsOf(child));
 
         assertEquals(0f, resolved.getAlpha(), 0f);
     }
@@ -609,12 +640,12 @@ class LayerGroupTest {
     }
 
     /** Runs each sample color through every step one after another, and compares with the resolved matrix. */
-    private static void assertAppliesInSequence(ColorMatrix actual, LayerEffects... steps) {
+    private static void assertAppliesInSequence(ColorMatrix actual, ColorEffects... steps) {
         float[] expected = new float[3];
         float[] resolvedColor = new float[3];
         for (float[] color : SAMPLE_COLORS) {
             float[] current = color.clone();
-            for (LayerEffects step : steps) {
+            for (ColorEffects step : steps) {
                 matrixOf(step).apply(current[0], current[1], current[2], expected);
                 current = expected.clone();
             }

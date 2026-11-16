@@ -349,7 +349,7 @@ class ShowcaseScene extends GridScene {
     private void bindOverlayFade() {
         timeline.bind(
             LoopFade.track(FADE_IN_SECONDS, FADE_OUT_START_SECONDS, FADE_OUT_SECONDS),
-            overlayLayer::setAlpha);
+            overlayLayer.getColorEffects()::setAlpha);
     }
 
     private void bindHpBar() {
@@ -369,11 +369,11 @@ class ShowcaseScene extends GridScene {
     }
 
     private void mixSplashLayersWithWhite(float amount) {
-        splashGroup.setMix(Color.WHITE, amount);
+        splashGroup.getColorEffects().setMix(Color.WHITE, amount);
     }
 
     private void saturateSplashLayers(float saturation) {
-        splashGroup.setSaturation(saturation);
+        splashGroup.getColorEffects().setSaturation(saturation);
     }
 
     /**
@@ -723,7 +723,7 @@ class ShowcaseScene extends GridScene {
     private void updateRain(float time) {
         for (int set = 0; set < RAIN_SET_COUNT; set++) {
             redrawRainIfCycleChanged(set, rainSets[set].cycleIndexAt(time));
-            rainLayers[set].setAlpha(rainSets[set].alphaAt(time));
+            rainLayers[set].getColorEffects().setAlpha(rainSets[set].alphaAt(time));
             rainLayers[set].setOffset(
                 rainSets[set].slideColumnsAt(time) * cellWidth,
                 (rainSets[set].slideRowsAt(time) - RAIN_SLIDE_CELLS) * cellHeight);
@@ -780,7 +780,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private void applyLightning(float time) {
-        lightningGroup.setInvert(lightning.amountAt(time));
+        lightningGroup.getColorEffects().setInvert(lightning.amountAt(time));
     }
 
     /** Center of the scene panel, measured from the panel's corner. */
@@ -807,7 +807,7 @@ class ShowcaseScene extends GridScene {
         float zoom = camera.zoomFor(depth);
         layer.setZoom(zoom);
         layer.setParallax(zoom);
-        layer.setAlpha(camera.alphaFor(depth));
+        layer.getColorEffects().setAlpha(camera.alphaFor(depth));
     }
 
     private void drawWaterIfStepChanged(float time) {

@@ -273,7 +273,7 @@ class SpritesScene extends GridScene {
 
     private void toggleGray() {
         gray = !gray;
-        mapLayer.setSaturation(gray ? 0f : 1f);
+        mapLayer.getColorEffects().setSaturation(gray ? 0f : 1f);
     }
 
     private void startFlash() {
@@ -286,7 +286,7 @@ class SpritesScene extends GridScene {
 
     private void toggleHalfAlpha() {
         halfAlpha = !halfAlpha;
-        mapLayer.setAlpha(halfAlpha ? HALF_ALPHA : 1f);
+        mapLayer.getColorEffects().setAlpha(halfAlpha ? HALF_ALPHA : 1f);
     }
 
     private void updateFlash(float step) {
@@ -294,7 +294,7 @@ class SpritesScene extends GridScene {
             return;
         }
         flashRemaining = Math.max(0f, flashRemaining - step);
-        mapLayer.setMix(1f, 1f, 1f, FLASH_STRENGTH * flashRemaining / FLASH_DURATION);
+        mapLayer.getColorEffects().setMix(1f, 1f, 1f, FLASH_STRENGTH * flashRemaining / FLASH_DURATION);
     }
 
     private void createRing() {

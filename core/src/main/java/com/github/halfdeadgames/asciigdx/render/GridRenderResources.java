@@ -27,7 +27,7 @@ final class GridRenderResources implements Disposable {
             + "}\n";
 
     // Glyph over background (Porter-Duff over), then the layer effects as one color matrix built from
-    // saturation, tint, mix, and invert in that order (see LayerEffects), then alpha. Alpha fades the
+    // saturation, tint, mix, and invert in that order (see ColorEffects), then alpha. Alpha fades the
     // cell as one color; the matrix never touches it. Mix comes before invert so a flash can reach its
     // color even on a darkly tinted layer; invert comes last so it negates the finished look.
     private static final String FRAGMENT_SOURCE =

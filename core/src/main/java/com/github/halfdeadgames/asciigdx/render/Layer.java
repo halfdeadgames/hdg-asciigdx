@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.render;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
@@ -36,7 +35,7 @@ public final class Layer {
     private float parallaxY = 1f;
     private boolean visible = true;
     private boolean pickable = true;
-    private final LayerEffects effects = new LayerEffects();
+    private final ColorEffects effects = new ColorEffects();
     private final Array<LayerGroup> groups = new Array<>(true, 2);
     private Panel panel;
     private MapWindow mapWindow;
@@ -419,163 +418,27 @@ public final class Layer {
         this.pickable = pickable;
     }
 
-    /** Returns the tint's red component. */
-    public float getTintR() {
-        return effects.getTintR();
-    }
-
-    /** Returns the tint's green component. */
-    public float getTintG() {
-        return effects.getTintG();
-    }
-
-    /** Returns the tint's blue component. */
-    public float getTintB() {
-        return effects.getTintB();
-    }
-
-    /** Returns the tint's alpha component. */
-    public float getTintA() {
-        return effects.getTintA();
-    }
-
-    /** Copies the tint into {@code out} and returns it. */
-    public Color getTint(Color out) {
-        return out.set(effects.getTintR(), effects.getTintG(), effects.getTintB(), effects.getTintA());
-    }
-
     /**
-     * Sets the tint, a color multiplied into every cell's background and glyph
-     * colors on the GPU each frame. Changing it rewrites and uploads nothing.
-     * Default is white (1, 1, 1, 1), which leaves colors unchanged. Values are not
-     * clamped.
+     * Returns this layer's own color effects: tint, alpha, mix, saturation, and invert. The object
+     * is live and owned by the layer; every call returns the same instance and allocates nothing.
+     * Changes apply on the next draw to this layer's cells and sprites. If the layer is in a
+     * {@link LayerGroup}, the group's effects run after these.
      *
-     * <p>The tint is applied after saturation and before the mix and the invert (see
-     * {@link #setSaturation}, {@link #setMix}, and {@link #setInvert}).
+     * <p>The object stays readable after the layer is removed from its stack, but its setters then
+     * throw {@link IllegalStateException}.
      *
-     * <p>Alpha fades each cell as one flat color, so a glyph's own background does
-     * not show through it; the layers below show through the whole faded layer.
-     * Inside a cell, glyph and background always combine with normal "over"
-     * blending. The batch's blend functions decide only how the finished cell
-     * combines with what is below.
+     * <p>Example, a white hit flash on a sepia layer:
+     * <pre>{@code
+     * ColorEffects effects = layer.getColorEffects();
+     * effects.setSaturation(0f);
+     * effects.setTint(0.9f, 0.7f, 0.4f, 1f);
+     * effects.setMix(1f, 1f, 1f, flashStrength);
+     * }</pre>
      *
-     * @throws IllegalStateException if the layer was removed
+     * @return the live color effects of this layer; never null
      */
-    public void setTint(float r, float g, float b, float a) {
-        requireAttached();
-        effects.setTint(r, g, b, a);
-    }
-
-    /**
-     * Sets the tint from a color. The values are copied; no reference is kept.
-     *
-     * @see #setTint(float, float, float, float)
-     * @throws IllegalStateException if the layer was removed
-     */
-    public void setTint(Color color) {
-        setTint(color.r, color.g, color.b, color.a);
-    }
-
-    /**
-     * Sets only the tint's alpha, keeping red, green, and blue.
-     *
-     * @see #setTint(float, float, float, float)
-     * @throws IllegalStateException if the layer was removed
-     */
-    public void setAlpha(float alpha) {
-        requireAttached();
-        effects.setTintAlpha(alpha);
-    }
-
-    /** Returns the mix color's red component. */
-    public float getMixR() {
-        return effects.getMixR();
-    }
-
-    /** Returns the mix color's green component. */
-    public float getMixG() {
-        return effects.getMixG();
-    }
-
-    /** Returns the mix color's blue component. */
-    public float getMixB() {
-        return effects.getMixB();
-    }
-
-    /** Returns how far the layer is mixed toward the mix color, 0 for not at all. */
-    public float getMixAmount() {
-        return effects.getMixAmount();
-    }
-
-    /**
-     * Mixes every drawn color toward the given color on the GPU each frame, for hit flashes
-     * (white, amount fading to 0) and fog washes. Changing it rewrites and uploads nothing.
-     * Amount 0 leaves colors unchanged (the default, with white as the color); 1 turns
-     * everything drawn into the color. Only colors change: alpha is untouched, so transparent
-     * parts stay transparent. Values are not clamped.
-     *
-     * <p>The mix is applied after saturation and the tint, so a flash can reach its pure
-     * color even on a darkly tinted layer. Only the invert follows it (see {@link #setInvert}).
-     *
-     * @throws IllegalStateException if the layer was removed
-     * @see CellHandle#setMix(int, float) the cell-level mix, which takes an RGBA8888 int and
-     *     changes one cell's own colors before the layer effects run
-     */
-    public void setMix(float r, float g, float b, float amount) {
-        requireAttached();
-        effects.setMix(r, g, b, amount);
-    }
-
-    /**
-     * Sets the mix from a color's red, green, and blue; its alpha is ignored. The values are
-     * copied; no reference is kept.
-     *
-     * @see #setMix(float, float, float, float)
-     * @throws IllegalStateException if the layer was removed
-     */
-    public void setMix(Color color, float amount) {
-        setMix(color.r, color.g, color.b, amount);
-    }
-
-    /** Returns the saturation, 1 for normal. */
-    public float getSaturation() {
-        return effects.getSaturation();
-    }
-
-    /**
-     * Sets the saturation applied on the GPU each frame: 1 is normal (the default), 0 is
-     * grayscale, and values above 1 oversaturate. Changing it rewrites and uploads nothing.
-     * Values are not clamped.
-     *
-     * <p>Saturation is applied first, before the tint, the mix, and the invert. Saturation 0
-     * plus a tint gives a one-hue look, such as sepia or night vision.
-     *
-     * @throws IllegalStateException if the layer was removed
-     */
-    public void setSaturation(float saturation) {
-        requireAttached();
-        effects.setSaturation(saturation);
-    }
-
-    /** Returns the invert amount, 0 for normal. */
-    public float getInvert() {
-        return effects.getInvert();
-    }
-
-    /**
-     * Sets how far every drawn color is turned into its negative on the GPU each frame: 0 leaves
-     * colors unchanged (the default) and 1 is a full negative. Changing it rewrites and uploads
-     * nothing. Alpha is untouched. Values are not clamped.
-     *
-     * <p>The invert is applied last, after saturation, the tint, and the mix. Inverting every
-     * layer of a stack equals inverting the whole screen as long as the bottom layer is opaque;
-     * transparent parts stay transparent, so they are not inverted.
-     *
-     * @throws IllegalStateException if the layer was removed
-     */
-    public void setInvert(float amount) {
-        requireAttached();
-        effects.setInvert(amount);
+    public ColorEffects getColorEffects() {
+        return effects;
     }
 
     /**
@@ -1065,10 +928,6 @@ public final class Layer {
         return owner;
     }
 
-    LayerEffects getEffects() {
-        return effects;
-    }
-
     /** The groups this layer belongs to, in join order. */
     Array<LayerGroup> getGroups() {
         return groups;
@@ -1097,6 +956,7 @@ public final class Layer {
 
     void detach() {
         owner = null;
+        effects.markDetached();
         detachMapWindow();
         leaveAllGroups();
         detachAllSprites();

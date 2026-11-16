@@ -13,36 +13,36 @@ class ColorMatrixTest {
         {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f}, {0.5f, 0.5f, 0.5f}
     };
 
-    private static LayerEffects identity() {
-        return new LayerEffects();
+    private static ColorEffects identity() {
+        return new ColorEffects();
     }
 
-    private static LayerEffects saturation(float value) {
-        LayerEffects effects = identity();
+    private static ColorEffects saturation(float value) {
+        ColorEffects effects = identity();
         effects.setSaturation(value);
         return effects;
     }
 
-    private static LayerEffects tint() {
-        LayerEffects effects = identity();
+    private static ColorEffects tint() {
+        ColorEffects effects = identity();
         effects.setTint(0.5f, 0.8f, 1.2f, 0.6f);
         return effects;
     }
 
-    private static LayerEffects mixWhite() {
-        LayerEffects effects = identity();
+    private static ColorEffects mixWhite() {
+        ColorEffects effects = identity();
         effects.setMix(1f, 1f, 1f, 0.7f);
         return effects;
     }
 
-    private static LayerEffects invert(float value) {
-        LayerEffects effects = identity();
+    private static ColorEffects invert(float value) {
+        ColorEffects effects = identity();
         effects.setInvert(value);
         return effects;
     }
 
-    private static LayerEffects everything() {
-        LayerEffects effects = new LayerEffects();
+    private static ColorEffects everything() {
+        ColorEffects effects = new ColorEffects();
         effects.setSaturation(0.5f);
         effects.setTint(0.9f, 0.4f, 0.7f, 0.3f);
         effects.setMix(0.2f, 0.9f, 0.1f, 0.35f);
@@ -50,10 +50,10 @@ class ColorMatrixTest {
         return effects;
     }
 
-    private static float[] oldPipeline(LayerEffects e, float[] color) {
+    private static float[] oldPipeline(ColorEffects e, float[] color) {
         float gray = color[0] * 0.2126f + color[1] * 0.7152f + color[2] * 0.0722f;
-        float[] tintValues = {e.getTintR(), e.getTintG(), e.getTintB()};
-        float[] mixValues = {e.getMixR(), e.getMixG(), e.getMixB()};
+        float[] tintValues = {e.getTintRed(), e.getTintGreen(), e.getTintBlue()};
+        float[] mixValues = {e.getMixRed(), e.getMixGreen(), e.getMixBlue()};
         float[] result = new float[3];
         for (int channel = 0; channel < 3; channel++) {
             float value = gray + (color[channel] - gray) * e.getSaturation();
@@ -64,7 +64,7 @@ class ColorMatrixTest {
         return result;
     }
 
-    private static void assertMatchesOldPipeline(LayerEffects effects) {
+    private static void assertMatchesOldPipeline(ColorEffects effects) {
         ColorMatrix matrix = new ColorMatrix();
         effects.writeColorMatrix(matrix);
         float[] actual = new float[3];
@@ -121,7 +121,7 @@ class ColorMatrixTest {
         assertEquals(0f, values[7], 0f);
         assertEquals(0f, values[11], 0f);
         assertEquals(1f, values[15], 0f);
-        assertEquals(0.3f, everything().getTintA(), 0f);
+        assertEquals(0.3f, everything().getTintAlpha(), 0f);
     }
 
     @Test
