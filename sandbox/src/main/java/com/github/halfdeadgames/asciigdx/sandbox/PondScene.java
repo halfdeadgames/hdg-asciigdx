@@ -7,6 +7,8 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.layer.CameraFraming;
+import com.github.halfdeadgames.asciigdx.layer.FrameAlignment;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
@@ -21,7 +23,6 @@ import com.github.halfdeadgames.asciigdx.sandbox.pond.ManualMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.MovingLilies;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PlayerMotion;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PointerAim;
-import com.github.halfdeadgames.asciigdx.sandbox.pond.PondCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondCell;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondGenerator;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondMap;
@@ -386,13 +387,15 @@ class PondScene implements SandboxScene {
     }
 
     private float cameraX(float remaining) {
-        return PondCamera.cameraFor(fractionalColumn(remaining), gameCellWidth, WINDOW_COLUMNS,
-                WORLD_COLUMNS);
+        return CameraFraming.centerOn((fractionalColumn(remaining) + 0.5f) * gameCellWidth,
+                WINDOW_COLUMNS * gameCellWidth, WORLD_COLUMNS * gameCellWidth,
+                FrameAlignment.START);
     }
 
     private float cameraY(float remaining) {
-        return PondCamera.cameraFor(fractionalRow(remaining), gameCellHeight, WINDOW_ROWS,
-                WORLD_ROWS);
+        return CameraFraming.centerOn((fractionalRow(remaining) + 0.5f) * gameCellHeight,
+                WINDOW_ROWS * gameCellHeight, WORLD_ROWS * gameCellHeight,
+                FrameAlignment.START);
     }
 
     private float playerCenterX() {
