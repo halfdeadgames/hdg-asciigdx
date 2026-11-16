@@ -89,7 +89,7 @@ public final class TextureGlyphSource implements GlyphSource {
         Objects.requireNonNull(layout, "layout must not be null");
         Objects.requireNonNull(order, "order must not be null");
         Objects.requireNonNull(mode, "mode must not be null");
-        requireOrderFits(order, layout);
+        GlyphSheetLoader.requireOrderFits(order, layout);
         int fallbackSlot = order.slotOf(fallbackCodePoint);
         if (fallbackSlot < 0) {
             throw new IllegalArgumentException(
@@ -142,46 +142,10 @@ public final class TextureGlyphSource implements GlyphSource {
         if (cellWidth <= 0 || cellHeight <= 0) {
             throw new IllegalArgumentException("Cell size must be positive, was " + cellWidth + "x" + cellHeight);
         }
-        String text = characterList.readString("UTF-8");
-        Pixmap pixmap = new Pixmap(image);
-        GlyphSheetLayout layout;
-        GlyphOrder order;
-        int fallbackSlot;
-        try {
-            int columns = pixmap.getWidth() / cellWidth;
-            if (columns == 0) {
-                throw new IllegalArgumentException(
-                    "Image " + image.path() + " is narrower than one " + cellWidth + " pixel cell");
-            }
-            order = GlyphOrderText.read(text, columns);
-            layout = GlyphSheetLayout.grid(cellWidth, cellHeight, columns, (order.size() + columns - 1) / columns);
-            fallbackSlot = order.slotOf(DEFAULT_FALLBACK_CODE_POINT);
-            if (fallbackSlot < 0) {
-                throw new IllegalArgumentException(
-                    "Character list " + characterList.path() + " has no '?' to use as the fallback glyph");
-            }
-        } catch (RuntimeException e) {
-            pixmap.dispose();
-            throw e;
-        }
-        return convertAndUpload(pixmap, image.path(), layout, order, mode, null, fallbackSlot, filter);
-    }
-
-    private static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {
-        if (order.size() > layout.slotCount()) {
-            throw new IllegalArgumentException(
-                "Order has " + order.size() + " glyphs but the layout has only "
-                    + layout.slotCount() + " slots");
-        }
-    }
-
-    private static void requireImageFits(Pixmap image, String imageName, GlyphSheetLayout layout) {
-        if (image.getWidth() < layout.requiredImageWidth() || image.getHeight() < layout.requiredImageHeight()) {
-            throw new IllegalArgumentException(
-                imageName + " is " + image.getWidth() + "x" + image.getHeight()
-                    + " but the layout needs at least " + layout.requiredImageWidth()
-                    + "x" + layout.requiredImageHeight());
-        }
+        GlyphSheetLoader.LoadedSheet sheet = GlyphSheetLoader.readSheet(
+            image, characterList, cellWidth, cellHeight, DEFAULT_FALLBACK_CODE_POINT);
+        return convertAndUpload(
+            sheet.pixmap(), image.path(), sheet.layout(), sheet.order(), mode, null, sheet.fallbackSlot(), filter);
     }
 
     // Takes ownership of the pixmap and disposes it, also when this method throws.
@@ -194,28 +158,13 @@ public final class TextureGlyphSource implements GlyphSource {
         Integer keyRgba8888OrNull,
         int fallbackSlot,
         GlyphFilter filter) {
+        Pixmap ready = pixmap;
         try {
-            requireImageFits(pixmap, "Image " + path, layout);
-            int key = keyRgba8888OrNull != null ? keyRgba8888OrNull : pixmap.getPixel(0, 0);
-            if (mode.shouldConvert(hasNonOpaquePixel(pixmap))) {
-                if (pixmap.getFormat() != Pixmap.Format.RGBA8888) {
-                    Pixmap rgba = new Pixmap(pixmap.getWidth(), pixmap.getHeight(), Pixmap.Format.RGBA8888);
-                    Pixmap original = pixmap;
-                    pixmap = rgba;
-                    try {
-                        rgba.setBlending(Pixmap.Blending.None);
-                        rgba.drawPixmap(original, 0, 0);
-                    } finally {
-                        original.dispose();
-                    }
-                }
-                pixmap.setBlending(Pixmap.Blending.None);
-                convertToWhiteWithAlpha(pixmap, key);
-            }
-
-            return upload(pixmap, layout, order, fallbackSlot, codePoint -> true, filter);
+            GlyphSheetLoader.requireImageFits(pixmap, "Image " + path, layout);
+            ready = GlyphSheetLoader.applyTransparencyMode(pixmap, mode, keyRgba8888OrNull);
+            return upload(ready, layout, order, fallbackSlot, codePoint -> true, filter);
         } finally {
-            pixmap.dispose();
+            ready.dispose();
         }
     }
 
@@ -261,13 +210,13 @@ public final class TextureGlyphSource implements GlyphSource {
             Objects.requireNonNull(layout, "layout must not be null");
             Objects.requireNonNull(order, "order must not be null");
             Objects.requireNonNull(presentInSheet, "presentInSheet must not be null");
-            requireOrderFits(order, layout);
+            GlyphSheetLoader.requireOrderFits(order, layout);
             int fallbackSlot = order.slotOf(fallbackCodePoint);
             if (fallbackSlot < 0 || !presentInSheet.test(fallbackCodePoint)) {
                 throw new IllegalArgumentException(
                     "Sheet has no glyph for fallback code point " + fallbackCodePoint);
             }
-            requireImageFits(sheet, "Sheet", layout);
+            GlyphSheetLoader.requireImageFits(sheet, "Sheet", layout);
             return upload(sheet, layout, order, fallbackSlot, presentInSheet, filter);
         } finally {
             if (sheet != null) {
@@ -344,25 +293,6 @@ public final class TextureGlyphSource implements GlyphSource {
             size.cellHeight(),
             TransparencyMode.AUTO,
             filter);
-    }
-
-    private static boolean hasNonOpaquePixel(Pixmap pixmap) {
-        for (int y = 0; y < pixmap.getHeight(); y++) {
-            for (int x = 0; x < pixmap.getWidth(); x++) {
-                if (ColorKeyConversion.isNotFullyOpaque(pixmap.getPixel(x, y))) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static void convertToWhiteWithAlpha(Pixmap pixmap, int key) {
-        for (int y = 0; y < pixmap.getHeight(); y++) {
-            for (int x = 0; x < pixmap.getWidth(); x++) {
-                pixmap.drawPixel(x, y, ColorKeyConversion.toWhiteWithAlpha(pixmap.getPixel(x, y), key));
-            }
-        }
     }
 
     @Override
