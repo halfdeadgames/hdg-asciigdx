@@ -4,7 +4,7 @@ package com.github.halfdeadgames.asciigdx.layer;
  * A target for one map cell that a tween or timeline setter can keep writing while the map window
  * scrolls, without throwing. Create it with {@link MapWindow#createCellTarget}.
  *
- * <p>A lasting handle from {@link MapWindow#cell} is detached when its cell scrolls out of the
+ * <p>A lasting handle from {@link MapWindow#obtainCellHandle} is detached when its cell scrolls out of the
  * window, so a setter that holds one throws later. This target holds only the map coordinates and
  * looks the lasting handle up again on every write, skipping the write while the cell is outside
  * the window:
@@ -71,6 +71,6 @@ public final class MapCellTarget {
         if (!window.contains(mapColumn, mapRow)) {
             return;
         }
-        writer.write(window.cell(mapColumn, mapRow), value);
+        writer.write(window.obtainCellHandle(mapColumn, mapRow), value);
     }
 }

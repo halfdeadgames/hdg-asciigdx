@@ -201,7 +201,7 @@ class LayerStackPanelTest {
         Layer layer = addMember(stack.addPanel(20f, 30f, 50f, 40f));
         layer.setOffset(10f, 5f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(130f, point.x, TOLERANCE);
         assertEquals(165f, point.y, TOLERANCE);
@@ -213,7 +213,7 @@ class LayerStackPanelTest {
         Layer layer = addMember(stack.addPanel(20f, 30f, 50f, 40f));
         layer.setOffset(10f, 5f);
 
-        stack.layerPointAt(layer, 100f, 200f, 139f, 152f, point);
+        stack.toLayerPoint(layer, 100f, 200f, 139f, 152f, point);
 
         assertEquals(9f, point.x, TOLERANCE);
         assertEquals(13f, point.y, TOLERANCE);
@@ -225,7 +225,7 @@ class LayerStackPanelTest {
         Layer layer = addMember(stack.addPanel(20f, 30f, 50f, 40f));
         layer.setOffset(10f, 5f);
 
-        stack.cellAt(layer, 100f, 200f, 139f, 152f, cell);
+        stack.toCell(layer, 100f, 200f, 139f, 152f, cell);
 
         assertEquals(1, cell.x);
         assertEquals(1, cell.y);
@@ -238,7 +238,7 @@ class LayerStackPanelTest {
         Layer layer = addMember(panel);
 
         panel.setPosition(40f, 10f);
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(140f, point.x, TOLERANCE);
         assertEquals(190f, point.y, TOLERANCE);
@@ -249,7 +249,7 @@ class LayerStackPanelTest {
         Layer layer = addMember(stack.addPanel(0.4f, 0f, 50f, 40f));
         layer.setOffset(0.4f, 0f);
 
-        stack.worldPointOf(layer, 0f, 100f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 0f, 100f, 0f, 0f, point);
 
         assertEquals(1f, point.x, TOLERANCE);
     }
@@ -261,7 +261,7 @@ class LayerStackPanelTest {
         Layer layer = addLayer();
         layer.setOffset(10f, 5f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(110f, point.x, TOLERANCE);
         assertEquals(195f, point.y, TOLERANCE);
@@ -274,7 +274,7 @@ class LayerStackPanelTest {
         layer.setOffset(10f, 5f);
 
         layer.setPanel(null);
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
         stack.draw(null, 0f, 100f);
 
         assertNull(layer.getPanel());

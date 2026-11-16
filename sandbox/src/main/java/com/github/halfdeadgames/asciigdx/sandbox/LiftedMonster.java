@@ -81,7 +81,7 @@ final class LiftedMonster {
             return;
         }
         if (handle == null || handle.isDetached()) {
-            handle = layer.cell(column, row);
+            handle = layer.obtainCellHandle(column, row);
         }
         applyMotion(triangle(cyclePosition / MOTION_SECONDS), cellWidth, cellHeight);
         lifted = true;

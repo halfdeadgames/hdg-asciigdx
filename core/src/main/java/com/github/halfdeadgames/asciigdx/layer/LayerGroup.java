@@ -36,7 +36,11 @@ public final class LayerGroup {
         this.owner = owner;
     }
 
-    /** Returns the parent group, or null if this group has none. */
+    /**
+     * Returns the parent group.
+     *
+     * @return the parent group, or null if this group has none
+     */
     public LayerGroup getParent() {
         return parent;
     }
@@ -48,23 +52,26 @@ public final class LayerGroup {
      * effects of this group and its descendants.
      * If the parent is removed from the stack, this group's parent becomes null.
      *
+     * @param parent the new parent group of the same stack, or null for no parent
      * @throws IllegalArgumentException if the parent is this group or one of its descendants, or
      *     belongs to another stack; the parent is left unchanged
      * @throws IllegalStateException if this group or the parent was removed
      */
-    public void setParent(LayerGroup newParent) {
+    public void setParent(LayerGroup parent) {
         LayerStack stack = requireAttached();
-        if (newParent == null) {
-            parent = null;
+        if (parent == null) {
+            this.parent = null;
             return;
         }
-        requireParentCandidate(newParent, stack);
-        parent = newParent;
+        requireParentCandidate(parent, stack);
+        this.parent = parent;
     }
 
     /**
-     * Adds a layer to this group; adding a layer that is already a member does nothing.
+     * Adds a layer to this group; adding a layer that is already a member does nothing. The layer
+     * keeps its own effects and joins the end of the member order.
      *
+     * @param layer a layer of the same stack; not null
      * @throws IllegalArgumentException if the layer is null or belongs to another stack
      * @throws IllegalStateException if the group or the layer was removed
      */
@@ -79,8 +86,10 @@ public final class LayerGroup {
     }
 
     /**
-     * Takes a layer out of this group; removing a layer that is not a member does nothing.
+     * Takes a layer out of this group; removing a layer that is not a member does nothing. The
+     * layer stays in the stack.
      *
+     * @param layer the layer to remove; not null
      * @throws IllegalArgumentException if the layer is null
      * @throws IllegalStateException if the group was removed
      */
@@ -95,22 +104,34 @@ public final class LayerGroup {
         layer.leaveGroup(this);
     }
 
-    /** Returns whether the layer is a member of this group. */
+    /**
+     * Returns whether the layer is a member of this group. Membership in a descendant group does
+     * not count.
+     *
+     * @param layer the layer to look for; may be null
+     * @return true if the layer is a direct member
+     */
     public boolean contains(Layer layer) {
         return members.contains(layer, true);
     }
 
-    /** Returns the number of member layers. */
-    public int size() {
+    /**
+     * Returns the number of member layers.
+     *
+     * @return the number of member layers
+     */
+    public int getLayerCount() {
         return members.size;
     }
 
     /**
      * Returns the member layer at a position, in the order the layers joined.
      *
+     * @param index from 0 to {@link #getLayerCount()} - 1
+     * @return the member layer; never null
      * @throws IndexOutOfBoundsException if the index is out of range
      */
-    public Layer get(int index) {
+    public Layer getLayer(int index) {
         Guards.requireIndexInRange(index, members.size);
         return members.get(index);
     }

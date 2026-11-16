@@ -22,7 +22,7 @@ import java.util.List;
  *
  * <p>A timeline made with {@link #writingEveryApply()} skips nothing: each apply forces every
  * binding, so every setter is called on every apply, even when the value did not change. Use it
- * for values written to a frame handle ({@code Layer.frameCell} or {@code MapWindow.frameCell}).
+ * for values written to a frame handle ({@code Layer.obtainFrameCellHandle} or {@code MapWindow.obtainFrameCellHandle}).
  * {@code LayerStack.beginCellEffects} resets frame handles every frame, so a skipping timeline's
  * effect would vanish after one frame. Such a timeline must be applied every frame, after
  * {@code LayerStack.beginCellEffects}. The cost is one setter call per binding per apply.
@@ -64,7 +64,7 @@ public final class Timeline {
      *
      * <pre>{@code
      * Timeline timeline = Timeline.writingEveryApply();
-     * timeline.bind(track, degrees -> layer.frameCell(column, row).setRotation(degrees));
+     * timeline.bind(track, degrees -> layer.obtainFrameCellHandle(column, row).setRotation(degrees));
      * // each frame, after LayerStack.beginCellEffects
      * timeline.apply(elapsedSeconds);
      * }</pre>

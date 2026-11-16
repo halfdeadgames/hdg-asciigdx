@@ -14,11 +14,11 @@ import java.util.Objects;
  * <p>On a map-window layer the shape is read in map coordinates, not grid coordinates, so the zone stays
  * fixed to the world as the camera moves.
  *
- * <p>The zone writes to frame handles ({@link Layer#frameCell}). The game must call
+ * <p>The zone writes to frame handles ({@link Layer#obtainFrameCellHandle}). The game must call
  * {@link LayerStack#beginCellEffects} once per frame before applying zones; that call resets the frame
  * handles and releases those left unused for {@link Layer#getFrameReleaseSeconds()}. Without it, the last written values stay on screen. Frame handles
  * combine with the layer's lasting handles, so the zone never clears handles the game holds from
- * {@link Layer#cell}.
+ * {@link Layer#obtainCellHandle}.
  *
  * <p>The zone holds no handles between calls: each {@link #apply} asks the layer for the handles it
  * needs. Applying allocates nothing itself; the layer only allocates when it creates a cell's frame
@@ -93,8 +93,8 @@ public final class EffectZone {
 
     /**
      * Runs the effect once on every shape cell inside the layer's grid, on each cell's frame handle
-     * ({@link Layer#frameCell}). Cells outside the grid are skipped. On a
-     * {@linkplain Layer#isMapWindow() map-window layer} the shape is in map coordinates: it stays on
+     * ({@link Layer#obtainFrameCellHandle}). Cells outside the grid are skipped. On a
+     * {@linkplain Layer#hasMapWindow() map-window layer} the shape is in map coordinates: it stays on
      * its map cells while the window scrolls, and only cells inside the window are affected.
      *
      * <p>Call {@link LayerStack#beginCellEffects} once per frame before the first zone is applied.
@@ -112,7 +112,7 @@ public final class EffectZone {
             throw new IllegalStateException("EffectZone.apply is not reentrant");
         }
         TerminalView grid = layer.getGrid();
-        boolean mapWindow = layer.isMapWindow();
+        boolean mapWindow = layer.hasMapWindow();
         int originColumn = mapWindow ? layer.getMapWindow().getOriginColumn() : 0;
         int originRow = mapWindow ? layer.getMapWindow().getOriginRow() : 0;
         if (!overlaps(grid, originColumn, originRow)) {
@@ -179,7 +179,7 @@ public final class EffectZone {
                 return;
             }
             zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance, distanceFraction);
-            effect.apply(layer.frameCell(gridColumn, gridRow), zoneCell, timeSeconds);
+            effect.apply(layer.obtainFrameCellHandle(gridColumn, gridRow), zoneCell, timeSeconds);
         }
     }
 }

@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
-/** How a layer's zoom factor is applied. */
+/**
+ * How a layer's zoom factor is applied when the layer is drawn. Set it with {@link Layer#setZoomMode}.
+ * Zoom scales the layer about its pivot; see {@link Layer#setPivot}.
+ */
 public enum ZoomMode {
     /**
      * Uses the zoom as given. With nearest filtering, a fractional zoom gives uneven pixel widths.

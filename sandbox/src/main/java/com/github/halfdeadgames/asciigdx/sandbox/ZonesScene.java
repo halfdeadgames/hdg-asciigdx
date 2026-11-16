@@ -73,7 +73,7 @@ class ZonesScene extends GridScene {
         super(squareGlyphs, COLUMNS, ROWS);
         this.squareGlyphs = squareGlyphs;
         this.tallGlyphs = tallGlyphs;
-        layer = layers.get(0);
+        layer = layers.getLayer(0);
         layers.setSize(COLUMNS * squareGlyphs.getCellWidth(), ROWS * squareGlyphs.getCellHeight());
         spellShape = createCircle(SPELL_START_X, SPELL_START_Y, ShapeFill.FILLED, squareGlyphs);
         spellZone = new EffectZone(spellShape, spellEffects.current());

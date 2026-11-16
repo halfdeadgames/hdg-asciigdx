@@ -62,7 +62,7 @@ class SpritePivotKeepingPlacementTest {
     });
     private final Layer layer = stack.add(new TerminalGrid(6, 5), new FakeSource());
     private final GlyphSprite sprite = layer.addSprite('@', 0xFFFFFFFF, 20f, 15f);
-    private final CellHandle handle = layer.cell(3, 2);
+    private final CellHandle handle = layer.obtainCellHandle(3, 2);
 
     private static float[] quadOf(SpriteTransform transform, float x, float y) {
         float[] vertices = new float[CellVertexLayout.FLOATS_PER_QUAD];

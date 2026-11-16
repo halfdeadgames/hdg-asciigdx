@@ -33,29 +33,48 @@ public final class Panel {
         this.height = height;
     }
 
-    /** Returns the left edge in virtual pixels from the stack's left edge. */
+    /**
+     * Returns the left edge in virtual pixels from the stack's left edge.
+     *
+     * @return the left edge in virtual pixels from the stack's left edge
+     */
     public float getX() {
         return x;
     }
 
-    /** Returns the top edge in virtual pixels from the stack's top edge, growing downward. */
+    /**
+     * Returns the top edge in virtual pixels from the stack's top edge, growing downward.
+     *
+     * @return the top edge in virtual pixels from the stack's top edge, growing downward
+     */
     public float getY() {
         return y;
     }
 
-    /** Returns the width in virtual pixels, never negative. */
+    /**
+     * Returns the width in virtual pixels, never negative.
+     *
+     * @return the width in virtual pixels, never negative
+     */
     public float getWidth() {
         return width;
     }
 
-    /** Returns the height in virtual pixels, never negative. */
+    /**
+     * Returns the height in virtual pixels, never negative.
+     *
+     * @return the height in virtual pixels, never negative
+     */
     public float getHeight() {
         return height;
     }
 
     /**
-     * Moves the panel's top-left corner, keeping its size.
+     * Moves the panel's top-left corner, keeping its size. Member layers move with it on the next
+     * draw.
      *
+     * @param x left edge in virtual pixels from the stack's left edge; finite
+     * @param y top edge in virtual pixels from the stack's top edge, growing downward; finite
      * @throws IllegalArgumentException if x or y is not finite
      * @throws IllegalStateException if the panel was removed
      */
@@ -67,8 +86,13 @@ public final class Panel {
     }
 
     /**
-     * Sets the position and size.
+     * Sets the position and size. Member layers are re-clipped on the next draw. Nothing changes
+     * if an argument is rejected.
      *
+     * @param x left edge in virtual pixels from the stack's left edge; finite
+     * @param y top edge in virtual pixels from the stack's top edge, growing downward; finite
+     * @param width width in virtual pixels; finite, 0 or more
+     * @param height height in virtual pixels; finite, 0 or more
      * @throws IllegalArgumentException if a value is not finite, or width or height is negative
      * @throws IllegalStateException if the panel was removed
      */
@@ -86,6 +110,8 @@ public final class Panel {
      * {@link LayerStack#setCamera} (y grows downward). Each member layer shifts by minus the camera
      * times its parallax factor. Default (0, 0).
      *
+     * @param x camera x in virtual pixels; finite
+     * @param y camera y in virtual pixels, growing downward; finite
      * @throws IllegalArgumentException if x or y is not finite
      * @throws IllegalStateException if the panel was removed
      */
@@ -99,12 +125,20 @@ public final class Panel {
         owner.followCameraOfLayersIn(this);
     }
 
-    /** Returns the camera's x in virtual pixels, 0 by default. */
+    /**
+     * Returns the camera's x in virtual pixels, 0 by default.
+     *
+     * @return the camera's x in virtual pixels, 0 by default
+     */
     public float getCameraX() {
         return cameraX;
     }
 
-    /** Returns the camera's y in virtual pixels, growing downward, 0 by default. */
+    /**
+     * Returns the camera's y in virtual pixels, growing downward, 0 by default.
+     *
+     * @return the camera's y in virtual pixels, growing downward, 0 by default
+     */
     public float getCameraY() {
         return cameraY;
     }

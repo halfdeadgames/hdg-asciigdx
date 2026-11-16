@@ -163,8 +163,8 @@ class LayerStackTest {
         addLayer();
         Layer middle = stack.insert(1, new TerminalGrid(2, 2), font);
         assertOrder("L0", "L2", "L1");
-        assertSame(middle, stack.get(1));
-        assertEquals(3, stack.size());
+        assertSame(middle, stack.getLayer(1));
+        assertEquals(3, stack.getLayerCount());
     }
 
     @Test
@@ -228,8 +228,8 @@ class LayerStackTest {
         Layer small = stack.add(new TerminalGrid(4, 3), new FakeSource(8, 12));
         Layer big = stack.add(new TerminalGrid(4, 3), new FakeSource(16, 24));
 
-        small.setCellOffset(10, 4);
-        big.setCellOffset(10, 4);
+        small.setOffsetInCells(10, 4);
+        big.setOffsetInCells(10, 4);
 
         assertEquals(80f, small.getOffsetX());
         assertEquals(48f, small.getOffsetY());
@@ -254,9 +254,9 @@ class LayerStackTest {
     @Test
     void cellOffsetByUsesThatLayersCellSize() {
         Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource(8, 12));
-        layer.setCellOffset(1, 1);
+        layer.setOffsetInCells(1, 1);
 
-        layer.cellOffsetBy(2, -3);
+        layer.offsetByCells(2, -3);
 
         assertEquals(24f, layer.getOffsetX());
         assertEquals(-24f, layer.getOffsetY());
@@ -414,6 +414,13 @@ class LayerStackTest {
     }
 
     @Test
+    void removedLayerCannotChangeFrameReleaseSeconds() {
+        Layer layer = addLayer();
+        stack.remove(layer);
+        assertThrows(IllegalStateException.class, () -> layer.setFrameReleaseSeconds(2f));
+    }
+
+    @Test
     void removedLayerCannotChangeRotation() {
         Layer layer = addLayer();
         stack.remove(layer);
@@ -511,8 +518,8 @@ class LayerStackTest {
         stack.add(new TerminalGrid(80, 25), font);
         stack.add(new TerminalGrid(10, 4), new FakeSource(16, 24));
         assertOrder("L0", "L1");
-        assertEquals(80, stack.get(0).getGrid().getColumns());
-        assertEquals(10, stack.get(1).getGrid().getColumns());
+        assertEquals(80, stack.getLayer(0).getGrid().getColumns());
+        assertEquals(10, stack.getLayer(1).getGrid().getColumns());
     }
 
     @Test
@@ -528,7 +535,7 @@ class LayerStackTest {
         assertEquals(1, renderers.get(0).disposeCount);
         assertEquals(1, renderers.get(1).disposeCount);
         assertEquals(1, renderers.get(2).disposeCount);
-        assertEquals(0, stack.size());
+        assertEquals(0, stack.getLayerCount());
     }
 
     @Test
@@ -537,9 +544,9 @@ class LayerStackTest {
         stack.remove(layer);
 
         assertThrows(IllegalStateException.class, () -> layer.setOffset(1f, 1f));
-        assertThrows(IllegalStateException.class, () -> layer.setCellOffset(1, 1));
+        assertThrows(IllegalStateException.class, () -> layer.setOffsetInCells(1, 1));
         assertThrows(IllegalStateException.class, () -> layer.offsetBy(1f, 1f));
-        assertThrows(IllegalStateException.class, () -> layer.cellOffsetBy(1, 1));
+        assertThrows(IllegalStateException.class, () -> layer.offsetByCells(1, 1));
         assertThrows(IllegalStateException.class, () -> layer.setVisible(false));
         assertThrows(IllegalStateException.class, () -> layer.moveTo(0));
         assertThrows(IllegalStateException.class, layer::remove);
@@ -758,8 +765,8 @@ class LayerStackTest {
 
         assertThrows(IllegalArgumentException.class, () -> stack.remove(foreign));
         assertThrows(IllegalArgumentException.class, () -> stack.moveTo(foreign, 0));
-        assertEquals(1, stack.size());
-        assertEquals(1, other.size());
+        assertEquals(1, stack.getLayerCount());
+        assertEquals(1, other.getLayerCount());
     }
 
     @Test
@@ -772,7 +779,7 @@ class LayerStackTest {
 
         assertSame(bigger, layer.getGlyphSource());
         assertEquals(List.of(bigger), renderers.get(0).glyphSources);
-        layer.setCellOffset(1, 1);
+        layer.setOffsetInCells(1, 1);
         assertEquals(16f, layer.getOffsetX());
         assertEquals(24f, layer.getOffsetY());
     }

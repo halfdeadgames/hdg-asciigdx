@@ -62,8 +62,14 @@ public final class GridRenderer implements Disposable {
     private final Affine2 translation = new Affine2();
 
     /**
-     * @param grid the grid to draw
-     * @param glyphSource supplies glyph regions and the cell size
+     * Creates a renderer that owns its shader and GPU meshes. Construct it on the GL thread, and
+     * call {@link #dispose()} when done. Use {@link LayerStack} instead to draw several grids.
+     *
+     * @param grid the grid to draw; not null. Not owned and not disposed. The renderer registers a
+     *     dirty tracker on it
+     * @param glyphSource supplies glyph regions and the cell size; not null. Not owned and not
+     *     disposed
+     * @throws NullPointerException if the grid or glyph source is null
      */
     public GridRenderer(TerminalView grid, GlyphSource glyphSource) {
         this(Objects.requireNonNull(grid, "grid"), Objects.requireNonNull(glyphSource, "glyphSource"),
@@ -101,11 +107,13 @@ public final class GridRenderer implements Disposable {
 
     /**
      * Draws the grid. The batch must already be begun; this method never begins
-     * or ends it. The batch color is ignored and left unchanged.
+     * or ends it. The batch color is ignored and left unchanged. Call it once per frame on the GL
+     * thread.
      *
-     * @param batch the active batch
-     * @param x screen x of the grid's top-left corner
-     * @param y screen y of the grid's top-left corner (y grows upward)
+     * @param batch the active batch; not null
+     * @param x screen x of the grid's top-left corner, in the batch's coordinate space
+     * @param y screen y of the grid's top-left corner (y grows upward); the grid extends downward
+     *     from it
      */
     public void draw(SpriteBatch batch, float x, float y) {
         draw(batch, x, y, 1f, 1f, 1f, 1f);
@@ -114,11 +122,21 @@ public final class GridRenderer implements Disposable {
     /**
      * Draws the grid like {@link #draw(SpriteBatch, float, float)}, multiplying
      * every cell color by the tint on the GPU. Alpha fades each cell as one flat
-     * color. Changing the tint costs no vertex rewrite or upload.
+     * color. Changing the tint costs no vertex rewrite or upload. The batch must already be begun,
+     * and the batch color is ignored. Call it once per frame on the GL thread.
+     *
+     * @param batch the active batch; not null
+     * @param x screen x of the grid's top-left corner
+     * @param y screen y of the grid's top-left corner (y grows upward)
+     * @param tintRed red multiplier, 1 for unchanged
+     * @param tintGreen green multiplier, 1 for unchanged
+     * @param tintBlue blue multiplier, 1 for unchanged
+     * @param tintAlpha alpha multiplier, 1 for opaque and 0 for invisible
      */
-    public void draw(SpriteBatch batch, float x, float y, float tintR, float tintG, float tintB, float tintA) {
+    public void draw(SpriteBatch batch, float x, float y,
+            float tintRed, float tintGreen, float tintBlue, float tintAlpha) {
         tintOnlyEffects.reset();
-        tintOnlyEffects.setTint(tintR, tintG, tintB, tintA);
+        tintOnlyEffects.setTint(tintRed, tintGreen, tintBlue, tintAlpha);
         translation.setToTranslation(x, y);
         resolvedTintOnlyEffects.resolveOwn(tintOnlyEffects);
         draw(batch, translation, resolvedTintOnlyEffects);
@@ -275,7 +293,11 @@ public final class GridRenderer implements Disposable {
      * Switches to another glyph source. The glyph texture is read from it now; its cell size is
      * read at the next draw, which rebuilds the cache and meshes and rewrites every cell (this
      * allocates, once per switch). The grid keeps its contents and its cell count. Glyphs
-     * missing from the new source draw as its fallback. The source is not owned.
+     * missing from the new source draw as its fallback. The source is not owned. Call it on the
+     * GL thread.
+     *
+     * @param glyphSource the new source; not null. All its glyph regions must share one texture
+     * @throws NullPointerException if the glyph source is null
      */
     public void setGlyphSource(GlyphSource glyphSource) {
         Objects.requireNonNull(glyphSource, "glyphSource");
@@ -294,7 +316,11 @@ public final class GridRenderer implements Disposable {
         flatWriter.write(column, row, hiddenGlyphs[cell], handlesByCell[cell]);
     }
 
-    /** Releases the dirty tracker and frees the meshes. The shader is freed only if this renderer created it. */
+    /**
+     * Releases the dirty tracker and frees the meshes. The shader is freed only if this renderer
+     * created it. The grid and glyph source are not disposed. Call it once on the GL thread; the
+     * renderer must not be drawn afterward.
+     */
     @Override
     public void dispose() {
         tracker.release();

@@ -87,8 +87,8 @@ class LayerStackPointMappingTest {
     }
 
     private void assertRoundTrip(float layerX, float layerY) {
-        stack.worldPointOf(layer, STACK_X, STACK_Y, layerX, layerY, world);
-        stack.layerPointAt(layer, STACK_X, STACK_Y, world.x, world.y, point);
+        stack.toWorldPoint(layer, STACK_X, STACK_Y, layerX, layerY, world);
+        stack.toLayerPoint(layer, STACK_X, STACK_Y, world.x, world.y, point);
         assertEquals(layerX, point.x, TOLERANCE);
         assertEquals(layerY, point.y, TOLERANCE);
     }
@@ -115,7 +115,7 @@ class LayerStackPointMappingTest {
 
     @Test
     void layerOriginMapsToTopLeftCornerAtOffset() {
-        stack.worldPointOf(layer, STACK_X, STACK_Y, 0f, 0f, world);
+        stack.toWorldPoint(layer, STACK_X, STACK_Y, 0f, 0f, world);
 
         assertEquals(STACK_X + OFFSET_X, world.x, TOLERANCE);
         assertEquals(STACK_Y - OFFSET_Y, world.y, TOLERANCE);
@@ -123,7 +123,7 @@ class LayerStackPointMappingTest {
 
     @Test
     void layerYGrowsDownInWorld() {
-        stack.worldPointOf(layer, STACK_X, STACK_Y, 3f, 4f, world);
+        stack.toWorldPoint(layer, STACK_X, STACK_Y, 3f, 4f, world);
 
         assertEquals(STACK_X + OFFSET_X + 3f, world.x, TOLERANCE);
         assertEquals(STACK_Y - OFFSET_Y - 4f, world.y, TOLERANCE);
@@ -131,7 +131,7 @@ class LayerStackPointMappingTest {
 
     @Test
     void layerPointAtMatchesKnownValueWithoutTransforms() {
-        stack.layerPointAt(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 5f, STACK_Y - OFFSET_Y - 7f, point);
+        stack.toLayerPoint(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 5f, STACK_Y - OFFSET_Y - 7f, point);
 
         assertEquals(5f, point.x, TOLERANCE);
         assertEquals(7f, point.y, TOLERANCE);
@@ -139,7 +139,7 @@ class LayerStackPointMappingTest {
 
     @Test
     void cellAtOnCellBorderBelongsToTheLaterCell() {
-        stack.cellAt(layer, STACK_X, STACK_Y, 118f, 183f, cell);
+        stack.toCell(layer, STACK_X, STACK_Y, 118f, 183f, cell);
 
         assertEquals(1, cell.x);
         assertEquals(1, cell.y);
@@ -149,7 +149,7 @@ class LayerStackPointMappingTest {
     void cellAtFindsKnownCellWithZoomAndRotation() {
         zoomTwoRotateQuarterTurn(0f, 0f);
 
-        stack.cellAt(layer, STACK_X, STACK_Y, 170f, 235f, cell);
+        stack.toCell(layer, STACK_X, STACK_Y, 170f, 235f, cell);
 
         // Layer point (20, 30) divided by the 8x12 cell is (2.5, 2.5).
         assertEquals(2, cell.x);
@@ -180,7 +180,7 @@ class LayerStackPointMappingTest {
         layer.setOffset(10.4f, 5.6f);
         stack.setPixelSnapping(true);
 
-        stack.worldPointOf(layer, STACK_X, STACK_Y, 0f, 0f, world);
+        stack.toWorldPoint(layer, STACK_X, STACK_Y, 0f, 0f, world);
 
         // Unsnapped corner is (110.4, 194.4).
         assertEquals(110f, world.x, TOLERANCE);
@@ -194,34 +194,34 @@ class LayerStackPointMappingTest {
     }
 
     private void assertWorldAndBack(float layerX, float layerY, float expectedWorldX, float expectedWorldY) {
-        stack.worldPointOf(layer, STACK_X, STACK_Y, layerX, layerY, world);
+        stack.toWorldPoint(layer, STACK_X, STACK_Y, layerX, layerY, world);
         assertEquals(expectedWorldX, world.x, TOLERANCE);
         assertEquals(expectedWorldY, world.y, TOLERANCE);
 
-        stack.layerPointAt(layer, STACK_X, STACK_Y, expectedWorldX, expectedWorldY, point);
+        stack.toLayerPoint(layer, STACK_X, STACK_Y, expectedWorldX, expectedWorldY, point);
         assertEquals(layerX, point.x, TOLERANCE);
         assertEquals(layerY, point.y, TOLERANCE);
     }
 
     @Test
     void nullOutThrows() {
-        assertThrows(IllegalArgumentException.class, () -> stack.layerPointAt(layer, 0f, 0f, 0f, 0f, null));
-        assertThrows(IllegalArgumentException.class, () -> stack.worldPointOf(layer, 0f, 0f, 0f, 0f, null));
+        assertThrows(IllegalArgumentException.class, () -> stack.toLayerPoint(layer, 0f, 0f, 0f, 0f, null));
+        assertThrows(IllegalArgumentException.class, () -> stack.toWorldPoint(layer, 0f, 0f, 0f, 0f, null));
     }
 
     @Test
     void foreignLayerThrows() {
         Layer foreign = newStack().add(new TerminalGrid(2, 2), new FakeSource());
 
-        assertThrows(IllegalArgumentException.class, () -> stack.layerPointAt(foreign, 0f, 0f, 0f, 0f, point));
-        assertThrows(IllegalArgumentException.class, () -> stack.worldPointOf(foreign, 0f, 0f, 0f, 0f, point));
+        assertThrows(IllegalArgumentException.class, () -> stack.toLayerPoint(foreign, 0f, 0f, 0f, 0f, point));
+        assertThrows(IllegalArgumentException.class, () -> stack.toWorldPoint(foreign, 0f, 0f, 0f, 0f, point));
     }
 
     @Test
     void removedLayerThrows() {
         stack.remove(layer);
 
-        assertThrows(IllegalStateException.class, () -> stack.layerPointAt(layer, 0f, 0f, 0f, 0f, point));
-        assertThrows(IllegalStateException.class, () -> stack.worldPointOf(layer, 0f, 0f, 0f, 0f, point));
+        assertThrows(IllegalStateException.class, () -> stack.toLayerPoint(layer, 0f, 0f, 0f, 0f, point));
+        assertThrows(IllegalStateException.class, () -> stack.toWorldPoint(layer, 0f, 0f, 0f, 0f, point));
     }
 }

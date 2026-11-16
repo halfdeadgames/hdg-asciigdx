@@ -131,7 +131,7 @@ class LayerStackPanelCameraTest {
         layer.setParallax(0.5f, 2f);
         panel.setCamera(8f, 3f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(126f, point.x, TOLERANCE);
         assertEquals(171f, point.y, TOLERANCE);
@@ -144,7 +144,7 @@ class LayerStackPanelCameraTest {
         layer.setOffset(10f, 5f);
         panel.setCamera(8f, 3f);
 
-        stack.layerPointAt(layer, 100f, 200f, 122f, 168f, point);
+        stack.toLayerPoint(layer, 100f, 200f, 122f, 168f, point);
 
         assertEquals(0f, point.x, TOLERANCE);
         assertEquals(0f, point.y, TOLERANCE);
@@ -156,7 +156,7 @@ class LayerStackPanelCameraTest {
         Layer layer = addMember(panel);
         panel.setCamera(-8f, 0f);
 
-        stack.cellAt(layer, 100f, 200f, 137f, 168f, cell);
+        stack.toCell(layer, 100f, 200f, 137f, 168f, cell);
 
         assertEquals(1, cell.x);
         assertEquals(0, cell.y);
@@ -168,7 +168,7 @@ class LayerStackPanelCameraTest {
         Layer layer = addMember(panel);
         stack.setCamera(40f, 40f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(120f, point.x, TOLERANCE);
         assertEquals(170f, point.y, TOLERANCE);
@@ -181,7 +181,7 @@ class LayerStackPanelCameraTest {
         Layer layer = addLayer();
         stack.setCamera(5f, 7f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(95f, point.x, TOLERANCE);
         assertEquals(207f, point.y, TOLERANCE);
@@ -194,7 +194,7 @@ class LayerStackPanelCameraTest {
         layer.setParallax(0f);
         panel.setCamera(40f, 40f);
 
-        stack.worldPointOf(layer, 100f, 200f, 0f, 0f, point);
+        stack.toWorldPoint(layer, 100f, 200f, 0f, 0f, point);
 
         assertEquals(120f, point.x, TOLERANCE);
         assertEquals(170f, point.y, TOLERANCE);

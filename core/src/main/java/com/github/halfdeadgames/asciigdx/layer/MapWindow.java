@@ -44,8 +44,10 @@ public final class MapWindow {
     }
 
     /**
-     * Returns the map column shown at grid column 0.
+     * Returns the map column shown at grid column 0. It follows the layer's camera and changes when
+     * the layer scrolls the grid.
      *
+     * @return the map column of the grid's left edge
      * @throws IllegalStateException if this window is detached
      */
     public int getOriginColumn() {
@@ -54,8 +56,10 @@ public final class MapWindow {
     }
 
     /**
-     * Returns the map row shown at grid row 0.
+     * Returns the map row shown at grid row 0, counting down like grid rows. It follows the
+     * layer's camera and changes when the layer scrolls the grid.
      *
+     * @return the map row of the grid's top edge
      * @throws IllegalStateException if this window is detached
      */
     public int getOriginRow() {
@@ -66,6 +70,9 @@ public final class MapWindow {
     /**
      * Returns whether a map cell is inside the window's grid.
      *
+     * @param mapColumn the map column; any value is allowed
+     * @param mapRow the map row; any value is allowed
+     * @return true if the cell is shown by a grid cell right now
      * @throws IllegalStateException if this window is detached
      */
     public boolean contains(int mapColumn, int mapRow) {
@@ -74,8 +81,14 @@ public final class MapWindow {
     }
 
     /**
-     * Writes a cell at map coordinates. A cell outside the window is skipped silently.
+     * Writes a cell at map coordinates, as {@link TerminalGrid#set} does for grid coordinates. A
+     * cell outside the window is skipped silently.
      *
+     * @param mapColumn the map column; any value is allowed
+     * @param mapRow the map row; any value is allowed
+     * @param codePoint the Unicode code point of the glyph to draw
+     * @param foregroundRgba the glyph color as packed RGBA8888 ({@code 0xRRGGBBAA})
+     * @param backgroundRgba the cell background as packed RGBA8888 ({@code 0xRRGGBBAA})
      * @throws IllegalStateException if this window is detached
      */
     public void set(int mapColumn, int mapRow, int codePoint, int foregroundRgba, int backgroundRgba) {
@@ -86,21 +99,24 @@ public final class MapWindow {
     }
 
     /**
-     * Returns the handle of the cell at map coordinates, as {@link Layer#cell} does for the grid
+     * Returns the handle of the cell at map coordinates, as {@link Layer#obtainCellHandle} does for the grid
      * position.
      *
      * <p>A lasting handle is dropped when its cell leaves the window. Lasting handles are meant for
      * display-owned animation such as tweens, flashes, and bumps. Game state that must survive
      * scrolling belongs in the grid, set through the window's filler; per-frame effects belong in
-     * {@link #frameCell frame handles}. For a tween that must keep writing a cell after it scrolls
+     * {@link #obtainFrameCellHandle frame handles}. For a tween that must keep writing a cell after it scrolls
      * out and back in, use {@link #createCellTarget}.
      *
+     * @param mapColumn the map column of a cell inside the window
+     * @param mapRow the map row of a cell inside the window
+     * @return the lasting handle of the cell; never null
      * @throws IndexOutOfBoundsException if the cell is outside the window
      * @throws IllegalStateException if this window is detached
      */
-    public CellHandle cell(int mapColumn, int mapRow) {
+    public CellHandle obtainCellHandle(int mapColumn, int mapRow) {
         requireAttached();
-        return layer.cell(toGridColumn(mapColumn), toGridRow(mapRow));
+        return layer.obtainCellHandle(toGridColumn(mapColumn), toGridRow(mapRow));
     }
 
     /**
@@ -120,39 +136,68 @@ public final class MapWindow {
     }
 
     /**
-     * Returns the frame handle of the cell at map coordinates, as {@link Layer#frameCell} does for
+     * Returns the frame handle of the cell at map coordinates, as {@link Layer#obtainFrameCellHandle} does for
      * the grid position. To drive it with a timeline, use
      * {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a setter
      * that calls this method on every write; a held handle can be released or detached between
      * frames.
      *
+     * @param mapColumn the map column of a cell inside the window
+     * @param mapRow the map row of a cell inside the window
+     * @return the frame handle of the cell; never null
      * @throws IndexOutOfBoundsException if the cell is outside the window
      * @throws IllegalStateException if this window is detached
      */
-    public CellHandle frameCell(int mapColumn, int mapRow) {
+    public CellHandle obtainFrameCellHandle(int mapColumn, int mapRow) {
         requireAttached();
-        return layer.frameCell(toGridColumn(mapColumn), toGridRow(mapRow));
+        return layer.obtainFrameCellHandle(toGridColumn(mapColumn), toGridRow(mapRow));
     }
 
-    /** Converts a map column to a grid column, without a bounds check. */
+    /**
+     * Converts a map column to a grid column by subtracting the origin column, without a bounds
+     * check. Use {@link #contains} to test whether the result is inside the grid.
+     *
+     * @param mapColumn the map column; any value is allowed
+     * @return the grid column, which may be negative or past the grid
+     * @throws IllegalStateException if this window is detached
+     */
     public int toGridColumn(int mapColumn) {
         requireAttached();
         return mapColumn - origin.getOriginColumn();
     }
 
-    /** Converts a map row to a grid row, without a bounds check. */
+    /**
+     * Converts a map row to a grid row by subtracting the origin row, without a bounds check. Use
+     * {@link #contains} to test whether the result is inside the grid.
+     *
+     * @param mapRow the map row; any value is allowed
+     * @return the grid row, which may be negative or past the grid
+     * @throws IllegalStateException if this window is detached
+     */
     public int toGridRow(int mapRow) {
         requireAttached();
         return mapRow - origin.getOriginRow();
     }
 
-    /** Converts a grid column to a map column, without a bounds check. */
+    /**
+     * Converts a grid column to a map column by adding the origin column, without a bounds check.
+     *
+     * @param gridColumn the grid column; any value is allowed
+     * @return the map column
+     * @throws IllegalStateException if this window is detached
+     */
     public int toMapColumn(int gridColumn) {
         requireAttached();
         return gridColumn + origin.getOriginColumn();
     }
 
-    /** Converts a grid row to a map row, without a bounds check. */
+    /**
+     * Converts a grid row to a map row by adding the origin row, without a bounds check.
+     *
+     * @param gridRow the grid row; any value is allowed
+     * @return the map row
+     * @throws IllegalStateException if this window is detached
+     */
     public int toMapRow(int gridRow) {
         requireAttached();
         return gridRow + origin.getOriginRow();
@@ -163,9 +208,11 @@ public final class MapWindow {
      * filling when the window was enabled, when they scrolled into view, or when the grid was
      * resized. This only queries: call {@link #markAllFilled()} afterward.
      *
-     * <p>The visitor may call {@link #set} and {@link #cell}, but must not cause a scroll. Writes do
+     * <p>The visitor may call {@link #set} and {@link #obtainCellHandle}, but must not cause a scroll. Writes do
      * not clear the flags, because a map cell may have nothing to draw.
      *
+     * @param visitor receives each map cell to fill; not null
+     * @throws IllegalArgumentException if the visitor is null
      * @throws IllegalStateException if this window is detached
      */
     public void forEachCellToFill(MapCellVisitor visitor) {
@@ -180,7 +227,8 @@ public final class MapWindow {
     }
 
     /**
-     * Clears the needs-fill flag of every cell.
+     * Clears the needs-fill flag of every cell. Call it after {@link #forEachCellToFill} finished
+     * filling, so those cells are not visited again until they scroll into view.
      *
      * @throws IllegalStateException if this window is detached
      */

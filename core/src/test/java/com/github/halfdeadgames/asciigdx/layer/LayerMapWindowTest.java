@@ -60,7 +60,7 @@ class LayerMapWindowTest {
 
     private float screenXOfMapPixel(Layer target, float mapPixelX) {
         float gridPixelX = mapPixelX - originColumn(target) * target.getGlyphSource().getCellWidth();
-        stack.worldPointOf(target, 0f, 0f, gridPixelX, 0f, point);
+        stack.toWorldPoint(target, 0f, 0f, gridPixelX, 0f, point);
         return point.x;
     }
 
@@ -71,7 +71,7 @@ class LayerMapWindowTest {
 
         layer.enableMapWindow();
 
-        assertTrue(layer.isMapWindow());
+        assertTrue(layer.hasMapWindow());
         assertEquals(3, originColumn(layer));
         assertEquals(2, layer.getMapWindow().getOriginRow());
         assertEquals('a', grid.getCodePoint(2, 0));
@@ -200,7 +200,7 @@ class LayerMapWindowTest {
     void negativeMarginsAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> layer.enableMapWindow(-1, 0));
         assertThrows(IllegalArgumentException.class, () -> layer.enableMapWindow(0, -1));
-        assertFalse(layer.isMapWindow());
+        assertFalse(layer.hasMapWindow());
     }
 
     @Test
@@ -211,7 +211,7 @@ class LayerMapWindowTest {
         layer.disableMapWindow();
         stack.setCamera(48f, 0f);
 
-        assertFalse(layer.isMapWindow());
+        assertFalse(layer.hasMapWindow());
         assertEquals('a', grid.getCodePoint(2, 0));
     }
 
@@ -227,7 +227,7 @@ class LayerMapWindowTest {
 
         assertThrows(IllegalStateException.class, layer::enableMapWindow);
         assertThrows(IllegalStateException.class, layer::disableMapWindow);
-        assertThrows(IllegalStateException.class, layer::isMapWindow);
+        assertThrows(IllegalStateException.class, layer::hasMapWindow);
         assertThrows(IllegalStateException.class, layer::getMapWindow);
     }
 
@@ -258,7 +258,7 @@ class LayerMapWindowTest {
     void plainLayerTransformIsUnchanged() {
         stack.setCamera(20f, 0f);
 
-        stack.worldPointOf(layer, 0f, 0f, 30f, 0f, point);
+        stack.toWorldPoint(layer, 0f, 0f, 30f, 0f, point);
 
         assertEquals(10f, point.x, 1e-4f);
     }

@@ -391,7 +391,7 @@ class PondScene implements SandboxScene {
         if (!actorWindow.contains(motion.getColumn(), motion.getRow())) {
             return;
         }
-        actorWindow.frameCell(motion.getColumn(), motion.getRow()).setOffset(
+        actorWindow.obtainFrameCellHandle(motion.getColumn(), motion.getRow()).setOffset(
             -motion.getStepColumn() * gameCellWidth * remaining,
             -motion.getStepRow() * gameCellHeight * remaining);
     }
@@ -421,7 +421,7 @@ class PondScene implements SandboxScene {
                 continue;
             }
             Lily lily = movingLilies.lilyAt(i);
-            lilyWindow.frameCell(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
+            lilyWindow.obtainFrameCellHandle(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
                 lily.getOffsetY() * lilyCellHeight);
         }
     }

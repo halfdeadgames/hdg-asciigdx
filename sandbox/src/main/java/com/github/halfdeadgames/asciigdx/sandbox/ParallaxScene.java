@@ -70,8 +70,8 @@ class ParallaxScene extends GridScene {
         layers.setSize(COLUMNS * glyphs.getCellWidth(), ROWS * glyphs.getCellHeight());
 
         drawSky();
-        layers.get(0).setParallax(0f);
-        layers.get(0).clipToStack();
+        layers.getLayer(0).setParallax(0f);
+        layers.getLayer(0).clipToStack();
 
         addScrolling(wideGrid(MOUNTAIN_PARALLAX), MOUNTAIN_PARALLAX);
         addScrolling(wideGrid(HILL_PARALLAX), HILL_PARALLAX);
@@ -249,7 +249,7 @@ class ParallaxScene extends GridScene {
             clearHighlight();
             return;
         }
-        layers.cellAt(groundLayer, 0f, stackY, pointerWorld.x, pointerWorld.y, hoveredCell);
+        layers.toCell(groundLayer, 0f, stackY, pointerWorld.x, pointerWorld.y, hoveredCell);
         if (!groundGrid.contains(hoveredCell.x, hoveredCell.y)) {
             clearHighlight();
             return;

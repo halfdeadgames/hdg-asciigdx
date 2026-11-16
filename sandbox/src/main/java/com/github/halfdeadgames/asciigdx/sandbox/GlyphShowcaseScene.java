@@ -89,7 +89,7 @@ final class GlyphShowcaseScene extends GridScene {
         super(glyphs, COLUMNS, ROWS);
         this.glyphs = glyphs;
         this.size = size;
-        contentLayer = layers.get(0);
+        contentLayer = layers.getLayer(0);
     }
 
     @Override
@@ -218,7 +218,7 @@ final class GlyphShowcaseScene extends GridScene {
     private void scrollBy(int columns, int rows) {
         scrollColumn = ScrollView.clampScroll(scrollColumn + columns, COLUMNS, visibleColumns);
         scrollRow = ScrollView.clampScroll(scrollRow + rows, ROWS, visibleContentRows);
-        contentLayer.setCellOffset(-scrollColumn, overlayRows - scrollRow);
+        contentLayer.setOffsetInCells(-scrollColumn, overlayRows - scrollRow);
     }
 
     private void fillGrid() {

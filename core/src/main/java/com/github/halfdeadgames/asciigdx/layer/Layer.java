@@ -11,9 +11,33 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner, or from the
  * top-left corner of the layer's {@link Panel} if it has one (see {@link #setPanel}),
- * with y growing downward like grid rows. Once the layer is removed from its
- * stack, getters keep working but every method that changes or uses the layer
- * throws {@link IllegalStateException}.
+ * with y growing downward like grid rows. Rotation is in degrees, positive clockwise on screen. All
+ * methods run on the thread that owns the stack; none needs a GL context except drawing, which the
+ * stack does.
+ *
+ * <p>Example:
+ * <pre>{@code
+ * Layer layer = stack.add(grid, glyphSource);
+ * layer.setOffsetInCells(2, 1);
+ * layer.setZoom(2f);
+ * CellHandle handle = layer.obtainCellHandle(5, 3);   // lasting handle for one cell
+ * CellHandle frameHandle = layer.obtainFrameCellHandle(5, 3);   // per-frame effects
+ * }</pre>
+ *
+ * <p>After the layer is removed from its stack (by {@link #remove()} or {@link LayerStack#remove}), it is
+ * detached: its sprites and cell handles are detached, it leaves every {@link LayerGroup}, and its map
+ * window is detached. Afterward:
+ * <ul>
+ *   <li>These members keep working and return the last values: {@link #getGrid}, {@link #getGlyphSource},
+ *       the offset, parallax, zoom, pivot, zoom mode, rotation, visibility, pickable, panel, clip, and
+ *       frame release getters, {@link #getEffectiveZoom}, {@link #getColorEffects} (whose setters throw),
+ *       {@link #getSpriteCount} (0), {@link #getSprite} (always out of range), {@link #getCellHandleCount},
+ *       and {@link #getFrameCellHandleCount} (both 0).</li>
+ *   <li>{@link #hasMapWindow} and {@link #getMapWindow} throw {@link IllegalStateException}.</li>
+ *   <li>Every method that changes or uses the layer throws {@link IllegalStateException}: all setters,
+ *       the offset, scroll, map window, sprite, cell handle, clip, and release methods, {@link #moveTo},
+ *       and {@link #remove}.</li>
+ * </ul>
  */
 public final class Layer {
 
@@ -63,7 +87,11 @@ public final class Layer {
         return grid;
     }
 
-    /** Returns the glyph source this layer draws with. */
+    /**
+     * Returns the glyph source this layer draws with. Works after removal.
+     *
+     * @return the current glyph source; never null
+     */
     public GlyphSource getGlyphSource() {
         return glyphSource;
     }
@@ -81,6 +109,9 @@ public final class Layer {
      * <p>On a {@linkplain #enableMapWindow() map window}, changing the source changes the cell size
      * and with it the origin, so every cell is flagged as needing a refill.
      *
+     * <p>Call on the GL thread, because the renderer's glyph source is replaced immediately.
+     *
+     * @param glyphSource the new source; must not be null and is not owned by the layer
      * @throws IllegalArgumentException if the source is null
      * @throws IllegalStateException if the layer was removed
      */
@@ -102,27 +133,49 @@ public final class Layer {
         }
     }
 
-    /** Returns the horizontal offset in virtual pixels, growing to the right. */
+    /**
+     * Returns the horizontal offset in virtual pixels, growing to the right. Works after removal.
+     *
+     * @return the offset set by {@link #setOffset}; 0 by default
+     */
     public float getOffsetX() {
         return offsetX;
     }
 
-    /** Returns the vertical offset in virtual pixels, growing downward. */
+    /**
+     * Returns the vertical offset in virtual pixels, growing downward. Works after removal.
+     *
+     * @return the offset set by {@link #setOffset}; 0 by default
+     */
     public float getOffsetY() {
         return offsetY;
     }
 
-    /** Returns whether the layer is shown. A shown layer with tint alpha 0 is still skipped when drawing. */
+    /**
+     * Returns whether the layer is shown. A shown layer with tint alpha 0 is still skipped when drawing.
+     * Works after removal.
+     *
+     * @return true if shown; true by default
+     */
     public boolean isVisible() {
         return visible;
     }
 
-    /** Returns whether the stack's pick test can hit the layer. */
+    /**
+     * Returns whether the stack's pick test can hit the layer. Works after removal.
+     *
+     * @return true if pickable; true by default
+     */
     public boolean isPickable() {
         return pickable;
     }
 
-    /** Returns the panel this layer is placed in, or null if it is measured from the stack's corner. */
+    /**
+     * Returns the panel this layer is placed in, or null if it is measured from the stack's corner.
+     * Works after removal and still returns the last panel.
+     *
+     * @return the panel, or null
+     */
     public Panel getPanel() {
         return panel;
     }
@@ -166,12 +219,20 @@ public final class Layer {
         offsetY = y;
     }
 
-    /** Returns the horizontal parallax factor, 1 by default. */
+    /**
+     * Returns the horizontal parallax factor. Works after removal.
+     *
+     * @return the factor; 1 by default
+     */
     public float getParallaxX() {
         return parallaxX;
     }
 
-    /** Returns the vertical parallax factor, 1 by default. */
+    /**
+     * Returns the vertical parallax factor. Works after removal.
+     *
+     * @return the factor; 1 by default
+     */
     public float getParallaxY() {
         return parallaxY;
     }
@@ -182,6 +243,10 @@ public final class Layer {
      * (the default), 0 stays fixed on screen (a HUD), values between 0 and 1 suit distant
      * backgrounds, and values above 1 suit near foregrounds. Negative values are allowed.
      *
+     * <p>On a {@linkplain #enableMapWindow() map window}, a change that moves the origin scrolls the content.
+     *
+     * @param factorX horizontal factor; finite
+     * @param factorY vertical factor; finite
      * @throws IllegalArgumentException if a factor is not finite
      * @throws IllegalStateException if the layer was removed
      */
@@ -198,6 +263,9 @@ public final class Layer {
     /**
      * Sets the same parallax factor on both axes.
      *
+     * @param factor the factor for both axes; finite
+     * @throws IllegalArgumentException if the factor is not finite
+     * @throws IllegalStateException if the layer was removed
      * @see #setParallax(float, float)
      */
     public void setParallax(float factor) {
@@ -212,7 +280,7 @@ public final class Layer {
      * @param row cells downward
      * @throws IllegalStateException if the layer was removed
      */
-    public void setCellOffset(int column, int row) {
+    public void setOffsetInCells(int column, int row) {
         setOffset(column * glyphSource.getCellWidth(), row * glyphSource.getCellHeight());
     }
 
@@ -235,31 +303,54 @@ public final class Layer {
      * @param rows cells downward
      * @throws IllegalStateException if the layer was removed
      */
-    public void cellOffsetBy(int columns, int rows) {
+    public void offsetByCells(int columns, int rows) {
         offsetBy(columns * glyphSource.getCellWidth(), rows * glyphSource.getCellHeight());
     }
 
-    /** Returns the requested zoom, 1 by default. See {@link #getEffectiveZoom()} for the applied one. */
+    /**
+     * Returns the requested zoom. See {@link #getEffectiveZoom()} for the applied one. Works after removal.
+     *
+     * @return the zoom; 1 by default
+     */
     public float getZoom() {
         return zoom;
     }
 
-    /** Returns the zoom and rotation pivot's x in layer pixels from the layer's left edge; 0 by default. */
+    /**
+     * Returns the zoom and rotation pivot's x in layer pixels from the layer's left edge. Works after
+     * removal. In map window mode the pivot is in map pixels.
+     *
+     * @return the pivot x in pixels; 0 by default
+     */
     public float getPivotX() {
         return pivotX;
     }
 
-    /** Returns the zoom and rotation pivot's y in layer pixels from the layer's top edge, growing down; 0 by default. */
+    /**
+     * Returns the zoom and rotation pivot's y in layer pixels from the layer's top edge, growing down.
+     * Works after removal. In map window mode the pivot is in map pixels.
+     *
+     * @return the pivot y in pixels; 0 by default
+     */
     public float getPivotY() {
         return pivotY;
     }
 
-    /** Returns how the zoom is applied, {@link ZoomMode#SMOOTH} by default. */
+    /**
+     * Returns how the zoom is applied. Works after removal.
+     *
+     * @return the zoom mode; never null, {@link ZoomMode#SMOOTH} by default
+     */
     public ZoomMode getZoomMode() {
         return zoomMode;
     }
 
-    /** Returns the zoom actually drawn: the requested zoom for SMOOTH, or a whole number of at least 1 for WHOLE. */
+    /**
+     * Returns the zoom actually drawn: the requested zoom for SMOOTH, or a whole number of at least 1
+     * for WHOLE. Works after removal.
+     *
+     * @return the applied zoom; above 0
+     */
     public float getEffectiveZoom() {
         return LayerTransform.effectiveZoom(zoom, zoomMode);
     }
@@ -286,7 +377,11 @@ public final class Layer {
         this.zoom = zoom;
     }
 
-    /** Returns the rotation in degrees, 0 by default; positive is clockwise on screen. */
+    /**
+     * Returns the rotation in degrees; positive is clockwise on screen. Works after removal.
+     *
+     * @return the rotation in degrees; 0 by default
+     */
     public float getRotation() {
         return rotation;
     }
@@ -385,6 +480,7 @@ public final class Layer {
     /**
      * Chooses how the zoom is applied. Default {@link ZoomMode#SMOOTH}.
      *
+     * @param mode the zoom mode; must not be null
      * @throws IllegalArgumentException if the mode is null
      * @throws IllegalStateException if the layer was removed
      */
@@ -400,6 +496,7 @@ public final class Layer {
      * Shows or hides the layer. A hidden layer is skipped when drawing but keeps
      * its place in the stack.
      *
+     * @param visible true to show the layer, false to hide it
      * @throws IllegalStateException if the layer was removed
      */
     public void setVisible(boolean visible) {
@@ -411,6 +508,7 @@ public final class Layer {
      * Sets whether the stack's pick test, {@link LayerStack#isPickableAt}, can hit this layer. A
      * non-pickable layer still draws; it is only ignored by the pick test.
      *
+     * @param pickable true to let the pick test hit the layer, false to skip it
      * @throws IllegalStateException if the layer was removed
      */
     public void setPickable(boolean pickable) {
@@ -443,20 +541,28 @@ public final class Layer {
 
     /**
      * Returns whether the layer has its own clip, by a rectangle or to the stack's size. A member
-     * of a {@link Panel} is clipped to the panel even when this is false.
+     * of a {@link Panel} is clipped to the panel even when this is false. Works after removal.
+     *
+     * @return true if a clip is set
      */
     public boolean hasClip() {
         return clip.isSet();
     }
 
-    /** Returns whether the clip follows the stack's size instead of a fixed rectangle. */
+    /**
+     * Returns whether the clip follows the stack's size instead of a fixed rectangle. Works after removal.
+     *
+     * @return true if set by {@link #clipToStack}
+     */
     public boolean isClippedToStack() {
         return clip.isStackArea();
     }
 
     /**
      * Returns the clip rectangle's left edge as passed to {@link #setClip}, 0 unless set. For a
-     * panel member this is measured from the panel's corner.
+     * panel member this is measured from the panel's corner. Works after removal.
+     *
+     * @return the left edge in virtual pixels
      */
     public float getClipX() {
         return clip.getX();
@@ -464,18 +570,28 @@ public final class Layer {
 
     /**
      * Returns the clip rectangle's top edge as passed to {@link #setClip}, 0 unless set. For a
-     * panel member this is measured from the panel's corner.
+     * panel member this is measured from the panel's corner. Works after removal.
+     *
+     * @return the top edge in virtual pixels, growing downward
      */
     public float getClipY() {
         return clip.getY();
     }
 
-    /** Returns the clip rectangle's width; 0 unless set by {@link #setClip}. */
+    /**
+     * Returns the clip rectangle's width; 0 unless set by {@link #setClip}. Works after removal.
+     *
+     * @return the width in virtual pixels
+     */
     public float getClipWidth() {
         return clip.getWidth();
     }
 
-    /** Returns the clip rectangle's height; 0 unless set by {@link #setClip}. */
+    /**
+     * Returns the clip rectangle's height; 0 unless set by {@link #setClip}. Works after removal.
+     *
+     * @return the height in virtual pixels
+     */
     public float getClipHeight() {
         return clip.getHeight();
     }
@@ -496,6 +612,10 @@ public final class Layer {
      * <p>The clip assumes libGDX's default {@code HdpiMode.Logical}. While
      * {@code HdpiMode.Pixels} is set, the clip is the wrong size on HDPI screens.
      *
+     * @param x left edge in virtual pixels from the stack's (or panel's) top-left corner
+     * @param y top edge in virtual pixels, growing downward
+     * @param width width in virtual pixels; not negative
+     * @param height height in virtual pixels; not negative
      * @throws IllegalArgumentException if width or height is negative
      * @throws IllegalStateException if the layer was removed
      */
@@ -577,15 +697,23 @@ public final class Layer {
         sprite.detach();
     }
 
-    /** Returns the number of sprites. Indices shift when a sprite is removed. */
+    /**
+     * Returns the number of free sprites. Indices shift when a sprite is removed. Works after
+     * removal, when it returns 0.
+     *
+     * @return the sprite count, from 0 to {@link #MAX_SPRITES}
+     */
     public int getSpriteCount() {
         return sprites.size;
     }
 
     /**
      * Returns the sprite at a position, in the order the sprites were added. Indices shift when a
-     * sprite is removed; iterate backward when removing in a loop.
+     * sprite is removed; iterate backward when removing in a loop. Works after removal, when every
+     * index is out of range.
      *
+     * @param index position from 0 to {@link #getSpriteCount()} - 1
+     * @return the sprite at that position; never null
      * @throws IndexOutOfBoundsException if the index is out of range
      */
     public GlyphSprite getSprite(int index) {
@@ -605,12 +733,15 @@ public final class Layer {
      * <p>In a {@linkplain #enableMapWindow() map window} layer, a lasting handle is dropped when
      * its cell leaves the window. Lasting handles are meant for display-owned animation such as
      * tweens, flashes, and bumps. Game state that must survive scrolling belongs in the grid, set
-     * through the map window's filler; per-frame effects belong in {@link #frameCell frame handles}.
+     * through the map window's filler; per-frame effects belong in {@link #obtainFrameCellHandle frame handles}.
      *
+     * @param column grid column, from 0 up to the grid's column count - 1
+     * @param row grid row, from 0 up to the grid's row count - 1, growing downward
+     * @return the lasting handle for the cell; never null
      * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
      * @throws IllegalStateException if the layer was removed
      */
-    public CellHandle cell(int column, int row) {
+    public CellHandle obtainCellHandle(int column, int row) {
         requireAttached();
         requireCellInsideGrid(column, row);
         return cellHandleSet.getOrCreateLasting(column, row);
@@ -622,7 +753,7 @@ public final class Layer {
      * resets it, and releases it once it stays unused for {@link #getFrameReleaseSeconds()}. The
      * same handle is returned until it is released or detached, so request it again after a release.
      *
-     * <p>A cell can have both a lasting handle ({@link #cell}) and a frame handle. They are separate
+     * <p>A cell can have both a lasting handle ({@link #obtainCellHandle}) and a frame handle. They are separate
      * objects and never change each other's values; the cell is drawn with both effects combined, as
      * described in {@link CellHandle}. A frame handle has no pivot of its own, and its pivot setters
      * throw; the effective pivot is the lasting handle's.
@@ -636,10 +767,13 @@ public final class Layer {
      * that calls this method on every write. A held handle can be released or detached between
      * frames, and then its setters throw.
      *
+     * @param column grid column, from 0 up to the grid's column count - 1
+     * @param row grid row, from 0 up to the grid's row count - 1, growing downward
+     * @return the frame handle for the cell; never null
      * @throws IndexOutOfBoundsException if the cell is outside the grid's current size
      * @throws IllegalStateException if the layer was removed
      */
-    public CellHandle frameCell(int column, int row) {
+    public CellHandle obtainFrameCellHandle(int column, int row) {
         requireAttached();
         requireCellInsideGrid(column, row);
         return cellHandleSet.getOrCreateFrame(column, row);
@@ -663,7 +797,7 @@ public final class Layer {
      * are 0. The cells of released handles draw as plain grid cells.
      *
      * <p>A released handle is detached: its getters keep working and its setters throw
-     * {@link IllegalStateException}. Call {@link #cell} again for a fresh handle. Call this when an
+     * {@link IllegalStateException}. Call {@link #obtainCellHandle} again for a fresh handle. Call this when an
      * effect ends or moves on, not every frame, because each re-request allocates a new handle.
      *
      * <p>Settings that do not lift the cell, such as a custom pivot, do not keep a handle from
@@ -680,16 +814,23 @@ public final class Layer {
      * Sets how many seconds a frame handle must stay idle before {@link LayerStack#beginCellEffects}
      * releases it. Lasting handles are not affected. Default 1.
      *
+     * @param seconds idle time in seconds; finite and above 0
      * @throws IllegalArgumentException if {@code seconds} is not a finite number above 0
+     * @throws IllegalStateException if the layer was removed
      */
     public void setFrameReleaseSeconds(float seconds) {
+        requireAttached();
         if (Float.isNaN(seconds) || Float.isInfinite(seconds) || seconds <= 0f) {
             throw new IllegalArgumentException("Release seconds must be finite and above 0: " + seconds);
         }
         frameReleaseSeconds = seconds;
     }
 
-    /** Returns the idle time before a frame handle is released, in seconds. */
+    /**
+     * Returns the idle time before a frame handle is released, in seconds. Works after removal.
+     *
+     * @return the idle seconds; above 0, 1 by default
+     */
     public float getFrameReleaseSeconds() {
         return frameReleaseSeconds;
     }
@@ -708,7 +849,7 @@ public final class Layer {
      * <p>Unlike {@link TerminalGrid#scroll}, which moves content only and leaves handles keyed to
      * their positions, this keeps each handle's motion and overrides with its content. Handles
      * pushed out of the grid are detached as after a shrink: getters work, setters throw, and
-     * {@link #cell} gives a new handle. Free sprites are pixel-positioned and stay where they are.
+     * {@link #obtainCellHandle} gives a new handle. Free sprites are pixel-positioned and stay where they are.
      *
      * <p>Nothing is allocated except a possible rehash of the position index. A zero shift does
      * nothing.
@@ -801,6 +942,7 @@ public final class Layer {
     /**
      * Returns the {@link MapWindow} created by the latest {@link #enableMapWindow()}.
      *
+     * @return the live map window; never null
      * @throws IllegalStateException if the layer was removed or is not a map window
      */
     public MapWindow getMapWindow() {
@@ -822,9 +964,10 @@ public final class Layer {
     /**
      * Returns whether the layer is in map window mode.
      *
+     * @return true after {@link #enableMapWindow()} and before {@link #disableMapWindow()}
      * @throws IllegalStateException if the layer was removed
      */
-    public boolean isMapWindow() {
+    public boolean hasMapWindow() {
         requireAttached();
         return mapWindow != null;
     }
@@ -858,12 +1001,22 @@ public final class Layer {
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
     }
 
-    /** Returns how many lasting cell handles the layer currently holds. */
+    /**
+     * Returns how many lasting cell handles the layer currently holds. Works after removal, when
+     * it returns 0.
+     *
+     * @return the lasting handle count
+     */
     public int getCellHandleCount() {
         return cellHandleSet.lastingCount();
     }
 
-    /** Returns how many frame cell handles the layer currently holds. */
+    /**
+     * Returns how many frame cell handles the layer currently holds. Works after removal, when
+     * it returns 0.
+     *
+     * @return the frame handle count
+     */
     public int getFrameCellHandleCount() {
         return cellHandleSet.frameCount();
     }
@@ -909,6 +1062,9 @@ public final class Layer {
     /**
      * Moves the layer to a position in its stack.
      *
+     * @param index the new position in the stack, from 0 to {@link LayerStack#getLayerCount()} - 1
+     * @throws IllegalStateException if the layer was removed
+     * @throws IndexOutOfBoundsException if the index is outside the stack's layer range
      * @see LayerStack#moveTo(Layer, int)
      */
     public void moveTo(int index) {

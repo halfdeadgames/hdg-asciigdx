@@ -93,10 +93,10 @@ class LayerCellTest {
 
     @Test
     void sameHandleIsReturnedForTheSameCell() {
-        CellHandle first = layer.cell(2, 1);
+        CellHandle first = layer.obtainCellHandle(2, 1);
 
-        assertSame(first, layer.cell(2, 1));
-        assertNotSame(first, layer.cell(1, 2));
+        assertSame(first, layer.obtainCellHandle(2, 1));
+        assertNotSame(first, layer.obtainCellHandle(1, 2));
         assertEquals(2, first.getColumn());
         assertEquals(1, first.getRow());
         assertEquals(1, renderer.bindCount);
@@ -104,15 +104,15 @@ class LayerCellTest {
 
     @Test
     void cellsOutsideTheGridThrow() {
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(-1, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(0, -1));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(6, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(-1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(6, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(0, 4));
     }
 
     @Test
     void removedLayerThrowsAndDetachesItsHandles() {
-        CellHandle handle = layer.cell(0, 0);
+        CellHandle handle = layer.obtainCellHandle(0, 0);
         handle.setOffset(1f, 1f);
 
         layer.remove();
@@ -120,13 +120,13 @@ class LayerCellTest {
         assertTrue(handle.isDetached());
         assertEquals(1f, handle.getOffsetX());
         assertThrows(IllegalStateException.class, () -> handle.setOffset(0f, 0f));
-        assertThrows(IllegalStateException.class, () -> layer.cell(0, 0));
+        assertThrows(IllegalStateException.class, () -> layer.obtainCellHandle(0, 0));
         assertThrows(IllegalStateException.class, layer::resetCellHandles);
     }
 
     @Test
     void disposingTheStackDetachesHandles() {
-        CellHandle handle = layer.cell(0, 0);
+        CellHandle handle = layer.obtainCellHandle(0, 0);
 
         stack.dispose();
 
@@ -135,8 +135,8 @@ class LayerCellTest {
 
     @Test
     void resetCellHandlesResetsEveryHandle() {
-        CellHandle a = layer.cell(0, 0);
-        CellHandle b = layer.cell(1, 0);
+        CellHandle a = layer.obtainCellHandle(0, 0);
+        CellHandle b = layer.obtainCellHandle(1, 0);
         a.setOffset(3f, 0f);
         b.setRotation(45f);
         b.setMix(0xFF0000FF, 0.5f);
@@ -151,7 +151,7 @@ class LayerCellTest {
 
     @Test
     void rendererHearsAboutLiftingAndSettlingOnlyWhenTheStateChanges() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         draw();
         assertTrue(renderer.events.isEmpty());
 
@@ -172,8 +172,8 @@ class LayerCellTest {
 
     @Test
     void resizingTheGridDetachesOnlyHandlesOutsideAndReappliesTheRest() {
-        CellHandle inside = layer.cell(1, 1);
-        CellHandle outside = layer.cell(5, 1);
+        CellHandle inside = layer.obtainCellHandle(1, 1);
+        CellHandle outside = layer.obtainCellHandle(5, 1);
         inside.setAlphaMultiplier(0.5f);
         outside.setAlphaMultiplier(0.5f);
         draw();
@@ -187,19 +187,19 @@ class LayerCellTest {
         assertEquals(1, layer.getCellHandles().size);
         assertSame(inside, layer.getCellHandles().get(0));
         assertEquals(List.of("hide 1,1"), renderer.events);
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(5, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(5, 1));
     }
 
     @Test
     void growingBackNeedsAFreshHandle() {
-        CellHandle outside = layer.cell(5, 1);
+        CellHandle outside = layer.obtainCellHandle(5, 1);
         outside.setOffset(1f, 0f);
         grid.resize(3, 4);
         draw();
         grid.resize(6, 4);
         draw();
 
-        CellHandle fresh = layer.cell(5, 1);
+        CellHandle fresh = layer.obtainCellHandle(5, 1);
 
         assertNotSame(outside, fresh);
         assertFalse(fresh.isDetached());
@@ -212,7 +212,7 @@ class LayerCellTest {
         draw();
         grid.resize(8, 4);
         draw();
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         handle.setOffset(2f, 0f);
         draw();
         renderer.events.clear();
@@ -229,19 +229,19 @@ class LayerCellTest {
         draw();
         grid.resize(8, 4);
         draw();
-        CellHandle handle = layer.cell(7, 1);
+        CellHandle handle = layer.obtainCellHandle(7, 1);
         grid.resize(6, 4);
         draw();
 
         assertTrue(handle.isDetached());
         assertEquals(0, layer.getCellHandles().size);
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.cell(7, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainCellHandle(7, 1));
     }
 
     @Test
     void liftedCellsKeepCreationOrderInTheListTheRendererDraws() {
-        CellHandle late = layer.cell(4, 3);
-        CellHandle early = layer.cell(0, 0);
+        CellHandle late = layer.obtainCellHandle(4, 3);
+        CellHandle early = layer.obtainCellHandle(0, 0);
         layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
 
         assertSame(renderer.cellHandles, layer.getCellHandles());
@@ -251,7 +251,7 @@ class LayerCellTest {
 
     @Test
     void movingTheLayerLeavesLayerRelativeDataUntouched() {
-        CellHandle handle = layer.cell(2, 1);
+        CellHandle handle = layer.obtainCellHandle(2, 1);
         handle.setOffset(3f, -2f);
         layer.setOffset(10f, 4f);
 
@@ -280,7 +280,7 @@ class LayerCellTest {
 
     @Test
     void removeFreeSpritesLeavesLiftedCellsLifted() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         handle.setOffset(2f, 0f);
         layer.addSprite('a', 0, 0f, 0f);
 
@@ -315,7 +315,7 @@ class LayerCellTest {
 
     @Test
     void clearAllSpritesResetsHandlesAndRemovesFreeSprites() {
-        CellHandle handle = layer.cell(0, 0);
+        CellHandle handle = layer.obtainCellHandle(0, 0);
         handle.setOffset(3f, 0f);
         GlyphSprite sprite = layer.addSprite('a', 0, 0f, 0f);
 
@@ -325,12 +325,12 @@ class LayerCellTest {
         assertFalse(handle.isDetached());
         assertEquals(0, layer.getSpriteCount());
         assertThrows(IllegalStateException.class, () -> sprite.setVisible(false));
-        assertSame(handle, layer.cell(0, 0));
+        assertSame(handle, layer.obtainCellHandle(0, 0));
     }
 
     @Test
     void changedOverrideRefreshesItsCellOnceAndNothingWhenUnchanged() {
-        CellHandle handle = layer.cell(2, 1);
+        CellHandle handle = layer.obtainCellHandle(2, 1);
         handle.setForegroundMix(0xFF0000FF, 0.5f);
 
         draw();
@@ -343,7 +343,7 @@ class LayerCellTest {
 
     @Test
     void eachChangeOfAnOverrideRefreshesTheCellAgain() {
-        CellHandle handle = layer.cell(0, 3);
+        CellHandle handle = layer.obtainCellHandle(0, 3);
         handle.setCodePoint('x');
         draw();
         handle.clearCodePoint();
@@ -354,7 +354,7 @@ class LayerCellTest {
 
     @Test
     void handleWithoutOverrideChangesNeverRefreshes() {
-        layer.cell(1, 1);
+        layer.obtainCellHandle(1, 1);
         draw();
 
         assertTrue(renderer.events.isEmpty());
@@ -362,7 +362,7 @@ class LayerCellTest {
 
     @Test
     void handleDetachedByShrinkingDoesNotRefreshACellThatNoLongerExists() {
-        CellHandle outside = layer.cell(5, 3);
+        CellHandle outside = layer.obtainCellHandle(5, 3);
         outside.setCodePoint('x');
         grid.resize(3, 2);
 
@@ -374,8 +374,8 @@ class LayerCellTest {
 
     @Test
     void releaseDropsIdleHandlesAndDetachesThem() {
-        CellHandle idle = layer.cell(0, 0);
-        layer.cell(1, 0);
+        CellHandle idle = layer.obtainCellHandle(0, 0);
+        layer.obtainCellHandle(1, 0);
         assertEquals(2, layer.getCellHandleCount());
 
         layer.releaseIdleCellHandles();
@@ -387,11 +387,11 @@ class LayerCellTest {
 
     @Test
     void releaseKeepsLiftedMixedAndCodePointHandles() {
-        CellHandle lifted = layer.cell(0, 0);
-        CellHandle foregroundMixed = layer.cell(1, 0);
-        CellHandle backgroundMixed = layer.cell(2, 0);
-        CellHandle withCodePoint = layer.cell(3, 0);
-        CellHandle idle = layer.cell(4, 0);
+        CellHandle lifted = layer.obtainCellHandle(0, 0);
+        CellHandle foregroundMixed = layer.obtainCellHandle(1, 0);
+        CellHandle backgroundMixed = layer.obtainCellHandle(2, 0);
+        CellHandle withCodePoint = layer.obtainCellHandle(3, 0);
+        CellHandle idle = layer.obtainCellHandle(4, 0);
         lifted.setOffset(2f, 0f);
         foregroundMixed.setForegroundMix(0xFF0000FF, 0.5f);
         backgroundMixed.setBackgroundMix(0xFF0000FF, 0.5f);
@@ -400,19 +400,19 @@ class LayerCellTest {
         layer.releaseIdleCellHandles();
 
         assertEquals(4, layer.getCellHandleCount());
-        assertSame(lifted, layer.cell(0, 0));
-        assertSame(foregroundMixed, layer.cell(1, 0));
-        assertSame(backgroundMixed, layer.cell(2, 0));
-        assertSame(withCodePoint, layer.cell(3, 0));
+        assertSame(lifted, layer.obtainCellHandle(0, 0));
+        assertSame(foregroundMixed, layer.obtainCellHandle(1, 0));
+        assertSame(backgroundMixed, layer.obtainCellHandle(2, 0));
+        assertSame(withCodePoint, layer.obtainCellHandle(3, 0));
         assertTrue(idle.isDetached());
     }
 
     @Test
     void cellAfterReleaseReturnsAFreshHandle() {
-        CellHandle old = layer.cell(2, 2);
+        CellHandle old = layer.obtainCellHandle(2, 2);
         layer.releaseIdleCellHandles();
 
-        CellHandle fresh = layer.cell(2, 2);
+        CellHandle fresh = layer.obtainCellHandle(2, 2);
 
         assertNotSame(old, fresh);
         assertFalse(fresh.isDetached());
@@ -421,12 +421,12 @@ class LayerCellTest {
 
     @Test
     void releaseRebindsTheRendererSoItsIndexIsRebuiltEvenWhenTheCountIsUnchanged() {
-        layer.cell(1, 1).setOffset(1f, 0f);
-        layer.cell(2, 2);
+        layer.obtainCellHandle(1, 1).setOffset(1f, 0f);
+        layer.obtainCellHandle(2, 2);
         int bindsBefore = renderer.bindCount;
 
         layer.releaseIdleCellHandles();
-        layer.cell(3, 3);
+        layer.obtainCellHandle(3, 3);
 
         assertEquals(bindsBefore + 1, renderer.bindCount);
         assertEquals(2, renderer.cellHandles.size);
@@ -434,7 +434,7 @@ class LayerCellTest {
 
     @Test
     void releaseWithNothingIdleDoesNotRebind() {
-        layer.cell(2, 2).setOffset(1f, 0f);
+        layer.obtainCellHandle(2, 2).setOffset(1f, 0f);
         int bindsBefore = renderer.bindCount;
 
         layer.releaseIdleCellHandles();
@@ -444,7 +444,7 @@ class LayerCellTest {
 
     @Test
     void releaseUnhidesAndRefreshesCellsOfHandlesResetButNotYetSynced() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         handle.setOffset(2f, 0f);
         handle.setCodePoint('x');
         draw();
@@ -459,7 +459,7 @@ class LayerCellTest {
 
     @Test
     void releaseSkipsTheRendererForACellThatLeftTheGridSinceTheLastDraw() {
-        CellHandle outside = layer.cell(5, 3);
+        CellHandle outside = layer.obtainCellHandle(5, 3);
         outside.setOffset(2f, 0f);
         draw();
         layer.resetCellHandles();

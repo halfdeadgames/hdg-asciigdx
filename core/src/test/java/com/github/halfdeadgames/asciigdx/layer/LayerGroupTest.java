@@ -184,7 +184,7 @@ class LayerGroupTest {
         group.add(layer);
         group.add(layer);
 
-        assertEquals(1, group.size());
+        assertEquals(1, group.getLayerCount());
         assertEquals(1, layer.getGroups().size);
         assertTrue(group.contains(layer));
     }
@@ -227,7 +227,7 @@ class LayerGroupTest {
         stack.remove(layer);
 
         assertFalse(group.contains(layer));
-        assertEquals(0, group.size());
+        assertEquals(0, group.getLayerCount());
         assertEquals(0, layer.getGroups().size);
     }
 
@@ -240,7 +240,7 @@ class LayerGroupTest {
         stack.removeGroup(group);
 
         assertEquals(0, layer.getGroups().size);
-        assertEquals(0, group.size());
+        assertEquals(0, group.getLayerCount());
         assertThrows(IllegalStateException.class, () -> group.add(layer));
         assertThrows(IllegalStateException.class, () -> stack.removeGroup(group));
     }

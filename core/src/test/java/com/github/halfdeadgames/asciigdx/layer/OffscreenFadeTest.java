@@ -116,7 +116,7 @@ class OffscreenFadeTest {
     @Test
     void liftedCellsCountButRestingHandlesDoNot() {
         Layer layer = layerWithRecordingRenderer();
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         assertFalse(isNeeded(0.5f, layer));
 
         handle.setOffset(2f, 0f);

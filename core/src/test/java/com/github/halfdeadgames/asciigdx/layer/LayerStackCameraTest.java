@@ -143,7 +143,7 @@ class LayerStackCameraTest {
         float cornerX = STACK_X + OFFSET_X - 16f;
         float cornerY = STACK_Y - (OFFSET_Y - 12f);
 
-        stack.cellAt(layer, STACK_X, STACK_Y, cornerX + CELL_WIDTH + 1f, cornerY - 2 * CELL_HEIGHT - 1f, cell);
+        stack.toCell(layer, STACK_X, STACK_Y, cornerX + CELL_WIDTH + 1f, cornerY - 2 * CELL_HEIGHT - 1f, cell);
 
         assertEquals(1, cell.x);
         assertEquals(2, cell.y);
@@ -156,7 +156,7 @@ class LayerStackCameraTest {
         float cornerX = STACK_X + OFFSET_X;
         float cornerY = STACK_Y - OFFSET_Y;
 
-        stack.cellAt(layer, STACK_X, STACK_Y, cornerX + 1f, cornerY - 1f, cell);
+        stack.toCell(layer, STACK_X, STACK_Y, cornerX + 1f, cornerY - 1f, cell);
 
         assertEquals(0, cell.x);
         assertEquals(0, cell.y);

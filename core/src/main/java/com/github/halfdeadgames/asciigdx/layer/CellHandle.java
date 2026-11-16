@@ -5,7 +5,16 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
 /**
  * Holds everything temporary about one cell, for bump attacks, wiggles, hit pops, and flashes.
- * Handles come from {@link Layer#cell(int, int)}. The grid data is never modified.
+ * Handles come from {@link Layer#obtainCellHandle(int, int)}. The grid data is never modified.
+ *
+ * <p>Example, a hit pop that flashes a cell white and nudges it sideways for a moment:
+ * <pre>{@code
+ * CellHandle handle = layer.obtainCellHandle(column, row);
+ * handle.setMix(0xFFFFFFFF, 1f);
+ * handle.setOffset(2f, 0f);
+ * // later, once the effect is over
+ * handle.reset();
+ * }</pre>
  *
  * <p>Motion lifts the glyph off the grid so it can move, rotate, scale, and fade on its own. A
  * handle with default motion does nothing: the glyph stays in the grid. As soon as one motion
@@ -21,8 +30,8 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  *
  * <p>A detached handle keeps its getters working, but it draws nothing: no motion and no overrides.
  *
- * <p>There are two kinds of handle. A lasting handle ({@link Layer#cell}) stays until the game
- * releases it. A frame handle ({@link Layer#frameCell}) is for effects applied again every frame:
+ * <p>There are two kinds of handle. A lasting handle ({@link Layer#obtainCellHandle}) stays until the game
+ * releases it. A frame handle ({@link Layer#obtainFrameCellHandle}) is for effects applied again every frame:
  * {@link LayerStack#beginCellEffects} resets it each frame and releases it after it stays unused for
  * a while. A cell can have both; they are separate objects and never change each other's values. A
  * frame handle has no pivot of its own; it uses the lasting handle's pivot.
@@ -40,9 +49,13 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  * layer like sprites.
  *
  * <p>Offsets are in virtual pixels with y growing downward, like layer offsets. Rotation is in
- * degrees, clockwise on screen. Values are not clamped, except alpha. Once the handle is
- * detached (the layer was removed, or the grid shrank so the cell no longer exists), getters keep
- * working but every mutator throws {@link IllegalStateException}; ask the layer for a new handle.
+ * degrees, clockwise on screen. Values are not clamped, except alpha and the mix amounts. Once the
+ * handle is detached (the layer was removed, or the grid shrank so the cell no longer exists),
+ * getters keep working but every mutator throws {@link IllegalStateException}; ask the layer for a
+ * new handle.
+ *
+ * <p>A handle holds no GPU resources and needs no disposing. Use it from the game thread; no GL
+ * context is needed to change it.
  */
 public final class CellHandle implements SpriteTransform {
 
@@ -50,7 +63,8 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Marks "no temporary glyph". It is {@link Integer#MIN_VALUE} rather than -1 because grid
-     * writes accept any int, so -1 could appear as real grid data.
+     * writes accept any int, so -1 could appear as real grid data. {@link #getCodePoint()} returns
+     * it while no temporary glyph is set, and {@link #setCodePoint(int)} treats it as a clear.
      */
     public static final int NO_CODE_POINT = Integer.MIN_VALUE;
 
@@ -93,8 +107,10 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Whether this is a frame handle, from {@link Layer#frameCell(int, int)}, rather than a lasting
-     * handle from {@link Layer#cell(int, int)}.
+     * Whether this is a frame handle, from {@link Layer#obtainFrameCellHandle(int, int)}, rather than a lasting
+     * handle from {@link Layer#obtainCellHandle(int, int)}.
+     *
+     * @return true for a frame handle, false for a lasting handle
      */
     public boolean isFrameHandle() {
         return frameHandle;
@@ -141,33 +157,52 @@ public final class CellHandle implements SpriteTransform {
     private void requireLastingHandleForPivot() {
         if (frameHandle) {
             throw new IllegalStateException(
-                    "Frame handles use the lasting handle's pivot; set it on Layer.cell(column, row)");
+                    "Frame handles use the lasting handle's pivot; set it on Layer.obtainCellHandle(column, row)");
         }
     }
 
-    /** The cell's column. */
+    /**
+     * The cell's column, counted from 0 at the left edge of the layer's grid.
+     *
+     * @return the column index; changes only when {@link Layer#scroll} moves the handle
+     */
     public int getColumn() {
         return column;
     }
 
-    /** The cell's row. */
+    /**
+     * The cell's row, counted from 0 at the top edge of the layer's grid (y grows downward).
+     *
+     * @return the row index; changes only when {@link Layer#scroll} moves the handle
+     */
     public int getRow() {
         return row;
     }
 
-    /** Horizontal offset from the cell's own position, in virtual pixels. */
+    /**
+     * Horizontal offset from the cell's own position, in virtual pixels.
+     *
+     * @return the horizontal offset in virtual pixels; positive is right, 0 by default
+     */
     public float getOffsetX() {
         return offsetX;
     }
 
-    /** Vertical offset from the cell's own position, in virtual pixels, growing downward. */
+    /**
+     * Vertical offset from the cell's own position, in virtual pixels, growing downward.
+     *
+     * @return the vertical offset in virtual pixels; positive is down, 0 by default
+     */
     public float getOffsetY() {
         return offsetY;
     }
 
     /**
-     * Sets the offset from the cell's own position.
+     * Sets the offset from the cell's own position. A nonzero offset lifts the glyph. Values are not
+     * clamped.
      *
+     * @param x horizontal offset in virtual pixels; positive is right
+     * @param y vertical offset in virtual pixels; positive is down
      * @throws IllegalStateException if the handle was detached
      */
     public void setOffset(float x, float y) {
@@ -179,21 +214,29 @@ public final class CellHandle implements SpriteTransform {
     /**
      * Moves the glyph relative to its current offset.
      *
+     * @param dx horizontal distance in virtual pixels to add to the offset; positive is right
+     * @param dy vertical distance in virtual pixels to add to the offset; positive is down
      * @throws IllegalStateException if the handle was detached
      */
     public void offsetBy(float dx, float dy) {
         setOffset(offsetX + dx, offsetY + dy);
     }
 
-    /** Rotation in degrees; positive is clockwise on screen. */
+    /**
+     * Rotation in degrees; positive is clockwise on screen.
+     *
+     * @return the rotation in degrees, not wrapped to a single turn, 0 by default
+     */
     @Override
     public float getRotation() {
         return rotation;
     }
 
     /**
-     * Sets the rotation in degrees; positive is clockwise on screen.
+     * Sets the rotation in degrees; positive is clockwise on screen. The rotation is about the
+     * pivot and is not wrapped. A rotation that is not a whole number of turns lifts the glyph.
      *
+     * @param degrees the rotation in degrees
      * @throws IllegalStateException if the handle was detached
      */
     public void setRotation(float degrees) {
@@ -202,29 +245,39 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Adds to the rotation, in degrees.
+     * Adds to the rotation, in degrees; positive turns clockwise on screen.
      *
+     * @param degrees the angle to add in degrees; negative turns counterclockwise
      * @throws IllegalStateException if the handle was detached
      */
     public void rotateBy(float degrees) {
         setRotation(rotation + degrees);
     }
 
-    /** Horizontal scale; 1 is unscaled, negative mirrors. */
+    /**
+     * Horizontal scale; 1 is unscaled, negative mirrors.
+     *
+     * @return the horizontal scale factor, 1 by default
+     */
     @Override
     public float getScaleX() {
         return scaleX;
     }
 
-    /** Vertical scale; 1 is unscaled, negative mirrors. */
+    /**
+     * Vertical scale; 1 is unscaled, negative mirrors.
+     *
+     * @return the vertical scale factor, 1 by default
+     */
     @Override
     public float getScaleY() {
         return scaleY;
     }
 
     /**
-     * Sets the same scale on both axes.
+     * Sets the same scale on both axes, about the pivot. A scale other than 1 lifts the glyph.
      *
+     * @param scale the scale factor for both axes; 1 is unscaled, negative mirrors
      * @throws IllegalStateException if the handle was detached
      */
     public void setScale(float scale) {
@@ -232,8 +285,11 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Sets the scale per axis; negative values mirror.
+     * Sets the scale per axis, about the pivot; negative values mirror. A scale other than 1 lifts
+     * the glyph.
      *
+     * @param scaleX the horizontal scale factor; 1 is unscaled
+     * @param scaleY the vertical scale factor; 1 is unscaled
      * @throws IllegalStateException if the handle was detached
      */
     public void setScale(float scaleX, float scaleY) {
@@ -245,6 +301,7 @@ public final class CellHandle implements SpriteTransform {
     /**
      * Multiplies the scale on both axes by {@code factor}, so several effects can stack.
      *
+     * @param factor the multiplier for both axes; 1 changes nothing, negative mirrors
      * @throws IllegalStateException if the handle was detached
      */
     public void scaleBy(float factor) {
@@ -254,6 +311,8 @@ public final class CellHandle implements SpriteTransform {
     /**
      * Multiplies the scale on each axis by its own factor; negative factors mirror.
      *
+     * @param factorX the multiplier for the horizontal scale; 1 changes nothing
+     * @param factorY the multiplier for the vertical scale; 1 changes nothing
      * @throws IllegalStateException if the handle was detached
      */
     public void scaleBy(float factorX, float factorY) {
@@ -263,6 +322,8 @@ public final class CellHandle implements SpriteTransform {
     /**
      * Horizontal pivot as a fraction of the cell box: 0 is left, 1 is right. A frame handle has no
      * pivot of its own and always returns 0.5; the effective pivot is the lasting handle's.
+     *
+     * @return the horizontal pivot, 0.5 by default
      */
     @Override
     public float getPivotX() {
@@ -272,6 +333,8 @@ public final class CellHandle implements SpriteTransform {
     /**
      * Vertical pivot as a fraction of the cell box: 0 is top, 1 is bottom. A frame handle has no
      * pivot of its own and always returns 0.5; the effective pivot is the lasting handle's.
+     *
+     * @return the vertical pivot, 0.5 by default
      */
     @Override
     public float getPivotY() {
@@ -280,8 +343,11 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Sets the pivot for rotation and scale, as fractions of the cell box. Defaults to the center.
-     * The pivot alone does not lift the glyph.
+     * The pivot alone does not lift the glyph. Moving the pivot of a rotated or scaled cell moves
+     * the glyph on screen; use {@link #setPivotKeepingPlacement} to avoid that.
      *
+     * @param pivotX horizontal pivot as a fraction of the cell box: 0 is left, 1 is right
+     * @param pivotY vertical pivot as a fraction of the cell box: 0 is top, 1 is bottom
      * @throws IllegalStateException if the handle was detached, or is a frame handle
      */
     public void setPivot(float pivotX, float pivotY) {
@@ -314,19 +380,26 @@ public final class CellHandle implements SpriteTransform {
         setOffset(newOffsetX, newOffsetY);
     }
 
-    /** Multiplier on the glyph's alpha, from 0 to 1. */
+    /**
+     * Multiplier on the glyph's alpha, from 0 to 1.
+     *
+     * @return the alpha multiplier, 1 by default
+     */
     public float getAlphaMultiplier() {
         return alpha;
     }
 
     /**
-     * Sets the multiplier applied to the glyph's own alpha, clamped to 0..1. Default 1.
+     * Sets the multiplier applied to the glyph's own alpha, clamped to 0..1. Default 1. A value
+     * below 1 lifts the glyph. It fades the glyph only; the cell's background is not affected.
      *
+     * @param alphaMultiplier the multiplier, 0 for invisible and 1 for unchanged; values outside
+     *     0..1 are clamped
      * @throws IllegalStateException if the handle was detached
      */
-    public void setAlphaMultiplier(float alpha) {
+    public void setAlphaMultiplier(float alphaMultiplier) {
         requireAttached();
-        this.alpha = Math.max(0f, Math.min(1f, alpha));
+        this.alpha = Math.max(0f, Math.min(1f, alphaMultiplier));
     }
 
     /**
@@ -404,6 +477,9 @@ public final class CellHandle implements SpriteTransform {
      * color is an RGBA8888 int, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float,
      * float, float)}, which takes float channels or a {@code Color}.
      *
+     * @param rgba target color as an RGBA8888 int; its alpha is ignored
+     * @param amount 0 shows the cell's own colors, 1 shows {@code rgba}; clamped to 0..1, NaN counts
+     *     as 0
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
      * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
@@ -415,9 +491,15 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Mixes the foreground and the background toward their own colors by their own amounts. Colors
-     * are RGBA8888 ints, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float, float,
-     * float)}, which takes float channels or a {@code Color}.
+     * are RGBA8888 ints, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float,
+     * float, float)}, which takes float channels or a {@code Color}.
      *
+     * @param foregroundRgba target color of the foreground as an RGBA8888 int; its alpha is ignored
+     * @param foregroundAmount 0 shows the cell's own foreground, 1 shows {@code foregroundRgba};
+     *     clamped to 0..1, NaN counts as 0
+     * @param backgroundRgba target color of the background as an RGBA8888 int; its alpha is ignored
+     * @param backgroundAmount 0 shows the cell's own background, 1 shows {@code backgroundRgba};
+     *     clamped to 0..1, NaN counts as 0
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
      * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
@@ -438,22 +520,38 @@ public final class CellHandle implements SpriteTransform {
         setMix(0, 0f);
     }
 
-    /** Target color of the foreground mix, as RGBA8888; only visible while the amount is above 0. */
+    /**
+     * Target color of the foreground mix, as RGBA8888; only visible while the amount is above 0.
+     *
+     * @return the stored foreground mix color, 0 by default
+     */
     public int getForegroundMixColor() {
         return foregroundMixColor;
     }
 
-    /** Foreground mix amount, from 0 (none) to 1. */
+    /**
+     * Foreground mix amount, from 0 (none) to 1.
+     *
+     * @return the foreground mix amount, 0 by default
+     */
     public float getForegroundMixAmount() {
         return foregroundMixAmount;
     }
 
-    /** Target color of the background mix, as RGBA8888; only visible while the amount is above 0. */
+    /**
+     * Target color of the background mix, as RGBA8888; only visible while the amount is above 0.
+     *
+     * @return the stored background mix color, 0 by default
+     */
     public int getBackgroundMixColor() {
         return backgroundMixColor;
     }
 
-    /** Background mix amount, from 0 (none) to 1. */
+    /**
+     * Background mix amount, from 0 (none) to 1.
+     *
+     * @return the background mix amount, 0 by default
+     */
     public float getBackgroundMixAmount() {
         return backgroundMixAmount;
     }
@@ -481,7 +579,7 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Goes back to showing the cell's own glyph.
+     * Goes back to showing the cell's own glyph. Does nothing if no temporary glyph is set.
      *
      * @throws IllegalStateException if the handle was detached
      */
@@ -494,12 +592,20 @@ public final class CellHandle implements SpriteTransform {
         overridesChanged = true;
     }
 
-    /** Returns whether a temporary glyph is set. */
+    /**
+     * Returns whether a temporary glyph is set.
+     *
+     * @return true if {@link #setCodePoint(int)} set a glyph that is still active
+     */
     public boolean hasCodePoint() {
         return overrideCodePoint != NO_CODE_POINT;
     }
 
-    /** Returns the temporary glyph, or {@link #NO_CODE_POINT} if none is set. */
+    /**
+     * Returns the temporary glyph, or {@link #NO_CODE_POINT} if none is set.
+     *
+     * @return the temporary glyph as a Unicode code point, or {@link #NO_CODE_POINT}
+     */
     public int getCodePoint() {
         return overrideCodePoint;
     }
@@ -566,6 +672,8 @@ public final class CellHandle implements SpriteTransform {
      * Returns whether the glyph is drawn off the grid: any of offset, rotation (other than a
      * whole number of turns), scale, or alpha differs from its default. Temporary colors and
      * glyph are not considered. A detached handle keeps its values but is never drawn.
+     *
+     * @return true if the glyph is currently lifted off the grid
      */
     public boolean isLifted() {
         return offsetX != 0f || offsetY != 0f
@@ -582,7 +690,11 @@ public final class CellHandle implements SpriteTransform {
                 && backgroundMixAmount == 0f;
     }
 
-    /** Returns whether the handle was detached from its layer. */
+    /**
+     * Returns whether the handle was detached from its layer.
+     *
+     * @return true if the layer was removed or the cell no longer exists, so every mutator throws
+     */
     public boolean isDetached() {
         return detached;
     }

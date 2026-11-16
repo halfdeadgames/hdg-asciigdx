@@ -202,7 +202,7 @@ class MapWindowTest {
         stack.setCamera(32f, 16f);
         MapWindow window = enable();
 
-        assertSame(layer.cell(1, 2), window.cell(3, 3));
+        assertSame(layer.obtainCellHandle(1, 2), window.obtainCellHandle(3, 3));
     }
 
     @Test
@@ -210,9 +210,9 @@ class MapWindowTest {
         stack.setCamera(32f, 16f);
         MapWindow window = enable();
 
-        assertThrows(IndexOutOfBoundsException.class, () -> window.cell(1, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.cell(2 + COLUMNS, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.cell(2, 1 + ROWS));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(1, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(2 + COLUMNS, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(2, 1 + ROWS));
     }
 
     @Test
@@ -220,8 +220,8 @@ class MapWindowTest {
         stack.setCamera(32f, 16f);
         MapWindow window = enable();
 
-        assertSame(layer.frameCell(1, 2), window.frameCell(3, 3));
-        assertTrue(window.frameCell(3, 3).isFrameHandle());
+        assertSame(layer.obtainFrameCellHandle(1, 2), window.obtainFrameCellHandle(3, 3));
+        assertTrue(window.obtainFrameCellHandle(3, 3).isFrameHandle());
     }
 
     @Test
@@ -229,9 +229,9 @@ class MapWindowTest {
         stack.setCamera(32f, 16f);
         MapWindow window = enable();
 
-        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(1, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(2 + COLUMNS, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.frameCell(2, 1 + ROWS));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(1, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(2 + COLUMNS, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(2, 1 + ROWS));
     }
 
     @Test
@@ -480,7 +480,7 @@ class MapWindowTest {
         assertThrows(IllegalStateException.class, window::getOriginRow);
         assertThrows(IllegalStateException.class, () -> window.contains(0, 0));
         assertThrows(IllegalStateException.class, () -> window.set(0, 0, 'a', 0, 0));
-        assertThrows(IllegalStateException.class, () -> window.cell(0, 0));
+        assertThrows(IllegalStateException.class, () -> window.obtainCellHandle(0, 0));
         assertThrows(IllegalStateException.class, () -> window.toGridColumn(0));
         assertThrows(IllegalStateException.class, () -> window.toGridRow(0));
         assertThrows(IllegalStateException.class, () -> window.toMapColumn(0));

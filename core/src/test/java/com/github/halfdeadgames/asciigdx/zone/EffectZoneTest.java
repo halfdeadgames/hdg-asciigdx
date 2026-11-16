@@ -128,7 +128,7 @@ class EffectZoneTest {
         first.apply(layer, 0f);
         second.apply(layer, 0f);
 
-        CellHandle cell = layer.frameCell(2, 2);
+        CellHandle cell = layer.obtainFrameCellHandle(2, 2);
         assertEquals(4f, cell.getOffsetX());
         assertEquals(1f, cell.getOffsetY());
         assertEquals(15f, cell.getRotation());
@@ -158,8 +158,8 @@ class EffectZoneTest {
         first.apply(layer, 0f);
         second.apply(layer, 0f);
 
-        assertEquals(0x00FF00FF, layer.frameCell(0, 0).getForegroundMixColor());
-        assertEquals('b', layer.frameCell(0, 0).getCodePoint());
+        assertEquals(0x00FF00FF, layer.obtainFrameCellHandle(0, 0).getForegroundMixColor());
+        assertEquals('b', layer.obtainFrameCellHandle(0, 0).getCodePoint());
     }
 
     @Test
@@ -167,7 +167,7 @@ class EffectZoneTest {
         EffectZone zone = new EffectZone(filledRectangle(0, 0, 2, 2),
                 (cell, where, time) -> cell.offsetBy(1f, 0f));
         zone.apply(layer, 0f);
-        CellHandle firstHandle = layer.frameCell(0, 0);
+        CellHandle firstHandle = layer.obtainFrameCellHandle(0, 0);
 
         float releaseSeconds = layer.getFrameReleaseSeconds();
         stack.beginCellEffects(releaseSeconds);
@@ -176,7 +176,7 @@ class EffectZoneTest {
         zone.apply(layer, 0f);
 
         assertTrue(firstHandle.isDetached());
-        CellHandle freshHandle = layer.frameCell(0, 0);
+        CellHandle freshHandle = layer.obtainFrameCellHandle(0, 0);
         assertFalse(freshHandle.isDetached());
         assertEquals(1f, freshHandle.getOffsetX());
         assertEquals(4, layer.getFrameCellHandleCount());
@@ -229,12 +229,12 @@ class EffectZoneTest {
     @Test
     void applyWritesFrameHandlesAndLeavesLastingHandlesUntouched() {
         EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
-        CellHandle lasting = layer.cell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
         lasting.setOffset(5f, 0f);
 
         zone.apply(layer, 0f);
 
-        assertEquals(2f, layer.frameCell(1, 1).getOffsetX(), 0.0001f);
+        assertEquals(2f, layer.obtainFrameCellHandle(1, 1).getOffsetX(), 0.0001f);
         assertEquals(5f, lasting.getOffsetX(), 0.0001f);
         assertEquals(1, layer.getCellHandleCount());
         assertEquals(1, layer.getFrameCellHandleCount());

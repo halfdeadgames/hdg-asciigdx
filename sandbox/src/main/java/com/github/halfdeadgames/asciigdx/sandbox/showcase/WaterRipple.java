@@ -43,7 +43,7 @@ public final class WaterRipple {
         for (int row = 0; row < rowCount; row++) {
             for (int column = 0; column < columnCount; column++) {
                 int index = row * columnCount + column;
-                cells[index] = waterLayer.cell(firstColumn + column, firstRow + row);
+                cells[index] = waterLayer.obtainCellHandle(firstColumn + column, firstRow + row);
                 distancesCells[index] = distanceCells(
                     firstColumn + column + 0.5f - splashColumn,
                     (firstRow + row + 0.5f - splashRow) * rowHeightPerColumnWidth);

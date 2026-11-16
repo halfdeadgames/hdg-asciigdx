@@ -24,6 +24,23 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
  *
  * <p>A layer can be placed in a {@link Panel} made by {@link #addPanel}: its offset and clip are then
  * measured from the panel's top-left corner, and it is clipped to the panel's rectangle.
+ *
+ * <p>Layers can also be put in a {@link LayerGroup} made by {@link #addGroup} to share color effects.
+ * Nothing in the stack reads a clock: durations and deltas are in seconds, passed in by the game.
+ * Use the stack on the GL thread only; it is not thread-safe.
+ *
+ * <p>Example:
+ * <pre>{@code
+ * LayerStack stack = new LayerStack();
+ * Layer layer = stack.add(grid, glyphSource);
+ * layer.setOffset(16f, 8f);                          // pixels from the stack's top-left, y down
+ *
+ * // each frame, with the batch begun:
+ * stack.draw(batch, 0f, viewport.getWorldHeight());  // screen position, y up
+ *
+ * // on shutdown:
+ * stack.dispose();
+ * }</pre>
  */
 public final class LayerStack implements Disposable {
 
@@ -60,8 +77,10 @@ public final class LayerStack implements Disposable {
     /**
      * Sets the stack's area in virtual pixels, used by {@link Layer#clipToStack()}.
      * 0 means unset. The area starts at the stack's top-left corner and extends right
-     * and down.
+     * and down. Call it when the stack's area is known or changes, for example on resize.
      *
+     * @param width width in virtual pixels; 0 or more
+     * @param height height in virtual pixels; 0 or more
      * @throws IllegalArgumentException if width or height is negative
      */
     public void setSize(float width, float height) {
@@ -72,12 +91,20 @@ public final class LayerStack implements Disposable {
         this.height = height;
     }
 
-    /** Returns the stack's width in virtual pixels, 0 if unset. */
+    /**
+     * Returns the stack's width in virtual pixels, 0 if unset.
+     *
+     * @return the stack's width in virtual pixels, 0 if unset
+     */
     public float getWidth() {
         return width;
     }
 
-    /** Returns the stack's height in virtual pixels, 0 if unset. */
+    /**
+     * Returns the stack's height in virtual pixels, 0 if unset.
+     *
+     * @return the stack's height in virtual pixels, 0 if unset
+     */
     public float getHeight() {
         return height;
     }
@@ -105,7 +132,7 @@ public final class LayerStack implements Disposable {
     /**
      * Inserts a layer at a position; layers at and above it move up by one.
      *
-     * @param index position from 0 (bottom) to {@link #size()} (top)
+     * @param index position from 0 (bottom) to {@link #getLayerCount()} (top)
      * @param grid the grid to draw; not null. The caller writes its cells, and the layer may
      *     scroll it (see {@link Layer#scroll} and {@link Layer#enableMapWindow()}). The layer does
      *     not own or dispose it
@@ -138,8 +165,10 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Removes a layer and disposes its renderer.
+     * Removes a layer and disposes its renderer. The layer can no longer be used. Its grid and glyph
+     * source are not disposed. Call it on the GL thread.
      *
+     * @param layer a layer of this stack; not null
      * @throws IllegalStateException if the layer was already removed
      * @throws IllegalArgumentException if the layer belongs to another stack
      */
@@ -153,7 +182,8 @@ public final class LayerStack implements Disposable {
     /**
      * Moves a layer to a position; the other layers keep their relative order.
      *
-     * @param index new position from 0 (bottom) to {@link #size()} - 1 (top)
+     * @param layer a layer of this stack; not null
+     * @param index new position from 0 (bottom) to {@link #getLayerCount()} - 1 (top)
      * @throws IndexOutOfBoundsException if the index is outside 0 to size - 1
      * @throws IllegalStateException if the layer was removed
      * @throws IllegalArgumentException if the layer belongs to another stack
@@ -165,18 +195,23 @@ public final class LayerStack implements Disposable {
         layers.insert(index, layer);
     }
 
-    /** Returns the number of layers. */
-    public int size() {
+    /**
+     * Returns the number of layers.
+     *
+     * @return the number of layers
+     */
+    public int getLayerCount() {
         return layers.size;
     }
 
     /**
      * Returns the layer at a position.
      *
-     * @param index from 0 (bottom) to {@link #size()} - 1 (top)
+     * @param index from 0 (bottom) to {@link #getLayerCount()} - 1 (top)
+     * @return the layer at that position; never null
      * @throws IndexOutOfBoundsException if the index is out of range
      */
-    public Layer get(int index) {
+    public Layer getLayer(int index) {
         Guards.requireIndexInRange(index, layers.size);
         return layers.get(index);
     }
@@ -227,6 +262,7 @@ public final class LayerStack implements Disposable {
     /**
      * Removes a panel. The panel stays readable but can no longer be changed.
      *
+     * @param panel a panel of this stack; not null
      * @throws IllegalArgumentException if the panel is null or belongs to another stack
      * @throws IllegalStateException if the panel was already removed, or a layer of this stack is
      *     still placed in it
@@ -258,8 +294,9 @@ public final class LayerStack implements Disposable {
 
     /**
      * Removes a group. Its member layers leave it and keep their own effects. The group stays
-     * readable but can no longer be changed.
+     * readable but can no longer be changed. Children of the group become parentless.
      *
+     * @param group a group of this stack; not null
      * @throws IllegalArgumentException if the group is null or belongs to another stack
      * @throws IllegalStateException if the group was already removed
      */
@@ -293,7 +330,12 @@ public final class LayerStack implements Disposable {
         Guards.requireOwnedBy(panel.getOwner(), this, "Panel", "stack");
     }
 
-    /** Returns the position of a layer, or -1 if it is not in this stack. */
+    /**
+     * Returns the position of a layer.
+     *
+     * @param layer the layer to look for; may be null
+     * @return the position from 0 (bottom), or -1 if the layer is null or not in this stack
+     */
     public int indexOf(Layer layer) {
         return layers.indexOf(layer, true);
     }
@@ -311,6 +353,8 @@ public final class LayerStack implements Disposable {
      * <p>Pixel snapping rounds each layer's corner on its own, so layers with different parallax
      * factors can be 1 pixel apart during slow pans. Turn snapping off for smooth motion.
      *
+     * @param x camera x in virtual pixels; finite
+     * @param y camera y in virtual pixels, growing downward; finite
      * @throws IllegalArgumentException if x or y is not finite
      */
     public void setCamera(float x, float y) {
@@ -332,31 +376,46 @@ public final class LayerStack implements Disposable {
         }
     }
 
-    /** Returns the camera's x in virtual pixels, 0 by default. */
+    /**
+     * Returns the camera's x in virtual pixels, 0 by default.
+     *
+     * @return the camera's x in virtual pixels, 0 by default
+     */
     public float getCameraX() {
         return cameraX;
     }
 
-    /** Returns the camera's y in virtual pixels, growing downward, 0 by default. */
+    /**
+     * Returns the camera's y in virtual pixels, growing downward, 0 by default.
+     *
+     * @return the camera's y in virtual pixels, growing downward, 0 by default
+     */
     public float getCameraY() {
         return cameraY;
     }
 
     /**
-     * Sets whether final layer positions are rounded to whole pixels. Default true.
+     * Sets whether final layer positions are rounded to whole pixels. Default true. Applies to
+     * {@link #draw} and to the point mapping and picking methods.
+     *
+     * @param pixelSnapping true to round each layer's corner to whole pixels
      */
     public void setPixelSnapping(boolean pixelSnapping) {
         this.pixelSnapping = pixelSnapping;
     }
 
-    /** Returns whether final layer positions are rounded to whole pixels. */
+    /**
+     * Returns whether final layer positions are rounded to whole pixels.
+     *
+     * @return true if final layer positions are rounded to whole pixels
+     */
     public boolean isPixelSnapping() {
         return pixelSnapping;
     }
 
     /**
      * Draws every visible layer from bottom to top. The batch must already be
-     * begun; this method never begins or ends it.
+     * begun; this method never begins or ends it. Call it once per frame on the GL thread.
      *
      * <p>Every visible layer is drawn on every call, in stack order, whether or not
      * its grid changed. Dirty tracking only decides whether a layer's GPU data is
@@ -392,7 +451,7 @@ public final class LayerStack implements Disposable {
      * framebuffer is bound. To skip the offscreen pass, keep the effective alpha at 1. Other layers draw
      * directly.
      *
-     * @param batch the active batch
+     * @param batch the active batch; not null
      * @param x screen x of the stack's top-left corner
      * @param y screen y of the stack's top-left corner (y grows upward)
      */
@@ -450,12 +509,12 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void cellAt(Layer layer, float stackX, float stackY, float worldX, float worldY, GridPoint2 out) {
+    public void toCell(Layer layer, float stackX, float stackY, float worldX, float worldY, GridPoint2 out) {
         requireOwned(layer);
         if (out == null) {
             throw new IllegalArgumentException("out must not be null");
         }
-        layerPointAt(layer, stackX, stackY, worldX, worldY, layerPixel);
+        toLayerPoint(layer, stackX, stackY, worldX, worldY, layerPixel);
         GlyphSource source = layer.getGlyphSource();
         out.x = (int) Math.floor(layerPixel.x / source.getCellWidth());
         out.y = (int) Math.floor(layerPixel.y / source.getCellHeight());
@@ -485,7 +544,7 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void layerPointAt(Layer layer, float stackX, float stackY, float worldX, float worldY, Vector2 out) {
+    public void toLayerPoint(Layer layer, float stackX, float stackY, float worldX, float worldY, Vector2 out) {
         requireOutAndOwned(layer, out);
         LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, inverseTransform);
         inverseTransform.inv();
@@ -493,7 +552,7 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Maps a point in layer pixels to batch world space, the inverse of {@link #layerPointAt}.
+     * Maps a point in layer pixels to batch world space, the inverse of {@link #toLayerPoint}.
      * It uses the same transform {@link #draw} uses: offset shifted by camera and parallax,
      * zoom, rotation about the pivot, and corner snapping. The layer point is measured from the
      * top-left corner of the layer's grid, x right and y down, before zoom and rotation.
@@ -515,7 +574,7 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void worldPointOf(Layer layer, float stackX, float stackY, float layerX, float layerY, Vector2 out) {
+    public void toWorldPoint(Layer layer, float stackX, float stackY, float layerX, float layerY, Vector2 out) {
         requireOutAndOwned(layer, out);
         LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, pointTransform);
         LayerTransform.layerPixelsToWorld(pointTransform, layerX, layerY, out);
@@ -543,6 +602,7 @@ public final class LayerStack implements Disposable {
      * @param stackY the y passed to {@link #draw} (y grows upward)
      * @param worldX x of the point in batch world space
      * @param worldY y of the point in batch world space
+     * @return true if the layer is visible, pickable, and the point is inside its clip window
      * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed, or is clipped to the stack while
      *     the stack size is unset
@@ -595,7 +655,10 @@ public final class LayerStack implements Disposable {
 
     /**
      * Disposes every layer's renderer and empties the stack. Removed layers can no
-     * longer be used. Calling it again does nothing.
+     * longer be used. Panels and groups are detached the same way: getters keep working and
+     * changes throw {@link IllegalStateException}. Frees the shared shader and offscreen target.
+     * Grids and glyph sources are not disposed. Call it once on the GL thread when the stack is no
+     * longer needed. Calling it again does nothing.
      */
     @Override
     public void dispose() {
@@ -626,12 +689,13 @@ public final class LayerStack implements Disposable {
 
     /**
      * Call once at the start of each update, before applying cell effects. On every layer, the
-     * frame handles ({@link Layer#frameCell}) are swept: handles that stayed idle since the last
+     * frame handles ({@link Layer#obtainFrameCellHandle}) are swept: handles that stayed idle since the last
      * call add the delta to their unused time, and handles that were used start over at zero.
      * Handles unused for at least {@link Layer#getFrameReleaseSeconds()} are released, and the
-     * rest are reset. Lasting handles ({@link Layer#cell}) are never touched. A zero, negative,
+     * rest are reset. Lasting handles ({@link Layer#obtainCellHandle}) are never touched. A zero, negative,
      * NaN, or infinite delta adds no unused time, but the reset still happens.
      *
+     * @param deltaSeconds seconds since the previous call, passed in by the game
      * @throws IllegalStateException if the stack was disposed
      */
     public void beginCellEffects(float deltaSeconds) {

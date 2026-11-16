@@ -33,7 +33,7 @@ class CellEffectsTest {
     }
 
     private CellHandle freshHandle(int column, int row) {
-        CellHandle handle = layer.cell(column, row);
+        CellHandle handle = layer.obtainCellHandle(column, row);
         handle.reset();
         return handle;
     }
@@ -328,7 +328,7 @@ class CellEffectsTest {
         nudgeZone.apply(layer, 1f);
 
         float layerCellHeight = layer.getGlyphSource().getCellHeight();
-        assertEquals(0.5f * layerCellHeight + 1f, layer.frameCell(2, 2).getOffsetY(), DELTA);
+        assertEquals(0.5f * layerCellHeight + 1f, layer.obtainFrameCellHandle(2, 2).getOffsetY(), DELTA);
     }
 
     @Test

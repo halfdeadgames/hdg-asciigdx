@@ -101,23 +101,23 @@ class LayerScrollTest {
 
     @Test
     void handleMovesWithItsContent() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         handle.setOffset(2f, 0f);
 
         layer.scroll(1, 2);
 
         assertEquals(2, handle.getColumn());
         assertEquals(3, handle.getRow());
-        assertSame(handle, layer.cell(2, 3));
-        assertNotSame(handle, layer.cell(1, 1));
+        assertSame(handle, layer.obtainCellHandle(2, 3));
+        assertNotSame(handle, layer.obtainCellHandle(1, 1));
         assertEquals(2f, handle.getOffsetX());
         assertFalse(handle.isDetached());
     }
 
     @Test
     void handlePushedOutIsDetached() {
-        CellHandle staying = layer.cell(1, 1);
-        CellHandle pushedOut = layer.cell(5, 1);
+        CellHandle staying = layer.obtainCellHandle(1, 1);
+        CellHandle pushedOut = layer.obtainCellHandle(5, 1);
 
         layer.scroll(1, 0);
 
@@ -130,7 +130,7 @@ class LayerScrollTest {
 
     @Test
     void liftedHandleIsUnhiddenAtTheOldPositionAndHiddenAtTheNewOne() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         handle.setOffset(2f, 0f);
         draw();
         renderer.events.clear();
@@ -144,7 +144,7 @@ class LayerScrollTest {
 
     @Test
     void hiddenHandleOutsideAShrunkGridDoesNotReachTheRendererAndIsMovedBack() {
-        CellHandle handle = layer.cell(5, 1);
+        CellHandle handle = layer.obtainCellHandle(5, 1);
         handle.setOffset(2f, 0f);
         draw();
         grid.resize(5, 4);
@@ -155,12 +155,12 @@ class LayerScrollTest {
         assertTrue(renderer.events.isEmpty());
         assertFalse(handle.isDetached());
         assertEquals(4, handle.getColumn());
-        assertSame(handle, layer.cell(4, 1));
+        assertSame(handle, layer.obtainCellHandle(4, 1));
     }
 
     @Test
     void rendererIsRebound() {
-        layer.cell(1, 1);
+        layer.obtainCellHandle(1, 1);
         int bindsBefore = renderer.bindCount;
 
         layer.scroll(1, 0);
@@ -172,19 +172,19 @@ class LayerScrollTest {
     @Test
     void zeroShiftChangesNothing() {
         grid.setCodePoint(1, 1, 'a');
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         int bindsBefore = renderer.bindCount;
 
         layer.scroll(0, 0);
 
         assertEquals('a', grid.getCodePoint(1, 1));
-        assertSame(handle, layer.cell(1, 1));
+        assertSame(handle, layer.obtainCellHandle(1, 1));
         assertEquals(bindsBefore, renderer.bindCount);
     }
 
     @Test
     void scrollsAccumulate() {
-        CellHandle handle = layer.cell(1, 1);
+        CellHandle handle = layer.obtainCellHandle(1, 1);
         grid.setCodePoint(1, 1, 'a');
 
         layer.scroll(1, 0);
@@ -192,15 +192,15 @@ class LayerScrollTest {
 
         assertEquals(3, handle.getColumn());
         assertEquals(2, handle.getRow());
-        assertSame(handle, layer.cell(3, 2));
+        assertSame(handle, layer.obtainCellHandle(3, 2));
         assertEquals('a', grid.getCodePoint(3, 2));
     }
 
     @Test
     void scrollLargerThanTheGridDetachesEveryHandleAndEmptiesTheGrid() {
         grid.setCodePoint(1, 1, 'a');
-        CellHandle first = layer.cell(0, 0);
-        CellHandle second = layer.cell(5, 3);
+        CellHandle first = layer.obtainCellHandle(0, 0);
+        CellHandle second = layer.obtainCellHandle(5, 3);
 
         layer.scroll(6, 0);
 

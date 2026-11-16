@@ -112,7 +112,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void aDrawHandleExistsWhenOnlyAFrameHandleDoes() {
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
 
         assertEquals(1, layer.getCellHandles().size);
         assertSame(layer.getCellHandles(), renderer.cellHandles);
@@ -125,8 +125,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void aCellWithOnlyALastingHandleIsDrawnThroughThatHandle() {
-        CellHandle lasting = layer.cell(2, 2);
-        layer.frameCell(0, 0);
+        CellHandle lasting = layer.obtainCellHandle(2, 2);
+        layer.obtainFrameCellHandle(0, 0);
 
         assertEquals(2, layer.getCellHandles().size);
         assertSame(lasting, drawnHandle(0));
@@ -134,10 +134,10 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void aCellWithBothHandlesHasOneDrawHandleThatKeepsItsPlaceInTheOrder() {
-        CellHandle first = layer.cell(2, 2);
-        CellHandle second = layer.cell(3, 3);
+        CellHandle first = layer.obtainCellHandle(2, 2);
+        CellHandle second = layer.obtainCellHandle(3, 3);
 
-        layer.frameCell(2, 2);
+        layer.obtainFrameCellHandle(2, 2);
 
         assertEquals(2, layer.getCellHandles().size);
         assertNotSame(first, drawnHandle(0));
@@ -147,7 +147,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void frameOnlyMotionHidesTheGlyphOnceAndShowsItAfterTheSweepResetsTheHandle() {
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         frame.setOffset(2f, 0f);
 
         draw();
@@ -161,7 +161,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void frameOnlyOverridesRefreshTheCellOnceAndReachTheRenderersHandle() {
-        CellHandle frame = layer.frameCell(2, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(2, 1);
         frame.setForegroundMix(RED, 0.5f);
         frame.setCodePoint('f');
 
@@ -176,7 +176,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void releasingAFrameOnlyCellRewritesItWithoutTheOldOverrides() {
-        CellHandle frame = layer.frameCell(2, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(2, 1);
         frame.setForegroundMix(RED, 0.5f);
         draw();
         layer.setFrameReleaseSeconds(0.5f);
@@ -191,7 +191,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void anIdleFrameHandleNeverTouchesTheRenderer() {
-        layer.frameCell(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
 
         draw();
 
@@ -200,8 +200,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void combinedValuesReachTheDrawHandleAndLeaveBothHandlesAlone() {
-        CellHandle lasting = layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         lasting.setOffset(3f, 0f);
         lasting.setPivot(0.25f, 0.75f);
         frame.setOffset(1.5f, 0f);
@@ -217,14 +217,14 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void addingAFrameHandleToALiftedCellCausesNoRendererEventsUntilItChangesSomething() {
-        CellHandle lasting = layer.cell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
         lasting.setOffset(2f, 0f);
         lasting.setCodePoint('l');
         draw();
         renderer.events.clear();
         int bindsBefore = renderer.bindCount;
 
-        layer.frameCell(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
         draw();
 
         assertTrue(renderer.events.isEmpty());
@@ -235,8 +235,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void aFrameEffectThatCancelsTheLastingMotionSettlesTheGlyph() {
-        CellHandle lasting = layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         lasting.setOffset(2f, 0f);
         draw();
         renderer.events.clear();
@@ -249,8 +249,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void releasingTheFrameHandleHandsTheCellBackToTheLastingHandle() {
-        CellHandle lasting = layer.cell(1, 1);
-        layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
         lasting.setOffset(2f, 0f);
         draw();
         renderer.events.clear();
@@ -267,8 +267,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void releasingAFrameHandleThatHeldOverridesRefreshesTheCellFromTheLastingHandle() {
-        layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         frame.setCodePoint('f');
         draw();
         renderer.events.clear();
@@ -282,8 +282,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void theDrawHandleIsReleasedOnlyAfterBothHandlesAreGone() {
-        CellHandle lasting = layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         CellHandle drawn = drawnHandle(0);
 
         layer.releaseIdleCellHandles();
@@ -302,8 +302,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void theDrawHandleIsAlsoReleasedWhenTheLastingHandleOutlivesTheFrameHandle() {
-        CellHandle lasting = layer.cell(1, 1);
-        layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
         stack.beginCellEffects(1f);
         assertSame(lasting, drawnHandle(0));
 
@@ -315,7 +315,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void releasingAFrameOnlyCellShowsTheGlyphAndRefreshesItsOverridesAndRebinds() {
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         frame.setOffset(2f, 0f);
         frame.setCodePoint('x');
         draw();
@@ -332,8 +332,8 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void releasingTheLastingHandleKeepsTheFrameEffectDrawn() {
-        CellHandle lasting = layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         lasting.setOffset(2f, 0f);
         frame.setOffset(1f, 0f);
         draw();
@@ -351,10 +351,10 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void scrollMovesTheDrawHandlesWithTheirHandlesAndRebindsOnce() {
-        CellHandle lasting = layer.cell(1, 1);
-        layer.frameCell(1, 1);
-        CellHandle frameOnly = layer.frameCell(2, 2);
-        layer.frameCell(5, 0);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
+        CellHandle frameOnly = layer.obtainFrameCellHandle(2, 2);
+        layer.obtainFrameCellHandle(5, 0);
         lasting.setOffset(2f, 0f);
         frameOnly.setOffset(1f, 0f);
         draw();
@@ -379,9 +379,9 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void shrinkingTheGridDropsDrawHandlesOutsideAndKeepsTheRest() {
-        layer.cell(5, 1);
-        layer.frameCell(5, 1);
-        layer.frameCell(1, 1);
+        layer.obtainCellHandle(5, 1);
+        layer.obtainFrameCellHandle(5, 1);
+        layer.obtainFrameCellHandle(1, 1);
         CellHandle outsideDrawn = drawnHandle(0);
         draw();
 
@@ -397,7 +397,7 @@ class FrameCellDrawHandlesTest {
 
     @Test
     void removingTheLayerDetachesDrawHandles() {
-        layer.frameCell(1, 1);
+        layer.obtainFrameCellHandle(1, 1);
         CellHandle drawn = drawnHandle(0);
 
         layer.remove();

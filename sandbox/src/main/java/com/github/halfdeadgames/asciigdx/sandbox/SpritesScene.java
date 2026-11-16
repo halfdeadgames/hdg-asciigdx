@@ -108,7 +108,7 @@ class SpritesScene extends GridScene {
         cellWidth = glyphs.getCellWidth();
         cellHeight = glyphs.getCellHeight();
         layers.setSize(COLUMNS * cellWidth, ROWS * cellHeight);
-        mapLayer = layers.get(0);
+        mapLayer = layers.getLayer(0);
         drawMap();
         placeMonsters();
         overrideDemo = new OverrideDemo(grid, mapLayer);

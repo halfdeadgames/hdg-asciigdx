@@ -505,8 +505,8 @@ class ShowcaseScene extends GridScene {
 
     /** Sets every layer's parallax to 0, so only depth layers follow the scene panel's camera; they get their parallax from their zoom each frame. */
     private void pinAllLayersToScreen() {
-        for (int index = 0; index < layers.size(); index++) {
-            layers.get(index).setParallax(0f);
+        for (int index = 0; index < layers.getLayerCount(); index++) {
+            layers.getLayer(index).setParallax(0f);
         }
     }
 
@@ -605,7 +605,7 @@ class ShowcaseScene extends GridScene {
     /** Finds the water layer pixel under a point given in stack pixels (y down) and stores it in waterPixel. */
     private void findWaterPixelUnder(float stackPixelX, float stackPixelY) {
         float stackTop = viewport.getWorldHeight();
-        layers.layerPointAt(waterLayer, STACK_DRAW_X, stackTop, STACK_DRAW_X + stackPixelX, stackTop - stackPixelY, waterPixel);
+        layers.toLayerPoint(waterLayer, STACK_DRAW_X, stackTop, STACK_DRAW_X + stackPixelX, stackTop - stackPixelY, waterPixel);
     }
 
     /**

@@ -57,7 +57,7 @@ final class OverrideDemo {
     private void refreshDetachedHandles() {
         for (int i = 0; i < handles.length; i++) {
             if (handles[i] == null || handles[i].isDetached()) {
-                handles[i] = layer.cell(WORD_COLUMN + i, WORD_ROW);
+                handles[i] = layer.obtainCellHandle(WORD_COLUMN + i, WORD_ROW);
             }
         }
     }

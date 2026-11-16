@@ -258,7 +258,7 @@ public final class TerminalGrid implements TerminalView {
      * Layers draw from their top-left corner, so after growing upward by N rows
      * with {@code resize(columns, rows + N, 0, N)} the old content appears N rows lower
      * unless the caller also moves the layer offset up by N rows
-     * ({@code Layer.setCellOffset} or {@code Layer.setOffset}).
+     * ({@code Layer.setOffsetInCells} or {@code Layer.setOffset}).
      *
      * <p>Coordinates the caller has stored (positions, cursors, selections) must
      * be shifted by the same amount. Discarded cells do not come back when the

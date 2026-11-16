@@ -75,7 +75,7 @@ class LayerTransformScene extends GridScene {
         cellHeight = glyphs.getCellHeight();
         layers.setSize(COLUMNS * cellWidth, ROWS * cellHeight);
 
-        mapLayer = layers.get(0);
+        mapLayer = layers.getLayer(0);
         drawMap();
         mapLayer.setPivotCell(HERO_COLUMN, HERO_ROW);
         mapLayer.setClip(FRAME_THICKNESS * cellWidth, FRAME_THICKNESS * cellHeight,
@@ -236,7 +236,7 @@ class LayerTransformScene extends GridScene {
             clearHighlight();
             return;
         }
-        layers.cellAt(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y, hoveredCell);
+        layers.toCell(mapLayer, 0f, stackY, pointerWorld.x, pointerWorld.y, hoveredCell);
         if (!grid.contains(hoveredCell.x, hoveredCell.y)) {
             clearHighlight();
             return;

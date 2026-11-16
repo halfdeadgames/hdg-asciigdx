@@ -103,7 +103,7 @@ class LayersScene extends GridScene {
         this.glyphs = glyphs;
         layers.setSize(COLUMNS * glyphs.getCellWidth(), ROWS * glyphs.getCellHeight());
 
-        layerById[MAP] = layers.get(0);
+        layerById[MAP] = layers.getLayer(0);
         layerById[MAP].clipToStack();
         drawMap();
 
@@ -160,7 +160,7 @@ class LayersScene extends GridScene {
     @Override
     public String statusText() {
         status.setLength(0);
-        for (int i = 0; i < layers.size(); i++) {
+        for (int i = 0; i < layers.getLayerCount(); i++) {
             status.append(LETTERS.charAt(idAt(i)));
         }
         status.append(" rain ").append(rainVisible ? "on" : "off")
@@ -228,7 +228,7 @@ class LayersScene extends GridScene {
     }
 
     private int idAt(int stackIndex) {
-        Layer layer = layers.get(stackIndex);
+        Layer layer = layers.getLayer(stackIndex);
         for (int i = 0; i < layerById.length; i++) {
             if (layerById[i] == layer) {
                 return i;
@@ -239,7 +239,7 @@ class LayersScene extends GridScene {
 
     /** Cycles popup, marker, rain, and banner through the middle depths; the map stays bottom and the frame top. */
     private void rotateOrder() {
-        layers.get(1).moveTo(layers.size() - 2);
+        layers.getLayer(1).moveTo(layers.getLayerCount() - 2);
     }
 
     private void toggleRain() {
@@ -368,7 +368,7 @@ class LayersScene extends GridScene {
             rainRandom.setSeed(cycle);
             int shiftColumns = rainRandom.nextInt(MAX_SHIFT + 1);
             int shiftRows = rainRandom.nextInt(MAX_SHIFT + 1);
-            rain.setCellOffset(-shiftColumns, -shiftRows);
+            rain.setOffsetInCells(-shiftColumns, -shiftRows);
         }
         float mix = 0.5f - 0.5f * MathUtils.cos(MathUtils.PI2 * elapsed / TINT_PERIOD);
         float red = MathUtils.lerp(0.6f, 1f, mix);

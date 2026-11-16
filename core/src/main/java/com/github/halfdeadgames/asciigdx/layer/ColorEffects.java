@@ -6,18 +6,21 @@ import com.badlogic.gdx.graphics.Color;
  * The color effects the GPU applies to everything a {@link Layer} or a {@link LayerGroup} draws:
  * saturation, then tint, then mix, then invert, with the alpha taken from the tint. Each layer and
  * each group owns exactly one instance and reuses it every frame; there is no public constructor.
+ * Get it from {@link Layer#getColorEffects()} or {@link LayerGroup#getColorEffects()}.
  *
  * <p>Every change takes effect on the GPU in the next frame. Changing an effect rewrites and uploads
  * nothing, so it is cheap to change every frame, for example to fade a layer or flash it white.
  * Values are never clamped, and the defaults leave every color unchanged: tint white (1, 1, 1, 1),
- * mix amount 0, saturation 1, invert 0.
+ * mix amount 0, saturation 1, invert 0. Color components are floats where 1 is full intensity, not
+ * 0..255 bytes.
  *
  * <p>A layer's effects apply to that layer's cells and sprites. A group's effects apply to every
  * member layer after the member's own effects: the color transforms run in sequence and the alphas
  * multiply.
  *
- * <p>Once the owning layer or group is removed from its stack, the getters keep working but every
- * setter throws {@link IllegalStateException}.
+ * <p>Call the setters from the game thread, normally once per frame. They do not touch the GPU
+ * directly, so no GL context is needed. Once the owning layer or group is removed from its stack,
+ * the getters keep working but every setter throws {@link IllegalStateException}.
  *
  * <p>Example, a white hit flash that fades out over time:
  * <pre>{@code
@@ -43,62 +46,102 @@ public final class ColorEffects {
     ColorEffects() {
     }
 
-    /** Returns the tint's red component, 1 by default. */
+    /**
+     * Returns the tint's red component, 1 by default.
+     *
+     * @return the red multiplier, 1 for unchanged
+     */
     public float getTintRed() {
         return tintRed;
     }
 
-    /** Returns the tint's green component, 1 by default. */
+    /**
+     * Returns the tint's green component, 1 by default.
+     *
+     * @return the green multiplier, 1 for unchanged
+     */
     public float getTintGreen() {
         return tintGreen;
     }
 
-    /** Returns the tint's blue component, 1 by default. */
+    /**
+     * Returns the tint's blue component, 1 by default.
+     *
+     * @return the blue multiplier, 1 for unchanged
+     */
     public float getTintBlue() {
         return tintBlue;
     }
 
-    /** Returns the tint's alpha component, 1 by default. */
+    /**
+     * Returns the tint's alpha component, 1 by default.
+     *
+     * @return the opacity multiplier, 1 for opaque and 0 for invisible
+     */
     public float getTintAlpha() {
         return tintAlpha;
     }
 
     /**
-     * Copies the tint into a color.
+     * Copies the tint into a color. Allocates nothing, so it is safe to call every frame.
      *
      * @param out the color to overwrite; must not be null
-     * @return {@code out}
+     * @return {@code out}, holding the tint's red, green, blue, and alpha
      */
     public Color getTint(Color out) {
         return out.set(tintRed, tintGreen, tintBlue, tintAlpha);
     }
 
-    /** Returns the mix color's red component, 1 by default. */
+    /**
+     * Returns the mix color's red component, 1 by default.
+     *
+     * @return the red component of the mix color, 1 is full intensity
+     */
     public float getMixRed() {
         return mixRed;
     }
 
-    /** Returns the mix color's green component, 1 by default. */
+    /**
+     * Returns the mix color's green component, 1 by default.
+     *
+     * @return the green component of the mix color, 1 is full intensity
+     */
     public float getMixGreen() {
         return mixGreen;
     }
 
-    /** Returns the mix color's blue component, 1 by default. */
+    /**
+     * Returns the mix color's blue component, 1 by default.
+     *
+     * @return the blue component of the mix color, 1 is full intensity
+     */
     public float getMixBlue() {
         return mixBlue;
     }
 
-    /** Returns how far colors are mixed toward the mix color, 0 for not at all (the default). */
+    /**
+     * Returns how far colors are mixed toward the mix color, 0 for not at all (the default).
+     *
+     * @return the mix amount, 0 for none and 1 for fully the mix color
+     */
     public float getMixAmount() {
         return mixAmount;
     }
 
-    /** Returns the saturation, 1 for normal (the default). */
+    /**
+     * Returns the saturation, 1 for normal (the default).
+     *
+     * @return the saturation, 0 for grayscale, 1 for unchanged, above 1 for oversaturated
+     */
     public float getSaturation() {
         return saturation;
     }
 
-    /** Returns the invert amount, 0 for normal (the default). */
+    /**
+     * Returns the invert amount, 0 for normal (the default).
+     *
+     * @return the invert amount, 0 for unchanged and 1 for a full negative
+     */
     public float getInvert() {
         return invert;
     }
@@ -128,7 +171,8 @@ public final class ColorEffects {
     }
 
     /**
-     * Sets the tint from a color. The values are copied; no reference is kept.
+     * Sets the tint from a color. The values are copied; no reference is kept, and the color is not
+     * modified.
      *
      * @param color the tint, including its alpha; must not be null
      * @throws IllegalStateException if the owning layer or group was removed
@@ -159,9 +203,9 @@ public final class ColorEffects {
      * <p>The mix is applied after saturation and the tint, so a flash can reach its pure color even
      * on a darkly tinted layer. Only the invert follows it (see {@link #setInvert}).
      *
-     * @param red the mix color's red component
-     * @param green the mix color's green component
-     * @param blue the mix color's blue component
+     * @param red the mix color's red component, 1 is full intensity
+     * @param green the mix color's green component, 1 is full intensity
+     * @param blue the mix color's blue component, 1 is full intensity
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully
      * @throws IllegalStateException if the owning layer or group was removed
      * @see CellHandle#setMix(int, float) the cell-level mix, which takes an RGBA8888 int and
@@ -174,7 +218,7 @@ public final class ColorEffects {
 
     /**
      * Sets the mix from a color's red, green, and blue; its alpha is ignored. The values are
-     * copied; no reference is kept.
+     * copied; no reference is kept, and the color is not modified.
      *
      * @param color the mix color; must not be null
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully

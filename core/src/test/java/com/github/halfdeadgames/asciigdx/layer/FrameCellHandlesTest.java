@@ -47,17 +47,17 @@ class FrameCellHandlesTest {
 
     @Test
     void repeatRequestsReturnTheSameHandle() {
-        CellHandle handle = layer.frameCell(2, 1);
+        CellHandle handle = layer.obtainFrameCellHandle(2, 1);
 
-        assertSame(handle, layer.frameCell(2, 1));
+        assertSame(handle, layer.obtainFrameCellHandle(2, 1));
         assertTrue(handle.isFrameHandle());
         assertEquals(1, layer.getFrameCellHandleCount());
     }
 
     @Test
     void frameHandleIsDistinctFromLastingHandle() {
-        CellHandle lasting = layer.cell(2, 1);
-        CellHandle frame = layer.frameCell(2, 1);
+        CellHandle lasting = layer.obtainCellHandle(2, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(2, 1);
 
         assertNotSame(lasting, frame);
         assertFalse(lasting.isFrameHandle());
@@ -67,23 +67,23 @@ class FrameCellHandlesTest {
 
     @Test
     void cellOutsideTheGridThrows() {
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.frameCell(-1, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.frameCell(0, -1));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.frameCell(6, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> layer.frameCell(0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainFrameCellHandle(-1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainFrameCellHandle(0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainFrameCellHandle(6, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> layer.obtainFrameCellHandle(0, 4));
     }
 
     @Test
     void removedLayerRefusesFrameHandles() {
         layer.remove();
 
-        assertThrows(IllegalStateException.class, () -> layer.frameCell(0, 0));
+        assertThrows(IllegalStateException.class, () -> layer.obtainFrameCellHandle(0, 0));
     }
 
     @Test
     void sweepResetsFrameHandleButLeavesLastingHandleUntouched() {
-        CellHandle lasting = layer.cell(1, 1);
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         lasting.setOffset(3f, 0f);
         frame.setOffset(5f, 0f);
 
@@ -91,8 +91,8 @@ class FrameCellHandlesTest {
 
         assertEquals(0f, frame.getOffsetX(), DELTA);
         assertEquals(3f, lasting.getOffsetX(), DELTA);
-        assertSame(frame, layer.frameCell(1, 1));
-        assertSame(lasting, layer.cell(1, 1));
+        assertSame(frame, layer.obtainFrameCellHandle(1, 1));
+        assertSame(lasting, layer.obtainCellHandle(1, 1));
     }
 
     @Test
@@ -112,7 +112,7 @@ class FrameCellHandlesTest {
     @Test
     void mapWindowFrameHandleIsReleasedAfterScrollAndIndexStaysConsistent() {
         layer.enableMapWindow();
-        CellHandle handle = layer.frameCell(2, 1);
+        CellHandle handle = layer.obtainFrameCellHandle(2, 1);
         handle.setOffset(1f, 0f);
 
         stack.setCamera(8f, 0f);
@@ -122,14 +122,14 @@ class FrameCellHandlesTest {
         stack.beginCellEffects(0.6f);
 
         assertEquals(0, layer.getFrameCellHandleCount());
-        CellHandle fresh = layer.frameCell(1, 1);
+        CellHandle fresh = layer.obtainFrameCellHandle(1, 1);
         assertNotSame(handle, fresh);
         assertEquals(1, layer.getFrameCellHandleCount());
     }
 
     @Test
     void sweepReleasesIdleFrameHandlesOnAFreshLayer() {
-        CellHandle frame = layer.frameCell(0, 0);
+        CellHandle frame = layer.obtainFrameCellHandle(0, 0);
 
         stack.beginCellEffects(1f);
 
@@ -139,44 +139,44 @@ class FrameCellHandlesTest {
 
     @Test
     void idleFrameHandleIsReleasedOnlyOnceReleaseTimeIsReached() {
-        CellHandle frame = layer.frameCell(2, 2);
+        CellHandle frame = layer.obtainFrameCellHandle(2, 2);
 
         stack.beginCellEffects(0.4f);
         stack.beginCellEffects(0.4f);
-        assertSame(frame, layer.frameCell(2, 2));
+        assertSame(frame, layer.obtainFrameCellHandle(2, 2));
 
         stack.beginCellEffects(0.4f);
         assertEquals(0, layer.getFrameCellHandleCount());
-        assertNotSame(frame, layer.frameCell(2, 2));
+        assertNotSame(frame, layer.obtainFrameCellHandle(2, 2));
         assertThrows(IllegalStateException.class, () -> frame.setOffset(1f, 1f));
     }
 
     @Test
     void frameHandleUsedEveryFrameIsNeverReleased() {
-        CellHandle frame = layer.frameCell(2, 2);
+        CellHandle frame = layer.obtainFrameCellHandle(2, 2);
 
         for (int tick = 0; tick < 300; tick++) {
             frame.setOffset(1f, 0f);
             stack.beginCellEffects(0.1f);
-            assertSame(frame, layer.frameCell(2, 2));
+            assertSame(frame, layer.obtainFrameCellHandle(2, 2));
         }
     }
 
     @Test
     void customReleaseSecondsAppliesToFrameHandles() {
         layer.setFrameReleaseSeconds(0.25f);
-        CellHandle frame = layer.frameCell(0, 0);
+        CellHandle frame = layer.obtainFrameCellHandle(0, 0);
 
         stack.beginCellEffects(0.2f);
-        assertSame(frame, layer.frameCell(0, 0));
+        assertSame(frame, layer.obtainFrameCellHandle(0, 0));
 
         stack.beginCellEffects(0.1f);
-        assertNotSame(frame, layer.frameCell(0, 0));
+        assertNotSame(frame, layer.obtainFrameCellHandle(0, 0));
     }
 
     @Test
     void unusableDeltasAddNoTime() {
-        CellHandle frame = layer.frameCell(0, 0);
+        CellHandle frame = layer.obtainFrameCellHandle(0, 0);
         float[] deltas = {0f, -1f, Float.NaN, Float.POSITIVE_INFINITY};
 
         for (float delta : deltas) {
@@ -185,25 +185,25 @@ class FrameCellHandlesTest {
 
             assertEquals(0f, frame.getOffsetX(), DELTA);
             assertEquals(0f, frame.getUnusedSeconds(), DELTA);
-            assertSame(frame, layer.frameCell(0, 0));
+            assertSame(frame, layer.obtainFrameCellHandle(0, 0));
         }
     }
 
     @Test
     void lastingHandlesStayUntouchedByTheFrameSweep() {
-        CellHandle lasting = layer.cell(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
         lasting.setOffset(3f, 0f);
 
         stack.beginCellEffects(5f);
 
         assertEquals(3f, lasting.getOffsetX(), DELTA);
-        assertSame(lasting, layer.cell(1, 1));
+        assertSame(lasting, layer.obtainCellHandle(1, 1));
     }
 
     @Test
     void pivotSettersThrowOnFrameHandlesAndWorkOnLastingOnes() {
-        CellHandle frame = layer.frameCell(1, 1);
-        CellHandle lasting = layer.cell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
+        CellHandle lasting = layer.obtainCellHandle(1, 1);
 
         assertThrows(IllegalStateException.class, () -> frame.setPivot(0f, 0f));
         assertThrows(IllegalStateException.class, () -> frame.setPivotKeepingPlacement(0f, 0f));
@@ -219,18 +219,18 @@ class FrameCellHandlesTest {
 
     @Test
     void scrollMovesFrameHandlesAndDetachesPushedOutOnes() {
-        CellHandle moving = layer.frameCell(2, 1);
-        CellHandle pushedOut = layer.frameCell(5, 0);
+        CellHandle moving = layer.obtainFrameCellHandle(2, 1);
+        CellHandle pushedOut = layer.obtainFrameCellHandle(5, 0);
 
         layer.scroll(1, 0);
 
         assertEquals(3, moving.getColumn());
         assertFalse(moving.isDetached());
-        assertSame(moving, layer.frameCell(3, 1));
+        assertSame(moving, layer.obtainFrameCellHandle(3, 1));
         assertTrue(pushedOut.isDetached());
         assertEquals(1, layer.getFrameCellHandleCount());
-        assertNotSame(moving, layer.frameCell(2, 1));
-        assertNotSame(pushedOut, layer.frameCell(5, 0));
+        assertNotSame(moving, layer.obtainFrameCellHandle(2, 1));
+        assertNotSame(pushedOut, layer.obtainFrameCellHandle(5, 0));
     }
 
     @Test
@@ -238,8 +238,8 @@ class FrameCellHandlesTest {
         LayerStack bigStack = HeadlessLayers.createStack();
         TerminalGrid bigGrid = new TerminalGrid(12, 12);
         Layer bigLayer = HeadlessLayers.add(bigStack, bigGrid);
-        CellHandle outside = bigLayer.frameCell(9, 9);
-        CellHandle inside = bigLayer.frameCell(1, 1);
+        CellHandle outside = bigLayer.obtainFrameCellHandle(9, 9);
+        CellHandle inside = bigLayer.obtainFrameCellHandle(1, 1);
 
         bigGrid.resize(6, 4);
         bigLayer.syncCellHandles();
@@ -249,12 +249,12 @@ class FrameCellHandlesTest {
         assertEquals(1, bigLayer.getFrameCellHandleCount());
 
         bigGrid.resize(12, 12);
-        assertNotSame(outside, bigLayer.frameCell(9, 9));
+        assertNotSame(outside, bigLayer.obtainFrameCellHandle(9, 9));
     }
 
     @Test
     void layerRemovalDetachesFrameHandles() {
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
 
         layer.remove();
 
@@ -265,14 +265,14 @@ class FrameCellHandlesTest {
 
     @Test
     void releaseIdleAndResetCellHandlesLeaveFrameHandlesAlone() {
-        CellHandle frame = layer.frameCell(1, 1);
+        CellHandle frame = layer.obtainFrameCellHandle(1, 1);
         frame.setOffset(4f, 0f);
 
         layer.resetCellHandles();
         layer.releaseIdleCellHandles();
 
         assertEquals(4f, frame.getOffsetX(), DELTA);
-        assertSame(frame, layer.frameCell(1, 1));
+        assertSame(frame, layer.obtainFrameCellHandle(1, 1));
     }
 
     @Test
@@ -281,8 +281,8 @@ class FrameCellHandlesTest {
         layer.setPanel(panel);
         Layer grouped = stack.add(new TerminalGrid(6, 4), new FakeSource());
         stack.addGroup().add(grouped);
-        CellHandle panelHandle = layer.frameCell(0, 0);
-        CellHandle groupedHandle = grouped.frameCell(0, 0);
+        CellHandle panelHandle = layer.obtainFrameCellHandle(0, 0);
+        CellHandle groupedHandle = grouped.obtainFrameCellHandle(0, 0);
         panelHandle.setOffset(2f, 0f);
         groupedHandle.setOffset(2f, 0f);
 

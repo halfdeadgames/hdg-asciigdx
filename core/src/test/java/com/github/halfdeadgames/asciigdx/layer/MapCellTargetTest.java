@@ -35,7 +35,7 @@ class MapCellTargetTest {
 
         target.writeIfShown(MapCellTargetTest::writeOffsetX, 3f);
 
-        assertEquals(3f, window.cell(2, 1).getOffsetX());
+        assertEquals(3f, window.obtainCellHandle(2, 1).getOffsetX());
     }
 
     @Test
@@ -47,7 +47,7 @@ class MapCellTargetTest {
 
         target.writeIfShown(MapCellTargetTest::writeOffsetX, 7f);
         scrollColumns(0);
-        assertEquals(0f, window.cell(2, 1).getOffsetX());
+        assertEquals(0f, window.obtainCellHandle(2, 1).getOffsetX());
     }
 
     @Test
@@ -60,7 +60,7 @@ class MapCellTargetTest {
 
         target.writeIfShown(MapCellTargetTest::writeOffsetX, 4f);
 
-        assertEquals(4f, window.cell(2, 1).getOffsetX());
+        assertEquals(4f, window.obtainCellHandle(2, 1).getOffsetX());
     }
 
     @Test
@@ -70,10 +70,10 @@ class MapCellTargetTest {
         target.writeIfShown(MapCellTargetTest::writeOffsetX, 9f);
 
         scrollColumns(5);
-        assertEquals(0f, window.cell(COLUMNS + 2, 1).getOffsetX());
+        assertEquals(0f, window.obtainCellHandle(COLUMNS + 2, 1).getOffsetX());
         target.writeIfShown(MapCellTargetTest::writeOffsetX, 5f);
 
-        assertEquals(5f, window.cell(COLUMNS + 2, 1).getOffsetX());
+        assertEquals(5f, window.obtainCellHandle(COLUMNS + 2, 1).getOffsetX());
     }
 
     @Test
