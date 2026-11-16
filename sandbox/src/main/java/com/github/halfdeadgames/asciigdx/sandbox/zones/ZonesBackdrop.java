@@ -21,8 +21,8 @@ public final class ZonesBackdrop {
     }
 
     public static void drawFloor(TerminalGrid grid) {
-        for (int row = 0; row < grid.getHeight(); row++) {
-            for (int column = 0; column < grid.getWidth(); column++) {
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
                 int variety = column * 73 + row * 151 + column * row * 7;
                 int glyph = FLOOR_GLYPHS[variety % FLOOR_GLYPHS.length];
                 int color = FLOOR_COLORS[variety / FLOOR_GLYPHS.length % FLOOR_COLORS.length];

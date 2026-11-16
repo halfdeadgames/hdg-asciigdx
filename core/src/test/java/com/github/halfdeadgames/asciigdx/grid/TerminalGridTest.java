@@ -16,7 +16,7 @@ class TerminalGridTest {
     void newGridIsEmpty() {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(2, 1));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getForeground(2, 1));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(2, 1));
     }
@@ -27,7 +27,7 @@ class TerminalGridTest {
 
         grid.set(1, 1, '@', RED, BLUE);
 
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertEquals(RED, grid.getForeground(1, 1));
         assertEquals(BLUE, grid.getBackground(1, 1));
     }
@@ -38,9 +38,9 @@ class TerminalGridTest {
 
         grid.set(1, 0, '@', RED, BLUE);
 
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(1, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(2, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(1, 1));
     }
 
     @Test
@@ -50,7 +50,7 @@ class TerminalGridTest {
 
         grid.set(0, 0, alembic, RED, BLUE);
 
-        assertEquals(alembic, grid.getGlyph(0, 0));
+        assertEquals(alembic, grid.getCodePoint(0, 0));
     }
 
     @Test
@@ -63,7 +63,7 @@ class TerminalGridTest {
 
         for (int y = 0; y < 2; y++) {
             for (int x = 0; x < 3; x++) {
-                assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(x, y));
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(x, y));
             }
         }
     }
@@ -72,7 +72,7 @@ class TerminalGridTest {
     void outOfBoundsReadThrows() {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
-        assertThrows(IndexOutOfBoundsException.class, () -> grid.getGlyph(3, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> grid.getCodePoint(3, 0));
         assertThrows(IndexOutOfBoundsException.class, () -> grid.getForeground(0, -1));
         assertThrows(IndexOutOfBoundsException.class, () -> grid.getBackground(0, 2));
     }
@@ -96,16 +96,16 @@ class TerminalGridTest {
 
         grid.clear();
 
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 0));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(1, 1));
     }
 
     @Test
-    void reportsWidthAndHeight() {
+    void reportsColumnsAndRows() {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
-        assertEquals(3, grid.getWidth());
-        assertEquals(2, grid.getHeight());
+        assertEquals(3, grid.getColumns());
+        assertEquals(2, grid.getRows());
     }
 
     @Test
@@ -120,14 +120,14 @@ class TerminalGridTest {
     }
 
     private static void assertCellEmpty(TerminalGrid grid, int x, int y) {
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(x, y));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(x, y));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getForeground(x, y));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(x, y));
     }
 
     private static void assertGridEmpty(TerminalGrid grid) {
-        for (int y = 0; y < grid.getHeight(); y++) {
-            for (int x = 0; x < grid.getWidth(); x++) {
+        for (int y = 0; y < grid.getRows(); y++) {
+            for (int x = 0; x < grid.getColumns(); x++) {
                 assertCellEmpty(grid, x, y);
             }
         }
@@ -140,9 +140,9 @@ class TerminalGridTest {
 
         grid.resize(5, 4);
 
-        assertEquals(5, grid.getWidth());
-        assertEquals(4, grid.getHeight());
-        assertEquals('@', grid.getGlyph(2, 1));
+        assertEquals(5, grid.getColumns());
+        assertEquals(4, grid.getRows());
+        assertEquals('@', grid.getCodePoint(2, 1));
         assertEquals(RED, grid.getForeground(2, 1));
         assertEquals(BLUE, grid.getBackground(2, 1));
         assertCellEmpty(grid, 3, 1);
@@ -157,11 +157,11 @@ class TerminalGridTest {
         grid.set(2, 2, 'b', RED, BLUE);
 
         grid.resize(2, 2);
-        assertEquals('a', grid.getGlyph(0, 0));
+        assertEquals('a', grid.getCodePoint(0, 0));
         assertFalse(grid.contains(2, 2));
 
         grid.resize(3, 3);
-        assertEquals('a', grid.getGlyph(0, 0));
+        assertEquals('a', grid.getCodePoint(0, 0));
         assertCellEmpty(grid, 2, 2);
     }
 
@@ -172,7 +172,7 @@ class TerminalGridTest {
 
         grid.resize(3, 7, 0, 5);
 
-        assertEquals('@', grid.getGlyph(1, 5));
+        assertEquals('@', grid.getCodePoint(1, 5));
         assertCellEmpty(grid, 1, 0);
         assertCellEmpty(grid, 1, 4);
     }
@@ -186,8 +186,8 @@ class TerminalGridTest {
 
         grid.resize(2, 2, -1, -1);
 
-        assertEquals('b', grid.getGlyph(0, 0));
-        assertEquals('c', grid.getGlyph(1, 1));
+        assertEquals('b', grid.getCodePoint(0, 0));
+        assertEquals('c', grid.getCodePoint(1, 1));
         assertCellEmpty(grid, 1, 0);
         assertCellEmpty(grid, 0, 1);
     }
@@ -200,8 +200,8 @@ class TerminalGridTest {
 
         grid.resize(4, 4, 1, 1);
 
-        assertEquals('a', grid.getGlyph(1, 1));
-        assertEquals('d', grid.getGlyph(2, 2));
+        assertEquals('a', grid.getCodePoint(1, 1));
+        assertEquals('d', grid.getCodePoint(2, 2));
         assertCellEmpty(grid, 0, 0);
         assertCellEmpty(grid, 3, 3);
     }
@@ -241,12 +241,12 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
         grid.resize(3, 2);
 
         assertFalse(tracker.hasDirtyCells());
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
     }
 
     @Test
@@ -254,11 +254,11 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(0, 0, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
         grid.resize(3, 2, 1, 1);
 
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertCellEmpty(grid, 0, 0);
         assertEquals(6, tracker.getDirtyCellCount());
     }
@@ -268,27 +268,27 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
         assertThrows(IllegalArgumentException.class, () -> grid.resize(0, 2));
         assertThrows(IllegalArgumentException.class, () -> grid.resize(3, -1, 1, 1));
         assertThrows(IllegalArgumentException.class, () -> grid.resize(50000, 50000));
 
-        assertEquals(3, grid.getWidth());
-        assertEquals(2, grid.getHeight());
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals(3, grid.getColumns());
+        assertEquals(2, grid.getRows());
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertFalse(tracker.hasDirtyCells());
         assertEquals(0, tracker.getDirtyCellCount());
     }
 
     @Test
-    void setGlyphChangesOnlyTheGlyph() {
+    void setCodePointChangesOnlyTheCodePoint() {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
 
-        grid.setGlyph(1, 1, '#');
+        grid.setCodePoint(1, 1, '#');
 
-        assertEquals('#', grid.getGlyph(1, 1));
+        assertEquals('#', grid.getCodePoint(1, 1));
         assertEquals(RED, grid.getForeground(1, 1));
         assertEquals(BLUE, grid.getBackground(1, 1));
     }
@@ -300,7 +300,7 @@ class TerminalGridTest {
 
         grid.setForeground(1, 1, BLUE);
 
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertEquals(BLUE, grid.getForeground(1, 1));
         assertEquals(BLUE, grid.getBackground(1, 1));
     }
@@ -312,7 +312,7 @@ class TerminalGridTest {
 
         grid.setBackground(1, 1, RED);
 
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertEquals(RED, grid.getForeground(1, 1));
         assertEquals(RED, grid.getBackground(1, 1));
     }
@@ -322,16 +322,16 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
-        grid.setGlyph(1, 1, '#');
+        grid.setCodePoint(1, 1, '#');
         assertEquals(1, tracker.getDirtyCellCount());
 
-        tracker.clear();
+        tracker.markAllClean();
         grid.setForeground(1, 1, BLUE);
         assertEquals(1, tracker.getDirtyCellCount());
 
-        tracker.clear();
+        tracker.markAllClean();
         grid.setBackground(1, 1, RED);
         assertEquals(1, tracker.getDirtyCellCount());
     }
@@ -341,9 +341,9 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
-        grid.setGlyph(1, 1, '@');
+        grid.setCodePoint(1, 1, '@');
         grid.setForeground(1, 1, RED);
         grid.setBackground(1, 1, BLUE);
 
@@ -355,17 +355,17 @@ class TerminalGridTest {
         TerminalGrid grid = new TerminalGrid(3, 2);
         grid.set(1, 1, '@', RED, BLUE);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
 
-        grid.setGlyph(-1, 0, '#');
-        grid.setGlyph(3, 0, '#');
+        grid.setCodePoint(-1, 0, '#');
+        grid.setCodePoint(3, 0, '#');
         grid.setForeground(0, -1, BLUE);
         grid.setForeground(0, 2, BLUE);
         grid.setBackground(-1, -1, RED);
         grid.setBackground(3, 2, RED);
 
         assertFalse(tracker.hasDirtyCells());
-        assertEquals('@', grid.getGlyph(1, 1));
+        assertEquals('@', grid.getCodePoint(1, 1));
         assertEquals(RED, grid.getForeground(1, 1));
         assertEquals(BLUE, grid.getBackground(1, 1));
     }

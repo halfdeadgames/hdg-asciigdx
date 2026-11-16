@@ -91,12 +91,12 @@ class LayerScrollTest {
 
     @Test
     void contentMovesWithTheShift() {
-        grid.setGlyph(1, 1, 'a');
+        grid.setCodePoint(1, 1, 'a');
 
         layer.scroll(1, 0);
 
-        assertEquals('a', grid.getGlyph(2, 1));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(1, 1));
+        assertEquals('a', grid.getCodePoint(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(1, 1));
     }
 
     @Test
@@ -171,13 +171,13 @@ class LayerScrollTest {
 
     @Test
     void zeroShiftChangesNothing() {
-        grid.setGlyph(1, 1, 'a');
+        grid.setCodePoint(1, 1, 'a');
         CellHandle handle = layer.cell(1, 1);
         int bindsBefore = renderer.bindCount;
 
         layer.scroll(0, 0);
 
-        assertEquals('a', grid.getGlyph(1, 1));
+        assertEquals('a', grid.getCodePoint(1, 1));
         assertSame(handle, layer.cell(1, 1));
         assertEquals(bindsBefore, renderer.bindCount);
     }
@@ -185,7 +185,7 @@ class LayerScrollTest {
     @Test
     void scrollsAccumulate() {
         CellHandle handle = layer.cell(1, 1);
-        grid.setGlyph(1, 1, 'a');
+        grid.setCodePoint(1, 1, 'a');
 
         layer.scroll(1, 0);
         layer.scroll(1, 1);
@@ -193,12 +193,12 @@ class LayerScrollTest {
         assertEquals(3, handle.getColumn());
         assertEquals(2, handle.getRow());
         assertSame(handle, layer.cell(3, 2));
-        assertEquals('a', grid.getGlyph(3, 2));
+        assertEquals('a', grid.getCodePoint(3, 2));
     }
 
     @Test
     void scrollLargerThanTheGridDetachesEveryHandleAndEmptiesTheGrid() {
-        grid.setGlyph(1, 1, 'a');
+        grid.setCodePoint(1, 1, 'a');
         CellHandle first = layer.cell(0, 0);
         CellHandle second = layer.cell(5, 3);
 
@@ -207,9 +207,9 @@ class LayerScrollTest {
         assertTrue(first.isDetached());
         assertTrue(second.isDetached());
         assertEquals(0, layer.getCellHandleCount());
-        for (int row = 0; row < grid.getHeight(); row++) {
-            for (int column = 0; column < grid.getWidth(); column++) {
-                assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(column, row));
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(column, row));
             }
         }
     }

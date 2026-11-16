@@ -53,9 +53,9 @@ public final class SeeThroughWater {
     private void collectCellsNear(float splashColumn, float splashRow, float rowHeightPerColumnWidth) {
         float radius = UnderwaterDive.seeThroughRadiusCells();
         int firstColumn = Math.max(0, (int) Math.floor(splashColumn - radius));
-        int lastColumn = Math.min(waterGrid.getWidth() - 1, (int) Math.ceil(splashColumn + radius));
+        int lastColumn = Math.min(waterGrid.getColumns() - 1, (int) Math.ceil(splashColumn + radius));
         int firstRow = Math.max(0, (int) Math.floor(splashRow - radius / rowHeightPerColumnWidth));
-        int lastRow = Math.min(waterGrid.getHeight() - 1, (int) Math.ceil(splashRow + radius / rowHeightPerColumnWidth));
+        int lastRow = Math.min(waterGrid.getRows() - 1, (int) Math.ceil(splashRow + radius / rowHeightPerColumnWidth));
         for (int row = firstRow; row <= lastRow; row++) {
             for (int column = firstColumn; column <= lastColumn; column++) {
                 float columnDelta = column + 0.5f - splashColumn;

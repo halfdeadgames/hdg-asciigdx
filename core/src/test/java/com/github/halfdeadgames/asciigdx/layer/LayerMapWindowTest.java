@@ -67,37 +67,37 @@ class LayerMapWindowTest {
     @Test
     void enableTakesOriginFromCameraWithoutScrolling() {
         stack.setCamera(48f, 32f);
-        grid.setGlyph(2, 0, 'a');
+        grid.setCodePoint(2, 0, 'a');
 
         layer.enableMapWindow();
 
         assertTrue(layer.isMapWindow());
         assertEquals(3, originColumn(layer));
         assertEquals(2, layer.getMapWindow().getOriginRow());
-        assertEquals('a', grid.getGlyph(2, 0));
+        assertEquals('a', grid.getCodePoint(2, 0));
     }
 
     @Test
     void cameraCrossingACellScrollsContentAndUpdatesOrigin() {
         layer.enableMapWindow();
-        grid.setGlyph(2, 0, 'a');
+        grid.setCodePoint(2, 0, 'a');
 
         stack.setCamera(16f, 0f);
 
         assertEquals(1, originColumn(layer));
-        assertEquals('a', grid.getGlyph(1, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 0));
+        assertEquals('a', grid.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(2, 0));
     }
 
     @Test
     void cameraMovingWithinACellDoesNotScroll() {
         layer.enableMapWindow();
-        grid.setGlyph(2, 0, 'a');
+        grid.setCodePoint(2, 0, 'a');
 
         stack.setCamera(15f, 15f);
 
         assertEquals(0, originColumn(layer));
-        assertEquals('a', grid.getGlyph(2, 0));
+        assertEquals('a', grid.getCodePoint(2, 0));
     }
 
     @Test
@@ -126,12 +126,12 @@ class LayerMapWindowTest {
     void settingParallaxFollowsAgain() {
         stack.setCamera(64f, 0f);
         layer.enableMapWindow();
-        grid.setGlyph(5, 0, 'a');
+        grid.setCodePoint(5, 0, 'a');
 
         layer.setParallax(0.5f);
 
         assertEquals(2, originColumn(layer));
-        assertEquals('a', grid.getGlyph(7, 0));
+        assertEquals('a', grid.getCodePoint(7, 0));
     }
 
     @Test
@@ -206,13 +206,13 @@ class LayerMapWindowTest {
     @Test
     void disableStopsFollowingAndKeepsContent() {
         layer.enableMapWindow();
-        grid.setGlyph(2, 0, 'a');
+        grid.setCodePoint(2, 0, 'a');
 
         layer.disableMapWindow();
         stack.setCamera(48f, 0f);
 
         assertFalse(layer.isMapWindow());
-        assertEquals('a', grid.getGlyph(2, 0));
+        assertEquals('a', grid.getCodePoint(2, 0));
     }
 
     @Test

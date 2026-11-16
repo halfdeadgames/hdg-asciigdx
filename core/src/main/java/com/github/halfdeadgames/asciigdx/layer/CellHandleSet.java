@@ -33,8 +33,8 @@ final class CellHandleSet {
         this.layer = layer;
         this.grid = grid;
         this.renderer = renderer;
-        syncedColumns = grid.getWidth();
-        syncedRows = grid.getHeight();
+        syncedColumns = grid.getColumns();
+        syncedRows = grid.getRows();
     }
 
     Array<CellHandle> frameHandles() {
@@ -194,7 +194,7 @@ final class CellHandleSet {
     }
 
     private boolean isOutsideGrid(CellHandle cell) {
-        return cell.getColumn() >= grid.getWidth() || cell.getRow() >= grid.getHeight();
+        return cell.getColumn() >= grid.getColumns() || cell.getRow() >= grid.getRows();
     }
 
     void rebindRendererIfChanged() {
@@ -228,11 +228,11 @@ final class CellHandleSet {
      * rewrite; the renderer's rebuild on the size change drops it from its index.
      */
     private void dropHandlesOutsideResizedGrid() {
-        if (grid.getWidth() == syncedColumns && grid.getHeight() == syncedRows) {
+        if (grid.getColumns() == syncedColumns && grid.getRows() == syncedRows) {
             return;
         }
-        syncedColumns = grid.getWidth();
-        syncedRows = grid.getHeight();
+        syncedColumns = grid.getColumns();
+        syncedRows = grid.getRows();
         dropOutsideGridAndReindex();
         forgetHiddenFlags();
     }
@@ -244,7 +244,7 @@ final class CellHandleSet {
     }
 
     private void dropOutsideGridAndReindex(IndexedHandles handles) {
-        handles.dropOutside(grid.getWidth(), grid.getHeight());
+        handles.dropOutside(grid.getColumns(), grid.getRows());
         handles.rebuildIndex();
     }
 
@@ -313,7 +313,7 @@ final class CellHandleSet {
     }
 
     private boolean isInsideGrid(CellHandle cell) {
-        return Guards.isCellInside(cell.getColumn(), cell.getRow(), grid.getWidth(), grid.getHeight());
+        return Guards.isCellInside(cell.getColumn(), cell.getRow(), grid.getColumns(), grid.getRows());
     }
 
     /**

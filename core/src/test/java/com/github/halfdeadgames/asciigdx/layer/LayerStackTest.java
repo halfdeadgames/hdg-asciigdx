@@ -511,8 +511,8 @@ class LayerStackTest {
         stack.add(new TerminalGrid(80, 25), font);
         stack.add(new TerminalGrid(10, 4), new FakeSource(16, 24));
         assertOrder("L0", "L1");
-        assertEquals(80, stack.get(0).getGrid().getWidth());
-        assertEquals(10, stack.get(1).getGrid().getWidth());
+        assertEquals(80, stack.get(0).getGrid().getColumns());
+        assertEquals(10, stack.get(1).getGrid().getColumns());
     }
 
     @Test

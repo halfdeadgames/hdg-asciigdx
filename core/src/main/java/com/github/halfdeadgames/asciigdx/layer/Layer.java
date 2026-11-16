@@ -898,7 +898,7 @@ public final class Layer {
     }
 
     private void requireCellInsideGrid(int column, int row) {
-        Guards.requireCellInside(column, row, grid.getWidth(), grid.getHeight());
+        Guards.requireCellInside(column, row, grid.getColumns(), grid.getRows());
     }
 
     /** Brings the renderer in line with the cell handles before drawing; see {@link CellHandleSet#syncBeforeDraw}. */

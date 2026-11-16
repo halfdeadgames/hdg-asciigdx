@@ -17,14 +17,14 @@ class GridDrawingTest {
 
         GridDrawing.text(grid, 1, 1, "abc", RED, BLUE);
 
-        assertEquals('a', grid.getGlyph(1, 1));
-        assertEquals('b', grid.getGlyph(2, 1));
-        assertEquals('c', grid.getGlyph(3, 1));
+        assertEquals('a', grid.getCodePoint(1, 1));
+        assertEquals('b', grid.getCodePoint(2, 1));
+        assertEquals('c', grid.getCodePoint(3, 1));
         assertEquals(RED, grid.getForeground(3, 1));
         assertEquals(BLUE, grid.getBackground(3, 1));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 1));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(4, 1));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(4, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(1, 0));
     }
 
     @Test
@@ -34,9 +34,9 @@ class GridDrawingTest {
 
         GridDrawing.text(grid, 0, 0, new StringBuilder().appendCodePoint(dagger).append('x'), RED, BLUE);
 
-        assertEquals(dagger, grid.getGlyph(0, 0));
-        assertEquals('x', grid.getGlyph(1, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 0));
+        assertEquals(dagger, grid.getCodePoint(0, 0));
+        assertEquals('x', grid.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(2, 0));
     }
 
     @Test
@@ -45,9 +45,9 @@ class GridDrawingTest {
 
         GridDrawing.text(grid, 1, 0, "abcd", RED, BLUE);
 
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
-        assertEquals('a', grid.getGlyph(1, 0));
-        assertEquals('b', grid.getGlyph(2, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 0));
+        assertEquals('a', grid.getCodePoint(1, 0));
+        assertEquals('b', grid.getCodePoint(2, 0));
     }
 
     @Test
@@ -56,9 +56,9 @@ class GridDrawingTest {
 
         GridDrawing.text(grid, -2, 0, "abcd", RED, BLUE);
 
-        assertEquals('c', grid.getGlyph(0, 0));
-        assertEquals('d', grid.getGlyph(1, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(2, 0));
+        assertEquals('c', grid.getCodePoint(0, 0));
+        assertEquals('d', grid.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(2, 0));
     }
 
     @Test
@@ -81,7 +81,7 @@ class GridDrawingTest {
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 5; x++) {
                 boolean inside = x >= 1 && x <= 3 && y >= 1 && y <= 2;
-                assertEquals(inside ? '#' : TerminalGrid.EMPTY_GLYPH, grid.getGlyph(x, y));
+                assertEquals(inside ? '#' : TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(x, y));
             }
         }
         assertEquals(RED, grid.getForeground(2, 2));
@@ -131,19 +131,19 @@ class GridDrawingTest {
 
         GridDrawing.box(grid, 1, 1, 4, 3, RED, BLUE);
 
-        assertEquals('┌', grid.getGlyph(1, 1));
-        assertEquals('┐', grid.getGlyph(4, 1));
-        assertEquals('└', grid.getGlyph(1, 3));
-        assertEquals('┘', grid.getGlyph(4, 3));
-        assertEquals('─', grid.getGlyph(2, 1));
-        assertEquals('─', grid.getGlyph(3, 3));
-        assertEquals('│', grid.getGlyph(1, 2));
-        assertEquals('│', grid.getGlyph(4, 2));
+        assertEquals('┌', grid.getCodePoint(1, 1));
+        assertEquals('┐', grid.getCodePoint(4, 1));
+        assertEquals('└', grid.getCodePoint(1, 3));
+        assertEquals('┘', grid.getCodePoint(4, 3));
+        assertEquals('─', grid.getCodePoint(2, 1));
+        assertEquals('─', grid.getCodePoint(3, 3));
+        assertEquals('│', grid.getCodePoint(1, 2));
+        assertEquals('│', grid.getCodePoint(4, 2));
         assertEquals(RED, grid.getForeground(2, 1));
         assertEquals(BLUE, grid.getBackground(4, 2));
         assertBlank(grid, 2, 2, 2, 1);
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(5, 4));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(5, 4));
     }
 
     @Test
@@ -171,11 +171,11 @@ class GridDrawingTest {
 
         GridDrawing.box(grid, -2, -1, 5, 4, RED, BLUE);
 
-        assertEquals('│', grid.getGlyph(2, 0));
-        assertEquals('│', grid.getGlyph(2, 1));
-        assertEquals('┘', grid.getGlyph(2, 2));
-        assertEquals('─', grid.getGlyph(0, 2));
-        assertEquals('─', grid.getGlyph(1, 2));
+        assertEquals('│', grid.getCodePoint(2, 0));
+        assertEquals('│', grid.getCodePoint(2, 1));
+        assertEquals('┘', grid.getCodePoint(2, 2));
+        assertEquals('─', grid.getCodePoint(0, 2));
+        assertEquals('─', grid.getCodePoint(1, 2));
         assertBlank(grid, 0, 0, 2, 2);
         assertBlank(grid, 3, 0, 1, 4);
         assertBlank(grid, 0, 3, 4, 1);
@@ -192,13 +192,13 @@ class GridDrawingTest {
     }
 
     private static void assertBlank(TerminalGrid grid, int left, int top, int width, int height) {
-        assertFilled(grid, left, top, width, height, TerminalGrid.EMPTY_GLYPH);
+        assertFilled(grid, left, top, width, height, TerminalGrid.EMPTY_CODE_POINT);
     }
 
     private static void assertFilled(TerminalGrid grid, int left, int top, int width, int height, int glyph) {
         for (int y = top; y < top + height; y++) {
             for (int x = left; x < left + width; x++) {
-                assertEquals(glyph, grid.getGlyph(x, y), "cell (" + x + ", " + y + ")");
+                assertEquals(glyph, grid.getCodePoint(x, y), "cell (" + x + ", " + y + ")");
             }
         }
     }

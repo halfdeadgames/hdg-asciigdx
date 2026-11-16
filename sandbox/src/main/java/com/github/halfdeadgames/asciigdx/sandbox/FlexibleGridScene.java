@@ -102,8 +102,8 @@ class FlexibleGridScene extends GridScene {
     }
 
     private void drawMarker() {
-        int left = (grid.getWidth() - MARKER_WIDTH) / 2;
-        int top = (grid.getHeight() - MARKER_HEIGHT) / 2;
+        int left = (grid.getColumns() - MARKER_WIDTH) / 2;
+        int top = (grid.getRows() - MARKER_HEIGHT) / 2;
         markerLeft = left;
         markerTop = top;
         for (int row = 0; row < MARKER_HEIGHT; row++) {
@@ -117,12 +117,12 @@ class FlexibleGridScene extends GridScene {
     }
 
     private void drawBorder() {
-        GridDrawing.box(grid, 0, 0, grid.getWidth(), grid.getHeight(), WHITE, CLEAR);
+        GridDrawing.box(grid, 0, 0, grid.getColumns(), grid.getRows(), WHITE, CLEAR);
     }
 
     private void eraseBorderAndStatus() {
-        int right = grid.getWidth() - 1;
-        int bottom = grid.getHeight() - 1;
+        int right = grid.getColumns() - 1;
+        int bottom = grid.getRows() - 1;
         for (int column = 0; column <= right; column++) {
             clearUnlessMarker(column, 0);
             clearUnlessMarker(column, bottom);

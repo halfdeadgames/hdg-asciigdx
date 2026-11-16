@@ -11,11 +11,11 @@ class TerminalGridScrollTest {
     private static final int WIDTH = 4;
     private static final int HEIGHT = 3;
 
-    private static TerminalGrid filledGrid(int width, int height) {
-        var grid = new TerminalGrid(width, height);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int id = y * width + x + 1;
+    private static TerminalGrid filledGrid(int columns, int rows) {
+        var grid = new TerminalGrid(columns, rows);
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < columns; x++) {
+                int id = y * columns + x + 1;
                 grid.set(x, y, 100 + id, 0x1000 + id, 0x2000 + id);
             }
         }
@@ -23,11 +23,11 @@ class TerminalGridScrollTest {
     }
 
     private static void assertSameContent(TerminalGrid expected, TerminalGrid actual) {
-        assertEquals(expected.getWidth(), actual.getWidth());
-        assertEquals(expected.getHeight(), actual.getHeight());
-        for (int y = 0; y < expected.getHeight(); y++) {
-            for (int x = 0; x < expected.getWidth(); x++) {
-                assertEquals(expected.getGlyph(x, y), actual.getGlyph(x, y), "glyph " + x + "," + y);
+        assertEquals(expected.getColumns(), actual.getColumns());
+        assertEquals(expected.getRows(), actual.getRows());
+        for (int y = 0; y < expected.getRows(); y++) {
+            for (int x = 0; x < expected.getColumns(); x++) {
+                assertEquals(expected.getCodePoint(x, y), actual.getCodePoint(x, y), "code point " + x + "," + y);
                 assertEquals(expected.getForeground(x, y), actual.getForeground(x, y), "fg " + x + "," + y);
                 assertEquals(expected.getBackground(x, y), actual.getBackground(x, y), "bg " + x + "," + y);
             }
@@ -40,11 +40,11 @@ class TerminalGridScrollTest {
                 int sourceX = x - shiftX;
                 int sourceY = y - shiftY;
                 if (original.contains(sourceX, sourceY)) {
-                    assertEquals(original.getGlyph(sourceX, sourceY), scrolled.getGlyph(x, y));
+                    assertEquals(original.getCodePoint(sourceX, sourceY), scrolled.getCodePoint(x, y));
                     assertEquals(original.getForeground(sourceX, sourceY), scrolled.getForeground(x, y));
                     assertEquals(original.getBackground(sourceX, sourceY), scrolled.getBackground(x, y));
                 } else {
-                    assertEquals(TerminalGrid.EMPTY_GLYPH, scrolled.getGlyph(x, y));
+                    assertEquals(TerminalGrid.EMPTY_CODE_POINT, scrolled.getCodePoint(x, y));
                     assertEquals(TerminalGrid.TRANSPARENT_RGBA, scrolled.getForeground(x, y));
                     assertEquals(TerminalGrid.TRANSPARENT_RGBA, scrolled.getBackground(x, y));
                 }
@@ -88,18 +88,18 @@ class TerminalGridScrollTest {
     void scrollRightKeepsExactCells() {
         var grid = filledGrid(WIDTH, HEIGHT);
         grid.scroll(1, 0);
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 1));
-        assertEquals(105, grid.getGlyph(1, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 1));
+        assertEquals(105, grid.getCodePoint(1, 1));
         assertEquals(0x1005, grid.getForeground(1, 1));
         assertEquals(0x2005, grid.getBackground(1, 1));
-        assertEquals(107, grid.getGlyph(3, 1));
+        assertEquals(107, grid.getCodePoint(3, 1));
     }
 
     @Test
     void zeroShiftLeavesTrackersClean() {
         var grid = filledGrid(WIDTH, HEIGHT);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
         grid.scroll(0, 0);
         assertFalse(tracker.hasDirtyCells());
     }
@@ -108,13 +108,13 @@ class TerminalGridScrollTest {
     void nonzeroShiftMarksAllCellsDirty() {
         var grid = filledGrid(WIDTH, HEIGHT);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
         grid.scroll(0, 1);
         assertEquals(WIDTH * HEIGHT, tracker.getDirtyCellCount());
     }
 
     @Test
-    void shiftAtLeastWidthEmptiesGrid() {
+    void shiftAtLeastColumnCountEmptiesGrid() {
         assertScrollMovesContent(WIDTH, 0);
         assertScrollMovesContent(-WIDTH, 0);
         assertScrollMovesContent(0, HEIGHT);
@@ -134,7 +134,7 @@ class TerminalGridScrollTest {
     void extremeShiftStillMarksTrackersDirty() {
         var grid = filledGrid(WIDTH, HEIGHT);
         DirtyTracker tracker = grid.createDirtyTracker();
-        tracker.clear();
+        tracker.markAllClean();
         grid.scroll(Integer.MIN_VALUE, 0);
         assertTrue(tracker.hasDirtyCells());
     }
@@ -143,7 +143,7 @@ class TerminalGridScrollTest {
     void singleCellGridEmptiesOnAnyShift() {
         var grid = filledGrid(1, 1);
         grid.scroll(1, 0);
-        assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(0, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(0, 0));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getForeground(0, 0));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(0, 0));
     }
@@ -152,7 +152,7 @@ class TerminalGridScrollTest {
     void singleCellGridKeepsContentOnZeroShift() {
         var grid = filledGrid(1, 1);
         grid.scroll(0, 0);
-        assertEquals(101, grid.getGlyph(0, 0));
+        assertEquals(101, grid.getCodePoint(0, 0));
     }
 
     @Test

@@ -280,7 +280,7 @@ class ParallaxScene extends GridScene {
     /** Wide enough that the camera's full pan never shows an empty edge for this factor. */
     private static TerminalGrid wideGrid(float parallax) {
         TerminalGrid wide = new TerminalGrid(COLUMNS + (int) Math.ceil(PAN_CELLS * parallax), ROWS);
-        GridDrawing.fill(wide, 0, 0, wide.getWidth(), ROWS, ' ', WHITE, CLEAR);
+        GridDrawing.fill(wide, 0, 0, wide.getColumns(), ROWS, ' ', WHITE, CLEAR);
         return wide;
     }
 
@@ -310,7 +310,7 @@ class ParallaxScene extends GridScene {
     }
 
     private static void drawMountains(TerminalGrid target) {
-        for (int column = 0; column < target.getWidth(); column++) {
+        for (int column = 0; column < target.getColumns(); column++) {
             int height = 1 + 7 - Math.abs(column % 14 - 7);
             int top = MOUNTAIN_BASE_ROW - height;
             target.set(column, top, '▲', MOUNTAIN_PEAK, MOUNTAIN);
@@ -319,7 +319,7 @@ class ParallaxScene extends GridScene {
     }
 
     private static void drawHills(TerminalGrid target) {
-        for (int column = 0; column < target.getWidth(); column++) {
+        for (int column = 0; column < target.getColumns(); column++) {
             int top = HILL_BASE_ROW - Math.round(1.5f * MathUtils.sin(column * 0.35f));
             target.set(column, top, '~', HILL_CREST, HILL);
             GridDrawing.fill(target, column, top + 1, 1, ROWS - top - 1, ' ', WHITE, HILL);
@@ -327,7 +327,7 @@ class ParallaxScene extends GridScene {
     }
 
     private static void drawGround(TerminalGrid target) {
-        int width = target.getWidth();
+        int width = target.getColumns();
         GridDrawing.fill(target, 0, GROUND_ROW, width, 1, '"', GRASS, GRASS_BACKGROUND);
         GridDrawing.fill(target, 0, GROUND_ROW + 1, width, ROWS - GROUND_ROW - 1, '.', DIRT, DIRT_BACKGROUND);
         GridDrawing.fill(target, 0, GROUND_ROW + 2, width, 1, '=', PATH, DIRT_BACKGROUND);

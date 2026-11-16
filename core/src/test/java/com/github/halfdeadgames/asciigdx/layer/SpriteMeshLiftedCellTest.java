@@ -73,12 +73,12 @@ class SpriteMeshLiftedCellTest {
     }
 
     private float[] ownQuadOf(int column, int row) {
-        CellVertexCache cache = new CellVertexCache(grid.getWidth(), grid.getHeight(), 8f, 12f);
-        TextureRegion region = source.glyph(grid.getGlyph(column, row));
+        CellVertexCache cache = new CellVertexCache(grid.getColumns(), grid.getRows(), 8f, 12f);
+        TextureRegion region = source.glyph(grid.getCodePoint(column, row));
         cache.writeCell(column, row, 0, grid.getForeground(column, row),
                 region.getU(), region.getV(), region.getU2(), region.getV2());
         float[] own = new float[QUAD];
-        System.arraycopy(cache.getVertices(), (row * grid.getWidth() + column) * QUAD, own, 0, QUAD);
+        System.arraycopy(cache.getVertices(), (row * grid.getColumns() + column) * QUAD, own, 0, QUAD);
         return own;
     }
 

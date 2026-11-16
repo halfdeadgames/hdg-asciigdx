@@ -33,9 +33,9 @@ public final class WaterRipple {
         this.rings = rings;
         this.maxScaleBump = maxScaleBump;
         int firstColumn = clampedFirstCell(splashColumn - halfWidthCells);
-        int lastColumn = clampedLastCell(splashColumn + halfWidthCells, waterLayer.getGrid().getWidth());
+        int lastColumn = clampedLastCell(splashColumn + halfWidthCells, waterLayer.getGrid().getColumns());
         int firstRow = clampedFirstCell(splashRow - halfHeightCells);
-        int lastRow = clampedLastCell(splashRow + halfHeightCells, waterLayer.getGrid().getHeight());
+        int lastRow = clampedLastCell(splashRow + halfHeightCells, waterLayer.getGrid().getRows());
         int columnCount = Math.max(0, lastColumn - firstColumn + 1);
         int rowCount = Math.max(0, lastRow - firstRow + 1);
         cells = new CellHandle[columnCount * rowCount];

@@ -31,7 +31,7 @@ class FlexibleGridSceneCenteringTest {
     private static void assertMarkerIntact(TerminalGrid grid, int left, int top) {
         for (int row = 0; row < MARKER_HEIGHT; row++) {
             for (int column = 0; column < MARKER_WIDTH; column++) {
-                assertEquals(glyphAt(column, row), grid.getGlyph(left + column, top + row));
+                assertEquals(glyphAt(column, row), grid.getCodePoint(left + column, top + row));
                 assertEquals(colorAt(column, row), grid.getForeground(left + column, top + row));
                 assertEquals(colorAt(row, column), grid.getBackground(left + column, top + row));
             }
@@ -49,8 +49,8 @@ class FlexibleGridSceneCenteringTest {
         int[] next = resizeTo(grid, columns, rows, position[0], position[1]);
         position[0] = next[0];
         position[1] = next[1];
-        assertEquals(columns, grid.getWidth());
-        assertEquals(rows, grid.getHeight());
+        assertEquals(columns, grid.getColumns());
+        assertEquals(rows, grid.getRows());
         assertEquals((columns - MARKER_WIDTH) / 2, position[0]);
         assertEquals((rows - MARKER_HEIGHT) / 2, position[1]);
         assertMarkerIntact(grid, position[0], position[1]);

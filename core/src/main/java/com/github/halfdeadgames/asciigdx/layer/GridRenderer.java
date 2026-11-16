@@ -87,8 +87,8 @@ public final class GridRenderer implements Disposable {
     }
 
     private void createCacheAndMesh() {
-        cachedColumns = grid.getWidth();
-        cachedRows = grid.getHeight();
+        cachedColumns = grid.getColumns();
+        cachedRows = grid.getRows();
         cache = new CellVertexCache(cachedColumns, cachedRows,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
         mesh = new GridMesh(cachedColumns * cachedRows, resources.getShader());
@@ -170,7 +170,7 @@ public final class GridRenderer implements Disposable {
     }
 
     private void rebuildIfStale() {
-        if (glyphSourceChanged || grid.getWidth() != cachedColumns || grid.getHeight() != cachedRows) {
+        if (glyphSourceChanged || grid.getColumns() != cachedColumns || grid.getRows() != cachedRows) {
             glyphSourceChanged = false;
             mesh.dispose();
             createCacheAndMesh();
@@ -252,18 +252,18 @@ public final class GridRenderer implements Disposable {
     private void drawGrid(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, CellBlend blend) {
         rebuildIfStale();
         if (cache.isFullRebuildNeeded()) {
-            for (int row = 0; row < grid.getHeight(); row++) {
-                for (int column = 0; column < grid.getWidth(); column++) {
+            for (int row = 0; row < grid.getRows(); row++) {
+                for (int column = 0; column < grid.getColumns(); column++) {
                     writeCell(column, row);
                 }
             }
             cache.markRebuilt();
-            tracker.clear();
+            tracker.markAllClean();
             uploadPending = false;
             mesh.upload(cache.getVertices());
         } else if (tracker.hasDirtyCells() || uploadPending) {
             tracker.forEachDirtyCell(cellWriter);
-            tracker.clear();
+            tracker.markAllClean();
             uploadPending = false;
             mesh.upload(cache.getVertices());
         }
@@ -286,7 +286,7 @@ public final class GridRenderer implements Disposable {
     }
 
     static boolean isBlankGlyph(int codePoint, int foreground) {
-        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_GLYPH || CellVertexCache.isFullyTransparent(foreground);
+        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_CODE_POINT || CellVertexCache.isFullyTransparent(foreground);
     }
 
     private void writeCell(int column, int row) {

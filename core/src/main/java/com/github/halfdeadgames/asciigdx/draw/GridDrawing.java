@@ -41,13 +41,13 @@ public final class GridDrawing {
      */
     public static void text(TerminalGrid grid, int column, int row, CharSequence text, int foreground,
                             int background) {
-        if (row < 0 || row >= grid.getHeight() || column >= grid.getWidth()) {
+        if (row < 0 || row >= grid.getRows() || column >= grid.getColumns()) {
             return;
         }
         int cellColumn = column;
         int index = 0;
         int length = text.length();
-        while (index < length && cellColumn < grid.getWidth()) {
+        while (index < length && cellColumn < grid.getColumns()) {
             int codePoint = Character.codePointAt(text, index);
             grid.set(cellColumn, row, codePoint, foreground, background);
             index += Character.charCount(codePoint);
@@ -71,10 +71,10 @@ public final class GridDrawing {
     public static void fill(TerminalGrid grid, int left, int top, int width, int height, int codePoint,
                             int foreground, int background) {
         requireNonNegativeSize(width, height);
-        int firstColumn = clampToGrid(left, grid.getWidth());
-        int endColumn = clampToGrid((long) left + width, grid.getWidth());
-        int firstRow = clampToGrid(top, grid.getHeight());
-        int endRow = clampToGrid((long) top + height, grid.getHeight());
+        int firstColumn = clampToGrid(left, grid.getColumns());
+        int endColumn = clampToGrid((long) left + width, grid.getColumns());
+        int firstRow = clampToGrid(top, grid.getRows());
+        int endRow = clampToGrid((long) top + height, grid.getRows());
         for (int row = firstRow; row < endRow; row++) {
             for (int column = firstColumn; column < endColumn; column++) {
                 grid.set(column, row, codePoint, foreground, background);
@@ -105,7 +105,7 @@ public final class GridDrawing {
 
     private static boolean overlapsGrid(TerminalGrid grid, CellShape shape) {
         return shape.getRight() >= 0 && shape.getBottom() >= 0
-                && shape.getLeft() < grid.getWidth() && shape.getTop() < grid.getHeight();
+                && shape.getLeft() < grid.getColumns() && shape.getTop() < grid.getRows();
     }
 
     /**
@@ -141,11 +141,11 @@ public final class GridDrawing {
 
     private static void drawHorizontalEdge(TerminalGrid grid, long firstColumn, long endColumn, long row,
                                            int foreground, int background) {
-        if (row < 0 || row >= grid.getHeight()) {
+        if (row < 0 || row >= grid.getRows()) {
             return;
         }
-        int start = clampToGrid(firstColumn, grid.getWidth());
-        int end = clampToGrid(endColumn, grid.getWidth());
+        int start = clampToGrid(firstColumn, grid.getColumns());
+        int end = clampToGrid(endColumn, grid.getColumns());
         for (int column = start; column < end; column++) {
             grid.set(column, (int) row, HORIZONTAL_GLYPH, foreground, background);
         }
@@ -153,11 +153,11 @@ public final class GridDrawing {
 
     private static void drawVerticalEdge(TerminalGrid grid, long column, long firstRow, long endRow,
                                          int foreground, int background) {
-        if (column < 0 || column >= grid.getWidth()) {
+        if (column < 0 || column >= grid.getColumns()) {
             return;
         }
-        int start = clampToGrid(firstRow, grid.getHeight());
-        int end = clampToGrid(endRow, grid.getHeight());
+        int start = clampToGrid(firstRow, grid.getRows());
+        int end = clampToGrid(endRow, grid.getRows());
         for (int row = start; row < end; row++) {
             grid.set((int) column, row, VERTICAL_GLYPH, foreground, background);
         }
@@ -165,7 +165,7 @@ public final class GridDrawing {
 
     private static void setIfInside(TerminalGrid grid, long column, long row, int codePoint, int foreground,
                                     int background) {
-        if (column < 0 || column >= grid.getWidth() || row < 0 || row >= grid.getHeight()) {
+        if (column < 0 || column >= grid.getColumns() || row < 0 || row >= grid.getRows()) {
             return;
         }
         grid.set((int) column, (int) row, codePoint, foreground, background);

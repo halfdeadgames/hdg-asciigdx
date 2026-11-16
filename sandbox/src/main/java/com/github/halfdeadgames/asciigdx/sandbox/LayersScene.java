@@ -475,8 +475,8 @@ class LayersScene extends GridScene {
     }
 
     private static void drawRain(TerminalGrid rain) {
-        for (int row = 0; row < rain.getHeight(); row++) {
-            for (int column = 0; column < rain.getWidth(); column++) {
+        for (int row = 0; row < rain.getRows(); row++) {
+            for (int column = 0; column < rain.getColumns(); column++) {
                 int hash = (column * 7 + row * 13 + column * row) % 11;
                 if (hash == 0) {
                     rain.set(column, row, '/', 0xA0C8FFFF, CLEAR);

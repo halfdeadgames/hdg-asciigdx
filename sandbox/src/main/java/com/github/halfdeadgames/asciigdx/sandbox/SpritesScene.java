@@ -219,7 +219,7 @@ class SpritesScene extends GridScene {
     private void updateMonsters(float step) {
         monsterClock += step;
         for (int i = 0; i < monsters.length; i++) {
-            monsters[i].update(mapLayer, grid.getWidth(), grid.getHeight(), monsterClock, cellWidth, cellHeight);
+            monsters[i].update(mapLayer, grid.getColumns(), grid.getRows(), monsterClock, cellWidth, cellHeight);
         }
     }
 
@@ -352,8 +352,8 @@ class SpritesScene extends GridScene {
     }
 
     private void drawMap() {
-        for (int row = 0; row < grid.getHeight(); row++) {
-            for (int column = 0; column < grid.getWidth(); column++) {
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
                 if (isStripe(column, row)) {
                     grid.set(column, row, '=', STRIPE_GLYPH, STRIPE_BACKGROUND);
                     continue;

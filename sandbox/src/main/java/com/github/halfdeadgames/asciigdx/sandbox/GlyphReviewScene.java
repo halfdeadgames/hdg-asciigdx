@@ -279,7 +279,7 @@ final class GlyphReviewScene extends GridScene {
         int column = (int) (touchPoint.x / glyphs.getCellWidth());
         int row = (int) ((viewport.getWorldHeight() - touchPoint.y) / glyphs.getCellHeight());
         int index = row - menuFirstItemRow();
-        boolean inColumns = column >= MENU_COLUMN && column < grid.getWidth();
+        boolean inColumns = column >= MENU_COLUMN && column < grid.getColumns();
         return inColumns && index >= 0 && index < REASON_MENU_ITEMS ? index : -1;
     }
 
@@ -302,7 +302,7 @@ final class GlyphReviewScene extends GridScene {
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = menuFirstItemRow() + i;
-            GridDrawing.fill(grid, menuColumn, row, grid.getWidth() - menuColumn, 1, ' ', foreground, background);
+            GridDrawing.fill(grid, menuColumn, row, grid.getColumns() - menuColumn, 1, ' ', foreground, background);
             GridDrawing.text(grid, menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]),
                 foreground, background);
         }
@@ -478,7 +478,7 @@ final class GlyphReviewScene extends GridScene {
     private void writeCandidateContext(int codePoint) {
         int[] pattern = contextPattern(codePoint);
         for (int pair = 0; pair < contextPairs; pair++) {
-            for (int column = 0; column < candidateGrid.getWidth(); column++) {
+            for (int column = 0; column < candidateGrid.getColumns(); column++) {
                 int glyph = pattern[column];
                 boolean usable = glyph == codePoint || candidate.hasGlyph(glyph);
                 candidateGrid.set(column, pair, usable ? glyph : ' ', COLOR_PAIRS[pair][0], COLOR_PAIRS[pair][1]);
@@ -504,7 +504,7 @@ final class GlyphReviewScene extends GridScene {
 
     private void writeLine(int row, String text, int foreground) {
         SceneDrawing.writePadded(grid, 0, row, MARGIN_COLUMNS, "", foreground, CLEAR);
-        SceneDrawing.writePadded(grid, MARGIN_COLUMNS, row, grid.getWidth() - MARGIN_COLUMNS, text, foreground, CLEAR);
+        SceneDrawing.writePadded(grid, MARGIN_COLUMNS, row, grid.getColumns() - MARGIN_COLUMNS, text, foreground, CLEAR);
     }
 
     private void writeContextRows(int codePoint) {

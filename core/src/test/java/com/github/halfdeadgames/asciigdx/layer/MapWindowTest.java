@@ -164,7 +164,7 @@ class MapWindowTest {
 
         window.set(5, 3, 'x', 0x11223344, 0x55667788);
 
-        assertEquals('x', grid.getGlyph(2, 1));
+        assertEquals('x', grid.getCodePoint(2, 1));
         assertEquals(0x11223344, grid.getForeground(2, 1));
         assertEquals(0x55667788, grid.getBackground(2, 1));
     }
@@ -180,7 +180,7 @@ class MapWindowTest {
 
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                assertEquals(TerminalGrid.EMPTY_GLYPH, grid.getGlyph(column, row));
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(column, row));
             }
         }
     }
@@ -364,8 +364,8 @@ class MapWindowTest {
 
         window.forEachCellToFill((mapColumn, mapRow) -> window.set(mapColumn, mapRow, 'm', 0, 0));
 
-        assertEquals('m', grid.getGlyph(0, 0));
-        assertEquals('m', grid.getGlyph(COLUMNS - 1, ROWS - 1));
+        assertEquals('m', grid.getCodePoint(0, 0));
+        assertEquals('m', grid.getCodePoint(COLUMNS - 1, ROWS - 1));
     }
 
     @Test
@@ -464,15 +464,15 @@ class MapWindowTest {
     @Test
     void scrollThrowsInMapWindowModeAndWorksAfterDisable() {
         enable();
-        grid.setGlyph(2, 0, 'a');
+        grid.setCodePoint(2, 0, 'a');
 
         assertThrows(IllegalStateException.class, () -> layer.scroll(1, 0));
-        assertEquals('a', grid.getGlyph(2, 0));
+        assertEquals('a', grid.getCodePoint(2, 0));
 
         layer.disableMapWindow();
         layer.scroll(1, 0);
 
-        assertEquals('a', grid.getGlyph(3, 0));
+        assertEquals('a', grid.getCodePoint(3, 0));
     }
 
     private static void assertDetached(MapWindow window) {

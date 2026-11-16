@@ -25,7 +25,7 @@ final class FlatCellWriter {
     /** @param handle the cell's handle, or null if it has none */
     void write(int column, int row, boolean glyphHidden, CellHandle handle) {
         int background = CellResolver.background(grid.getBackground(column, row), handle);
-        int codePoint = CellResolver.codePoint(grid.getGlyph(column, row), handle);
+        int codePoint = CellResolver.codePoint(grid.getCodePoint(column, row), handle);
         int foreground = CellResolver.foreground(grid.getForeground(column, row), handle);
         if (glyphHidden || GridRenderer.isBlankGlyph(codePoint, foreground)) {
             cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);

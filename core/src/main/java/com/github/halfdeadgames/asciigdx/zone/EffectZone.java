@@ -129,8 +129,8 @@ public final class EffectZone {
     /** Tests the shape's bounds against the rectangle of shape coordinates the grid shows. */
     private boolean overlaps(TerminalView grid, int originColumn, int originRow) {
         return shape.getRight() >= originColumn && shape.getBottom() >= originRow
-                && shape.getLeft() < (long) originColumn + grid.getWidth()
-                && shape.getTop() < (long) originRow + grid.getHeight();
+                && shape.getLeft() < (long) originColumn + grid.getColumns()
+                && shape.getTop() < (long) originRow + grid.getRows();
     }
 
     private static final class ZoneVisitor implements ShapeCellVisitor {
@@ -160,8 +160,8 @@ public final class EffectZone {
             shapeTop = top;
             originColumn = mapOriginColumn;
             originRow = mapOriginRow;
-            gridWidth = targetLayer.getGrid().getWidth();
-            gridHeight = targetLayer.getGrid().getHeight();
+            gridWidth = targetLayer.getGrid().getColumns();
+            gridHeight = targetLayer.getGrid().getRows();
             zoneCell.setCellSize(targetLayer.getGlyphSource().getCellWidth(),
                     targetLayer.getGlyphSource().getCellHeight());
         }

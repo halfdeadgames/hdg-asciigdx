@@ -268,7 +268,7 @@ public final class MapWindow {
     }
 
     private boolean flagsMatchGrid() {
-        return grid.getWidth() == flagColumns && grid.getHeight() == flagRows;
+        return grid.getColumns() == flagColumns && grid.getRows() == flagRows;
     }
 
     private void resetFlagsIfGridResized() {
@@ -278,8 +278,8 @@ public final class MapWindow {
     }
 
     private void resetFlagsToGridSize() {
-        flagColumns = grid.getWidth();
-        flagRows = grid.getHeight();
+        flagColumns = grid.getColumns();
+        flagRows = grid.getRows();
         needsFill = new boolean[flagColumns * flagRows];
         Arrays.fill(needsFill, true);
     }

@@ -86,7 +86,7 @@ final class SpriteMesh implements Disposable {
     }
 
     private static int resolvedCodePoint(CellHandle cell, TerminalView grid) {
-        return CellResolver.codePoint(grid.getGlyph(cell.getColumn(), cell.getRow()), cell);
+        return CellResolver.codePoint(grid.getCodePoint(cell.getColumn(), cell.getRow()), cell);
     }
 
     private static int resolvedForeground(CellHandle cell, TerminalView grid) {

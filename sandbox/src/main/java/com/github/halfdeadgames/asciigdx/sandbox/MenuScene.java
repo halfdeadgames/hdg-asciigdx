@@ -25,7 +25,7 @@ class MenuScene extends GridScene {
         this.scenes = scenes;
         cellHeight = glyphs.getCellHeight();
         GridDrawing.text(grid, TEXT_COLUMN, TITLE_ROW, "HDG-AsciiGDX sandbox", GOLD, CLEAR);
-        GridDrawing.text(grid, TEXT_COLUMN, grid.getHeight() - 2, helpText(), CYAN, CLEAR);
+        GridDrawing.text(grid, TEXT_COLUMN, grid.getRows() - 2, helpText(), CYAN, CLEAR);
         drawItems();
     }
 

@@ -17,7 +17,7 @@ class GridDrawingShapeTest {
 
     private static final int RED = 0xFF0000FF;
     private static final int BLUE = 0x0000FFFF;
-    private static final int EMPTY = TerminalGrid.EMPTY_GLYPH;
+    private static final int EMPTY = TerminalGrid.EMPTY_CODE_POINT;
 
     @Test
     void filledCircleWritesGlyphAndColorsOnlyInsideTheCircle() {
@@ -26,13 +26,13 @@ class GridDrawingShapeTest {
 
         GridDrawing.fill(grid, circle, '*', RED, BLUE);
 
-        assertEquals('*', grid.getGlyph(6, 6));
+        assertEquals('*', grid.getCodePoint(6, 6));
         assertEquals(RED, grid.getForeground(6, 6));
         assertEquals(BLUE, grid.getBackground(6, 6));
-        assertEquals('*', grid.getGlyph(6, 3));
-        assertEquals(EMPTY, grid.getGlyph(0, 0));
-        assertEquals(EMPTY, grid.getGlyph(3, 3));
-        assertEquals(EMPTY, grid.getGlyph(11, 11));
+        assertEquals('*', grid.getCodePoint(6, 3));
+        assertEquals(EMPTY, grid.getCodePoint(0, 0));
+        assertEquals(EMPTY, grid.getCodePoint(3, 3));
+        assertEquals(EMPTY, grid.getCodePoint(11, 11));
         assertEquals(countCells(circle), countGlyphs(grid, '*'));
     }
 
@@ -42,12 +42,12 @@ class GridDrawingShapeTest {
 
         GridDrawing.fill(grid, new RectangleShape(1, 1, 5, 5, ShapeFill.OUTLINE), '#', RED, BLUE);
 
-        assertEquals('#', grid.getGlyph(1, 1));
-        assertEquals('#', grid.getGlyph(5, 5));
-        assertEquals('#', grid.getGlyph(1, 3));
-        assertEquals('#', grid.getGlyph(3, 1));
-        assertEquals(EMPTY, grid.getGlyph(3, 3));
-        assertEquals(EMPTY, grid.getGlyph(2, 2));
+        assertEquals('#', grid.getCodePoint(1, 1));
+        assertEquals('#', grid.getCodePoint(5, 5));
+        assertEquals('#', grid.getCodePoint(1, 3));
+        assertEquals('#', grid.getCodePoint(3, 1));
+        assertEquals(EMPTY, grid.getCodePoint(3, 3));
+        assertEquals(EMPTY, grid.getCodePoint(2, 2));
         assertEquals(16, countGlyphs(grid, '#'));
     }
 
@@ -61,10 +61,10 @@ class GridDrawingShapeTest {
         assertDoesNotThrow(() -> GridDrawing.fill(grid, bottomRight, 'b', RED, BLUE));
 
         assertEquals(4 + 1, countGlyphs(grid, 'a') + countGlyphs(grid, 'b'));
-        assertEquals('a', grid.getGlyph(0, 0));
-        assertEquals('a', grid.getGlyph(1, 1));
-        assertEquals(EMPTY, grid.getGlyph(2, 2));
-        assertEquals('b', grid.getGlyph(3, 3));
+        assertEquals('a', grid.getCodePoint(0, 0));
+        assertEquals('a', grid.getCodePoint(1, 1));
+        assertEquals(EMPTY, grid.getCodePoint(2, 2));
+        assertEquals('b', grid.getCodePoint(3, 3));
     }
 
     @Test
@@ -87,7 +87,7 @@ class GridDrawingShapeTest {
 
         for (int column = 0; column < 6; column++) {
             boolean onLine = column >= 1 && column <= 4;
-            assertEquals(onLine ? '-' : EMPTY, grid.getGlyph(column, 1));
+            assertEquals(onLine ? '-' : EMPTY, grid.getCodePoint(column, 1));
         }
         assertEquals(4, countGlyphs(grid, '-'));
     }
@@ -98,9 +98,9 @@ class GridDrawingShapeTest {
 
         GridDrawing.fill(grid, new VerticalLineShape(1, 2, 10), '|', RED, BLUE);
 
-        assertEquals('|', grid.getGlyph(1, 2));
-        assertEquals('|', grid.getGlyph(1, 3));
-        assertEquals(EMPTY, grid.getGlyph(1, 1));
+        assertEquals('|', grid.getCodePoint(1, 2));
+        assertEquals('|', grid.getCodePoint(1, 3));
+        assertEquals(EMPTY, grid.getCodePoint(1, 1));
         assertEquals(2, countGlyphs(grid, '|'));
     }
 
@@ -124,9 +124,9 @@ class GridDrawingShapeTest {
         GridDrawing.fill(first, shape, 'a', RED, BLUE);
         GridDrawing.fill(second, shape, 'b', BLUE, RED);
 
-        assertEquals('a', first.getGlyph(1, 1));
+        assertEquals('a', first.getCodePoint(1, 1));
         assertEquals(RED, first.getForeground(1, 1));
-        assertEquals('b', second.getGlyph(1, 1));
+        assertEquals('b', second.getCodePoint(1, 1));
         assertEquals(BLUE, second.getForeground(1, 1));
         assertEquals(RED, second.getBackground(1, 1));
         assertEquals(4, countGlyphs(first, 'a'));
@@ -141,9 +141,9 @@ class GridDrawingShapeTest {
 
     private static int countGlyphs(TerminalGrid grid, int glyph) {
         int count = 0;
-        for (int row = 0; row < grid.getHeight(); row++) {
-            for (int column = 0; column < grid.getWidth(); column++) {
-                if (grid.getGlyph(column, row) == glyph) {
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
+                if (grid.getCodePoint(column, row) == glyph) {
                     count++;
                 }
             }
@@ -153,9 +153,9 @@ class GridDrawingShapeTest {
 
     private static int countRowsWithGlyph(TerminalGrid grid, int glyph) {
         int count = 0;
-        for (int row = 0; row < grid.getHeight(); row++) {
-            for (int column = 0; column < grid.getWidth(); column++) {
-                if (grid.getGlyph(column, row) == glyph) {
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
+                if (grid.getCodePoint(column, row) == glyph) {
                     count++;
                     break;
                 }
@@ -166,9 +166,9 @@ class GridDrawingShapeTest {
 
     private static int countColumnsWithGlyph(TerminalGrid grid, int glyph) {
         int count = 0;
-        for (int column = 0; column < grid.getWidth(); column++) {
-            for (int row = 0; row < grid.getHeight(); row++) {
-                if (grid.getGlyph(column, row) == glyph) {
+        for (int column = 0; column < grid.getColumns(); column++) {
+            for (int row = 0; row < grid.getRows(); row++) {
+                if (grid.getCodePoint(column, row) == glyph) {
                     count++;
                     break;
                 }

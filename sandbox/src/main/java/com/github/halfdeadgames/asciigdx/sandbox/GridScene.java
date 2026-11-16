@@ -67,6 +67,6 @@ abstract class GridScene implements SandboxScene {
 
     @Override
     public int cellCount() {
-        return grid.getWidth() * grid.getHeight();
+        return grid.getColumns() * grid.getRows();
     }
 }

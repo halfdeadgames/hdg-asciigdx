@@ -49,7 +49,7 @@ final class LiftedMonster {
 
     /** Writes the monster's glyph over the given background, if its cell exists in the grid. */
     void placeIn(TerminalGrid grid, int background) {
-        if (column >= grid.getWidth() || row >= grid.getHeight()) {
+        if (column >= grid.getColumns() || row >= grid.getRows()) {
             return;
         }
         grid.set(column, row, glyph, color, background);
