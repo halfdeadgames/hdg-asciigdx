@@ -1,8 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 /**
- * Rings that spread from one point at a fixed speed, one after another. Each ring is a smooth bump around its
- * radius whose height fades out over the ring's life. Every value is a pure function of the distance and the time.
+ * Rings that spread from one point at a fixed speed, one after another. Each ring is a smooth bump
+ * around its radius whose height fades out over the ring's life. Every value is a pure function of
+ * the distance and the time.
  */
 public final class RippleRings {
 
@@ -13,13 +14,16 @@ public final class RippleRings {
     private final float speedCellsPerSecond;
     private final float halfWidthCells;
 
-    public RippleRings(float firstStartSeconds, float staggerSeconds, int ringCount, float lifeSeconds,
-                       float speedCellsPerSecond, float halfWidthCells) {
+    public RippleRings(float firstStartSeconds, float staggerSeconds, int ringCount,
+            float lifeSeconds,
+            float speedCellsPerSecond, float halfWidthCells) {
         if (!Float.isFinite(firstStartSeconds)) {
-            throw new IllegalArgumentException("firstStartSeconds must be finite: " + firstStartSeconds);
+            throw new IllegalArgumentException(
+                    "firstStartSeconds must be finite: " + firstStartSeconds);
         }
         if (!Float.isFinite(staggerSeconds) || staggerSeconds < 0f) {
-            throw new IllegalArgumentException("staggerSeconds must be finite and >= 0: " + staggerSeconds);
+            throw new IllegalArgumentException(
+                    "staggerSeconds must be finite and >= 0: " + staggerSeconds);
         }
         if (ringCount < 1) {
             throw new IllegalArgumentException("ringCount must be >= 1: " + ringCount);

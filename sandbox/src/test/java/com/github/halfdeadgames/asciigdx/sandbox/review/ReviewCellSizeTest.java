@@ -18,9 +18,11 @@ class ReviewCellSizeTest {
 
     @Test
     void rejectsMissingMalformedAndNonPositiveValues() {
-        for (String bad : new String[] {null, "", "x", "16x", "x16", "16X16", " 16", "16 x 16", "-4", "0", "0x8",
-            "8x0", "1.5", "16x16x16", "99999"}) {
-            assertThrows(IllegalArgumentException.class, () -> ReviewCellSize.parse(bad), String.valueOf(bad));
+        for (String bad : new String[]{null, "", "x", "16x", "x16", "16X16", " 16", "16 x 16", "-4",
+                "0", "0x8",
+                "8x0", "1.5", "16x16x16", "99999"}) {
+            assertThrows(IllegalArgumentException.class, () -> ReviewCellSize.parse(bad),
+                    String.valueOf(bad));
         }
     }
 }

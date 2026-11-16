@@ -1,10 +1,10 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 /**
- * Wake rings left by player steps. Each ring starts at the center of a map cell, spreads at a fixed speed, and is a
- * smooth bump around its radius whose height fades out over the ring's life. Storage is fixed, so starting a ring
- * never allocates; when all slots are in use the oldest ring is replaced. Every query is a pure function of the
- * stored rings and the time.
+ * Wake rings left by player steps. Each ring starts at the center of a map cell, spreads at a fixed
+ * speed, and is a smooth bump around its radius whose height fades out over the ring's life.
+ * Storage is fixed, so starting a ring never allocates; when all slots are in use the oldest ring
+ * is replaced. Every query is a pure function of the stored rings and the time.
  */
 public final class WakeRipples {
 
@@ -17,7 +17,8 @@ public final class WakeRipples {
     /** Half the width of the ring bump. */
     public static final float HALF_WIDTH_CELLS = 0.8f;
     /** The farthest a ring can lift a cell from its start cell. */
-    public static final float REACH_CELLS = SPEED_CELLS_PER_SECOND * LIFE_SECONDS + HALF_WIDTH_CELLS;
+    public static final float REACH_CELLS =
+            SPEED_CELLS_PER_SECOND * LIFE_SECONDS + HALF_WIDTH_CELLS;
 
     private static final int REACH_WHOLE_CELLS = (int) Math.ceil(REACH_CELLS);
 
@@ -27,7 +28,10 @@ public final class WakeRipples {
     private int ringCount;
     private int nextSlot;
 
-    /** Starts a ring centered on the given map cell, replacing the oldest ring when all slots are in use. */
+    /**
+     * Starts a ring centered on the given map cell, replacing the oldest ring when all slots are in
+     * use.
+     */
     public void start(int column, int row, float timeSeconds) {
         requireFinite(timeSeconds);
         columns[nextSlot] = column;
@@ -64,7 +68,10 @@ public final class WakeRipples {
         return strongest;
     }
 
-    /** Leftmost column, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt} is true. */
+    /**
+     * Leftmost column, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt}
+     * is true.
+     */
     public int activeLeft(float timeSeconds) {
         requireFinite(timeSeconds);
         var left = Integer.MAX_VALUE;
@@ -76,7 +83,10 @@ public final class WakeRipples {
         return left;
     }
 
-    /** Topmost row, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt} is true. */
+    /**
+     * Topmost row, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt} is
+     * true.
+     */
     public int activeTop(float timeSeconds) {
         requireFinite(timeSeconds);
         var top = Integer.MAX_VALUE;
@@ -88,7 +98,10 @@ public final class WakeRipples {
         return top;
     }
 
-    /** Rightmost column, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt} is true. */
+    /**
+     * Rightmost column, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt}
+     * is true.
+     */
     public int activeRight(float timeSeconds) {
         requireFinite(timeSeconds);
         var right = Integer.MIN_VALUE;
@@ -100,7 +113,10 @@ public final class WakeRipples {
         return right;
     }
 
-    /** Bottommost row, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt} is true. */
+    /**
+     * Bottommost row, inclusive, reached by a live ring. Only meaningful when {@link #isActiveAt}
+     * is true.
+     */
     public int activeBottom(float timeSeconds) {
         requireFinite(timeSeconds);
         var bottom = Integer.MIN_VALUE;

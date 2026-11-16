@@ -70,8 +70,11 @@ class TitlePopTest {
 
     @Test
     void rejectsBadArguments() {
-        assertThrows(IllegalArgumentException.class, () -> new TitlePop(0f, 0.1f, 0.4f, 3.5f, 0, FROM, TO));
-        assertThrows(IllegalArgumentException.class, () -> new TitlePop(0f, 0.1f, 0f, 3.5f, 3, FROM, TO));
-        assertThrows(IllegalArgumentException.class, () -> new TitlePop(0f, -0.1f, 0.4f, 3.5f, 3, FROM, TO));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TitlePop(0f, 0.1f, 0.4f, 3.5f, 0, FROM, TO));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TitlePop(0f, 0.1f, 0f, 3.5f, 3, FROM, TO));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TitlePop(0f, -0.1f, 0.4f, 3.5f, 3, FROM, TO));
     }
 }

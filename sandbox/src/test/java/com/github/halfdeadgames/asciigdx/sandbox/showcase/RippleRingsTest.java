@@ -75,11 +75,17 @@ class RippleRingsTest {
 
     @Test
     void rejectsInvalidArguments() {
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(Float.NaN, 0.15f, 3, 0.9f, 9f, 1.2f));
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(7.6f, -0.1f, 3, 0.9f, 9f, 1.2f));
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(7.6f, 0.15f, 0, 0.9f, 9f, 1.2f));
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(7.6f, 0.15f, 3, 0f, 9f, 1.2f));
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(7.6f, 0.15f, 3, 0.9f, -9f, 1.2f));
-        assertThrows(IllegalArgumentException.class, () -> new RippleRings(7.6f, 0.15f, 3, 0.9f, 9f, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(Float.NaN, 0.15f, 3, 0.9f, 9f, 1.2f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(7.6f, -0.1f, 3, 0.9f, 9f, 1.2f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(7.6f, 0.15f, 0, 0.9f, 9f, 1.2f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(7.6f, 0.15f, 3, 0f, 9f, 1.2f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(7.6f, 0.15f, 3, 0.9f, -9f, 1.2f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new RippleRings(7.6f, 0.15f, 3, 0.9f, 9f, Float.POSITIVE_INFINITY));
     }
 }

@@ -136,7 +136,8 @@ class PondGeneratorTest {
                         continue;
                     }
                     int color = lily.getColor();
-                    assertTrue(palette.contains(color), "not a palette color: " + Integer.toHexString(color));
+                    assertTrue(palette.contains(color),
+                            "not a palette color: " + Integer.toHexString(color));
                     distinct.add(color);
                 }
             }

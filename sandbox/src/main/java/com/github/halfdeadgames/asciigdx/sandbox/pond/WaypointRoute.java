@@ -1,10 +1,10 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 /**
- * Builds a closed walking route of 'L', 'R', 'U', 'D', and 'W' (wait) steps through a list of waypoints.
- * Each leg spreads its horizontal and vertical steps evenly, so a diagonal leg reads as a steady heading
- * instead of a staircase of long runs. The route must end at its start: finish the chain with
- * {@link #back()} before calling {@link #route()}.
+ * Builds a closed walking route of 'L', 'R', 'U', 'D', and 'W' (wait) steps through a list of
+ * waypoints. Each leg spreads its horizontal and vertical steps evenly, so a diagonal leg reads as
+ * a steady heading instead of a staircase of long runs. The route must end at its start: finish the
+ * chain with {@link #back()} before calling {@link #route()}.
  */
 public final class WaypointRoute {
 

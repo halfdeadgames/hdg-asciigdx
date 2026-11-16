@@ -1,8 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 /**
- * Decides where the player is and how far the glyph still has to slide, whether from a script or from
- * input. The logical cell is already the step's target while the step runs; the display slides in after it.
+ * Decides where the player is and how far the glyph still has to slide, whether from a script or
+ * from input. The logical cell is already the step's target while the step runs; the display
+ * slides in after it.
  */
 public interface PlayerMotion {
 
@@ -15,7 +16,9 @@ public interface PlayerMotion {
     /** Returns the logical row. */
     int getRow();
 
-    /** Returns the column change of the step in progress, or of the last step when none is running. */
+    /**
+     * Returns the column change of the step in progress, or of the last step when none is running.
+     */
     int getStepColumn();
 
     /** Returns the row change of the step in progress, or of the last step when none is running. */
@@ -43,7 +46,10 @@ public interface PlayerMotion {
         return false;
     }
 
-    /** Pointer press, aimed through the pointer source the motion was built with; return true if handled. */
+    /**
+     * Pointer press, aimed through the pointer source the motion was built with; return true if
+     * handled.
+     */
     default boolean pointerDown() {
         return false;
     }

@@ -9,9 +9,11 @@ public final class UnderwaterSwap {
     private final GlyphSprite underwaterSprite;
     private final SeeThroughWater seeThroughWater;
 
-    public UnderwaterSwap(UnderwaterDive dive, GlyphSprite underwaterSprite, SeeThroughWater seeThroughWater) {
+    public UnderwaterSwap(UnderwaterDive dive, GlyphSprite underwaterSprite,
+            SeeThroughWater seeThroughWater) {
         if (dive == null || underwaterSprite == null || seeThroughWater == null) {
-            throw new IllegalArgumentException("dive, underwaterSprite, and seeThroughWater must not be null");
+            throw new IllegalArgumentException(
+                    "dive, underwaterSprite, and seeThroughWater must not be null");
         }
         this.dive = dive;
         this.underwaterSprite = underwaterSprite;

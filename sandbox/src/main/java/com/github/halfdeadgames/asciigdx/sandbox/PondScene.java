@@ -34,10 +34,10 @@ import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 import com.github.halfdeadgames.asciigdx.zone.EffectZone;
 
 /**
- * A small roguelike over map-window layers: a player crosses an 80x44 pond while the camera follows.
- * What moves the player is a {@link PlayerMotion}: a fixed route or the keys and touch. With the route
- * the scene is a pure function of elapsed time (steps also send wake rings across the water), so the
- * {@code pondTime} setting can hold it at one moment for captures.
+ * A small roguelike over map-window layers: a player crosses an 80x44 pond while the camera
+ * follows. What moves the player is a {@link PlayerMotion}: a fixed route or the keys and touch.
+ * With the route the scene is a pure function of elapsed time (steps also send wake rings across
+ * the water), so the {@code pondTime} setting can hold it at one moment for captures.
  */
 class PondScene implements SandboxScene {
     static final String KEY_POND_TIME = "pondTime";
@@ -53,7 +53,9 @@ class PondScene implements SandboxScene {
     private static final float REPLAY_FRAMES_PER_SECOND = 60f;
     private static final int NO_PLAYER_YET = Integer.MIN_VALUE;
 
-    /** Builds the motion once the map exists; the pointer source is for motions that follow touch. */
+    /**
+     * Builds the motion once the map exists; the pointer source is for motions that follow touch.
+     */
     private interface MotionFactory {
         PlayerMotion create(PondMap map, PointerAim pointerAim);
     }
@@ -80,7 +82,8 @@ class PondScene implements SandboxScene {
     private final int cellCount;
     private final boolean clockPinned;
     private final WakeRipples wakeRipples = new WakeRipples();
-    private final RectangleShape wakeArea = RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED);
+    private final RectangleShape wakeArea =
+            RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED);
     private final EffectZone wakeZone;
     private final PointerAim pointerAim = new PointerAim() {
         @Override
@@ -111,21 +114,26 @@ class PondScene implements SandboxScene {
     private int shownCameraY = NO_PLAYER_YET;
     private String statusLine = "";
 
-    /** The scene where the player walks a fixed route; the pond time setting holds it at one moment. */
+    /**
+     * The scene where the player walks a fixed route; the pond time setting holds it at one moment.
+     */
     static PondScene autoWalk(GlyphSource glyphs, GlyphSource smallGlyphs, String pondTimeSetting) {
-        return new PondScene("pond-auto", "Pond: map window, auto walk", glyphs, smallGlyphs, pondTimeSetting,
-            (map, pointerAim) -> new AutoMotion(START_COLUMN, START_ROW));
+        return new PondScene("pond-auto", "Pond: map window, auto walk", glyphs, smallGlyphs,
+                pondTimeSetting,
+                (map, pointerAim) -> new AutoMotion(START_COLUMN, START_ROW));
     }
 
     /** The scene where the arrow keys or touch move the player. */
     static PondScene keyWalk(GlyphSource glyphs, GlyphSource smallGlyphs) {
         return new PondScene("pond-keys", "Pond: map window, arrow keys", glyphs, smallGlyphs, null,
-            (map, pointerAim) -> new ManualMotion(new PondPlayer(START_COLUMN, START_ROW), map, pointerAim));
+                (map, pointerAim) -> new ManualMotion(new PondPlayer(START_COLUMN, START_ROW), map,
+                        pointerAim));
     }
 
     /** @param pondTimeSetting seconds to hold the scene at, or null or invalid to play normally */
-    private PondScene(String id, String title, GlyphSource glyphs, GlyphSource smallGlyphs, String pondTimeSetting,
-                      MotionFactory motionFactory) {
+    private PondScene(String id, String title, GlyphSource glyphs, GlyphSource smallGlyphs,
+            String pondTimeSetting,
+            MotionFactory motionFactory) {
         this.id = id;
         this.title = title;
         gameCellWidth = glyphs.getCellWidth();
@@ -142,7 +150,7 @@ class PondScene implements SandboxScene {
         motion = motionFactory.create(map, pointerAim);
         TerminalGrid waterGrid = new TerminalGrid(WINDOW_COLUMNS + 1, WINDOW_ROWS + 1);
         TerminalGrid lilyGrid = new TerminalGrid((WINDOW_COLUMNS + 1) * LILIES_PER_GAME_CELL_AXIS,
-            (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
+                (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
         TerminalGrid actorGrid = new TerminalGrid(WINDOW_COLUMNS + 1, WINDOW_ROWS + 1);
         waterLayer = addMapWindowLayer(waterGrid, glyphs);
         lilyLayer = addMapWindowLayer(lilyGrid, smallGlyphs);
@@ -152,8 +160,9 @@ class PondScene implements SandboxScene {
         actorFiller = new ActorLayerFiller(actorLayer.getMapWindow());
         lilyFlashes = new LilyFlashes(map, lilyLayer);
         wakeZone = new EffectZone(wakeArea, new WakeRippleEffect(map, wakeRipples));
-        cellCount = waterGrid.getColumns() * waterGrid.getRows() + lilyGrid.getColumns() * lilyGrid.getRows()
-            + actorGrid.getColumns() * actorGrid.getRows();
+        cellCount = waterGrid.getColumns() * waterGrid.getRows()
+                + lilyGrid.getColumns() * lilyGrid.getRows()
+                + actorGrid.getColumns() * actorGrid.getRows();
         clockPinned = pinClockIfRequested(pondTimeSetting);
         if (clockPinned) {
             replayLiliesUpToPinnedTime();
@@ -275,7 +284,7 @@ class PondScene implements SandboxScene {
         lilyFlashes.clear();
         map.clearVisited();
         lilyFiller.redrawWindow((WINDOW_COLUMNS + 1) * LILIES_PER_GAME_CELL_AXIS,
-            (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
+                (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
@@ -301,8 +310,8 @@ class PondScene implements SandboxScene {
     }
 
     /**
-     * Starts the lily push and a wake ring for a one-cell step; a bigger jump, such as after a restart,
-     * only resyncs.
+     * Starts the lily push and a wake ring for a one-cell step; a bigger jump, such as after a
+     * restart, only resyncs.
      *
      * @param stepSeconds scene clock time at which the step happened
      */
@@ -322,7 +331,9 @@ class PondScene implements SandboxScene {
         lastStepRow = motion.getRow();
     }
 
-    /** Remembers the visit in the game cell and repaints its lilies, which the filler draws paler. */
+    /**
+     * Remembers the visit in the game cell and repaints its lilies, which the filler draws paler.
+     */
     private void markVisited(int gameColumn, int gameRow) {
         PondCell gameCell = map.cell(gameColumn, gameRow);
         if (gameCell.isVisited()) {
@@ -340,7 +351,8 @@ class PondScene implements SandboxScene {
         int left = wakeRipples.activeLeft(elapsed);
         int top = wakeRipples.activeTop(elapsed);
         wakeArea.setPosition(left, top);
-        wakeArea.setSize(wakeRipples.activeRight(elapsed) - left + 1, wakeRipples.activeBottom(elapsed) - top + 1);
+        wakeArea.setSize(wakeRipples.activeRight(elapsed) - left + 1,
+                wakeRipples.activeBottom(elapsed) - top + 1);
         wakeZone.apply(waterLayer, elapsed);
     }
 
@@ -361,7 +373,10 @@ class PondScene implements SandboxScene {
         showStatus();
     }
 
-    /** The player's position in cells, trailing the logical cell by the part of the step still to slide. */
+    /**
+     * The player's position in cells, trailing the logical cell by the part of the step still to
+     * slide.
+     */
     private float fractionalColumn(float remaining) {
         return motion.getColumn() - motion.getStepColumn() * remaining;
     }
@@ -371,19 +386,23 @@ class PondScene implements SandboxScene {
     }
 
     private float cameraX(float remaining) {
-        return PondCamera.cameraFor(fractionalColumn(remaining), gameCellWidth, WINDOW_COLUMNS, WORLD_COLUMNS);
+        return PondCamera.cameraFor(fractionalColumn(remaining), gameCellWidth, WINDOW_COLUMNS,
+                WORLD_COLUMNS);
     }
 
     private float cameraY(float remaining) {
-        return PondCamera.cameraFor(fractionalRow(remaining), gameCellHeight, WINDOW_ROWS, WORLD_ROWS);
+        return PondCamera.cameraFor(fractionalRow(remaining), gameCellHeight, WINDOW_ROWS,
+                WORLD_ROWS);
     }
 
     private float playerCenterX() {
-        return (fractionalColumn(motion.getSlideRemaining()) + 0.5f) * gameCellWidth - layers.getCameraX();
+        return (fractionalColumn(motion.getSlideRemaining()) + 0.5f) * gameCellWidth
+                - layers.getCameraX();
     }
 
     private float playerCenterY() {
-        return (fractionalRow(motion.getSlideRemaining()) + 0.5f) * gameCellHeight - layers.getCameraY();
+        return (fractionalRow(motion.getSlideRemaining()) + 0.5f) * gameCellHeight
+                - layers.getCameraY();
     }
 
     private void slidePlayerGlyph(float remaining) {
@@ -392,8 +411,8 @@ class PondScene implements SandboxScene {
             return;
         }
         actorWindow.obtainFrameCellHandle(motion.getColumn(), motion.getRow()).setOffset(
-            -motion.getStepColumn() * gameCellWidth * remaining,
-            -motion.getStepRow() * gameCellHeight * remaining);
+                -motion.getStepColumn() * gameCellWidth * remaining,
+                -motion.getStepRow() * gameCellHeight * remaining);
     }
 
     private void eraseStalePlayer() {
@@ -421,8 +440,9 @@ class PondScene implements SandboxScene {
                 continue;
             }
             Lily lily = movingLilies.lilyAt(i);
-            lilyWindow.obtainFrameCellHandle(column, row).setOffset(lily.getOffsetX() * lilyCellWidth,
-                lily.getOffsetY() * lilyCellHeight);
+            lilyWindow.obtainFrameCellHandle(column, row)
+                    .setOffset(lily.getOffsetX() * lilyCellWidth,
+                            lily.getOffsetY() * lilyCellHeight);
         }
     }
 
@@ -431,7 +451,9 @@ class PondScene implements SandboxScene {
         layer.getMapWindow().markAllFilled();
     }
 
-    /** Runs after the fill pass, which blanks cells scrolled into view and could erase the player. */
+    /**
+     * Runs after the fill pass, which blanks cells scrolled into view and could erase the player.
+     */
     private void drawPlayer() {
         drawnPlayerColumn = motion.getColumn();
         drawnPlayerRow = motion.getRow();
@@ -445,7 +467,8 @@ class PondScene implements SandboxScene {
         int row = motion.getRow();
         int cameraX = showsCamera ? Math.round(layers.getCameraX()) : 0;
         int cameraY = showsCamera ? Math.round(layers.getCameraY()) : 0;
-        if (column == shownColumn && row == shownRow && cameraX == shownCameraX && cameraY == shownCameraY) {
+        if (column == shownColumn && row == shownRow && cameraX == shownCameraX
+                && cameraY == shownCameraY) {
             return;
         }
         shownColumn = column;

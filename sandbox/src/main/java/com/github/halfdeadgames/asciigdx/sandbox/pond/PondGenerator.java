@@ -12,7 +12,10 @@ public final class PondGenerator {
     /** Keeps at least one water cell between an island and the map edge. */
     private static final int EDGE_MARGIN = MAX_RADIUS + 1;
     private static final int LILY_ODDS = 3;
-    /** Separate stream for colors, so picking them does not change where the main stream places lilies. */
+    /**
+     * Separate stream for colors, so picking them does not change where the main stream places
+     * lilies.
+     */
     private static final long COLOR_SEED_SALT = 0x5DEECE66DL;
 
     private PondGenerator() {
@@ -24,9 +27,11 @@ public final class PondGenerator {
      * @param startColumn column of the player start; it and its neighbors stay free of land
      * @param startRow    row of the player start
      */
-    public static PondMap generate(int width, int height, long seed, int startColumn, int startRow) {
+    public static PondMap generate(int width, int height, long seed, int startColumn,
+            int startRow) {
         if (width <= 2 * EDGE_MARGIN || height <= 2 * EDGE_MARGIN) {
-            throw new IllegalArgumentException("map too small for islands: " + width + "x" + height);
+            throw new IllegalArgumentException(
+                    "map too small for islands: " + width + "x" + height);
         }
         var random = new Random(seed);
         var map = new PondMap(width, height);
@@ -46,8 +51,9 @@ public final class PondGenerator {
         }
     }
 
-    private static void fillEllipse(PondMap map, int centerColumn, int centerRow, int radiusX, int radiusY,
-                                    int startColumn, int startRow) {
+    private static void fillEllipse(PondMap map, int centerColumn, int centerRow, int radiusX,
+            int radiusY,
+            int startColumn, int startRow) {
         for (int row = centerRow - radiusY; row <= centerRow + radiusY; row++) {
             for (int column = centerColumn - radiusX; column <= centerColumn + radiusX; column++) {
                 if (isInsideEllipse(column - centerColumn, row - centerRow, radiusX, radiusY)
@@ -58,7 +64,8 @@ public final class PondGenerator {
         }
     }
 
-    private static boolean isInsideEllipse(int deltaColumn, int deltaRow, int radiusX, int radiusY) {
+    private static boolean isInsideEllipse(int deltaColumn, int deltaRow, int radiusX,
+            int radiusY) {
         double normalizedX = deltaColumn / (radiusX + 0.5);
         double normalizedY = deltaRow / (radiusY + 0.5);
         return normalizedX * normalizedX + normalizedY * normalizedY <= 1.0;

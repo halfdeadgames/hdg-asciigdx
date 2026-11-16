@@ -4,8 +4,8 @@ import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 
 /**
- * Swells the water glyphs near a splash point as rings pass. Only the scale of lifted cells is touched, so other
- * effects can use the same handles for alpha.
+ * Swells the water glyphs near a splash point as rings pass. Only the scale of lifted cells is
+ * touched, so other effects can use the same handles for alpha.
  */
 public final class WaterRipple {
 
@@ -16,13 +16,16 @@ public final class WaterRipple {
     private boolean atRest = true;
 
     /**
-     * Cell coordinates are in cell units from the grid's top-left corner, so the center of cell (c, r) is
-     * (c + 0.5, r + 0.5). Handles are made for the cells whose centers lie within the half extents of the splash point.
+     * Cell coordinates are in cell units from the grid's top-left corner, so the center of cell
+     * (c, r) is (c + 0.5, r + 0.5). Handles are made for the cells whose centers lie within the
+     * half extents of the splash point.
      *
-     * @param rowHeightPerColumnWidth cell height divided by cell width, so rings look round on screen
+     * @param rowHeightPerColumnWidth cell height divided by cell width, so rings look round on
+     *        screen
      */
-    public WaterRipple(Layer waterLayer, float splashColumn, float splashRow, float rowHeightPerColumnWidth,
-                       float halfWidthCells, float halfHeightCells, RippleRings rings, float maxScaleBump) {
+    public WaterRipple(Layer waterLayer, float splashColumn, float splashRow,
+            float rowHeightPerColumnWidth,
+            float halfWidthCells, float halfHeightCells, RippleRings rings, float maxScaleBump) {
         if (waterLayer == null || rings == null) {
             throw new IllegalArgumentException("waterLayer and rings must not be null");
         }
@@ -33,7 +36,8 @@ public final class WaterRipple {
         this.rings = rings;
         this.maxScaleBump = maxScaleBump;
         int firstColumn = clampedFirstCell(splashColumn - halfWidthCells);
-        int lastColumn = clampedLastCell(splashColumn + halfWidthCells, waterLayer.getGrid().getColumns());
+        int lastColumn =
+                clampedLastCell(splashColumn + halfWidthCells, waterLayer.getGrid().getColumns());
         int firstRow = clampedFirstCell(splashRow - halfHeightCells);
         int lastRow = clampedLastCell(splashRow + halfHeightCells, waterLayer.getGrid().getRows());
         int columnCount = Math.max(0, lastColumn - firstColumn + 1);
@@ -45,8 +49,8 @@ public final class WaterRipple {
                 int index = row * columnCount + column;
                 cells[index] = waterLayer.obtainCellHandle(firstColumn + column, firstRow + row);
                 distancesCells[index] = distanceCells(
-                    firstColumn + column + 0.5f - splashColumn,
-                    (firstRow + row + 0.5f - splashRow) * rowHeightPerColumnWidth);
+                        firstColumn + column + 0.5f - splashColumn,
+                        (firstRow + row + 0.5f - splashRow) * rowHeightPerColumnWidth);
             }
         }
     }
@@ -81,7 +85,8 @@ public final class WaterRipple {
         }
         atRest = false;
         for (int index = 0; index < cells.length; index++) {
-            cells[index].setScale(1f + maxScaleBump * rings.liftAt(distancesCells[index], timeSeconds));
+            cells[index].setScale(
+                    1f + maxScaleBump * rings.liftAt(distancesCells[index], timeSeconds));
         }
     }
 

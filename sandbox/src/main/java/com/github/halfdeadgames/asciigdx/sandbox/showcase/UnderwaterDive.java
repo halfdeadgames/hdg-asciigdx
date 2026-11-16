@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
-/** The timing of the player sinking below the water and coming back up: see-through water and the surfacing. */
+/**
+ * The timing of the player sinking below the water and coming back up: see-through water and the
+ * surfacing.
+ */
 public final class UnderwaterDive {
 
     private static final float SEE_THROUGH_RAMP_SECONDS = 0.1f;
@@ -47,7 +50,10 @@ public final class UnderwaterDive {
         return surface.end();
     }
 
-    /** 0 outside the dive; inside, the edge ramps times a depth curve that dips from 1 to the minimum and back. */
+    /**
+     * 0 outside the dive; inside, the edge ramps times a depth curve that dips from 1 to the
+     * minimum and back.
+     */
     public float seeThroughAt(float timeSeconds) {
         if (!isUnderwaterAt(timeSeconds)) {
             return 0f;
@@ -66,10 +72,14 @@ public final class UnderwaterDive {
         return 1f - (1f - DEEPEST_SEE_THROUGH) * depth;
     }
 
-    /** Opacity of a water cell this many cell widths from the player: 1 far away, lowest at the center at the deepest point. */
+    /**
+     * Opacity of a water cell this many cell widths from the player: 1 far away, lowest at the
+     * center at the deepest point.
+     */
     public float waterAlphaAt(float distanceCells, float timeSeconds) {
         if (!(distanceCells >= 0f) || Float.isInfinite(distanceCells)) {
-            throw new IllegalArgumentException("distanceCells must be finite and >= 0: " + distanceCells);
+            throw new IllegalArgumentException(
+                    "distanceCells must be finite and >= 0: " + distanceCells);
         }
         return 1f - MAX_WATER_TRANSPARENCY * seeThroughAt(timeSeconds) * falloffAt(distanceCells);
     }

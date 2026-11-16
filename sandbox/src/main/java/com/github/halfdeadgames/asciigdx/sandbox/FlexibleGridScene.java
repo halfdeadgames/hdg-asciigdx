@@ -9,7 +9,9 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
 import java.util.Locale;
 
-/** A grid that follows the window size at an exact scale; content stays centered through resizes. */
+/**
+ * A grid that follows the window size at an exact scale; content stays centered through resizes.
+ */
 class FlexibleGridScene extends GridScene {
     private static final int INITIAL_COLUMNS = 80;
     private static final int INITIAL_ROWS = 45;
@@ -23,7 +25,7 @@ class FlexibleGridScene extends GridScene {
     private static final int FONT_ROW = 4;
     private static final int MS_ROW = 5;
     private static final int[] MARKER_COLORS = {
-        0xC03030FF, 0xC07030FF, 0xB0B030FF, 0x30A030FF, 0x3070C0FF, 0x7040B0FF
+            0xC03030FF, 0xC07030FF, 0xB0B030FF, 0x30A030FF, 0x3070C0FF, 0x7040B0FF
     };
     private static final double NANOS_PER_MILLISECOND = 1_000_000.0;
 
@@ -56,7 +58,7 @@ class FlexibleGridScene extends GridScene {
     public void resize(int width, int height) {
         resizeStartNanos = System.nanoTime();
         GridFit fit = GridFit.calculate(width, height, font.getCellWidth(), font.getCellHeight(),
-            MIN_COLUMNS, MIN_ROWS);
+                MIN_COLUMNS, MIN_ROWS);
         fitIsEmpty = fit.isEmpty();
         if (fitIsEmpty) {
             timingResize = false;
@@ -87,18 +89,22 @@ class FlexibleGridScene extends GridScene {
             Gdx.gl.glFinish();
             double milliseconds = (System.nanoTime() - resizeStartNanos) / NANOS_PER_MILLISECOND;
             timingResize = false;
-            GridDrawing.drawText(grid, 1, MS_ROW, String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
+            GridDrawing.drawText(grid, 1, MS_ROW,
+                    String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
         }
     }
 
-    /** Columns or rows to shift content so it is centered; computed from its current start, so it never drifts. */
+    /**
+     * Columns or rows to shift content so it is centered; computed from its current start, so it
+     * never drifts.
+     */
     static int centeringShift(int contentStart, int contentSize, int gridSize) {
         return (gridSize - contentSize) / 2 - contentStart;
     }
 
     private boolean insideMarker(int x, int y) {
         return x >= markerLeft && x < markerLeft + MARKER_WIDTH
-            && y >= markerTop && y < markerTop + MARKER_HEIGHT;
+                && y >= markerTop && y < markerTop + MARKER_HEIGHT;
     }
 
     private void drawMarker() {
@@ -112,8 +118,8 @@ class FlexibleGridScene extends GridScene {
                 grid.set(left + column, top + row, ' ', WHITE, color);
             }
         }
-        GridDrawing.drawText(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT", WHITE,
-            MARKER_COLORS[0]);
+        GridDrawing.drawText(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT",
+                WHITE, MARKER_COLORS[0]);
     }
 
     private void drawBorder() {
@@ -146,12 +152,13 @@ class FlexibleGridScene extends GridScene {
 
     private void drawStatus(GridFit fit) {
         GridDrawing.drawText(grid, 1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
-            fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
+                fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
         GridDrawing.drawText(grid, 1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
-            fit.getLeftoverWidth(), fit.getLeftoverHeight()), CYAN, CLEAR);
-        GridDrawing.drawText(grid, 1, 3, fit.isMinimumMet() ? "minimum ok" : "below minimum", GOLD, CLEAR);
+                fit.getLeftoverWidth(), fit.getLeftoverHeight()), CYAN, CLEAR);
+        GridDrawing.drawText(grid, 1, 3, fit.isMinimumMet() ? "minimum ok" : "below minimum",
+                GOLD, CLEAR);
         GridDrawing.drawText(grid, 1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
-            font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
+                font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
         GridDrawing.drawText(grid, 1, MS_ROW, "resize -- ms", WHITE, CLEAR);
     }
 }

@@ -25,8 +25,9 @@ public final class CaptureConfig {
     private final List<Integer> dirtyPercents;
     private final List<Integer> layerCounts;
 
-    private CaptureConfig(String outputDirectory, List<String> sceneIds, int samples, float sampleSeconds,
-                          List<Integer> dirtyPercents, List<Integer> layerCounts) {
+    private CaptureConfig(String outputDirectory, List<String> sceneIds, int samples,
+            float sampleSeconds,
+            List<Integer> dirtyPercents, List<Integer> layerCounts) {
         this.layerCounts = Collections.unmodifiableList(new ArrayList<>(layerCounts));
         this.outputDirectory = outputDirectory;
         this.sceneIds = Collections.unmodifiableList(new ArrayList<>(sceneIds));
@@ -39,7 +40,8 @@ public final class CaptureConfig {
      * Returns null when capture mode is off (no "capture" value).
      *
      * @param lookup returns the value for a key, or null when missing
-     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds", "dirty" or "layers" holds an invalid value
+     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds", "dirty" or
+     *        "layers" holds an invalid value
      */
     public static CaptureConfig fromSettings(Function<String, String> lookup) {
         String outputDirectory = lookup.apply(KEY_CAPTURE);
@@ -47,8 +49,10 @@ public final class CaptureConfig {
             return null;
         }
         return new CaptureConfig(outputDirectory, parseSceneIds(lookup.apply(KEY_SCENES)),
-            parseSamples(lookup.apply(KEY_SAMPLES)), parseSampleSeconds(lookup.apply(KEY_SAMPLE_SECONDS)),
-            parseDirtyPercents(lookup.apply(KEY_DIRTY)), parseLayerCounts(lookup.apply(KEY_LAYERS)));
+                parseSamples(lookup.apply(KEY_SAMPLES)),
+                parseSampleSeconds(lookup.apply(KEY_SAMPLE_SECONDS)),
+                parseDirtyPercents(lookup.apply(KEY_DIRTY)),
+                parseLayerCounts(lookup.apply(KEY_LAYERS)));
     }
 
     private static List<Integer> parseLayerCounts(String value) {
@@ -59,7 +63,8 @@ public final class CaptureConfig {
         return parseBoundedWholeNumbers(value, KEY_DIRTY, 0, MAX_DIRTY_PERCENT);
     }
 
-    private static List<Integer> parseBoundedWholeNumbers(String value, String key, int min, int max) {
+    private static List<Integer> parseBoundedWholeNumbers(String value, String key, int min,
+            int max) {
         List<Integer> numbers = new ArrayList<>();
         if (value == null || value.trim().isEmpty()) {
             return numbers;
@@ -70,10 +75,13 @@ public final class CaptureConfig {
             try {
                 number = Integer.parseInt(text);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid value for '" + key + "': '" + text + "' is not a whole number", e);
+                throw new IllegalArgumentException(
+                        "Invalid value for '" + key + "': '" + text + "' is not a whole number", e);
             }
             if (number < min || number > max) {
-                throw new IllegalArgumentException("Invalid value for '" + key + "': " + number + " must be between " + min + " and " + max);
+                throw new IllegalArgumentException(
+                        "Invalid value for '" + key + "': " + number + " must be between " + min
+                                + " and " + max);
             }
             numbers.add(number);
         }
@@ -88,7 +96,9 @@ public final class CaptureConfig {
         for (String part : value.split(",", -1)) {
             String id = part.trim();
             if (id.isEmpty()) {
-                throw new IllegalArgumentException("Invalid value for '" + KEY_SCENES + "': '" + value + "' contains an empty scene id");
+                throw new IllegalArgumentException(
+                        "Invalid value for '" + KEY_SCENES + "': '" + value
+                                + "' contains an empty scene id");
             }
             ids.add(id);
         }
@@ -103,10 +113,12 @@ public final class CaptureConfig {
         try {
             parsed = Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for '" + KEY_SAMPLES + "': '" + value + "' is not a whole number", e);
+            throw new IllegalArgumentException("Invalid value for '" + KEY_SAMPLES + "': '" + value
+                    + "' is not a whole number", e);
         }
         if (parsed <= 0) {
-            throw new IllegalArgumentException("Invalid value for '" + KEY_SAMPLES + "': '" + value + "' must be positive");
+            throw new IllegalArgumentException(
+                    "Invalid value for '" + KEY_SAMPLES + "': '" + value + "' must be positive");
         }
         return parsed;
     }
@@ -119,10 +131,14 @@ public final class CaptureConfig {
         try {
             parsed = Float.parseFloat(value.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value + "' is not a number", e);
+            throw new IllegalArgumentException(
+                    "Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value
+                            + "' is not a number", e);
         }
         if (!(parsed > 0f) || Float.isInfinite(parsed)) {
-            throw new IllegalArgumentException("Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value + "' must be positive");
+            throw new IllegalArgumentException(
+                    "Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value
+                            + "' must be positive");
         }
         return parsed;
     }

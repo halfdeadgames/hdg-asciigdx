@@ -26,7 +26,10 @@ interface SandboxScene {
         return "";
     }
 
-    /** Whether the status changes without input, so the app re-reads {@link #statusText()} every frame. */
+    /**
+     * Whether the status changes without input, so the app re-reads {@link #statusText()} every
+     * frame.
+     */
     default boolean hasLiveStatus() {
         return false;
     }
@@ -36,7 +39,10 @@ interface SandboxScene {
         return false;
     }
 
-    /** Touch forwarded by the app while this scene is open, in screen pixels; return true if handled. */
+    /**
+     * Touch forwarded by the app while this scene is open, in screen pixels; return true if
+     * handled.
+     */
     default boolean touchDown(int screenX, int screenY) {
         return false;
     }
@@ -66,7 +72,10 @@ interface SandboxScene {
         return false;
     }
 
-    /** Share of cells (0..100) rewritten per frame; only called when {@link #supportsDirtyPercent()} is true. */
+    /**
+     * Share of cells (0..100) rewritten per frame; only called when {@link #supportsDirtyPercent()}
+     * is true.
+     */
     default void setDirtyPercent(int percent) {
     }
 
@@ -75,7 +84,9 @@ interface SandboxScene {
         return false;
     }
 
-    /** Number of stacked layers (1 or more); only called when {@link #supportsLayerCount()} is true. */
+    /**
+     * Number of stacked layers (1 or more); only called when {@link #supportsLayerCount()} is true.
+     */
     default void setLayerCount(int count) {
     }
 

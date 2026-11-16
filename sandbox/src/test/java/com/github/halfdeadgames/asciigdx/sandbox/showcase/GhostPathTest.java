@@ -46,7 +46,8 @@ class GhostPathTest {
         float highest = -Float.MAX_VALUE;
         for (float time = 3.4f; time < 4.4f; time += 0.01f) {
             float alpha = path.alphaAt(time);
-            assertTrue(alpha >= FLICKER_FLOOR_ALPHA - EPSILON && alpha <= SETTLED_ALPHA + EPSILON, "alpha " + alpha);
+            assertTrue(alpha >= FLICKER_FLOOR_ALPHA - EPSILON && alpha <= SETTLED_ALPHA + EPSILON,
+                    "alpha " + alpha);
             lowest = Math.min(lowest, alpha);
             highest = Math.max(highest, alpha);
         }

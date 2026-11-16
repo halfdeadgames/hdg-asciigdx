@@ -30,7 +30,8 @@ public class AndroidLauncher extends AndroidApplication {
         configuration.useWakelock = true;
         Bundle extras = getIntent().getExtras();
         applyRequestedOrientation(extras);
-        initialize(new SandboxApp(key -> readSetting(extras, key), this::toggleOrientation), configuration);
+        initialize(new SandboxApp(key -> readSetting(extras, key), this::toggleOrientation),
+                configuration);
         if (savedInstanceState == null) {
             scheduleRecreateForContextLossTest(extras);
         }
@@ -43,14 +44,19 @@ public class AndroidLauncher extends AndroidApplication {
         }
         String orientation = extras.getString(ORIENTATION_EXTRA);
         switch (orientation) {
-            case "landscape" -> setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            case "portrait" -> setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+            case "landscape" ->
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            case "portrait" ->
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
             default -> throw new IllegalArgumentException(
                     "orientation must be landscape or portrait, was: " + orientation);
         }
     }
 
-    /** Dev-only: swaps portrait and landscape; the app stays in the requested orientation until restarted. */
+    /**
+     * Dev-only: swaps portrait and landscape; the app stays in the requested orientation until
+     * restarted.
+     */
     private void toggleOrientation() {
         runOnUiThread(() -> {
             boolean isLandscape = getResources().getConfiguration().orientation

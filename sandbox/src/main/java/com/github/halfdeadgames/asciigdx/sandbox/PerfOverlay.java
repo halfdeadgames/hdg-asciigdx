@@ -8,7 +8,10 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.GridRenderer;
 
-/** fps / frame time / cell count line drawn over whichever scene is open, at the top-left of the screen. */
+/**
+ * fps / frame time / cell count line drawn over whichever scene is open, at the top-left of the
+ * screen.
+ */
 class PerfOverlay {
     private static final float SAMPLE_WINDOW_SECONDS = 0.5f;
     private static final int WIDTH = 40;
@@ -71,7 +74,9 @@ class PerfOverlay {
         renderer.dispose();
     }
 
-    /** Reads the count out of Mesh.getManagedStatus(), which looks like "Managed meshes/app: { 3 }". */
+    /**
+     * Reads the count out of Mesh.getManagedStatus(), which looks like "Managed meshes/app: { 3 }".
+     */
     private static int managedMeshCount() {
         String managedStatus = Mesh.getManagedStatus();
         int count = 0;
@@ -91,8 +96,8 @@ class PerfOverlay {
         if (sampleFrames > 0) {
             int tenthsOfMillisecond = Math.round(sampleSeconds / sampleFrames * 10000f);
             readout.append(Math.round(sampleFrames / sampleSeconds)).append(" fps ")
-                .append(tenthsOfMillisecond / 10).append('.').append(tenthsOfMillisecond % 10)
-                .append(" ms ");
+                    .append(tenthsOfMillisecond / 10).append('.').append(tenthsOfMillisecond % 10)
+                    .append(" ms ");
         } else {
             readout.append("measuring ");
         }

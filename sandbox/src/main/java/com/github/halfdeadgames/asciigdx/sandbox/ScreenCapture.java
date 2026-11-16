@@ -13,7 +13,10 @@ import com.github.tommyettinger.anim8.PaletteReducer;
 import java.nio.ByteBuffer;
 import java.util.zip.Deflater;
 
-/** Saves PNG screenshots and GIF recordings of the back buffer. Call {@link #onFrameRendered()} at the end of every render. */
+/**
+ * Saves PNG screenshots and GIF recordings of the back buffer. Call {@link #onFrameRendered()} at
+ * the end of every render.
+ */
 class ScreenCapture {
     static final int MAX_GIF_FRAMES = 120;
     private static final int GIF_FRAMES_PER_SECOND = 30;
@@ -83,16 +86,20 @@ class ScreenCapture {
 
     private void savePng(String fileName) {
         Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0,
-            Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
+                Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
         try {
             makeOpaque(pixmap);
-            PixmapIO.writePNG(outputDirectory.child(fileName), pixmap, Deflater.DEFAULT_COMPRESSION, true);
+            PixmapIO.writePNG(outputDirectory.child(fileName), pixmap,
+                    Deflater.DEFAULT_COMPRESSION, true);
         } finally {
             pixmap.dispose();
         }
     }
 
-    /** Blending leaves the framebuffer alpha below 1 while the screen ignores it, so captures would look partly transparent. */
+    /**
+     * Blending leaves the framebuffer alpha below 1 while the screen ignores it, so captures would
+     * look partly transparent.
+     */
     private static void makeOpaque(Pixmap rgba8888Pixmap) {
         ByteBuffer pixels = rgba8888Pixmap.getPixels();
         int byteCount = rgba8888Pixmap.getWidth() * rgba8888Pixmap.getHeight() * 4;
@@ -103,7 +110,7 @@ class ScreenCapture {
 
     private Pixmap readBackBufferTopDown() {
         Pixmap bottomUp = Pixmap.createFromFrameBuffer(0, 0,
-            Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
+                Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
         int width = bottomUp.getWidth();
         int height = bottomUp.getHeight();
         Pixmap topDown = new Pixmap(width, height, Pixmap.Format.RGBA8888);

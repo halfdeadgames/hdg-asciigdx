@@ -9,9 +9,9 @@ class LightningFlashTest {
     private static final float EPSILON = 1e-5f;
     private static final float STRENGTH = 0.85f;
     private final LightningFlash flash = new LightningFlash(
-        STRENGTH,
-        new LightningFlash.Flicker(3.40f, 3.48f),
-        new LightningFlash.Flicker(3.56f, 3.66f));
+            STRENGTH,
+            new LightningFlash.Flicker(3.40f, 3.48f),
+            new LightningFlash.Flicker(3.56f, 3.66f));
 
     @Test
     void isZeroBeforeFirstFlicker() {

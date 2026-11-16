@@ -9,7 +9,10 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 
-/** Fills a large grid once, then rewrites an adjustable share of distinct cells each frame (1% by default) in a fixed-seed shuffled order. */
+/**
+ * Fills a large grid once, then rewrites an adjustable share of distinct cells each frame (1% by
+ * default) in a fixed-seed shuffled order.
+ */
 class SparseUpdateScene extends GridScene {
     private static final int COLUMNS = 240;
     private static final int ROWS = 135;
@@ -65,7 +68,8 @@ class SparseUpdateScene extends GridScene {
             setLayerCount(nextLayerCountLevel());
             return true;
         }
-        if (keycode == Input.Keys.PLUS || keycode == Input.Keys.EQUALS || keycode == Input.Keys.NUMPAD_ADD) {
+        if (keycode == Input.Keys.PLUS || keycode == Input.Keys.EQUALS
+                || keycode == Input.Keys.NUMPAD_ADD) {
             stepLevel(1);
             return true;
         }
@@ -124,7 +128,8 @@ class SparseUpdateScene extends GridScene {
             for (int column = 0; column < COLUMNS; column++) {
                 if (layerRandom.nextInt(100) < EXTRA_LAYER_FILL_PERCENT) {
                     int glyph = SceneDrawing.randomGlyph(layerRandom);
-                    sparse.set(column, row, glyph, SceneDrawing.randomOpaqueColor(layerRandom), CLEAR);
+                    sparse.set(column, row, glyph,
+                            SceneDrawing.randomOpaqueColor(layerRandom), CLEAR);
                 }
             }
         }
@@ -132,7 +137,8 @@ class SparseUpdateScene extends GridScene {
     }
 
     private void stepLevel(int direction) {
-        int nextIndex = direction > 0 ? nextLevelIndexAbove(dirtyPercent) : nextLevelIndexBelow(dirtyPercent);
+        int nextIndex = direction > 0 ? nextLevelIndexAbove(dirtyPercent)
+                : nextLevelIndexBelow(dirtyPercent);
         dirtyPercent = PERCENT_LEVELS[nextIndex];
     }
 
@@ -178,6 +184,7 @@ class SparseUpdateScene extends GridScene {
 
     private void setRandomCell(int column, int row) {
         int glyph = SceneDrawing.randomGlyph(random);
-        grid.set(column, row, glyph, SceneDrawing.randomOpaqueColor(random), SceneDrawing.randomOpaqueColor(random));
+        grid.set(column, row, glyph, SceneDrawing.randomOpaqueColor(random),
+                SceneDrawing.randomOpaqueColor(random));
     }
 }

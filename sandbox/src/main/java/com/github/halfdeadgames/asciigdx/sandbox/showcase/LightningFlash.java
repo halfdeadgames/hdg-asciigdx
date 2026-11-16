@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-/** How strongly a lightning flash inverts the scene at a loop time: a fixed strength inside each flicker, 0 outside. */
+/**
+ * How strongly a lightning flash inverts the scene at a loop time: a fixed strength inside each
+ * flicker, 0 outside.
+ */
 public final class LightningFlash {
 
     /** One flicker, on from startSeconds (inclusive) to endSeconds (exclusive). */
@@ -8,7 +11,8 @@ public final class LightningFlash {
 
         public Flicker {
             if (!(endSeconds >= startSeconds)) {
-                throw new IllegalArgumentException("endSeconds must be >= startSeconds: " + endSeconds);
+                throw new IllegalArgumentException(
+                        "endSeconds must be >= startSeconds: " + endSeconds);
             }
         }
 

@@ -17,15 +17,15 @@ import com.github.halfdeadgames.asciigdx.zone.EffectZone;
 import com.github.halfdeadgames.asciigdx.zone.Phase;
 
 /**
- * Effect zones over a map-like floor: a filled circle "area spell" that moves, a caption with a wave
- * running along it, a permanent outline circle drawn through the same shape code, and an optional
- * full-screen zone for a performance check.
+ * Effect zones over a map-like floor: a filled circle "area spell" that moves, a caption with a
+ * wave running along it, a permanent outline circle drawn through the same shape code, and an
+ * optional full-screen zone for a performance check.
  *
  * <p>Keys: arrow keys move the spell. E cycles the spell's effect: combined, wave, bounce, shake,
- * pulse, spin, flash, rainbow. F toggles the full-screen zone; the status line shows the layer's frame
- * handle count (H). T swaps between a square and a tall font, rebuilding the circles for the new cell
- * shape. On touch screens, a touch or drag above the bottom quarter moves the spell, and the bottom
- * quarter is split into thirds for E, F, and T.
+ * pulse, spin, flash, rainbow. F toggles the full-screen zone; the status line shows the layer's
+ * frame handle count (H). T swaps between a square and a tall font, rebuilding the circles for the
+ * new cell shape. On touch screens, a touch or drag above the bottom quarter moves the spell, and
+ * the bottom quarter is split into thirds for E, F, and T.
  *
  * <p>The scene clock loops, so captures can hold it still with the {@code zonesTime} setting.
  */
@@ -36,7 +36,8 @@ class ZonesScene extends GridScene {
 
     private static final int COLUMNS = 40;
     private static final int ROWS = 22;
-    private static final float SPELL_RADIUS = 6.6f; // below 7 for a rounder outline; see CircleShape
+    // below 7 for a rounder outline; see CircleShape
+    private static final float SPELL_RADIUS = 6.6f;
     private static final float SPELL_START_X = 11.5f;
     private static final float SPELL_START_Y = 9.5f;
     private static final float OUTLINE_CENTER_X = 30.5f;
@@ -49,7 +50,8 @@ class ZonesScene extends GridScene {
     private final GlyphSource squareGlyphs;
     private final GlyphSource tallGlyphs;
     private final Layer layer;
-    private final TweenClock clock = TweenClock.looping(SpellEffectCycle.LOOP_SECONDS, CAPPED_DELTA);
+    private final TweenClock clock =
+            TweenClock.looping(SpellEffectCycle.LOOP_SECONDS, CAPPED_DELTA);
     private final SpellEffectCycle spellEffects = new SpellEffectCycle();
     private final EffectZone spellZone;
     private final EffectZone captionZone;
@@ -64,12 +66,13 @@ class ZonesScene extends GridScene {
     /**
      * @param squareGlyphs font the scene opens with
      * @param tallGlyphs font T swaps to; its cells are taller than wide
-     * @param zonesTimeSetting loop time in seconds to hold the scene at, or null or invalid to play normally
-     * @param zonesStartSetting comma-separated start options for captures: {@code tall}, {@code full},
-     *     {@code effect=<name>}; null or unknown tokens are ignored
+     * @param zonesTimeSetting loop time in seconds to hold the scene at, or null or invalid to play
+     *     normally
+     * @param zonesStartSetting comma-separated start options for captures: {@code tall},
+     *     {@code full}, {@code effect=<name>}; null or unknown tokens are ignored
      */
     ZonesScene(GlyphSource squareGlyphs, GlyphSource tallGlyphs, String zonesTimeSetting,
-               String zonesStartSetting) {
+            String zonesStartSetting) {
         super(squareGlyphs, COLUMNS, ROWS);
         this.squareGlyphs = squareGlyphs;
         this.tallGlyphs = tallGlyphs;
@@ -78,12 +81,13 @@ class ZonesScene extends GridScene {
         spellShape = createCircle(SPELL_START_X, SPELL_START_Y, ShapeFill.FILLED, squareGlyphs);
         spellZone = new EffectZone(spellShape, spellEffects.current());
         captionZone = new EffectZone(
-            RectangleShape.forSquareCells(ZonesBackdrop.CAPTION_COLUMN, ZonesBackdrop.CAPTION_ROW,
-                ZonesBackdrop.CAPTION.length(), 1, ShapeFill.FILLED),
-            CellEffects.wave(0.4f, 1.2f, Phase.alongColumns(10f)));
+                RectangleShape.forSquareCells(ZonesBackdrop.CAPTION_COLUMN,
+                        ZonesBackdrop.CAPTION_ROW,
+                        ZonesBackdrop.CAPTION.length(), 1, ShapeFill.FILLED),
+                CellEffects.wave(0.4f, 1.2f, Phase.alongColumns(10f)));
         fullScreenZone = new EffectZone(
-            RectangleShape.forSquareCells(0, 0, COLUMNS, ROWS, ShapeFill.FILLED),
-            CellEffects.wave(0.2f, 1f, Phase.scattered(FULL_SCREEN_SEED)));
+                RectangleShape.forSquareCells(0, 0, COLUMNS, ROWS, ShapeFill.FILLED),
+                CellEffects.wave(0.2f, 1f, Phase.scattered(FULL_SCREEN_SEED)));
         redrawBackdrop();
         pinClockIfRequested(zonesTimeSetting);
         applyStartOptions(zonesStartSetting);
@@ -113,9 +117,9 @@ class ZonesScene extends GridScene {
     public String statusText() {
         status.setLength(0);
         status.append("E:").append(spellEffects.currentName())
-            .append(" F:").append(fullScreenOn ? "on" : "off")
-            .append(" T:").append(tall ? "tall" : "sq")
-            .append(" H:").append(layer.getFrameCellHandleCount());
+                .append(" F:").append(fullScreenOn ? "on" : "off")
+                .append(" T:").append(tall ? "tall" : "sq")
+                .append(" H:").append(layer.getFrameCellHandleCount());
         return status.toString();
     }
 
@@ -187,7 +191,8 @@ class ZonesScene extends GridScene {
             return;
         }
         float distance = MOVE_CELLS_PER_SECOND * Math.min(delta, CAPPED_DELTA);
-        moveSpellTo(spellShape.getCenterX() + horizontal * distance, spellShape.getCenterY() + vertical * distance);
+        moveSpellTo(spellShape.getCenterX() + horizontal * distance,
+                spellShape.getCenterY() + vertical * distance);
     }
 
     private static float axis(int positiveKey, int negativeKey) {
@@ -206,11 +211,13 @@ class ZonesScene extends GridScene {
         viewport.unproject(touchPoint);
         float cellWidth = layer.getGlyphSource().getCellWidth();
         float cellHeight = layer.getGlyphSource().getCellHeight();
-        moveSpellTo(touchPoint.x / cellWidth, (viewport.getWorldHeight() - touchPoint.y) / cellHeight);
+        moveSpellTo(touchPoint.x / cellWidth,
+                (viewport.getWorldHeight() - touchPoint.y) / cellHeight);
     }
 
     private void moveSpellTo(float centerX, float centerY) {
-        spellShape.setCenter(MathUtils.clamp(centerX, 0f, COLUMNS), MathUtils.clamp(centerY, 0f, ROWS));
+        spellShape.setCenter(MathUtils.clamp(centerX, 0f, COLUMNS),
+                MathUtils.clamp(centerY, 0f, ROWS));
     }
 
     private boolean isInButtonStrip(int screenY) {
@@ -245,7 +252,8 @@ class ZonesScene extends GridScene {
             if (!fullScreenOn) {
                 toggleFullScreenZone();
             }
-        } else if (token.regionMatches(true, 0, EFFECT_OPTION_PREFIX, 0, EFFECT_OPTION_PREFIX.length())) {
+        } else if (token.regionMatches(true, 0, EFFECT_OPTION_PREFIX, 0,
+                EFFECT_OPTION_PREFIX.length())) {
             spellEffects.select(token.substring(EFFECT_OPTION_PREFIX.length()).trim());
             showCurrentSpellEffect();
         }
@@ -256,8 +264,8 @@ class ZonesScene extends GridScene {
     }
 
     /**
-     * Swapping is rare, so allocating new shapes here is fine. The grid keeps its size; the world size
-     * follows the new cell size.
+     * Swapping is rare, so allocating new shapes here is fine. The grid keeps its size; the world
+     * size follows the new cell size.
      */
     private void swapFont() {
         tall = !tall;
@@ -266,7 +274,8 @@ class ZonesScene extends GridScene {
         layers.setSize(COLUMNS * glyphs.getCellWidth(), ROWS * glyphs.getCellHeight());
         viewport.setWorldSize(COLUMNS * glyphs.getCellWidth(), ROWS * glyphs.getCellHeight());
         viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
-        spellShape = createCircle(spellShape.getCenterX(), spellShape.getCenterY(), ShapeFill.FILLED, glyphs);
+        spellShape = createCircle(spellShape.getCenterX(), spellShape.getCenterY(),
+                ShapeFill.FILLED, glyphs);
         spellZone.setShape(spellShape);
         redrawBackdrop();
     }
@@ -275,10 +284,12 @@ class ZonesScene extends GridScene {
         ZonesBackdrop.drawFloor(grid);
         ZonesBackdrop.drawCaption(grid);
         ZonesBackdrop.drawOutline(grid,
-            createCircle(OUTLINE_CENTER_X, OUTLINE_CENTER_Y, ShapeFill.OUTLINE, layer.getGlyphSource()));
+                createCircle(OUTLINE_CENTER_X, OUTLINE_CENTER_Y, ShapeFill.OUTLINE,
+                        layer.getGlyphSource()));
     }
 
-    private static CircleShape createCircle(float centerX, float centerY, ShapeFill fill, GlyphSource glyphs) {
+    private static CircleShape createCircle(float centerX, float centerY, ShapeFill fill,
+            GlyphSource glyphs) {
         float aspect = (float) glyphs.getCellHeight() / glyphs.getCellWidth();
         return new CircleShape(centerX, centerY, SPELL_RADIUS, fill, aspect);
     }

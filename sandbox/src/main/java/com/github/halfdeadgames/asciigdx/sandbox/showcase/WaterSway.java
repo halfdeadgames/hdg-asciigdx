@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
-/** A rocking rotation whose amplitude rises from 0 at the sway start to its peak at mid-sway, then falls back to 0. */
+/**
+ * A rocking rotation whose amplitude rises from 0 at the sway start to its peak at mid-sway, then
+ * falls back to 0.
+ */
 public final class WaterSway {
 
     private final Tween sway;

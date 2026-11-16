@@ -111,16 +111,19 @@ final class OverrideDemo {
     private void applyPhase(int phase, float progress) {
         switch (phase) {
             case 1 -> applyMixes(GOLD_MIX, progress, 0, 0f, CellHandle.NO_CODE_POINT);
-            case 2 -> applyMixes(WHITE_MIX, 1f - progress, WHITE_MIX, 1f - progress, CellHandle.NO_CODE_POINT);
-            case 3 -> applyMixes(0, 0f, DARK_RED_MIX, BACKGROUND_MIX_AMOUNT, CellHandle.NO_CODE_POINT);
+            case 2 -> applyMixes(WHITE_MIX, 1f - progress, WHITE_MIX, 1f - progress,
+                    CellHandle.NO_CODE_POINT);
+            case 3 -> applyMixes(0, 0f, DARK_RED_MIX, BACKGROUND_MIX_AMOUNT,
+                    CellHandle.NO_CODE_POINT);
             case 4 -> applyMixes(0, 0f, 0, 0f, TEMPORARY_GLYPH);
             case 5 -> applyMixes(GOLD_MIX, progress * PHASE_SECONDS < HIDE_SECONDS ? 1f : 0f, 0, 0f,
-                CellHandle.NO_CODE_POINT);
+                    CellHandle.NO_CODE_POINT);
             default -> clearAll();
         }
     }
 
-    private void applyMixes(int foreground, float foregroundAmount, int background, float backgroundAmount,
+    private void applyMixes(int foreground, float foregroundAmount, int background,
+            float backgroundAmount,
             int codePoint) {
         for (int i = 0; i < handles.length; i++) {
             handles[i].setMix(foreground, foregroundAmount, background, backgroundAmount);

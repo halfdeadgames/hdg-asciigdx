@@ -11,7 +11,8 @@ public final class DepthCamera {
             throw new IllegalArgumentException("hiddenDistance must be > 0: " + hiddenDistance);
         }
         if (!(fadeDistance > hiddenDistance)) {
-            throw new IllegalArgumentException("fadeDistance must be > hiddenDistance: " + fadeDistance);
+            throw new IllegalArgumentException(
+                    "fadeDistance must be > hiddenDistance: " + fadeDistance);
         }
         this.hiddenDistance = hiddenDistance;
         this.fadeDistance = fadeDistance;

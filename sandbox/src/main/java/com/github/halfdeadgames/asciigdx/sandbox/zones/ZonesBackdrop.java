@@ -4,7 +4,10 @@ import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 
-/** Permanent drawing under the zones scene: a varied dim floor, a caption line, and a circle outline. */
+/**
+ * Permanent drawing under the zones scene: a varied dim floor, a caption line, and a circle
+ * outline.
+ */
 public final class ZonesBackdrop {
     public static final String CAPTION = "THE AREA SPELL RIPPLES OUTWARD";
     public static final int CAPTION_COLUMN = 5;
@@ -32,7 +35,8 @@ public final class ZonesBackdrop {
     }
 
     public static void drawCaption(TerminalGrid grid) {
-        GridDrawing.drawText(grid, CAPTION_COLUMN, CAPTION_ROW, CAPTION, CAPTION_COLOR, FLOOR_BACKGROUND);
+        GridDrawing.drawText(grid, CAPTION_COLUMN, CAPTION_ROW, CAPTION, CAPTION_COLOR,
+                FLOOR_BACKGROUND);
     }
 
     public static void drawOutline(TerminalGrid grid, CellShape outline) {

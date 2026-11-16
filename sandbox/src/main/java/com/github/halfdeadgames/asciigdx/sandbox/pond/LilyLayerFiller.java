@@ -4,7 +4,10 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
 import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 
-/** Draws lilies into a map window whose cells are half a game cell on each axis, so four cover one game cell. */
+/**
+ * Draws lilies into a map window whose cells are half a game cell on each axis, so four cover one
+ * game cell.
+ */
 public final class LilyLayerFiller implements MapCellVisitor {
 
     private static final int BLANK_COLOR = 0xFFFFFFFF;

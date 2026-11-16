@@ -14,7 +14,8 @@ class DropletSprayTest {
     private static final float MAX_DISTANCE = 4f;
     private static final float PEAK_SCALE = 1.8f;
     private static final float EPSILON = 1e-5f;
-    private final DropletSpray spray = new DropletSpray(new Tween(7.6f, 0.7f, 0f, 1f), COUNT, MAX_DISTANCE, PEAK_SCALE);
+    private final DropletSpray spray =
+            new DropletSpray(new Tween(7.6f, 0.7f, 0f, 1f), COUNT, MAX_DISTANCE, PEAK_SCALE);
 
     @Test
     void isInvisibleOutsideTheSpray() {
@@ -57,7 +58,7 @@ class DropletSprayTest {
             assertEquals(1f, (float) Math.hypot(x, y), EPSILON);
             for (int second = first + 1; second < COUNT; second++) {
                 boolean same = Math.abs(x - spray.directionX(second)) < EPSILON
-                    && Math.abs(y - spray.directionY(second)) < EPSILON;
+                        && Math.abs(y - spray.directionY(second)) < EPSILON;
                 assertFalse(same, first + " vs " + second);
             }
         }
@@ -82,7 +83,8 @@ class DropletSprayTest {
 
     @Test
     void sameInputsGiveSameOutputs() {
-        DropletSpray other = new DropletSpray(new Tween(7.6f, 0.7f, 0f, 1f), COUNT, MAX_DISTANCE, PEAK_SCALE);
+        DropletSpray other =
+                new DropletSpray(new Tween(7.6f, 0.7f, 0f, 1f), COUNT, MAX_DISTANCE, PEAK_SCALE);
         for (int index = 0; index < COUNT; index++) {
             assertEquals(spray.directionX(index), other.directionX(index));
             assertEquals(spray.directionY(index), other.directionY(index));
@@ -96,8 +98,10 @@ class DropletSprayTest {
         assertThrows(IllegalArgumentException.class, () -> new DropletSpray(null, 8, 4f, 1.8f));
         assertThrows(IllegalArgumentException.class, () -> new DropletSpray(timing, 0, 4f, 1.8f));
         assertThrows(IllegalArgumentException.class, () -> new DropletSpray(timing, 8, 0f, 1.8f));
-        assertThrows(IllegalArgumentException.class, () -> new DropletSpray(timing, 8, Float.NaN, 1.8f));
-        assertThrows(IllegalArgumentException.class, () -> new DropletSpray(timing, 8, 4f, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> new DropletSpray(timing, 8, Float.NaN, 1.8f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new DropletSpray(timing, 8, 4f, Float.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> new DropletSpray(timing, 8, 4f, -1f));
     }
 }

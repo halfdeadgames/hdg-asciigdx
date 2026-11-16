@@ -1,6 +1,8 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
-/** The hand-picked greens a lily can take, chosen to read as water plants on the deep blue water. */
+/**
+ * The hand-picked greens a lily can take, chosen to read as water plants on the deep blue water.
+ */
 public final class LilyPalette {
 
     public static final int DEEP_GREEN = 0x2E9447FF;
@@ -10,7 +12,8 @@ public final class LilyPalette {
     public static final int TEAL_GREEN = 0x3DB58CFF;
 
     private static final float PALER_AMOUNT = 0.45f;
-    private static final int[] COLORS = {DEEP_GREEN, BASE_GREEN, LIGHT_GREEN, YELLOW_GREEN, TEAL_GREEN};
+    private static final int[] COLORS =
+            {DEEP_GREEN, BASE_GREEN, LIGHT_GREEN, YELLOW_GREEN, TEAL_GREEN};
 
     private LilyPalette() {
     }

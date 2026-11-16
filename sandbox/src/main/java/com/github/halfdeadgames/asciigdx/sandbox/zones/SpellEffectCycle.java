@@ -5,8 +5,8 @@ import com.github.halfdeadgames.asciigdx.zone.CellEffects;
 import com.github.halfdeadgames.asciigdx.zone.Phase;
 
 /**
- * The effects the area spell can show, one at a time. Every period divides {@link #LOOP_SECONDS}, so a
- * looping clock of that length shows no jump when it wraps.
+ * The effects the area spell can show, one at a time. Every period divides {@link #LOOP_SECONDS},
+ * so a looping clock of that length shows no jump when it wraps.
  */
 public final class SpellEffectCycle {
     /** Length of the shortest clock loop that fits every effect here. */
@@ -18,26 +18,27 @@ public final class SpellEffectCycle {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int WARM_GOLD = 0xFFA824FF;
 
-    private final String[] names = {"combined", "wave", "bounce", "shake", "pulse", "spin", "flash", "rainbow"};
+    private final String[] names =
+            {"combined", "wave", "bounce", "shake", "pulse", "spin", "flash", "rainbow"};
     private final CellEffect[] effects;
     private int index;
 
     public SpellEffectCycle() {
         Phase rings = Phase.byDistance(RING_CELLS_PER_CYCLE);
         Phase slowRings = Phase.byDistance(SLOW_RING_CELLS_PER_CYCLE);
-        effects = new CellEffect[] {
-            CellEffects.combine(
-                CellEffects.spin(-90f, Phase.scattered(1)),
-                CellEffects.pulse(0.15f, 1.2f, Phase.scattered(2)),
-                CellEffects.bounce(0.3f, 1f, Phase.scattered(3)),
-                CellEffects.flash(WARM_GOLD, 0.6f, 1.2f, Phase.scattered(4))),
-            CellEffects.wave(0.3f, 1.2f, rings),
-            CellEffects.bounce(0.4f, 1f, rings),
-            CellEffects.shake(0.15f, 12f, SHAKE_SEED),
-            CellEffects.pulse(0.4f, 1.2f, rings),
-            CellEffects.spin(-120f, slowRings),
-            CellEffects.flash(WHITE, 0.8f, 1.2f, rings),
-            CellEffects.rainbow(0.7f, 2f, slowRings)
+        effects = new CellEffect[]{
+                CellEffects.combine(
+                        CellEffects.spin(-90f, Phase.scattered(1)),
+                        CellEffects.pulse(0.15f, 1.2f, Phase.scattered(2)),
+                        CellEffects.bounce(0.3f, 1f, Phase.scattered(3)),
+                        CellEffects.flash(WARM_GOLD, 0.6f, 1.2f, Phase.scattered(4))),
+                CellEffects.wave(0.3f, 1.2f, rings),
+                CellEffects.bounce(0.4f, 1f, rings),
+                CellEffects.shake(0.15f, 12f, SHAKE_SEED),
+                CellEffects.pulse(0.4f, 1.2f, rings),
+                CellEffects.spin(-120f, slowRings),
+                CellEffects.flash(WHITE, 0.8f, 1.2f, rings),
+                CellEffects.rainbow(0.7f, 2f, slowRings)
         };
     }
 

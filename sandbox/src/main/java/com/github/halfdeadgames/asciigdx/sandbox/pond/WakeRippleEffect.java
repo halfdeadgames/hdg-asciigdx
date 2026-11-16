@@ -5,8 +5,9 @@ import com.github.halfdeadgames.asciigdx.zone.CellEffect;
 import com.github.halfdeadgames.asciigdx.zone.ZoneCell;
 
 /**
- * Lifts water cells under a wake ring: a cell grows, tilts, bobs up, and takes a foam tint, and neighbors tilt
- * opposite ways so the ring reads as a ripple. Land cells and cells outside the map are left alone.
+ * Lifts water cells under a wake ring: a cell grows, tilts, bobs up, and takes a foam tint, and
+ * neighbors tilt opposite ways so the ring reads as a ripple. Land cells and cells outside the map
+ * are left alone.
  */
 public final class WakeRippleEffect implements CellEffect {
 

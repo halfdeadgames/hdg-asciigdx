@@ -155,7 +155,8 @@ class LayersScene extends GridScene {
         elapsed = 0f;
         rainCycle = -1;
         super.show();
-        applyAnimation();    }
+        applyAnimation();
+    }
 
     @Override
     public String statusText() {
@@ -164,10 +165,10 @@ class LayersScene extends GridScene {
             status.append(LETTERS.charAt(idAt(i)));
         }
         status.append(" rain ").append(rainVisible ? "on" : "off")
-            .append(" ghost ").append(ghostPopup ? "on" : "off")
-            .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off")
-            .append(" neg ").append(negative ? "on" : "off")
-            .append(" dim ").append(dimWorld ? "on" : "off");
+                .append(" ghost ").append(ghostPopup ? "on" : "off")
+                .append(" snap ").append(layers.isPixelSnapping() ? "on" : "off")
+                .append(" neg ").append(negative ? "on" : "off")
+                .append(" dim ").append(dimWorld ? "on" : "off");
         return status.toString();
     }
 
@@ -237,7 +238,10 @@ class LayersScene extends GridScene {
         return MAP;
     }
 
-    /** Cycles popup, marker, rain, and banner through the middle depths; the map stays bottom and the frame top. */
+    /**
+     * Cycles popup, marker, rain, and banner through the middle depths; the map stays bottom and
+     * the frame top.
+     */
     private void rotateOrder() {
         layers.getLayer(1).moveTo(layers.getLayerCount() - 2);
     }
@@ -337,7 +341,8 @@ class LayersScene extends GridScene {
             }
         }
         float lift = hopping ? 4f * reaction * (1f - reaction) * glyphs.getCellHeight() : 0f;
-        layerById[AT].setOffset(AT_COLUMN * glyphs.getCellWidth(), AT_ROW * glyphs.getCellHeight() - lift);
+        layerById[AT].setOffset(AT_COLUMN * glyphs.getCellWidth(),
+                AT_ROW * glyphs.getCellHeight() - lift);
     }
 
     private void applyPopup() {
@@ -356,7 +361,8 @@ class LayersScene extends GridScene {
         }
         float eased = progress * progress * (3f - 2f * progress);
         Layer popup = layerById[POPUP];
-        popup.setOffset(MathUtils.lerp(hiddenX, restX, eased), POPUP_REST_ROW * glyphs.getCellHeight());
+        popup.setOffset(MathUtils.lerp(hiddenX, restX, eased),
+                POPUP_REST_ROW * glyphs.getCellHeight());
         popup.getColorEffects().setAlpha(eased * (ghostPopup ? GHOST_ALPHA : 1f));
     }
 
@@ -384,20 +390,21 @@ class LayersScene extends GridScene {
         float along = (elapsed * BANNER_SPEED) % (2f * travel);
         float drift = along < travel ? along : 2f * travel - along;
         layerById[BANNER].setOffset(BANNER_COLUMN * glyphs.getCellWidth() + drift,
-            BANNER_ROW * glyphs.getCellHeight());
+                BANNER_ROW * glyphs.getCellHeight());
     }
 
     private void drawMap() {
         int last = FRAME_THICKNESS;
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                boolean hidden = column < last || row < last || column >= COLUMNS - last || row >= ROWS - last;
+                boolean hidden = column < last || row < last || column >= COLUMNS - last
+                        || row >= ROWS - last;
                 if (hidden) {
                     drawHiddenCell(column, row);
                     continue;
                 }
                 boolean border = row == last || row == ROWS - 1 - last
-                    || column == last || column == COLUMNS - 1 - last;
+                        || column == last || column == COLUMNS - 1 - last;
                 boolean divider = column == 16 && row != 8 && row != 9;
                 boolean ledge = row == 11 && column > 16 && column != 30 && column != 31;
                 if (border || divider || ledge) {
@@ -415,7 +422,9 @@ class LayersScene extends GridScene {
         grid.set(25, 17, '%', 0x60E060FF, FLOOR_BACKGROUND);
     }
 
-    /** Bright content in the cells the frame covers, so only a shake lets slivers of it peek out. */
+    /**
+     * Bright content in the cells the frame covers, so only a shake lets slivers of it peek out.
+     */
     private void drawHiddenCell(int column, int row) {
         int hash = (column * 5 + row * 3 + column * row) % 7;
         if (hash == 0) {
@@ -432,7 +441,8 @@ class LayersScene extends GridScene {
     private static void drawFrame(TerminalGrid frame) {
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                int depth = Math.min(Math.min(column, row), Math.min(COLUMNS - 1 - column, ROWS - 1 - row));
+                int depth = Math.min(Math.min(column, row),
+                        Math.min(COLUMNS - 1 - column, ROWS - 1 - row));
                 if (depth >= FRAME_THICKNESS) {
                     frame.set(column, row, ' ', WHITE, CLEAR);
                 } else if (depth == 0) {
@@ -442,7 +452,8 @@ class LayersScene extends GridScene {
                 }
             }
         }
-        GridDrawing.drawText(frame, 2, ROWS - 1, "R order V rain P snap F ghost G gray", GOLD, FRAME_OUTER);
+        GridDrawing.drawText(frame, 2, ROWS - 1, "R order V rain P snap F ghost G gray", GOLD,
+                FRAME_OUTER);
     }
 
     private static int frameGlyph(int column, int row) {
@@ -466,7 +477,8 @@ class LayersScene extends GridScene {
     }
 
     private static void drawPopup(TerminalGrid popup) {
-        GridDrawing.fillRectangle(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, ' ', WHITE, POPUP_BACKGROUND);
+        GridDrawing.fillRectangle(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, ' ', WHITE,
+                POPUP_BACKGROUND);
         GridDrawing.drawBox(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, POPUP_FRAME, POPUP_BACKGROUND);
         GridDrawing.drawText(popup, 2, 1, "Inventory", GOLD, POPUP_BACKGROUND);
         GridDrawing.drawText(popup, 2, 2, "$ Gold      x2", WHITE, POPUP_BACKGROUND);

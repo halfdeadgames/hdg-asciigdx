@@ -13,7 +13,8 @@ class FallSpinTest {
 
     private static final float EPSILON = 1e-4f;
 
-    private final FallSpin spin = new FallSpin(new Tween(6f, 1.3f, 0f, 1f, Interpolation.sine), 720f, 0.5f);
+    private final FallSpin spin =
+            new FallSpin(new Tween(6f, 1.3f, 0f, 1f, Interpolation.sine), 720f, 0.5f);
 
     @Test
     void isUprightAndFullSizeBeforeStart() {

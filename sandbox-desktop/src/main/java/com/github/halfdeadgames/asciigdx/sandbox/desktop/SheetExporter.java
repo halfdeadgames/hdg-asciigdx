@@ -14,8 +14,8 @@ import com.github.halfdeadgames.asciigdx.sandbox.PixelScaler;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Bakes a TTF into a glyph sheet PNG plus its character list {@code .txt}, without opening a window.
- * Run through the {@code exportSheet} Gradle task, which passes the settings as
+ * Bakes a TTF into a glyph sheet PNG plus its character list {@code .txt}, without opening a
+ * window. Run through the {@code exportSheet} Gradle task, which passes the settings as
  * {@code asciigdx.export.*} system properties.
  */
 public final class SheetExporter {
@@ -37,17 +37,21 @@ public final class SheetExporter {
         if (scale < 1) {
             throw new IllegalArgumentException("scale must be at least 1: " + scale);
         }
-        GlyphOrder order = glyphOrder(System.getProperty(PROPERTY_PREFIX + "chars", "cp437"), columns);
+        GlyphOrder order =
+                glyphOrder(System.getProperty(PROPERTY_PREFIX + "chars", "cp437"), columns);
         String name = System.getProperty(PROPERTY_PREFIX + "sheetName", font.nameWithoutExtension())
-            + "-" + cellHeight * scale;
-        FileHandle outputFolder = Gdx.files.absolute(System.getProperty(PROPERTY_PREFIX + "output"));
+                + "-" + cellHeight * scale;
+        FileHandle outputFolder =
+                Gdx.files.absolute(System.getProperty(PROPERTY_PREFIX + "output"));
 
         exportSheet(font, cellHeight, order, columns, scale, outputFolder, name);
     }
 
-    private static void exportSheet(FileHandle font, int cellHeight, GlyphOrder order, int columns, int scale,
-        FileHandle outputFolder, String name) {
-        FreeTypeGlyphBaker.BakedSheet baked = FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
+    private static void exportSheet(FileHandle font, int cellHeight, GlyphOrder order, int columns,
+            int scale,
+            FileHandle outputFolder, String name) {
+        FreeTypeGlyphBaker.BakedSheet baked =
+                FreeTypeGlyphBaker.bake(font, cellHeight, order, columns, true);
         Pixmap output = null;
         try {
             output = scaled(baked.getPixmap(), scale);
@@ -56,8 +60,10 @@ public final class SheetExporter {
             PixmapIO.writePNG(png, output);
             txt.writeString(GlyphOrderText.write(order, columns), false, "UTF-8");
             verifyRoundTrip(output, order, columns, png, txt);
-            System.out.println("Exported " + order.getGlyphCount() + " glyphs, " + baked.getLayout().getCellWidth() * scale + "x"
-                + baked.getLayout().getCellHeight() * scale + " cells, " + missingCount(baked, order) + " missing from the font");
+            System.out.println("Exported " + order.getGlyphCount() + " glyphs, "
+                    + baked.getLayout().getCellWidth() * scale + "x"
+                    + baked.getLayout().getCellHeight() * scale + " cells, " + missingCount(baked,
+                    order) + " missing from the font");
             System.out.println("  " + png.file().getAbsolutePath());
             System.out.println("  " + txt.file().getAbsolutePath());
         } finally {
@@ -122,14 +128,17 @@ public final class SheetExporter {
     }
 
     private static void verifyRoundTrip(
-        Pixmap original, GlyphOrder order, int columns, FileHandle png, FileHandle txt) {
-        GlyphOrder reread = GlyphOrderText.read(new String(txt.readBytes(), StandardCharsets.UTF_8), columns);
+            Pixmap original, GlyphOrder order, int columns, FileHandle png, FileHandle txt) {
+        GlyphOrder reread =
+                GlyphOrderText.read(new String(txt.readBytes(), StandardCharsets.UTF_8), columns);
         if (reread.getGlyphCount() != order.getGlyphCount()) {
-            throw new IllegalStateException("Character list did not round-trip: size " + reread.getGlyphCount());
+            throw new IllegalStateException(
+                    "Character list did not round-trip: size " + reread.getGlyphCount());
         }
         for (int slot = 0; slot < order.getGlyphCount(); slot++) {
             if (reread.getCodePoint(slot) != order.getCodePoint(slot)) {
-                throw new IllegalStateException("Character list did not round-trip at slot " + slot);
+                throw new IllegalStateException(
+                        "Character list did not round-trip at slot " + slot);
             }
         }
         Pixmap written = new Pixmap(png);

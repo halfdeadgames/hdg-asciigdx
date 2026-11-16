@@ -71,7 +71,8 @@ class MenuScene extends GridScene {
             int background = selected ? WHITE : CLEAR;
             int row = FIRST_ITEM_ROW + i;
             GridDrawing.fillRectangle(grid, 1, row, COLUMNS - 2, 1, ' ', foreground, background);
-            GridDrawing.drawText(grid, TEXT_COLUMN, row, scenes.get(i).title(), foreground, background);
+            GridDrawing.drawText(grid, TEXT_COLUMN, row, scenes.get(i).title(), foreground,
+                    background);
         }
     }
 }

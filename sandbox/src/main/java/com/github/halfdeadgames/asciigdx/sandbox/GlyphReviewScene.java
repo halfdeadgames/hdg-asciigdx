@@ -31,7 +31,7 @@ import java.util.OptionalInt;
 final class GlyphReviewScene extends GridScene {
 
     private static final int[] REVIEW_LIST = {
-        0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525,
+            0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525,
     };
 
     private static final int COLUMNS = 40;
@@ -70,10 +70,10 @@ final class GlyphReviewScene extends GridScene {
     private static final int PREVIEW_BACKGROUND = 0x101018FF;
 
     private static final int[][] COLOR_PAIRS = {
-        {0xE8E8E8FF, 0x101018FF},
-        {0x101010FF, 0xE8E8E8FF},
-        {0xFFD700FF, 0x102040FF},
-        {0x40E040FF, 0x000000FF},
+            {0xE8E8E8FF, 0x101018FF},
+            {0x101010FF, 0xE8E8E8FF},
+            {0xFFD700FF, 0x102040FF},
+            {0x40E040FF, 0x000000FF},
     };
 
     private static final int BOX_VERTICAL = 0x2502;
@@ -119,13 +119,14 @@ final class GlyphReviewScene extends GridScene {
     private boolean savingBlocked;
 
     /**
-     * @param reviewCharsPath absolute path of a glyph order text file to review, or null for the sheet's own
-     *        order (with a candidate sheet) or the demo list
-     * @param reviewSheetPath absolute path of a candidate sheet PNG (its list is the same path ending in .txt),
-     *        or null to review the default font
+     * @param reviewCharsPath absolute path of a glyph order text file to review, or null for the
+     *        sheet's own order (with a candidate sheet) or the demo list
+     * @param reviewSheetPath absolute path of a candidate sheet PNG (its list is the same path
+     *        ending in .txt), or null to review the default font
      * @param reviewCell cell size of the candidate sheet, {@code WxH} or a single number
      */
-    GlyphReviewScene(GlyphSource glyphs, String reviewCharsPath, String reviewSheetPath, String reviewCell) {
+    GlyphReviewScene(GlyphSource glyphs, String reviewCharsPath, String reviewSheetPath,
+            String reviewCell) {
         super(glyphs, COLUMNS, ROWS);
         this.glyphs = glyphs;
         this.reviewCharsPath = emptyToNull(reviewCharsPath);
@@ -138,8 +139,9 @@ final class GlyphReviewScene extends GridScene {
     }
 
     private int menuTitleRow() {
-        return comparing() ? Math.min(PREVIEW_TOP_ROW + comparePanelRows, COMPARE_MENU_LAST_TITLE_ROW)
-            : MENU_TITLE_ROW;
+        return comparing() ? Math.min(PREVIEW_TOP_ROW + comparePanelRows,
+                COMPARE_MENU_LAST_TITLE_ROW)
+                : MENU_TITLE_ROW;
     }
 
     private int menuFirstItemRow() {
@@ -240,7 +242,8 @@ final class GlyphReviewScene extends GridScene {
         switch (keycode) {
             case Input.Keys.UP -> moveReasonCursor(-1);
             case Input.Keys.DOWN -> moveReasonCursor(1);
-            case Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER, Input.Keys.SPACE -> chooseReason(reasonMenuCursor);
+            case Input.Keys.ENTER, Input.Keys.NUMPAD_ENTER, Input.Keys.SPACE ->
+                    chooseReason(reasonMenuCursor);
             case Input.Keys.ESCAPE -> chooseReason(0);
             case Input.Keys.BACKSPACE -> {
                 session.undo();
@@ -302,9 +305,11 @@ final class GlyphReviewScene extends GridScene {
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = menuFirstItemRow() + i;
-            GridDrawing.fillRectangle(grid, menuColumn, row, grid.getColumns() - menuColumn, 1, ' ', foreground, background);
-            GridDrawing.drawText(grid, menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]),
-                foreground, background);
+            GridDrawing.fillRectangle(grid, menuColumn, row, grid.getColumns() - menuColumn, 1, ' ',
+                    foreground, background);
+            GridDrawing.drawText(grid, menuColumn + 1, row,
+                    i == 0 ? "No reason" : reasonName(reasons[i - 1]),
+                    foreground, background);
         }
     }
 
@@ -327,10 +332,11 @@ final class GlyphReviewScene extends GridScene {
         setDrawColor(batch, PREVIEW_BACKGROUND);
         batch.draw(solid, left, panelBottom, PREVIEW_WIDTH, panelTop - panelBottom);
         setDrawColor(batch, PREVIEW_FOREGROUND);
-        TextureRegion region = (candidate != null ? candidate : glyphs).getGlyphRegion(current.getAsInt());
+        TextureRegion region =
+                (candidate != null ? candidate : glyphs).getGlyphRegion(current.getAsInt());
         for (int i = 0; i < PREVIEW_SCALES.length; i++) {
             batch.draw(region, left + PREVIEW_X[i], panelBottom + PREVIEW_PADDING,
-                cellWidth * PREVIEW_SCALES[i], cellHeight * PREVIEW_SCALES[i]);
+                    cellWidth * PREVIEW_SCALES[i], cellHeight * PREVIEW_SCALES[i]);
         }
         batch.setColor(Color.WHITE);
     }
@@ -347,23 +353,27 @@ final class GlyphReviewScene extends GridScene {
         for (int i = 0; i < compareHeights.length; i++) {
             int candidateScale = compareHeights[i] / candidate.getCellHeight();
             int x = left + compareX[i];
-            drawPreviewGlyph(batch, candidate, codePoint, x, bottom + PREVIEW_PADDING, candidateScale);
+            drawPreviewGlyph(batch, candidate, codePoint, x, bottom + PREVIEW_PADDING,
+                    candidateScale);
             x += candidate.getCellWidth() * candidateScale + PAIR_GAP;
             drawPreviewGlyph(batch, glyphs, codePoint, x, bottom + PREVIEW_PADDING,
-                compareHeights[i] / glyphs.getCellHeight());
+                    compareHeights[i] / glyphs.getCellHeight());
         }
         batch.setColor(Color.WHITE);
     }
 
-    private void drawPreviewGlyph(SpriteBatch batch, GlyphSource source, int codePoint, int x, int y, int scale) {
+    private void drawPreviewGlyph(SpriteBatch batch, GlyphSource source, int codePoint, int x,
+            int y, int scale) {
         if (source.hasGlyph(codePoint)) {
-            batch.draw(source.getGlyphRegion(codePoint), x, y, source.getCellWidth() * scale, source.getCellHeight() * scale);
+            batch.draw(source.getGlyphRegion(codePoint), x, y, source.getCellWidth() * scale,
+                    source.getCellHeight() * scale);
             return;
         }
         int markerScale = Math.max(1, scale / MISSING_MARKER.length());
         for (int i = 0; i < MISSING_MARKER.length(); i++) {
-            batch.draw(source.getGlyphRegion(MISSING_MARKER.charAt(i)), x + i * source.getCellWidth() * markerScale, y,
-                source.getCellWidth() * markerScale, source.getCellHeight() * markerScale);
+            batch.draw(source.getGlyphRegion(MISSING_MARKER.charAt(i)),
+                    x + i * source.getCellWidth() * markerScale, y,
+                    source.getCellWidth() * markerScale, source.getCellHeight() * markerScale);
         }
     }
 
@@ -398,7 +408,8 @@ final class GlyphReviewScene extends GridScene {
         comparePanelWidth = panelWidth(heights, used);
 
         int cellHeight = glyphs.getCellHeight();
-        comparePanelRows = (compareHeights[used - 1] + 2 * PREVIEW_PADDING + cellHeight - 1) / cellHeight;
+        comparePanelRows =
+                (compareHeights[used - 1] + 2 * PREVIEW_PADDING + cellHeight - 1) / cellHeight;
         int contextTopRow = PREVIEW_TOP_ROW + comparePanelRows;
         int availablePixels = (LAST_ANSWER_ROW - contextTopRow) * cellHeight;
         contextPairs = Math.max(1, Math.min(COLOR_PAIRS.length, availablePixels / candidateHeight));
@@ -406,7 +417,7 @@ final class GlyphReviewScene extends GridScene {
 
     private int pairWidth(int height) {
         return candidate.getCellWidth() * (height / candidate.getCellHeight()) + PAIR_GAP
-            + glyphs.getCellWidth() * (height / glyphs.getCellHeight());
+                + glyphs.getCellWidth() * (height / glyphs.getCellHeight());
     }
 
     private int panelWidth(IntArray heights, int count) {
@@ -435,7 +446,7 @@ final class GlyphReviewScene extends GridScene {
         if (current.isPresent()) {
             int position = reasonMenuOpen ? session.answeredCount() : session.answeredCount() + 1;
             writeLine(PROGRESS_ROW, String.format(Locale.ROOT, "%d / %d   U+%04X",
-                position, session.totalCount(), current.getAsInt()), WHITE);
+                    position, session.totalCount(), current.getAsInt()), WHITE);
             if (comparing()) {
                 writeCompareLabels();
                 writeCandidateContext(current.getAsInt());
@@ -443,8 +454,10 @@ final class GlyphReviewScene extends GridScene {
                 writeContextRows(current.getAsInt());
             }
         } else {
-            writeLine(PROGRESS_ROW, String.format(Locale.ROOT, "Done: %d perfect, %d needs work, %d fail",
-                session.count(Verdict.PERFECT), session.count(Verdict.NEEDS_WORK), session.count(Verdict.FAIL)), GOLD);
+            writeLine(PROGRESS_ROW,
+                    String.format(Locale.ROOT, "Done: %d perfect, %d needs work, %d fail",
+                            session.count(Verdict.PERFECT), session.count(Verdict.NEEDS_WORK),
+                            session.count(Verdict.FAIL)), GOLD);
         }
         writeLine(LAST_ANSWER_ROW, lastAnswerText(), CYAN);
         writeLine(ERROR_ROW, statusText(), ERROR);
@@ -462,16 +475,17 @@ final class GlyphReviewScene extends GridScene {
     }
 
     private void writeCompareLabels() {
-        writeLine(COMPARE_LABEL_ROW, "left: new " + candidate.getCellWidth() + "x" + candidate.getCellHeight()
-            + "  right: old " + glyphs.getCellWidth() + "x" + glyphs.getCellHeight(), LABEL);
+        writeLine(COMPARE_LABEL_ROW, "left: new " + candidate.getCellWidth() + "x"
+                + candidate.getCellHeight() + "  right: old " + glyphs.getCellWidth() + "x"
+                + glyphs.getCellHeight(), LABEL);
     }
 
     private static int[] contextPattern(int codePoint) {
-        return new int[] {
-            'a', '#', codePoint, '#', 'b', ' ',
-            BOX_VERTICAL, codePoint, BOX_VERTICAL, ' ',
-            MEDIUM_SHADE, codePoint, MEDIUM_SHADE, ' ',
-            '0', codePoint, 'O',
+        return new int[]{
+                'a', '#', codePoint, '#', 'b', ' ',
+                BOX_VERTICAL, codePoint, BOX_VERTICAL, ' ',
+                MEDIUM_SHADE, codePoint, MEDIUM_SHADE, ' ',
+                '0', codePoint, 'O',
         };
     }
 
@@ -481,7 +495,8 @@ final class GlyphReviewScene extends GridScene {
             for (int column = 0; column < candidateGrid.getColumns(); column++) {
                 int glyph = pattern[column];
                 boolean usable = glyph == codePoint || candidate.hasGlyph(glyph);
-                candidateGrid.set(column, pair, usable ? glyph : ' ', COLOR_PAIRS[pair][0], COLOR_PAIRS[pair][1]);
+                candidateGrid.set(column, pair, usable ? glyph : ' ', COLOR_PAIRS[pair][0],
+                        COLOR_PAIRS[pair][1]);
             }
         }
     }
@@ -504,7 +519,8 @@ final class GlyphReviewScene extends GridScene {
 
     private void writeLine(int row, String text, int foreground) {
         SceneDrawing.writePadded(grid, 0, row, MARGIN_COLUMNS, "", foreground, CLEAR);
-        SceneDrawing.writePadded(grid, MARGIN_COLUMNS, row, grid.getColumns() - MARGIN_COLUMNS, text, foreground, CLEAR);
+        SceneDrawing.writePadded(grid, MARGIN_COLUMNS, row, grid.getColumns() - MARGIN_COLUMNS,
+                text, foreground, CLEAR);
     }
 
     private void writeContextRows(int codePoint) {
@@ -516,7 +532,8 @@ final class GlyphReviewScene extends GridScene {
             for (int column = 0; column < CONTEXT_WIDTH; column++) {
                 int index = column - MARGIN_COLUMNS;
                 boolean inMargin = index < 0;
-                grid.set(column, y, !inMargin && index < pattern.length ? pattern[index] : ' ', foreground,
+                grid.set(column, y, !inMargin && index < pattern.length ? pattern[index] : ' ',
+                        foreground,
                         inMargin ? CLEAR : background);
             }
         }
@@ -541,13 +558,14 @@ final class GlyphReviewScene extends GridScene {
             ReviewCellSize cell = ReviewCellSize.parse(reviewCell);
             FileHandle image = Gdx.files.absolute(reviewSheetPath);
             FileHandle order = Gdx.files.absolute(image.pathWithoutExtension() + ".txt");
-            candidate = TextureGlyphSource.loadSheet(image, order, cell.width(), cell.height(), TransparencyMode.AUTO);
+            candidate = TextureGlyphSource.loadSheet(image, order, cell.width(), cell.height(),
+                    TransparencyMode.AUTO);
             candidateOrderFile = order;
             layoutCompare();
             candidateGrid = new TerminalGrid(CONTEXT_PATTERN_LENGTH, contextPairs);
             candidateLayer = layers.add(candidateGrid, candidate);
             candidateLayer.setOffset(MARGIN_COLUMNS * glyphs.getCellWidth(),
-                (PREVIEW_TOP_ROW + comparePanelRows) * glyphs.getCellHeight());
+                    (PREVIEW_TOP_ROW + comparePanelRows) * glyphs.getCellHeight());
         } catch (GdxRuntimeException | IllegalArgumentException e) {
             candidateError = "Sheet failed, using default font: " + e.getMessage();
         }
@@ -557,7 +575,8 @@ final class GlyphReviewScene extends GridScene {
         loadCandidate();
         reviewList = REVIEW_LIST;
         listNotice = candidateError;
-        FileHandle listFile = reviewCharsPath != null ? Gdx.files.absolute(reviewCharsPath) : candidateOrderFile;
+        FileHandle listFile =
+                reviewCharsPath != null ? Gdx.files.absolute(reviewCharsPath) : candidateOrderFile;
         if (listFile == null) {
             return;
         }

@@ -7,7 +7,8 @@ public final class EighthBar {
     private static final int FULL_BLOCK = 0x2588;
     private static final int EMPTY = ' ';
     /** Index is the number of filled eighths, 0 to 7. */
-    private static final int[] PARTIAL_BLOCKS = {EMPTY, 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589};
+    private static final int[] PARTIAL_BLOCKS =
+            {EMPTY, 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589};
 
     private EighthBar() {
     }
@@ -17,14 +18,16 @@ public final class EighthBar {
      * @param cellCount number of cells in the bar, at least 1
      * @param fraction filled share of the bar; clamped to 0..1
      * @return the code point to draw in that cell
-     * @throws IllegalArgumentException if {@code cellCount} is not positive or {@code cellIndex} is out of range
+     * @throws IllegalArgumentException if {@code cellCount} is not positive or {@code cellIndex} is
+     *        out of range
      */
     public static int codePointAt(int cellIndex, int cellCount, float fraction) {
         if (cellCount <= 0) {
             throw new IllegalArgumentException("cellCount must be > 0: " + cellCount);
         }
         if (cellIndex < 0 || cellIndex >= cellCount) {
-            throw new IllegalArgumentException("cellIndex out of range 0.." + (cellCount - 1) + ": " + cellIndex);
+            throw new IllegalArgumentException(
+                    "cellIndex out of range 0.." + (cellCount - 1) + ": " + cellIndex);
         }
         int eighthsInCell = totalEighths(cellCount, fraction) - cellIndex * EIGHTHS_PER_CELL;
         if (eighthsInCell <= 0) {

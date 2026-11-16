@@ -16,7 +16,7 @@ class WaypointRouteTest {
             column += step == 'L' ? -1 : step == 'R' ? 1 : 0;
             row += step == 'U' ? -1 : step == 'D' ? 1 : 0;
         }
-        return new int[] {column, row};
+        return new int[]{column, row};
     }
 
     private static int count(String steps, char step) {
@@ -34,7 +34,8 @@ class WaypointRouteTest {
 
     @Test
     void routeIsClosed() {
-        String route = WaypointRoute.from(40, 22).to(30, 17).to(8, 5).pause(2).to(50, 40).back().route();
+        String route =
+                WaypointRoute.from(40, 22).to(30, 17).to(8, 5).pause(2).to(50, 40).back().route();
         int[] end = endOf(40, 22, route);
         assertEquals(40, end[0]);
         assertEquals(22, end[1]);
@@ -42,7 +43,8 @@ class WaypointRouteTest {
 
     @Test
     void routeThatDoesNotEndAtItsStartIsRejected() {
-        assertThrows(IllegalStateException.class, () -> WaypointRoute.from(40, 22).to(30, 17).route());
+        assertThrows(IllegalStateException.class,
+                () -> WaypointRoute.from(40, 22).to(30, 17).route());
     }
 
     @Test

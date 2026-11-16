@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 class PixelScalerTest {
 
     private static final String DEFAULT_SHEET =
-        "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.png";
+            "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.png";
 
     private static final String DEFAULT_ORDER =
-        "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.txt";
+            "/com/github/halfdeadgames/asciigdx/fonts/saiksistt/saiksistt-16x16.txt";
 
     private static final int DEFAULT_CELL = 16;
 
@@ -35,12 +35,12 @@ class PixelScalerTest {
 
     @Test
     void scalesEachPixelIntoABlock() {
-        int[] scaled = PixelScaler.scale(new int[] {10, 20, 30, 40}, 2, 2, 2);
-        assertArrayEquals(new int[] {
-            10, 10, 20, 20,
-            10, 10, 20, 20,
-            30, 30, 40, 40,
-            30, 30, 40, 40}, scaled);
+        int[] scaled = PixelScaler.scale(new int[]{10, 20, 30, 40}, 2, 2, 2);
+        assertArrayEquals(new int[]{
+                10, 10, 20, 20,
+                10, 10, 20, 20,
+                30, 30, 40, 40,
+                30, 30, 40, 40}, scaled);
     }
 
     @Test
@@ -51,11 +51,11 @@ class PixelScalerTest {
     @Test
     void scale2xRoundsAStaircaseCorner() {
         int[] staircase = {
-            1, 0, 0,
-            1, 1, 0,
-            1, 1, 1};
+                1, 0, 0,
+                1, 1, 0,
+                1, 1, 1};
         int[] scaled = PixelScaler.scale2x(staircase, 3, 3, 3, 3, slot -> false,
-            PixelScaler.Scale2xMode.FULL, pixel -> false);
+                PixelScaler.Scale2xMode.FULL, pixel -> false);
         // Center pixel: only its top-right quarter takes the empty neighbor's color.
         assertEquals(1, scaled[2 * 6 + 2]);
         assertEquals(0, scaled[2 * 6 + 3]);
@@ -66,21 +66,24 @@ class PixelScalerTest {
     @Test
     void scale2xKeepsSolidBlocksAndIsolatedPixelsAsPlainBlocks() {
         int[] solid = {1, 1, 1, 1, 1, 1, 1, 1, 1};
-        assertArrayEquals(PixelScaler.scale(solid, 3, 3, 2), PixelScaler.scale2x(solid, 3, 3, 3, 3, slot -> false,
-            PixelScaler.Scale2xMode.FULL, pixel -> false));
+        assertArrayEquals(PixelScaler.scale(solid, 3, 3, 2),
+                PixelScaler.scale2x(solid, 3, 3, 3, 3, slot -> false,
+                        PixelScaler.Scale2xMode.FULL, pixel -> false));
         int[] isolated = {0, 0, 0, 0, 1, 0, 0, 0, 0};
-        assertArrayEquals(PixelScaler.scale(isolated, 3, 3, 2), PixelScaler.scale2x(isolated, 3, 3, 3, 3, slot -> false,
-            PixelScaler.Scale2xMode.FULL, pixel -> false));
+        assertArrayEquals(PixelScaler.scale(isolated, 3, 3, 2),
+                PixelScaler.scale2x(isolated, 3, 3, 3, 3, slot -> false,
+                        PixelScaler.Scale2xMode.FULL, pixel -> false));
     }
 
     @Test
     void scale2xNeverReadsAcrossCellEdges() {
         // Two 2x2 cells side by side; each is one solid color, so no pixel may change.
         int[] pixels = {
-            1, 1, 0, 0,
-            1, 1, 0, 0};
-        assertArrayEquals(PixelScaler.scale(pixels, 4, 2, 2), PixelScaler.scale2x(pixels, 4, 2, 2, 2, slot -> false,
-            PixelScaler.Scale2xMode.FULL, pixel -> false));
+                1, 1, 0, 0,
+                1, 1, 0, 0};
+        assertArrayEquals(PixelScaler.scale(pixels, 4, 2, 2),
+                PixelScaler.scale2x(pixels, 4, 2, 2, 2, slot -> false,
+                        PixelScaler.Scale2xMode.FULL, pixel -> false));
     }
 
     @Test
@@ -115,7 +118,7 @@ class PixelScalerTest {
         int[] source = image.getRGB(0, 0, width, height, null, 0, width);
         int[] plain = PixelScaler.scale(source, width, height, 2);
         int[] smooth = PixelScaler.scale2xGlyphSheet(source, width, height, cell, codePoints,
-            PixelScaler.Scale2xMode.FULL, pixel -> false);
+                PixelScaler.Scale2xMode.FULL, pixel -> false);
         int scaledWidth = width * 2;
         int lockedCells = 0;
 
@@ -133,9 +136,11 @@ class PixelScalerTest {
                 for (int x = 0; x < cell * 2; x++) {
                     int index = (top + y) * scaledWidth + left + x;
                     if (locked) {
-                        assertEquals(plain[index], smooth[index], "locked U+" + Integer.toHexString(codePoints[slot]));
+                        assertEquals(plain[index], smooth[index],
+                                "locked U+" + Integer.toHexString(codePoints[slot]));
                     }
-                    assertEquals(true, sourceColors.contains(smooth[index]), "color in slot " + slot);
+                    assertEquals(true, sourceColors.contains(smooth[index]),
+                            "color in slot " + slot);
                 }
             }
             if (locked) {
@@ -148,8 +153,9 @@ class PixelScalerTest {
     private static final int LIT = 0xFFFFFFFF;
 
     private static int[] variant(int[] pixels, int width, int height, int cell, IntPredicate locked,
-        PixelScaler.Scale2xMode mode) {
-        return PixelScaler.scale2x(pixels, width, height, cell, cell, locked, mode, pixel -> (pixel >>> 24) == 0);
+            PixelScaler.Scale2xMode mode) {
+        return PixelScaler.scale2x(pixels, width, height, cell, cell, locked, mode,
+                pixel -> (pixel >>> 24) == 0);
     }
 
     private static int[] randomOneBitSheet(int width, int height, long seed) {
@@ -194,13 +200,16 @@ class PixelScalerTest {
             IntPredicate locked = slot -> slot == 1;
             int[] nearest = PixelScaler.scale(pixels, width, height, 2);
             int[] full = variant(pixels, width, height, 8, locked, PixelScaler.Scale2xMode.FULL);
-            int[] fill = variant(pixels, width, height, 8, locked, PixelScaler.Scale2xMode.FILL_ONLY);
-            int[] trim = variant(pixels, width, height, 8, locked, PixelScaler.Scale2xMode.TRIM_ONLY);
+            int[] fill =
+                    variant(pixels, width, height, 8, locked, PixelScaler.Scale2xMode.FILL_ONLY);
+            int[] trim =
+                    variant(pixels, width, height, 8, locked, PixelScaler.Scale2xMode.TRIM_ONLY);
             for (int i = 0; i < nearest.length; i++) {
                 boolean nearestLit = nearest[i] != 0;
                 assertEquals(true, !nearestLit || fill[i] != 0, "fill is a superset of nearest");
                 assertEquals(true, nearestLit || trim[i] == 0, "trim is a subset of nearest");
-                int combined = fill[i] != nearest[i] ? fill[i] : trim[i] != nearest[i] ? trim[i] : nearest[i];
+                int combined = fill[i] != nearest[i] ? fill[i]
+                        : trim[i] != nearest[i] ? trim[i] : nearest[i];
                 assertEquals(full[i], combined, "fill and trim reproduce scale2x at " + i);
             }
         }
@@ -213,7 +222,8 @@ class PixelScalerTest {
         int[] pixels = randomOneBitSheet(width, height, 7);
         int[] nearest = PixelScaler.scale(pixels, width, height, 2);
         for (PixelScaler.Scale2xMode mode : PixelScaler.Scale2xMode.values()) {
-            assertArrayEquals(nearest, variant(pixels, width, height, 8, slot -> true, mode), mode.name());
+            assertArrayEquals(nearest, variant(pixels, width, height, 8, slot -> true, mode),
+                    mode.name());
         }
     }
 
@@ -224,13 +234,14 @@ class PixelScalerTest {
     private static final IntPredicate BACKGROUND = pixel -> pixel == 0;
 
     private static final Upscaler MMPX = (pixels, width, height, cell, locked) ->
-        PixelScaler.mmpx(pixels, width, height, cell, cell, locked, pixel -> pixel == 0 ? 0 : (pixel & 0xFF) + 1);
+            PixelScaler.mmpx(pixels, width, height, cell, cell, locked,
+                    pixel -> pixel == 0 ? 0 : (pixel & 0xFF) + 1);
 
     private static final Upscaler SFX = (pixels, width, height, cell, locked) ->
-        PixelScaler.scale2xSfx(pixels, width, height, cell, cell, locked);
+            PixelScaler.scale2xSfx(pixels, width, height, cell, cell, locked);
 
     private static final Upscaler LIGHT = (pixels, width, height, cell, locked) ->
-        PixelScaler.light(pixels, width, height, cell, cell, locked, BACKGROUND);
+            PixelScaler.light(pixels, width, height, cell, cell, locked, BACKGROUND);
 
     private static final Upscaler[] NEW_UPSCALERS = {MMPX, SFX, LIGHT};
 
@@ -263,7 +274,8 @@ class PixelScalerTest {
                     colors.add(pixel);
                 }
                 for (int pixel : upscaler.apply(pixels, 32, 16, 8, slot -> false)) {
-                    assertEquals(true, colors.contains(pixel), "new color " + Integer.toHexString(pixel));
+                    assertEquals(true, colors.contains(pixel),
+                            "new color " + Integer.toHexString(pixel));
                 }
             }
         }
@@ -278,7 +290,8 @@ class PixelScalerTest {
             int[] partial = upscaler.apply(pixels, 32, 16, 8, slot -> slot == 1);
             for (int y = 0; y < 16; y++) {
                 for (int x = 16; x < 32; x++) {
-                    assertEquals(nearest[y * 64 + x], partial[y * 64 + x], "locked cell pixel " + x + "," + y);
+                    assertEquals(nearest[y * 64 + x], partial[y * 64 + x],
+                            "locked cell pixel " + x + "," + y);
                 }
             }
         }
@@ -297,7 +310,8 @@ class PixelScalerTest {
                 int[] alone = upscaler.apply(single, 8, 8, 8, slot -> false);
                 for (int y = 0; y < 16; y++) {
                     for (int x = 0; x < 16; x++) {
-                        assertEquals(alone[y * 16 + x], together[y * 32 + cell * 16 + x], "cell " + cell + " at " + x + "," + y);
+                        assertEquals(alone[y * 16 + x], together[y * 32 + cell * 16 + x],
+                                "cell " + cell + " at " + x + "," + y);
                     }
                 }
             }
@@ -316,22 +330,25 @@ class PixelScalerTest {
                 }
             }
         }
-        assertArrayEquals(PixelScaler.scale(isolated, 8, 8, 2), MMPX.apply(isolated, 8, 8, 8, slot -> false));
-        assertArrayEquals(PixelScaler.scale(isolated, 8, 8, 2), SFX.apply(isolated, 8, 8, 8, slot -> false));
+        assertArrayEquals(PixelScaler.scale(isolated, 8, 8, 2),
+                MMPX.apply(isolated, 8, 8, 8, slot -> false));
+        assertArrayEquals(PixelScaler.scale(isolated, 8, 8, 2),
+                SFX.apply(isolated, 8, 8, 8, slot -> false));
     }
 
     @Test
     void mmpxKeepsSquareCornersOfASolidRectangle() {
         int[] rectangle = block(8, 2, 2, 5, 5);
-        assertArrayEquals(PixelScaler.scale(rectangle, 8, 8, 2), MMPX.apply(rectangle, 8, 8, 8, slot -> false));
+        assertArrayEquals(PixelScaler.scale(rectangle, 8, 8, 2),
+                MMPX.apply(rectangle, 8, 8, 8, slot -> false));
     }
 
     @Test
     void scale2xSfxRoundsAStaircaseCornerLikeScale2x() {
         int[] staircase = {
-            1, 0, 0,
-            1, 1, 0,
-            1, 1, 1};
+                1, 0, 0,
+                1, 1, 0,
+                1, 1, 1};
         int[] scaled = SFX.apply(staircase, 3, 3, 3, slot -> false);
         assertEquals(1, scaled[2 * 6 + 2]);
         assertEquals(0, scaled[2 * 6 + 3]);
@@ -408,7 +425,8 @@ class PixelScalerTest {
                     for (int x = 0; x < scaledCell; x++) {
                         int expected = source[(top + y / scale) * width + left + x / scale];
                         int actual = scaled[(top * scale + y) * scaledWidth + left * scale + x];
-                        assertEquals(expected, actual, "cell at " + left + "," + top + " pixel " + x + "," + y);
+                        assertEquals(expected, actual,
+                                "cell at " + left + "," + top + " pixel " + x + "," + y);
                     }
                 }
             }

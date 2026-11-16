@@ -36,7 +36,8 @@ class AutoWalkDefaultRouteTest {
             readDirectionOfStep(step);
             column += direction.getColumn();
             row += direction.getRow();
-            assertTrue(column >= 8 && column <= MAP_COLUMNS - 9, "column " + column + " at step " + step);
+            assertTrue(column >= 8 && column <= MAP_COLUMNS - 9,
+                    "column " + column + " at step " + step);
             assertTrue(row >= 5 && row <= MAP_ROWS - 6, "row " + row + " at step " + step);
         }
     }

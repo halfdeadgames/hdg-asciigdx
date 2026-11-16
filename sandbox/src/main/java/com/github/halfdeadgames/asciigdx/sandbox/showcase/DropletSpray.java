@@ -4,9 +4,9 @@ import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /**
- * Droplets thrown radially outward from one point in a top-down view. Every value is a pure function of the
- * droplet index and the time, so repeated runs match. The spray tween should be linear: its progress is the spray's
- * linear progress, and the outward easing is applied here.
+ * Droplets thrown radially outward from one point in a top-down view. Every value is a pure
+ * function of the droplet index and the time, so repeated runs match. The spray tween should be
+ * linear: its progress is the spray's linear progress, and the outward easing is applied here.
  */
 public final class DropletSpray {
 
@@ -53,7 +53,8 @@ public final class DropletSpray {
     }
 
     private void fillDroplet(int index) {
-        double angle = 2.0 * Math.PI * index / count + ANGLE_VARIATION_RADIANS * Math.sin(index * ANGLE_VARIATION_STEP);
+        double angle = 2.0 * Math.PI * index / count + ANGLE_VARIATION_RADIANS * Math.sin(
+                index * ANGLE_VARIATION_STEP);
         directionsX[index] = (float) Math.cos(angle);
         directionsY[index] = (float) Math.sin(angle);
         float fraction = (index * GOLDEN_FRACTION) % 1f;
@@ -78,7 +79,8 @@ public final class DropletSpray {
     }
 
     public float distanceCellsAt(int index, float timeSeconds) {
-        return Interpolation.pow2Out.apply(spray.progressAt(timeSeconds)) * maxDistanceCells * distanceMultipliers[index];
+        return Interpolation.pow2Out.apply(spray.progressAt(timeSeconds)) * maxDistanceCells
+                * distanceMultipliers[index];
     }
 
     /** Rises from 1 to the peak at mid-spray, then falls back to 1. */

@@ -42,7 +42,8 @@ class CaptureConfigTest {
 
     @Test
     void scenesAreTrimmedAndKeepOrder() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, " b , a,c ");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, " b , a,c ");
 
         assertEquals(List.of("b", "a", "c"), config.getSceneIds());
     }
@@ -50,12 +51,13 @@ class CaptureConfigTest {
     @Test
     void emptySceneEntryThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, "a,,b"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, "a,,b"));
     }
 
     @Test
     void samplesAreParsed() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, " 9 ");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, " 9 ");
 
         assertEquals(9, config.getSamples());
     }
@@ -63,24 +65,25 @@ class CaptureConfigTest {
     @Test
     void nonNumericSamplesThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "many"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "many"));
     }
 
     @Test
     void zeroSamplesThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "0"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "0"));
     }
 
     @Test
     void negativeSamplesThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "-5"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLES, "-5"));
     }
 
     @Test
     void sampleSecondsAreParsed() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, " 1.25 ");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, " 1.25 ");
 
         assertEquals(1.25f, config.getSampleSeconds());
     }
@@ -88,30 +91,35 @@ class CaptureConfigTest {
     @Test
     void nonNumericSampleSecondsThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, "long"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS,
+                        "long"));
     }
 
     @Test
     void zeroSampleSecondsThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, "0"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS,
+                        "0"));
     }
 
     @Test
     void negativeSampleSecondsThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, "-0.5"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS,
+                        "-0.5"));
     }
 
     @Test
     void notANumberSampleSecondsThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS, "NaN"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SAMPLE_SECONDS,
+                        "NaN"));
     }
 
     @Test
     void sceneListIsUnmodifiable() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, "a");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, "a");
 
         assertThrows(UnsupportedOperationException.class, () -> config.getSceneIds().add("b"));
     }
@@ -123,7 +131,8 @@ class CaptureConfigTest {
 
     @Test
     void dirtyPercentsAreTrimmedAndKeepOrder() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, " 50, 0,100 ,1");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, " 50, 0,100 ,1");
 
         assertEquals(List.of(50, 0, 100, 1), config.getDirtyPercents());
     }
@@ -131,25 +140,25 @@ class CaptureConfigTest {
     @Test
     void nonNumericDirtyThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10,abc"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10,abc"));
     }
 
     @Test
     void emptyDirtyEntryThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10,,20"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10,,20"));
     }
 
     @Test
     void negativeDirtyThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "-1"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "-1"));
     }
 
     @Test
     void dirtyAboveHundredThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "101"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "101"));
     }
 
     @Test
@@ -159,7 +168,8 @@ class CaptureConfigTest {
 
     @Test
     void layerCountsAreTrimmedAndKeepOrder() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, " 4, 1,8 ,2");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, " 4, 1,8 ,2");
 
         assertEquals(List.of(4, 1, 8, 2), config.getLayerCounts());
     }
@@ -167,45 +177,48 @@ class CaptureConfigTest {
     @Test
     void nonNumericLayersThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,abc"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,abc"));
     }
 
     @Test
     void emptyLayersEntryThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,,2"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "1,,2"));
     }
 
     @Test
     void zeroLayersThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "0"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "0"));
     }
 
     @Test
     void negativeLayersThrow() {
         assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "-1"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "-1"));
     }
 
     @Test
     void layersAboveMaximumThrowWithClearMessage() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-            () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "9"));
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "9"));
 
-        assertTrue(error.getMessage().contains("'layers'") && error.getMessage().contains("between 1 and 8"));
+        assertTrue(error.getMessage().contains("'layers'") && error.getMessage()
+                .contains("between 1 and 8"));
     }
 
     @Test
     void layerListIsUnmodifiable() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "2");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_LAYERS, "2");
 
         assertThrows(UnsupportedOperationException.class, () -> config.getLayerCounts().add(4));
     }
 
     @Test
     void dirtyListIsUnmodifiable() {
-        CaptureConfig config = parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10");
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_DIRTY, "10");
 
         assertThrows(UnsupportedOperationException.class, () -> config.getDirtyPercents().add(20));
     }

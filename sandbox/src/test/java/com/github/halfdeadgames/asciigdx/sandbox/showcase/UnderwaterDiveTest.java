@@ -14,7 +14,8 @@ class UnderwaterDiveTest {
     private static final float EPSILON = 1e-5f;
     private static final float MINIMUM_SEE_THROUGH = 0.35f;
     private final UnderwaterDive dive = new UnderwaterDive(
-        new Tween(7.6f, 0.4f, 0f, 1f, Interpolation.sineOut), new Tween(8.0f, 0.6f, 0f, 1f, Interpolation.sine));
+            new Tween(7.6f, 0.4f, 0f, 1f, Interpolation.sineOut),
+            new Tween(8.0f, 0.6f, 0f, 1f, Interpolation.sine));
 
     @Test
     void isUnderwaterOnlyInsideTheWindow() {
@@ -106,7 +107,8 @@ class UnderwaterDiveTest {
         Tween sink = new Tween(7.6f, 0.4f, 0f, 1f);
         assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(null, sink));
         assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(sink, null));
-        assertThrows(IllegalArgumentException.class, () -> new UnderwaterDive(sink, new Tween(7.9f, 0.6f, 0f, 1f)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new UnderwaterDive(sink, new Tween(7.9f, 0.6f, 0f, 1f)));
         assertThrows(IllegalArgumentException.class, () -> dive.waterAlphaAt(-1f, 8.0f));
         assertThrows(IllegalArgumentException.class, () -> dive.waterAlphaAt(Float.NaN, 8.0f));
     }

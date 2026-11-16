@@ -20,9 +20,12 @@ final class SceneDrawing {
     private SceneDrawing() {
     }
 
-    /** Writes {@code text} from {@code column}, cut off or padded with spaces to exactly {@code width} cells. */
+    /**
+     * Writes {@code text} from {@code column}, cut off or padded with spaces to exactly
+     * {@code width} cells.
+     */
     static void writePadded(TerminalGrid grid, int column, int row, int width, CharSequence text,
-                            int foreground, int background) {
+            int foreground, int background) {
         int index = 0;
         for (int offset = 0; offset < width; offset++) {
             int codePoint = ' ';
@@ -44,11 +47,14 @@ final class SceneDrawing {
         return FIRST_RANDOM_GLYPH + random.nextInt(LAST_RANDOM_GLYPH - FIRST_RANDOM_GLYPH + 1);
     }
 
-    /** Clears the screen area covered by the viewport to {@link #VIEWPORT_BACKGROUND}, leaving the rest alone. */
+    /**
+     * Clears the screen area covered by the viewport to {@link #VIEWPORT_BACKGROUND}, leaving the
+     * rest alone.
+     */
     static void clearViewportArea(Viewport viewport) {
         Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
         HdpiUtils.glScissor(viewport.getScreenX(), viewport.getScreenY(),
-            viewport.getScreenWidth(), viewport.getScreenHeight());
+                viewport.getScreenWidth(), viewport.getScreenHeight());
         ScreenUtils.clear(VIEWPORT_BACKGROUND);
         Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
     }

@@ -16,7 +16,10 @@ class AutoWalkTest {
     private final AutoWalk walk = new AutoWalk(ROUTE);
     private final CellPoint point = new CellPoint();
 
-    /** The logical cell during step k is the position after k + 1 steps, so sample at the start of step n - 1. */
+    /**
+     * The logical cell during step k is the position after k + 1 steps, so sample at the start of
+     * step n - 1.
+     */
     private void assertAtStep(int stepsTaken, int column, int row) {
         walk.positionAt((stepsTaken - 1) * AutoWalk.STEP_SECONDS, START_COLUMN, START_ROW, point);
         assertEquals(column, point.getColumn(), "column after " + stepsTaken + " steps");

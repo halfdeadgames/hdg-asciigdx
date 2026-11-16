@@ -13,14 +13,18 @@ public final class AutoWalk {
     private final String route;
 
     /**
-     * Creates the exploring loop for an 80x44 map started at (40, 22). It wanders on diagonal headings
-     * and swings near the top-left corner so both camera axes stop, without running along a wall.
+     * Creates the exploring loop for an 80x44 map started at (40, 22). It wanders on diagonal
+     * headings and swings near the top-left corner so both camera axes stop, without running along
+     * a wall.
      */
     public AutoWalk() {
         this(exploringLoopRoute());
     }
 
-    /** Creates a walk over a route of 'L', 'R', 'U', 'D', and 'W' (wait) steps that must return to its start. */
+    /**
+     * Creates a walk over a route of 'L', 'R', 'U', 'D', and 'W' (wait) steps that must return
+     * to its start.
+     */
     public AutoWalk(String route) {
         if (route.isEmpty()) {
             throw new IllegalArgumentException("route must not be empty");
@@ -60,7 +64,9 @@ public final class AutoWalk {
         out.set(column, row);
     }
 
-    /** Writes the column and row change of the step in progress at the given time into {@code out}. */
+    /**
+     * Writes the column and row change of the step in progress at the given time into {@code out}.
+     */
     public void stepDirectionAt(float seconds, CellPoint out) {
         char step = route.charAt(stepCountAt(seconds) % route.length());
         out.set(columnDelta(step), rowDelta(step));

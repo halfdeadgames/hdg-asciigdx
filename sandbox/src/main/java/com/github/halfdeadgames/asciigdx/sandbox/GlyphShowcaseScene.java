@@ -9,7 +9,10 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 
-/** The whole Saiksistt sheet next to examples built from its cards, chess pieces, dice, and bar glyphs. */
+/**
+ * The whole Saiksistt sheet next to examples built from its cards, chess pieces, dice, and bar
+ * glyphs.
+ */
 final class GlyphShowcaseScene extends GridScene {
 
     private static final int EMPTY_SLOT_FILLER = 0x10FFFD;
@@ -39,12 +42,13 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int FIRST_DIE_FACE = 0x2680;
 
     private static final int[] VERTICAL_BAR_STAGES = {
-        ' ', 0x2581, 0x2582, 0x2583, 0x2584, 0x2585, 0x2586, 0x2587, FULL_BLOCK
+            ' ', 0x2581, 0x2582, 0x2583, 0x2584, 0x2585, 0x2586, 0x2587, FULL_BLOCK
     };
     private static final int[] HORIZONTAL_BAR_STAGES = {
-        ' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589, FULL_BLOCK
+            ' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589, FULL_BLOCK
     };
-    private static final int[] SHADE_STAGES = {' ', LIGHT_SHADE, MEDIUM_SHADE, DARK_SHADE, FULL_BLOCK};
+    private static final int[] SHADE_STAGES =
+            {' ', LIGHT_SHADE, MEDIUM_SHADE, DARK_SHADE, FULL_BLOCK};
     private static final int[] HEART_STAGES = {HEART_HOLLOW, HEART_FULL};
 
     private static final float SECONDS_PER_METER_STAGE = 0.4f;
@@ -131,8 +135,10 @@ final class GlyphShowcaseScene extends GridScene {
             case Input.Keys.DOWN -> scrollBy(0, 1);
             case Input.Keys.LEFT -> scrollBy(-1, 0);
             case Input.Keys.RIGHT -> scrollBy(1, 0);
-            case Input.Keys.PAGE_UP -> scrollBy(0, -Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
-            case Input.Keys.PAGE_DOWN -> scrollBy(0, Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
+            case Input.Keys.PAGE_UP ->
+                    scrollBy(0, -Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
+            case Input.Keys.PAGE_DOWN ->
+                    scrollBy(0, Math.max(PAGE_ROWS_FALLBACK, visibleContentRows - 1));
             case Input.Keys.HOME -> scrollBy(-scrollColumn, -scrollRow);
             default -> {
                 return false;
@@ -204,14 +210,17 @@ final class GlyphShowcaseScene extends GridScene {
         visibleColumns = ScrollView.visibleCells(windowWidth, cellWidth, scale);
         int visibleRows = ScrollView.visibleCells(windowHeight, cellHeight, scale);
         int overlayCellHeight = SaiksisttSize.SQUARE_16X16.getCellHeight();
-        int overlayPixels = OVERLAY_ROWS * overlayCellHeight * Math.max(1, Math.round(Gdx.graphics.getDensity()));
-        overlayRows = Math.min(ScrollView.coveredCells(overlayPixels, cellHeight, scale), visibleRows - 1);
+        int overlayPixels = OVERLAY_ROWS * overlayCellHeight * Math.max(1,
+                Math.round(Gdx.graphics.getDensity()));
+        overlayRows = Math.min(ScrollView.coveredCells(overlayPixels, cellHeight, scale),
+                visibleRows - 1);
         visibleContentRows = visibleRows - overlayRows;
         float worldWidth = visibleColumns * cellWidth;
         float worldHeight = visibleRows * cellHeight;
         viewport.setWorldSize(worldWidth, worldHeight);
         layers.setSize(worldWidth, worldHeight);
-        contentLayer.setClip(0f, overlayRows * cellHeight, worldWidth, visibleContentRows * cellHeight);
+        contentLayer.setClip(0f, overlayRows * cellHeight, worldWidth,
+                visibleContentRows * cellHeight);
         scrollBy(0, 0);
     }
 
@@ -223,10 +232,11 @@ final class GlyphShowcaseScene extends GridScene {
 
     private void fillGrid() {
         grid.clear();
-        GlyphOrder order = GlyphOrderText.read(Gdx.files.classpath(size.getCharacterListPath()).readString("UTF-8"),
-            SHEET_COLUMNS);
-        GridDrawing.drawText(grid, 0, 0, "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL,
-            CLEAR);
+        GlyphOrder order = GlyphOrderText.read(
+                Gdx.files.classpath(size.getCharacterListPath()).readString("UTF-8"),
+                SHEET_COLUMNS);
+        GridDrawing.drawText(grid, 0, 0,
+                "Saiksistt " + sizeLabel() + ", " + countGlyphs(order) + " glyphs", LABEL, CLEAR);
         writeSheet(order);
         writeCards(1);
         writeChess(5);
@@ -258,19 +268,21 @@ final class GlyphShowcaseScene extends GridScene {
     private void writeCards(int top) {
         GridDrawing.drawText(grid, PANEL, top, "Cards", LABEL, CLEAR);
         int[][] hand = {
-            {'A', SPADE}, {'K', HEART_FULL}, {'Q', DIAMOND}, {'J', CLUB}, {'T', HEART_HOLLOW}, {'9', SPADE_HOLLOW}
+                {'A', SPADE}, {'K', HEART_FULL}, {'Q', DIAMOND}, {'J', CLUB}, {'T', HEART_HOLLOW},
+                {'9', SPADE_HOLLOW}
         };
         int column = PANEL;
         for (int[] card : hand) {
             boolean red = card[1] == HEART_FULL || card[1] == DIAMOND || card[1] == HEART_HOLLOW
-                || card[1] == DIAMOND_HOLLOW;
+                    || card[1] == DIAMOND_HOLLOW;
             int ink = red ? RED : INK;
             grid.set(column, top + 1, card[0], ink, CARD);
             grid.set(column + 1, top + 1, card[1], ink, CARD);
             column += 3;
         }
         for (int i = 0; i < 6; i++) {
-            grid.set(PANEL + i * 2, top + 2, i == 2 ? DARK_SHADE : MEDIUM_SHADE, i == 2 ? GOLD : CYAN, CLEAR);
+            grid.set(PANEL + i * 2, top + 2, i == 2 ? DARK_SHADE : MEDIUM_SHADE,
+                    i == 2 ? GOLD : CYAN, CLEAR);
         }
     }
 
@@ -302,7 +314,8 @@ final class GlyphShowcaseScene extends GridScene {
             int stage = bouncingStage(step, stages.length);
             if (stage != meterShownStage[meter]) {
                 meterShownStage[meter] = stage;
-                grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage], meterColors[meter], CLEAR);
+                grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage],
+                        meterColors[meter], CLEAR);
             }
         }
     }
@@ -316,18 +329,21 @@ final class GlyphShowcaseScene extends GridScene {
     // Each row lists its stages from empty to full, then one cell that fills and empties again.
     private void writeMeters(int top) {
         GridDrawing.drawText(grid, PANEL, top, "Meters", LABEL, CLEAR);
-        meterStages = new int[][] {VERTICAL_BAR_STAGES, HORIZONTAL_BAR_STAGES, SHADE_STAGES, HEART_STAGES};
-        meterColors = new int[] {CYAN, GOLD, WHITE, RED};
+        meterStages =
+                new int[][]{VERTICAL_BAR_STAGES, HORIZONTAL_BAR_STAGES, SHADE_STAGES, HEART_STAGES};
+        meterColors = new int[]{CYAN, GOLD, WHITE, RED};
         meterRows = new int[meterStages.length];
         meterShownStage = new int[meterStages.length];
         meterClock = 0f;
         for (int meter = 0; meter < meterStages.length; meter++) {
             meterRows[meter] = top + 1 + meter;
             for (int stage = 0; stage < meterStages[meter].length; stage++) {
-                grid.set(PANEL + stage * METER_STAGE_SPACING, meterRows[meter], meterStages[meter][stage],
-                    meterColors[meter], CLEAR);
+                grid.set(PANEL + stage * METER_STAGE_SPACING, meterRows[meter],
+                        meterStages[meter][stage],
+                        meterColors[meter], CLEAR);
             }
-            grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0], meterColors[meter], CLEAR);
+            grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0],
+                    meterColors[meter], CLEAR);
         }
     }
 

@@ -10,7 +10,8 @@ public final class PondMap {
     /** Creates a map of water cells without lilies. */
     public PondMap(int width, int height) {
         if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException("map size must be positive: " + width + "x" + height);
+            throw new IllegalArgumentException(
+                    "map size must be positive: " + width + "x" + height);
         }
         this.width = width;
         this.height = height;

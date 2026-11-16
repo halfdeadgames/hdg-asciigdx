@@ -3,8 +3,8 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 import java.util.Random;
 
 /**
- * Timing and drop placement for one set of rain drops. The set repeats a cycle of fade in, slide, and fade out,
- * shifted by a phase so several sets can be staggered.
+ * Timing and drop placement for one set of rain drops. The set repeats a cycle of fade in, slide,
+ * and fade out, shifted by a phase so several sets can be staggered.
  */
 public final class RainSet {
     private final double cycleSeconds;
@@ -18,9 +18,11 @@ public final class RainSet {
     /**
      * @param cyclesPerLoop whole cycles in one loop; cycleSeconds times this is the loop length
      * @param phaseFraction share of a cycle this set starts after time 0
-     * @param rampFraction share of a cycle spent fading in, and the same share fading out; at most 0.5
+     * @param rampFraction share of a cycle spent fading in, and the same share fading out; at most
+     *        0.5
      */
-    public RainSet(float cycleSeconds, int cyclesPerLoop, float phaseFraction, float slideColumns, float slideRows, float peakAlpha, float rampFraction) {
+    public RainSet(float cycleSeconds, int cyclesPerLoop, float phaseFraction, float slideColumns,
+            float slideRows, float peakAlpha, float rampFraction) {
         if (cyclesPerLoop < 1) {
             throw new IllegalArgumentException("cyclesPerLoop must be >= 1: " + cyclesPerLoop);
         }
@@ -44,9 +46,13 @@ public final class RainSet {
         return setIndex * 1_000_003L + cycleIndex;
     }
 
-    /** Index in [0, cyclesPerLoop), repeating every loop so a phased set never reseeds while visible at the wrap. */
+    /**
+     * Index in [0, cyclesPerLoop), repeating every loop so a phased set never reseeds while visible
+     * at the wrap.
+     */
     public int cycleIndexAt(float timeSeconds) {
-        return (int) Math.floorMod((long) Math.floor(cyclePositionAt(timeSeconds)), (long) cyclesPerLoop);
+        return (int) Math.floorMod((long) Math.floor(cyclePositionAt(timeSeconds)),
+                (long) cyclesPerLoop);
     }
 
     public float alphaAt(float timeSeconds) {
@@ -60,7 +66,9 @@ public final class RainSet {
         return peakAlpha;
     }
 
-    /** How far through the current cycle the set is, 0 at its start and approaching 1 at its end. */
+    /**
+     * How far through the current cycle the set is, 0 at its start and approaching 1 at its end.
+     */
     public float slideProgressAt(float timeSeconds) {
         double position = cyclePositionAt(timeSeconds);
         return (float) (position - Math.floor(position));
@@ -76,8 +84,12 @@ public final class RainSet {
         return slideRows * slideProgressAt(timeSeconds);
     }
 
-    /** Reseeds the random, then writes one drop per slot of the output arrays, both of the same length. */
-    public void fillDropPositions(Random random, long seed, int gridColumns, int gridRows, int[] dropColumns, int[] dropRows) {
+    /**
+     * Reseeds the random, then writes one drop per slot of the output arrays, both of the same
+     * length.
+     */
+    public void fillDropPositions(Random random, long seed, int gridColumns, int gridRows,
+            int[] dropColumns, int[] dropRows) {
         random.setSeed(seed);
         for (int drop = 0; drop < dropColumns.length; drop++) {
             dropColumns[drop] = random.nextInt(gridColumns);

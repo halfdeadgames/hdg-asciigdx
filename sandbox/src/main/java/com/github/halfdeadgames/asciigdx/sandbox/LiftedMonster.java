@@ -28,7 +28,7 @@ final class LiftedMonster {
     private boolean suspended;
 
     LiftedMonster(int column, int row, int glyph, int color, int directionX, int directionY,
-                  boolean wiggles, float staggerSeconds) {
+            boolean wiggles, float staggerSeconds) {
         this.column = column;
         this.row = row;
         this.glyph = glyph;
@@ -65,7 +65,8 @@ final class LiftedMonster {
      * Moves the monster for the given time on the shared clock. Drops its handle when the grid no
      * longer has the cell, and asks the layer for a fresh one when the cell is back.
      */
-    void update(Layer layer, int gridColumns, int gridRows, float clockSeconds, float cellWidth, float cellHeight) {
+    void update(Layer layer, int gridColumns, int gridRows, float clockSeconds, float cellWidth,
+            float cellHeight) {
         if (column >= gridColumns || row >= gridRows) {
             handle = null;
             lifted = false;
@@ -93,7 +94,7 @@ final class LiftedMonster {
             return;
         }
         handle.setOffset(directionX * amount * cellWidth * BUMP_CELL_FRACTION,
-            directionY * amount * cellHeight * BUMP_CELL_FRACTION);
+                directionY * amount * cellHeight * BUMP_CELL_FRACTION);
     }
 
     private void settle() {

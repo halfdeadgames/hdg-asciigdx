@@ -9,7 +9,10 @@ public final class AutoMotion implements PlayerMotion {
     private final AutoWalk walk = new AutoWalk();
     private final CellPoint cell = new CellPoint();
     private final CellPoint stepDirection = new CellPoint();
-    /** Fraction of the step still to slide: 1 at the step start, 0 at its end, linear for steady speed. */
+    /**
+     * Fraction of the step still to slide: 1 at the step start, 0 at its end, linear for steady
+     * speed.
+     */
     private final Tween slide = new Tween(0f, 1f, 1f, 0f, Interpolation.linear);
     private final int startColumn;
     private final int startRow;

@@ -24,7 +24,7 @@ public final class TitlePop {
      * @param toRgba         color of the last letter
      */
     public TitlePop(float startSeconds, float staggerSeconds, float popSeconds, float overshoot,
-                    int letterCount, int fromRgba, int toRgba) {
+            int letterCount, int fromRgba, int toRgba) {
         if (letterCount < 1) {
             throw new IllegalArgumentException("letterCount must be >= 1: " + letterCount);
         }
@@ -35,8 +35,10 @@ public final class TitlePop {
             throw new IllegalArgumentException("staggerSeconds must be >= 0: " + staggerSeconds);
         }
         scaleTrack = new StaggeredTrack(
-                new Tween(startSeconds, popSeconds, 0f, 1f, new Interpolation.SwingOut(overshoot)), staggerSeconds);
-        alphaTrack = new StaggeredTrack(new Tween(startSeconds, popSeconds, 0f, 1f), staggerSeconds);
+                new Tween(startSeconds, popSeconds, 0f, 1f, new Interpolation.SwingOut(overshoot)),
+                staggerSeconds);
+        alphaTrack =
+                new StaggeredTrack(new Tween(startSeconds, popSeconds, 0f, 1f), staggerSeconds);
         letterColors = new int[letterCount];
         for (int i = 0; i < letterCount; i++) {
             letterColors[i] = letterCount == 1

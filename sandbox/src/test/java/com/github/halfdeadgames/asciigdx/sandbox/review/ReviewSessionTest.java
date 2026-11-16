@@ -93,7 +93,7 @@ class ReviewSessionTest {
 
     @Test
     void lastCodePointFollowsLatestAnswer() {
-        ReviewSession session = new ReviewSession(new int[] {'A', 'B'});
+        ReviewSession session = new ReviewSession(new int[]{'A', 'B'});
         assertEquals(OptionalInt.empty(), session.lastCodePoint());
         session.fail();
         assertEquals(OptionalInt.of('A'), session.lastCodePoint());
@@ -137,35 +137,37 @@ class ReviewSessionTest {
         session.needsWork();
         session.setReasonForLast(FailReason.UGLY_OR_WRONG_SHAPE);
         session.fail();
-        ReviewSession restored = new ReviewSession(new int[] {'A', 'B', 'C'}, session.toResultsText());
+        ReviewSession restored =
+                new ReviewSession(new int[]{'A', 'B', 'C'}, session.toResultsText());
         assertEquals(session.toResultsText(), restored.toResultsText());
         assertTrue(restored.isFinished());
     }
 
     @Test
     void resumeSkipsAnsweredGlyphs() {
-        ReviewSession session = new ReviewSession(new int[] {'A', 'B', 'C'}, "U+0041\tA\tperfect\n");
+        ReviewSession session = new ReviewSession(new int[]{'A', 'B', 'C'}, "U+0041\tA\tperfect\n");
         assertEquals(1, session.answeredCount());
         assertEquals(OptionalInt.of('B'), session.current());
     }
 
     @Test
     void resumeIgnoresCodePointsNotInList() {
-        ReviewSession session = new ReviewSession(new int[] {'A'}, "U+005A\tZ\tperfect\n");
+        ReviewSession session = new ReviewSession(new int[]{'A'}, "U+005A\tZ\tperfect\n");
         assertEquals(0, session.answeredCount());
         assertEquals("", session.toResultsText());
     }
 
     @Test
     void resumeKeepsFirstLineForRepeatedCodePoint() {
-        ReviewSession session = new ReviewSession(new int[] {'A'}, "U+0041\tA\tperfect\nU+0041\tA\tfail\n");
+        ReviewSession session =
+                new ReviewSession(new int[]{'A'}, "U+0041\tA\tperfect\nU+0041\tA\tfail\n");
         assertEquals("U+0041\tA\tperfect\n", session.toResultsText());
     }
 
     @Test
     void resumeAcceptsCrlfAndBlankLines() {
         String text = "U+0041\tA\tperfect\r\n\r\n  \r\nU+0042\tB\tneeds-work\t3\r\n";
-        ReviewSession session = new ReviewSession(new int[] {'A', 'B'}, text);
+        ReviewSession session = new ReviewSession(new int[]{'A', 'B'}, text);
         assertTrue(session.isFinished());
         assertEquals("U+0041\tA\tperfect\nU+0042\tB\tneeds-work\t3\n", session.toResultsText());
     }
@@ -174,19 +176,25 @@ class ReviewSessionTest {
     void malformedLineReportsLineNumber() {
         String text = "U+0041\tA\tperfect\nnonsense\n";
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-            () -> new ReviewSession(new int[] {'A'}, text));
+                () -> new ReviewSession(new int[]{'A'}, text));
         assertTrue(error.getMessage().contains("line 2"), error.getMessage());
     }
 
     @Test
     void badVerdictBadReasonAndReasonOnPerfectAreMalformed() {
         int[] list = {'A'};
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+0041\tA\tmaybe\n"));
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+0041\tA\tpass\n"));
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+0041\tA\tfail\t9\n"));
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+0041\tA\tneeds-work\tx\n"));
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+0041\tA\tperfect\t1\n"));
-        assertThrows(IllegalArgumentException.class, () -> new ReviewSession(list, "U+ZZZZ\tA\tperfect\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+0041\tA\tmaybe\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+0041\tA\tpass\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+0041\tA\tfail\t9\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+0041\tA\tneeds-work\tx\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+0041\tA\tperfect\t1\n"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReviewSession(list, "U+ZZZZ\tA\tperfect\n"));
     }
 
     @Test

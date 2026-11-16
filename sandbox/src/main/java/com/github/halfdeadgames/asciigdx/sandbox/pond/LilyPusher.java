@@ -20,7 +20,9 @@ public final class LilyPusher {
     private final PondMap map;
     private final MovingLilies moving;
 
-    /** Creates a pusher for the lilies of the map; every lily it touches is added to {@code moving}. */
+    /**
+     * Creates a pusher for the lilies of the map; every lily it touches is added to {@code moving}.
+     */
     public LilyPusher(PondMap map, MovingLilies moving) {
         this.map = Objects.requireNonNull(map, "map");
         this.moving = Objects.requireNonNull(moving, "moving");
@@ -43,13 +45,15 @@ public final class LilyPusher {
     public void onStepStart(int fromColumn, int fromRow, int deltaColumn, int deltaRow) {
         if (Math.abs(deltaColumn) + Math.abs(deltaRow) != 1) {
             throw new IllegalArgumentException(
-                    "step must be one cell orthogonally but was (" + deltaColumn + ", " + deltaRow + ")");
+                    "step must be one cell orthogonally but was (" + deltaColumn + ", " + deltaRow
+                            + ")");
         }
         var destinationColumn = fromColumn + deltaColumn;
         var destinationRow = fromRow + deltaRow;
         releaseLeftCell(fromColumn, fromRow);
         disturbDestination(destinationColumn, destinationRow, deltaColumn, deltaRow);
-        pushNeighbors(destinationColumn, destinationRow, fromColumn, fromRow, deltaColumn, deltaRow);
+        pushNeighbors(destinationColumn, destinationRow, fromColumn, fromRow, deltaColumn,
+                deltaRow);
     }
 
     private void releaseLeftCell(int column, int row) {
@@ -87,10 +91,12 @@ public final class LilyPusher {
         }
     }
 
-    private void pushNeighbors(int destinationColumn, int destinationRow, int fromColumn, int fromRow,
+    private void pushNeighbors(int destinationColumn, int destinationRow, int fromColumn,
+            int fromRow,
             int deltaColumn, int deltaRow) {
         for (var offsetRow = -NEIGHBOR_RADIUS; offsetRow <= NEIGHBOR_RADIUS; offsetRow++) {
-            for (var offsetColumn = -NEIGHBOR_RADIUS; offsetColumn <= NEIGHBOR_RADIUS; offsetColumn++) {
+            for (var offsetColumn = -NEIGHBOR_RADIUS;
+                 offsetColumn <= NEIGHBOR_RADIUS; offsetColumn++) {
                 var column = destinationColumn + offsetColumn;
                 var row = destinationRow + offsetRow;
                 var isDestination = offsetColumn == 0 && offsetRow == 0;
@@ -98,7 +104,8 @@ public final class LilyPusher {
                 if (isDestination || isFromCell || !map.contains(column, row)) {
                     continue;
                 }
-                pushCell(map.cell(column, row), column, row, offsetColumn, offsetRow, deltaColumn, deltaRow);
+                pushCell(map.cell(column, row), column, row, offsetColumn, offsetRow, deltaColumn,
+                        deltaRow);
             }
         }
     }
@@ -114,7 +121,8 @@ public final class LilyPusher {
         for (var slot : SLOTS) {
             if (cell.hasLily(slot)) {
                 var lily = cell.lilyAt(slot);
-                pushNeighborLily(lily, slot, offsetColumn, offsetRow, deltaColumn, deltaRow, falloff);
+                pushNeighborLily(lily, slot, offsetColumn, offsetRow, deltaColumn, deltaRow,
+                        falloff);
                 markMoving(lily, column, row, slot);
             }
         }

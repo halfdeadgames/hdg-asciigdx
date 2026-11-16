@@ -14,7 +14,8 @@ public final class TypedLine {
             throw new IllegalArgumentException("text must not be null");
         }
         if (!(charactersPerSecond > 0f)) {
-            throw new IllegalArgumentException("charactersPerSecond must be > 0: " + charactersPerSecond);
+            throw new IllegalArgumentException(
+                    "charactersPerSecond must be > 0: " + charactersPerSecond);
         }
         this.startSeconds = startSeconds;
         this.text = text;

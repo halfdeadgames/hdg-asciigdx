@@ -16,7 +16,8 @@ class WaterPatternTest {
         for (int step = 0; step < 10; step++) {
             for (int row = 0; row < HEIGHT; row++) {
                 for (int column = 0; column < WIDTH; column++) {
-                    int codePoint = WaterPattern.codePointAt(column, row, step * WaterPattern.STEP_SECONDS);
+                    int codePoint =
+                            WaterPattern.codePointAt(column, row, step * WaterPattern.STEP_SECONDS);
                     assertTrue(codePoint == '~' || codePoint == '≈' || codePoint == ' ');
                 }
             }
@@ -45,8 +46,8 @@ class WaterPatternTest {
     @Test
     void patternShiftsBetweenSteps() {
         assertNotEquals(
-            WaterPattern.codePointAt(0, 0, 0f),
-            WaterPattern.codePointAt(0, 0, WaterPattern.STEP_SECONDS));
+                WaterPattern.codePointAt(0, 0, 0f),
+                WaterPattern.codePointAt(0, 0, WaterPattern.STEP_SECONDS));
     }
 
     @Test

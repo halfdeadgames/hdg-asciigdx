@@ -6,7 +6,9 @@ public final class PondCamera {
     private PondCamera() {
     }
 
-    /** Returns the window's top-left in virtual pixels along one axis for a player on a whole cell. */
+    /**
+     * Returns the window's top-left in virtual pixels along one axis for a player on a whole cell.
+     */
     public static float cameraFor(int playerCell, float cellSize, int windowCells, int mapCells) {
         return cameraFor((float) playerCell, cellSize, windowCells, mapCells);
     }

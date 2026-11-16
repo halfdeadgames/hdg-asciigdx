@@ -4,8 +4,8 @@ import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
 /**
- * Where the player is at a loop time: whole-cell backing slides, then a hop in place (scale arc only) over the
- * broken plank. Positions are in cells.
+ * Where the player is at a loop time: whole-cell backing slides, then a hop in place (scale arc
+ * only) over the broken plank. Positions are in cells.
  */
 public final class PlayerPath {
 
@@ -48,6 +48,7 @@ public final class PlayerPath {
     }
 
     public float scaleAt(float timeSeconds) {
-        return 1f + HOP_PEAK_SCALE_GAIN * (float) Math.sin(Math.PI * hopArc.progressAt(timeSeconds));
+        return 1f + HOP_PEAK_SCALE_GAIN * (float) Math.sin(
+                Math.PI * hopArc.progressAt(timeSeconds));
     }
 }

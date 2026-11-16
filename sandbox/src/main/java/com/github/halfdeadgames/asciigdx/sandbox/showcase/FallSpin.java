@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
-/** A spin and shrink over a time span; once it ends, the smooth glyph gives way to the crisp one. */
+/**
+ * A spin and shrink over a time span; once it ends, the smooth glyph gives way to the crisp one.
+ */
 public final class FallSpin {
 
     private final Tween spin;

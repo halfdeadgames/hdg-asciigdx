@@ -3,9 +3,9 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 import com.badlogic.gdx.math.Interpolation;
 
 /**
- * Schedules the player's steps from presses and held directions. A fresh press eases out; a step that
- * ends while a direction is still held is followed at once by a linear one, so a held key walks at
- * constant speed. Input is passed in as arguments, so nothing here reads devices.
+ * Schedules the player's steps from presses and held directions. A fresh press eases out; a step
+ * that ends while a direction is still held is followed at once by a linear one, so a held key
+ * walks at constant speed. Input is passed in as arguments, so nothing here reads devices.
  */
 public final class StepScheduler {
 
@@ -30,7 +30,9 @@ public final class StepScheduler {
         this.stepSeconds = stepSeconds;
     }
 
-    /** Handles a fresh press; during a step the latest one is queued to start when the step ends. */
+    /**
+     * Handles a fresh press; during a step the latest one is queued to start when the step ends.
+     */
     public void press(int deltaColumn, int deltaRow, float nowSeconds) {
         if (stepping) {
             queuedColumn = deltaColumn;
@@ -40,7 +42,9 @@ public final class StepScheduler {
         startStepIfAllowed(deltaColumn, deltaRow, nowSeconds, FRESH_PRESS_EASING);
     }
 
-    /** Advances to the time, chaining a step for the held direction, or none when both deltas are 0. */
+    /**
+     * Advances to the time, chaining a step for the held direction, or none when both deltas are 0.
+     */
     public void update(float nowSeconds, int heldColumn, int heldRow) {
         while (hasStepEndedBy(nowSeconds)) {
             float endSeconds = stepStartSeconds + stepSeconds;
@@ -82,7 +86,10 @@ public final class StepScheduler {
         return stepRow;
     }
 
-    /** Returns the part of the step still to slide at the time: 1 at its start, 0 at its end or when idle. */
+    /**
+     * Returns the part of the step still to slide at the time: 1 at its start, 0 at its end or when
+     * idle.
+     */
     public float slideRemainingAt(float nowSeconds) {
         if (!stepping) {
             return 0f;
@@ -108,7 +115,8 @@ public final class StepScheduler {
         startStepIfAllowed(queuedStepColumn, queuedStepRow, startSeconds, FRESH_PRESS_EASING);
     }
 
-    private void startStepIfAllowed(int deltaColumn, int deltaRow, float startSeconds, Interpolation easing) {
+    private void startStepIfAllowed(int deltaColumn, int deltaRow, float startSeconds,
+            Interpolation easing) {
         if (deltaColumn == 0 && deltaRow == 0) {
             return;
         }

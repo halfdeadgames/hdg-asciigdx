@@ -13,7 +13,7 @@ class RendererBasicsScene extends GridScene {
     private static final int NAVY = 0x1A2A6CFF;
     private static final int DARK_RED = 0x6C1A1AFF;
     private static final int[] STRIPE_COLORS = {
-        0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0x00FF00FF, 0x0080FFFF, 0x8000FFFF
+            0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0x00FF00FF, 0x0080FFFF, 0x8000FFFF
     };
 
     RendererBasicsScene(GlyphSource glyphs) {
@@ -54,8 +54,8 @@ class RendererBasicsScene extends GridScene {
     private void showScaleIndicator() {
         float scale = viewport.getScreenWidth() / viewport.getWorldWidth();
         String label = scale >= 1f
-            ? String.format(Locale.ROOT, " %dx ", Math.round(scale))
-            : String.format(Locale.ROOT, " %.2fx fit ", scale);
+                ? String.format(Locale.ROOT, " %dx ", Math.round(scale))
+                : String.format(Locale.ROOT, " %.2fx fit ", scale);
         int row = ROWS - 1;
         GridDrawing.fillRectangle(grid, 1, row, COLUMNS - 2, 1, '─', WHITE, CLEAR);
         GridDrawing.drawText(grid, COLUMNS - 1 - label.length(), row, label, CYAN, CLEAR);

@@ -22,7 +22,7 @@ class RainSetTest {
     void cycleIndexIsPeriodicOverTheLoopAndInRange() {
         float loopSeconds = CYCLE * CYCLES_PER_LOOP;
         float[] times = {0f, 0.001f, 0.01f, 0.3f, 4.7f, 11.9f};
-        for (float phase : new float[] {0f, 1f / 3f, 2f / 3f}) {
+        for (float phase : new float[]{0f, 1f / 3f, 2f / 3f}) {
             RainSet set = setWithPhase(phase);
             for (float time : times) {
                 int index = set.cycleIndexAt(time);
@@ -101,7 +101,8 @@ class RainSetTest {
         assertArrayEquals(columnsA, columnsB);
         assertArrayEquals(rowsA, rowsB);
         set.fillDropPositions(random, RainSet.seedFor(1, 5), 28, 17, columnsB, rowsB);
-        assertFalse(java.util.Arrays.equals(columnsA, columnsB) && java.util.Arrays.equals(rowsA, rowsB));
+        assertFalse(java.util.Arrays.equals(columnsA, columnsB)
+                && java.util.Arrays.equals(rowsA, rowsB));
     }
 
     @Test

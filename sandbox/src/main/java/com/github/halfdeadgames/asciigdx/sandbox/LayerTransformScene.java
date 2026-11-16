@@ -31,9 +31,12 @@ class LayerTransformScene extends GridScene {
     private static final float FULL_TURN_DEGREES = 360f;
 
     private static final float CYCLE_SECONDS = 16f;
-    private static final float[] KEY_TIMES = {0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 16f};
-    private static final float[] KEY_ZOOMS = {1f, 1f, 1.5f, 1.5f, 2f, 2f, 3f, 3f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
-    private static final float[] KEY_ROTATIONS = {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, -90f, -90f, 0f, -360f};
+    private static final float[] KEY_TIMES =
+            {0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 16f};
+    private static final float[] KEY_ZOOMS =
+            {1f, 1f, 1.5f, 1.5f, 2f, 2f, 3f, 3f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
+    private static final float[] KEY_ROTATIONS =
+            {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, -90f, -90f, 0f, -360f};
 
     static final String KEY_HOVER = "hover";
 
@@ -67,7 +70,10 @@ class LayerTransformScene extends GridScene {
     private int highlightRow = -1;
     private int highlightOriginalBackground;
 
-    /** @param hoverSetting fake pointer as "fx,fy" window fractions from the top-left, or null for none */
+    /**
+     * @param hoverSetting fake pointer as "fx,fy" window fractions from the top-left, or null for
+     *        none
+     */
     LayerTransformScene(GlyphSource glyphs, String hoverSetting) {
         super(glyphs, COLUMNS, ROWS);
         hoverFractions = parseHoverFractions(hoverSetting);
@@ -79,7 +85,8 @@ class LayerTransformScene extends GridScene {
         drawMap();
         mapLayer.setPivotCell(HERO_COLUMN, HERO_ROW);
         mapLayer.setClip(FRAME_THICKNESS * cellWidth, FRAME_THICKNESS * cellHeight,
-            (COLUMNS - 2 * FRAME_THICKNESS) * cellWidth, (ROWS - 2 * FRAME_THICKNESS) * cellHeight);
+                (COLUMNS - 2 * FRAME_THICKNESS) * cellWidth,
+                (ROWS - 2 * FRAME_THICKNESS) * cellHeight);
 
         TerminalGrid frameGrid = new TerminalGrid(COLUMNS, ROWS);
         drawFrame(frameGrid);
@@ -132,7 +139,7 @@ class LayerTransformScene extends GridScene {
         status.append('>');
         appendZoom(mapLayer.getEffectiveZoom());
         status.append(' ').append(Math.round(wrapDegrees(mapLayer.getRotation()))).append('°')
-            .append(' ').append(mapLayer.getZoomMode() == ZoomMode.SMOOTH ? 'S' : 'W');
+                .append(' ').append(mapLayer.getZoomMode() == ZoomMode.SMOOTH ? 'S' : 'W');
         if (auto) {
             status.append(" auto");
         }
@@ -210,7 +217,8 @@ class LayerTransformScene extends GridScene {
             return null;
         }
         try {
-            return new float[] {Float.parseFloat(parts[0].trim()), Float.parseFloat(parts[1].trim())};
+            return new float[]{Float.parseFloat(parts[0].trim()),
+                    Float.parseFloat(parts[1].trim())};
         } catch (NumberFormatException ignored) {
             return null;
         }
@@ -228,7 +236,8 @@ class LayerTransformScene extends GridScene {
         if (hasRealPointer) {
             pointerWorld.set(pointerScreenX, pointerScreenY);
         } else {
-            pointerWorld.set(hoverFractions[0] * Gdx.graphics.getWidth(), hoverFractions[1] * Gdx.graphics.getHeight());
+            pointerWorld.set(hoverFractions[0] * Gdx.graphics.getWidth(),
+                    hoverFractions[1] * Gdx.graphics.getHeight());
         }
         viewport.unproject(pointerWorld);
         float stackY = viewport.getWorldHeight();
@@ -276,7 +285,8 @@ class LayerTransformScene extends GridScene {
 
     /** Switching the mode leaves auto alone, so the two modes can be compared mid-tour. */
     private void toggleZoomMode() {
-        mapLayer.setZoomMode(mapLayer.getZoomMode() == ZoomMode.SMOOTH ? ZoomMode.WHOLE : ZoomMode.SMOOTH);
+        mapLayer.setZoomMode(
+                mapLayer.getZoomMode() == ZoomMode.SMOOTH ? ZoomMode.WHOLE : ZoomMode.SMOOTH);
     }
 
     private void reset() {
@@ -292,7 +302,8 @@ class LayerTransformScene extends GridScene {
             next++;
         }
         int previous = next - 1;
-        float progress = (cycleTime - KEY_TIMES[previous]) / (KEY_TIMES[next] - KEY_TIMES[previous]);
+        float progress =
+                (cycleTime - KEY_TIMES[previous]) / (KEY_TIMES[next] - KEY_TIMES[previous]);
         float eased = Interpolation.smooth.apply(progress);
         mapLayer.setZoom(MathUtils.lerp(KEY_ZOOMS[previous], KEY_ZOOMS[next], eased));
         mapLayer.setRotation(MathUtils.lerp(KEY_ROTATIONS[previous], KEY_ROTATIONS[next], eased));
@@ -341,7 +352,10 @@ class LayerTransformScene extends GridScene {
         grid.set(HERO_COLUMN, HERO_ROW, '@', HERO, FLOOR_BACKGROUND);
     }
 
-    /** Draws a wall down the column across the floor rows, leaving a doorway from firstGap to lastGap. */
+    /**
+     * Draws a wall down the column across the floor rows, leaving a doorway from firstGap to
+     * lastGap.
+     */
     private void drawVerticalWall(int column, int firstGap, int lastGap) {
         for (int row = 3; row < ROWS - 3; row++) {
             if (row < firstGap || row > lastGap) {
@@ -353,8 +367,9 @@ class LayerTransformScene extends GridScene {
     private static void drawFrame(TerminalGrid frame) {
         GridDrawing.fillRectangle(frame, 0, 0, COLUMNS, ROWS, ' ', WHITE, FRAME_OUTER);
         GridDrawing.fillRectangle(frame, FRAME_THICKNESS, FRAME_THICKNESS,
-            COLUMNS - 2 * FRAME_THICKNESS, ROWS - 2 * FRAME_THICKNESS, ' ', WHITE, CLEAR);
+                COLUMNS - 2 * FRAME_THICKNESS, ROWS - 2 * FRAME_THICKNESS, ' ', WHITE, CLEAR);
         GridDrawing.drawBox(frame, 1, 1, COLUMNS - 2, ROWS - 2, FRAME_LINE, FRAME_OUTER);
-        GridDrawing.drawText(frame, (COLUMNS - HELP_TEXT.length()) / 2, ROWS - 1, HELP_TEXT, GOLD, FRAME_OUTER);
+        GridDrawing.drawText(frame, (COLUMNS - HELP_TEXT.length()) / 2, ROWS - 1, HELP_TEXT, GOLD,
+                FRAME_OUTER);
     }
 }

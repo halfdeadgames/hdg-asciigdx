@@ -7,7 +7,8 @@ import com.badlogic.gdx.math.Vector2;
 /** Moves the player with the arrow keys, or toward a held touch or mouse button. */
 public final class ManualMotion implements PlayerMotion {
 
-    private static final int[] ARROW_KEYS = {Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.DOWN};
+    private static final int[] ARROW_KEYS =
+            {Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.DOWN};
 
     private final StepScheduler scheduler;
     private final PointerAim pointerAim;

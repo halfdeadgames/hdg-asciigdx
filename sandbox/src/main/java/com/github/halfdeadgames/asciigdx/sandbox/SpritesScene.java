@@ -58,7 +58,8 @@ class SpritesScene extends GridScene {
     private static final int STRIPE_BACKGROUND = 0xE0E0E0FF;
     private static final int STRIPE_GLYPH = 0x303030FF;
     private static final int[] RING_COLORS = {
-        0xFF4040FF, 0xFF9040FF, 0xFFE040FF, 0x60FF60FF, 0x40FFD0FF, 0x4090FFFF, 0xA060FFFF, 0xFF60C0FF
+            0xFF4040FF, 0xFF9040FF, 0xFFE040FF, 0x60FF60FF, 0x40FFD0FF, 0x4090FFFF, 0xA060FFFF,
+            0xFF60C0FF
     };
     private static final int[] CHURN_COLORS = {0xFFD700FF, 0x00FFFFFF, 0xFF80FFFF, 0x90FF90FF};
 
@@ -74,12 +75,12 @@ class SpritesScene extends GridScene {
     private final GlyphSprite[] churnSprites = new GlyphSprite[CHURN_CAPACITY];
     private final StringBuilder status = new StringBuilder();
     private final LiftedMonster[] monsters = {
-        new LiftedMonster(8, 10, 'g', 0xFF5050FF, 1, 0, false, 0f),
-        new LiftedMonster(12, 5, 'o', 0x60C0FFFF, 0, 1, false, 0.4f),
-        new LiftedMonster(20, 18, 's', 0xFFA040FF, -1, 0, false, 0.8f),
-        new LiftedMonster(16, 12, 'k', 0xFFFF60FF, 0, 0, true, 0.6f),
-        new LiftedMonster(34, 8, 'D', 0xFF40FFFF, -1, 0, false, 0.2f),
-        new LiftedMonster(36, 13, 'r', 0xC0FF60FF, 0, -1, false, 1f)
+            new LiftedMonster(8, 10, 'g', 0xFF5050FF, 1, 0, false, 0f),
+            new LiftedMonster(12, 5, 'o', 0x60C0FFFF, 0, 1, false, 0.4f),
+            new LiftedMonster(20, 18, 's', 0xFFA040FF, -1, 0, false, 0.8f),
+            new LiftedMonster(16, 12, 'k', 0xFFFF60FF, 0, 0, true, 0.6f),
+            new LiftedMonster(34, 8, 'D', 0xFF40FFFF, -1, 0, false, 0.2f),
+            new LiftedMonster(36, 13, 'r', 0xC0FF60FF, 0, -1, false, 1f)
     };
     private final OverrideDemo overrideDemo;
     private GlyphSprite spinner;
@@ -138,14 +139,15 @@ class SpritesScene extends GridScene {
     @Override
     public String statusText() {
         status.setLength(0);
-        // Labeled by key (G gray, P snap, A alpha, M slide, K shrink, C pivot): the overlay is 40 columns wide.
+        // Labeled by key (G gray, P snap, A alpha, M slide, K shrink, C pivot): the overlay is 40
+        // columns wide.
         status.append("G:").append(gray ? "on" : "off")
-            .append(" P:").append(layers.isPixelSnapping() ? "on" : "off")
-            .append(" A:").append(halfAlpha ? "0.5" : "1")
-            .append(" M:").append(sliding ? "on" : "off")
-            .append(" K:").append(shrunk ? "on" : "off")
-            .append(" H:").append(mapLayer.getCellHandleCount())
-            .append(" C:").append(spinnerPivotAtCorner ? "corner" : "center");
+                .append(" P:").append(layers.isPixelSnapping() ? "on" : "off")
+                .append(" A:").append(halfAlpha ? "0.5" : "1")
+                .append(" M:").append(sliding ? "on" : "off")
+                .append(" K:").append(shrunk ? "on" : "off")
+                .append(" H:").append(mapLayer.getCellHandleCount())
+                .append(" C:").append(spinnerPivotAtCorner ? "corner" : "center");
         return status.toString();
     }
 
@@ -219,7 +221,8 @@ class SpritesScene extends GridScene {
     private void updateMonsters(float step) {
         monsterClock += step;
         for (int i = 0; i < monsters.length; i++) {
-            monsters[i].update(mapLayer, grid.getColumns(), grid.getRows(), monsterClock, cellWidth, cellHeight);
+            monsters[i].update(mapLayer, grid.getColumns(), grid.getRows(), monsterClock, cellWidth,
+                    cellHeight);
         }
     }
 
@@ -228,7 +231,8 @@ class SpritesScene extends GridScene {
             return;
         }
         slideClock += step;
-        mapLayer.setOffset(MathUtils.sin(slideClock * SLIDE_RADIANS_PER_SECOND) * SLIDE_CELLS * cellWidth, 0f);
+        mapLayer.setOffset(
+                MathUtils.sin(slideClock * SLIDE_RADIANS_PER_SECOND) * SLIDE_CELLS * cellWidth, 0f);
     }
 
     private void resetLiftedCells() {
@@ -245,7 +249,10 @@ class SpritesScene extends GridScene {
         }
     }
 
-    /** Resizing allocates, which is fine for a key press. The grown grid starts empty, so the map is redrawn. */
+    /**
+     * Resizing allocates, which is fine for a key press. The grown grid starts empty, so the map is
+     * redrawn.
+     */
     private void toggleShrink() {
         shrunk = !shrunk;
         grid.resize(shrunk ? COLUMNS - SHRINK_COLUMNS : COLUMNS, ROWS);
@@ -294,7 +301,8 @@ class SpritesScene extends GridScene {
             return;
         }
         flashRemaining = Math.max(0f, flashRemaining - step);
-        mapLayer.getColorEffects().setMix(1f, 1f, 1f, FLASH_STRENGTH * flashRemaining / FLASH_DURATION);
+        mapLayer.getColorEffects()
+                .setMix(1f, 1f, 1f, FLASH_STRENGTH * flashRemaining / FLASH_DURATION);
     }
 
     private void createRing() {
@@ -310,7 +318,7 @@ class SpritesScene extends GridScene {
         for (int i = 0; i < RING_SIZE; i++) {
             float angle = ringAngle + i * (360f / RING_SIZE);
             ringSprites[i].setPosition(centerX + radius * MathUtils.cosDeg(angle),
-                centerY - radius * MathUtils.sinDeg(angle));
+                    centerY - radius * MathUtils.sinDeg(angle));
         }
     }
 
@@ -321,7 +329,8 @@ class SpritesScene extends GridScene {
         GlyphSprite mirrored = mapLayer.addSprite('P', GOLD, 33f * cellWidth, 4f * cellHeight);
         mirrored.setScale(-1f, 1f);
 
-        GlyphSprite translucent = mapLayer.addSprite('@', 0xFF2020FF, 28f * cellWidth, 16f * cellHeight);
+        GlyphSprite translucent =
+                mapLayer.addSprite('@', 0xFF2020FF, 28f * cellWidth, 16f * cellHeight);
         translucent.setAlpha(HALF_ALPHA);
     }
 
@@ -345,7 +354,8 @@ class SpritesScene extends GridScene {
         }
         int column = 2 + churnSpawned * CHURN_COLUMN_STRIDE % CHURN_COLUMN_SPAN;
         int color = CHURN_COLORS[churnSpawned % CHURN_COLORS.length];
-        GlyphSprite sprite = mapLayer.addSprite('*', color, column * cellWidth, (ROWS - 1) * cellHeight);
+        GlyphSprite sprite =
+                mapLayer.addSprite('*', color, column * cellWidth, (ROWS - 1) * cellHeight);
         churnSprites[(churnOldest + churnCount) % CHURN_CAPACITY] = sprite;
         churnCount++;
         churnSpawned++;
@@ -370,6 +380,6 @@ class SpritesScene extends GridScene {
 
     private static boolean isStripe(int column, int row) {
         return column >= STRIPE_FIRST_COLUMN && column <= STRIPE_LAST_COLUMN
-            && row >= STRIPE_FIRST_ROW && row <= STRIPE_LAST_ROW;
+                && row >= STRIPE_FIRST_ROW && row <= STRIPE_LAST_ROW;
     }
 }

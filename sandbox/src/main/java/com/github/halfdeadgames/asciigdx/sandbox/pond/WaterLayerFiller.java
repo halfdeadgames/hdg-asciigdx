@@ -34,7 +34,8 @@ public final class WaterLayerFiller implements MapCellVisitor {
             window.set(mapColumn, mapRow, WATER_GLYPH, WATER_FOREGROUND, WATER_BACKGROUND);
             return;
         }
-        window.set(mapColumn, mapRow, landGlyphAt(mapColumn, mapRow), LAND_FOREGROUND, LAND_BACKGROUND);
+        window.set(mapColumn, mapRow, landGlyphAt(mapColumn, mapRow), LAND_FOREGROUND,
+                LAND_BACKGROUND);
     }
 
     private static int landGlyphAt(int column, int row) {

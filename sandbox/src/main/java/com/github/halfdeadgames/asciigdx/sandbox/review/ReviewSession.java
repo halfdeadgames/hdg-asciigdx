@@ -203,8 +203,8 @@ public final class ReviewSession {
      */
     public Optional<Verdict> lastVerdict() {
         return answers.isEmpty()
-            ? Optional.empty()
-            : Optional.of(answers.get(answers.size() - 1).verdict());
+                ? Optional.empty()
+                : Optional.of(answers.get(answers.size() - 1).verdict());
     }
 
     /**
@@ -214,8 +214,8 @@ public final class ReviewSession {
      */
     public OptionalInt lastCodePoint() {
         return answers.isEmpty()
-            ? OptionalInt.empty()
-            : OptionalInt.of(answers.get(answers.size() - 1).codePoint());
+                ? OptionalInt.empty()
+                : OptionalInt.of(answers.get(answers.size() - 1).codePoint());
     }
 
     /**
@@ -225,8 +225,8 @@ public final class ReviewSession {
      */
     public Optional<FailReason> lastReason() {
         return answers.isEmpty()
-            ? Optional.empty()
-            : Optional.ofNullable(answers.get(answers.size() - 1).reason());
+                ? Optional.empty()
+                : Optional.ofNullable(answers.get(answers.size() - 1).reason());
     }
 
     /**
@@ -265,8 +265,8 @@ public final class ReviewSession {
         StringBuilder text = new StringBuilder();
         for (Answer answer : answers) {
             text.append(String.format(Locale.ROOT, "U+%04X", answer.codePoint()))
-                .append('\t').append(GlyphOrderText.escapeCodePoint(answer.codePoint()))
-                .append('\t').append(answer.verdict().label());
+                    .append('\t').append(GlyphOrderText.escapeCodePoint(answer.codePoint()))
+                    .append('\t').append(answer.verdict().label());
             if (answer.reason() != null) {
                 text.append('\t').append(answer.reason().number());
             }
@@ -299,7 +299,8 @@ public final class ReviewSession {
     private static Answer parseLine(String line, int lineNumber) {
         String[] fields = line.split("\t", -1);
         if (fields.length < 3 || fields.length > 4 || !fields[0].startsWith(CODE_POINT_PREFIX)) {
-            throw malformed(lineNumber, "expected U+XXXX, character, fail or needs-work or perfect, optional reason");
+            throw malformed(lineNumber,
+                    "expected U+XXXX, character, fail or needs-work or perfect, optional reason");
         }
         int codePoint = parseCodePoint(fields[0].substring(CODE_POINT_PREFIX.length()), lineNumber);
         Verdict verdict = parseVerdict(fields[2], lineNumber);
@@ -310,7 +311,8 @@ public final class ReviewSession {
     private static int parseCodePoint(String hex, int lineNumber) {
         try {
             int codePoint = Integer.parseInt(hex, 16);
-            if (hex.startsWith("+") || hex.startsWith("-") || !Character.isValidCodePoint(codePoint)) {
+            if (hex.startsWith("+") || hex.startsWith("-") || !Character.isValidCodePoint(
+                    codePoint)) {
                 throw malformed(lineNumber, "invalid code point U+" + hex);
             }
             return codePoint;
@@ -334,7 +336,7 @@ public final class ReviewSession {
         }
         try {
             return FailReason.fromNumber(Integer.parseInt(field))
-                .orElseThrow(() -> malformed(lineNumber, "unknown reason number " + field));
+                    .orElseThrow(() -> malformed(lineNumber, "unknown reason number " + field));
         } catch (NumberFormatException e) {
             throw malformed(lineNumber, "invalid reason number '" + field + "'");
         }

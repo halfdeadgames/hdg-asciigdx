@@ -40,7 +40,8 @@ public final class MessageLog {
             throw new IllegalArgumentException("line " + index + " must not be null");
         }
         if (index > 0 && lines[index].startSeconds() < lines[index - 1].startSeconds()) {
-            throw new IllegalArgumentException("line " + index + " starts before line " + (index - 1));
+            throw new IllegalArgumentException(
+                    "line " + index + " starts before line " + (index - 1));
         }
     }
 }

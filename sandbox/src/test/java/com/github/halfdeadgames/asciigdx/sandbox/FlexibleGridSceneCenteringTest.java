@@ -23,7 +23,8 @@ class FlexibleGridSceneCenteringTest {
     private static void writeMarker(TerminalGrid grid, int left, int top) {
         for (int row = 0; row < MARKER_HEIGHT; row++) {
             for (int column = 0; column < MARKER_WIDTH; column++) {
-                grid.set(left + column, top + row, glyphAt(column, row), colorAt(column, row), colorAt(row, column));
+                grid.set(left + column, top + row, glyphAt(column, row), colorAt(column, row),
+                        colorAt(row, column));
             }
         }
     }
@@ -42,7 +43,7 @@ class FlexibleGridSceneCenteringTest {
         int shiftX = FlexibleGridScene.centeringShift(left, MARKER_WIDTH, columns);
         int shiftY = FlexibleGridScene.centeringShift(top, MARKER_HEIGHT, rows);
         grid.resize(columns, rows, shiftX, shiftY);
-        return new int[] {left + shiftX, top + shiftY};
+        return new int[]{left + shiftX, top + shiftY};
     }
 
     private static void step(TerminalGrid grid, int columns, int rows, int[] position) {

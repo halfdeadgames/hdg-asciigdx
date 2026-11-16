@@ -126,7 +126,8 @@ class WakeRipplesTest {
     void nonFiniteTimeIsRejected() {
         var wake = new WakeRipples();
         assertThrows(IllegalArgumentException.class, () -> wake.start(0, 0, Float.NaN));
-        assertThrows(IllegalArgumentException.class, () -> wake.liftAt(0, 0, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> wake.liftAt(0, 0, Float.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> wake.isActiveAt(Float.NaN));
     }
 }

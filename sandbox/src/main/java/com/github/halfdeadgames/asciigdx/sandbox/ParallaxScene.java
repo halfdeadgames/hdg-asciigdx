@@ -10,7 +10,9 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 
-/** Far mountains, hills, and ground scrolling at different speeds under a fixed sky and status line. */
+/**
+ * Far mountains, hills, and ground scrolling at different speeds under a fixed sky and status line.
+ */
 class ParallaxScene extends GridScene {
     private static final int COLUMNS = 40;
     private static final int ROWS = 22;
@@ -213,7 +215,10 @@ class ParallaxScene extends GridScene {
         showStatus(Math.round(layers.getCameraX()), auto);
     }
 
-    /** Constant speed from 0 up to 1 and back over each whole cycle, so a capture always shows motion. */
+    /**
+     * Constant speed from 0 up to 1 and back over each whole cycle, so a capture always shows
+     * motion.
+     */
     private static float pingPong(float phase) {
         return 1f - Math.abs(2f * phase - 1f);
     }
@@ -228,7 +233,8 @@ class ParallaxScene extends GridScene {
         statusLine.append("camera x ").append(cameraXPixels).append(isAuto ? " auto" : " manual");
         GridDrawing.fillRectangle(statusGrid, 0, 0, COLUMNS, 1, ' ', WHITE, STATUS_BACKGROUND);
         GridDrawing.drawText(statusGrid, 1, 0, statusLine, GOLD, STATUS_BACKGROUND);
-        GridDrawing.drawText(statusGrid, COLUMNS - HELP_TEXT.length() - 1, 0, HELP_TEXT, GRASS, STATUS_BACKGROUND);
+        GridDrawing.drawText(statusGrid, COLUMNS - HELP_TEXT.length() - 1, 0, HELP_TEXT, GRASS,
+                STATUS_BACKGROUND);
     }
 
     private void storePointer(int screenX, int screenY) {
@@ -329,7 +335,8 @@ class ParallaxScene extends GridScene {
     private static void drawGround(TerminalGrid target) {
         int width = target.getColumns();
         GridDrawing.fillRectangle(target, 0, GROUND_ROW, width, 1, '"', GRASS, GRASS_BACKGROUND);
-        GridDrawing.fillRectangle(target, 0, GROUND_ROW + 1, width, ROWS - GROUND_ROW - 1, '.', DIRT, DIRT_BACKGROUND);
+        GridDrawing.fillRectangle(target, 0, GROUND_ROW + 1, width, ROWS - GROUND_ROW - 1, '.',
+                DIRT, DIRT_BACKGROUND);
         GridDrawing.fillRectangle(target, 0, GROUND_ROW + 2, width, 1, '=', PATH, DIRT_BACKGROUND);
         for (int column = 3; column < width; column += 9) {
             target.set(column, GROUND_ROW - 1, '♣', TREE, CLEAR);

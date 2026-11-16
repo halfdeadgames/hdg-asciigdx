@@ -5,16 +5,22 @@ import com.badlogic.gdx.Gdx;
 import java.util.List;
 import java.util.Locale;
 
-/** Unattended run: menu screenshot, then per scene a screenshot, perf line and optional GIF, then exit. Driven by {@link #onFrameRendered(long)}. */
+/**
+ * Unattended run: menu screenshot, then per scene a screenshot, perf line and optional GIF, then
+ * exit. Driven by {@link #onFrameRendered(long)}.
+ */
 class CaptureScript {
     private static final int GIF_FRAMES = 30;
-    /** Frames skipped after opening a scene, so setup and the previous scene's file writes stay out of the timing. */
+    /**
+     * Frames skipped after opening a scene, so setup and the previous scene's file writes stay out
+     * of the timing.
+     */
     private static final int WARM_UP_FRAMES = 30;
     private static final float NANOS_PER_MILLISECOND = 1_000_000f;
     private static final int NOT_SWEEPING = -1;
     private static final String PERF_TAG = "CaptureScript";
 
-    private enum Phase { MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE }
+    private enum Phase {MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE}
 
     private final SandboxApp app;
     private final ScreenCapture capture;
@@ -83,7 +89,8 @@ class CaptureScript {
     /**
      * Call at the end of render, after {@link ScreenCapture#onFrameRendered()}.
      *
-     * @param renderNanos nanoseconds the scene's render work took this frame, GPU work included; 0 when no scene was drawn
+     * @param renderNanos nanoseconds the scene's render work took this frame, GPU work included; 0
+     *        when no scene was drawn
      */
     void onFrameRendered(long renderNanos) {
         switch (phase) {
@@ -123,7 +130,8 @@ class CaptureScript {
                     openNextScene();
                 }
             }
-            case DONE -> { }
+            case DONE -> {
+            }
         }
     }
 
@@ -141,7 +149,8 @@ class CaptureScript {
     }
 
     private void closeWindow() {
-        sampleMeansMs[sampleCount++] = windowRenderNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        sampleMeansMs[sampleCount++] =
+                windowRenderNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
         resetWindow();
     }
 
@@ -180,8 +189,10 @@ class CaptureScript {
         app.openScene(sceneIndex);
         sweepIndex = NOT_SWEEPING;
         SandboxScene scene = app.getScene(sceneIndex);
-        sceneLayerCounts = !layerCounts.isEmpty() && scene.supportsLayerCount() ? layerCounts : null;
-        sceneDirtyPercents = !dirtyPercents.isEmpty() && scene.supportsDirtyPercent() ? dirtyPercents : null;
+        sceneLayerCounts =
+                !layerCounts.isEmpty() && scene.supportsLayerCount() ? layerCounts : null;
+        sceneDirtyPercents =
+                !dirtyPercents.isEmpty() && scene.supportsDirtyPercent() ? dirtyPercents : null;
         if (sceneLayerCounts != null || sceneDirtyPercents != null) {
             startSweepStep(0);
             return;
@@ -191,17 +202,20 @@ class CaptureScript {
 
     private int sweepStepCount() {
         return (sceneLayerCounts == null ? 1 : sceneLayerCounts.size())
-            * (sceneDirtyPercents == null ? 1 : sceneDirtyPercents.size());
+                * (sceneDirtyPercents == null ? 1 : sceneDirtyPercents.size());
     }
 
-    /** Label tail such as "@L2", "@10" or "@L2@10"; dirtyUnit is appended after the dirty number. */
+    /**
+     * Label tail such as "@L2", "@10" or "@L2@10"; dirtyUnit is appended after the dirty number.
+     */
     private String sweepSuffix(String dirtyUnit) {
         StringBuilder suffix = new StringBuilder();
         if (sceneLayerCounts != null) {
             suffix.append("@L").append(sceneLayerCounts.get(sweepIndex / dirtyStepCount()));
         }
         if (sceneDirtyPercents != null) {
-            suffix.append('@').append(sceneDirtyPercents.get(sweepIndex % dirtyStepCount())).append(dirtyUnit);
+            suffix.append('@').append(sceneDirtyPercents.get(sweepIndex % dirtyStepCount()))
+                    .append(dirtyUnit);
         }
         return suffix.toString();
     }
@@ -235,11 +249,11 @@ class CaptureScript {
     private void appendPerf(SandboxScene scene, String label) {
         PerfSummary summary = PerfSummary.of(sampleMeansMs);
         report.append(label)
-            .append(": medianMs=").append(formatMilliseconds(summary.medianMs()))
-            .append(" minMs=").append(formatMilliseconds(summary.minMs()))
-            .append(" maxMs=").append(formatMilliseconds(summary.maxMs()))
-            .append(" spreadPct=").append(summary.spreadPercent())
-            .append(" samples=[");
+                .append(": medianMs=").append(formatMilliseconds(summary.medianMs()))
+                .append(" minMs=").append(formatMilliseconds(summary.minMs()))
+                .append(" maxMs=").append(formatMilliseconds(summary.maxMs()))
+                .append(" spreadPct=").append(summary.spreadPercent())
+                .append(" samples=[");
         for (int i = 0; i < sampleMeansMs.length; i++) {
             if (i > 0) {
                 report.append(',');
@@ -247,8 +261,8 @@ class CaptureScript {
             report.append(formatMilliseconds(sampleMeansMs[i]));
         }
         report.append("] frames=").append(totalMeasuredFrames)
-            .append(" cells=").append(scene.cellCount())
-            .append('\n');
+                .append(" cells=").append(scene.cellCount())
+                .append('\n');
     }
 
     private static String formatMilliseconds(float milliseconds) {

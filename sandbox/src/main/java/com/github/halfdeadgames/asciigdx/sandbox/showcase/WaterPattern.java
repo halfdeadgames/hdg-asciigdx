@@ -1,6 +1,8 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-/** A slow diagonal wave pattern of water glyphs that advances one step every {@link #STEP_SECONDS}. */
+/**
+ * A slow diagonal wave pattern of water glyphs that advances one step every {@link #STEP_SECONDS}.
+ */
 public final class WaterPattern {
 
     public static final float STEP_SECONDS = 0.4f;

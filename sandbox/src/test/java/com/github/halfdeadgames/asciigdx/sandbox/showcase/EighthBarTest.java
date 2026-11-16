@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 class EighthBarTest {
 
     private static final int FULL = 0x2588;
-    private static final int[] LEFT_EIGHTHS = {' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589};
+    private static final int[] LEFT_EIGHTHS =
+            {' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589};
 
     private static String render(int cellCount, float fraction) {
         StringBuilder bar = new StringBuilder();

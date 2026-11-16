@@ -12,11 +12,11 @@ class MessageLogTest {
 
     private static MessageLog fiveLines() {
         return new MessageLog(
-            new TypedLine(1f, "a", 30f),
-            new TypedLine(2f, "b", 30f),
-            new TypedLine(3f, "c", 30f),
-            new TypedLine(4f, "d", 30f),
-            new TypedLine(5f, "e", 30f));
+                new TypedLine(1f, "a", 30f),
+                new TypedLine(2f, "b", 30f),
+                new TypedLine(3f, "c", 30f),
+                new TypedLine(4f, "d", 30f),
+                new TypedLine(5f, "e", 30f));
     }
 
     @Test
@@ -61,7 +61,7 @@ class MessageLogTest {
     @Test
     void rejectsDecreasingStartTimes() {
         assertThrows(IllegalArgumentException.class,
-            () -> new MessageLog(new TypedLine(2f, "a", 30f), new TypedLine(1f, "b", 30f)));
+                () -> new MessageLog(new TypedLine(2f, "a", 30f), new TypedLine(1f, "b", 30f)));
     }
 
     @Test

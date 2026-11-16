@@ -18,7 +18,8 @@ public record ReviewCellSize(int width, int height) {
         }
         Matcher matcher = FORMAT.matcher(text);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("reviewCell must look like 16x16 or 16, was '" + text + "'");
+            throw new IllegalArgumentException(
+                    "reviewCell must look like 16x16 or 16, was '" + text + "'");
         }
         int width = Integer.parseInt(matcher.group(1));
         int height = matcher.group(2) == null ? width : Integer.parseInt(matcher.group(2));

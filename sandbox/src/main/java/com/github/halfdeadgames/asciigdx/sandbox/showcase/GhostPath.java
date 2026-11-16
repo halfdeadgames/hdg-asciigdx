@@ -3,7 +3,9 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
 
-/** Where a ghost is, how much it bobs, and how opaque it is at a loop time. Positions are in cells. */
+/**
+ * Where a ghost is, how much it bobs, and how opaque it is at a loop time. Positions are in cells.
+ */
 public final class GhostPath {
 
     private static final float DRIFT_START_SECONDS = 2.0f;
@@ -19,7 +21,8 @@ public final class GhostPath {
     private static final float FLICKER_RANGE = 1f - FLICKER_FLOOR;
     private static final float TWO_PI = (float) (2.0 * Math.PI);
 
-    private final Tween drift = new Tween(DRIFT_START_SECONDS, DRIFT_SECONDS, 0f, 1f, Interpolation.sineOut);
+    private final Tween drift =
+            new Tween(DRIFT_START_SECONDS, DRIFT_SECONDS, 0f, 1f, Interpolation.sineOut);
     private final Tween wail = new Tween(WAIL_START_SECONDS, WAIL_SECONDS, 0f, 1f);
     private final float startColumn;
     private final float endColumn;
@@ -57,6 +60,7 @@ public final class GhostPath {
     }
 
     private static float flickerAt(float timeSeconds) {
-        return FLICKER_FLOOR + FLICKER_RANGE * Math.abs((float) Math.sin(TWO_PI * FLICKER_HERTZ * timeSeconds));
+        return FLICKER_FLOOR + FLICKER_RANGE * Math.abs(
+                (float) Math.sin(TWO_PI * FLICKER_HERTZ * timeSeconds));
     }
 }

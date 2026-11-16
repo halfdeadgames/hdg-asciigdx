@@ -39,7 +39,8 @@ public final class ReviewList {
             }
         }
         if (keptCount == 0) {
-            throw new IllegalArgumentException("None of the " + missing + " listed glyphs are in the sheet");
+            throw new IllegalArgumentException(
+                    "None of the " + missing + " listed glyphs are in the sheet");
         }
         return new ReviewList(Arrays.copyOf(kept, keptCount), missing);
     }

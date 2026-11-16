@@ -33,7 +33,7 @@ class FullRewriteStressScene extends GridScene {
             for (int column = 0; column < COLUMNS; column++) {
                 int glyph = SceneDrawing.randomGlyph(MathUtils.random);
                 grid.set(column, row, glyph, SceneDrawing.randomOpaqueColor(MathUtils.random),
-                    SceneDrawing.randomOpaqueColor(MathUtils.random));
+                        SceneDrawing.randomOpaqueColor(MathUtils.random));
             }
         }
     }

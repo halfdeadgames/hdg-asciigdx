@@ -117,7 +117,9 @@ public final class Lily {
         pendingPushDelaySeconds = 0f;
     }
 
-    /** Returns true when the lily is at rest, has no push pending, and its target is exactly 0,0. */
+    /**
+     * Returns true when the lily is at rest, has no push pending, and its target is exactly 0,0.
+     */
     public boolean isHome() {
         return isAtRest() && motion.getTargetX() == 0f && motion.getTargetY() == 0f;
     }

@@ -33,16 +33,23 @@ public final class LilyFlashes {
         this.window = layer.getMapWindow();
     }
 
-    /** Starts a flash on the game cell; a cell without lilies is ignored, and one already flashing restarts. */
+    /**
+     * Starts a flash on the game cell; a cell without lilies is ignored, and one already flashing
+     * restarts.
+     */
     public void start(int gameColumn, int gameRow, float nowSeconds) {
         if (!hasLilies(gameColumn, gameRow)) {
             return;
         }
         removeFlashOn(gameColumn, gameRow);
-        flashes.add(new Flash(gameColumn, gameRow, nowSeconds + DURATION_SECONDS, buildTimeline(gameColumn, gameRow, nowSeconds)));
+        flashes.add(new Flash(gameColumn, gameRow, nowSeconds + DURATION_SECONDS,
+                buildTimeline(gameColumn, gameRow, nowSeconds)));
     }
 
-    /** Writes every flash for the time; a finished one gets its last write, which leaves mix 0, and is dropped. */
+    /**
+     * Writes every flash for the time; a finished one gets its last write, which leaves mix 0, and
+     * is dropped.
+     */
     public void apply(float nowSeconds) {
         boolean anyFinished = false;
         for (int i = flashes.size - 1; i >= 0; i--) {
@@ -76,9 +83,11 @@ public final class LilyFlashes {
                 }
                 int mapColumn = gameColumn * SLOTS_PER_AXIS + eastBit;
                 int mapRow = gameRow * SLOTS_PER_AXIS + southBit;
-                Tween fade = new Tween(startSeconds, DURATION_SECONDS, START_AMOUNT, 0f, Interpolation.pow2Out);
+                Tween fade = new Tween(startSeconds, DURATION_SECONDS, START_AMOUNT, 0f,
+                        Interpolation.pow2Out);
                 MapCellTarget target = window.createCellTarget(mapColumn, mapRow);
-                timeline.bind(fade, amount -> target.writeIfShown(LilyFlashes::setWhiteMix, amount));
+                timeline.bind(fade,
+                        amount -> target.writeIfShown(LilyFlashes::setWhiteMix, amount));
             }
         }
         return timeline;

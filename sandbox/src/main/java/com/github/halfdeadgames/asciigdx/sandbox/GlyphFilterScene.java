@@ -37,7 +37,8 @@ class GlyphFilterScene extends GridScene {
 
     GlyphFilterScene(GlyphSource nearestGlyphs) {
         super(nearestGlyphs, COLUMNS, ROWS);
-        linearGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
+        linearGlyphs =
+                TextureGlyphSource.loadSaiksistt(SaiksisttSize.SQUARE_16X16, GlyphFilter.LINEAR);
         cellWidth = nearestGlyphs.getCellWidth();
         cellHeight = nearestGlyphs.getCellHeight();
         fillBackground();
@@ -106,7 +107,8 @@ class GlyphFilterScene extends GridScene {
 
     private void addStaticSprites(Layer layer) {
         for (int i = 0; i < STATIC_SCALES.length; i++) {
-            GlyphSprite sprite = layer.addSprite('@', WHITE, STATIC_COLUMNS[i] * cellWidth, 3f * cellHeight);
+            GlyphSprite sprite =
+                    layer.addSprite('@', WHITE, STATIC_COLUMNS[i] * cellWidth, 3f * cellHeight);
             sprite.setScale(STATIC_SCALES[i]);
         }
     }
@@ -119,7 +121,8 @@ class GlyphFilterScene extends GridScene {
 
     private void addEdgeSprites(Layer layer) {
         for (int i = 0; i < EDGE_GLYPHS.length; i++) {
-            GlyphSprite sprite = layer.addSprite(EDGE_GLYPHS[i], WHITE, EDGE_COLUMNS[i] * cellWidth, 10f * cellHeight);
+            GlyphSprite sprite = layer.addSprite(EDGE_GLYPHS[i], WHITE, EDGE_COLUMNS[i] * cellWidth,
+                    10f * cellHeight);
             sprite.setScale(2.7f);
             slowSpinners.add(sprite);
         }

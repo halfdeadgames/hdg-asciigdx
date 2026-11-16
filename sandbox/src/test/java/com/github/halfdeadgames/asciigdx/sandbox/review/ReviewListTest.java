@@ -10,27 +10,27 @@ class ReviewListTest {
     @Test
     void keepsEveryRowInOrderWhateverItsLength() {
         ReviewList list = ReviewList.fromText("AB\nCDE\n\\u{E0D0}\n", cp -> true);
-        assertArrayEquals(new int[] {'A', 'B', 'C', 'D', 'E', 0xE0D0}, list.codePoints());
+        assertArrayEquals(new int[]{'A', 'B', 'C', 'D', 'E', 0xE0D0}, list.codePoints());
         assertEquals(0, list.missingCount());
     }
 
     @Test
     void dropsAndCountsGlyphsTheSourceLacks() {
         ReviewList list = ReviewList.fromText("ABC", cp -> cp != 'B');
-        assertArrayEquals(new int[] {'A', 'C'}, list.codePoints());
+        assertArrayEquals(new int[]{'A', 'C'}, list.codePoints());
         assertEquals(1, list.missingCount());
     }
 
     @Test
     void repeatedCodePointsAreReviewedOnce() {
         ReviewList list = ReviewList.fromText("ABA", cp -> true);
-        assertArrayEquals(new int[] {'A', 'B'}, list.codePoints());
+        assertArrayEquals(new int[]{'A', 'B'}, list.codePoints());
     }
 
     @Test
     void candidateFilterAppliesBeforeReferenceCheck() {
         ReviewList list = ReviewList.fromText("ABCA", cp -> cp != 'C');
-        assertArrayEquals(new int[] {'A', 'B'}, list.codePoints());
+        assertArrayEquals(new int[]{'A', 'B'}, list.codePoints());
         assertEquals(1, list.missingCount());
     }
 
