@@ -33,9 +33,10 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  *       {@link #getGlyphSource}, the offset, parallax, zoom, pivot, zoom mode, rotation,
  *       visibility, pickable, panel, clip, and frame release getters, {@link #getEffectiveZoom},
  *       {@link #getColorEffects} (whose setters throw), {@link #getSpriteCount} (0),
- *       {@link #getSprite} (always out of range), {@link #getCellHandleCount}, and
- *       {@link #getFrameCellHandleCount} (both 0).</li>
- *   <li>{@link #hasMapWindow} and {@link #getMapWindow} throw {@link IllegalStateException}.</li>
+ *       {@link #getSprite} (always out of range), {@link #getCellHandleCount} and
+ *       {@link #getFrameCellHandleCount} (both 0), and {@link #hasMapWindow} (false).</li>
+ *   <li>{@link #getMapWindow} throws {@link IllegalStateException}, because removal detaches the
+ *       map window.</li>
  *   <li>Every method that changes or uses the layer throws {@link IllegalStateException}: all
  *       setters, the offset, scroll, map window, sprite, cell handle, clip, and release methods,
  *       {@link #moveTo}, and {@link #remove}.</li>
@@ -960,10 +961,9 @@ public final class Layer {
      * Returns the {@link MapWindow} created by the latest {@link #enableMapWindow()}.
      *
      * @return the live map window; never null
-     * @throws IllegalStateException if the layer was removed or is not a map window
+     * @throws IllegalStateException if the layer is not a map window, including after removal
      */
     public MapWindow getMapWindow() {
-        requireAttached();
         if (mapWindow == null) {
             throw new IllegalStateException("Layer is not a map window");
         }
@@ -979,13 +979,12 @@ public final class Layer {
     }
 
     /**
-     * Returns whether the layer is in map window mode.
+     * Returns whether the layer is in map window mode. Works after removal, when it returns false.
      *
-     * @return true after {@link #enableMapWindow()} and before {@link #disableMapWindow()}
-     * @throws IllegalStateException if the layer was removed
+     * @return true after {@link #enableMapWindow()} and before {@link #disableMapWindow()} or
+     *     removal
      */
     public boolean hasMapWindow() {
-        requireAttached();
         return mapWindow != null;
     }
 

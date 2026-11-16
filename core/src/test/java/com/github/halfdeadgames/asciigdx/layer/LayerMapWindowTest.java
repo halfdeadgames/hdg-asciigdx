@@ -223,13 +223,13 @@ class LayerMapWindowTest {
     }
 
     @Test
-    void removedLayerThrows() {
+    void removedLayerRejectsChangesAndReportsNoMapWindow() {
         layer.enableMapWindow();
         layer.remove();
 
         assertThrows(IllegalStateException.class, layer::enableMapWindow);
         assertThrows(IllegalStateException.class, layer::disableMapWindow);
-        assertThrows(IllegalStateException.class, layer::hasMapWindow);
+        assertFalse(layer.hasMapWindow());
         assertThrows(IllegalStateException.class, layer::getMapWindow);
     }
 

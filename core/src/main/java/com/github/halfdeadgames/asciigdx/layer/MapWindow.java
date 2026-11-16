@@ -93,6 +93,7 @@ public final class MapWindow {
      */
     public void set(int mapColumn, int mapRow, int codePoint, int foregroundRgba,
             int backgroundRgba) {
+        requireAttached();
         if (!contains(mapColumn, mapRow)) {
             return;
         }

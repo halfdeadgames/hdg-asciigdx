@@ -39,7 +39,8 @@ public final class LayerGroup {
     }
 
     /**
-     * Returns the parent group.
+     * Returns the parent group. Works after removal: removal clears the parent, so it returns
+     * null.
      *
      * @return the parent group, or null if this group has none
      */
@@ -108,7 +109,7 @@ public final class LayerGroup {
 
     /**
      * Returns whether the layer is a member of this group. Membership in a descendant group does
-     * not count.
+     * not count. Works after removal: removal empties the group, so it returns false.
      *
      * @param layer the layer to look for; may be null
      * @return true if the layer is a direct member
@@ -118,7 +119,7 @@ public final class LayerGroup {
     }
 
     /**
-     * Returns the number of member layers.
+     * Returns the number of member layers. Works after removal, when it returns 0.
      *
      * @return the number of member layers
      */
@@ -127,7 +128,8 @@ public final class LayerGroup {
     }
 
     /**
-     * Returns the member layer at a position, in the order the layers joined.
+     * Returns the member layer at a position, in the order the layers joined. After removal, every
+     * index is out of range.
      *
      * @param index from 0 to {@link #getLayerCount()} - 1
      * @return the member layer; never null
