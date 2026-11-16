@@ -12,92 +12,92 @@ class TweenTest {
 
     private static final float TOLERANCE = 1e-6f;
 
-    private final Tween ascending = new Tween(2f, 4f, 10f, 30f);
+    private final Tween ascending = Tween.linear(2f, 4f, 10f, 30f);
 
     @Test
     void valueBeforeStartIsFrom() {
-        assertEquals(10f, ascending.valueAt(1f), TOLERANCE);
+        assertEquals(10f, ascending.getValueAt(1f), TOLERANCE);
     }
 
     @Test
     void valueAtStartIsFrom() {
-        assertEquals(10f, ascending.valueAt(2f), TOLERANCE);
+        assertEquals(10f, ascending.getValueAt(2f), TOLERANCE);
     }
 
     @Test
     void valueAtMidpointIsHalfwayWithLinearEasing() {
-        assertEquals(20f, ascending.valueAt(4f), TOLERANCE);
+        assertEquals(20f, ascending.getValueAt(4f), TOLERANCE);
     }
 
     @Test
     void valueAtEndIsTo() {
-        assertEquals(30f, ascending.valueAt(6f), TOLERANCE);
+        assertEquals(30f, ascending.getValueAt(6f), TOLERANCE);
     }
 
     @Test
     void valueAfterEndIsTo() {
-        assertEquals(30f, ascending.valueAt(100f), TOLERANCE);
+        assertEquals(30f, ascending.getValueAt(100f), TOLERANCE);
     }
 
     @Test
     void valueDescendsWhenFromIsGreaterThanTo() {
-        Tween descending = new Tween(0f, 2f, 8f, 0f);
-        assertEquals(6f, descending.valueAt(0.5f), TOLERANCE);
+        Tween descending = Tween.linear(0f, 2f, 8f, 0f);
+        assertEquals(6f, descending.getValueAt(0.5f), TOLERANCE);
     }
 
     @Test
     void zeroDurationStaysAtFromBeforeStart() {
-        Tween instant = new Tween(3f, 0f, 1f, 5f);
-        assertEquals(1f, instant.valueAt(2.9f), TOLERANCE);
+        Tween instant = Tween.linear(3f, 0f, 1f, 5f);
+        assertEquals(1f, instant.getValueAt(2.9f), TOLERANCE);
     }
 
     @Test
     void zeroDurationJumpsToToAtStart() {
-        Tween instant = new Tween(3f, 0f, 1f, 5f);
-        assertEquals(5f, instant.valueAt(3f), TOLERANCE);
+        Tween instant = Tween.linear(3f, 0f, 1f, 5f);
+        assertEquals(5f, instant.getValueAt(3f), TOLERANCE);
     }
 
     @Test
     void customEasingShapesTheMidpoint() {
-        Tween eased = new Tween(0f, 2f, 0f, 100f, Interpolation.pow2In);
-        assertEquals(25f, eased.valueAt(1f), TOLERANCE);
+        Tween eased = Tween.eased(0f, 2f, 0f, 100f, Interpolation.pow2In);
+        assertEquals(25f, eased.getValueAt(1f), TOLERANCE);
     }
 
     @Test
     void overshootEasingExceedsToInsideTheSpan() {
-        Tween overshoot = new Tween(0f, 1f, 0f, 10f, Interpolation.swingOut);
-        assertTrue(overshoot.valueAt(0.7f) > 10f);
+        Tween overshoot = Tween.eased(0f, 1f, 0f, 10f, Interpolation.swingOut);
+        assertTrue(overshoot.getValueAt(0.7f) > 10f);
     }
 
     @Test
     void overshootEasingEndsExactlyAtTo() {
-        Tween overshoot = new Tween(0f, 1f, 0f, 10f, Interpolation.swingOut);
-        assertEquals(10f, overshoot.valueAt(1f), 0f);
+        Tween overshoot = Tween.eased(0f, 1f, 0f, 10f, Interpolation.swingOut);
+        assertEquals(10f, overshoot.getValueAt(1f), 0f);
     }
 
     @Test
     void queryingOutOfOrderGivesTheSameAnswers() {
-        float first = ascending.valueAt(5f);
-        ascending.valueAt(0f);
-        ascending.valueAt(9f);
-        assertEquals(first, ascending.valueAt(5f), 0f);
+        float first = ascending.getValueAt(5f);
+        ascending.getValueAt(0f);
+        ascending.getValueAt(9f);
+        assertEquals(first, ascending.getValueAt(5f), 0f);
     }
 
     @Test
     void progressIsZeroBeforeStart() {
-        assertEquals(0f, ascending.progressAt(-5f), 0f);
+        assertEquals(0f, ascending.getProgressAt(-5f), 0f);
     }
 
     @Test
     void progressIsOneAtAndAfterEnd() {
-        assertEquals(1f, ascending.progressAt(6f), 0f);
-        assertEquals(1f, ascending.progressAt(60f), 0f);
+        assertEquals(1f, ascending.getProgressAt(6f), 0f);
+        assertEquals(1f, ascending.getProgressAt(60f), 0f);
     }
 
     @Test
     void progressInsideSpanIsEased() {
-        Tween eased = new Tween(0f, 2f, 0f, 100f, Interpolation.pow2In);
-        assertEquals(0.25f, eased.progressAt(1f), TOLERANCE);
+        Tween eased = Tween.eased(0f, 2f, 0f, 100f, Interpolation.pow2In);
+        assertEquals(0.25f, eased.getProgressAt(1f), TOLERANCE);
     }
 
     @Test
@@ -122,59 +122,59 @@ class TweenTest {
 
     @Test
     void zeroDurationIsNeverActive() {
-        Tween instant = new Tween(3f, 0f, 1f, 5f);
+        Tween instant = Tween.linear(3f, 0f, 1f, 5f);
         assertFalse(instant.isActiveAt(3f));
     }
 
     @Test
     void gettersReportConstructorValues() {
-        assertEquals(2f, ascending.start(), 0f);
-        assertEquals(6f, ascending.end(), 0f);
-        assertEquals(4f, ascending.duration(), 0f);
-        assertEquals(10f, ascending.from(), 0f);
-        assertEquals(30f, ascending.to(), 0f);
+        assertEquals(2f, ascending.getStartSeconds(), 0f);
+        assertEquals(6f, ascending.getEndSeconds(), 0f);
+        assertEquals(4f, ascending.getDurationSeconds(), 0f);
+        assertEquals(10f, ascending.getFromValue(), 0f);
+        assertEquals(30f, ascending.getToValue(), 0f);
     }
 
     @Test
     void nanStartIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Tween(Float.NaN, 1f, 0f, 1f));
+        assertThrows(IllegalArgumentException.class, () -> Tween.linear(Float.NaN, 1f, 0f, 1f));
     }
 
     @Test
     void infiniteStartIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Tween(Float.POSITIVE_INFINITY, 1f, 0f, 1f));
+                () -> Tween.linear(Float.POSITIVE_INFINITY, 1f, 0f, 1f));
     }
 
     @Test
     void negativeDurationIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Tween(0f, -1f, 0f, 1f));
+        assertThrows(IllegalArgumentException.class, () -> Tween.linear(0f, -1f, 0f, 1f));
     }
 
     @Test
     void nanDurationIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Tween(0f, Float.NaN, 0f, 1f));
+        assertThrows(IllegalArgumentException.class, () -> Tween.linear(0f, Float.NaN, 0f, 1f));
     }
 
     @Test
     void infiniteDurationIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Tween(0f, Float.POSITIVE_INFINITY, 0f, 1f));
+                () -> Tween.linear(0f, Float.POSITIVE_INFINITY, 0f, 1f));
     }
 
     @Test
     void nanFromIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Tween(0f, 1f, Float.NaN, 1f));
+        assertThrows(IllegalArgumentException.class, () -> Tween.linear(0f, 1f, Float.NaN, 1f));
     }
 
     @Test
     void infiniteToIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Tween(0f, 1f, 0f, Float.NEGATIVE_INFINITY));
+                () -> Tween.linear(0f, 1f, 0f, Float.NEGATIVE_INFINITY));
     }
 
     @Test
     void nullEasingIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new Tween(0f, 1f, 0f, 1f, null));
+        assertThrows(IllegalArgumentException.class, () -> Tween.eased(0f, 1f, 0f, 1f, null));
     }
 }

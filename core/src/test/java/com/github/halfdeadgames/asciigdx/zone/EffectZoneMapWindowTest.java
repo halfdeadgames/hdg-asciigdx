@@ -111,7 +111,8 @@ class EffectZoneMapWindowTest {
         Map<Long, Float> phaseByMapCell = new HashMap<>();
         Phase phase = Phase.scattered(7);
         CellEffect phaseEffect = (cell, where, time) ->
-                phaseByMapCell.put(key(where.getColumn(), where.getRow()), phase.cyclesAt(where));
+                phaseByMapCell.put(key(where.getColumn(), where.getRow()),
+                        phase.getCyclesAt(where));
         EffectZone zone = new EffectZone(filledRectangle(0, 0, 20, 20), phaseEffect);
         layer.enableMapWindow();
 

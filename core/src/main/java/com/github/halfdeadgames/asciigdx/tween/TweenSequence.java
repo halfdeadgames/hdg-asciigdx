@@ -22,26 +22,26 @@ public final class TweenSequence implements FloatTrack {
     }
 
     @Override
-    public float valueAt(float timeSeconds) {
+    public float getValueAt(float timeSeconds) {
         for (int i = pieces.length - 1; i >= 0; i--) {
-            if (pieces[i].start() <= timeSeconds) {
-                return pieces[i].valueAt(timeSeconds);
+            if (pieces[i].getStartSeconds() <= timeSeconds) {
+                return pieces[i].getValueAt(timeSeconds);
             }
         }
-        return pieces[0].valueAt(timeSeconds);
+        return pieces[0].getValueAt(timeSeconds);
     }
 
     @Override
-    public float start() {
-        return pieces[0].start();
+    public float getStartSeconds() {
+        return pieces[0].getStartSeconds();
     }
 
     @Override
-    public float end() {
-        return pieces[pieces.length - 1].end();
+    public float getEndSeconds() {
+        return pieces[pieces.length - 1].getEndSeconds();
     }
 
-    public int pieceCount() {
+    public int getPieceCount() {
         return pieces.length;
     }
 
@@ -63,7 +63,7 @@ public final class TweenSequence implements FloatTrack {
         }
 
         public Builder to(float value, float durationSeconds, Interpolation easing) {
-            pieces.add(new Tween(currentEnd(), durationSeconds, currentValue(), value, easing));
+            pieces.add(Tween.eased(currentEnd(), durationSeconds, currentValue(), value, easing));
             return this;
         }
 
@@ -79,11 +79,11 @@ public final class TweenSequence implements FloatTrack {
         }
 
         private float currentEnd() {
-            return pieces.size == 0 ? startSeconds : pieces.peek().end();
+            return pieces.size == 0 ? startSeconds : pieces.peek().getEndSeconds();
         }
 
         private float currentValue() {
-            return pieces.size == 0 ? startValue : pieces.peek().to();
+            return pieces.size == 0 ? startValue : pieces.peek().getToValue();
         }
     }
 }

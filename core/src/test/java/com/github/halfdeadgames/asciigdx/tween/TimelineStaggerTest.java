@@ -15,17 +15,17 @@ class TimelineStaggerTest {
     private static final class RampTrack implements FloatTrack {
 
         @Override
-        public float valueAt(float timeSeconds) {
+        public float getValueAt(float timeSeconds) {
             return Math.max(0f, Math.min(10f, timeSeconds));
         }
 
         @Override
-        public float start() {
+        public float getStartSeconds() {
             return 0f;
         }
 
         @Override
-        public float end() {
+        public float getEndSeconds() {
             return 10f;
         }
     }
@@ -119,7 +119,7 @@ class TimelineStaggerTest {
                 () -> timeline.bind(staggeredTrack(), 0, new IndexedRecorder()));
         assertThrows(IllegalArgumentException.class,
                 () -> timeline.bind(staggeredTrack(), -1, new IndexedRecorder()));
-        assertEquals(0, timeline.bindingCount());
+        assertEquals(0, timeline.getBindingCount());
     }
 
     @Test
@@ -138,6 +138,6 @@ class TimelineStaggerTest {
         timeline.bind(staggeredTrack(), 2, recorder);
         assertThrows(IllegalArgumentException.class,
                 () -> timeline.bind(staggeredTrack(), 2, recorder));
-        assertEquals(1, timeline.bindingCount());
+        assertEquals(1, timeline.getBindingCount());
     }
 }

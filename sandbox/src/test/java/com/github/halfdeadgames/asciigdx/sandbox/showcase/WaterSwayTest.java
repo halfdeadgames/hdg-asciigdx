@@ -13,7 +13,7 @@ class WaterSwayTest {
     private static final float PEAK_DEGREES = 3f;
     private static final float EPSILON = 1e-5f;
     private final WaterSway sway =
-            new WaterSway(new Tween(6.0f, 1.6f, 0f, 1f), PEAK_DEGREES, 1.25f);
+            new WaterSway(Tween.linear(6.0f, 1.6f, 0f, 1f), PEAK_DEGREES, 1.25f);
 
     @Test
     void isZeroOutsideTheSway() {

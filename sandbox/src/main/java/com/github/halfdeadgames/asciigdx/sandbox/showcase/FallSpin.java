@@ -21,15 +21,15 @@ public final class FallSpin {
     }
 
     public float rotationDegreesAt(float timeSeconds) {
-        return totalDegrees * spin.progressAt(timeSeconds);
+        return totalDegrees * spin.getProgressAt(timeSeconds);
     }
 
     public float scaleAt(float timeSeconds) {
-        return 1f + (endScale - 1f) * spin.progressAt(timeSeconds);
+        return 1f + (endScale - 1f) * spin.getProgressAt(timeSeconds);
     }
 
     /** Whether the crisp glyph replaces the smooth one. */
     public boolean isCrispAt(float timeSeconds) {
-        return timeSeconds >= spin.end();
+        return timeSeconds >= spin.getEndSeconds();
     }
 }

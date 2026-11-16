@@ -13,7 +13,7 @@ final class FloatBinding implements Binding {
 
     @Override
     public void applyAt(float timeSeconds) {
-        float value = track.valueAt(timeSeconds);
+        float value = track.getValueAt(timeSeconds);
         int bits = ChangeGate.bitsOf(value);
         if (gate.isUnchanged(bits)) {
             return;

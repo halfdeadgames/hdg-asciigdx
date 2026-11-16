@@ -17,7 +17,7 @@ final class CycleMath {
     static float position(float timeSeconds, float periodSeconds, Phase phase, ZoneCell where) {
         double cycles = (double) timeSeconds / periodSeconds;
         cycles -= Math.floor(cycles);
-        return (float) cycles - phase.cyclesAt(where);
+        return (float) cycles - phase.getCyclesAt(where);
     }
 
     /** Sine of a full turn per cycle, from -1 to 1. */

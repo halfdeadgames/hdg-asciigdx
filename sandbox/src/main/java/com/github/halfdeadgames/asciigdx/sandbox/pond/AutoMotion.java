@@ -13,7 +13,7 @@ public final class AutoMotion implements PlayerMotion {
      * Fraction of the step still to slide: 1 at the step start, 0 at its end, linear for steady
      * speed.
      */
-    private final Tween slide = new Tween(0f, 1f, 1f, 0f, Interpolation.linear);
+    private final Tween slide = Tween.eased(0f, 1f, 1f, 0f, Interpolation.linear);
     private final int startColumn;
     private final int startRow;
     private float slideRemaining;
@@ -28,7 +28,7 @@ public final class AutoMotion implements PlayerMotion {
     public void update(float elapsedSeconds) {
         walk.positionAt(elapsedSeconds, startColumn, startRow, cell);
         walk.stepDirectionAt(elapsedSeconds, stepDirection);
-        slideRemaining = slide.valueAt(walk.stepProgressAt(elapsedSeconds));
+        slideRemaining = slide.getValueAt(walk.stepProgressAt(elapsedSeconds));
     }
 
     @Override

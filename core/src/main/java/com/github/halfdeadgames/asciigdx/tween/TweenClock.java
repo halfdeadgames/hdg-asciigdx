@@ -89,7 +89,7 @@ public final class TweenClock {
      *
      * @return time in seconds; within [0, loopSeconds) when looping
      */
-    public float time() {
+    public float getTimeSeconds() {
         return time;
     }
 
@@ -108,7 +108,7 @@ public final class TweenClock {
      * @return loop length in seconds
      * @throws IllegalStateException if the clock is unbounded
      */
-    public float loopSeconds() {
+    public float getLoopSeconds() {
         if (!isLooping()) {
             throw new IllegalStateException("Clock is not looping");
         }

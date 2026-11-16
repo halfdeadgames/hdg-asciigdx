@@ -30,11 +30,11 @@ public final class CameraPan {
     }
 
     public float cameraXAt(float timeSeconds) {
-        return targetX * pan.progressAt(timeSeconds);
+        return targetX * pan.getProgressAt(timeSeconds);
     }
 
     public float cameraYAt(float timeSeconds) {
-        return targetY * pan.progressAt(timeSeconds);
+        return targetY * pan.getProgressAt(timeSeconds);
     }
 
     /**
@@ -44,6 +44,6 @@ public final class CameraPan {
      * which equals (from - to) * (1 - progress) * zoom.
      */
     public float followAt(float timeSeconds, float from, float to, float zoom) {
-        return to + (from - to) * (1f - pan.progressAt(timeSeconds)) * zoom;
+        return to + (from - to) * (1f - pan.getProgressAt(timeSeconds)) * zoom;
     }
 }

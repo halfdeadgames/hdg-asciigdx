@@ -26,8 +26,8 @@ public final class WaterSway {
         if (!sway.isActiveAt(timeSeconds)) {
             return 0f;
         }
-        double elapsed = timeSeconds - sway.start();
-        double duration = sway.end() - sway.start();
+        double elapsed = timeSeconds - sway.getStartSeconds();
+        double duration = sway.getEndSeconds() - sway.getStartSeconds();
         double envelope = Math.sin(Math.PI * elapsed / duration);
         double rocking = Math.sin(2.0 * Math.PI * cyclesPerSecond * elapsed);
         return (float) (peakDegrees * envelope * rocking);

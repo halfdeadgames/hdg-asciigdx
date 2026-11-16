@@ -23,36 +23,36 @@ class TweenSequenceTest {
 
     @Test
     void valueBeforeStartIsStartValue() {
-        assertEquals(10f, chain.valueAt(-3f), TOLERANCE);
+        assertEquals(10f, chain.getValueAt(-3f), TOLERANCE);
     }
 
     @Test
     void valueAtPieceBoundariesIsTheChainedValue() {
-        assertEquals(10f, chain.valueAt(1f), TOLERANCE);
-        assertEquals(20f, chain.valueAt(3f), TOLERANCE);
-        assertEquals(0f, chain.valueAt(7f), TOLERANCE);
+        assertEquals(10f, chain.getValueAt(1f), TOLERANCE);
+        assertEquals(20f, chain.getValueAt(3f), TOLERANCE);
+        assertEquals(0f, chain.getValueAt(7f), TOLERANCE);
     }
 
     @Test
     void valueAtPieceMidpointsIsHalfway() {
-        assertEquals(15f, chain.valueAt(2f), TOLERANCE);
-        assertEquals(10f, chain.valueAt(5f), TOLERANCE);
+        assertEquals(15f, chain.getValueAt(2f), TOLERANCE);
+        assertEquals(10f, chain.getValueAt(5f), TOLERANCE);
     }
 
     @Test
     void holdKeepsTheValue() {
-        assertEquals(1f, envelope.valueAt(0.1f), TOLERANCE);
-        assertEquals(1f, envelope.valueAt(0.4f), TOLERANCE);
-        assertEquals(1f, envelope.valueAt(0.599f), 1e-3f);
+        assertEquals(1f, envelope.getValueAt(0.1f), TOLERANCE);
+        assertEquals(1f, envelope.getValueAt(0.4f), TOLERANCE);
+        assertEquals(1f, envelope.getValueAt(0.599f), 1e-3f);
     }
 
     @Test
     void envelopeRisesHoldsAndFalls() {
-        assertEquals(0f, envelope.valueAt(0f), TOLERANCE);
-        assertEquals(0.5f, envelope.valueAt(0.05f), TOLERANCE);
-        assertEquals(1f, envelope.valueAt(0.3f), TOLERANCE);
-        assertEquals(0.5f, envelope.valueAt(0.7f), TOLERANCE);
-        assertEquals(0f, envelope.valueAt(0.8f), TOLERANCE);
+        assertEquals(0f, envelope.getValueAt(0f), TOLERANCE);
+        assertEquals(0.5f, envelope.getValueAt(0.05f), TOLERANCE);
+        assertEquals(1f, envelope.getValueAt(0.3f), TOLERANCE);
+        assertEquals(0.5f, envelope.getValueAt(0.7f), TOLERANCE);
+        assertEquals(0f, envelope.getValueAt(0.8f), TOLERANCE);
     }
 
     @Test
@@ -62,30 +62,30 @@ class TweenSequenceTest {
                 .to(5f, 0f)
                 .hold(1f)
                 .build();
-        assertEquals(0f, jump.valueAt(0.999f), TOLERANCE);
-        assertEquals(5f, jump.valueAt(1f), TOLERANCE);
-        assertEquals(5f, jump.valueAt(1.5f), TOLERANCE);
+        assertEquals(0f, jump.getValueAt(0.999f), TOLERANCE);
+        assertEquals(5f, jump.getValueAt(1f), TOLERANCE);
+        assertEquals(5f, jump.getValueAt(1.5f), TOLERANCE);
     }
 
     @Test
     void valueAfterEndIsLastValue() {
-        assertEquals(0f, chain.valueAt(100f), TOLERANCE);
+        assertEquals(0f, chain.getValueAt(100f), TOLERANCE);
     }
 
     @Test
     void startEndAndPieceCountDescribeTheSequence() {
-        assertEquals(1f, chain.start(), TOLERANCE);
-        assertEquals(7f, chain.end(), TOLERANCE);
-        assertEquals(2, chain.pieceCount());
+        assertEquals(1f, chain.getStartSeconds(), TOLERANCE);
+        assertEquals(7f, chain.getEndSeconds(), TOLERANCE);
+        assertEquals(2, chain.getPieceCount());
     }
 
     @Test
     void seekingOutOfOrderGivesTheSameValues() {
-        float first = chain.valueAt(5f);
-        chain.valueAt(0f);
-        chain.valueAt(2f);
-        chain.valueAt(50f);
-        assertEquals(first, chain.valueAt(5f), 0f);
+        float first = chain.getValueAt(5f);
+        chain.getValueAt(0f);
+        chain.getValueAt(2f);
+        chain.getValueAt(50f);
+        assertEquals(first, chain.getValueAt(5f), 0f);
     }
 
     @Test
@@ -109,8 +109,8 @@ class TweenSequenceTest {
         TweenSequence.Builder builder = TweenSequence.startingAt(0f, 0f).to(1f, 1f);
         TweenSequence built = builder.build();
         builder.to(9f, 1f);
-        assertEquals(1, built.pieceCount());
-        assertEquals(1f, built.valueAt(5f), TOLERANCE);
+        assertEquals(1, built.getPieceCount());
+        assertEquals(1f, built.getValueAt(5f), TOLERANCE);
     }
 
     @Test
@@ -119,7 +119,7 @@ class TweenSequenceTest {
                 .to(100f, 2f, Interpolation.pow2In)
                 .to(0f, 2f)
                 .build();
-        assertEquals(25f, eased.valueAt(1f), TOLERANCE);
-        assertEquals(50f, eased.valueAt(3f), TOLERANCE);
+        assertEquals(25f, eased.getValueAt(1f), TOLERANCE);
+        assertEquals(50f, eased.getValueAt(3f), TOLERANCE);
     }
 }

@@ -16,7 +16,7 @@ class TweenClockTest {
         TweenClock clock = TweenClock.looping(10f, 1f);
         clock.setTime(3f);
         clock.update(Float.NaN);
-        assertEquals(3f, clock.time(), EPSILON);
+        assertEquals(3f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
@@ -31,7 +31,7 @@ class TweenClockTest {
         TweenClock clock = TweenClock.looping(10f, 1f);
         clock.update(0.5f);
         clock.update(0.25f);
-        assertEquals(0.75f, clock.time(), EPSILON);
+        assertEquals(0.75f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
@@ -39,21 +39,21 @@ class TweenClockTest {
         TweenClock clock = TweenClock.looping(2f, 5f);
         clock.setTime(1.75f);
         clock.update(0.5f);
-        assertEquals(0.25f, clock.time(), EPSILON);
+        assertEquals(0.25f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void updateWrapsMultipleLoopsInOneDelta() {
         TweenClock clock = TweenClock.looping(1f, 10f);
         clock.update(3.25f);
-        assertEquals(0.25f, clock.time(), EPSILON);
+        assertEquals(0.25f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void updateCapsDelta() {
         TweenClock clock = TweenClock.looping(100f, 0.25f);
         clock.update(50f);
-        assertEquals(0.25f, clock.time(), EPSILON);
+        assertEquals(0.25f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
@@ -61,35 +61,35 @@ class TweenClockTest {
         TweenClock clock = TweenClock.looping(10f, 1f);
         clock.setTime(3f);
         clock.update(-2f);
-        assertEquals(3f, clock.time(), EPSILON);
+        assertEquals(3f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void setTimeWrapsOverLength() {
         TweenClock clock = TweenClock.looping(4f, 1f);
         clock.setTime(9f);
-        assertEquals(1f, clock.time(), EPSILON);
+        assertEquals(1f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void setTimeWrapsNegative() {
         TweenClock clock = TweenClock.looping(4f, 1f);
         clock.setTime(-1f);
-        assertEquals(3f, clock.time(), EPSILON);
+        assertEquals(3f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void timeStaysBelowLoopLengthForTinyNegative() {
         TweenClock clock = TweenClock.looping(4f, 1f);
         clock.setTime(-1e-10f);
-        assertTrue(clock.time() >= 0f && clock.time() < 4f);
+        assertTrue(clock.getTimeSeconds() >= 0f && clock.getTimeSeconds() < 4f);
     }
 
     @Test
     void loopingClockReportsLoopSeconds() {
         TweenClock clock = TweenClock.looping(6f, 1f);
         assertTrue(clock.isLooping());
-        assertEquals(6f, clock.loopSeconds(), EPSILON);
+        assertEquals(6f, clock.getLoopSeconds(), EPSILON);
     }
 
     @Test
@@ -112,7 +112,7 @@ class TweenClockTest {
         for (int i = 0; i < 5; i++) {
             clock.update(10f);
         }
-        assertEquals(50f, clock.time(), EPSILON);
+        assertEquals(50f, clock.getTimeSeconds(), EPSILON);
         assertFalse(clock.isLooping());
     }
 
@@ -120,7 +120,7 @@ class TweenClockTest {
     void unboundedCapsDelta() {
         TweenClock clock = TweenClock.unbounded(0.25f);
         clock.update(50f);
-        assertEquals(0.25f, clock.time(), EPSILON);
+        assertEquals(0.25f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
@@ -130,14 +130,14 @@ class TweenClockTest {
         clock.update(-2f);
         clock.update(0f);
         clock.update(Float.NaN);
-        assertEquals(3f, clock.time(), EPSILON);
+        assertEquals(3f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
     void unboundedSetTimeKeepsValueWithoutWrapping() {
         TweenClock clock = TweenClock.unbounded(1f);
         clock.setTime(1234f);
-        assertEquals(1234f, clock.time(), EPSILON);
+        assertEquals(1234f, clock.getTimeSeconds(), EPSILON);
     }
 
     @Test
@@ -157,7 +157,7 @@ class TweenClockTest {
     @Test
     void unboundedLoopSecondsThrows() {
         TweenClock clock = TweenClock.unbounded(1f);
-        assertThrows(IllegalStateException.class, clock::loopSeconds);
+        assertThrows(IllegalStateException.class, clock::getLoopSeconds);
     }
 
     @Test

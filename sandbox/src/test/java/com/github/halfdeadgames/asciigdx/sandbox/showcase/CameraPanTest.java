@@ -10,7 +10,7 @@ class CameraPanTest {
 
     private static final float EPSILON = 1e-4f;
 
-    private final CameraPan pan = new CameraPan(new Tween(2f, 4f, 0f, 1f), 40f, -20f);
+    private final CameraPan pan = new CameraPan(Tween.linear(2f, 4f, 0f, 1f), 40f, -20f);
 
     @Test
     void staysAtOriginBeforeStart() {
@@ -40,7 +40,7 @@ class CameraPanTest {
     void followMatchesTheZoomedLayerSpot() {
         float from = 90f;
         float to = 50f;
-        CameraPan towardSpot = new CameraPan(new Tween(2f, 4f, 0f, 1f), from - to, 0f);
+        CameraPan towardSpot = new CameraPan(Tween.linear(2f, 4f, 0f, 1f), from - to, 0f);
         float zoom = 1.75f;
         float layerSpotOnScreen = to + (from - to - towardSpot.cameraXAt(3f)) * zoom;
         assertEquals(layerSpotOnScreen, towardSpot.followAt(3f, from, to, zoom), EPSILON);

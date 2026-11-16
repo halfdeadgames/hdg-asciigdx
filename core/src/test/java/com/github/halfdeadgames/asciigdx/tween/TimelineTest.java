@@ -15,17 +15,17 @@ class TimelineTest {
     private static final class RampTrack implements FloatTrack {
 
         @Override
-        public float valueAt(float timeSeconds) {
+        public float getValueAt(float timeSeconds) {
             return Math.max(0f, Math.min(10f, timeSeconds));
         }
 
         @Override
-        public float start() {
+        public float getStartSeconds() {
             return 0f;
         }
 
         @Override
-        public float end() {
+        public float getEndSeconds() {
             return 10f;
         }
     }
@@ -93,14 +93,14 @@ class TimelineTest {
         timeline.bind(track, recorder);
         timeline.apply(5f);
         assertEquals(1, recorder.values.size());
-        assertEquals(track.colorAt(5f), recorder.values.get(0).intValue());
+        assertEquals(track.getColorAt(5f), recorder.values.get(0).intValue());
     }
 
     @Test
     void visibilityFollowsHalfOpenInterval() {
         Timeline timeline = new Timeline();
         BooleanRecorder recorder = new BooleanRecorder();
-        timeline.visibleDuring(2f, 4f, recorder);
+        timeline.bindVisibility(2f, 4f, recorder);
         timeline.apply(1f);
         timeline.apply(2f);
         timeline.apply(3f);
@@ -113,7 +113,7 @@ class TimelineTest {
     void visibilityIsNeverTrueWhenStartEqualsEnd() {
         Timeline timeline = new Timeline();
         BooleanRecorder recorder = new BooleanRecorder();
-        timeline.visibleDuring(2f, 2f, recorder);
+        timeline.bindVisibility(2f, 2f, recorder);
         timeline.apply(1f);
         timeline.apply(2f);
         timeline.apply(3f);
@@ -160,7 +160,7 @@ class TimelineTest {
         BooleanRecorder booleans = new BooleanRecorder();
         timeline.bind(new RampTrack(), floats);
         timeline.bind(colorTrack(), colors);
-        timeline.visibleDuring(0f, 5f, booleans);
+        timeline.bindVisibility(0f, 5f, booleans);
         timeline.apply(3f);
         timeline.forceNextApply();
         timeline.apply(3f);
@@ -187,7 +187,7 @@ class TimelineTest {
         Timeline child = new Timeline();
         FloatRecorder recorder = new FloatRecorder();
         child.bind(new RampTrack(), recorder);
-        parent.add(child, 0f);
+        parent.addChild(child, 0f);
         parent.apply(3f);
         parent.apply(3f);
         assertEquals(2, recorder.values.size());
@@ -200,8 +200,8 @@ class TimelineTest {
         Timeline grandchild = new Timeline();
         FloatRecorder recorder = new FloatRecorder();
         grandchild.bind(new RampTrack(), recorder);
-        child.add(grandchild, 0f);
-        root.add(child, 0f);
+        child.addChild(grandchild, 0f);
+        root.addChild(child, 0f);
         root.apply(3f);
         root.apply(3f);
         assertEquals(2, recorder.values.size());
@@ -213,7 +213,7 @@ class TimelineTest {
         Timeline child = Timeline.writingEveryApply();
         FloatRecorder recorder = new FloatRecorder();
         child.bind(new RampTrack(), recorder);
-        parent.add(child, 0f);
+        parent.addChild(child, 0f);
         parent.apply(3f);
         parent.apply(3f);
         assertEquals(2, recorder.values.size());
@@ -237,11 +237,11 @@ class TimelineTest {
         Timeline timeline = new Timeline();
         List<String> order = new ArrayList<>();
         timeline.bind(new RampTrack(), value -> order.add("float"));
-        timeline.visibleDuring(0f, 1f, value -> order.add("visible"));
+        timeline.bindVisibility(0f, 1f, value -> order.add("visible"));
         timeline.bind(colorTrack(), rgba -> order.add("color"));
         timeline.apply(0.5f);
         assertEquals(List.of("float", "visible", "color"), order);
-        assertEquals(3, timeline.bindingCount());
+        assertEquals(3, timeline.getBindingCount());
     }
 
     @Test
@@ -251,7 +251,7 @@ class TimelineTest {
         timeline.bind(new RampTrack(), recorder);
         assertThrows(IllegalArgumentException.class,
                 () -> timeline.bind(new RampTrack(), recorder));
-        assertEquals(1, timeline.bindingCount());
+        assertEquals(1, timeline.getBindingCount());
     }
 
     @Test
@@ -260,7 +260,7 @@ class TimelineTest {
         DualSetter dual = new DualSetter();
         timeline.bind(new RampTrack(), (FloatSetter) dual);
         assertThrows(IllegalArgumentException.class,
-                () -> timeline.visibleDuring(0f, 1f, (BooleanSetter) dual));
+                () -> timeline.bindVisibility(0f, 1f, (BooleanSetter) dual));
     }
 
     @Test
@@ -275,7 +275,7 @@ class TimelineTest {
         assertThrows(IllegalArgumentException.class,
                 () -> timeline.bind(colorTrack(), (ColorSetter) null));
         assertThrows(IllegalArgumentException.class,
-                () -> timeline.visibleDuring(0f, 1f, null));
+                () -> timeline.bindVisibility(0f, 1f, null));
     }
 
     @Test
@@ -307,6 +307,6 @@ class TimelineTest {
     void visibleDuringRejectsEndBeforeStart() {
         Timeline timeline = new Timeline();
         assertThrows(IllegalArgumentException.class,
-                () -> timeline.visibleDuring(2f, 1f, new BooleanRecorder()));
+                () -> timeline.bindVisibility(2f, 1f, new BooleanRecorder()));
     }
 }

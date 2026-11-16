@@ -22,8 +22,8 @@ public final class GhostPath {
     private static final float TWO_PI = (float) (2.0 * Math.PI);
 
     private final Tween drift =
-            new Tween(DRIFT_START_SECONDS, DRIFT_SECONDS, 0f, 1f, Interpolation.sineOut);
-    private final Tween wail = new Tween(WAIL_START_SECONDS, WAIL_SECONDS, 0f, 1f);
+            Tween.eased(DRIFT_START_SECONDS, DRIFT_SECONDS, 0f, 1f, Interpolation.sineOut);
+    private final Tween wail = Tween.linear(WAIL_START_SECONDS, WAIL_SECONDS, 0f, 1f);
     private final float startColumn;
     private final float endColumn;
 
@@ -33,15 +33,15 @@ public final class GhostPath {
     }
 
     public float driftStartSeconds() {
-        return drift.start();
+        return drift.getStartSeconds();
     }
 
     public boolean isVisibleAt(float timeSeconds) {
-        return timeSeconds >= drift.start();
+        return timeSeconds >= drift.getStartSeconds();
     }
 
     public float columnAt(float timeSeconds) {
-        return startColumn + (endColumn - startColumn) * drift.progressAt(timeSeconds);
+        return startColumn + (endColumn - startColumn) * drift.getProgressAt(timeSeconds);
     }
 
     public float wobbleRowsAt(float timeSeconds) {
@@ -52,7 +52,7 @@ public final class GhostPath {
         if (!isVisibleAt(timeSeconds)) {
             return 0f;
         }
-        float baseAlpha = SETTLED_ALPHA * drift.progressAt(timeSeconds);
+        float baseAlpha = SETTLED_ALPHA * drift.getProgressAt(timeSeconds);
         if (!wail.isActiveAt(timeSeconds)) {
             return baseAlpha;
         }

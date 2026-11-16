@@ -39,7 +39,7 @@ public final class SplashColor {
         }
 
         @Override
-        public float valueAt(float timeSeconds) {
+        public float getValueAt(float timeSeconds) {
             if (timeSeconds < dive.sinkStartSeconds()) {
                 return 1f;
             }
@@ -47,12 +47,12 @@ public final class SplashColor {
         }
 
         @Override
-        public float start() {
+        public float getStartSeconds() {
             return dive.sinkStartSeconds();
         }
 
         @Override
-        public float end() {
+        public float getEndSeconds() {
             return dive.surfaceEndSeconds();
         }
     }

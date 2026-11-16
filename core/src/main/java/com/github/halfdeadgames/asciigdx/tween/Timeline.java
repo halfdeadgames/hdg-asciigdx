@@ -29,8 +29,8 @@ import java.util.List;
  * setter call per binding per apply.
  *
  * <p>A staggered binding writes one value per index and skips unchanged values per index. A child
- * timeline added with {@link #add(Timeline, float)} runs on local time and is forced along with
- * its parent: a child under a write-every parent is written on every apply, and a write-every
+ * timeline added with {@link #addChild(Timeline, float)} runs on local time and is forced along
+ * with its parent: a child under a write-every parent is written on every apply, and a write-every
  * child forces itself under any parent. The duplicate-setter check does not look inside children.
  *
  * <p>{@link #apply(float)} does not allocate.
@@ -99,7 +99,7 @@ public final class Timeline {
     }
 
     /**
-     * Writes {@code track.valueAt(index, time)} to the setter for every index from 0 to
+     * Writes {@code track.getValueAt(index, time)} to the setter for every index from 0 to
      * {@code count - 1}. Skipping unchanged values is tracked per index.
      *
      * @throws IllegalArgumentException if an argument is null, count is below 1, or the setter is
@@ -121,7 +121,7 @@ public final class Timeline {
      * @throws IllegalArgumentException if a time is not finite, end is before start, the setter is
      *     null, or the setter is already bound
      */
-    public void visibleDuring(float startSeconds, float endSeconds, BooleanSetter setter) {
+    public void bindVisibility(float startSeconds, float endSeconds, BooleanSetter setter) {
         TweenChecks.requireFinite("startSeconds", startSeconds);
         TweenChecks.requireFinite("endSeconds", endSeconds);
         if (endSeconds < startSeconds) {
@@ -145,7 +145,7 @@ public final class Timeline {
      * @throws IllegalArgumentException if the child is null, this timeline, already has a parent,
      *     or already contains this timeline (a cycle), or if startSeconds is not finite
      */
-    public void add(Timeline child, float startSeconds) {
+    public void addChild(Timeline child, float startSeconds) {
         requireNonNull("child", child);
         TweenChecks.requireFinite("startSeconds", startSeconds);
         if (child.hasParent) {
@@ -182,7 +182,7 @@ public final class Timeline {
     }
 
     /** Returns the number of bindings; a child timeline counts as one. */
-    public int bindingCount() {
+    public int getBindingCount() {
         return bindings.size();
     }
 

@@ -19,12 +19,12 @@ public final class TypedLine {
         }
         this.startSeconds = startSeconds;
         this.text = text;
-        this.typing = new Tween(startSeconds, text.length() / charactersPerSecond, 0f, 1f);
+        this.typing = Tween.linear(startSeconds, text.length() / charactersPerSecond, 0f, 1f);
     }
 
     public int visibleCharacters(float timeSeconds) {
         int length = text.length();
-        int visible = (int) Math.floor(typing.progressAt(timeSeconds) * length);
+        int visible = (int) Math.floor(typing.getProgressAt(timeSeconds) * length);
         return Math.max(0, Math.min(length, visible));
     }
 

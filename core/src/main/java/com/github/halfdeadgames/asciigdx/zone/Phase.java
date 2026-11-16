@@ -18,7 +18,7 @@ public final class Phase {
 
     /** Computes the phase of one cell. */
     private interface Source {
-        float cyclesAt(ZoneCell where);
+        float getCyclesAt(ZoneCell where);
     }
 
     /**
@@ -71,7 +71,7 @@ public final class Phase {
     }
 
     /** Returns the cell's phase in cycles. */
-    public float cyclesAt(ZoneCell where) {
-        return source.cyclesAt(where);
+    public float getCyclesAt(ZoneCell where) {
+        return source.getCyclesAt(where);
     }
 }

@@ -18,7 +18,7 @@ public final class PlayerPath {
     private static final float HOP_PEAK_SCALE_GAIN = 0.4f;
 
     private final Tween[] slides;
-    private final Tween hopArc = new Tween(HOP_START_SECONDS, HOP_SECONDS, 0f, 1f);
+    private final Tween hopArc = Tween.linear(HOP_START_SECONDS, HOP_SECONDS, 0f, 1f);
     private final int startColumn;
     private final int startRow;
 
@@ -31,14 +31,14 @@ public final class PlayerPath {
         this.slides = new Tween[stepCount];
         for (int step = 0; step < stepCount; step++) {
             float slideStart = FIRST_STEP_START_SECONDS + step * STEP_INTERVAL_SECONDS;
-            slides[step] = new Tween(slideStart, SLIDE_SECONDS, 0f, 1f, Interpolation.sineOut);
+            slides[step] = Tween.eased(slideStart, SLIDE_SECONDS, 0f, 1f, Interpolation.sineOut);
         }
     }
 
     public float columnAt(float timeSeconds) {
         float column = startColumn;
         for (int step = 0; step < slides.length; step++) {
-            column += slides[step].progressAt(timeSeconds);
+            column += slides[step].getProgressAt(timeSeconds);
         }
         return column;
     }
@@ -49,6 +49,6 @@ public final class PlayerPath {
 
     public float scaleAt(float timeSeconds) {
         return 1f + HOP_PEAK_SCALE_GAIN * (float) Math.sin(
-                Math.PI * hopArc.progressAt(timeSeconds));
+                Math.PI * hopArc.getProgressAt(timeSeconds));
     }
 }

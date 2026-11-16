@@ -112,7 +112,7 @@ public final class CellEffects {
         Objects.requireNonNull(phase, "phase");
         return (cell, where, time) -> {
             float turnedDegrees = (float) (((double) degreesPerSecond * time) % FULL_TURN_DEGREES);
-            cell.rotateBy(turnedDegrees - FULL_TURN_DEGREES * phase.cyclesAt(where));
+            cell.rotateBy(turnedDegrees - FULL_TURN_DEGREES * phase.getCyclesAt(where));
         };
     }
 

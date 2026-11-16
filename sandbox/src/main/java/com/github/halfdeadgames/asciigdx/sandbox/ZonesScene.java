@@ -173,7 +173,7 @@ class ZonesScene extends GridScene {
         }
         moveSpellFromArrowKeys(delta);
         layers.beginCellEffects(delta);
-        applyZones(clock.time());
+        applyZones(clock.getTimeSeconds());
     }
 
     private void applyZones(float time) {

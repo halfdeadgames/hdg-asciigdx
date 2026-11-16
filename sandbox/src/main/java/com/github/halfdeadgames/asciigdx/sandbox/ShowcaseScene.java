@@ -94,19 +94,19 @@ class ShowcaseScene extends GridScene {
     private static final float PAN_SECONDS = 0.8f;
     private static final float FALL_CAMERA_DEPTH = 2.5f;
     private static final Tween CAMERA_DEPTH_FALL =
-            new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f, Interpolation.pow2In);
+            Tween.eased(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f, Interpolation.pow2In);
     private static final float SPIN_SECONDS = 1.3f;
     private static final float SPIN_DEGREES = -720f;
     private static final float SHRUNK_SCALE = 0.5f;
     private static final FallSpin FALL_SPIN = new FallSpin(
-            new Tween(FALL_START_SECONDS, SPIN_SECONDS, 0f, 1f, Interpolation.sine), SPIN_DEGREES,
+            Tween.eased(FALL_START_SECONDS, SPIN_SECONDS, 0f, 1f, Interpolation.sine), SPIN_DEGREES,
             SHRUNK_SCALE);
     private static final Tween CAMERA_PAN =
-            new Tween(FALL_START_SECONDS, PAN_SECONDS, 0f, 1f, Interpolation.sine);
+            Tween.eased(FALL_START_SECONDS, PAN_SECONDS, 0f, 1f, Interpolation.sine);
     private static final float WATER_SWAY_DEGREES = -3f;
     private static final float WATER_SWAY_CYCLES_PER_SECOND = 1.25f;
     private static final WaterSway WATER_SWAY = new WaterSway(
-            new Tween(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f), WATER_SWAY_DEGREES,
+            Tween.linear(FALL_START_SECONDS, FALL_SECONDS, 0f, 1f), WATER_SWAY_DEGREES,
             WATER_SWAY_CYCLES_PER_SECOND);
 
     /**
@@ -183,8 +183,9 @@ class ShowcaseScene extends GridScene {
     private static final float SINK_SECONDS = 0.4f;
     private static final float SURFACE_SECONDS = 0.6f;
     private static final UnderwaterDive UNDERWATER_DIVE = new UnderwaterDive(
-            new Tween(SPLASH_SECONDS, SINK_SECONDS, 0f, 1f, Interpolation.sineOut),
-            new Tween(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, 0f, 1f, Interpolation.sine));
+            Tween.eased(SPLASH_SECONDS, SINK_SECONDS, 0f, 1f, Interpolation.sineOut),
+            Tween.eased(SPLASH_SECONDS + SINK_SECONDS, SURFACE_SECONDS, 0f, 1f,
+                    Interpolation.sine));
 
     private static final String TITLE_TEXT = "AsciiGDX";
     private static final float TITLE_START_SECONDS = 8.6f;
@@ -337,7 +338,7 @@ class ShowcaseScene extends GridScene {
         if (!clockPinned) {
             clock.update(delta);
         }
-        float time = clock.time();
+        float time = clock.getTimeSeconds();
         applyCamera(time);
         applyWaterSway(time);
         waterRipple.update(time);
@@ -369,7 +370,7 @@ class ShowcaseScene extends GridScene {
 
     private void bindHpBar() {
         timeline.bind(
-                new Tween(HP_DRAIN_START_SECONDS, HP_DRAIN_SECONDS, 1f, HP_AFTER_WAIL,
+                Tween.eased(HP_DRAIN_START_SECONDS, HP_DRAIN_SECONDS, 1f, HP_AFTER_WAIL,
                         Interpolation.pow2Out),
                 this::drawHpBar);
     }
@@ -424,10 +425,10 @@ class ShowcaseScene extends GridScene {
      * it is visible over two spans (spin end to splash, and after surfacing).
      */
     private void bindSpriteVisibility() {
-        timeline.visibleDuring(0f, FALL_START_SECONDS, playerSprite::setVisible);
-        timeline.visibleDuring(FALL_START_SECONDS, FALL_START_SECONDS + SPIN_SECONDS,
+        timeline.bindVisibility(0f, FALL_START_SECONDS, playerSprite::setVisible);
+        timeline.bindVisibility(FALL_START_SECONDS, FALL_START_SECONDS + SPIN_SECONDS,
                 fallingPlayerSprite::setVisible);
-        timeline.visibleDuring(ghostPath.driftStartSeconds(), LOOP_SECONDS,
+        timeline.bindVisibility(ghostPath.driftStartSeconds(), LOOP_SECONDS,
                 ghostSprite::setVisible);
     }
 
@@ -553,7 +554,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private void applyCamera(float time) {
-        camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.progressAt(time));
+        camera.setCameraDepth(FALL_CAMERA_DEPTH * CAMERA_DEPTH_FALL.getProgressAt(time));
         scenePanel.setCamera(cameraPan.cameraXAt(time), cameraPan.cameraYAt(time));
         applyDepth();
     }
@@ -824,7 +825,7 @@ class ShowcaseScene extends GridScene {
      */
     private Splash createSplash() {
         DropletSpray spray = new DropletSpray(
-                new Tween(SPLASH_SECONDS, SPRAY_SECONDS, 0f, 1f), SPRAY_DROPLET_COUNT,
+                Tween.linear(SPLASH_SECONDS, SPRAY_SECONDS, 0f, 1f), SPRAY_DROPLET_COUNT,
                 SPRAY_MAX_DISTANCE_CELLS, SPRAY_PEAK_SCALE);
         return new Splash(
                 dropletLayer, fallEndX + cellWidth / 2f, fallEndY + cellHeight / 2f, cellWidth,

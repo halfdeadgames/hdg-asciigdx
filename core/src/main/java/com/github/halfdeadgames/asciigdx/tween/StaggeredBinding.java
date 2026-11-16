@@ -32,7 +32,7 @@ final class StaggeredBinding implements Binding {
     }
 
     private void applyIndex(int index, float timeSeconds) {
-        float value = track.valueAt(index, timeSeconds);
+        float value = track.getValueAt(index, timeSeconds);
         int bits = ChangeGate.bitsOf(value);
         if (gate.isUnchanged(index, bits)) {
             return;

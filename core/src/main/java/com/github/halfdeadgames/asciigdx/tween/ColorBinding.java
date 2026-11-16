@@ -13,7 +13,7 @@ final class ColorBinding implements Binding {
 
     @Override
     public void applyAt(float timeSeconds) {
-        int rgba = track.colorAt(timeSeconds);
+        int rgba = track.getColorAt(timeSeconds);
         if (gate.isUnchanged(rgba)) {
             return;
         }

@@ -17,25 +17,25 @@ class PhaseTest {
 
     @Test
     void syncIsZeroEverywhere() {
-        assertEquals(0f, Phase.sync().cyclesAt(cellAt(3, 4, 2, 5f)));
-        assertEquals(0f, Phase.sync().cyclesAt(cellAt(0, 0, 0, 0f)));
+        assertEquals(0f, Phase.sync().getCyclesAt(cellAt(3, 4, 2, 5f)));
+        assertEquals(0f, Phase.sync().getCyclesAt(cellAt(0, 0, 0, 0f)));
     }
 
     @Test
     void alongColumnsDividesZoneColumnByCellsPerCycle() {
         Phase phase = Phase.alongColumns(4f);
 
-        assertEquals(0f, phase.cyclesAt(cellAt(7, 1, 0, 9f)));
-        assertEquals(0.5f, phase.cyclesAt(cellAt(7, 1, 2, 9f)));
-        assertEquals(1.5f, phase.cyclesAt(cellAt(0, 0, 6, 0f)));
+        assertEquals(0f, phase.getCyclesAt(cellAt(7, 1, 0, 9f)));
+        assertEquals(0.5f, phase.getCyclesAt(cellAt(7, 1, 2, 9f)));
+        assertEquals(1.5f, phase.getCyclesAt(cellAt(0, 0, 6, 0f)));
     }
 
     @Test
     void byDistanceDividesDistanceByCellsPerCycle() {
         Phase phase = Phase.byDistance(2f);
 
-        assertEquals(0f, phase.cyclesAt(cellAt(0, 0, 0, 0f)));
-        assertEquals(1.5f, phase.cyclesAt(cellAt(0, 0, 0, 3f)));
+        assertEquals(0f, phase.getCyclesAt(cellAt(0, 0, 0, 0f)));
+        assertEquals(1.5f, phase.getCyclesAt(cellAt(0, 0, 0, 3f)));
     }
 
     @Test
@@ -46,8 +46,8 @@ class PhaseTest {
         float period = 2f;
         float crestPosition = 0.25f;
 
-        float innerCrestTime = (crestPosition + phase.cyclesAt(inner)) * period;
-        float outerCrestTime = (crestPosition + phase.cyclesAt(outer)) * period;
+        float innerCrestTime = (crestPosition + phase.getCyclesAt(inner)) * period;
+        float outerCrestTime = (crestPosition + phase.getCyclesAt(outer)) * period;
 
         assertEquals(crestPosition, wrappedPosition(innerCrestTime, period, phase, inner), 1e-5f);
         assertEquals(crestPosition, wrappedPosition(outerCrestTime, period, phase, outer), 1e-5f);
@@ -63,13 +63,13 @@ class PhaseTest {
     void scatteredIsStableAndInUnitRange() {
         Phase phase = Phase.scattered(42);
         boolean anyDifferent = false;
-        float first = phase.cyclesAt(cellAt(0, 0, 0, 0f));
+        float first = phase.getCyclesAt(cellAt(0, 0, 0, 0f));
 
         for (int column = 0; column < 30; column++) {
             for (int row = 0; row < 30; row++) {
-                float value = phase.cyclesAt(cellAt(column, row, 0, 0f));
+                float value = phase.getCyclesAt(cellAt(column, row, 0, 0f));
                 assertTrue(value >= 0f && value < 1f, "out of range: " + value);
-                assertEquals(value, phase.cyclesAt(cellAt(column, row, 5, 9f)));
+                assertEquals(value, phase.getCyclesAt(cellAt(column, row, 5, 9f)));
                 anyDifferent |= value != first;
             }
         }
@@ -78,8 +78,8 @@ class PhaseTest {
 
     @Test
     void scatteredDependsOnSeed() {
-        float first = Phase.scattered(1).cyclesAt(cellAt(3, 4, 0, 0f));
-        float second = Phase.scattered(2).cyclesAt(cellAt(3, 4, 0, 0f));
+        float first = Phase.scattered(1).getCyclesAt(cellAt(3, 4, 0, 0f));
+        float second = Phase.scattered(2).getCyclesAt(cellAt(3, 4, 0, 0f));
 
         assertNotEquals(first, second);
     }

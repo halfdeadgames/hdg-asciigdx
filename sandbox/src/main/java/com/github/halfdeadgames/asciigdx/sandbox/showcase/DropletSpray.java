@@ -79,13 +79,13 @@ public final class DropletSpray {
     }
 
     public float distanceCellsAt(int index, float timeSeconds) {
-        return Interpolation.pow2Out.apply(spray.progressAt(timeSeconds)) * maxDistanceCells
+        return Interpolation.pow2Out.apply(spray.getProgressAt(timeSeconds)) * maxDistanceCells
                 * distanceMultipliers[index];
     }
 
     /** Rises from 1 to the peak at mid-spray, then falls back to 1. */
     public float scaleAt(float timeSeconds) {
-        float progress = spray.progressAt(timeSeconds);
+        float progress = spray.getProgressAt(timeSeconds);
         return 1f + (peakScale - 1f) * 4f * progress * (1f - progress);
     }
 
@@ -94,7 +94,7 @@ public final class DropletSpray {
         if (!isVisibleAt(timeSeconds)) {
             return 0f;
         }
-        float progress = spray.progressAt(timeSeconds);
+        float progress = spray.getProgressAt(timeSeconds);
         if (progress <= FULL_ALPHA_UNTIL) {
             return 1f;
         }

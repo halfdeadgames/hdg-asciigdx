@@ -21,20 +21,20 @@ public final class StaggeredTrack {
         this.stepSeconds = stepSeconds;
     }
 
-    public float valueAt(int index, float timeSeconds) {
-        return track.valueAt(timeSeconds - delayOf(index));
+    public float getValueAt(int index, float timeSeconds) {
+        return track.getValueAt(timeSeconds - delayOf(index));
     }
 
-    public float startOf(int index) {
-        return track.start() + delayOf(index);
+    public float getStartSecondsOf(int index) {
+        return track.getStartSeconds() + delayOf(index);
     }
 
-    public float endOf(int index) {
-        return track.end() + delayOf(index);
+    public float getEndSecondsOf(int index) {
+        return track.getEndSeconds() + delayOf(index);
     }
 
     public boolean hasStartedAt(int index, float timeSeconds) {
-        return timeSeconds >= startOf(index);
+        return timeSeconds >= getStartSecondsOf(index);
     }
 
     private float delayOf(int index) {

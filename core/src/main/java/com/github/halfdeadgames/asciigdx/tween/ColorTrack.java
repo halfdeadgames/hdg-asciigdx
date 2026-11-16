@@ -22,23 +22,23 @@ public final class ColorTrack {
         this.toRgba = toRgba;
     }
 
-    public int colorAt(float timeSeconds) {
-        return CellColor.mixOklab(fromRgba, toRgba, amount.valueAt(timeSeconds));
+    public int getColorAt(float timeSeconds) {
+        return CellColor.mixOklab(fromRgba, toRgba, amount.getValueAt(timeSeconds));
     }
 
-    public float start() {
-        return amount.start();
+    public float getStartSeconds() {
+        return amount.getStartSeconds();
     }
 
-    public float end() {
-        return amount.end();
+    public float getEndSeconds() {
+        return amount.getEndSeconds();
     }
 
-    public int fromRgba() {
+    public int getFromRgba() {
         return fromRgba;
     }
 
-    public int toRgba() {
+    public int getToRgba() {
         return toRgba;
     }
 }

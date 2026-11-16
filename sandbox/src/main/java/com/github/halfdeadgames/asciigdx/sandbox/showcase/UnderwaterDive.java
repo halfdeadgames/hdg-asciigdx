@@ -26,7 +26,7 @@ public final class UnderwaterDive {
         if (sink == null || surface == null) {
             throw new IllegalArgumentException("sink and surface must not be null");
         }
-        if (surface.start() < sink.end()) {
+        if (surface.getStartSeconds() < sink.getEndSeconds()) {
             throw new IllegalArgumentException("surface must not start before sink ends");
         }
         this.sink = sink;
@@ -34,20 +34,20 @@ public final class UnderwaterDive {
     }
 
     public boolean isUnderwaterAt(float timeSeconds) {
-        return timeSeconds >= sink.start() && timeSeconds < surface.end();
+        return timeSeconds >= sink.getStartSeconds() && timeSeconds < surface.getEndSeconds();
     }
 
     /** 0 until the surfacing starts, easing to 1 at its end. */
     public float surfaceProgressAt(float timeSeconds) {
-        return surface.progressAt(timeSeconds);
+        return surface.getProgressAt(timeSeconds);
     }
 
     public float sinkStartSeconds() {
-        return sink.start();
+        return sink.getStartSeconds();
     }
 
     public float surfaceEndSeconds() {
-        return surface.end();
+        return surface.getEndSeconds();
     }
 
     /**
@@ -62,13 +62,13 @@ public final class UnderwaterDive {
     }
 
     private float rampEnvelopeAt(float timeSeconds) {
-        float rampIn = (timeSeconds - sink.start()) / SEE_THROUGH_RAMP_SECONDS;
-        float rampOut = (surface.end() - timeSeconds) / SEE_THROUGH_RAMP_SECONDS;
+        float rampIn = (timeSeconds - sink.getStartSeconds()) / SEE_THROUGH_RAMP_SECONDS;
+        float rampOut = (surface.getEndSeconds() - timeSeconds) / SEE_THROUGH_RAMP_SECONDS;
         return Math.min(1f, Math.min(rampIn, rampOut));
     }
 
     private float depthCurveAt(float timeSeconds) {
-        float depth = sink.progressAt(timeSeconds) - surface.progressAt(timeSeconds);
+        float depth = sink.getProgressAt(timeSeconds) - surface.getProgressAt(timeSeconds);
         return 1f - (1f - DEEPEST_SEE_THROUGH) * depth;
     }
 

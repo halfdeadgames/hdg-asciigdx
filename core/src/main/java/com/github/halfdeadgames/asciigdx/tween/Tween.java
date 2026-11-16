@@ -16,11 +16,7 @@ public final class Tween implements FloatTrack {
     private final float to;
     private final Interpolation easing;
 
-    public Tween(float startSeconds, float durationSeconds, float from, float to) {
-        this(startSeconds, durationSeconds, from, to, Interpolation.linear);
-    }
-
-    public Tween(float startSeconds, float durationSeconds, float from, float to,
+    private Tween(float startSeconds, float durationSeconds, float from, float to,
             Interpolation easing) {
         requireFinite("startSeconds", startSeconds);
         requireFinite("durationSeconds", durationSeconds);
@@ -39,16 +35,25 @@ public final class Tween implements FloatTrack {
         this.easing = easing;
     }
 
+    public static Tween linear(float startSeconds, float durationSeconds, float from, float to) {
+        return new Tween(startSeconds, durationSeconds, from, to, Interpolation.linear);
+    }
+
+    public static Tween eased(float startSeconds, float durationSeconds, float from, float to,
+            Interpolation easing) {
+        return new Tween(startSeconds, durationSeconds, from, to, easing);
+    }
+
     @Override
-    public float valueAt(float timeSeconds) {
-        return from + (to - from) * progressAt(timeSeconds);
+    public float getValueAt(float timeSeconds) {
+        return from + (to - from) * getProgressAt(timeSeconds);
     }
 
     /**
      * Eased progress, 0 before the start and 1 from the end on. Inside the span it may overshoot.
      */
-    public float progressAt(float timeSeconds) {
-        if (timeSeconds >= end()) {
+    public float getProgressAt(float timeSeconds) {
+        if (timeSeconds >= getEndSeconds()) {
             return 1f;
         }
         if (timeSeconds < startSeconds) {
@@ -62,32 +67,32 @@ public final class Tween implements FloatTrack {
     }
 
     public boolean isActiveAt(float timeSeconds) {
-        return timeSeconds >= startSeconds && timeSeconds < end();
+        return timeSeconds >= startSeconds && timeSeconds < getEndSeconds();
     }
 
     public boolean isFinishedAt(float timeSeconds) {
-        return timeSeconds >= end();
+        return timeSeconds >= getEndSeconds();
     }
 
     @Override
-    public float start() {
+    public float getStartSeconds() {
         return startSeconds;
     }
 
     @Override
-    public float end() {
+    public float getEndSeconds() {
         return startSeconds + durationSeconds;
     }
 
-    public float duration() {
+    public float getDurationSeconds() {
         return durationSeconds;
     }
 
-    public float from() {
+    public float getFromValue() {
         return from;
     }
 
-    public float to() {
+    public float getToValue() {
         return to;
     }
 }

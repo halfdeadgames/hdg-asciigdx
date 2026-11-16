@@ -11,23 +11,23 @@ class StaggeredTrackTest {
 
     private static final float TOLERANCE = 1e-6f;
 
-    private final Tween track = new Tween(1f, 2f, 0f, 10f);
+    private final Tween track = Tween.linear(1f, 2f, 0f, 10f);
     private final StaggeredTrack staggered = new StaggeredTrack(track, 0.1f);
 
     @Test
     void indexZeroEqualsTheTrack() {
-        assertEquals(track.valueAt(1.5f), staggered.valueAt(0, 1.5f), TOLERANCE);
+        assertEquals(track.getValueAt(1.5f), staggered.getValueAt(0, 1.5f), TOLERANCE);
     }
 
     @Test
     void indexTwoIsShiftedByTwoSteps() {
-        assertEquals(track.valueAt(1.3f), staggered.valueAt(2, 1.5f), TOLERANCE);
+        assertEquals(track.getValueAt(1.3f), staggered.getValueAt(2, 1.5f), TOLERANCE);
     }
 
     @Test
     void startAndEndAreShiftedPerIndex() {
-        assertEquals(1.3f, staggered.startOf(3), TOLERANCE);
-        assertEquals(3.3f, staggered.endOf(3), TOLERANCE);
+        assertEquals(1.3f, staggered.getStartSecondsOf(3), TOLERANCE);
+        assertEquals(3.3f, staggered.getEndSecondsOf(3), TOLERANCE);
     }
 
     @Test
@@ -40,21 +40,21 @@ class StaggeredTrackTest {
     void worksWithATweenSequence() {
         TweenSequence sequence = TweenSequence.startingAt(0f, 0f).to(1f, 1f).hold(1f).build();
         StaggeredTrack sequenceStaggered = new StaggeredTrack(sequence, 0.5f);
-        assertEquals(0.5f, sequenceStaggered.valueAt(1, 1f), TOLERANCE);
-        assertEquals(2.5f, sequenceStaggered.endOf(1), TOLERANCE);
+        assertEquals(0.5f, sequenceStaggered.getValueAt(1, 1f), TOLERANCE);
+        assertEquals(2.5f, sequenceStaggered.getEndSecondsOf(1), TOLERANCE);
     }
 
     @Test
     void zeroStepMakesAllItemsEqual() {
         StaggeredTrack together = new StaggeredTrack(track, 0f);
-        assertEquals(together.valueAt(0, 1.5f), together.valueAt(7, 1.5f), 0f);
+        assertEquals(together.getValueAt(0, 1.5f), together.getValueAt(7, 1.5f), 0f);
     }
 
     @Test
     void negativeIndexThrows() {
-        assertThrows(IllegalArgumentException.class, () -> staggered.valueAt(-1, 0f));
-        assertThrows(IllegalArgumentException.class, () -> staggered.startOf(-1));
-        assertThrows(IllegalArgumentException.class, () -> staggered.endOf(-1));
+        assertThrows(IllegalArgumentException.class, () -> staggered.getValueAt(-1, 0f));
+        assertThrows(IllegalArgumentException.class, () -> staggered.getStartSecondsOf(-1));
+        assertThrows(IllegalArgumentException.class, () -> staggered.getEndSecondsOf(-1));
         assertThrows(IllegalArgumentException.class, () -> staggered.hasStartedAt(-1, 0f));
     }
 

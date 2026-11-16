@@ -83,7 +83,7 @@ public final class LilyFlashes {
                 }
                 int mapColumn = gameColumn * SLOTS_PER_AXIS + eastBit;
                 int mapRow = gameRow * SLOTS_PER_AXIS + southBit;
-                Tween fade = new Tween(startSeconds, DURATION_SECONDS, START_AMOUNT, 0f,
+                Tween fade = Tween.eased(startSeconds, DURATION_SECONDS, START_AMOUNT, 0f,
                         Interpolation.pow2Out);
                 MapCellTarget target = window.createCellTarget(mapColumn, mapRow);
                 timeline.bind(fade,
