@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -71,7 +70,7 @@ public final class MenuBarView {
                 painter.fill(UiPalette.FRAME, (x + 1) * cellPixels, y, (width - 2) * cellPixels,
                         cellPixels);
             }
-            Color color = !available ? UiPalette.MENU_DISABLED
+            int color = !available ? UiPalette.MENU_DISABLED
                     : highlighted ? UiPalette.ACCENT : UiPalette.TEXT;
             if (i == bar.inspectedItem()) {
                 painter.fill(UiPalette.MENU_DISABLED, (x + 1) * cellPixels, y,

@@ -3,11 +3,12 @@ package com.github.halfdeadgames.asciigdx.workbench.preview;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PreviewPanelSizeTest {
 
-    private static final int[] OTHER_CELL_SIZES = {8, 16, 32};
+    private static final List<Integer> OTHER_CELL_SIZES = List.of(8, 16, 32);
 
     @Test
     void heightGrowsWithTheGlyphHeight() {

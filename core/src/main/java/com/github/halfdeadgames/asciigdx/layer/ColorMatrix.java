@@ -11,7 +11,9 @@ final class ColorMatrix {
 
     static final int SIZE = 16;
     private static final int TRANSLATION = 12;
-    private static final float[] LUMA = {0.2126f, 0.7152f, 0.0722f};
+    private static final float LUMA_RED = 0.2126f;
+    private static final float LUMA_GREEN = 0.7152f;
+    private static final float LUMA_BLUE = 0.0722f;
 
     private final float[] values = new float[SIZE];
 
@@ -43,9 +45,19 @@ final class ColorMatrix {
         for (int column = 0; column < 3; column++) {
             for (int row = 0; row < 3; row++) {
                 float identity = column == row ? 1f : 0f;
-                values[column * 4 + row] = (1f - saturation) * LUMA[column] + saturation * identity;
+                values[column * 4 + row] = (1f - saturation) * lumaWeight(column)
+                        + saturation * identity;
             }
         }
+    }
+
+    private static float lumaWeight(int column) {
+        return switch (column) {
+            case 0 -> LUMA_RED;
+            case 1 -> LUMA_GREEN;
+            case 2 -> LUMA_BLUE;
+            default -> throw new IllegalArgumentException("No luma weight for column " + column);
+        };
     }
 
     /** Runs the colors through this transform first, then through {@code next}. */

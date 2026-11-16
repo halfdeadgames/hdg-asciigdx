@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.layer.ZoomMode;
+import java.util.List;
 
 /**
  * A dungeon map that zooms and rotates about the hero inside a clipped window, under a frame and
@@ -31,12 +32,25 @@ class LayerTransformScene extends GridScene {
     private static final float FULL_TURN_DEGREES = 360f;
 
     private static final float CYCLE_SECONDS = 16f;
-    private static final float[] KEY_TIMES =
-            {0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 16f};
-    private static final float[] KEY_ZOOMS =
-            {1f, 1f, 1.5f, 1.5f, 2f, 2f, 3f, 3f, 1f, 1f, 1f, 1f, 1f, 1f, 1f};
-    private static final float[] KEY_ROTATIONS =
-            {0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, -90f, -90f, 0f, -360f};
+    private static final List<Keyframe> KEYFRAMES = List.of(
+            new Keyframe(0f, 1f, 0f),
+            new Keyframe(1f, 1f, 0f),
+            new Keyframe(2f, 1.5f, 0f),
+            new Keyframe(3f, 1.5f, 0f),
+            new Keyframe(4f, 2f, 0f),
+            new Keyframe(5f, 2f, 0f),
+            new Keyframe(6f, 3f, 0f),
+            new Keyframe(7f, 3f, 0f),
+            new Keyframe(8f, 1f, 0f),
+            new Keyframe(9f, 1f, 0f),
+            new Keyframe(10f, 1f, 0f),
+            new Keyframe(11f, 1f, -90f),
+            new Keyframe(12f, 1f, -90f),
+            new Keyframe(13f, 1f, 0f),
+            new Keyframe(16f, 1f, -360f));
+
+    private record Keyframe(float time, float zoom, float rotation) {
+    }
 
     static final String KEY_HOVER = "hover";
 
@@ -298,15 +312,15 @@ class LayerTransformScene extends GridScene {
     private void applyAutoKeyframe() {
         float cycleTime = elapsed % CYCLE_SECONDS;
         int next = 1;
-        while (next < KEY_TIMES.length - 1 && cycleTime >= KEY_TIMES[next]) {
+        while (next < KEYFRAMES.size() - 1 && cycleTime >= KEYFRAMES.get(next).time()) {
             next++;
         }
-        int previous = next - 1;
-        float progress =
-                (cycleTime - KEY_TIMES[previous]) / (KEY_TIMES[next] - KEY_TIMES[previous]);
+        Keyframe from = KEYFRAMES.get(next - 1);
+        Keyframe to = KEYFRAMES.get(next);
+        float progress = (cycleTime - from.time()) / (to.time() - from.time());
         float eased = Interpolation.smooth.apply(progress);
-        mapLayer.setZoom(MathUtils.lerp(KEY_ZOOMS[previous], KEY_ZOOMS[next], eased));
-        mapLayer.setRotation(MathUtils.lerp(KEY_ROTATIONS[previous], KEY_ROTATIONS[next], eased));
+        mapLayer.setZoom(MathUtils.lerp(from.zoom(), to.zoom(), eased));
+        mapLayer.setRotation(MathUtils.lerp(from.rotation(), to.rotation(), eased));
     }
 
     private static float wrapDegrees(float degrees) {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 class LayerStackOffscreenTest {
 
-    private static final int[] LETTERBOX = {100, 50, 600, 500};
+    private static final List<Integer> LETTERBOX = List.of(100, 50, 600, 500);
 
     private static final class FakeSource implements GlyphSource {
         @Override
@@ -61,7 +61,9 @@ class LayerStackOffscreenTest {
 
         @Override
         public void getViewport(int[] out) {
-            System.arraycopy(LETTERBOX, 0, out, 0, 4);
+            for (int i = 0; i < LETTERBOX.size(); i++) {
+                out[i] = LETTERBOX.get(i);
+            }
         }
 
         @Override

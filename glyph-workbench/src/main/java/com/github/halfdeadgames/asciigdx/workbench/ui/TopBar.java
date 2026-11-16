@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,7 +69,7 @@ public final class TopBar {
             TopBarStatus barStatus) {
         String tag = barStatus.tag();
         String status = barStatus.text();
-        Color statusColor = barStatus.color();
+        int statusColor = barStatus.color();
         int cellPixels = painter.cellPixels();
         painter.fill(UiPalette.PANEL, 0, row * cellPixels, columns * cellPixels, cellPixels);
         boolean hasStatus = isPresent(status);
@@ -94,7 +93,7 @@ public final class TopBar {
         return text != null && !text.isEmpty();
     }
 
-    private static Color colorOf(Kind kind) {
+    private static int colorOf(Kind kind) {
         return switch (kind) {
             case TITLE -> UiPalette.TITLE;
             case TEXT -> UiPalette.TEXT;

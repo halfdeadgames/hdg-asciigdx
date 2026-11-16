@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CircleShapeTest {
 
-    private static final int[] EXPECTED_ROW_WIDTHS = {1, 5, 5, 7, 5, 5, 1};
+    private static final List<Integer> EXPECTED_ROW_WIDTHS = List.of(1, 5, 5, 7, 5, 5, 1);
 
     @Test
     void squareCellsGiveSymmetricRowWidths() {
@@ -19,9 +20,10 @@ class CircleShapeTest {
         assertEquals(29, visits.count());
         assertTrue(visits.hasNoDuplicates());
         assertTrue(visits.isInRowMajorOrder());
-        for (int i = 0; i < EXPECTED_ROW_WIDTHS.length; i++) {
+        for (int i = 0; i < EXPECTED_ROW_WIDTHS.size(); i++) {
             final int row = 7 + i;
-            assertEquals(EXPECTED_ROW_WIDTHS[i], visits.countInRow(row), "row " + row);
+            assertEquals(EXPECTED_ROW_WIDTHS.get(i).intValue(), visits.countInRow(row),
+                    "row " + row);
             assertEquals(20, visits.minColumnInRow(row) + visits.maxColumnInRow(row), "row " + row);
         }
         assertEquals(7, shape.getLeft());

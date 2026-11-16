@@ -4,15 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ColorMatrixTest {
 
     private static final float TOLERANCE = 1e-5f;
-    private static final float[][] SAMPLE_COLORS = {
-            {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f},
-            {0.5f, 0.5f, 0.5f}
-    };
+    private static final List<Rgb> SAMPLE_COLORS = List.of(
+            new Rgb(0f, 0f, 0f), new Rgb(1f, 1f, 1f), new Rgb(1f, 0f, 0f),
+            new Rgb(0.2f, 0.6f, 0.9f), new Rgb(0.75f, 0.1f, 0.4f), new Rgb(0.5f, 0.5f, 0.5f));
+
+    private record Rgb(float red, float green, float blue) {
+    }
 
     private static ColorEffects identity() {
         return new ColorEffects();
@@ -51,7 +54,8 @@ class ColorMatrixTest {
         return effects;
     }
 
-    private static float[] oldPipeline(ColorEffects e, float[] color) {
+    private static float[] oldPipeline(ColorEffects e, Rgb rgb) {
+        float[] color = {rgb.red(), rgb.green(), rgb.blue()};
         float gray = color[0] * 0.2126f + color[1] * 0.7152f + color[2] * 0.0722f;
         float[] tintValues = {e.getTintRed(), e.getTintGreen(), e.getTintBlue()};
         float[] mixValues = {e.getMixRed(), e.getMixGreen(), e.getMixBlue()};
@@ -69,8 +73,8 @@ class ColorMatrixTest {
         ColorMatrix matrix = new ColorMatrix();
         effects.writeColorMatrix(matrix);
         float[] actual = new float[3];
-        for (float[] color : SAMPLE_COLORS) {
-            matrix.apply(color[0], color[1], color[2], actual);
+        for (Rgb color : SAMPLE_COLORS) {
+            matrix.apply(color.red(), color.green(), color.blue(), actual);
             assertArrayClose(oldPipeline(effects, color), actual);
         }
     }
@@ -138,10 +142,10 @@ class ColorMatrixTest {
         float[] middle = new float[3];
         float[] expected = new float[3];
         float[] actual = new float[3];
-        for (float[] color : SAMPLE_COLORS) {
-            first.apply(color[0], color[1], color[2], middle);
+        for (Rgb color : SAMPLE_COLORS) {
+            first.apply(color.red(), color.green(), color.blue(), middle);
             second.apply(middle[0], middle[1], middle[2], expected);
-            composed.apply(color[0], color[1], color[2], actual);
+            composed.apply(color.red(), color.green(), color.blue(), actual);
             assertArrayClose(expected, actual);
         }
     }
@@ -154,9 +158,9 @@ class ColorMatrixTest {
         Matrix4 uploaded = new Matrix4(matrix.getValues());
 
         float[] expected = new float[3];
-        for (float[] color : SAMPLE_COLORS) {
-            matrix.apply(color[0], color[1], color[2], expected);
-            Vector3 actual = new Vector3(color[0], color[1], color[2]).mul(uploaded);
+        for (Rgb color : SAMPLE_COLORS) {
+            matrix.apply(color.red(), color.green(), color.blue(), expected);
+            Vector3 actual = new Vector3(color.red(), color.green(), color.blue()).mul(uploaded);
             assertArrayClose(expected, new float[]{actual.x, actual.y, actual.z});
         }
     }

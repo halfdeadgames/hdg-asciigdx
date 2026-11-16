@@ -27,6 +27,7 @@ public final class ScreenKit {
     private Texture whitePixel;
     private TextureGlyphSource source;
     private Painter painter;
+    private final Color clearColor = new Color();
     private int pointerX;
     private int pointerY;
 
@@ -76,7 +77,8 @@ public final class ScreenKit {
 
     /** Clears the screen, applies the viewport, and starts the batch. */
     public void beginFrame() {
-        ScreenUtils.clear(UiPalette.BG);
+        Color.rgba8888ToColor(clearColor, UiPalette.BG);
+        ScreenUtils.clear(clearColor);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();

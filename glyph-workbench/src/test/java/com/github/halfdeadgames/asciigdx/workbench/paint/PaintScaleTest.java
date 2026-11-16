@@ -4,22 +4,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PaintScaleTest {
 
-    private static final int[][] FONTS = {{8, 8}, {16, 16}, {8, 16}, {32, 32}};
+    private record Font(int glyphWidth, int glyphHeight) {
+    }
 
-    private static final int[] EIGHT_BARE_WIDTHS = {336, 608, 888, 1152};
+    private static final List<Font> FONTS = List.of(
+            new Font(8, 8), new Font(16, 16), new Font(8, 16), new Font(32, 32));
+
+    private static final List<Integer> EIGHT_BARE_WIDTHS = List.of(336, 608, 888, 1152);
     // Cell sizes 8, 16, 24, and 32 pixels; each height includes one row for the menu bar.
-    private static final int[] EIGHT_HEIGHTS = {192, 336, 504, 672};
+    private static final List<Integer> EIGHT_HEIGHTS = List.of(192, 336, 504, 672);
 
     @Test
     void eightByEightMinimumsAreExact() {
         for (int factor = 1; factor <= 4; factor++) {
-            assertEquals(EIGHT_BARE_WIDTHS[factor - 1],
+            assertEquals(EIGHT_BARE_WIDTHS.get(factor - 1).intValue(),
                     PaintScale.minimumWidth(factor, PaintSheetView.GAP, 8, 8));
-            assertEquals(EIGHT_HEIGHTS[factor - 1], PaintScale.minimumHeight(factor, 8));
+            assertEquals(EIGHT_HEIGHTS.get(factor - 1).intValue(),
+                    PaintScale.minimumHeight(factor, 8));
         }
     }
 
@@ -115,13 +121,14 @@ class PaintScaleTest {
 
     @Test
     void largerFactorsNeedLargerWindows() {
-        for (int[] font : FONTS) {
+        for (Font font : FONTS) {
+            int width = font.glyphWidth();
+            int height = font.glyphHeight();
             for (int factor = 2; factor <= 4; factor++) {
-                assertTrue(PaintScale.minimumWidth(factor, PaintSheetView.GAP, font[0], font[1])
-                        > PaintScale.minimumWidth(factor - 1, PaintSheetView.GAP, font[0],
-                        font[1]));
-                assertTrue(PaintScale.minimumHeight(factor, font[1]) > PaintScale.minimumHeight(
-                        factor - 1, font[1]));
+                assertTrue(PaintScale.minimumWidth(factor, PaintSheetView.GAP, width, height)
+                        > PaintScale.minimumWidth(factor - 1, PaintSheetView.GAP, width, height));
+                assertTrue(PaintScale.minimumHeight(factor, height) > PaintScale.minimumHeight(
+                        factor - 1, height));
             }
         }
     }

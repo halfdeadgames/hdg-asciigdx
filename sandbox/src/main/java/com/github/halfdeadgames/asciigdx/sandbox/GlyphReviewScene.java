@@ -20,6 +20,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewList;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.FailReason;
 import com.github.halfdeadgames.asciigdx.sandbox.review.ReviewSession.Verdict;
+import java.util.List;
 import java.util.Locale;
 import java.util.OptionalInt;
 
@@ -29,9 +30,8 @@ import java.util.OptionalInt;
  */
 final class GlyphReviewScene extends GridScene {
 
-    private static final int[] REVIEW_LIST = {
-            0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525,
-    };
+    private static final List<Integer> REVIEW_LIST = List.of(
+            0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525);
 
     private static final int COLUMNS = 40;
     private static final int ROWS = 23;
@@ -53,27 +53,34 @@ final class GlyphReviewScene extends GridScene {
 
     private static final int COMPARE_LABEL_ROW = 1;
     private static final int COMPARE_MENU_LAST_TITLE_ROW = HELP_ROW - REASON_MENU_ITEMS - 1;
-    private static final int[] COMPARE_TARGET_HEIGHTS = {16, 32, 64};
+    private static final List<Integer> COMPARE_TARGET_HEIGHTS = List.of(16, 32, 64);
     private static final int PAIR_GAP = 4;
     private static final int PAIR_SPACING = 12;
     private static final String MISSING_MARKER = "new";
 
     private static final int PREVIEW_PADDING = 8;
     private static final int PREVIEW_WIDTH = 152;
-    private static final int[] PREVIEW_SCALES = {1, 2, 4};
-    private static final int[] PREVIEW_X = {8, 32, 80};
+    private static final List<PreviewStep> PREVIEW_STEPS = List.of(
+            new PreviewStep(1, 8),
+            new PreviewStep(2, 32),
+            new PreviewStep(4, 80));
 
     private static final int LABEL = 0x9090C0FF;
     private static final int ERROR = 0xFF6060FF;
     private static final int PREVIEW_FOREGROUND = 0xE8E8E8FF;
     private static final int PREVIEW_BACKGROUND = 0x101018FF;
 
-    private static final int[][] COLOR_PAIRS = {
-            {0xE8E8E8FF, 0x101018FF},
-            {0x101010FF, 0xE8E8E8FF},
-            {0xFFD700FF, 0x102040FF},
-            {0x40E040FF, 0x000000FF},
-    };
+    private static final List<ColorPair> COLOR_PAIRS = List.of(
+            new ColorPair(0xE8E8E8FF, 0x101018FF),
+            new ColorPair(0x101010FF, 0xE8E8E8FF),
+            new ColorPair(0xFFD700FF, 0x102040FF),
+            new ColorPair(0x40E040FF, 0x000000FF));
+
+    private record PreviewStep(int scale, int x) {
+    }
+
+    private record ColorPair(int foreground, int background) {
+    }
 
     private static final int BOX_VERTICAL = 0x2502;
     private static final int MEDIUM_SHADE = 0x2592;
@@ -107,9 +114,9 @@ final class GlyphReviewScene extends GridScene {
     private int comparePanelRows;
     private int contextPairs;
 
-    private int[] reviewList = REVIEW_LIST;
+    private int[] reviewList = demoReviewList();
     private String listNotice = "";
-    private ReviewSession session = new ReviewSession(REVIEW_LIST);
+    private ReviewSession session = new ReviewSession(reviewList);
     private final Vector2 touchPoint = new Vector2();
 
     private boolean reasonMenuOpen;
@@ -333,9 +340,10 @@ final class GlyphReviewScene extends GridScene {
         setDrawColor(batch, PREVIEW_FOREGROUND);
         TextureRegion region =
                 (candidate != null ? candidate : glyphs).getGlyphRegion(current.getAsInt());
-        for (int i = 0; i < PREVIEW_SCALES.length; i++) {
-            batch.draw(region, left + PREVIEW_X[i], panelBottom + PREVIEW_PADDING,
-                    cellWidth * PREVIEW_SCALES[i], cellHeight * PREVIEW_SCALES[i]);
+        for (int i = 0; i < PREVIEW_STEPS.size(); i++) {
+            PreviewStep step = PREVIEW_STEPS.get(i);
+            batch.draw(region, left + step.x(), panelBottom + PREVIEW_PADDING,
+                    cellWidth * step.scale(), cellHeight * step.scale());
         }
         batch.setColor(Color.WHITE);
     }
@@ -411,7 +419,7 @@ final class GlyphReviewScene extends GridScene {
                 (compareHeights[used - 1] + 2 * PREVIEW_PADDING + cellHeight - 1) / cellHeight;
         int contextTopRow = PREVIEW_TOP_ROW + comparePanelRows;
         int availablePixels = (LAST_ANSWER_ROW - contextTopRow) * cellHeight;
-        contextPairs = Math.max(1, Math.min(COLOR_PAIRS.length, availablePixels / candidateHeight));
+        contextPairs = Math.max(1, Math.min(COLOR_PAIRS.size(), availablePixels / candidateHeight));
     }
 
     private int pairWidth(int height) {
@@ -425,6 +433,14 @@ final class GlyphReviewScene extends GridScene {
             width += pairWidth(heights.get(i)) + PAIR_SPACING;
         }
         return width;
+    }
+
+    private static int[] demoReviewList() {
+        int[] codePoints = new int[REVIEW_LIST.size()];
+        for (int i = 0; i < codePoints.length; i++) {
+            codePoints[i] = REVIEW_LIST.get(i);
+        }
+        return codePoints;
     }
 
     private static int gcd(int a, int b) {
@@ -494,8 +510,9 @@ final class GlyphReviewScene extends GridScene {
             for (int column = 0; column < candidateGrid.getColumns(); column++) {
                 int glyph = pattern[column];
                 boolean usable = glyph == codePoint || candidate.hasGlyph(glyph);
-                candidateGrid.set(column, pair, usable ? glyph : ' ', COLOR_PAIRS[pair][0],
-                        COLOR_PAIRS[pair][1]);
+                ColorPair colors = COLOR_PAIRS.get(pair);
+                candidateGrid.set(column, pair, usable ? glyph : ' ', colors.foreground(),
+                        colors.background());
             }
         }
     }
@@ -524,9 +541,9 @@ final class GlyphReviewScene extends GridScene {
 
     private void writeContextRows(int codePoint) {
         int[] pattern = contextPattern(codePoint);
-        for (int pair = 0; pair < COLOR_PAIRS.length; pair++) {
-            int foreground = COLOR_PAIRS[pair][0];
-            int background = COLOR_PAIRS[pair][1];
+        for (int pair = 0; pair < COLOR_PAIRS.size(); pair++) {
+            int foreground = COLOR_PAIRS.get(pair).foreground();
+            int background = COLOR_PAIRS.get(pair).background();
             int y = CONTEXT_FIRST_ROW + pair;
             for (int column = 0; column < CONTEXT_WIDTH; column++) {
                 int index = column - MARGIN_COLUMNS;
@@ -572,7 +589,7 @@ final class GlyphReviewScene extends GridScene {
 
     private void loadReviewList() {
         loadCandidate();
-        reviewList = REVIEW_LIST;
+        reviewList = demoReviewList();
         listNotice = candidateError;
         FileHandle listFile =
                 reviewCharsPath != null ? Gdx.files.absolute(reviewCharsPath) : candidateOrderFile;

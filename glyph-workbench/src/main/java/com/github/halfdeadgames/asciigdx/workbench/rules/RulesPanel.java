@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.rules;
 
-import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.nio.file.Path;
 import java.util.List;
@@ -17,12 +16,12 @@ final class RulesPanel {
     private static final int PAGE_OVERLAP = 1;
 
     private final Painter painter;
-    private final Color frameColor;
-    private final Color fillColor;
-    private final Color textColor;
-    private final Color headingColor;
-    private final Color warningColor;
-    private final Color inactiveColor;
+    private final int frameColor;
+    private final int fillColor;
+    private final int textColor;
+    private final int headingColor;
+    private final int warningColor;
+    private final int inactiveColor;
     private List<RulesPageLines.PageLine> lines = List.of();
     private RulesLoadResult rules = RulesLoadResult.missing(Path.of(""));
     private String notes;
@@ -34,9 +33,8 @@ final class RulesPanel {
     private int room = 1;
     private int offset;
 
-    RulesPanel(Painter painter, Color frameColor, Color fillColor, Color textColor,
-            Color headingColor,
-            Color warningColor, Color inactiveColor) {
+    RulesPanel(Painter painter, int frameColor, int fillColor, int textColor, int headingColor,
+            int warningColor, int inactiveColor) {
         this.painter = painter;
         this.frameColor = frameColor;
         this.fillColor = fillColor;
@@ -123,7 +121,7 @@ final class RulesPanel {
         lines = RulesPageLines.build(rules, notes, codePoint, brokenRuleNames, textChars);
     }
 
-    private Color colorOf(RulesPageLines.Role role) {
+    private int colorOf(RulesPageLines.Role role) {
         return switch (role) {
             case TEXT -> textColor;
             case HEADING -> headingColor;

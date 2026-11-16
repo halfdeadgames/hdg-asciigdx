@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
+import java.util.List;
+
 /** Picks the glyph for each cell of a bar that fills left to right in eighths of a cell. */
 public final class EighthBar {
 
@@ -7,8 +9,8 @@ public final class EighthBar {
     private static final int FULL_BLOCK = 0x2588;
     private static final int EMPTY = ' ';
     /** Index is the number of filled eighths, 0 to 7. */
-    private static final int[] PARTIAL_BLOCKS =
-            {EMPTY, 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589};
+    private static final List<Integer> PARTIAL_BLOCKS =
+            List.of(EMPTY, 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589);
 
     private EighthBar() {
     }
@@ -36,7 +38,7 @@ public final class EighthBar {
         if (eighthsInCell >= EIGHTHS_PER_CELL) {
             return FULL_BLOCK;
         }
-        return PARTIAL_BLOCKS[eighthsInCell];
+        return PARTIAL_BLOCKS.get(eighthsInCell);
     }
 
     private static int totalEighths(int cellCount, float fraction) {

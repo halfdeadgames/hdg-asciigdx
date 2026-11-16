@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.badlogic.gdx.graphics.Color;
 
 /** Shared ▲ ░ █ ▼ scrollbar drawing and thumb math. */
 public final class ScrollBar {
@@ -48,7 +47,7 @@ public final class ScrollBar {
         int size = thumbSize(track, total, visible);
         for (int i = 0; i < track; i++) {
             boolean thumb = showThumb && i >= start && i < start + size;
-            Color color = thumb ? UiPalette.FOCUS : UiPalette.FRAME;
+            int color = thumb ? UiPalette.FOCUS : UiPalette.FRAME;
             painter.text(thumb ? "█" : "░", pixelX, pixelTop + (1 + i) * cellPixels, color);
         }
     }

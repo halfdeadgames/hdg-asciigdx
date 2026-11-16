@@ -35,25 +35,26 @@ public final class PaintGuideListPanel {
             new StatusBar.Key("ENTER", "ADD GUIDE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> GROUP_LIST_KEYS = List.of(
             new StatusBar.Key("ENTER", "DONE"), new StatusBar.Key("ESC", "CANCEL"));
-    private static final List<String[]> EDIT_LEGEND = List.of(
-            new String[]{"ARROWS", "PICK"}, new String[]{"[ ]", "MOVE"},
-            new String[]{"SH+[ ]", "SIZE"},
-            new String[]{"A", "ADD"}, new String[]{"DEL", "REMOVE"},
-            new String[]{"G", "GROUPS"}, new String[]{"L", "RENAME"});
-    private static final List<String[]> GROUP_LEGEND = List.of(
-            new String[]{"ARROWS", "PICK"}, new String[]{"SPACE", "TOGGLE"},
-            new String[]{"CLICK", "TOGGLE"},
-            new String[]{"NONE = ALL GLYPHS"});
+    private static final List<LegendRow> EDIT_LEGEND = List.of(
+            new LegendRow("ARROWS", "PICK"), new LegendRow("[ ]", "MOVE"),
+            new LegendRow("SH+[ ]", "SIZE"),
+            new LegendRow("A", "ADD"), new LegendRow("DEL", "REMOVE"),
+            new LegendRow("G", "GROUPS"), new LegendRow("L", "RENAME"));
+    private static final List<LegendRow> GROUP_LEGEND = List.of(
+            new LegendRow("ARROWS", "PICK"), new LegendRow("SPACE", "TOGGLE"),
+            new LegendRow("CLICK", "TOGGLE"),
+            new LegendRow("NONE = ALL GLYPHS", null));
     private static final int LEGEND_ACTION_COLUMN = 8;
     private static final int LEGEND_MIN_LIST_ROWS = 8;
     private static final int GROUP_LEGEND_MIN_LIST_ROWS = 4;
     private static final String KEY_SELECTED_GROUPS = "guideGroups";
     private static final String NO_GROUPS_MESSAGE =
             "This font has no groups: guides show on all glyphs";
-    private static final int[] KIND_KEYS =
-            {Input.Keys.NUM_1, Input.Keys.NUM_2, Input.Keys.NUM_3, Input.Keys.NUM_4};
-    private static final int[] KIND_NUMPAD_KEYS = {
-            Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
+    private static final List<KindKey> KIND_KEYS = List.of(
+            new KindKey(Input.Keys.NUM_1, Input.Keys.NUMPAD_1),
+            new KindKey(Input.Keys.NUM_2, Input.Keys.NUMPAD_2),
+            new KindKey(Input.Keys.NUM_3, Input.Keys.NUMPAD_3),
+            new KindKey(Input.Keys.NUM_4, Input.Keys.NUMPAD_4));
     // The L that starts a rename can also arrive as a typed character a frame later; it must not
     // enter the text.
     private static final int RENAME_KEY_SWALLOW_FRAMES = 2;
@@ -78,6 +79,13 @@ public final class PaintGuideListPanel {
     private int renameKeySwallowFrames;
     private final Blink cursorBlink = new Blink();
     private String labelBeforeRename;
+
+    // A legend line; a null action means the key text is a plain note.
+    private record LegendRow(String key, String action) {
+    }
+
+    private record KindKey(int key, int numpadKey) {
+    }
 
     /** What the panel needs from the screen it is shown on. */
     public interface Host {
@@ -395,7 +403,7 @@ public final class PaintGuideListPanel {
                 : guideList.row(index, cursorBlink.isOn()).text();
     }
 
-    private List<String[]> legend() {
+    private List<LegendRow> legend() {
         return groupList != null ? GROUP_LEGEND : EDIT_LEGEND;
     }
 
@@ -410,16 +418,17 @@ public final class PaintGuideListPanel {
 
     private void drawLegend(CellRect area, int rowsAbove, int cellPixels) {
         int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cellPixels;
-        List<String[]> entries = legend();
+        List<LegendRow> entries = legend();
         for (int i = 0; i < entries.size(); i++) {
-            String[] entry = entries.get(i);
+            LegendRow entry = entries.get(i);
             int top = (area.y() + 1 + rowsAbove + i) * cellPixels;
-            if (entry.length == 1) {
-                painter.text(entry[0], textX, top, UiPalette.TEXT);
+            if (entry.action() == null) {
+                painter.text(entry.key(), textX, top, UiPalette.TEXT);
                 continue;
             }
-            painter.text(entry[0], textX, top, UiPalette.TITLE);
-            painter.text(entry[1], textX + LEGEND_ACTION_COLUMN * cellPixels, top, UiPalette.TEXT);
+            painter.text(entry.key(), textX, top, UiPalette.TITLE);
+            painter.text(entry.action(), textX + LEGEND_ACTION_COLUMN * cellPixels, top,
+                    UiPalette.TEXT);
         }
     }
 
@@ -441,9 +450,10 @@ public final class PaintGuideListPanel {
 
     // 1-based number of the digit key (top row or numpad) just pressed, or 0.
     private static int pressedNumber() {
-        for (int i = 0; i < KIND_KEYS.length; i++) {
-            if (Gdx.input.isKeyJustPressed(KIND_KEYS[i]) || Gdx.input.isKeyJustPressed(
-                    KIND_NUMPAD_KEYS[i])) {
+        for (int i = 0; i < KIND_KEYS.size(); i++) {
+            KindKey kindKey = KIND_KEYS.get(i);
+            if (Gdx.input.isKeyJustPressed(kindKey.key())
+                    || Gdx.input.isKeyJustPressed(kindKey.numpadKey())) {
                 return i + 1;
             }
         }

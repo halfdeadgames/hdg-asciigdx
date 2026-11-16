@@ -11,7 +11,6 @@ import com.badlogic.gdx.utils.SharedLibraryLoader;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,7 +25,7 @@ class FreeTypeGlyphBakerTest {
     // The fixture PNG and TTF are different revisions of dungeon.mode; these CP437 slots
     // (e.g. '%', 'i', the dark shade, and NBSP) are drawn differently in the two files.
     private static final Set<Integer> SLOTS_DRAWN_DIFFERENTLY_IN_PNG_AND_TTF =
-            new TreeSet<>(List.of(37, 74, 75, 102, 104, 105, 106, 125, 134, 139, 178, 200, 255));
+            Set.of(37, 74, 75, 102, 104, 105, 106, 125, 134, 139, 178, 200, 255);
 
     @BeforeAll
     static void loadNatives() {

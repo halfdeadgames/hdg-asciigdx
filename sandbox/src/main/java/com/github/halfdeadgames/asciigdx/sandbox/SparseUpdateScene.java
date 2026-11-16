@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.List;
 
 /**
  * Fills a large grid once, then rewrites an adjustable share of distinct cells each frame (1% by
@@ -17,14 +18,15 @@ class SparseUpdateScene extends GridScene {
     private static final int COLUMNS = 240;
     private static final int ROWS = 135;
     private static final int CELL_COUNT = COLUMNS * ROWS;
-    private static final int[] PERCENT_LEVELS = {1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
-    private static final int[] LAYER_LEVELS = {1, 2, 4};
+    private static final List<Integer> PERCENT_LEVELS =
+            List.of(1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+    private static final List<Integer> LAYER_LEVELS = List.of(1, 2, 4);
     private static final int EXTRA_LAYER_FILL_PERCENT = 10;
     private static final long SEED = 20240607L;
 
     private final RandomXS128 random = new RandomXS128(SEED);
     private final int[] shuffledCells = new int[CELL_COUNT];
-    private int dirtyPercent = PERCENT_LEVELS[0];
+    private int dirtyPercent = PERCENT_LEVELS.get(0);
     private int rotatingOffset;
 
     private final GlyphSource glyphSource;
@@ -113,12 +115,13 @@ class SparseUpdateScene extends GridScene {
     }
 
     private int nextLayerCountLevel() {
-        for (int level : LAYER_LEVELS) {
+        for (int i = 0; i < LAYER_LEVELS.size(); i++) {
+            int level = LAYER_LEVELS.get(i);
             if (level > layerCount) {
                 return level;
             }
         }
-        return LAYER_LEVELS[0];
+        return LAYER_LEVELS.get(0);
     }
 
     private static TerminalGrid createSparseStaticGrid(int layerNumber) {
@@ -139,21 +142,21 @@ class SparseUpdateScene extends GridScene {
     private void stepLevel(int direction) {
         int nextIndex = direction > 0 ? nextLevelIndexAbove(dirtyPercent)
                 : nextLevelIndexBelow(dirtyPercent);
-        dirtyPercent = PERCENT_LEVELS[nextIndex];
+        dirtyPercent = PERCENT_LEVELS.get(nextIndex);
     }
 
     private static int nextLevelIndexAbove(int percent) {
-        for (int i = 0; i < PERCENT_LEVELS.length; i++) {
-            if (PERCENT_LEVELS[i] > percent) {
+        for (int i = 0; i < PERCENT_LEVELS.size(); i++) {
+            if (PERCENT_LEVELS.get(i) > percent) {
                 return i;
             }
         }
-        return PERCENT_LEVELS.length - 1;
+        return PERCENT_LEVELS.size() - 1;
     }
 
     private static int nextLevelIndexBelow(int percent) {
-        for (int i = PERCENT_LEVELS.length - 1; i >= 0; i--) {
-            if (PERCENT_LEVELS[i] < percent) {
+        for (int i = PERCENT_LEVELS.size() - 1; i >= 0; i--) {
+            if (PERCENT_LEVELS.get(i) < percent) {
                 return i;
             }
         }

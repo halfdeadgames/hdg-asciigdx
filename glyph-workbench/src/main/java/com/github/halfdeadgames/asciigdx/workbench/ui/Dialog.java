@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,10 +46,9 @@ public final class Dialog {
     private static final int BUTTON_EDGE_PADDING = 1;
     private static final int SHADOW_MARGIN = 2;
     private static final int MIN_CAPPED_WIDTH = 12;
-    private static final float DIM_ALPHA = 0.55f;
-    private static final Color DIM_COLOR = new Color(0f, 0f, 0f, DIM_ALPHA);
-    private static final Color INPUT_BACKGROUND = new Color(0x000000FF);
-    private static final Color INPUT_TEXT = new Color(0xFFFFFFFF);
+    private static final int DIM_COLOR = 0x0000008C;
+    private static final int INPUT_BACKGROUND = 0x000000FF;
+    private static final int INPUT_TEXT = 0xFFFFFFFF;
     private static final int INPUT_INSET_DIVISOR = 4;
     private static final int MIN_INPUT_INSET = 2;
 
@@ -160,7 +158,7 @@ public final class Dialog {
                     cellPixels);
             painter.text(" " + button.key() + " ", bx * cellPixels, layout.buttonY() * cellPixels,
                     UiPalette.TEXT);
-            Color label = switch (button.tone()) {
+            int label = switch (button.tone()) {
                 case OK -> UiPalette.OK;
                 case WARN -> UiPalette.WARN;
                 case DIM -> UiPalette.DIM;

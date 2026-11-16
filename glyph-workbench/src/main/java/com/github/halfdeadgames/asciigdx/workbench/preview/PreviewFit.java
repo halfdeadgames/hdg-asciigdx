@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import java.util.List;
 
 /**
  * Decides which preview scales fit a panel; whatever does not fit is dropped, never clipped. 1X is
@@ -8,7 +9,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
  */
 public final class PreviewFit {
 
-    public static final int[] SCALES = {1, 2, 4, 8};
+    public static final List<Integer> SCALES = List.of(1, 2, 4, 8);
 
     private PreviewFit() {
     }
@@ -24,9 +25,9 @@ public final class PreviewFit {
     public static int scaleCount(int innerWidth, int maxBlockHeight, GlyphSize cell, int gap,
             int labelWidth) {
         int count = 1;
-        int used = Math.max(labelWidth, cell.width() * SCALES[0]);
-        for (int i = 1; i < SCALES.length; i++) {
-            int scale = SCALES[i];
+        int used = Math.max(labelWidth, cell.width() * SCALES.get(0));
+        for (int i = 1; i < SCALES.size(); i++) {
+            int scale = SCALES.get(i);
             used += gap + Math.max(labelWidth, cell.width() * scale);
             if (used > innerWidth || scale * cell.height() > maxBlockHeight) {
                 break;
@@ -37,7 +38,7 @@ public final class PreviewFit {
     }
 
     public static int largestScale(int scaleCount) {
-        return SCALES[scaleCount - 1];
+        return SCALES.get(scaleCount - 1);
     }
 
     /**

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.layer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.color.CellColor;
@@ -208,6 +209,22 @@ class CellHandleCombineTest {
         frame.setForegroundMix(RED, 0.25f);
         combine();
         assertTrue(target.areOverridesChanged());
+    }
+
+    @Test
+    void noEffectRejectsChanges() {
+        assertThrows(IllegalStateException.class,
+                () -> CellHandleCombine.NO_EFFECT.setOffset(1f, 1f));
+        assertThrows(IllegalStateException.class, CellHandleCombine.NO_EFFECT::reset);
+    }
+
+    @Test
+    void combiningWithNoEffectGivesDefaults() {
+        CellHandleCombine.combine(target, CellHandleCombine.NO_EFFECT,
+                CellHandleCombine.NO_EFFECT);
+
+        assertFalse(target.isLifted());
+        assertFalse(target.hasOverrides());
     }
 
     @Test

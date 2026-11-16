@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.workbench.help;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Keys;
@@ -39,7 +38,7 @@ public final class ControlsScreen {
     private static final int MARGIN = 2;
     private static final int MIN_WIDTH = 12;
     private static final int MIN_HEIGHT = 4;
-    private static final Color DIM = new Color(0f, 0f, 0f, 0.55f);
+    private static final int DIM = 0x0000008C;
 
     private final KeyRepeat repeatUp = new KeyRepeat();
     private final KeyRepeat repeatDown = new KeyRepeat();

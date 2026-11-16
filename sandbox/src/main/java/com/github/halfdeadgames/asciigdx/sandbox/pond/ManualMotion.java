@@ -3,12 +3,13 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
+import java.util.List;
 
 /** Moves the player with the arrow keys, or toward a held touch or mouse button. */
 public final class ManualMotion implements PlayerMotion {
 
-    private static final int[] ARROW_KEYS =
-            {Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.DOWN};
+    private static final List<Integer> ARROW_KEYS =
+            List.of(Input.Keys.LEFT, Input.Keys.RIGHT, Input.Keys.UP, Input.Keys.DOWN);
 
     private final StepScheduler scheduler;
     private final PointerAim pointerAim;
@@ -101,7 +102,8 @@ public final class ManualMotion implements PlayerMotion {
             keyDirection(newestKey, heldDirection);
             return;
         }
-        for (int key : ARROW_KEYS) {
+        for (int i = 0; i < ARROW_KEYS.size(); i++) {
+            int key = ARROW_KEYS.get(i);
             if (Gdx.input.isKeyPressed(key)) {
                 keyDirection(key, heldDirection);
                 return;
@@ -110,8 +112,8 @@ public final class ManualMotion implements PlayerMotion {
     }
 
     private static boolean isArrowKey(int keycode) {
-        for (int key : ARROW_KEYS) {
-            if (key == keycode) {
+        for (int i = 0; i < ARROW_KEYS.size(); i++) {
+            if (ARROW_KEYS.get(i) == keycode) {
                 return true;
             }
         }

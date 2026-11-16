@@ -4,16 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PaintColumnsTest {
 
-    private static final int[] WIDTHS = {1900, 1500, 1280, 1000};
-    // slot width, glyph width
-    private static final int[][] FONTS = {{24, 8}, {16, 8}, {32, 32}};
+    private record Font(int slotWidth, int glyphWidth) {
+    }
 
-    private static PaintColumns.Split split(int windowWidth, int[] font) {
-        return PaintColumns.split(windowWidth, font[0], PaintSheetView.GAP, font[1], 24);
+    private static final List<Integer> WIDTHS = List.of(1900, 1500, 1280, 1000);
+    private static final List<Font> FONTS = List.of(
+            new Font(24, 8), new Font(16, 8), new Font(32, 32));
+
+    private static PaintColumns.Split split(int windowWidth, Font font) {
+        return PaintColumns.split(
+                windowWidth, font.slotWidth(), PaintSheetView.GAP, font.glyphWidth(), 24);
     }
 
     private static void assertShrinkOrder(PaintColumns.Split split, int comfort) {
@@ -30,19 +35,19 @@ class PaintColumnsTest {
 
     @Test
     void wideWindowKeepsEverythingAsBefore() {
-        for (int[] font : FONTS) {
+        for (Font font : FONTS) {
             PaintColumns.Split split = split(1900, font);
             assertEquals(16, split.sheetColumns());
             assertEquals(24, split.rightCells());
         }
-        PaintColumns.Split plain = split(1900, FONTS[0]);
+        PaintColumns.Split plain = split(1900, FONTS.get(0));
         assertEquals(20, plain.sheetCells());
         assertEquals(33, plain.editorCells());
     }
 
     @Test
     void sheetShrinksFirst() {
-        PaintColumns.Split split = split(1500, FONTS[0]);
+        PaintColumns.Split split = split(1500, FONTS.get(0));
         assertEquals(12, split.sheetColumns());
         assertEquals(24, split.rightCells());
         assertEquals(20, split.editorCells());
@@ -50,7 +55,7 @@ class PaintColumnsTest {
 
     @Test
     void editorShrinksBelowComfortBeforeTheRightColumnDoes() {
-        PaintColumns.Split split = split(1280, FONTS[0]);
+        PaintColumns.Split split = split(1280, FONTS.get(0));
         assertEquals(8, split.sheetColumns());
         assertEquals(24, split.rightCells());
         assertEquals(15, split.editorCells());
@@ -58,11 +63,11 @@ class PaintColumnsTest {
 
     @Test
     void sheetThenRightColumnShrinkOnceTheEditorIsAtItsFloor() {
-        PaintColumns.Split split = split(1000, FONTS[0]);
+        PaintColumns.Split split = split(1000, FONTS.get(0));
         assertEquals(4, split.sheetColumns());
         assertEquals(20, split.rightCells());
         assertEquals(11, split.editorCells());
-        PaintColumns.Split narrow = split(1128, FONTS[0]);
+        PaintColumns.Split narrow = split(1128, FONTS.get(0));
         assertEquals(6, narrow.sheetColumns());
         assertEquals(24, narrow.rightCells());
         assertEquals(11, narrow.editorCells());
@@ -88,10 +93,11 @@ class PaintColumnsTest {
 
     @Test
     void everyFontKeepsTheShrinkOrderMinimumsAndNoOverlap() {
-        for (int[] font : FONTS) {
-            int comfort = PaintColumns.editorComfortCells(font[1], 24);
-            int floor = PaintColumns.editorFloorCells(font[1], 24);
-            int minimumWidth = PaintColumns.minimumWidth(font[0], PaintSheetView.GAP, font[1], 24);
+        for (Font font : FONTS) {
+            int comfort = PaintColumns.editorComfortCells(font.glyphWidth(), 24);
+            int floor = PaintColumns.editorFloorCells(font.glyphWidth(), 24);
+            int minimumWidth = PaintColumns.minimumWidth(
+                    font.slotWidth(), PaintSheetView.GAP, font.glyphWidth(), 24);
             for (int width : WIDTHS) {
                 PaintColumns.Split split = split(width, font);
                 assertTrue(split.sheetColumns() >= 4 && split.sheetColumns() <= 16);
@@ -182,16 +188,18 @@ class PaintColumnsTest {
     void minimumWidthHoldsAllThreeAtTheirMinimum() {
         assertEquals(37 * 24, PaintColumns.minimumWidth(24, PaintSheetView.GAP, 8, 24));
         assertEquals(46 * 24, PaintColumns.minimumWidth(32, PaintSheetView.GAP, 32, 24));
-        for (int[] font : FONTS) {
-            int minimum = PaintColumns.minimumWidth(font[0], PaintSheetView.GAP, font[1], 24);
+        for (Font font : FONTS) {
+            int slotWidth = font.slotWidth();
+            int glyphWidth = font.glyphWidth();
+            int minimum = PaintColumns.minimumWidth(slotWidth, PaintSheetView.GAP, glyphWidth, 24);
             PaintColumns.Split atMinimum =
-                    PaintColumns.split(minimum, font[0], PaintSheetView.GAP, font[1], 24);
+                    PaintColumns.split(minimum, slotWidth, PaintSheetView.GAP, glyphWidth, 24);
             assertEquals(4, atMinimum.sheetColumns());
             assertEquals(16, atMinimum.rightCells());
-            assertEquals(PaintColumns.editorFloorCells(font[1], 24), atMinimum.editorCells());
+            assertEquals(PaintColumns.editorFloorCells(glyphWidth, 24), atMinimum.editorCells());
             PaintColumns.Split narrower =
-                    PaintColumns.split(minimum - 24, font[0], PaintSheetView.GAP, font[1], 24);
-            assertTrue(narrower.editorCells() < PaintColumns.editorFloorCells(font[1], 24));
+                    PaintColumns.split(minimum - 24, slotWidth, PaintSheetView.GAP, glyphWidth, 24);
+            assertTrue(narrower.editorCells() < PaintColumns.editorFloorCells(glyphWidth, 24));
         }
     }
 

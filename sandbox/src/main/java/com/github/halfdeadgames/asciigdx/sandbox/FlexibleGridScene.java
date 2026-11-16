@@ -2,10 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.fit.GridFit;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -23,9 +23,8 @@ class FlexibleGridScene extends GridScene {
     private static final int STATUS_WIDTH = 30;
     private static final int FONT_ROW = 4;
     private static final int MS_ROW = 5;
-    private static final int[] MARKER_COLORS = {
-            0xC03030FF, 0xC07030FF, 0xB0B030FF, 0x30A030FF, 0x3070C0FF, 0x7040B0FF
-    };
+    private static final List<Integer> MARKER_COLORS = List.of(
+            0xC03030FF, 0xC07030FF, 0xB0B030FF, 0x30A030FF, 0x3070C0FF, 0x7040B0FF);
     private static final double NANOS_PER_MILLISECOND = 1_000_000.0;
 
     private final GlyphSource font;
@@ -80,7 +79,7 @@ class FlexibleGridScene extends GridScene {
     @Override
     public void render(SpriteBatch batch, float delta) {
         if (fitIsEmpty) {
-            ScreenUtils.clear(SceneDrawing.VIEWPORT_BACKGROUND);
+            SceneDrawing.clearToViewportBackground();
             return;
         }
         super.render(batch, delta);
@@ -113,12 +112,12 @@ class FlexibleGridScene extends GridScene {
         markerTop = top;
         for (int row = 0; row < MARKER_HEIGHT; row++) {
             for (int column = 0; column < MARKER_WIDTH; column++) {
-                int color = MARKER_COLORS[(column + row) % MARKER_COLORS.length];
+                int color = MARKER_COLORS.get((column + row) % MARKER_COLORS.size());
                 grid.set(left + column, top + row, ' ', WHITE, color);
             }
         }
         GridDrawing.drawText(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT",
-                WHITE, MARKER_COLORS[0]);
+                WHITE, MARKER_COLORS.get(0));
     }
 
     private void drawBorder() {

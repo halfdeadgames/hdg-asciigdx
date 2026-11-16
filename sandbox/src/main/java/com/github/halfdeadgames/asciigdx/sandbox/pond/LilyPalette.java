@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
+import java.util.List;
+
 /**
  * The hand-picked greens a lily can take, chosen to read as water plants on the deep blue water.
  */
@@ -12,8 +14,8 @@ public final class LilyPalette {
     public static final int TEAL_GREEN = 0x3DB58CFF;
 
     private static final float PALER_AMOUNT = 0.45f;
-    private static final int[] COLORS =
-            {DEEP_GREEN, BASE_GREEN, LIGHT_GREEN, YELLOW_GREEN, TEAL_GREEN};
+    private static final List<Integer> COLORS =
+            List.of(DEEP_GREEN, BASE_GREEN, LIGHT_GREEN, YELLOW_GREEN, TEAL_GREEN);
 
     private LilyPalette() {
     }
@@ -32,11 +34,11 @@ public final class LilyPalette {
 
     /** Returns how many colors the palette holds. */
     public static int size() {
-        return COLORS.length;
+        return COLORS.size();
     }
 
     /** Returns the RGBA color at the index, from 0 up to but excluding {@link #size()}. */
     public static int colorAt(int index) {
-        return COLORS[index];
+        return COLORS.get(index);
     }
 }

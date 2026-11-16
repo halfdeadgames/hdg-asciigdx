@@ -32,7 +32,7 @@ final class PaintLayout {
         int editorRows = 2 + PaintGridLabels.LABEL_ROWS_ABOVE
                 + (glyphHeight * PaintColumns.MIN_EDITOR_ZOOM + cellPixels / 2 + cellPixels - 1)
                 / cellPixels;
-        int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels)
+        int rightRows = PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES.get(0), cellPixels)
                 + MIN_BELOW_PREVIEW_HEIGHT;
         return (TOP_ROWS + Math.max(editorRows, rightRows) + MESSAGES_HEIGHT + 1) * cellPixels;
     }

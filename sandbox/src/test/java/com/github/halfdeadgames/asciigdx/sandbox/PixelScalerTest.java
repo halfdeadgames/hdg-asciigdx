@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntPredicate;
@@ -243,7 +244,7 @@ class PixelScalerTest {
     private static final Upscaler LIGHT = (pixels, width, height, cell, locked) ->
             PixelScaler.light(pixels, width, height, cell, cell, locked, BACKGROUND);
 
-    private static final Upscaler[] NEW_UPSCALERS = {MMPX, SFX, LIGHT};
+    private static final List<Upscaler> NEW_UPSCALERS = List.of(MMPX, SFX, LIGHT);
 
     private static int[] randomSheet(int width, int height, long seed, int colors) {
         Random random = new Random(seed);

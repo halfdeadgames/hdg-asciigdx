@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-import com.badlogic.gdx.graphics.Color;
 import java.util.List;
 
 /**
@@ -58,7 +57,7 @@ public final class SelectList {
                 painter.text("► " + row.text(), rowX, y, UiPalette.ACCENT);
                 continue;
             }
-            Color color = row.dimmed() ? UiPalette.DIM
+            int color = row.dimmed() ? UiPalette.DIM
                     : row.selectable() ? UiPalette.TEXT : UiPalette.TITLE;
             painter.text(row.selectable() ? "  " + row.text() : row.text(), rowX, y, color);
         }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Checks the needs-fill flags that move with scrolled content against a naive copy. */
@@ -15,31 +16,39 @@ class MapWindowFlagShiftTest {
     private static final float CELL_WIDTH = 8f;
     private static final float CELL_HEIGHT = 12f;
 
-    /** Camera moves in cells: {columns, rows}. */
-    private static final int[][] CAMERA_MOVES = {
-            {1, 0}, {-1, 0}, {0, 1}, {0, -1},
-            {1, 1}, {-1, -1}, {1, -1}, {-1, 1},
-            {COLUMNS - 1, 0}, {-(COLUMNS - 1), 0}, {0, ROWS - 1}, {0, -(ROWS - 1)},
-            {COLUMNS - 1, ROWS - 1}, {-(COLUMNS - 1), -(ROWS - 1)},
-            {COLUMNS, 0}, {-COLUMNS, 0}, {0, ROWS}, {0, -ROWS},
-            {COLUMNS + 3, 1}, {-(COLUMNS + 3), -1}, {2, ROWS + 5}, {-2, -(ROWS + 5)},
-            {40, 40}, {-40, -40},
-    };
+    private static final List<CameraMove> CAMERA_MOVES = List.of(
+            new CameraMove(1, 0), new CameraMove(-1, 0), new CameraMove(0, 1),
+            new CameraMove(0, -1),
+            new CameraMove(1, 1), new CameraMove(-1, -1), new CameraMove(1, -1),
+            new CameraMove(-1, 1),
+            new CameraMove(COLUMNS - 1, 0), new CameraMove(-(COLUMNS - 1), 0),
+            new CameraMove(0, ROWS - 1), new CameraMove(0, -(ROWS - 1)),
+            new CameraMove(COLUMNS - 1, ROWS - 1), new CameraMove(-(COLUMNS - 1), -(ROWS - 1)),
+            new CameraMove(COLUMNS, 0), new CameraMove(-COLUMNS, 0), new CameraMove(0, ROWS),
+            new CameraMove(0, -ROWS),
+            new CameraMove(COLUMNS + 3, 1), new CameraMove(-(COLUMNS + 3), -1),
+            new CameraMove(2, ROWS + 5), new CameraMove(-2, -(ROWS + 5)),
+            new CameraMove(40, 40), new CameraMove(-40, -40));
+
+    /** A camera move in whole cells. */
+    private record CameraMove(int columns, int rows) {
+    }
 
     private final LayerStack stack = HeadlessLayers.createStack();
     private final Layer layer = HeadlessLayers.add(stack, new TerminalGrid(COLUMNS, ROWS));
 
     @Test
     void flagsMoveLikeANaiveCopyForEveryShift() {
-        for (int[] move : CAMERA_MOVES) {
+        for (CameraMove move : CAMERA_MOVES) {
             MapWindow window = windowWithDistinctivePattern();
             boolean[] before = readFlags(window);
             assertPatternIsDistinctive(before);
 
-            stack.setCamera((3 + move[0]) * CELL_WIDTH, (1 + move[1]) * CELL_HEIGHT);
+            stack.setCamera((3 + move.columns()) * CELL_WIDTH, (1 + move.rows()) * CELL_HEIGHT);
 
-            boolean[] expected = naiveShift(before, -move[0], -move[1]);
-            assertArrayEquals(expected, readFlags(window), "move " + move[0] + ", " + move[1]);
+            boolean[] expected = naiveShift(before, -move.columns(), -move.rows());
+            assertArrayEquals(expected, readFlags(window),
+                    "move " + move.columns() + ", " + move.rows());
         }
     }
 

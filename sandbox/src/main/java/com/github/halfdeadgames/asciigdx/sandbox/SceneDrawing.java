@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.HdpiUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -11,7 +10,10 @@ import java.util.Random;
 
 /** Drawing and random-fill helpers shared by the sandbox scenes. */
 final class SceneDrawing {
-    static final Color VIEWPORT_BACKGROUND = new Color(0.15f, 0.15f, 0.2f, 1f);
+    static final float VIEWPORT_BACKGROUND_RED = 0.15f;
+    static final float VIEWPORT_BACKGROUND_GREEN = 0.15f;
+    static final float VIEWPORT_BACKGROUND_BLUE = 0.2f;
+    static final float VIEWPORT_BACKGROUND_ALPHA = 1f;
 
     private static final int FIRST_RANDOM_GLYPH = '!';
     private static final int LAST_RANDOM_GLYPH = '~';
@@ -47,14 +49,20 @@ final class SceneDrawing {
     }
 
     /**
-     * Clears the screen area covered by the viewport to {@link #VIEWPORT_BACKGROUND}, leaving the
-     * rest alone.
+     * Clears the screen area covered by the viewport to the viewport background color, leaving
+     * the rest alone.
      */
     static void clearViewportArea(Viewport viewport) {
         Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
         HdpiUtils.glScissor(viewport.getScreenX(), viewport.getScreenY(),
                 viewport.getScreenWidth(), viewport.getScreenHeight());
-        ScreenUtils.clear(VIEWPORT_BACKGROUND);
+        clearToViewportBackground();
         Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
+    }
+
+    /** Clears the whole current target to the viewport background color. */
+    static void clearToViewportBackground() {
+        ScreenUtils.clear(VIEWPORT_BACKGROUND_RED, VIEWPORT_BACKGROUND_GREEN,
+                VIEWPORT_BACKGROUND_BLUE, VIEWPORT_BACKGROUND_ALPHA);
     }
 }

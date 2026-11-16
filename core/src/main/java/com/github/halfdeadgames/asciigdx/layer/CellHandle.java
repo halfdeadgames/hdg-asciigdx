@@ -90,6 +90,17 @@ public final class CellHandle implements SpriteTransform {
 
     private final Layer owner;
     private final boolean frameHandle;
+    private boolean frozen;
+
+    /**
+     * Creates a handle with every value at its default that rejects every change, for sharing as
+     * a constant. Never handed to users.
+     */
+    static CellHandle createFrozen() {
+        var handle = new CellHandle(0, 0);
+        handle.frozen = true;
+        return handle;
+    }
 
     CellHandle(int column, int row) {
         this(null, column, row, false);
@@ -117,6 +128,7 @@ public final class CellHandle implements SpriteTransform {
     }
 
     void detach() {
+        requireNotFrozen();
         detached = true;
     }
 
@@ -126,10 +138,12 @@ public final class CellHandle implements SpriteTransform {
     }
 
     void addUnusedSeconds(float seconds) {
+        requireNotFrozen();
         unusedSeconds += seconds;
     }
 
     void clearUnusedSeconds() {
+        requireNotFrozen();
         unusedSeconds = 0f;
     }
 
@@ -138,6 +152,7 @@ public final class CellHandle implements SpriteTransform {
      * step.
      */
     void moveBy(int columns, int rows) {
+        requireNotFrozen();
         column += columns;
         row += rows;
     }
@@ -148,10 +163,19 @@ public final class CellHandle implements SpriteTransform {
     }
 
     void setGlyphHidden(boolean glyphHidden) {
+        requireNotFrozen();
         this.glyphHidden = glyphHidden;
     }
 
-    private void requireAttached() {
+    private void requireNotFrozen() {
+        if (frozen) {
+            throw new IllegalStateException("Frozen cell handle cannot be changed");
+        }
+    }
+
+    /** Guards every public mutator: rejects frozen handles, then detached ones. */
+    private void requireChangeable() {
+        requireNotFrozen();
         if (detached) {
             throw new IllegalStateException("Cell handle was detached from its layer");
         }
@@ -210,7 +234,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setOffset(float x, float y) {
-        requireAttached();
+        requireChangeable();
         offsetX = x;
         offsetY = y;
     }
@@ -244,7 +268,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setRotation(float degrees) {
-        requireAttached();
+        requireChangeable();
         rotation = degrees;
     }
 
@@ -297,7 +321,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setScale(float scaleX, float scaleY) {
-        requireAttached();
+        requireChangeable();
         this.scaleX = scaleX;
         this.scaleY = scaleY;
     }
@@ -355,7 +379,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached, or is a frame handle
      */
     public void setPivot(float pivotX, float pivotY) {
-        requireAttached();
+        requireChangeable();
         requireLastingHandleForPivot();
         this.pivotX = pivotX;
         this.pivotY = pivotY;
@@ -373,7 +397,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached, or is a frame handle
      */
     public void setPivotKeepingPlacement(float pivotX, float pivotY) {
-        requireAttached();
+        requireChangeable();
         requireLastingHandleForPivot();
         GlyphSource glyphSource = owner.getGlyphSource();
         float shiftX = (pivotX - this.pivotX) * glyphSource.getCellWidth();
@@ -406,7 +430,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setAlphaMultiplier(float alphaMultiplier) {
-        requireAttached();
+        requireChangeable();
         this.alpha = Math.max(0f, Math.min(1f, alphaMultiplier));
     }
 
@@ -428,7 +452,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void resetTransform() {
-        requireAttached();
+        requireChangeable();
         offsetX = 0f;
         offsetY = 0f;
         rotation = 0f;
@@ -450,7 +474,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setForegroundMix(int rgba, float amount) {
-        requireAttached();
+        requireChangeable();
         float clamped = clampAmount(amount);
         if (foregroundMixColor == rgba && foregroundMixAmount == clamped) {
             return;
@@ -470,7 +494,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setBackgroundMix(int rgba, float amount) {
-        requireAttached();
+        requireChangeable();
         float clamped = clampAmount(amount);
         if (backgroundMixColor == rgba && backgroundMixAmount == clamped) {
             return;
@@ -575,7 +599,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void setCodePoint(int codePoint) {
-        requireAttached();
+        requireChangeable();
         if (codePoint == NO_CODE_POINT) {
             clearCodePoint();
             return;
@@ -593,7 +617,7 @@ public final class CellHandle implements SpriteTransform {
      * @throws IllegalStateException if the handle was detached
      */
     public void clearCodePoint() {
-        requireAttached();
+        requireChangeable();
         if (overrideCodePoint == NO_CODE_POINT) {
             return;
         }
@@ -664,11 +688,13 @@ public final class CellHandle implements SpriteTransform {
     }
 
     void clearOverridesChanged() {
+        requireNotFrozen();
         overridesChanged = false;
     }
 
     /** Asks the layer's sync to rewrite this cell even though no override value changed. */
     void markOverridesChanged() {
+        requireNotFrozen();
         overridesChanged = true;
     }
 

@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.github.halfdeadgames.asciigdx.workbench.ui.KeyRepeat;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
@@ -19,16 +18,16 @@ public final class RulesScreen {
 
     private static final float SLIDE_SECONDS = 0.15f;
     private static final float DIM_ALPHA = 0.7f;
-    private static final Color PAGE_FILL = new Color(0.08f, 0.09f, 0.13f, 1f);
-    private static final Color FRAME_COLOR = new Color(0.32f, 0.38f, 0.55f, 1f);
-    private static final Color TEXT_COLOR = new Color(0.9f, 0.9f, 0.9f, 1f);
-    private static final Color HEADING_COLOR = new Color(0.8f, 0.6f, 1f, 1f);
+    private static final int MAX_ALPHA_BYTE = 255;
+    private static final int PAGE_FILL = 0x141621FF;
+    private static final int FRAME_COLOR = 0x51608CFF;
+    private static final int TEXT_COLOR = 0xE5E5E5FF;
+    private static final int HEADING_COLOR = 0xCC99FFFF;
 
     private final Painter painter;
     private final RulesPanel panel;
     private final KeyRepeat repeatUp = new KeyRepeat();
     private final KeyRepeat repeatDown = new KeyRepeat();
-    private final Color dim = new Color();
     private boolean open;
     private float slide;
 
@@ -126,8 +125,8 @@ public final class RulesScreen {
         if (slide <= 0f) {
             return;
         }
-        dim.set(0f, 0f, 0f, DIM_ALPHA * slide);
-        painter.fill(dim, 0, 0, worldWidth, worldHeight);
+        int dimmedBlack = (int) (MAX_ALPHA_BYTE * DIM_ALPHA * slide);
+        painter.fill(dimmedBlack, 0, 0, worldWidth, worldHeight);
         int cellPixels = painter.cellPixels();
         int cellsWide = RulesPanel.cellsWideFor(worldWidth, cellPixels);
         float eased = 1f - (1f - slide) * (1f - slide);

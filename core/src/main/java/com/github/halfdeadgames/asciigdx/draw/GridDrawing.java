@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public final class GridDrawing {
 
-    private static final ShapeWriter SHAPE_WRITER = new ShapeWriter();
+    private static final ShapeWriter shapeWriter = new ShapeWriter();
 
     private static final int HORIZONTAL_GLYPH = '─';
     private static final int VERTICAL_GLYPH = '│';
@@ -131,11 +131,11 @@ public final class GridDrawing {
         if (!overlapsGrid(grid, shape)) {
             return;
         }
-        SHAPE_WRITER.configure(grid, codePoint, foreground, background);
+        shapeWriter.configure(grid, codePoint, foreground, background);
         try {
-            shape.forEachCell(SHAPE_WRITER);
+            shape.forEachCell(shapeWriter);
         } finally {
-            SHAPE_WRITER.release();
+            shapeWriter.release();
         }
     }
 

@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
+import java.util.List;
 import java.util.Locale;
 
 /** Box, colors, transparency and the integer scale label. */
@@ -11,9 +12,8 @@ class RendererBasicsScene extends GridScene {
 
     private static final int NAVY = 0x1A2A6CFF;
     private static final int DARK_RED = 0x6C1A1AFF;
-    private static final int[] STRIPE_COLORS = {
-            0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0x00FF00FF, 0x0080FFFF, 0x8000FFFF
-    };
+    private static final List<Integer> STRIPE_COLORS = List.of(
+            0xFF0000FF, 0xFF8000FF, 0xFFFF00FF, 0x00FF00FF, 0x0080FFFF, 0x8000FFFF);
 
     RendererBasicsScene(GlyphSource glyphs) {
         super(glyphs, COLUMNS, ROWS);
@@ -42,7 +42,7 @@ class RendererBasicsScene extends GridScene {
         GridDrawing.drawText(grid, 2, 3, "Transparent bg over clear", GOLD, CLEAR);
         GridDrawing.drawText(grid, 2, 5, "Red bg, cyan glyphs", CYAN, DARK_RED);
         for (int column = 1; column < COLUMNS - 1; column++) {
-            int stripeColor = STRIPE_COLORS[column % STRIPE_COLORS.length];
+            int stripeColor = STRIPE_COLORS.get(column % STRIPE_COLORS.size());
             grid.set(column, 7, ' ', WHITE, stripeColor);
             grid.set(column, 8, '█', stripeColor, CLEAR);
         }

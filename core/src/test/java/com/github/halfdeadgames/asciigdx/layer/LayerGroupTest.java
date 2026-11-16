@@ -13,14 +13,18 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class LayerGroupTest {
 
     private static final float TOLERANCE = 1e-5f;
-    private static final float[][] SAMPLE_COLORS = {
-            {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f}
-    };
+    private static final List<Rgb> SAMPLE_COLORS = List.of(
+            new Rgb(0f, 0f, 0f), new Rgb(1f, 1f, 1f), new Rgb(1f, 0f, 0f),
+            new Rgb(0.2f, 0.6f, 0.9f), new Rgb(0.75f, 0.1f, 0.4f));
+
+    private record Rgb(float red, float green, float blue) {
+    }
 
     private static final class FakeSource implements GlyphSource {
         @Override
@@ -83,9 +87,9 @@ class LayerGroupTest {
     private static void assertMatrixEquals(ColorMatrix expected, ColorMatrix actual) {
         float[] expectedColor = new float[3];
         float[] actualColor = new float[3];
-        for (float[] color : SAMPLE_COLORS) {
-            expected.apply(color[0], color[1], color[2], expectedColor);
-            actual.apply(color[0], color[1], color[2], actualColor);
+        for (Rgb color : SAMPLE_COLORS) {
+            expected.apply(color.red(), color.green(), color.blue(), expectedColor);
+            actual.apply(color.red(), color.green(), color.blue(), actualColor);
             assertArrayEquals(expectedColor, actualColor, TOLERANCE);
         }
     }
@@ -653,13 +657,13 @@ class LayerGroupTest {
     private static void assertAppliesInSequence(ColorMatrix actual, ColorEffects... steps) {
         float[] expected = new float[3];
         float[] resolvedColor = new float[3];
-        for (float[] color : SAMPLE_COLORS) {
-            float[] current = color.clone();
+        for (Rgb color : SAMPLE_COLORS) {
+            float[] current = {color.red(), color.green(), color.blue()};
             for (ColorEffects step : steps) {
                 matrixOf(step).apply(current[0], current[1], current[2], expected);
                 current = expected.clone();
             }
-            actual.apply(color[0], color[1], color[2], resolvedColor);
+            actual.apply(color.red(), color.green(), color.blue(), resolvedColor);
             assertArrayEquals(current, resolvedColor, TOLERANCE);
         }
     }

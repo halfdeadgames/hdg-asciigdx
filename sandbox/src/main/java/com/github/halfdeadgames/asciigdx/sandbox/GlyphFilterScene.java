@@ -8,6 +8,7 @@ import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.List;
 
 /**
  * Nearest filtering on the left half, linear on the right, with identical sprites in both. Scaled
@@ -24,10 +25,21 @@ class GlyphFilterScene extends GridScene {
     private static final float SLOW_DEGREES_PER_SECOND = -12f;
     private static final float CAPPED_DELTA = 0.1f;
 
-    private static final float[] STATIC_SCALES = {0.37f, 0.5f, 1.3f, 2.5f};
-    private static final int[] STATIC_COLUMNS = {1, 3, 5, 8};
-    private static final int[] EDGE_GLYPHS = {0x2588, 0x256C, 0x2593};
-    private static final int[] EDGE_COLUMNS = {2, 7, 12};
+    private static final List<StaticSprite> STATIC_SPRITES = List.of(
+            new StaticSprite(0.37f, 1),
+            new StaticSprite(0.5f, 3),
+            new StaticSprite(1.3f, 5),
+            new StaticSprite(2.5f, 8));
+    private static final List<EdgeGlyph> EDGE_GLYPHS = List.of(
+            new EdgeGlyph(0x2588, 2),
+            new EdgeGlyph(0x256C, 7),
+            new EdgeGlyph(0x2593, 12));
+
+    private record StaticSprite(float scale, int column) {
+    }
+
+    private record EdgeGlyph(int codePoint, int column) {
+    }
 
     private final TextureGlyphSource linearGlyphs;
     private final float cellWidth;
@@ -106,10 +118,10 @@ class GlyphFilterScene extends GridScene {
     }
 
     private void addStaticSprites(Layer layer) {
-        for (int i = 0; i < STATIC_SCALES.length; i++) {
-            GlyphSprite sprite =
-                    layer.addSprite('@', WHITE, STATIC_COLUMNS[i] * cellWidth, 3f * cellHeight);
-            sprite.setScale(STATIC_SCALES[i]);
+        for (StaticSprite staticSprite : STATIC_SPRITES) {
+            GlyphSprite sprite = layer.addSprite('@', WHITE, staticSprite.column() * cellWidth,
+                    3f * cellHeight);
+            sprite.setScale(staticSprite.scale());
         }
     }
 
@@ -120,9 +132,9 @@ class GlyphFilterScene extends GridScene {
     }
 
     private void addEdgeSprites(Layer layer) {
-        for (int i = 0; i < EDGE_GLYPHS.length; i++) {
-            GlyphSprite sprite = layer.addSprite(EDGE_GLYPHS[i], WHITE, EDGE_COLUMNS[i] * cellWidth,
-                    10f * cellHeight);
+        for (EdgeGlyph edgeGlyph : EDGE_GLYPHS) {
+            GlyphSprite sprite = layer.addSprite(edgeGlyph.codePoint(), WHITE,
+                    edgeGlyph.column() * cellWidth, 10f * cellHeight);
             sprite.setScale(2.7f);
             slowSpinners.add(sprite);
         }

@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.paint;
 
-import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
@@ -19,12 +18,12 @@ final class PaintSheetView {
     static final int GAP = 1;
     private static final int OUTLINE = 2;
 
-    private static final Color CELL_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
-    private static final Color EMPTY_OUTLINE = new Color(0.4f, 0.42f, 0.55f, 1f);
-    private static final Color GLYPH_COLOR = Color.WHITE;
-    private static final Color DERIVED_COLOR = UiPalette.DERIVED;
-    private static final Color CURSOR_COLOR = Color.YELLOW;
-    private static final Color SOURCE_CURSOR_COLOR = UiPalette.ORANGE;
+    private static final int CELL_FILL = 0x23232DFF;
+    private static final int EMPTY_OUTLINE = 0x666B8CFF;
+    private static final int GLYPH_COLOR = UiPalette.WHITE;
+    private static final int DERIVED_COLOR = UiPalette.DERIVED;
+    private static final int CURSOR_COLOR = 0xFFFF00FF;
+    private static final int SOURCE_CURSOR_COLOR = UiPalette.ORANGE;
 
     private final Painter painter;
     private final FontEditor editor;
@@ -343,7 +342,7 @@ final class PaintSheetView {
         return scroll.isVisible(slot / COLUMNS) && columnScroll.isVisible(slot % COLUMNS);
     }
 
-    private void outline(Color color, int x, int top, int width, int height, int thickness) {
+    private void outline(int color, int x, int top, int width, int height, int thickness) {
         painter.fill(color, x, top, width, thickness);
         painter.fill(color, x, top + height - thickness, width, thickness);
         painter.fill(color, x, top, thickness, height);
@@ -351,7 +350,7 @@ final class PaintSheetView {
     }
 
     private void drawColumnBar() {
-        Color color = UiPalette.FRAME;
+        int color = UiPalette.FRAME;
         int cells = columnBarCells();
         int barTop = columnBarTop();
         int barLeftEdge = frameLeft + cellPixels();

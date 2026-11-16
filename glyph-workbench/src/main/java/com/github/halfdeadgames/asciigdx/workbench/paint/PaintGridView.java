@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.paint;
 
-import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.derive.OverlayCheck;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -25,27 +24,27 @@ final class PaintGridView {
     private static final int GUIDE_THICKNESS = 2;
     private static final int LEADER_THICKNESS = 1;
 
-    private static final Color UNLIT_FILL = new Color(0.14f, 0.14f, 0.18f, 1f);
-    private static final Color LIT_FILL = Color.WHITE;
-    private static final Color DERIVED_LIT_FILL = UiPalette.DERIVED;
-    private static final Color LINE_COLOR = new Color(0.22f, 0.24f, 0.3f, 1f);
-    private static final Color GUIDE_COLOR = new Color(0.3f, 0.85f, 0.9f, 1f);
+    private static final int UNLIT_FILL = 0x23232DFF;
+    private static final int LIT_FILL = UiPalette.WHITE;
+    private static final int DERIVED_LIT_FILL = UiPalette.DERIVED;
+    private static final int LINE_COLOR = 0x383D4CFF;
+    private static final int GUIDE_COLOR = 0x4CD8E5FF;
 
     private static final int WIDTH_GUIDE_THICKNESS = 2;
     private static final int BAR_THICKNESS = 2;
     private static final int BAR_DASH = 8;
-    private static final Color BAR_GUIDE_COLOR = new Color(1f, 0.3f, 0.85f, 1f);
-    private static final Color MARKER_FILL = new Color(0xFF9A30FF);
-    private static final Color MARKER_OUTLINE = new Color(0x3A2000FF);
-    private static final Color WIDTH_GUIDE_COLOR = new Color(0.55f, 0.95f, 0.4f, 1f);
+    private static final int BAR_GUIDE_COLOR = 0xFF4CD8FF;
+    private static final int MARKER_FILL = UiPalette.ORANGE;
+    private static final int MARKER_OUTLINE = 0x3A2000FF;
+    private static final int WIDTH_GUIDE_COLOR = 0x8CF266FF;
 
-    private static final Color HIGHLIGHT_COLOR = new Color(1f, 0.95f, 0.15f, 1f);
+    private static final int HIGHLIGHT_COLOR = 0xFFF226FF;
 
-    private static final float BAND_TINT_ALPHA = 0.14f;
-    private static final Color BAR_TINT_COLOR = new Color(
-            BAR_GUIDE_COLOR.r, BAR_GUIDE_COLOR.g, BAR_GUIDE_COLOR.b, BAND_TINT_ALPHA);
-    private static final Color HIGHLIGHT_TINT_COLOR = new Color(
-            HIGHLIGHT_COLOR.r, HIGHLIGHT_COLOR.g, HIGHLIGHT_COLOR.b, BAND_TINT_ALPHA);
+    private static final int BAND_TINT_ALPHA_BYTE = 0x23;
+    private static final int BAR_TINT_COLOR =
+            (BAR_GUIDE_COLOR & 0xFFFFFF00) | BAND_TINT_ALPHA_BYTE;
+    private static final int HIGHLIGHT_TINT_COLOR =
+            (HIGHLIGHT_COLOR & 0xFFFFFF00) | BAND_TINT_ALPHA_BYTE;
 
     private final Painter painter;
     private PaintGuides.Listed highlighted;
@@ -162,13 +161,13 @@ final class PaintGridView {
     }
 
     private void drawPixels(int codePoint, PixelGlyph previewGlyph) {
-        Color lit =
+        int lit =
                 previewGlyph != null || editor.isDerived(codePoint) ? DERIVED_LIT_FILL : LIT_FILL;
         for (int y = 0; y < editor.cellHeight(); y++) {
             for (int x = 0; x < editor.cellWidth(); x++) {
                 boolean on = previewGlyph == null ? editor.isLit(codePoint, x, y)
                         : previewGlyph.pixels().isLitWithin(x, y);
-                Color fill = on ? lit : UNLIT_FILL;
+                int fill = on ? lit : UNLIT_FILL;
                 painter.fill(fill, left + x * pixelSize, top + y * pixelSize, pixelSize, pixelSize);
             }
         }
@@ -238,12 +237,12 @@ final class PaintGridView {
         }
     }
 
-    private void tintRows(Color tint, int firstRow, int rowCount) {
+    private void tintRows(int tint, int firstRow, int rowCount) {
         painter.fill(tint, left, GuideBands.bandStart(top, firstRow, pixelSize),
                 editor.cellWidth() * pixelSize, GuideBands.bandLength(rowCount, pixelSize));
     }
 
-    private void tintColumns(Color tint, int firstColumn, int columnCount) {
+    private void tintColumns(int tint, int firstColumn, int columnCount) {
         painter.fill(tint, GuideBands.bandStart(left, firstColumn, pixelSize), top,
                 GuideBands.bandLength(columnCount, pixelSize), height());
     }
@@ -415,7 +414,7 @@ final class PaintGridView {
         }
     }
 
-    private void drawWidthLabel(String text, Color color, int lineX, int labelX, int tier) {
+    private void drawWidthLabel(String text, int color, int lineX, int labelX, int tier) {
         int cellPixels = painter.cellPixels();
         int labelWidth = text.length() * cellPixels;
         int labelY = top - overhang() - (tier + 1) * cellPixels;
@@ -432,7 +431,7 @@ final class PaintGridView {
 
     // Draws the label of a right-hand guide at labelY; a label moved off its guide gets a thin
     // elbow leader.
-    private void drawRowLabel(String text, Color color, int lineY, int labelY) {
+    private void drawRowLabel(String text, int color, int lineY, int labelY) {
         int cellPixels = painter.cellPixels();
         int guideEnd = left + editor.cellWidth() * pixelSize + overhang();
         int labelX = guideEnd + cellPixels / 2;
@@ -450,25 +449,25 @@ final class PaintGridView {
     }
 
     // Dashed so the lit pixels under it stay visible.
-    private void drawBarGuide(PaintGuides.BarGuide bar, int labelY, Color labelColor) {
+    private void drawBarGuide(PaintGuides.BarGuide bar, int labelY, int labelColor) {
         int lineY = top + Math.round(bar.centerRow() * pixelSize);
         drawDashedLine(BAR_GUIDE_COLOR, lineY, scaled(BAR_THICKNESS));
         drawRowLabel(bar.label(), labelColor, lineY, labelY);
     }
 
-    private void drawDashedLine(Color color, int lineY, int thickness) {
+    private void drawDashedLine(int color, int lineY, int thickness) {
         drawDashes(color, left - overhang(), left + editor.cellWidth() * pixelSize + overhang(),
                 lineY - thickness / 2, thickness, false);
     }
 
-    private void drawDashedColumn(Color color, int lineX, int thickness) {
+    private void drawDashedColumn(int color, int lineX, int thickness) {
         drawDashes(color, top - overhang(), top + height() + overhang(), lineX - thickness / 2,
                 thickness, true);
     }
 
     // Dashes run from start to end along the line; crossStart is the line's near edge on the other
     // axis.
-    private void drawDashes(Color color, int start, int end, int crossStart, int thickness,
+    private void drawDashes(int color, int start, int end, int crossStart, int thickness,
             boolean vertical) {
         int dash = scaled(BAR_DASH);
         for (int at = start; at < end; at += 2 * dash) {
@@ -494,7 +493,7 @@ final class PaintGridView {
     }
 
     // Dashed so the lit pixels under it stay visible.
-    private void drawColumnBarGuide(PaintGuides.ColumnBarGuide bar, int labelX, Color labelColor) {
+    private void drawColumnBarGuide(PaintGuides.ColumnBarGuide bar, int labelX, int labelColor) {
         int lineX = left + Math.round(bar.centerColumn() * pixelSize);
         drawDashedColumn(BAR_GUIDE_COLOR, lineX, scaled(BAR_THICKNESS));
         drawWidthLabel(bar.label(), labelColor, lineX, labelX, bar.tier());

@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class LayerPivotKeepingPlacementTest {
@@ -17,7 +18,11 @@ class LayerPivotKeepingPlacementTest {
     private static final float STACK_X = 100f;
     private static final float STACK_Y = 200f;
     private static final float TOLERANCE = 1e-3f;
-    private static final float[][] SAMPLE_POINTS = {{0f, 0f}, {32f, 36f}, {17.5f, 22.25f}};
+    private static final List<Point> SAMPLE_POINTS =
+            List.of(new Point(0f, 0f), new Point(32f, 36f), new Point(17.5f, 22.25f));
+
+    private record Point(float x, float y) {
+    }
 
     private static final class FakeSource implements GlyphSource {
         @Override
@@ -70,10 +75,10 @@ class LayerPivotKeepingPlacementTest {
     }
 
     private float[] recordWorldPoints() {
-        float[] recorded = new float[SAMPLE_POINTS.length * 2];
-        for (int i = 0; i < SAMPLE_POINTS.length; i++) {
-            stack.toWorldPoint(
-                    layer, STACK_X, STACK_Y, SAMPLE_POINTS[i][0], SAMPLE_POINTS[i][1], world);
+        float[] recorded = new float[SAMPLE_POINTS.size() * 2];
+        for (int i = 0; i < SAMPLE_POINTS.size(); i++) {
+            Point point = SAMPLE_POINTS.get(i);
+            stack.toWorldPoint(layer, STACK_X, STACK_Y, point.x(), point.y(), world);
             recorded[i * 2] = world.x;
             recorded[i * 2 + 1] = world.y;
         }

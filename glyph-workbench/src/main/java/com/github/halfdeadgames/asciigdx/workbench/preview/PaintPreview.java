@@ -1,7 +1,6 @@
 package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.IntMap;
 import com.github.halfdeadgames.asciigdx.workbench.editor.FontEditor;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGlyph;
@@ -12,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 import com.github.halfdeadgames.asciigdx.workbench.ui.TextCells;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -22,9 +22,9 @@ import java.util.Set;
  */
 public final class PaintPreview {
 
-    private static final int[] SCALES = PreviewFit.SCALES;
-    private static final String[] SCALE_LABELS = {"1X", "2X", "4X", "8X"};
-    private static final Color BACKDROP = new Color(0.14f, 0.14f, 0.18f, 1f);
+    private static final List<Integer> SCALES = PreviewFit.SCALES;
+    private static final List<String> SCALE_LABELS = List.of("1X", "2X", "4X", "8X");
+    private static final int BACKDROP = 0x23232DFF;
     private static final String NO_CLASS_MESSAGE = "NO CLASS FOR BLANKS";
     private static final int TICKER_LINES = 2;
     private static final int TICKER_SCALE = 2;
@@ -40,7 +40,7 @@ public final class PaintPreview {
 
     private final TickerLine[] tickerLines = new TickerLine[TICKER_LINES];
     private final String[] tickerMessages = new String[TICKER_LINES];
-    private final Color[] tickerMessageColors = new Color[TICKER_LINES];
+    private final int[] tickerMessageColors = new int[TICKER_LINES];
     private final IntMap<PixelGrid> tickerCells = new IntMap<>();
     private final TickerGlyphDrawer tickerDrawer = new TickerGlyphDrawer();
     private Set<Integer> tickerAvailable;
@@ -136,7 +136,7 @@ public final class PaintPreview {
         tickerDrawer.clipRight = clipRight;
         tickerDrawer.featured = selected;
         tickerDrawer.featuredColor = tickerSeconds % (WHITE_SECONDS + FLASH_SECONDS) < WHITE_SECONDS
-                ? Color.WHITE : UiPalette.ACCENT;
+                ? UiPalette.WHITE : UiPalette.ACCENT;
         for (int i = 0; i < TICKER_LINES; i++) {
             int bandTop = top + i * bandHeight;
             TickerLine line = tickerLines[i];
@@ -221,7 +221,7 @@ public final class PaintPreview {
         int clipLeft;
         int clipRight;
         int featured;
-        Color featuredColor = Color.WHITE;
+        int featuredColor = UiPalette.WHITE;
 
         @Override
         public void visit(int codePoint, float x) {
@@ -229,7 +229,7 @@ public final class PaintPreview {
             if (cell == null) {
                 return;
             }
-            Color color = codePoint == featured ? featuredColor : Color.WHITE;
+            int color = codePoint == featured ? featuredColor : UiPalette.WHITE;
             int glyphLeft = left + Math.round(x);
             for (int py = 0; py < cell.getHeight(); py++) {
                 for (int px = 0; px < cell.getWidth(); px++) {
@@ -241,7 +241,7 @@ public final class PaintPreview {
             }
         }
 
-        private void fillWithinClip(Color color, int x, int y) {
+        private void fillWithinClip(int color, int x, int y) {
             int from = Math.max(x, clipLeft);
             int to = Math.min(x + TICKER_SCALE, clipRight);
             if (to > from) {
@@ -267,8 +267,8 @@ public final class PaintPreview {
                 labelWidth());
         int blockLeft = left;
         for (int i = 0; i < blocks; i++) {
-            blockLeft = drawTileBlock(blockLeft, top, glyph, SCALE_LABELS[i], SCALES[i],
-                    largestScale / SCALES[i]);
+            blockLeft = drawTileBlock(blockLeft, top, glyph, SCALE_LABELS.get(i), SCALES.get(i),
+                    largestScale / SCALES.get(i));
         }
     }
 
@@ -286,7 +286,7 @@ public final class PaintPreview {
                 for (int column = 0; column < count; column++) {
                     painter.pixels(cell, left + column * cellWidth * scale,
                             blockTop + row * cellHeight * scale,
-                            scale, Color.WHITE);
+                            scale, UiPalette.WHITE);
                 }
             }
         }
@@ -300,13 +300,13 @@ public final class PaintPreview {
         int blockTop = top + cellPixels();
         int blockLeft = left;
         for (int i = 0; i < scaleCount; i++) {
-            int scale = SCALES[i];
-            painter.text(SCALE_LABELS[i], blockLeft, top, UiPalette.DIM);
+            int scale = SCALES.get(i);
+            painter.text(SCALE_LABELS.get(i), blockLeft, top, UiPalette.DIM);
             painter.fill(BACKDROP, blockLeft, blockTop, cellWidth * scale, cellHeight * scale);
             if (glyph != null) {
-                painter.pixels(glyph.pixels(), blockLeft, blockTop, scale, Color.WHITE);
+                painter.pixels(glyph.pixels(), blockLeft, blockTop, scale, UiPalette.WHITE);
             }
-            int labelWidth = SCALE_LABELS[i].length() * cellPixels();
+            int labelWidth = SCALE_LABELS.get(i).length() * cellPixels();
             blockLeft += Math.max(labelWidth, cellWidth * scale) + sectionGap();
         }
     }

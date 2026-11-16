@@ -8,6 +8,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.SaiksisttSize;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.List;
 
 /**
  * The whole Saiksistt sheet next to examples built from its cards, chess pieces, dice, and bar
@@ -41,22 +42,20 @@ final class GlyphShowcaseScene extends GridScene {
     private static final int FULL_BLOCK = 0x2588;
     private static final int FIRST_DIE_FACE = 0x2680;
 
-    private static final int[] VERTICAL_BAR_STAGES = {
-            ' ', 0x2581, 0x2582, 0x2583, 0x2584, 0x2585, 0x2586, 0x2587, FULL_BLOCK
-    };
-    private static final int[] HORIZONTAL_BAR_STAGES = {
-            ' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589, FULL_BLOCK
-    };
-    private static final int[] SHADE_STAGES =
-            {' ', LIGHT_SHADE, MEDIUM_SHADE, DARK_SHADE, FULL_BLOCK};
-    private static final int[] HEART_STAGES = {HEART_HOLLOW, HEART_FULL};
+    private static final List<Integer> VERTICAL_BAR_STAGES = List.of(
+            (int) ' ', 0x2581, 0x2582, 0x2583, 0x2584, 0x2585, 0x2586, 0x2587, FULL_BLOCK);
+    private static final List<Integer> HORIZONTAL_BAR_STAGES = List.of(
+            (int) ' ', 0x258F, 0x258E, 0x258D, 0x258C, 0x258B, 0x258A, 0x2589, FULL_BLOCK);
+    private static final List<Integer> SHADE_STAGES =
+            List.of((int) ' ', LIGHT_SHADE, MEDIUM_SHADE, DARK_SHADE, FULL_BLOCK);
+    private static final List<Integer> HEART_STAGES = List.of(HEART_HOLLOW, HEART_FULL);
 
     private static final float SECONDS_PER_METER_STAGE = 0.4f;
     private static final int ANIMATED_METER_COLUMN = PANEL + 20;
     private static final int METER_STAGE_SPACING = 2;
     private static final int SHADE_STRIP_WIDTH = 20;
 
-    private int[][] meterStages = new int[0][];
+    private List<List<Integer>> meterStages = List.of();
     private int[] meterColors = new int[0];
     private int[] meterRows = new int[0];
     private int[] meterShownStage = new int[0];
@@ -309,12 +308,12 @@ final class GlyphShowcaseScene extends GridScene {
     protected void update(float delta) {
         meterClock += delta;
         int step = (int) (meterClock / SECONDS_PER_METER_STAGE);
-        for (int meter = 0; meter < meterStages.length; meter++) {
-            int[] stages = meterStages[meter];
-            int stage = bouncingStage(step, stages.length);
+        for (int meter = 0; meter < meterStages.size(); meter++) {
+            List<Integer> stages = meterStages.get(meter);
+            int stage = bouncingStage(step, stages.size());
             if (stage != meterShownStage[meter]) {
                 meterShownStage[meter] = stage;
-                grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages[stage],
+                grid.set(ANIMATED_METER_COLUMN, meterRows[meter], stages.get(stage),
                         meterColors[meter], CLEAR);
             }
         }
@@ -329,20 +328,20 @@ final class GlyphShowcaseScene extends GridScene {
     // Each row lists its stages from empty to full, then one cell that fills and empties again.
     private void writeMeters(int top) {
         GridDrawing.drawText(grid, PANEL, top, "Meters", LABEL, CLEAR);
-        meterStages =
-                new int[][]{VERTICAL_BAR_STAGES, HORIZONTAL_BAR_STAGES, SHADE_STAGES, HEART_STAGES};
+        meterStages = List.of(
+                VERTICAL_BAR_STAGES, HORIZONTAL_BAR_STAGES, SHADE_STAGES, HEART_STAGES);
         meterColors = new int[]{CYAN, GOLD, WHITE, RED};
-        meterRows = new int[meterStages.length];
-        meterShownStage = new int[meterStages.length];
+        meterRows = new int[meterStages.size()];
+        meterShownStage = new int[meterStages.size()];
         meterClock = 0f;
-        for (int meter = 0; meter < meterStages.length; meter++) {
+        for (int meter = 0; meter < meterStages.size(); meter++) {
             meterRows[meter] = top + 1 + meter;
-            for (int stage = 0; stage < meterStages[meter].length; stage++) {
+            for (int stage = 0; stage < meterStages.get(meter).size(); stage++) {
                 grid.set(PANEL + stage * METER_STAGE_SPACING, meterRows[meter],
-                        meterStages[meter][stage],
+                        meterStages.get(meter).get(stage),
                         meterColors[meter], CLEAR);
             }
-            grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages[meter][0],
+            grid.set(ANIMATED_METER_COLUMN, meterRows[meter], meterStages.get(meter).get(0),
                     meterColors[meter], CLEAR);
         }
     }
@@ -358,8 +357,8 @@ final class GlyphShowcaseScene extends GridScene {
     private void writeShades(int top) {
         GridDrawing.drawText(grid, PANEL, top, "Shades", LABEL, CLEAR);
         for (int column = 0; column < SHADE_STRIP_WIDTH; column++) {
-            int level = Math.round(column * (SHADE_STAGES.length - 1f) / (SHADE_STRIP_WIDTH - 1));
-            grid.set(PANEL + column, top + 1, SHADE_STAGES[level], WHITE, CLEAR);
+            int level = Math.round(column * (SHADE_STAGES.size() - 1f) / (SHADE_STRIP_WIDTH - 1));
+            grid.set(PANEL + column, top + 1, SHADE_STAGES.get(level), WHITE, CLEAR);
         }
     }
 }

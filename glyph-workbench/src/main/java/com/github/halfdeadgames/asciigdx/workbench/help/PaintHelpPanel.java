@@ -1,6 +1,5 @@
 package com.github.halfdeadgames.asciigdx.workbench.help;
 
-import com.badlogic.gdx.graphics.Color;
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
@@ -69,7 +68,7 @@ public final class PaintHelpPanel {
     }
 
     private void drawLine(HelpWrap.Line line, int textX, int top, int cellPixels) {
-        Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
+        int color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
                 : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
                         : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
         if (!line.key().isEmpty()) {

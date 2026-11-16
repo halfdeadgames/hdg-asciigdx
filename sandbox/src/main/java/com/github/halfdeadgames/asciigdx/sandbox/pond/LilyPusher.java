@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
+import java.util.List;
 import java.util.Objects;
 
 /** Turns a player's step into pushes and rest-point changes on the lilies around it. */
@@ -13,7 +14,7 @@ public final class LilyPusher {
     private static final int NEIGHBOR_RADIUS = 3;
     private static final float NEIGHBOR_SPEED = 2.0f;
     private static final float NEAR_ZERO_LENGTH = 1e-4f;
-    private static final LilySlot[] SLOTS = LilySlot.values();
+    private static final List<LilySlot> SLOTS = List.of(LilySlot.values());
 
     private static final int SLOTS_PER_AXIS = 2;
 
@@ -61,7 +62,8 @@ public final class LilyPusher {
             return;
         }
         var cell = map.cell(column, row);
-        for (var slot : SLOTS) {
+        for (int i = 0; i < SLOTS.size(); i++) {
+            var slot = SLOTS.get(i);
             if (cell.hasLily(slot)) {
                 var lily = cell.lilyAt(slot);
                 lily.setTarget(0f, 0f);
@@ -76,7 +78,8 @@ public final class LilyPusher {
         }
         var cell = map.cell(column, row);
         var movesAlongRow = deltaRow == 0;
-        for (var slot : SLOTS) {
+        for (int i = 0; i < SLOTS.size(); i++) {
+            var slot = SLOTS.get(i);
             if (!cell.hasLily(slot)) {
                 continue;
             }
@@ -118,7 +121,8 @@ public final class LilyPusher {
             return;
         }
         falloff = Math.min(falloff, 1f);
-        for (var slot : SLOTS) {
+        for (int i = 0; i < SLOTS.size(); i++) {
+            var slot = SLOTS.get(i);
             if (cell.hasLily(slot)) {
                 var lily = cell.lilyAt(slot);
                 pushNeighborLily(lily, slot, offsetColumn, offsetRow, deltaColumn, deltaRow,

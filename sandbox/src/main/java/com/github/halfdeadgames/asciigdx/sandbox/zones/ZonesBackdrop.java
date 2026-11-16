@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.sandbox.zones;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
+import java.util.List;
 
 /**
  * Permanent drawing under the zones scene: a varied dim floor, a caption line, and a circle
@@ -13,8 +14,11 @@ public final class ZonesBackdrop {
     public static final int CAPTION_COLUMN = 5;
     public static final int CAPTION_ROW = 19;
 
-    private static final int[] FLOOR_GLYPHS = {'.', ',', ':', ';', '\'', '`', '"', '~'};
-    private static final int[] FLOOR_COLORS = {0x6A9A6AFF, 0x80B880FF, 0x9A9A6AFF, 0x6A86A8FF};
+    private static final List<Integer> FLOOR_GLYPHS = List.of(
+            (int) '.', (int) ',', (int) ':', (int) ';', (int) '\'', (int) '`', (int) '"',
+            (int) '~');
+    private static final List<Integer> FLOOR_COLORS =
+            List.of(0x6A9A6AFF, 0x80B880FF, 0x9A9A6AFF, 0x6A86A8FF);
     private static final int FLOOR_BACKGROUND = 0x101810FF;
     private static final int CAPTION_COLOR = 0xFFE890FF;
     private static final int OUTLINE_GLYPH = 'o';
@@ -27,8 +31,8 @@ public final class ZonesBackdrop {
         for (int row = 0; row < grid.getRows(); row++) {
             for (int column = 0; column < grid.getColumns(); column++) {
                 int variety = column * 73 + row * 151 + column * row * 7;
-                int glyph = FLOOR_GLYPHS[variety % FLOOR_GLYPHS.length];
-                int color = FLOOR_COLORS[variety / FLOOR_GLYPHS.length % FLOOR_COLORS.length];
+                int glyph = FLOOR_GLYPHS.get(variety % FLOOR_GLYPHS.size());
+                int color = FLOOR_COLORS.get(variety / FLOOR_GLYPHS.size() % FLOOR_COLORS.size());
                 grid.set(column, row, glyph, color, FLOOR_BACKGROUND);
             }
         }

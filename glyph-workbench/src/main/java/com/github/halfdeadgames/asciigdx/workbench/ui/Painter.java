@@ -17,6 +17,7 @@ public final class Painter {
     private final Texture whitePixel;
     private final GlyphSource font;
     private final Viewport viewport;
+    private final Color scratchColor = new Color();
     private UiScale scale = UiScale.DEFAULT;
 
     public Painter(SpriteBatch batch, Texture whitePixel, GlyphSource font, Viewport viewport) {
@@ -40,25 +41,25 @@ public final class Painter {
         return scale.cellPixels();
     }
 
-    public void fill(Color color, int x, int top, int width, int height) {
-        batch.setColor(color);
+    public void fill(int rgba, int x, int top, int width, int height) {
+        applyColor(rgba);
         batch.draw(whitePixel, x, flipY(top, height), width, height);
     }
 
     /** Draws the lit pixels of a grid as filled squares of {@code scale} pixels. */
-    public void pixels(PixelGrid grid, int x, int top, int scale, Color color) {
+    public void pixels(PixelGrid grid, int x, int top, int scale, int rgba) {
         for (int py = 0; py < grid.getHeight(); py++) {
             for (int px = 0; px < grid.getWidth(); px++) {
                 if (grid.isLit(px, py)) {
-                    fill(color, x + px * scale, top + py * scale, scale, scale);
+                    fill(rgba, x + px * scale, top + py * scale, scale, scale);
                 }
             }
         }
     }
 
-    public void text(CharSequence value, int x, int top, Color color) {
+    public void text(CharSequence value, int x, int top, int rgba) {
         int size = cellPixels();
-        batch.setColor(color);
+        applyColor(rgba);
         int column = 0;
         for (int i = 0; i < value.length(); column++) {
             int codePoint = Character.codePointAt(value, i);
@@ -71,11 +72,11 @@ public final class Painter {
     }
 
     /** Draws a double-line border of text-sized cells; the size must be at least 2x2 cells. */
-    public void frame(Color color, int x, int top, int cellsWide, int cellsHigh) {
+    public void frame(int rgba, int x, int top, int cellsWide, int cellsHigh) {
         int size = cellPixels();
         int right = x + (cellsWide - 1) * size;
         int bottom = top + (cellsHigh - 1) * size;
-        batch.setColor(color);
+        applyColor(rgba);
         cell('╔', x, top);
         cell('╗', right, top);
         cell('╚', x, bottom);
@@ -93,6 +94,11 @@ public final class Painter {
     private void cell(char c, int x, int top) {
         int size = cellPixels();
         batch.draw(font.getGlyphRegion(c), x, flipY(top, size), size, size);
+    }
+
+    private void applyColor(int rgba) {
+        Color.rgba8888ToColor(scratchColor, rgba);
+        batch.setColor(scratchColor);
     }
 
     private float flipY(int top, int height) {

@@ -6,11 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewFit;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewPanelSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PaintLayoutTest {
 
-    private static final int[] OTHER_CELL_SIZES = {8, 16, 32};
+    private static final List<Integer> OTHER_CELL_SIZES = List.of(8, 16, 32);
 
     @Test
     void panelsFillTheScreenWithoutOverlap() {
@@ -136,8 +137,9 @@ class PaintLayoutTest {
             for (int glyphHeight : new int[]{8, 32}) {
                 int minimum = PaintLayout.minimumHeight(glyphHeight, cellPixels);
                 assertEquals(0, minimum % cellPixels);
+                int smallestScale = PreviewFit.SCALES.get(0);
                 int rightRows =
-                        PreviewPanelSize.height(glyphHeight, PreviewFit.SCALES[0], cellPixels) + 6;
+                        PreviewPanelSize.height(glyphHeight, smallestScale, cellPixels) + 6;
                 assertTrue(minimum / cellPixels
                         >= PaintLayout.TOP_ROWS + rightRows + PaintLayout.MESSAGES_HEIGHT + 1);
             }

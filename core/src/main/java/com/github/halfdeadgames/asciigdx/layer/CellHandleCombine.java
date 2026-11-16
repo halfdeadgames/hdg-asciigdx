@@ -11,7 +11,7 @@ final class CellHandleCombine {
     /**
      * Stands in for a cell that has no lasting handle: every value at its default. Never modified.
      */
-    static final CellHandle NO_EFFECT = new CellHandle(0, 0);
+    static final CellHandle NO_EFFECT = CellHandle.createFrozen();
 
     private static final int CHANNEL_MASK = 0xFF;
     private static final int OPAQUE = 0xFF;

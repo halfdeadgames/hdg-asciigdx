@@ -42,6 +42,7 @@ class LabelFieldTest {
     @Test
     void privateUseCharactersAreRefused() {
         LabelField field = field("");
+        // U+DFFF is a lone low surrogate with no printable form, so it stays escaped.
         type(field, "abcd\uDFFF");
         assertEquals("ABCD", field.value());
     }

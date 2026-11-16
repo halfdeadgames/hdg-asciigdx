@@ -103,37 +103,51 @@ public final class PaintHelp {
     private static final int PART_KEY_GAP = 1;
     private static final String PARTS_TITLE = "PARTS";
 
-    // Each control is {key, action}; a block lines its actions up in one column.
-    private static final String[][] IDLE_CONTROLS = {
-            {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"ARROWS", "PICK GLYPH"},
-            {"PGUP", "SCROLL UP"},
-            {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}};
-    private static final String[][] ALL_CONTROLS = {
-            {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"},
-            {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"},
-            {"PGDN", "SCROLL DOWN"},
-            {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}, {"N", "NEW GLYPH"},
-            {"D", "DERIVE"},
-            {"U", "UNLOCK DERIVED"}, {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"},
-            {"CTRL+E", "EXPORT"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
-            {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
-            {"F1", "RULES"}, {"F2", "GUIDES"}, {"F5", "RELOAD FILES"}, {"ALT+LETTER", "OPEN MENU"},
-            {"F10", "MENU BAR"}, {"ESC", "BACK"}};
-    private static final String[][] MENU_CONTROLS = {
-            {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
-    private static final String[][] PICK_CONTROLS = {
-            {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"},
-            {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
-    private static final String[][] OVERLAY_CONTROLS = {
-            {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"; '", "MOVE 1 ROW"},
-            {"ENTER", "ADD PART"},
-            {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
-    private static final String[][] REPLACE_CONTROLS = {{"R", "REPLACE"}, {"ESC", "BACK"}};
-    private static final String[][] UPSCALE_PICK_CONTROLS = {
-            {"ARROWS", "MOVE"}, {"CLICK", "SELECT"}, {"CLICK AGAIN", "CHOOSE"}, {"ENTER", "CHOOSE"},
-            {"WHEEL", "SCROLL"}, {"ESC", "BACK"}};
-    private static final String[][] UPSCALE_CANDIDATE_CONTROLS = {
-            {"1-9", "PICK"}, {"ARROWS", "NEXT"}, {"ENTER", "APPLY"}, {"ESC", "BACK"}};
+    private record Control(String key, String action) {
+    }
+
+    // A block lines its actions up in one column.
+    private static final List<Control> IDLE_CONTROLS = List.of(
+            new Control("CLICK", "PAINT PIXEL"), new Control("DRAG", "PAINT STROKE"),
+            new Control("ARROWS", "PICK GLYPH"), new Control("PGUP", "SCROLL UP"),
+            new Control("PGDN", "SCROLL DOWN"), new Control("HOME", "TOP"),
+            new Control("END", "BOTTOM"), new Control("[ ]", "SCROLL HELP"));
+    private static final List<Control> ALL_CONTROLS = List.of(
+            new Control("CLICK", "PAINT PIXEL"), new Control("DRAG", "PAINT STROKE"),
+            new Control("TABS", "SWITCH VIEW"), new Control("TAB", "NEXT VIEW"),
+            new Control("ARROWS", "PICK GLYPH"), new Control("PGUP", "SCROLL UP"),
+            new Control("PGDN", "SCROLL DOWN"), new Control("HOME", "TOP"),
+            new Control("END", "BOTTOM"), new Control("[ ]", "SCROLL HELP"),
+            new Control("N", "NEW GLYPH"), new Control("D", "DERIVE"),
+            new Control("U", "UNLOCK DERIVED"), new Control("G", "GO TO SOURCE"),
+            new Control("CTRL+S", "SAVE"), new Control("CTRL+E", "EXPORT"),
+            new Control("CTRL+Z", "UNDO"), new Control("CTRL+Y", "REDO"),
+            new Control("CTRL+=", "BIGGER UI"), new Control("CTRL+-", "SMALLER UI"),
+            new Control("CTRL+0", "AUTO UI SIZE"), new Control("F1", "RULES"),
+            new Control("F2", "GUIDES"), new Control("F5", "RELOAD FILES"),
+            new Control("ALT+LETTER", "OPEN MENU"), new Control("F10", "MENU BAR"),
+            new Control("ESC", "BACK"));
+    private static final List<Control> MENU_CONTROLS = List.of(
+            new Control("UP/DOWN", "CHOOSE"), new Control("ENTER", "SELECT"),
+            new Control("ESC", "CANCEL"));
+    private static final List<Control> PICK_CONTROLS = List.of(
+            new Control("ARROWS", "MOVE CURSOR"), new Control("ENTER", "CONFIRM"),
+            new Control("CLICK", "MOVE OR CONFIRM"), new Control("TAB", "NEXT VIEW"),
+            new Control("ESC", "CANCEL"));
+    private static final List<Control> OVERLAY_CONTROLS = List.of(
+            new Control("ARROWS", "MOVE CURSOR"), new Control("[ ]", "SHIFT 1 COLUMN"),
+            new Control("; '", "MOVE 1 ROW"), new Control("ENTER", "ADD PART"),
+            new Control("BKSP", "REMOVE LAST"), new Control("F", "FINISH"),
+            new Control("TAB", "NEXT VIEW"), new Control("ESC", "CANCEL"));
+    private static final List<Control> REPLACE_CONTROLS = List.of(
+            new Control("R", "REPLACE"), new Control("ESC", "BACK"));
+    private static final List<Control> UPSCALE_PICK_CONTROLS = List.of(
+            new Control("ARROWS", "MOVE"), new Control("CLICK", "SELECT"),
+            new Control("CLICK AGAIN", "CHOOSE"), new Control("ENTER", "CHOOSE"),
+            new Control("WHEEL", "SCROLL"), new Control("ESC", "BACK"));
+    private static final List<Control> UPSCALE_CANDIDATE_CONTROLS = List.of(
+            new Control("1-9", "PICK"), new Control("ARROWS", "NEXT"),
+            new Control("ENTER", "APPLY"), new Control("ESC", "BACK"));
 
     private PaintHelp() {
     }
@@ -218,13 +232,14 @@ public final class PaintHelp {
         }
     }
 
-    private static void addControls(List<Row> out, String[][] controls) {
+    private static void addControls(List<Row> out, List<Control> controls) {
         int actionColumn = 0;
-        for (String[] control : controls) {
-            actionColumn = Math.max(actionColumn, control[0].length() + KEY_GAP);
+        for (int i = 0; i < controls.size(); i++) {
+            actionColumn = Math.max(actionColumn, controls.get(i).key().length() + KEY_GAP);
         }
-        for (String[] control : controls) {
-            out.add(new Row(Kind.CONTROL, control[0], control[1], actionColumn));
+        for (int i = 0; i < controls.size(); i++) {
+            Control control = controls.get(i);
+            out.add(new Row(Kind.CONTROL, control.key(), control.action(), actionColumn));
         }
     }
 

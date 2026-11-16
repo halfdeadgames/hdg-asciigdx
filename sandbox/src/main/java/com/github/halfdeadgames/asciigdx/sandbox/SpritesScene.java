@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.GlyphSprite;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.List;
 
 /**
  * Off-grid sprites on one map layer: an orbiting ring, a slowly spinning scaled marker, a mirrored
@@ -57,11 +58,11 @@ class SpritesScene extends GridScene {
     private static final int FLOOR_GLYPH = 0x4C7A4CFF;
     private static final int STRIPE_BACKGROUND = 0xE0E0E0FF;
     private static final int STRIPE_GLYPH = 0x303030FF;
-    private static final int[] RING_COLORS = {
+    private static final List<Integer> RING_COLORS = List.of(
             0xFF4040FF, 0xFF9040FF, 0xFFE040FF, 0x60FF60FF, 0x40FFD0FF, 0x4090FFFF, 0xA060FFFF,
-            0xFF60C0FF
-    };
-    private static final int[] CHURN_COLORS = {0xFFD700FF, 0x00FFFFFF, 0xFF80FFFF, 0x90FF90FF};
+            0xFF60C0FF);
+    private static final List<Integer> CHURN_COLORS =
+            List.of(0xFFD700FF, 0x00FFFFFF, 0xFF80FFFF, 0x90FF90FF);
 
     private static final int STRIPE_FIRST_COLUMN = 26;
     private static final int STRIPE_LAST_COLUMN = 32;
@@ -307,7 +308,7 @@ class SpritesScene extends GridScene {
 
     private void createRing() {
         for (int i = 0; i < RING_SIZE; i++) {
-            ringSprites[i] = mapLayer.addSprite('O', RING_COLORS[i], 0f, 0f);
+            ringSprites[i] = mapLayer.addSprite('O', RING_COLORS.get(i), 0f, 0f);
         }
     }
 
@@ -353,7 +354,7 @@ class SpritesScene extends GridScene {
             churnCount--;
         }
         int column = 2 + churnSpawned * CHURN_COLUMN_STRIDE % CHURN_COLUMN_SPAN;
-        int color = CHURN_COLORS[churnSpawned % CHURN_COLORS.length];
+        int color = CHURN_COLORS.get(churnSpawned % CHURN_COLORS.size());
         GlyphSprite sprite =
                 mapLayer.addSprite('*', color, column * cellWidth, (ROWS - 1) * cellHeight);
         churnSprites[(churnOldest + churnCount) % CHURN_CAPACITY] = sprite;
