@@ -87,7 +87,7 @@ class FlexibleGridScene extends GridScene {
             Gdx.gl.glFinish();
             double milliseconds = (System.nanoTime() - resizeStartNanos) / NANOS_PER_MILLISECOND;
             timingResize = false;
-            GridDrawing.text(grid, 1, MS_ROW, String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
+            GridDrawing.drawText(grid, 1, MS_ROW, String.format(Locale.ROOT, "resize %.2f ms", milliseconds), WHITE, CLEAR);
         }
     }
 
@@ -112,12 +112,12 @@ class FlexibleGridScene extends GridScene {
                 grid.set(left + column, top + row, ' ', WHITE, color);
             }
         }
-        GridDrawing.text(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT", WHITE,
+        GridDrawing.drawText(grid, left + (MARKER_WIDTH - 4) / 2, top + MARKER_HEIGHT / 2, "KEPT", WHITE,
             MARKER_COLORS[0]);
     }
 
     private void drawBorder() {
-        GridDrawing.box(grid, 0, 0, grid.getColumns(), grid.getRows(), WHITE, CLEAR);
+        GridDrawing.drawBox(grid, 0, 0, grid.getColumns(), grid.getRows(), WHITE, CLEAR);
     }
 
     private void eraseBorderAndStatus() {
@@ -145,13 +145,13 @@ class FlexibleGridScene extends GridScene {
     }
 
     private void drawStatus(GridFit fit) {
-        GridDrawing.text(grid, 1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
+        GridDrawing.drawText(grid, 1, 1, String.format(Locale.ROOT, "scale %dx  %dx%d cells",
             fit.getScale(), fit.getColumns(), fit.getRows()), CYAN, CLEAR);
-        GridDrawing.text(grid, 1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
+        GridDrawing.drawText(grid, 1, 2, String.format(Locale.ROOT, "leftover %d,%d px",
             fit.getLeftoverWidth(), fit.getLeftoverHeight()), CYAN, CLEAR);
-        GridDrawing.text(grid, 1, 3, fit.isMinimumMet() ? "minimum ok" : "below minimum", GOLD, CLEAR);
-        GridDrawing.text(grid, 1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
+        GridDrawing.drawText(grid, 1, 3, fit.isMinimumMet() ? "minimum ok" : "below minimum", GOLD, CLEAR);
+        GridDrawing.drawText(grid, 1, FONT_ROW, String.format(Locale.ROOT, "font %dx%d",
             font.getCellWidth(), font.getCellHeight()), GOLD, CLEAR);
-        GridDrawing.text(grid, 1, MS_ROW, "resize -- ms", WHITE, CLEAR);
+        GridDrawing.drawText(grid, 1, MS_ROW, "resize -- ms", WHITE, CLEAR);
     }
 }

@@ -24,8 +24,8 @@ class MenuScene extends GridScene {
         super(glyphs, COLUMNS, FIRST_ITEM_ROW + scenes.size + ROWS_BELOW_ITEMS);
         this.scenes = scenes;
         cellHeight = glyphs.getCellHeight();
-        GridDrawing.text(grid, TEXT_COLUMN, TITLE_ROW, "HDG-AsciiGDX sandbox", GOLD, CLEAR);
-        GridDrawing.text(grid, TEXT_COLUMN, grid.getRows() - 2, helpText(), CYAN, CLEAR);
+        GridDrawing.drawText(grid, TEXT_COLUMN, TITLE_ROW, "HDG-AsciiGDX sandbox", GOLD, CLEAR);
+        GridDrawing.drawText(grid, TEXT_COLUMN, grid.getRows() - 2, helpText(), CYAN, CLEAR);
         drawItems();
     }
 
@@ -70,8 +70,8 @@ class MenuScene extends GridScene {
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = FIRST_ITEM_ROW + i;
-            GridDrawing.fill(grid, 1, row, COLUMNS - 2, 1, ' ', foreground, background);
-            GridDrawing.text(grid, TEXT_COLUMN, row, scenes.get(i).title(), foreground, background);
+            GridDrawing.fillRectangle(grid, 1, row, COLUMNS - 2, 1, ' ', foreground, background);
+            GridDrawing.drawText(grid, TEXT_COLUMN, row, scenes.get(i).title(), foreground, background);
         }
     }
 }

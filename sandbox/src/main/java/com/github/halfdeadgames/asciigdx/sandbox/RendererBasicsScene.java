@@ -38,17 +38,17 @@ class RendererBasicsScene extends GridScene {
     }
 
     private void fillDemoGrid() {
-        GridDrawing.box(grid, 0, 0, COLUMNS, ROWS, WHITE, CLEAR);
-        GridDrawing.text(grid, 2, 1, "Top-left: row 0 is the top", WHITE, NAVY);
-        GridDrawing.text(grid, 2, 3, "Transparent bg over clear", GOLD, CLEAR);
-        GridDrawing.text(grid, 2, 5, "Red bg, cyan glyphs", CYAN, DARK_RED);
+        GridDrawing.drawBox(grid, 0, 0, COLUMNS, ROWS, WHITE, CLEAR);
+        GridDrawing.drawText(grid, 2, 1, "Top-left: row 0 is the top", WHITE, NAVY);
+        GridDrawing.drawText(grid, 2, 3, "Transparent bg over clear", GOLD, CLEAR);
+        GridDrawing.drawText(grid, 2, 5, "Red bg, cyan glyphs", CYAN, DARK_RED);
         for (int column = 1; column < COLUMNS - 1; column++) {
             int stripeColor = STRIPE_COLORS[column % STRIPE_COLORS.length];
             grid.set(column, 7, ' ', WHITE, stripeColor);
             grid.set(column, 8, '█', stripeColor, CLEAR);
         }
-        GridDrawing.text(grid, 2, 10, "Spaces skip:  [   ]", WHITE, CLEAR);
-        GridDrawing.text(grid, 2, ROWS - 2, "Bottom row of text", GOLD, NAVY);
+        GridDrawing.drawText(grid, 2, 10, "Spaces skip:  [   ]", WHITE, CLEAR);
+        GridDrawing.drawText(grid, 2, ROWS - 2, "Bottom row of text", GOLD, NAVY);
     }
 
     private void showScaleIndicator() {
@@ -57,7 +57,7 @@ class RendererBasicsScene extends GridScene {
             ? String.format(Locale.ROOT, " %dx ", Math.round(scale))
             : String.format(Locale.ROOT, " %.2fx fit ", scale);
         int row = ROWS - 1;
-        GridDrawing.fill(grid, 1, row, COLUMNS - 2, 1, '─', WHITE, CLEAR);
-        GridDrawing.text(grid, COLUMNS - 1 - label.length(), row, label, CYAN, CLEAR);
+        GridDrawing.fillRectangle(grid, 1, row, COLUMNS - 2, 1, '─', WHITE, CLEAR);
+        GridDrawing.drawText(grid, COLUMNS - 1 - label.length(), row, label, CYAN, CLEAR);
     }
 }

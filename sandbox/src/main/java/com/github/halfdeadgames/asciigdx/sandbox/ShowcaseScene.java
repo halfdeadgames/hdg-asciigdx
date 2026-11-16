@@ -274,7 +274,7 @@ class ShowcaseScene extends GridScene {
     /** @param showcaseTimeSetting loop time in seconds to hold the scene at, or null/invalid to play normally */
     ShowcaseScene(GlyphSource glyphs, GlyphSource tallGlyphs, String showcaseTimeSetting) {
         super(glyphs, COLUMNS, ROWS);
-        GridDrawing.fill(grid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
+        GridDrawing.fillRectangle(grid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
         drawFrames();
         drawStats();
         cellWidth = glyphs.getCellWidth();
@@ -439,7 +439,7 @@ class ShowcaseScene extends GridScene {
      */
     private Layer addWaterLayer(GlyphSource glyphs) {
         for (int row = 0; row < WATER_ROWS; row++) {
-            GridDrawing.fill(waterGrid, 0, row, WATER_COLUMNS, 1, ' ', WATER_GLYPH_COLOR, WATER_BACKGROUND_COLOR);
+            GridDrawing.fillRectangle(waterGrid, 0, row, WATER_COLUMNS, 1, ' ', WATER_GLYPH_COLOR, WATER_BACKGROUND_COLOR);
         }
         Layer layer = layers.add(waterGrid, glyphs);
         layer.setPivot(waterCenterX, waterCenterY);
@@ -449,16 +449,16 @@ class ShowcaseScene extends GridScene {
     }
 
     private Layer addBridgeLayer(GlyphSource glyphs) {
-        GridDrawing.fill(bridgeGrid, 0, 0, BRIDGE_COLUMNS, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_ABOVE, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_PLANK_ROW, BRIDGE_COLUMNS, 1, '║', PLANK_COLOR, PLANK_BACKGROUND_COLOR);
-        GridDrawing.fill(bridgeGrid, 0, BRIDGE_ROPE_ROW_BELOW, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
+        GridDrawing.fillRectangle(bridgeGrid, 0, 0, BRIDGE_COLUMNS, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
+        GridDrawing.fillRectangle(bridgeGrid, 0, BRIDGE_ROPE_ROW_ABOVE, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
+        GridDrawing.fillRectangle(bridgeGrid, 0, BRIDGE_PLANK_ROW, BRIDGE_COLUMNS, 1, '║', PLANK_COLOR, PLANK_BACKGROUND_COLOR);
+        GridDrawing.fillRectangle(bridgeGrid, 0, BRIDGE_ROPE_ROW_BELOW, BRIDGE_COLUMNS, 1, '─', ROPE_COLOR, CLEAR);
         return addInnerLayer(bridgeGrid, glyphs, BRIDGE_MARGIN_COLUMNS);
     }
 
     private Layer addInnerLayer(GlyphSource glyphs) {
         TerminalGrid emptyGrid = new TerminalGrid(SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT);
-        GridDrawing.fill(emptyGrid, 0, 0, SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
+        GridDrawing.fillRectangle(emptyGrid, 0, 0, SCENE_INNER_WIDTH, SCENE_INNER_HEIGHT, ' ', WHITE, CLEAR);
         return addInnerLayer(emptyGrid, glyphs, 0);
     }
 
@@ -643,7 +643,7 @@ class ShowcaseScene extends GridScene {
         int columns = (int) Math.ceil(SCENE_INNER_WIDTH * mainGlyphs.getCellWidth() / crispGlyphs.getCellWidth());
         int rows = (int) Math.ceil(SCENE_INNER_HEIGHT * mainGlyphs.getCellHeight() / crispGlyphs.getCellHeight());
         TerminalGrid underwaterGrid = new TerminalGrid(columns, rows);
-        GridDrawing.fill(underwaterGrid, 0, 0, columns, rows, ' ', WHITE, WATER_BACKGROUND_COLOR);
+        GridDrawing.fillRectangle(underwaterGrid, 0, 0, columns, rows, ' ', WHITE, WATER_BACKGROUND_COLOR);
         Layer layer = layers.insert(layers.indexOf(waterLayer), underwaterGrid, crispGlyphs);
         layer.setPanel(scenePanel);
         return layer;
@@ -736,7 +736,7 @@ class ShowcaseScene extends GridScene {
         }
         drawnRainCycles[set] = cycleIndex;
         rainSets[set].fillDropPositions(rainRandom, RainSet.seedFor(set, cycleIndex), RAIN_COLUMNS, RAIN_ROWS, rainDropColumns, rainDropRows);
-        GridDrawing.fill(rainGrids[set], 0, 0, RAIN_COLUMNS, RAIN_ROWS, ' ', WHITE, CLEAR);
+        GridDrawing.fillRectangle(rainGrids[set], 0, 0, RAIN_COLUMNS, RAIN_ROWS, ' ', WHITE, CLEAR);
         for (int drop = 0; drop < RAIN_DROPS_PER_SET; drop++) {
             rainGrids[set].set(rainDropColumns[drop], rainDropRows[drop], RAIN_DROP_CODE_POINT, RAIN_COLOR, CLEAR);
         }
@@ -825,7 +825,7 @@ class ShowcaseScene extends GridScene {
 
     /** The panel's corner is in main-grid pixels, and its size is in tall cells so it matches the log grid. */
     private void addLogLayer(GlyphSource mainGlyphs, GlyphSource tallGlyphs) {
-        GridDrawing.fill(logGrid, 0, 0, LOG_TEXT_WIDTH, LOG_ROWS, ' ', WHITE, CLEAR);
+        GridDrawing.fillRectangle(logGrid, 0, 0, LOG_TEXT_WIDTH, LOG_ROWS, ' ', WHITE, CLEAR);
         Panel logPanel = layers.addPanel(
             LOG_INNER_COLUMN * mainGlyphs.getCellWidth(),
             LOG_INNER_ROW * mainGlyphs.getCellHeight(),
@@ -836,7 +836,7 @@ class ShowcaseScene extends GridScene {
 
     private Layer addOverlay(GlyphSource glyphs) {
         TerminalGrid overlayGrid = new TerminalGrid(COLUMNS, ROWS);
-        GridDrawing.fill(overlayGrid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
+        GridDrawing.fillRectangle(overlayGrid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
         return layers.add(overlayGrid, glyphs);
     }
 
@@ -886,15 +886,15 @@ class ShowcaseScene extends GridScene {
     }
 
     private void drawFrames() {
-        GridDrawing.box(grid, 0, 0, SCENE_FRAME_WIDTH, SCENE_FRAME_HEIGHT, FRAME_COLOR, BLACK);
-        GridDrawing.box(grid, STATS_LEFT, 0, STATS_WIDTH, SCENE_FRAME_HEIGHT, FRAME_COLOR, BLACK);
-        GridDrawing.box(grid, 0, LOG_TOP, COLUMNS, LOG_HEIGHT, FRAME_COLOR, BLACK);
+        GridDrawing.drawBox(grid, 0, 0, SCENE_FRAME_WIDTH, SCENE_FRAME_HEIGHT, FRAME_COLOR, BLACK);
+        GridDrawing.drawBox(grid, STATS_LEFT, 0, STATS_WIDTH, SCENE_FRAME_HEIGHT, FRAME_COLOR, BLACK);
+        GridDrawing.drawBox(grid, 0, LOG_TOP, COLUMNS, LOG_HEIGHT, FRAME_COLOR, BLACK);
     }
 
     private void drawStats() {
-        GridDrawing.text(grid, STATS_TEXT_COLUMN, 1, "@", GOLD, BLACK);
-        GridDrawing.text(grid, STATS_TEXT_COLUMN + 2, 1, "Wanderer", WHITE, BLACK);
-        GridDrawing.text(grid, STATS_TEXT_COLUMN, HP_BAR_ROW, "HP ", LABEL_COLOR, BLACK);
+        GridDrawing.drawText(grid, STATS_TEXT_COLUMN, 1, "@", GOLD, BLACK);
+        GridDrawing.drawText(grid, STATS_TEXT_COLUMN + 2, 1, "Wanderer", WHITE, BLACK);
+        GridDrawing.drawText(grid, STATS_TEXT_COLUMN, HP_BAR_ROW, "HP ", LABEL_COLOR, BLACK);
         drawHpBar(1f);
         drawStatLine(5, "DEPTH ", "3");
         drawStatLine(6, "GOLD  ", "42");
@@ -902,7 +902,7 @@ class ShowcaseScene extends GridScene {
     }
 
     private void drawStatLine(int row, String label, String value) {
-        GridDrawing.text(grid, STATS_TEXT_COLUMN, row, label, LABEL_COLOR, BLACK);
-        GridDrawing.text(grid, STATS_TEXT_COLUMN + label.length(), row, value, WHITE, BLACK);
+        GridDrawing.drawText(grid, STATS_TEXT_COLUMN, row, label, LABEL_COLOR, BLACK);
+        GridDrawing.drawText(grid, STATS_TEXT_COLUMN + label.length(), row, value, WHITE, BLACK);
     }
 }

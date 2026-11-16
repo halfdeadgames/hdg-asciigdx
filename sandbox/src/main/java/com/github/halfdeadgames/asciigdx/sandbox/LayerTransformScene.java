@@ -322,8 +322,8 @@ class LayerTransformScene extends GridScene {
     }
 
     private void drawMap() {
-        GridDrawing.fill(grid, 0, 0, COLUMNS, ROWS, '#', WALL, WALL_BACKGROUND);
-        GridDrawing.fill(grid, 3, 3, COLUMNS - 6, ROWS - 6, '.', FLOOR, FLOOR_BACKGROUND);
+        GridDrawing.fillRectangle(grid, 0, 0, COLUMNS, ROWS, '#', WALL, WALL_BACKGROUND);
+        GridDrawing.fillRectangle(grid, 3, 3, COLUMNS - 6, ROWS - 6, '.', FLOOR, FLOOR_BACKGROUND);
         drawVerticalWall(13, 10, 11);
         drawVerticalWall(27, 6, 7);
         drawVerticalWall(27, 15, 15);
@@ -351,10 +351,10 @@ class LayerTransformScene extends GridScene {
     }
 
     private static void drawFrame(TerminalGrid frame) {
-        GridDrawing.fill(frame, 0, 0, COLUMNS, ROWS, ' ', WHITE, FRAME_OUTER);
-        GridDrawing.fill(frame, FRAME_THICKNESS, FRAME_THICKNESS,
+        GridDrawing.fillRectangle(frame, 0, 0, COLUMNS, ROWS, ' ', WHITE, FRAME_OUTER);
+        GridDrawing.fillRectangle(frame, FRAME_THICKNESS, FRAME_THICKNESS,
             COLUMNS - 2 * FRAME_THICKNESS, ROWS - 2 * FRAME_THICKNESS, ' ', WHITE, CLEAR);
-        GridDrawing.box(frame, 1, 1, COLUMNS - 2, ROWS - 2, FRAME_LINE, FRAME_OUTER);
-        GridDrawing.text(frame, (COLUMNS - HELP_TEXT.length()) / 2, ROWS - 1, HELP_TEXT, GOLD, FRAME_OUTER);
+        GridDrawing.drawBox(frame, 1, 1, COLUMNS - 2, ROWS - 2, FRAME_LINE, FRAME_OUTER);
+        GridDrawing.drawText(frame, (COLUMNS - HELP_TEXT.length()) / 2, ROWS - 1, HELP_TEXT, GOLD, FRAME_OUTER);
     }
 }

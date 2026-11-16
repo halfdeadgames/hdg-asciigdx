@@ -295,15 +295,15 @@ final class GlyphReviewScene extends GridScene {
 
     private void drawReasonMenu() {
         int menuColumn = MENU_COLUMN;
-        GridDrawing.text(grid, menuColumn + 1, menuTitleRow(), "Reason", GOLD, CLEAR);
+        GridDrawing.drawText(grid, menuColumn + 1, menuTitleRow(), "Reason", GOLD, CLEAR);
         FailReason[] reasons = FailReason.values();
         for (int i = 0; i < REASON_MENU_ITEMS; i++) {
             boolean selected = i == reasonMenuCursor;
             int foreground = selected ? BLACK : WHITE;
             int background = selected ? WHITE : CLEAR;
             int row = menuFirstItemRow() + i;
-            GridDrawing.fill(grid, menuColumn, row, grid.getColumns() - menuColumn, 1, ' ', foreground, background);
-            GridDrawing.text(grid, menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]),
+            GridDrawing.fillRectangle(grid, menuColumn, row, grid.getColumns() - menuColumn, 1, ' ', foreground, background);
+            GridDrawing.drawText(grid, menuColumn + 1, row, i == 0 ? "No reason" : reasonName(reasons[i - 1]),
                 foreground, background);
         }
     }

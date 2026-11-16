@@ -11,7 +11,7 @@
  * <p>Example, drawing the outline of a rectangle onto a grid and then reading the cells of a circle:
  * <pre>{@code
  * RectangleShape frame = RectangleShape.forSquareCells(1, 1, 5, 5, ShapeFill.OUTLINE);
- * GridDrawing.fill(grid, frame, '#', foreground, background);
+ * GridDrawing.fillShape(grid, frame, '#', foreground, background);
  *
  * CircleShape disc = new CircleShape(10.5f, 10.5f, 4f, ShapeFill.FILLED, 2f);
  * disc.forEachCell((column, row, distance, distanceFraction) ->

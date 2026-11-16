@@ -226,9 +226,9 @@ class ParallaxScene extends GridScene {
         shownAuto = isAuto;
         statusLine.setLength(0);
         statusLine.append("camera x ").append(cameraXPixels).append(isAuto ? " auto" : " manual");
-        GridDrawing.fill(statusGrid, 0, 0, COLUMNS, 1, ' ', WHITE, STATUS_BACKGROUND);
-        GridDrawing.text(statusGrid, 1, 0, statusLine, GOLD, STATUS_BACKGROUND);
-        GridDrawing.text(statusGrid, COLUMNS - HELP_TEXT.length() - 1, 0, HELP_TEXT, GRASS, STATUS_BACKGROUND);
+        GridDrawing.fillRectangle(statusGrid, 0, 0, COLUMNS, 1, ' ', WHITE, STATUS_BACKGROUND);
+        GridDrawing.drawText(statusGrid, 1, 0, statusLine, GOLD, STATUS_BACKGROUND);
+        GridDrawing.drawText(statusGrid, COLUMNS - HELP_TEXT.length() - 1, 0, HELP_TEXT, GRASS, STATUS_BACKGROUND);
     }
 
     private void storePointer(int screenX, int screenY) {
@@ -280,7 +280,7 @@ class ParallaxScene extends GridScene {
     /** Wide enough that the camera's full pan never shows an empty edge for this factor. */
     private static TerminalGrid wideGrid(float parallax) {
         TerminalGrid wide = new TerminalGrid(COLUMNS + (int) Math.ceil(PAN_CELLS * parallax), ROWS);
-        GridDrawing.fill(wide, 0, 0, wide.getColumns(), ROWS, ' ', WHITE, CLEAR);
+        GridDrawing.fillRectangle(wide, 0, 0, wide.getColumns(), ROWS, ' ', WHITE, CLEAR);
         return wide;
     }
 
@@ -299,7 +299,7 @@ class ParallaxScene extends GridScene {
     }
 
     private void drawSky() {
-        GridDrawing.fill(grid, 0, 0, COLUMNS, ROWS, ' ', WHITE, SKY);
+        GridDrawing.fillRectangle(grid, 0, 0, COLUMNS, ROWS, ' ', WHITE, SKY);
         for (int row = 0; row < MOUNTAIN_BASE_ROW - 2; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 if ((column * 7 + row * 11 + column * row) % 23 == 0) {
@@ -314,7 +314,7 @@ class ParallaxScene extends GridScene {
             int height = 1 + 7 - Math.abs(column % 14 - 7);
             int top = MOUNTAIN_BASE_ROW - height;
             target.set(column, top, '▲', MOUNTAIN_PEAK, MOUNTAIN);
-            GridDrawing.fill(target, column, top + 1, 1, height - 1, ' ', WHITE, MOUNTAIN);
+            GridDrawing.fillRectangle(target, column, top + 1, 1, height - 1, ' ', WHITE, MOUNTAIN);
         }
     }
 
@@ -322,15 +322,15 @@ class ParallaxScene extends GridScene {
         for (int column = 0; column < target.getColumns(); column++) {
             int top = HILL_BASE_ROW - Math.round(1.5f * MathUtils.sin(column * 0.35f));
             target.set(column, top, '~', HILL_CREST, HILL);
-            GridDrawing.fill(target, column, top + 1, 1, ROWS - top - 1, ' ', WHITE, HILL);
+            GridDrawing.fillRectangle(target, column, top + 1, 1, ROWS - top - 1, ' ', WHITE, HILL);
         }
     }
 
     private static void drawGround(TerminalGrid target) {
         int width = target.getColumns();
-        GridDrawing.fill(target, 0, GROUND_ROW, width, 1, '"', GRASS, GRASS_BACKGROUND);
-        GridDrawing.fill(target, 0, GROUND_ROW + 1, width, ROWS - GROUND_ROW - 1, '.', DIRT, DIRT_BACKGROUND);
-        GridDrawing.fill(target, 0, GROUND_ROW + 2, width, 1, '=', PATH, DIRT_BACKGROUND);
+        GridDrawing.fillRectangle(target, 0, GROUND_ROW, width, 1, '"', GRASS, GRASS_BACKGROUND);
+        GridDrawing.fillRectangle(target, 0, GROUND_ROW + 1, width, ROWS - GROUND_ROW - 1, '.', DIRT, DIRT_BACKGROUND);
+        GridDrawing.fillRectangle(target, 0, GROUND_ROW + 2, width, 1, '=', PATH, DIRT_BACKGROUND);
         for (int column = 3; column < width; column += 9) {
             target.set(column, GROUND_ROW - 1, '♣', TREE, CLEAR);
         }

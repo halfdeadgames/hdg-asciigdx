@@ -32,10 +32,10 @@ public final class ZonesBackdrop {
     }
 
     public static void drawCaption(TerminalGrid grid) {
-        GridDrawing.text(grid, CAPTION_COLUMN, CAPTION_ROW, CAPTION, CAPTION_COLOR, FLOOR_BACKGROUND);
+        GridDrawing.drawText(grid, CAPTION_COLUMN, CAPTION_ROW, CAPTION, CAPTION_COLOR, FLOOR_BACKGROUND);
     }
 
     public static void drawOutline(TerminalGrid grid, CellShape outline) {
-        GridDrawing.fill(grid, outline, OUTLINE_GLYPH, OUTLINE_COLOR, FLOOR_BACKGROUND);
+        GridDrawing.fillShape(grid, outline, OUTLINE_GLYPH, OUTLINE_COLOR, FLOOR_BACKGROUND);
     }
 }

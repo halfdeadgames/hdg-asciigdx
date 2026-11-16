@@ -122,7 +122,7 @@ class LayersScene extends GridScene {
         layerById[RAIN].clipToStack();
 
         TerminalGrid bannerGrid = new TerminalGrid(BANNER_TEXT.length(), 1);
-        GridDrawing.text(bannerGrid, 0, 0, BANNER_TEXT, GOLD, BANNER_BACKGROUND);
+        GridDrawing.drawText(bannerGrid, 0, 0, BANNER_TEXT, GOLD, BANNER_BACKGROUND);
         layerById[BANNER] = layers.add(bannerGrid, glyphs);
         layerById[BANNER].clipToStack();
 
@@ -442,7 +442,7 @@ class LayersScene extends GridScene {
                 }
             }
         }
-        GridDrawing.text(frame, 2, ROWS - 1, "R order V rain P snap F ghost G gray", GOLD, FRAME_OUTER);
+        GridDrawing.drawText(frame, 2, ROWS - 1, "R order V rain P snap F ghost G gray", GOLD, FRAME_OUTER);
     }
 
     private static int frameGlyph(int column, int row) {
@@ -466,12 +466,12 @@ class LayersScene extends GridScene {
     }
 
     private static void drawPopup(TerminalGrid popup) {
-        GridDrawing.fill(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, ' ', WHITE, POPUP_BACKGROUND);
-        GridDrawing.box(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, POPUP_FRAME, POPUP_BACKGROUND);
-        GridDrawing.text(popup, 2, 1, "Inventory", GOLD, POPUP_BACKGROUND);
-        GridDrawing.text(popup, 2, 2, "$ Gold      x2", WHITE, POPUP_BACKGROUND);
-        GridDrawing.text(popup, 2, 3, "! Potion    x1", WHITE, POPUP_BACKGROUND);
-        GridDrawing.text(popup, 2, 4, "? Scroll    x1", WHITE, POPUP_BACKGROUND);
+        GridDrawing.fillRectangle(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, ' ', WHITE, POPUP_BACKGROUND);
+        GridDrawing.drawBox(popup, 0, 0, POPUP_COLUMNS, POPUP_ROWS, POPUP_FRAME, POPUP_BACKGROUND);
+        GridDrawing.drawText(popup, 2, 1, "Inventory", GOLD, POPUP_BACKGROUND);
+        GridDrawing.drawText(popup, 2, 2, "$ Gold      x2", WHITE, POPUP_BACKGROUND);
+        GridDrawing.drawText(popup, 2, 3, "! Potion    x1", WHITE, POPUP_BACKGROUND);
+        GridDrawing.drawText(popup, 2, 4, "? Scroll    x1", WHITE, POPUP_BACKGROUND);
     }
 
     private static void drawRain(TerminalGrid rain) {
