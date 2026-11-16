@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.tween;
 
 /**
- * One clock advanced by the frame delta drives every track. The delta cap keeps a long stall
+ * A clock, advanced by the frame delta, that drives every track. The delta cap keeps a long stall
  * (window drag, breakpoint) from skipping animations. Tracks are pure functions of time, so
  * {@link #setTime(float)} seeks to any moment.
  *

@@ -21,16 +21,21 @@ public final class Phase {
         float cyclesAt(ZoneCell where);
     }
 
-    /** Every cell is at the same point of its cycle. */
+    /**
+     * Returns a phase that puts every cell at the same point of its cycle.
+     *
+     * @return the shared phase that is 0 for every cell
+     */
     public static Phase sync() {
         return SYNC;
     }
 
     /**
-     * Phase grows with the cell's column in the zone, so the pattern travels toward higher columns.
-     * Suits waves that run along a line of text.
+     * Returns a phase that grows with the cell's column in the zone, so the pattern travels toward
+     * higher columns. Suits waves that run along a line of text.
      *
      * @param cellsPerCycle columns that make up one full cycle; finite and greater than 0
+     * @return a phase equal to the cell's zone column divided by {@code cellsPerCycle}
      * @throws IllegalArgumentException if {@code cellsPerCycle} is not finite or not above 0
      */
     public static Phase alongColumns(float cellsPerCycle) {
@@ -39,10 +44,12 @@ public final class Phase {
     }
 
     /**
-     * Phase grows with the distance from the shape's center, so rings spread outward over time.
+     * Returns a phase that grows with the distance from the shape's center, so rings spread
+     * outward over time.
      *
      * @param cellsPerCycle distance between rings, in column widths (see
      *     {@link ZoneCell#getDistance()}); finite and greater than 0
+     * @return a phase equal to the cell's distance divided by {@code cellsPerCycle}
      * @throws IllegalArgumentException if {@code cellsPerCycle} is not finite or not above 0
      */
     public static Phase byDistance(float cellsPerCycle) {
@@ -51,11 +58,12 @@ public final class Phase {
     }
 
     /**
-     * Gives each grid cell its own stable pseudo-random phase from 0 (inclusive) to 1 (exclusive).
-     * The same seed, column, and row always give the same value. The value depends on the grid
-     * position, not the position inside the zone.
+     * Returns a phase that gives each grid cell its own stable pseudo-random value from 0
+     * (inclusive) to 1 (exclusive). The same seed, column, and row always give the same value. The
+     * value depends on the grid position, not the position inside the zone.
      *
      * @param seed any int; different seeds give different patterns
+     * @return a phase that depends only on the seed and the cell's grid column and row
      */
     public static Phase scattered(int seed) {
         return new Phase(where -> CellHash.toUnit(

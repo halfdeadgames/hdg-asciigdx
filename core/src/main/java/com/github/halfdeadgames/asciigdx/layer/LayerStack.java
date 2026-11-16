@@ -701,9 +701,9 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Call once at the start of each update, before applying cell effects. On every layer, the
-     * frame handles ({@link Layer#obtainFrameCellHandle}) are swept: handles that stayed idle since
-     * the last call add the delta to their unused time, and handles that were used start over at
+     * Sweeps every layer's frame cell handles ({@link Layer#obtainFrameCellHandle}). Call once at
+     * the start of each update, before applying cell effects. Handles that stayed idle since the
+     * last call add the delta to their unused time, and handles that were used start over at
      * zero. Handles unused for at least {@link Layer#getFrameReleaseSeconds()} are released, and
      * the rest are reset. Lasting handles ({@link Layer#obtainCellHandle}) are never touched. A
      * zero, negative, NaN, or infinite delta adds no unused time, but the reset still happens.
