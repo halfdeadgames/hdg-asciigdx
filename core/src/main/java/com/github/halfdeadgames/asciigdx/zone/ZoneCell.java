@@ -36,50 +36,77 @@ public final class ZoneCell {
         this.distanceFraction = distanceFraction;
     }
 
-    /** The cell's column in the layer's grid, or in the map when the layer is a map window. */
+    /**
+     * Returns the cell's column in the layer's grid, or in the map when the layer is a map window.
+     *
+     * @return the column, counted from 0 at the left
+     */
     public int getColumn() {
         return column;
     }
 
-    /** The cell's row in the layer's grid, or in the map when the layer is a map window. */
+    /**
+     * Returns the cell's row in the layer's grid, or in the map when the layer is a map window.
+     *
+     * @return the row, counted from 0 at the top
+     */
     public int getRow() {
         return row;
     }
 
-    /** The cell's column counted from the left edge of the shape's bounds. */
+    /**
+     * Returns the cell's column counted from the left edge of the shape's bounds.
+     *
+     * @return the column offset inside the shape's bounds; 0 at the left edge
+     */
     public int getZoneColumn() {
         return zoneColumn;
     }
 
-    /** The cell's row counted from the top edge of the shape's bounds. */
+    /**
+     * Returns the cell's row counted from the top edge of the shape's bounds.
+     *
+     * @return the row offset inside the shape's bounds; 0 at the top edge
+     */
     public int getZoneRow() {
         return zoneRow;
     }
 
     /**
-     * Distance from the shape's center to the cell's center, in column widths, with rows scaled by
-     * the shape's aspect.
+     * Returns the distance from the shape's center to the cell's center, with rows scaled by the
+     * shape's aspect.
+     *
+     * @return the distance in column widths; not negative
      */
     public float getDistance() {
         return distance;
     }
 
-    /** {@link #getDistance()} divided by the largest distance in the shape, from 0 to 1. */
+    /**
+     * Returns {@link #getDistance()} divided by the largest distance in the shape.
+     *
+     * @return the relative distance, from 0 at the center to 1 at the farthest cell; 0 when the
+     *     largest distance is 0, as in a one-cell shape
+     */
     public float getDistanceFraction() {
         return distanceFraction;
     }
 
     /**
-     * Width of one cell in virtual pixels. Multiply a horizontal amount in cell widths by it to get
-     * a {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} x offset.
+     * Returns the width of one cell. Multiply a horizontal amount in cell widths by it to get a
+     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} x offset.
+     *
+     * @return the cell width in virtual pixels
      */
     public float getCellWidth() {
         return cellWidth;
     }
 
     /**
-     * Height of one cell in virtual pixels. Multiply a vertical amount in cell heights by it to get
-     * a {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} y offset.
+     * Returns the height of one cell. Multiply a vertical amount in cell heights by it to get a
+     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} y offset.
+     *
+     * @return the cell height in virtual pixels
      */
     public float getCellHeight() {
         return cellHeight;

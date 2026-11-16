@@ -20,12 +20,15 @@ public final class CellEffects {
     }
 
     /**
-     * Moves each glyph up and down along a sine, centered on its own position.
+     * Returns an effect that moves each glyph up and down along a sine, centered on its own
+     * position. It adds a vertical offset to the cell's handle.
      *
      * @param amplitudeCells peak distance in cell heights; finite and not negative
      * @param periodSeconds seconds per cycle; finite and greater than 0
-     * @param phase offset between cells
+     * @param phase offset between cells; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect wave(float amplitudeCells, float periodSeconds, Phase phase) {
         EffectArguments.requireNonNegative("amplitudeCells", amplitudeCells);
@@ -38,12 +41,15 @@ public final class CellEffects {
     }
 
     /**
-     * Makes each glyph hop upward and land again, once per period. It never moves below its cell.
+     * Returns an effect that makes each glyph hop upward and land again, once per period. It never
+     * moves below its cell. It adds a vertical offset to the cell's handle.
      *
      * @param heightCells peak height in cell heights; finite and not negative
      * @param periodSeconds seconds per hop; finite and greater than 0
-     * @param phase offset between cells
+     * @param phase offset between cells; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect bounce(float heightCells, float periodSeconds, Phase phase) {
         EffectArguments.requireNonNegative("heightCells", heightCells);
@@ -56,13 +62,16 @@ public final class CellEffects {
     }
 
     /**
-     * Jitters each glyph to a new pseudo-random spot {@code stepsPerSecond} times per second. Every
-     * grid cell gets its own offset, and the same cell, step, and seed always give the same offset.
+     * Returns an effect that jitters each glyph to a new pseudo-random spot
+     * {@code stepsPerSecond} times per second. Every grid cell gets its own offset, and the same
+     * cell, step, and seed always give the same offset. It adds a horizontal and vertical offset to
+     * the cell's handle.
      *
      * @param amplitudeCells largest offset on each axis, in cell widths horizontally and cell
      *     heights vertically; finite and not negative
      * @param stepsPerSecond offset changes per second; finite and greater than 0
      * @param seed any int; different seeds give different patterns
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
      */
     public static CellEffect shake(float amplitudeCells, float stepsPerSecond, int seed) {
@@ -79,13 +88,17 @@ public final class CellEffects {
     }
 
     /**
-     * Grows and shrinks each glyph along a sine, between {@code 1 - amount} and {@code 1 + amount}.
+     * Returns an effect that grows and shrinks each glyph along a sine, between
+     * {@code 1 - amount} and {@code 1 + amount}. It multiplies the scale of the cell's handle on
+     * both axes.
      *
      * @param amount largest change of the scale factor; finite and not negative. Above 1 the glyph
      *     mirrors at the low end.
      * @param periodSeconds seconds per cycle; finite and greater than 0
-     * @param phase offset between cells
+     * @param phase offset between cells; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect pulse(float amount, float periodSeconds, Phase phase) {
         EffectArguments.requireNonNegative("amount", amount);
@@ -98,14 +111,16 @@ public final class CellEffects {
     }
 
     /**
-     * Turns each glyph at a steady speed. The rotation added is {@code degreesPerSecond * time},
-     * reduced modulo 360 in double precision so it stays precise at large times, minus
-     * {@code 360 * phase}, so a bigger phase lags behind. Positive degrees turn clockwise on
-     * screen.
+     * Returns an effect that turns each glyph at a steady speed. The rotation added is
+     * {@code degreesPerSecond * time}, reduced modulo 360 in double precision so it stays precise
+     * at large times, minus {@code 360 * phase}, so a bigger phase lags behind. Positive degrees
+     * turn clockwise on screen. It adds to the rotation of the cell's handle.
      *
-     * @param degreesPerSecond turning speed; finite, may be negative
-     * @param phase offset between cells, in turns
+     * @param degreesPerSecond turning speed in degrees per second; finite, may be negative
+     * @param phase offset between cells, in turns; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if the speed is not finite
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect spin(float degreesPerSecond, Phase phase) {
         EffectArguments.requireFinite("degreesPerSecond", degreesPerSecond);
@@ -117,14 +132,17 @@ public final class CellEffects {
     }
 
     /**
-     * Blinks the foreground toward a color and back. The mix amount follows a sine between 0 and
-     * {@code maxAmount} and starts at half of {@code maxAmount}.
+     * Returns an effect that blinks the foreground toward a color and back. The mix amount follows
+     * a sine between 0 and {@code maxAmount} and starts at half of {@code maxAmount}. It sets the
+     * foreground mix of the cell's handle, so the zone applied last decides the color.
      *
      * @param rgba target color as RGBA8888; its alpha is ignored
      * @param maxAmount strongest mix; from 0 to 1
      * @param periodSeconds seconds per blink; finite and greater than 0
-     * @param phase offset between cells
+     * @param phase offset between cells; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect flash(int rgba, float maxAmount, float periodSeconds, Phase phase) {
         EffectArguments.requireFraction("maxAmount", maxAmount);
@@ -137,13 +155,16 @@ public final class CellEffects {
     }
 
     /**
-     * Tints the foreground with a hue that goes around the color wheel once per period, starting at
-     * red. If the time is NaN or infinite, the cell is left unchanged.
+     * Returns an effect that tints the foreground with a hue that goes around the color wheel once
+     * per period, starting at red. If the time is NaN or infinite, the cell is left unchanged. It
+     * sets the foreground mix of the cell's handle, so the zone applied last decides the color.
      *
      * @param amount how strongly the hue is mixed in; from 0 to 1
      * @param periodSeconds seconds per trip around the wheel; finite and greater than 0
-     * @param phase offset between cells; a cell with a bigger phase shows an earlier hue
+     * @param phase offset between cells; a cell with a bigger phase shows an earlier hue; not null
+     * @return a new effect that allocates nothing when applied
      * @throws IllegalArgumentException if a number is out of range
+     * @throws NullPointerException if {@code phase} is null
      */
     public static CellEffect rainbow(float amount, float periodSeconds, Phase phase) {
         EffectArguments.requireFraction("amount", amount);
@@ -159,10 +180,12 @@ public final class CellEffects {
     }
 
     /**
-     * Runs several effects on each cell, in the order given. The array is copied, so later changes
-     * to it have no effect.
+     * Returns an effect that runs several effects on each cell, in the order given. The array is
+     * copied, so later changes to it have no effect. An empty array gives an effect that does
+     * nothing.
      *
-     * @param effects effects to run, in order
+     * @param effects effects to run, in order; not null, and no null elements
+     * @return a new effect that runs each given effect in turn
      * @throws NullPointerException if the array or any effect is null
      */
     public static CellEffect combine(CellEffect... effects) {

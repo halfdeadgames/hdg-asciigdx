@@ -70,7 +70,16 @@ public final class Phase {
                 CellHash.hash(where.getColumn(), where.getRow(), 0, seed)));
     }
 
-    /** Returns the cell's phase in cycles. */
+    /**
+     * Returns the cell's phase, in cycles: 1 is one full period of the effect, so for repeating
+     * effects only the fractional part changes the look. The value is not wrapped. It is 0 for
+     * {@link #sync()}, from 0 up for {@link #alongColumns} and {@link #byDistance}, and from 0
+     * (inclusive) to 1 (exclusive) for {@link #scattered}.
+     *
+     * @param where the reused {@link ZoneCell} supplied during an apply; read it during the call
+     *     only; not null
+     * @return the phase in cycles
+     */
     public float getCyclesAt(ZoneCell where) {
         return source.getCyclesAt(where);
     }
