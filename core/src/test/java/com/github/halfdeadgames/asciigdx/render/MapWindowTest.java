@@ -21,14 +21,20 @@ class MapWindowTest {
     private static final int CELL = 16;
 
     private static final class SquareSource implements GlyphSource {
+        private final int cellSize;
+
+        SquareSource(int cellSize) {
+            this.cellSize = cellSize;
+        }
+
         @Override
         public int getCellWidth() {
-            return CELL;
+            return cellSize;
         }
 
         @Override
         public int getCellHeight() {
-            return CELL;
+            return cellSize;
         }
 
         @Override
@@ -48,7 +54,7 @@ class MapWindowTest {
 
     private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(COLUMNS, ROWS);
-    private final Layer layer = stack.add(grid, new SquareSource());
+    private final Layer layer = stack.add(grid, new SquareSource(CELL));
 
     private MapWindow enable() {
         layer.enableMapWindow();
@@ -107,6 +113,48 @@ class MapWindowTest {
 
         stack.setCamera(64f, 32f);
         assertEquals(4, window.getOriginColumn());
+    }
+
+    @Test
+    void cameraMovingTwoCellsShiftsTheOriginByTwoColumnsAndRows() {
+        MapWindow window = enable();
+
+        stack.setCamera(2 * CELL, 2 * CELL);
+
+        assertEquals(2, window.getOriginColumn());
+        assertEquals(2, window.getOriginRow());
+        assertEquals(2 * CELL, window.getOriginPixelsX(CELL));
+        assertEquals(2 * CELL, window.getOriginPixelsY(CELL));
+    }
+
+    @Test
+    void cameraMovingWithinOneCellKeepsTheOriginPixels() {
+        MapWindow window = enable();
+
+        stack.setCamera(CELL - 1, CELL - 1);
+
+        assertEquals(0, window.getOriginColumn());
+        assertEquals(0, window.getOriginRow());
+        assertEquals(0f, window.getOriginPixelsX(CELL));
+        assertEquals(0f, window.getOriginPixelsY(CELL));
+    }
+
+    @Test
+    void originPixelsAreTheOriginTimesTheCellSizeForEachLayer() {
+        Layer small = stack.add(new TerminalGrid(COLUMNS, ROWS), new SquareSource(8));
+        small.enableMapWindow();
+        MapWindow window = enable();
+
+        stack.setCamera(3 * CELL, 2 * CELL);
+
+        assertEquals(3, window.getOriginColumn());
+        assertEquals(6, small.getMapWindow().getOriginColumn());
+        assertEquals(3 * CELL, layer.getMapOriginPixelsX());
+        assertEquals(2 * CELL, layer.getMapOriginPixelsY());
+        assertEquals(6 * 8, small.getMapOriginPixelsX());
+        assertEquals(4 * 8, small.getMapOriginPixelsY());
+        assertEquals(3 * CELL, window.getOriginPixelsX(CELL));
+        assertEquals(4 * 8, small.getMapWindow().getOriginPixelsY(8));
     }
 
     @Test

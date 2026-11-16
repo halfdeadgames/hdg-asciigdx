@@ -176,8 +176,31 @@ public final class MapWindow {
         Arrays.fill(needsFill, true);
     }
 
-    MapWindowOrigin origin() {
-        return origin;
+    void followCamera(float cameraX, float cameraY, float cellWidth, float cellHeight) {
+        origin.follow(cameraX, cameraY, cellWidth, cellHeight);
+    }
+
+    /** Whether the latest {@link #followCamera} call moved the origin. */
+    boolean hasShifted() {
+        return origin.hasShifted();
+    }
+
+    /** Columns the origin moved in the latest {@link #followCamera} call. */
+    int getShiftColumns() {
+        return origin.getShiftColumns();
+    }
+
+    /** Rows the origin moved in the latest {@link #followCamera} call. */
+    int getShiftRows() {
+        return origin.getShiftRows();
+    }
+
+    float getOriginPixelsX(float cellWidth) {
+        return origin.getOriginColumn() * cellWidth;
+    }
+
+    float getOriginPixelsY(float cellHeight) {
+        return origin.getOriginRow() * cellHeight;
     }
 
     void detach() {

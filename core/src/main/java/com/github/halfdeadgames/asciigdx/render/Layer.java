@@ -967,26 +967,25 @@ public final class Layer {
             return;
         }
         updateMapWindowOrigin();
-        MapWindowOrigin origin = mapWindow.origin();
-        if (origin.hasShifted()) {
+        if (mapWindow.hasShifted()) {
             // Origins are bounded by MapWindowOrigin.MAX_ORIGIN, so negating the shift cannot overflow.
-            scrollContent(-origin.getShiftColumns(), -origin.getShiftRows());
+            scrollContent(-mapWindow.getShiftColumns(), -mapWindow.getShiftRows());
         }
     }
 
     /** Pixels the map origin column sits from the map's left edge, or 0 outside map window mode. */
     float getMapOriginPixelsX() {
-        return mapWindow == null ? 0f : mapWindow.origin().getOriginColumn() * glyphSource.getCellWidth();
+        return mapWindow == null ? 0f : mapWindow.getOriginPixelsX(glyphSource.getCellWidth());
     }
 
     /** Pixels the map origin row sits from the map's top edge, or 0 outside map window mode. */
     float getMapOriginPixelsY() {
-        return mapWindow == null ? 0f : mapWindow.origin().getOriginRow() * glyphSource.getCellHeight();
+        return mapWindow == null ? 0f : mapWindow.getOriginPixelsY(glyphSource.getCellHeight());
     }
 
     private void updateMapWindowOrigin() {
         requireAttached();
-        mapWindow.origin().follow(LayerPlacement.getActiveCameraX(this) * parallaxX,
+        mapWindow.followCamera(LayerPlacement.getActiveCameraX(this) * parallaxX,
                 LayerPlacement.getActiveCameraY(this) * parallaxY,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
     }
