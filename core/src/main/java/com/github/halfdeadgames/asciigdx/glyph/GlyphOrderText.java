@@ -124,8 +124,8 @@ public final class GlyphOrderText {
             boolean tooShort = row.length < columns && line != lastLine;
             if (!anyLength && (tooShort || row.length > columns)) {
                 throw new IllegalArgumentException(
-                    "Line " + (line + 1) + " has " + row.length + " glyphs but every row needs "
-                        + columns + (line == lastLine ? " or fewer" : ""));
+                        "Line " + (line + 1) + " has " + row.length + " glyphs but every row needs "
+                                + columns + (line == lastLine ? " or fewer" : ""));
             }
             for (int codePoint : row) {
                 slots.add(codePoint);
@@ -158,7 +158,8 @@ public final class GlyphOrderText {
                 throw malformedEscape(lineNumber, index);
             }
             String hex = line.substring(index + 3, close);
-            if (hex.isEmpty() || hex.length() > 6 || !hex.chars().allMatch(GlyphOrderText::isHexDigit)) {
+            if (hex.isEmpty() || hex.length() > 6 || !hex.chars()
+                    .allMatch(GlyphOrderText::isHexDigit)) {
                 throw malformedEscape(lineNumber, index);
             }
             int escaped = Integer.parseInt(hex, 16);
@@ -173,21 +174,22 @@ public final class GlyphOrderText {
 
     private static boolean needsEscape(int codePoint) {
         return codePoint == ESCAPE
-            || Character.isISOControl(codePoint)
-            || codePoint == 0x00A0
-            || codePoint == BYTE_ORDER_MARK
-            || Character.getType(codePoint) == Character.PRIVATE_USE
-            || Character.getType(codePoint) == Character.SURROGATE
-            || GlyphOrder.isVariationSelector(codePoint)
-            || codePoint == 0x2028
-            || codePoint == 0x2029;
+                || Character.isISOControl(codePoint)
+                || codePoint == 0x00A0
+                || codePoint == BYTE_ORDER_MARK
+                || Character.getType(codePoint) == Character.PRIVATE_USE
+                || Character.getType(codePoint) == Character.SURROGATE
+                || GlyphOrder.isVariationSelector(codePoint)
+                || codePoint == 0x2028
+                || codePoint == 0x2029;
     }
 
     private static void appendEscape(StringBuilder text, int codePoint) {
         if (codePoint == ESCAPE) {
             text.append("\\\\");
         } else {
-            text.append("\\u{").append(Integer.toHexString(codePoint).toUpperCase(Locale.ROOT)).append('}');
+            text.append("\\u{").append(Integer.toHexString(codePoint).toUpperCase(Locale.ROOT))
+                    .append('}');
         }
     }
 
@@ -201,8 +203,8 @@ public final class GlyphOrderText {
 
     private static IllegalArgumentException malformedEscape(int lineNumber, int index) {
         return new IllegalArgumentException(
-            "Malformed escape on line " + lineNumber + " at column " + (index + 1)
-                + "; use \\u{HEX} or \\\\");
+                "Malformed escape on line " + lineNumber + " at column " + (index + 1)
+                        + "; use \\u{HEX} or \\\\");
     }
 
     private static void requirePositiveColumns(int columns) {

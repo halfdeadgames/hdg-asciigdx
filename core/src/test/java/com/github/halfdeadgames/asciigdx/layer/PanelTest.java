@@ -38,20 +38,21 @@ class PanelTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                @Override
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+                        Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                }
 
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
+                @Override
+                public void setGlyphSource(GlyphSource glyphSource) {
+                }
 
-        @Override
-        public void dispose() {
-        }
-    });
+                @Override
+                public void dispose() {
+                }
+            });
 
     @Test
     void addPanelStoresPixelBounds() {
@@ -76,8 +77,10 @@ class PanelTest {
     @Test
     void addPanelInCellsRejectsNullSourceAndNegativeCounts() {
         assertThrows(IllegalArgumentException.class, () -> stack.addPanelInCells(0, 0, 1, 1, null));
-        assertThrows(IllegalArgumentException.class, () -> stack.addPanelInCells(0, 0, -1, 1, new FakeSource()));
-        assertThrows(IllegalArgumentException.class, () -> stack.addPanelInCells(0, 0, 1, -1, new FakeSource()));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.addPanelInCells(0, 0, -1, 1, new FakeSource()));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.addPanelInCells(0, 0, 1, -1, new FakeSource()));
     }
 
     @Test
@@ -92,7 +95,8 @@ class PanelTest {
     void nonFiniteValuesAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> stack.addPanel(Float.NaN, 0f, 5f, 5f));
         Panel panel = stack.addPanel(0f, 0f, 5f, 5f);
-        assertThrows(IllegalArgumentException.class, () -> panel.setPosition(0f, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> panel.setPosition(0f, Float.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> panel.setBounds(0f, 0f, Float.NaN, 5f));
     }
 

@@ -1,16 +1,17 @@
 package com.github.halfdeadgames.asciigdx.shape;
 
 /**
- * A one-cell-thick horizontal line. Its center is the middle of the line. It has no fill mode, and it needs
- * no aspect because all of its cells share one row.
+ * A one-cell-thick horizontal line. Its center is the middle of the line. It has no fill mode, and
+ * it needs no aspect because all of its cells share one row.
  *
- * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are visited
- * from left to right, as guaranteed by {@link CellShape}. {@link #forEachCell(ShapeCellVisitor)} allocates
- * nothing.
+ * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are
+ * visited from left to right, as guaranteed by {@link CellShape}.
+ * {@link #forEachCell(ShapeCellVisitor)} allocates nothing.
  *
  * <p>Instances are mutable and not thread-safe. A setter takes effect on the next
- * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from inside
- * its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape is unchanged.
+ * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from
+ * inside its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape
+ * is unchanged.
  */
 public final class HorizontalLineShape implements CellShape {
 
@@ -24,8 +25,8 @@ public final class HorizontalLineShape implements CellShape {
      * @param left   leftmost column, in cells; may be negative
      * @param row    row of the line, in cells; may be negative
      * @param length length in cells, at least 1
-     * @throws IllegalArgumentException if {@code length} is below 1, or if the last column would reach
-     *                                  {@link Integer#MAX_VALUE}
+     * @throws IllegalArgumentException if {@code length} is below 1, or if the last column would
+     *                                  reach {@link Integer#MAX_VALUE}
      */
     public HorizontalLineShape(int left, int row, int length) {
         ShapeMath.requireSpan(left, length, "length");
@@ -39,8 +40,8 @@ public final class HorizontalLineShape implements CellShape {
      *
      * @param left leftmost column, in cells; may be negative
      * @param row  row of the line, in cells; may be negative
-     * @throws IllegalArgumentException if the last column would reach {@link Integer#MAX_VALUE}; the shape
-     *                                  is then unchanged
+     * @throws IllegalArgumentException if the last column would reach {@link Integer#MAX_VALUE};
+     *                                  the shape is then unchanged
      */
     public void setPosition(int left, int row) {
         ShapeMath.requireSpan(left, length, "length");
@@ -52,8 +53,8 @@ public final class HorizontalLineShape implements CellShape {
      * Changes the length, keeping the leftmost cell.
      *
      * @param length length in cells, at least 1
-     * @throws IllegalArgumentException if {@code length} is below 1, or if the last column would reach
-     *                                  {@link Integer#MAX_VALUE}; the shape is then unchanged
+     * @throws IllegalArgumentException if {@code length} is below 1, or if the last column would
+     *                                  reach {@link Integer#MAX_VALUE}; the shape is then unchanged
      */
     public void setLength(int length) {
         ShapeMath.requireSpan(left, length, "length");
@@ -75,7 +76,8 @@ public final class HorizontalLineShape implements CellShape {
         final int right = getRight();
         for (int current = left; current <= right; current++) {
             final float distance = (float) Math.abs(current + 0.5 - (left + length / 2.0));
-            visitor.visit(current, row, distance, ShapeMath.distanceFraction(distance, largestDistance));
+            visitor.visit(current, row, distance,
+                    ShapeMath.distanceFraction(distance, largestDistance));
         }
     }
 

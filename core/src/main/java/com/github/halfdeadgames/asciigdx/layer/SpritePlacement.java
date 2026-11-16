@@ -22,7 +22,7 @@ final class SpritePlacement {
      * @param rotationDegrees clockwise rotation in degrees
      */
     static float xKeepingPlacement(float position, float pivotShiftX, float pivotShiftY,
-                                   float scaleX, float scaleY, float rotationDegrees) {
+            float scaleX, float scaleY, float rotationDegrees) {
         float yUpDegrees = -rotationDegrees;
         float sin = SpriteQuadWriter.exactSin(yUpDegrees);
         float cos = SpriteQuadWriter.exactCos(yUpDegrees);
@@ -32,7 +32,7 @@ final class SpritePlacement {
 
     /** Returns the position's new y; see {@link #xKeepingPlacement}. */
     static float yKeepingPlacement(float position, float pivotShiftX, float pivotShiftY,
-                                   float scaleX, float scaleY, float rotationDegrees) {
+            float scaleX, float scaleY, float rotationDegrees) {
         float yUpDegrees = -rotationDegrees;
         float sin = SpriteQuadWriter.exactSin(yUpDegrees);
         float cos = SpriteQuadWriter.exactCos(yUpDegrees);

@@ -321,14 +321,16 @@ class CellEffectsTest {
         RectangleShape shape = RectangleShape.forSquareCells(2, 2, 1, 1, ShapeFill.FILLED);
         EffectZone waveZone = new EffectZone(shape, CellEffects.combine(
                 CellEffects.wave(0.5f, 4f, Phase.sync())));
-        EffectZone nudgeZone = new EffectZone(shape, (cell, cellWhere, time) -> cell.offsetBy(0f, 1f));
+        EffectZone nudgeZone =
+                new EffectZone(shape, (cell, cellWhere, time) -> cell.offsetBy(0f, 1f));
 
         stack.beginCellEffects(0f);
         waveZone.apply(layer, 1f);
         nudgeZone.apply(layer, 1f);
 
         float layerCellHeight = layer.getGlyphSource().getCellHeight();
-        assertEquals(0.5f * layerCellHeight + 1f, layer.obtainFrameCellHandle(2, 2).getOffsetY(), DELTA);
+        assertEquals(
+                0.5f * layerCellHeight + 1f, layer.obtainFrameCellHandle(2, 2).getOffsetY(), DELTA);
     }
 
     @Test

@@ -143,7 +143,8 @@ class LayerStackCameraTest {
         float cornerX = STACK_X + OFFSET_X - 16f;
         float cornerY = STACK_Y - (OFFSET_Y - 12f);
 
-        stack.toCell(layer, STACK_X, STACK_Y, cornerX + CELL_WIDTH + 1f, cornerY - 2 * CELL_HEIGHT - 1f, cell);
+        stack.toCell(layer, STACK_X, STACK_Y, cornerX + CELL_WIDTH + 1f,
+                cornerY - 2 * CELL_HEIGHT - 1f, cell);
 
         assertEquals(1, cell.x);
         assertEquals(2, cell.y);
@@ -176,7 +177,8 @@ class LayerStackCameraTest {
         stack.setCamera(1f, 2f);
 
         assertThrows(IllegalArgumentException.class, () -> stack.setCamera(Float.NaN, 0f));
-        assertThrows(IllegalArgumentException.class, () -> stack.setCamera(0f, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.setCamera(0f, Float.POSITIVE_INFINITY));
         assertEquals(1f, stack.getCameraX());
         assertEquals(2f, stack.getCameraY());
     }
@@ -184,7 +186,8 @@ class LayerStackCameraTest {
     @Test
     void nonFiniteParallaxThrowsAndKeepsTheFactors() {
         assertThrows(IllegalArgumentException.class, () -> layer.setParallax(Float.NaN));
-        assertThrows(IllegalArgumentException.class, () -> layer.setParallax(1f, Float.NEGATIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> layer.setParallax(1f, Float.NEGATIVE_INFINITY));
         assertEquals(1f, layer.getParallaxX());
         assertEquals(1f, layer.getParallaxY());
     }

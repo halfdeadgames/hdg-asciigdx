@@ -111,7 +111,8 @@ class LayerPlacementTest {
 
         Vector2 topLeft = composeTopLeft();
 
-        // Origin is column 2, row 2 (8 by 12 cells), so the camera shift is cancelled by 16 and 24 pixels.
+        // Origin is column 2, row 2 (8 by 12 cells), so the camera shift is cancelled by 16 and 24
+        // pixels.
         assertEquals(96f, topLeft.x, TOLERANCE);
         assertEquals(206f, topLeft.y, TOLERANCE);
     }

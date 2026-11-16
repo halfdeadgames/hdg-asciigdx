@@ -18,13 +18,12 @@ import java.util.Objects;
  * {@link SpriteBatch}: one quad per cell, with the shader mixing the glyph over
  * the cell's background.
  *
- * <p>Vertices are kept in a {@link CellVertexCache} and mirrored in GPU meshes.
- * Each frame only the cells changed since the last draw are rewritten in the
- * cache; if any changed, the meshes are re-uploaded. Vertices are built around
- * a fixed origin and the draw position is applied as a translation on the GPU
- * matrix, so moving the draw position is free (no vertex rewrite or upload).
- * Position values are used as given, without rounding. Drawing flushes the batch and renders the meshes with
- * their own shader, then rebinds the batch's shader. The renderer owns a
+ * <p>Vertices are kept in a {@link CellVertexCache} and mirrored in GPU meshes. Each frame only the
+ * cells changed since the last draw are rewritten in the cache; if any changed, the meshes are
+ * re-uploaded. Vertices are built around a fixed origin and the draw position is applied as a
+ * translation on the GPU matrix, so moving the draw position is free (no vertex rewrite or upload).
+ * Position values are used as given, without rounding. Drawing flushes the batch and renders the
+ * meshes with their own shader, then rebinds the batch's shader. The renderer owns a
  * {@link DirtyTracker} on the grid and releases it on {@link #dispose()}.
  *
  * <p>All glyph regions of the source must share one texture, as is true for
@@ -72,13 +71,15 @@ public final class GridRenderer implements Disposable {
      * @throws NullPointerException if the grid or glyph source is null
      */
     public GridRenderer(TerminalView grid, GlyphSource glyphSource) {
-        this(Objects.requireNonNull(grid, "grid"), Objects.requireNonNull(glyphSource, "glyphSource"),
-            new GridRenderResources(), true);
+        this(Objects.requireNonNull(grid, "grid"),
+                Objects.requireNonNull(glyphSource, "glyphSource"),
+                new GridRenderResources(), true);
     }
 
     GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources) {
-        this(Objects.requireNonNull(grid, "grid"), Objects.requireNonNull(glyphSource, "glyphSource"),
-            resources, false);
+        this(Objects.requireNonNull(grid, "grid"),
+                Objects.requireNonNull(glyphSource, "glyphSource"),
+                resources, false);
     }
 
     private GridRenderer(TerminalView grid, GlyphSource glyphSource, GridRenderResources resources,
@@ -143,9 +144,9 @@ public final class GridRenderer implements Disposable {
     }
 
     /**
-     * Draws the grid like {@link #draw(SpriteBatch, float, float)}, applying the effects on
-     * the GPU in this order: saturation, tint, mix, invert, then alpha. Alpha fades each
-     * cell as one flat color; mix, saturation, and invert never change it. Changing the effects costs no vertex
+     * Draws the grid like {@link #draw(SpriteBatch, float, float)}, applying the effects on the GPU
+     * in this order: saturation, tint, mix, invert, then alpha. Alpha fades each cell as one flat
+     * color; mix, saturation, and invert never change it. Changing the effects costs no vertex
      * rewrite or upload.
      */
     void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects) {
@@ -158,7 +159,8 @@ public final class GridRenderer implements Disposable {
      * blending. With pixel snapping on, sprite and lifted cell positions are rounded; rotation and
      * scale are not.
      */
-    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites,
+    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+            Array<GlyphSprite> sprites,
             boolean pixelSnapping) {
         drawGrid(batch, layerTransform, effects, CellBlend.BATCH);
         drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.BATCH);
@@ -171,12 +173,14 @@ public final class GridRenderer implements Disposable {
     void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         drawGrid(batch, layerTransform, effects, CellBlend.PREMULTIPLIED_TARGET);
-        drawSprites(batch, layerTransform, effects, sprites, pixelSnapping, CellBlend.PREMULTIPLIED_TARGET);
+        drawSprites(batch, layerTransform, effects, sprites, pixelSnapping,
+                CellBlend.PREMULTIPLIED_TARGET);
     }
 
     private void drawSprites(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping, CellBlend blend) {
-        int quadCount = SpriteMesh.countDrawnLifted(cellHandles, grid) + SpriteMesh.countDrawn(sprites);
+        int quadCount =
+                SpriteMesh.countDrawnLifted(cellHandles, grid) + SpriteMesh.countDrawn(sprites);
         if (quadCount == 0) {
             return;
         }
@@ -188,7 +192,8 @@ public final class GridRenderer implements Disposable {
     }
 
     private void rebuildIfStale() {
-        if (glyphSourceChanged || grid.getColumns() != cachedColumns || grid.getRows() != cachedRows) {
+        if (glyphSourceChanged || grid.getColumns() != cachedColumns
+                || grid.getRows() != cachedRows) {
             glyphSourceChanged = false;
             mesh.dispose();
             createCacheAndMesh();
@@ -212,7 +217,8 @@ public final class GridRenderer implements Disposable {
     }
 
     private void indexHandle(CellHandle handle) {
-        if (handle.isDetached() || handle.getColumn() >= cachedColumns || handle.getRow() >= cachedRows) {
+        if (handle.isDetached() || handle.getColumn() >= cachedColumns
+                || handle.getRow() >= cachedRows) {
             return;
         }
         handlesByCell[handle.getRow() * cachedColumns + handle.getColumn()] = handle;
@@ -267,7 +273,8 @@ public final class GridRenderer implements Disposable {
         Arrays.fill(handlesByCell, null);
     }
 
-    private void drawGrid(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, CellBlend blend) {
+    private void drawGrid(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+            CellBlend blend) {
         rebuildIfStale();
         if (cache.isFullRebuildNeeded()) {
             for (int row = 0; row < grid.getRows(); row++) {
@@ -308,7 +315,8 @@ public final class GridRenderer implements Disposable {
     }
 
     static boolean isBlankGlyph(int codePoint, int foreground) {
-        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_CODE_POINT || CellVertexCache.isFullyTransparent(foreground);
+        return codePoint == ' ' || codePoint == TerminalGrid.EMPTY_CODE_POINT
+                || CellVertexCache.isFullyTransparent(foreground);
     }
 
     private void writeCell(int column, int row) {

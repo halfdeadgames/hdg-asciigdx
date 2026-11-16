@@ -20,7 +20,8 @@ public final class Tween implements FloatTrack {
         this(startSeconds, durationSeconds, from, to, Interpolation.linear);
     }
 
-    public Tween(float startSeconds, float durationSeconds, float from, float to, Interpolation easing) {
+    public Tween(float startSeconds, float durationSeconds, float from, float to,
+            Interpolation easing) {
         requireFinite("startSeconds", startSeconds);
         requireFinite("durationSeconds", durationSeconds);
         if (durationSeconds < 0f) {
@@ -43,7 +44,9 @@ public final class Tween implements FloatTrack {
         return from + (to - from) * progressAt(timeSeconds);
     }
 
-    /** Eased progress, 0 before the start and 1 from the end on. Inside the span it may overshoot. */
+    /**
+     * Eased progress, 0 before the start and 1 from the end on. Inside the span it may overshoot.
+     */
     public float progressAt(float timeSeconds) {
         if (timeSeconds >= end()) {
             return 1f;

@@ -33,7 +33,10 @@ final class SpriteMesh implements Disposable {
         pass = new CellShaderPass(shader);
     }
 
-    /** Returns the quad capacity to use so that {@code needed} quads fit, doubling from {@code current}. */
+    /**
+     * Returns the quad capacity to use so that {@code needed} quads fit, doubling from
+     * {@code current}.
+     */
     static int grownCapacity(int current, int needed) {
         int grown = Math.max(current, MIN_CAPACITY);
         while (grown < needed && grown < CellVertexLayout.MAX_QUADS_PER_MESH) {
@@ -57,7 +60,10 @@ final class SpriteMesh implements Disposable {
         return drawn;
     }
 
-    /** Returns whether any handle is lifted; used by the fade rule, so a blank lifted cell counts too. */
+    /**
+     * Returns whether any handle is lifted; used by the fade rule, so a blank lifted cell counts
+     * too.
+     */
     static boolean hasLifted(Array<CellHandle> cells) {
         for (int i = 0; i < cells.size; i++) {
             if (cells.get(i).isLifted()) {
@@ -82,7 +88,8 @@ final class SpriteMesh implements Disposable {
         if (!cell.isLifted()) {
             return false;
         }
-        return !GridRenderer.isBlankGlyph(resolvedCodePoint(cell, grid), resolvedForeground(cell, grid));
+        return !GridRenderer.isBlankGlyph(resolvedCodePoint(cell, grid),
+                resolvedForeground(cell, grid));
     }
 
     private static int resolvedCodePoint(CellHandle cell, TerminalView grid) {
@@ -98,14 +105,16 @@ final class SpriteMesh implements Disposable {
      * sprite (in order), and uploads only the used floats. Quads beyond {@code quadCount}, which
      * is capped at the mesh limit, are dropped.
      */
-    void upload(Array<CellHandle> cells, Array<GlyphSprite> sprites, TerminalView grid, int quadCount,
+    void upload(Array<CellHandle> cells, Array<GlyphSprite> sprites, TerminalView grid,
+            int quadCount,
             GlyphSource glyphSource, boolean pixelSnapping) {
         int limit = Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH);
         ensureCapacity(limit);
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
         int quad = writeLiftedCells(cells, grid, limit, glyphSource, pixelSnapping);
-        quad = writeSprites(quad, sprites, limit, glyphSource, cellWidth, cellHeight, pixelSnapping);
+        quad = writeSprites(quad, sprites, limit, glyphSource, cellWidth, cellHeight,
+                pixelSnapping);
         usedQuads = quad;
         mesh.setVertices(vertices, 0, usedQuads * CellVertexLayout.FLOATS_PER_QUAD);
     }
@@ -123,7 +132,8 @@ final class SpriteMesh implements Disposable {
         return quad;
     }
 
-    private int writeSprites(int firstQuad, Array<GlyphSprite> sprites, int limit, GlyphSource glyphSource,
+    private int writeSprites(int firstQuad, Array<GlyphSprite> sprites, int limit,
+            GlyphSource glyphSource,
             float cellWidth, float cellHeight, boolean pixelSnapping) {
         int quad = firstQuad;
         for (int i = 0; i < sprites.size && quad < limit; i++) {
@@ -147,15 +157,18 @@ final class SpriteMesh implements Disposable {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
         TextureRegion region = glyphSource.getGlyphRegion(resolvedCodePoint(cell, grid));
-        int color = CellColor.withAlphaScaled(resolvedForeground(cell, grid), cell.getAlphaMultiplier());
+        int color = CellColor.withAlphaScaled(resolvedForeground(cell, grid),
+                cell.getAlphaMultiplier());
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();
         if (pixelSnapping) {
             x = ClipMath.snap(x);
             y = ClipMath.snap(y);
         }
-        SpriteQuadWriter.writeQuad(vertices, quad * CellVertexLayout.FLOATS_PER_QUAD, cell, color, x, y,
-                cellWidth, cellHeight, region.getU(), region.getV(), region.getU2(), region.getV2());
+        SpriteQuadWriter.writeQuad(vertices, quad * CellVertexLayout.FLOATS_PER_QUAD, cell, color,
+                x, y,
+                cellWidth, cellHeight, region.getU(), region.getV(), region.getU2(),
+                region.getV2());
     }
 
     private void writeSprite(int quad, GlyphSprite sprite, GlyphSource glyphSource, float cellWidth,
@@ -164,7 +177,8 @@ final class SpriteMesh implements Disposable {
         float x = pixelSnapping ? ClipMath.snap(sprite.getX()) : sprite.getX();
         float y = pixelSnapping ? ClipMath.snap(sprite.getY()) : sprite.getY();
         SpriteQuadWriter.writeQuad(vertices, quad * CellVertexLayout.FLOATS_PER_QUAD, sprite, x, y,
-                cellWidth, cellHeight, region.getU(), region.getV(), region.getU2(), region.getV2());
+                cellWidth, cellHeight, region.getU(), region.getV(), region.getU2(),
+                region.getV2());
     }
 
     private void ensureCapacity(int quads) {
@@ -182,11 +196,16 @@ final class SpriteMesh implements Disposable {
         mesh.setIndices(GridMesh.createQuadIndices(capacity), 0, indexCount);
     }
 
-    /** Draws the uploaded quads like {@link GridMesh#draw}, always blended (never treated as opaque). */
-    void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform, ResolvedEffects effects,
+    /**
+     * Draws the uploaded quads like {@link GridMesh#draw}, always blended (never treated as
+     * opaque).
+     */
+    void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
+            ResolvedEffects effects,
             CellBlend blend) {
         pass.begin(batch, glyphTexture, layerTransform, effects, false, blend);
-        mesh.render(pass.getShader(), GL20.GL_TRIANGLES, 0, usedQuads * CellVertexLayout.INDICES_PER_QUAD);
+        mesh.render(pass.getShader(), GL20.GL_TRIANGLES, 0,
+                usedQuads * CellVertexLayout.INDICES_PER_QUAD);
         pass.end(batch);
     }
 

@@ -74,23 +74,24 @@ class LayerSpriteTest {
         }
     };
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            lastSprites = sprites;
-            lastSnapping = pixelSnapping;
-            drawCount++;
-        }
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                @Override
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+                        Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                    lastSprites = sprites;
+                    lastSnapping = pixelSnapping;
+                    drawCount++;
+                }
 
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
+                @Override
+                public void setGlyphSource(GlyphSource glyphSource) {
+                }
 
-        @Override
-        public void dispose() {
-        }
-    }, backend);
+                @Override
+                public void dispose() {
+                }
+            }, backend);
 
     private Layer addLayer() {
         return stack.add(new TerminalGrid(4, 3), new FakeSource());

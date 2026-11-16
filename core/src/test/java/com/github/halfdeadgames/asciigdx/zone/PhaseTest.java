@@ -90,6 +90,7 @@ class PhaseTest {
         assertThrows(IllegalArgumentException.class, () -> Phase.alongColumns(-1f));
         assertThrows(IllegalArgumentException.class, () -> Phase.alongColumns(Float.NaN));
         assertThrows(IllegalArgumentException.class, () -> Phase.byDistance(0f));
-        assertThrows(IllegalArgumentException.class, () -> Phase.byDistance(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> Phase.byDistance(Float.POSITIVE_INFINITY));
     }
 }

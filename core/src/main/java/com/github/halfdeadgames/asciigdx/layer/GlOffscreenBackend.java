@@ -26,25 +26,25 @@ final class GlOffscreenBackend implements OffscreenBackend {
 
     private static final String VERTEX_SOURCE =
             "attribute vec2 " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
-            + "attribute vec2 " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
-            + "varying vec2 v_texCoords;\n"
-            + "void main()\n"
-            + "{\n"
-            + "   v_texCoords = " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
-            + "   gl_Position = vec4(" + ShaderProgram.POSITION_ATTRIBUTE + ", 0.0, 1.0);\n"
-            + "}\n";
+                    + "attribute vec2 " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
+                    + "varying vec2 v_texCoords;\n"
+                    + "void main()\n"
+                    + "{\n"
+                    + "   v_texCoords = " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n"
+                    + "   gl_Position = vec4(" + ShaderProgram.POSITION_ATTRIBUTE + ", 0.0, 1.0);\n"
+                    + "}\n";
 
     private static final String FRAGMENT_SOURCE =
             "#ifdef GL_ES\n"
-            + "precision mediump float;\n"
-            + "#endif\n"
-            + "varying vec2 v_texCoords;\n"
-            + "uniform sampler2D u_texture;\n"
-            + "uniform float u_alpha;\n"
-            + "void main()\n"
-            + "{\n"
-            + "  gl_FragColor = texture2D(u_texture, v_texCoords) * u_alpha;\n"
-            + "}";
+                    + "precision mediump float;\n"
+                    + "#endif\n"
+                    + "varying vec2 v_texCoords;\n"
+                    + "uniform sampler2D u_texture;\n"
+                    + "uniform float u_alpha;\n"
+                    + "void main()\n"
+                    + "{\n"
+                    + "  gl_FragColor = texture2D(u_texture, v_texCoords) * u_alpha;\n"
+                    + "}";
 
     private final float[] quadVertices = new float[OffscreenFade.COMPOSITE_FLOATS];
     // GL may write up to 16 floats for a get call, so the buffer is larger than the 4 used.
@@ -80,7 +80,8 @@ final class GlOffscreenBackend implements OffscreenBackend {
     @Override
     public void composite(SpriteBatch batch, float alpha, int[] viewport) {
         Texture texture = target.getColorBufferTexture();
-        OffscreenFade.writeCompositeQuad(viewport, texture.getWidth(), texture.getHeight(), quadVertices);
+        OffscreenFade.writeCompositeQuad(viewport, texture.getWidth(), texture.getHeight(),
+                quadVertices);
         compositeQuad.setVertices(quadVertices);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFuncSeparate(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA,
@@ -103,7 +104,8 @@ final class GlOffscreenBackend implements OffscreenBackend {
             target.dispose();
         }
         target = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-        target.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        target.getColorBufferTexture()
+                .setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         ensureCompositeResources();
     }
 
@@ -127,9 +129,11 @@ final class GlOffscreenBackend implements OffscreenBackend {
 
     private static Mesh createCompositeQuad() {
         Mesh quad = new Mesh(false, 4, 6,
-                new VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
-                new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
-        quad.setIndices(new short[] {0, 1, 2, 2, 3, 0});
+                new VertexAttribute(VertexAttributes.Usage.Position, 2,
+                        ShaderProgram.POSITION_ATTRIBUTE),
+                new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2,
+                        ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+        quad.setIndices(new short[]{0, 1, 2, 2, 3, 0});
         return quad;
     }
 

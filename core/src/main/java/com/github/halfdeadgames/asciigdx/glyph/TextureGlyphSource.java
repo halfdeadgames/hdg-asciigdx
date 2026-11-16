@@ -48,7 +48,8 @@ public final class TextureGlyphSource implements GlyphSource {
     private boolean disposed;
 
     private TextureGlyphSource(
-        Texture texture, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot, IntPredicate presentInSheet) {
+            Texture texture, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot,
+            IntPredicate presentInSheet) {
         this.texture = texture;
         this.order = order;
         this.presentInSheet = presentInSheet;
@@ -56,11 +57,13 @@ public final class TextureGlyphSource implements GlyphSource {
         cellHeight = layout.getCellHeight();
         regionsBySlot = new TextureRegion[order.getGlyphCount()];
         TextureRegion fallback = new TextureRegion(
-            texture, layout.getSlotX(fallbackSlot), layout.getSlotY(fallbackSlot), cellWidth, cellHeight);
+                texture, layout.getSlotX(fallbackSlot), layout.getSlotY(fallbackSlot), cellWidth,
+                cellHeight);
         for (int slot = 0; slot < regionsBySlot.length; slot++) {
             regionsBySlot[slot] = presentInSheet.test(order.getCodePoint(slot))
-                ? new TextureRegion(texture, layout.getSlotX(slot), layout.getSlotY(slot), cellWidth, cellHeight)
-                : fallback;
+                    ? new TextureRegion(texture, layout.getSlotX(slot), layout.getSlotY(slot),
+                    cellWidth, cellHeight)
+                    : fallback;
         }
         fallbackRegion = fallback;
     }
@@ -85,7 +88,7 @@ public final class TextureGlyphSource implements GlyphSource {
      *         more glyphs than the layout has slots, or the order lacks {@code '?'}
      */
     public static TextureGlyphSource load(
-        FileHandle file, GlyphSheetLayout layout, GlyphOrder order, TransparencyMode mode) {
+            FileHandle file, GlyphSheetLayout layout, GlyphOrder order, TransparencyMode mode) {
         return load(file, layout, order, mode, DEFAULT_FALLBACK_CODE_POINT);
     }
 
@@ -108,17 +111,20 @@ public final class TextureGlyphSource implements GlyphSource {
      * @param layout where the glyph cells are in the image; must not be null
      * @param order which code point each slot holds; must not be null
      * @param mode whether to convert the image to white glyphs with alpha; must not be null
-     * @param fallbackCodePoint code point whose glyph stands in for missing ones; must be in the order
+     * @param fallbackCodePoint code point whose glyph stands in for missing ones; must be in the
+     *        order
      * @return the loaded source
-     * @throws NullPointerException if {@code file}, {@code layout}, {@code order}, or {@code mode} is null
+     * @throws NullPointerException if {@code file}, {@code layout}, {@code order}, or {@code mode}
+     *         is null
      * @throws IllegalArgumentException if the image is smaller than the layout needs, the order has
      *         more glyphs than the layout has slots, or the order lacks the fallback
      */
     public static TextureGlyphSource load(
-        FileHandle file, GlyphSheetLayout layout, GlyphOrder order, TransparencyMode mode, int fallbackCodePoint) {
+            FileHandle file, GlyphSheetLayout layout, GlyphOrder order, TransparencyMode mode,
+            int fallbackCodePoint) {
         return loadFile(
-            file, layout, order, mode, fallbackCodePoint,
-            pixmap -> GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(pixmap, mode));
+                file, layout, order, mode, fallbackCodePoint,
+                pixmap -> GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(pixmap, mode));
     }
 
     /**
@@ -141,31 +147,33 @@ public final class TextureGlyphSource implements GlyphSource {
      * @param mode whether to convert the image to white glyphs with alpha; must not be null
      * @param keyRgba8888 the key color as an RGBA8888 int ({@code 0xRRGGBBAA}); pixels matching it
      *        become transparent. Its alpha byte is ignored by the conversion
-     * @param fallbackCodePoint code point whose glyph stands in for missing ones; must be in the order
+     * @param fallbackCodePoint code point whose glyph stands in for missing ones; must be in the
+     *        order
      * @return the loaded source
-     * @throws NullPointerException if {@code file}, {@code layout}, {@code order}, or {@code mode} is null
+     * @throws NullPointerException if {@code file}, {@code layout}, {@code order}, or {@code mode}
+     *         is null
      * @throws IllegalArgumentException if the image is smaller than the layout needs, the order has
      *         more glyphs than the layout has slots, or the order lacks the fallback
      */
     public static TextureGlyphSource loadWithColorKey(
-        FileHandle file,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        TransparencyMode mode,
-        int keyRgba8888,
-        int fallbackCodePoint) {
+            FileHandle file,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            TransparencyMode mode,
+            int keyRgba8888,
+            int fallbackCodePoint) {
         return loadFile(
-            file, layout, order, mode, fallbackCodePoint,
-            pixmap -> GlyphSheetLoader.applyTransparencyMode(pixmap, mode, keyRgba8888));
+                file, layout, order, mode, fallbackCodePoint,
+                pixmap -> GlyphSheetLoader.applyTransparencyMode(pixmap, mode, keyRgba8888));
     }
 
     private static TextureGlyphSource loadFile(
-        FileHandle file,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        TransparencyMode mode,
-        int fallbackCodePoint,
-        UnaryOperator<Pixmap> transparencyStep) {
+            FileHandle file,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            TransparencyMode mode,
+            int fallbackCodePoint,
+            UnaryOperator<Pixmap> transparencyStep) {
         Objects.requireNonNull(file, "file must not be null");
         Objects.requireNonNull(layout, "layout must not be null");
         Objects.requireNonNull(order, "order must not be null");
@@ -174,11 +182,12 @@ public final class TextureGlyphSource implements GlyphSource {
         int fallbackSlot = order.findSlot(fallbackCodePoint);
         if (fallbackSlot < 0) {
             throw new IllegalArgumentException(
-                "Order has no glyph for fallback code point " + fallbackCodePoint);
+                    "Order has no glyph for fallback code point " + fallbackCodePoint);
         }
 
         return convertAndUpload(
-            new Pixmap(file), file.path(), layout, order, transparencyStep, fallbackSlot, GlyphFilter.NEAREST);
+                new Pixmap(file), file.path(), layout, order, transparencyStep, fallbackSlot,
+                GlyphFilter.NEAREST);
     }
 
     /**
@@ -204,7 +213,8 @@ public final class TextureGlyphSource implements GlyphSource {
      *         malformed or does not fit the image, or it lacks {@code '?'}
      */
     public static TextureGlyphSource loadSheet(
-        FileHandle image, FileHandle characterList, int cellWidth, int cellHeight, TransparencyMode mode) {
+            FileHandle image, FileHandle characterList, int cellWidth, int cellHeight,
+            TransparencyMode mode) {
         return loadSheet(image, characterList, cellWidth, cellHeight, mode, GlyphFilter.NEAREST);
     }
 
@@ -235,41 +245,42 @@ public final class TextureGlyphSource implements GlyphSource {
      *         malformed or does not fit the image, or it lacks {@code '?'}
      */
     public static TextureGlyphSource loadSheet(
-        FileHandle image,
-        FileHandle characterList,
-        int cellWidth,
-        int cellHeight,
-        TransparencyMode mode,
-        GlyphFilter filter) {
+            FileHandle image,
+            FileHandle characterList,
+            int cellWidth,
+            int cellHeight,
+            TransparencyMode mode,
+            GlyphFilter filter) {
         Objects.requireNonNull(image, "image must not be null");
         Objects.requireNonNull(characterList, "characterList must not be null");
         Objects.requireNonNull(mode, "mode must not be null");
         Objects.requireNonNull(filter, "filter must not be null");
         if (cellWidth <= 0 || cellHeight <= 0) {
-            throw new IllegalArgumentException("Cell size must be positive, was " + cellWidth + "x" + cellHeight);
+            throw new IllegalArgumentException(
+                    "Cell size must be positive, was " + cellWidth + "x" + cellHeight);
         }
         GlyphSheetLoader.LoadedSheet sheet = GlyphSheetLoader.readSheet(
-            image, characterList, cellWidth, cellHeight, DEFAULT_FALLBACK_CODE_POINT);
+                image, characterList, cellWidth, cellHeight, DEFAULT_FALLBACK_CODE_POINT);
         return convertAndUpload(
-            sheet.pixmap(),
-            image.path(),
-            sheet.layout(),
-            sheet.order(),
-            pixmap -> GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(pixmap, mode),
-            sheet.fallbackSlot(),
-            filter);
+                sheet.pixmap(),
+                image.path(),
+                sheet.layout(),
+                sheet.order(),
+                pixmap -> GlyphSheetLoader.applyTransparencyModeWithTopLeftKey(pixmap, mode),
+                sheet.fallbackSlot(),
+                filter);
     }
 
     // Takes ownership of the pixmap and disposes it, also when this method throws.
     // The transparency step follows the GlyphSheetLoader.applyTransparencyMode ownership rules.
     private static TextureGlyphSource convertAndUpload(
-        Pixmap pixmap,
-        String path,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        UnaryOperator<Pixmap> transparencyStep,
-        int fallbackSlot,
-        GlyphFilter filter) {
+            Pixmap pixmap,
+            String path,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            UnaryOperator<Pixmap> transparencyStep,
+            int fallbackSlot,
+            GlyphFilter filter) {
         Pixmap ready = pixmap;
         try {
             GlyphSheetLoader.requireImageFits(pixmap, "Image " + path, layout);
@@ -307,8 +318,10 @@ public final class TextureGlyphSource implements GlyphSource {
      *         the sheet
      */
     public static TextureGlyphSource fromPixmap(
-        Pixmap sheet, GlyphSheetLayout layout, GlyphOrder order, IntPredicate presentInSheet, int fallbackCodePoint) {
-        return fromPixmap(sheet, layout, order, presentInSheet, fallbackCodePoint, GlyphFilter.NEAREST);
+            Pixmap sheet, GlyphSheetLayout layout, GlyphOrder order, IntPredicate presentInSheet,
+            int fallbackCodePoint) {
+        return fromPixmap(sheet, layout, order, presentInSheet, fallbackCodePoint,
+                GlyphFilter.NEAREST);
     }
 
     /**
@@ -341,12 +354,12 @@ public final class TextureGlyphSource implements GlyphSource {
      *         the sheet
      */
     public static TextureGlyphSource fromPixmap(
-        Pixmap sheet,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        IntPredicate presentInSheet,
-        int fallbackCodePoint,
-        GlyphFilter filter) {
+            Pixmap sheet,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            IntPredicate presentInSheet,
+            int fallbackCodePoint,
+            GlyphFilter filter) {
         try {
             Objects.requireNonNull(filter, "filter must not be null");
             Objects.requireNonNull(sheet, "sheet must not be null");
@@ -357,7 +370,7 @@ public final class TextureGlyphSource implements GlyphSource {
             int fallbackSlot = order.findSlot(fallbackCodePoint);
             if (fallbackSlot < 0 || !presentInSheet.test(fallbackCodePoint)) {
                 throw new IllegalArgumentException(
-                    "Sheet has no glyph for fallback code point " + fallbackCodePoint);
+                        "Sheet has no glyph for fallback code point " + fallbackCodePoint);
             }
             GlyphSheetLoader.requireImageFits(sheet, "Sheet", layout);
             return upload(sheet, layout, order, fallbackSlot, presentInSheet, filter);
@@ -370,36 +383,39 @@ public final class TextureGlyphSource implements GlyphSource {
 
     // Does not dispose the given pixmap; the caller keeps ownership.
     private static TextureGlyphSource upload(
-        Pixmap pixmap,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        int fallbackSlot,
-        IntPredicate presentInSheet,
-        GlyphFilter filter) {
+            Pixmap pixmap,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            int fallbackSlot,
+            IntPredicate presentInSheet,
+            GlyphFilter filter) {
         if (filter == GlyphFilter.LINEAR) {
             return uploadPadded(pixmap, layout, order, fallbackSlot, presentInSheet);
         }
-        return uploadTexture(pixmap, layout, order, fallbackSlot, presentInSheet, Texture.TextureFilter.Nearest);
+        return uploadTexture(pixmap, layout, order, fallbackSlot, presentInSheet,
+                Texture.TextureFilter.Nearest);
     }
 
     private static TextureGlyphSource uploadPadded(
-        Pixmap pixmap, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot, IntPredicate presentInSheet) {
+            Pixmap pixmap, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot,
+            IntPredicate presentInSheet) {
         GlyphSheetLayout paddedLayout = PaddedSheet.layoutFor(layout);
         Pixmap padded = PaddedSheet.copy(pixmap, layout, paddedLayout, order.getGlyphCount());
         try {
-            return uploadTexture(padded, paddedLayout, order, fallbackSlot, presentInSheet, Texture.TextureFilter.Linear);
+            return uploadTexture(padded, paddedLayout, order, fallbackSlot, presentInSheet,
+                    Texture.TextureFilter.Linear);
         } finally {
             padded.dispose();
         }
     }
 
     private static TextureGlyphSource uploadTexture(
-        Pixmap pixmap,
-        GlyphSheetLayout layout,
-        GlyphOrder order,
-        int fallbackSlot,
-        IntPredicate presentInSheet,
-        Texture.TextureFilter textureFilter) {
+            Pixmap pixmap,
+            GlyphSheetLayout layout,
+            GlyphOrder order,
+            int fallbackSlot,
+            IntPredicate presentInSheet,
+            Texture.TextureFilter textureFilter) {
         Texture texture = new Texture(pixmap, false);
         try {
             texture.setFilter(textureFilter, textureFilter);
@@ -457,12 +473,12 @@ public final class TextureGlyphSource implements GlyphSource {
         Objects.requireNonNull(size, "size must not be null");
         Objects.requireNonNull(filter, "filter must not be null");
         return loadSheet(
-            Gdx.files.classpath(size.getSheetPath()),
-            Gdx.files.classpath(size.getCharacterListPath()),
-            size.getCellWidth(),
-            size.getCellHeight(),
-            TransparencyMode.AUTO,
-            filter);
+                Gdx.files.classpath(size.getSheetPath()),
+                Gdx.files.classpath(size.getCharacterListPath()),
+                size.getCellWidth(),
+                size.getCellHeight(),
+                TransparencyMode.AUTO,
+                filter);
     }
 
     @Override

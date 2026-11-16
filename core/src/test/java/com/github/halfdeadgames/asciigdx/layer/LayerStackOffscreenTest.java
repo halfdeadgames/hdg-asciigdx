@@ -108,7 +108,8 @@ class LayerStackOffscreenTest {
         }
 
         @Override
-        public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+        public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform,
+                ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             events.add("drawPremultiplied alpha " + effects.getAlpha() + " "
                     + Arrays.toString(effects.getMatrix().getValues()));

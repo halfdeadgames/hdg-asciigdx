@@ -132,7 +132,8 @@ class DirtyTrackerTest {
         DirtyTracker tracker = grid.createDirtyTracker();
         tracker.markAllClean();
 
-        grid.set(1, 1, TerminalGrid.EMPTY_CODE_POINT, TerminalGrid.TRANSPARENT_RGBA, TerminalGrid.TRANSPARENT_RGBA);
+        grid.set(1, 1, TerminalGrid.EMPTY_CODE_POINT, TerminalGrid.TRANSPARENT_RGBA,
+                TerminalGrid.TRANSPARENT_RGBA);
 
         assertFalse(tracker.hasDirtyCells());
     }
@@ -234,7 +235,8 @@ class DirtyTrackerTest {
     void forEachDirtyCellDoesNotClearFlags() {
         DirtyTracker tracker = new TerminalGrid(3, 2).createDirtyTracker();
 
-        tracker.forEachDirtyCell((x, y) -> { });
+        tracker.forEachDirtyCell((x, y) -> {
+        });
 
         assertTrue(tracker.isDirty(0, 0));
         assertTrue(tracker.isDirty(2, 1));

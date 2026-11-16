@@ -45,20 +45,21 @@ class LayerPivotKeepingPlacementTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                @Override
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+                        Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                }
 
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
+                @Override
+                public void setGlyphSource(GlyphSource glyphSource) {
+                }
 
-        @Override
-        public void dispose() {
-        }
-    });
+                @Override
+                public void dispose() {
+                }
+            });
     private final Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource());
     private final Vector2 world = new Vector2();
 
@@ -71,7 +72,8 @@ class LayerPivotKeepingPlacementTest {
     private float[] recordWorldPoints() {
         float[] recorded = new float[SAMPLE_POINTS.length * 2];
         for (int i = 0; i < SAMPLE_POINTS.length; i++) {
-            stack.toWorldPoint(layer, STACK_X, STACK_Y, SAMPLE_POINTS[i][0], SAMPLE_POINTS[i][1], world);
+            stack.toWorldPoint(
+                    layer, STACK_X, STACK_Y, SAMPLE_POINTS[i][0], SAMPLE_POINTS[i][1], world);
             recorded[i * 2] = world.x;
             recorded[i * 2 + 1] = world.y;
         }
@@ -194,8 +196,10 @@ class LayerPivotKeepingPlacementTest {
     @Test
     void helperMatchesHandWorkedQuarterTurn() {
         // M = 2 * [0 -1; 1 0], shift (3, 1): (I - M)shift = (3 + 2, 1 - 6) = (5, -5).
-        assertEquals(10f - 5f, LayerTransform.offsetXKeepingPlacement(10f, 3f, 1f, 2f, 90f), TOLERANCE);
-        assertEquals(20f + 5f, LayerTransform.offsetYKeepingPlacement(20f, 3f, 1f, 2f, 90f), TOLERANCE);
+        assertEquals(10f - 5f, LayerTransform.offsetXKeepingPlacement(10f, 3f, 1f, 2f, 90f),
+                TOLERANCE);
+        assertEquals(20f + 5f, LayerTransform.offsetYKeepingPlacement(20f, 3f, 1f, 2f, 90f),
+                TOLERANCE);
     }
 
     @Test

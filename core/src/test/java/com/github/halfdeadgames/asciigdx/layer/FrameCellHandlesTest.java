@@ -42,7 +42,8 @@ class FrameCellHandlesTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final Layer layer = stack.add(new TerminalGrid(6, 4), new FakeSource());
 
     @Test

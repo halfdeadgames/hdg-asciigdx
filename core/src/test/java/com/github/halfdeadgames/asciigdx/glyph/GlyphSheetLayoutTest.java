@@ -58,7 +58,8 @@ class GlyphSheetLayoutTest {
 
     @Test
     void slotCountOverflowThrowsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> GlyphSheetLayout.packed(1, 1, 65536, 65536));
+        assertThrows(IllegalArgumentException.class,
+                () -> GlyphSheetLayout.packed(1, 1, 65536, 65536));
     }
 
     @Test
@@ -70,6 +71,6 @@ class GlyphSheetLayoutTest {
         assertThrows(IllegalArgumentException.class, () -> new GlyphSheetLayout(8, 8, 1, 1, -1, 0));
         assertThrows(IllegalArgumentException.class, () -> new GlyphSheetLayout(8, 8, 1, 1, 0, -1));
         assertThrows(IllegalArgumentException.class,
-            () -> GlyphSheetLayout.packed(Integer.MAX_VALUE, 8, 2, 1));
+                () -> GlyphSheetLayout.packed(Integer.MAX_VALUE, 8, 2, 1));
     }
 }

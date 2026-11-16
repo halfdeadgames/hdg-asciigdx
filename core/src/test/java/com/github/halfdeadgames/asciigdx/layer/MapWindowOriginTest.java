@@ -139,7 +139,8 @@ class MapWindowOriginTest {
     void invalidCellSizeIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> MapWindowOrigin.originFor(0f, 0f, 0));
         assertThrows(IllegalArgumentException.class, () -> MapWindowOrigin.originFor(0f, -8f, 0));
-        assertThrows(IllegalArgumentException.class, () -> MapWindowOrigin.originFor(0f, Float.NaN, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> MapWindowOrigin.originFor(0f, Float.NaN, 0));
         assertThrows(IllegalArgumentException.class,
                 () -> MapWindowOrigin.originFor(0f, Float.POSITIVE_INFINITY, 0));
     }
@@ -152,7 +153,8 @@ class MapWindowOriginTest {
         assertEquals(-max, MapWindowOrigin.originFor(Float.NEGATIVE_INFINITY, CELL, 0));
         assertEquals(max, MapWindowOrigin.originFor(1e30f, CELL, 0));
         assertEquals(-max, MapWindowOrigin.originFor(-1e30f, CELL, 0));
-        assertEquals(-max, MapWindowOrigin.originFor(Float.POSITIVE_INFINITY, CELL, Integer.MAX_VALUE));
+        assertEquals(-max,
+                MapWindowOrigin.originFor(Float.POSITIVE_INFINITY, CELL, Integer.MAX_VALUE));
     }
 
     @Test

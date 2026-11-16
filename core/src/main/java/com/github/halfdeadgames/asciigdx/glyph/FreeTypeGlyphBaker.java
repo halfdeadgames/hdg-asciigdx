@@ -62,11 +62,12 @@ public final class FreeTypeGlyphBaker {
      *         glyph
      * @see #bake(FileHandle, int, GlyphOrder, int, boolean)
      */
-    public static TextureGlyphSource loadSource(FileHandle fontFile, int cellHeight, GlyphOrder order) {
+    public static TextureGlyphSource loadSource(FileHandle fontFile, int cellHeight,
+            GlyphOrder order) {
         BakedSheet baked = bake(fontFile, cellHeight, order);
         return TextureGlyphSource.fromPixmap(
-            baked.getPixmap(), baked.getLayout(), order, baked::hasGlyph,
-            TextureGlyphSource.DEFAULT_FALLBACK_CODE_POINT);
+                baked.getPixmap(), baked.getLayout(), order, baked::hasGlyph,
+                TextureGlyphSource.DEFAULT_FALLBACK_CODE_POINT);
     }
 
     /**
@@ -120,7 +121,7 @@ public final class FreeTypeGlyphBaker {
      *         not a valid font
      */
     public static BakedSheet bake(
-        FileHandle fontFile, int cellHeight, GlyphOrder order, int columns, boolean pixelFont) {
+            FileHandle fontFile, int cellHeight, GlyphOrder order, int columns, boolean pixelFont) {
         Objects.requireNonNull(fontFile, "fontFile must not be null");
         Objects.requireNonNull(order, "order must not be null");
         if (cellHeight <= 0) {
@@ -130,7 +131,8 @@ public final class FreeTypeGlyphBaker {
             throw new IllegalArgumentException("Columns must be positive, was " + columns);
         }
 
-        int loadFlags = FreeType.FT_LOAD_NO_HINTING | (pixelFont ? FreeType.FT_LOAD_TARGET_MONO : 0);
+        int loadFlags =
+                FreeType.FT_LOAD_NO_HINTING | (pixelFont ? FreeType.FT_LOAD_TARGET_MONO : 0);
         int renderMode = pixelFont ? FreeType.FT_RENDER_MODE_MONO : FreeType.FT_RENDER_MODE_NORMAL;
 
         FreeType.Library library = FreeType.initFreeType();
@@ -139,10 +141,12 @@ public final class FreeTypeGlyphBaker {
             try {
                 int fontUnitsPerCell = face.getAscender() - face.getDescender();
                 if (fontUnitsPerCell <= 0) {
-                    throw new IllegalArgumentException("Font has no usable ascent and descent: " + fontFile);
+                    throw new IllegalArgumentException(
+                            "Font has no usable ascent and descent: " + fontFile);
                 }
                 int emSubpixels = Math.round(
-                    (float) cellHeight * SUBPIXEL_UNITS_PER_PIXEL * unitsPerEm(face) / fontUnitsPerCell);
+                        (float) cellHeight * SUBPIXEL_UNITS_PER_PIXEL * unitsPerEm(face)
+                                / fontUnitsPerCell);
                 // At 72 dpi, FreeType's 1/64 point equals 1/64 pixel, which allows a fractional em.
                 face.setCharSize(0, emSubpixels, POINTS_PER_INCH, POINTS_PER_INCH);
                 int ascent = Math.round((float) cellHeight * face.getAscender() / fontUnitsPerCell);
@@ -161,11 +165,13 @@ public final class FreeTypeGlyphBaker {
         int probeEmPixels = 1000;
         face.setPixelSizes(0, probeEmPixels);
         long yScale = face.getSize().getMetrics().getYscale();
-        return Math.round((float) ((long) probeEmPixels * SUBPIXEL_UNITS_PER_PIXEL * 65536L) / yScale);
+        return Math.round(
+                (float) ((long) probeEmPixels * SUBPIXEL_UNITS_PER_PIXEL * 65536L) / yScale);
     }
 
     private static BakedSheet bake(
-        FreeType.Face face, GlyphOrder order, int columns, int loadFlags, int renderMode, int cellHeight, int ascent) {
+            FreeType.Face face, GlyphOrder order, int columns, int loadFlags, int renderMode,
+            int cellHeight, int ascent) {
         IntSet present = new IntSet();
         int cellWidth = 1;
         for (int slot = 0; slot < order.getGlyphCount(); slot++) {
@@ -180,7 +186,8 @@ public final class FreeTypeGlyphBaker {
 
         int rows = (order.getGlyphCount() + columns - 1) / columns;
         GlyphSheetLayout layout = GlyphSheetLayout.packed(cellWidth, cellHeight, columns, rows);
-        Pixmap sheet = new Pixmap(layout.getRequiredImageWidth(), layout.getRequiredImageHeight(), Pixmap.Format.RGBA8888);
+        Pixmap sheet = new Pixmap(layout.getRequiredImageWidth(), layout.getRequiredImageHeight(),
+                Pixmap.Format.RGBA8888);
         try {
             sheet.setBlending(Pixmap.Blending.None);
             sheet.setColor(0f, 0f, 0f, 0f);
@@ -199,14 +206,14 @@ public final class FreeTypeGlyphBaker {
     }
 
     private static void drawGlyph(
-        FreeType.Face face,
-        int codePoint,
-        int loadFlags,
-        int renderMode,
-        Pixmap sheet,
-        GlyphSheetLayout layout,
-        int slot,
-        int ascent) {
+            FreeType.Face face,
+            int codePoint,
+            int loadFlags,
+            int renderMode,
+            Pixmap sheet,
+            GlyphSheetLayout layout,
+            int slot,
+            int ascent) {
         if (!face.loadChar(codePoint, loadFlags)) {
             return;
         }
@@ -234,20 +241,21 @@ public final class FreeTypeGlyphBaker {
                 return;
             }
             sheet.drawPixmap(
-                glyph,
-                layout.getSlotX(slot) + clippedLeft,
-                layout.getSlotY(slot) + clippedTop,
-                clippedLeft - offsetX,
-                clippedTop - offsetY,
-                clippedRight - clippedLeft,
-                clippedBottom - clippedTop);
+                    glyph,
+                    layout.getSlotX(slot) + clippedLeft,
+                    layout.getSlotY(slot) + clippedTop,
+                    clippedLeft - offsetX,
+                    clippedTop - offsetY,
+                    clippedRight - clippedLeft,
+                    clippedBottom - clippedTop);
         } finally {
             glyph.dispose();
         }
     }
 
     private static int roundToPixels(int subpixelUnits) {
-        return Math.floorDiv(subpixelUnits + SUBPIXEL_UNITS_PER_PIXEL / 2, SUBPIXEL_UNITS_PER_PIXEL);
+        return Math.floorDiv(subpixelUnits + SUBPIXEL_UNITS_PER_PIXEL / 2,
+                SUBPIXEL_UNITS_PER_PIXEL);
     }
 
     /**

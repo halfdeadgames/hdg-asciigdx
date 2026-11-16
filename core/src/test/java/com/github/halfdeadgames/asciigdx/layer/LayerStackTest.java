@@ -74,7 +74,7 @@ class LayerStackTest {
         public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
                 Array<GlyphSprite> sprites, boolean pixelSnapping) {
             drawLog.add(name);
-            positions.add(new float[] {layerTransform.m02, layerTransform.m12});
+            positions.add(new float[]{layerTransform.m02, layerTransform.m12});
             transforms.add(new Affine2(layerTransform));
             alphas.add(effects.getAlpha());
             matrices.add(effects.getMatrix().getValues().clone());
@@ -170,8 +170,10 @@ class LayerStackTest {
     @Test
     void insertRejectsBadIndex() {
         addLayer();
-        assertThrows(IndexOutOfBoundsException.class, () -> stack.insert(2, new TerminalGrid(2, 2), font));
-        assertThrows(IndexOutOfBoundsException.class, () -> stack.insert(-1, new TerminalGrid(2, 2), font));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> stack.insert(2, new TerminalGrid(2, 2), font));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> stack.insert(-1, new TerminalGrid(2, 2), font));
     }
 
     @Test
@@ -408,8 +410,10 @@ class LayerStackTest {
     void rotationRejectsValuesThatAreNotFinite() {
         Layer layer = addLayer();
         assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.NaN));
-        assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.POSITIVE_INFINITY));
-        assertThrows(IllegalArgumentException.class, () -> layer.setRotation(Float.NEGATIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> layer.setRotation(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> layer.setRotation(Float.NEGATIVE_INFINITY));
         assertEquals(0f, layer.getRotation());
     }
 
@@ -759,7 +763,8 @@ class LayerStackTest {
 
     @Test
     void layerFromAnotherStackIsRejected() {
-        LayerStack other = TestStacks.withRenderers((grid, source, shared) -> new FakeRenderer("other", drawLog));
+        LayerStack other = TestStacks.withRenderers(
+                (grid, source, shared) -> new FakeRenderer("other", drawLog));
         Layer foreign = other.add(new TerminalGrid(2, 2), font);
         addLayer();
 
@@ -803,7 +808,8 @@ class LayerStackTest {
     void removedLayerCannotChangeGlyphSource() {
         Layer layer = addLayer();
         stack.remove(layer);
-        assertThrows(IllegalStateException.class, () -> layer.setGlyphSource(new FakeSource(16, 24)));
+        assertThrows(IllegalStateException.class,
+                () -> layer.setGlyphSource(new FakeSource(16, 24)));
         assertSame(font, layer.getGlyphSource());
         assertEquals(0, renderers.get(0).glyphSources.size());
     }

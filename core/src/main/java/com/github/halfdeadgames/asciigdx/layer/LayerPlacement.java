@@ -33,9 +33,11 @@ final class LayerPlacement {
         return pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
     }
 
-    static void compose(Layer layer, float stackX, float stackY, boolean pixelSnapping, Affine2 out) {
+    static void compose(Layer layer, float stackX, float stackY, boolean pixelSnapping,
+            Affine2 out) {
         Panel panel = layer.getPanel();
-        // Zero for plain layers; for map windows it cancels the whole cells the content already scrolled.
+        // Zero for plain layers; for map windows it cancels the whole cells the content already
+        // scrolled.
         float mapOriginX = layer.getMapOriginPixelsX();
         float mapOriginY = layer.getMapOriginPixelsY();
         float effectiveOffsetX = getPanelCornerX(panel) + layer.getOffsetX()
@@ -44,7 +46,9 @@ final class LayerPlacement {
                 - getActiveCameraY(layer) * layer.getParallaxY() + mapOriginY;
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
-        LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX, layer.getPivotY() - mapOriginY,
-                layer.getEffectiveZoom(), layer.getRotation(), isCornerSnapped(layer, pixelSnapping), out);
+        LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX,
+                layer.getPivotY() - mapOriginY,
+                layer.getEffectiveZoom(), layer.getRotation(),
+                isCornerSnapped(layer, pixelSnapping), out);
     }
 }

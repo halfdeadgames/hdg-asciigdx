@@ -32,18 +32,20 @@ public final class GlyphSheetLayout {
      * @throws IllegalArgumentException if a size or count is not positive, margin or
      *         spacing is negative, or the resulting image size does not fit in an int
      */
-    public GlyphSheetLayout(int cellWidth, int cellHeight, int columns, int rows, int margin, int spacing) {
+    public GlyphSheetLayout(int cellWidth, int cellHeight, int columns, int rows, int margin,
+            int spacing) {
         if (cellWidth <= 0 || cellHeight <= 0) {
             throw new IllegalArgumentException(
-                "Cell size must be positive, was " + cellWidth + "x" + cellHeight);
+                    "Cell size must be positive, was " + cellWidth + "x" + cellHeight);
         }
         if (columns <= 0 || rows <= 0) {
             throw new IllegalArgumentException(
-                "Column and row counts must be positive, was " + columns + "x" + rows);
+                    "Column and row counts must be positive, was " + columns + "x" + rows);
         }
         if (margin < 0 || spacing < 0) {
             throw new IllegalArgumentException(
-                "Margin and spacing must not be negative, was margin=" + margin + ", spacing=" + spacing);
+                    "Margin and spacing must not be negative, was margin=" + margin + ", spacing="
+                            + spacing);
         }
         this.cellWidth = cellWidth;
         this.cellHeight = cellHeight;
@@ -182,7 +184,7 @@ public final class GlyphSheetLayout {
     private void checkSlot(int slot) {
         if (slot < 0 || slot >= getSlotCount()) {
             throw new IndexOutOfBoundsException(
-                "Slot " + slot + " is outside [0, " + getSlotCount() + ")");
+                    "Slot " + slot + " is outside [0, " + getSlotCount() + ")");
         }
     }
 
@@ -191,7 +193,7 @@ public final class GlyphSheetLayout {
             Math.multiplyExact(columns, rows);
         } catch (ArithmeticException e) {
             throw new IllegalArgumentException(
-                "Slot count does not fit in an int: " + columns + "x" + rows, e);
+                    "Slot count does not fit in an int: " + columns + "x" + rows, e);
         }
     }
 

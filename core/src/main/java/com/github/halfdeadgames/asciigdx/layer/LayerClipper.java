@@ -73,11 +73,16 @@ final class LayerClipper {
         return stackRect.width <= 0f || stackRect.height <= 0f;
     }
 
-    /** Flushes the batch and pushes the resolved rectangle as a scissor; see {@link #isScissorActive}. */
+    /**
+     * Flushes the batch and pushes the resolved rectangle as a scissor; see
+     * {@link #isScissorActive}.
+     */
     void pushScissor(SpriteBatch batch, float stackX, float stackY, boolean pixelSnapping) {
-        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width, stackRect.height,
+        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width,
+                stackRect.height,
                 pixelSnapping, worldRect);
-        ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2], viewport[3],
+        ClipMath.worldToWindow(worldRect, clipMatrix, viewport[0], viewport[1], viewport[2],
+                viewport[3],
                 clipCorner, windowRect);
         backend.flush(batch);
         scissorActive = backend.push(windowRect);
@@ -95,8 +100,10 @@ final class LayerClipper {
     }
 
     /** Tells whether a point in batch world space is inside the resolved rectangle. */
-    boolean isInside(float stackX, float stackY, float worldX, float worldY, boolean pixelSnapping) {
-        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width, stackRect.height,
+    boolean isInside(float stackX, float stackY, float worldX, float worldY,
+            boolean pixelSnapping) {
+        ClipMath.stackToWorld(stackX, stackY, stackRect.x, stackRect.y, stackRect.width,
+                stackRect.height,
                 pixelSnapping, worldRect);
         return isInsideWindow(worldRect, worldX, worldY);
     }
@@ -112,7 +119,8 @@ final class LayerClipper {
 
     private void resolveStackArea(float stackWidth, float stackHeight, boolean stackHasSize) {
         if (!stackHasSize) {
-            throw new IllegalStateException("Layer is clipped to the stack but the stack size is not set");
+            throw new IllegalStateException(
+                    "Layer is clipped to the stack but the stack size is not set");
         }
         stackRect.set(0f, 0f, stackWidth, stackHeight);
     }

@@ -45,13 +45,18 @@ final class IndexedHandles {
         removeAt(handles.indexOf(handle, true));
     }
 
-    /** Puts {@code replacement}, which must sit at the same cell, where {@code old} was in the list. */
+    /**
+     * Puts {@code replacement}, which must sit at the same cell, where {@code old} was in the list.
+     */
     void replace(CellHandle old, CellHandle replacement) {
         handles.set(handles.indexOf(old, true), replacement);
         byPosition.put(keyOf(replacement.getColumn(), replacement.getRow()), replacement);
     }
 
-    /** Drops and detaches handles outside a grid of the given size; call {@link #rebuildIndex()} afterward. */
+    /**
+     * Drops and detaches handles outside a grid of the given size; call {@link #rebuildIndex()}
+     * afterward.
+     */
     void dropOutside(int columns, int rows) {
         for (int i = handles.size - 1; i >= 0; i--) {
             CellHandle handle = handles.get(i);

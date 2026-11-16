@@ -21,15 +21,18 @@ class EffectZoneMapWindowTest {
     private static final float CELL_HEIGHT = 12f;
 
     /** Records the grid cell of the handle and the zone cell position of every call. */
-    private record Call(int handleColumn, int handleRow, int whereColumn, int whereRow, int zoneColumn,
+    private record Call(int handleColumn, int handleRow, int whereColumn, int whereRow,
+                        int zoneColumn,
                         int zoneRow) {
     }
 
     private final LayerStack stack = HeadlessLayers.createStack();
     private final Layer layer = HeadlessLayers.add(stack, new TerminalGrid(6, 4));
     private final List<Call> calls = new ArrayList<>();
-    private final CellEffect recordingEffect = (cell, where, time) -> calls.add(new Call(cell.getColumn(),
-            cell.getRow(), where.getColumn(), where.getRow(), where.getZoneColumn(), where.getZoneRow()));
+    private final CellEffect recordingEffect =
+            (cell, where, time) -> calls.add(new Call(cell.getColumn(),
+                    cell.getRow(), where.getColumn(), where.getRow(), where.getZoneColumn(),
+                    where.getZoneRow()));
 
     private static RectangleShape filledRectangle(int left, int top, int width, int height) {
         return RectangleShape.forSquareCells(left, top, width, height, ShapeFill.FILLED);

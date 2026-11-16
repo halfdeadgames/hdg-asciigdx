@@ -3,7 +3,8 @@
  * code point finds its glyph. A {@link com.github.halfdeadgames.asciigdx.glyph.GlyphSource} hands
  * out one texture region per Unicode code point, and all glyphs of a source share one cell size.
  *
- * <p>Ways to get a source, all on {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource}:
+ * <p>Ways to get a source, all on
+ * {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource}:
  * <ul>
  *   <li>The bundled Saiksistt font, with
  *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#loadSaiksistt()} or a
@@ -13,7 +14,8 @@
  *   <li>A sheet image plus an explicit layout and order, with
  *       {@link com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource#load(com.badlogic.gdx.files.FileHandle, com.github.halfdeadgames.asciigdx.glyph.GlyphSheetLayout, com.github.halfdeadgames.asciigdx.glyph.GlyphOrder, com.github.halfdeadgames.asciigdx.glyph.TransparencyMode)}.</li>
  *   <li>A TrueType font rasterized to a sheet, with
- *       {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker}. Needs gdx-freetype.</li>
+ *       {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker}. Needs
+ *       gdx-freetype.</li>
  * </ul>
  *
  * <p>A sheet is a grid of equally sized cells, called slots.
@@ -27,8 +29,9 @@
  * to bottom.
  *
  * <p>Transparency: a sheet image drawn on a solid background can be converted to white glyphs
- * with alpha, so the renderer can tint them. {@link com.github.halfdeadgames.asciigdx.glyph.TransparencyMode}
- * chooses whether to convert, and the top-left pixel of the image is the default key color.
+ * with alpha, so the renderer can tint them.
+ * {@link com.github.halfdeadgames.asciigdx.glyph.TransparencyMode} chooses whether to convert,
+ * and the top-left pixel of the image is the default key color.
  *
  * <p>Filtering: glyphs are sampled with nearest filtering by default, which keeps pixels crisp.
  * Pass {@link com.github.halfdeadgames.asciigdx.glyph.GlyphFilter#LINEAR} for smooth scaling and
@@ -42,9 +45,10 @@
  * <p>Thread and disposal rule: loading uploads a texture, so call the loading methods and
  * {@code dispose()} on the render thread. The caller owns every source and must dispose it once.
  * Disposing a source invalidates the regions it handed out. The layout and order classes are
- * immutable and safe to share. A {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker.BakedSheet}
- * holds a pixmap that its owner must dispose unless it is passed to
- * {@code TextureGlyphSource.fromPixmap}, which disposes it.
+ * immutable and safe to share. A
+ * {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker.BakedSheet} holds a pixmap
+ * that its owner must dispose unless it is passed to {@code TextureGlyphSource.fromPixmap}, which
+ * disposes it.
  *
  * <p>Example:
  * <pre>{@code

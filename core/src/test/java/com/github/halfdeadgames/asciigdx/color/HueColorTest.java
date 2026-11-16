@@ -31,6 +31,7 @@ class HueColorTest {
     @Test
     void nonFiniteHueThrows() {
         assertThrows(IllegalArgumentException.class, () -> HueColor.fromHue(Float.NaN));
-        assertThrows(IllegalArgumentException.class, () -> HueColor.fromHue(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> HueColor.fromHue(Float.POSITIVE_INFINITY));
     }
 }

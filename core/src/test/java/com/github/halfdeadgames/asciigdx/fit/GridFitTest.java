@@ -103,9 +103,11 @@ class GridFitTest {
     @Test
     void invalidCellSizeAndMinimumsThrow() {
         assertThrows(IllegalArgumentException.class, () -> GridFit.calculate(100, 100, 0, 8, 1, 1));
-        assertThrows(IllegalArgumentException.class, () -> GridFit.calculate(100, 100, 8, -1, 1, 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> GridFit.calculate(100, 100, 8, -1, 1, 1));
         assertThrows(IllegalArgumentException.class, () -> GridFit.calculate(100, 100, 8, 8, 0, 1));
-        assertThrows(IllegalArgumentException.class, () -> GridFit.calculate(100, 100, 8, 8, 1, -3));
+        assertThrows(IllegalArgumentException.class,
+                () -> GridFit.calculate(100, 100, 8, 8, 1, -3));
     }
 
     @Test
@@ -129,7 +131,8 @@ class GridFitTest {
 
     @Test
     void hugeWindowWithBigCellsDoesNotOverflow() {
-        GridFit fit = GridFit.calculate(Integer.MAX_VALUE, Integer.MAX_VALUE, 1 << 20, 1 << 20, 1, 1);
+        GridFit fit =
+                GridFit.calculate(Integer.MAX_VALUE, Integer.MAX_VALUE, 1 << 20, 1 << 20, 1, 1);
         assertEquals(2047, fit.getScale());
         assertEquals(1, fit.getColumns());
         assertTrue(fit.getLeftoverWidth() >= 0);
@@ -147,8 +150,10 @@ class GridFitTest {
                                 minimum[0], minimum[1]);
                         int scaledWidth = cell[0] * fit.getScale();
                         int scaledHeight = cell[1] * fit.getScale();
-                        assertEquals(width, fit.getColumns() * scaledWidth + fit.getLeftoverWidth());
-                        assertEquals(height, fit.getRows() * scaledHeight + fit.getLeftoverHeight());
+                        assertEquals(width,
+                                fit.getColumns() * scaledWidth + fit.getLeftoverWidth());
+                        assertEquals(height,
+                                fit.getRows() * scaledHeight + fit.getLeftoverHeight());
                         assertTrue(fit.getLeftoverWidth() < scaledWidth);
                         assertTrue(fit.getLeftoverHeight() < scaledHeight);
                     }
@@ -226,7 +231,8 @@ class GridFitTest {
                         assertEquals(worldHeight * fit.getScale(), exact.y, EPSILON);
                         float exactX = exact.x;
                         float exactY = exact.y;
-                        Vector2 integer = IntegerScaling.INSTANCE.apply(worldWidth, worldHeight, width, height);
+                        Vector2 integer = IntegerScaling.INSTANCE.apply(
+                                worldWidth, worldHeight, width, height);
                         assertEquals(exactX, integer.x, EPSILON);
                         assertEquals(exactY, integer.y, EPSILON);
                     }

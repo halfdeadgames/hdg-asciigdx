@@ -32,7 +32,8 @@ class GridDrawingTest {
         TerminalGrid grid = new TerminalGrid(4, 1);
         int dagger = 0x1F5E1;
 
-        GridDrawing.drawText(grid, 0, 0, new StringBuilder().appendCodePoint(dagger).append('x'), RED, BLUE);
+        GridDrawing.drawText(grid, 0, 0, new StringBuilder().appendCodePoint(dagger).append('x'),
+                RED, BLUE);
 
         assertEquals(dagger, grid.getCodePoint(0, 0));
         assertEquals('x', grid.getCodePoint(1, 0));
@@ -76,9 +77,12 @@ class GridDrawingTest {
     void drawTextWithNullArgumentsThrows() {
         TerminalGrid grid = new TerminalGrid(3, 2);
 
-        assertThrows(NullPointerException.class, () -> GridDrawing.drawText(null, 0, 0, "abc", RED, BLUE));
-        assertThrows(NullPointerException.class, () -> GridDrawing.drawText(grid, 0, 0, null, RED, BLUE));
-        assertThrows(NullPointerException.class, () -> GridDrawing.drawText(grid, 0, 99, null, RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.drawText(null, 0, 0, "abc", RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.drawText(grid, 0, 0, null, RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.drawText(grid, 0, 99, null, RED, BLUE));
     }
 
     @Test
@@ -127,7 +131,8 @@ class GridDrawingTest {
     void fillRectangleClipsHugeAndOffGridRectangles() {
         TerminalGrid grid = new TerminalGrid(3, 3);
 
-        GridDrawing.fillRectangle(grid, -5, -5, Integer.MAX_VALUE, Integer.MAX_VALUE, '#', RED, BLUE);
+        GridDrawing.fillRectangle(
+                grid, -5, -5, Integer.MAX_VALUE, Integer.MAX_VALUE, '#', RED, BLUE);
 
         assertFilled(grid, 0, 0, 3, 3, '#');
     }
@@ -178,13 +183,16 @@ class GridDrawingTest {
     void drawBoxWithNegativeSizeThrows() {
         TerminalGrid grid = new TerminalGrid(4, 4);
 
-        assertThrows(IllegalArgumentException.class, () -> GridDrawing.drawBox(grid, 0, 0, -1, 3, RED, BLUE));
-        assertThrows(IllegalArgumentException.class, () -> GridDrawing.drawBox(grid, 0, 0, 3, -1, RED, BLUE));
+        assertThrows(IllegalArgumentException.class,
+                () -> GridDrawing.drawBox(grid, 0, 0, -1, 3, RED, BLUE));
+        assertThrows(IllegalArgumentException.class,
+                () -> GridDrawing.drawBox(grid, 0, 0, 3, -1, RED, BLUE));
     }
 
     @Test
     void drawBoxWithNullGridThrows() {
-        assertThrows(NullPointerException.class, () -> GridDrawing.drawBox(null, 0, 0, 1, 1, RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.drawBox(null, 0, 0, 1, 1, RED, BLUE));
     }
 
     @Test
@@ -217,7 +225,8 @@ class GridDrawingTest {
         assertFilled(grid, left, top, width, height, TerminalGrid.EMPTY_CODE_POINT);
     }
 
-    private static void assertFilled(TerminalGrid grid, int left, int top, int width, int height, int glyph) {
+    private static void assertFilled(TerminalGrid grid, int left, int top, int width, int height,
+            int glyph) {
         for (int y = top; y < top + height; y++) {
             for (int x = left; x < left + width; x++) {
                 assertEquals(glyph, grid.getCodePoint(x, y), "cell (" + x + ", " + y + ")");

@@ -17,13 +17,13 @@ class MapWindowFlagShiftTest {
 
     /** Camera moves in cells: {columns, rows}. */
     private static final int[][] CAMERA_MOVES = {
-        {1, 0}, {-1, 0}, {0, 1}, {0, -1},
-        {1, 1}, {-1, -1}, {1, -1}, {-1, 1},
-        {COLUMNS - 1, 0}, {-(COLUMNS - 1), 0}, {0, ROWS - 1}, {0, -(ROWS - 1)},
-        {COLUMNS - 1, ROWS - 1}, {-(COLUMNS - 1), -(ROWS - 1)},
-        {COLUMNS, 0}, {-COLUMNS, 0}, {0, ROWS}, {0, -ROWS},
-        {COLUMNS + 3, 1}, {-(COLUMNS + 3), -1}, {2, ROWS + 5}, {-2, -(ROWS + 5)},
-        {40, 40}, {-40, -40},
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+            {1, 1}, {-1, -1}, {1, -1}, {-1, 1},
+            {COLUMNS - 1, 0}, {-(COLUMNS - 1), 0}, {0, ROWS - 1}, {0, -(ROWS - 1)},
+            {COLUMNS - 1, ROWS - 1}, {-(COLUMNS - 1), -(ROWS - 1)},
+            {COLUMNS, 0}, {-COLUMNS, 0}, {0, ROWS}, {0, -ROWS},
+            {COLUMNS + 3, 1}, {-(COLUMNS + 3), -1}, {2, ROWS + 5}, {-2, -(ROWS + 5)},
+            {40, 40}, {-40, -40},
     };
 
     private final LayerStack stack = HeadlessLayers.createStack();
@@ -43,7 +43,9 @@ class MapWindowFlagShiftTest {
         }
     }
 
-    /** Leaves flags on the bottom row and the right three columns, with the camera at cell (3, 1). */
+    /**
+     * Leaves flags on the bottom row and the right three columns, with the camera at cell (3, 1).
+     */
     private MapWindow windowWithDistinctivePattern() {
         stack.setCamera(0f, 0f);
         layer.enableMapWindow();
@@ -76,7 +78,8 @@ class MapWindowFlagShiftTest {
                 int sourceColumn = column - columns;
                 boolean exists = sourceRow >= 0 && sourceRow < ROWS
                         && sourceColumn >= 0 && sourceColumn < COLUMNS;
-                result[row * COLUMNS + column] = !exists || source[sourceRow * COLUMNS + sourceColumn];
+                result[row * COLUMNS + column] =
+                        !exists || source[sourceRow * COLUMNS + sourceColumn];
             }
         }
         return result;

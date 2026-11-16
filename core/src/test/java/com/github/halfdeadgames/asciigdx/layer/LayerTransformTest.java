@@ -90,7 +90,7 @@ class LayerTransformTest {
     void snapCornerOffLeavesFractions() {
         LayerTransform.compose(100f, 200f, 3.3f, 0f, 2f, 0f, false, transform);
 
-        assertEquals(96.7f,transform.m02, TOLERANCE);
+        assertEquals(96.7f, transform.m02, TOLERANCE);
         assertEquals(200f, transform.m12, TOLERANCE);
     }
 

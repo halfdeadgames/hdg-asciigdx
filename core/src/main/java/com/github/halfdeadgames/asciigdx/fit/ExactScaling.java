@@ -17,7 +17,8 @@ final class ExactScaling extends Scaling {
     }
 
     @Override
-    public Vector2 apply(float sourceWidth, float sourceHeight, float targetWidth, float targetHeight) {
+    public Vector2 apply(float sourceWidth, float sourceHeight, float targetWidth,
+            float targetHeight) {
         temp.set(sourceWidth * scale, sourceHeight * scale);
         return temp;
     }

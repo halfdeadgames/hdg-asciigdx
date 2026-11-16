@@ -107,7 +107,8 @@ class LayerStackHitTest {
 
     @Test
     void pointPastGridGivesCellsBeyondSize() {
-        assertCellAt(CORNER_X + COLUMNS * CELL_WIDTH + 1f, CORNER_Y - ROWS * CELL_HEIGHT - 1f, COLUMNS, ROWS);
+        assertCellAt(CORNER_X + COLUMNS * CELL_WIDTH + 1f, CORNER_Y - ROWS * CELL_HEIGHT - 1f,
+                COLUMNS, ROWS);
     }
 
     @Test
@@ -174,7 +175,8 @@ class LayerStackHitTest {
         stack.setPixelSnapping(false);
         stack.toCell(layer, fractionalStackX, STACK_Y, pointX, CORNER_Y - 1f, cell);
         assertEquals(-1, cell.x);
-        stack.toCell(layer, fractionalStackX, STACK_Y, unsnappedCornerX + 0.2f, CORNER_Y - 1f, cell);
+        stack.toCell(
+                layer, fractionalStackX, STACK_Y, unsnappedCornerX + 0.2f, CORNER_Y - 1f, cell);
         assertEquals(0, cell.x);
     }
 
@@ -193,20 +195,23 @@ class LayerStackHitTest {
                 for (float rotation : rotations) {
                     layer.setZoom(zoom);
                     layer.setRotation(rotation);
-                    LayerTransform.compose(CORNER_X, CORNER_Y, 13f, 17f, zoom, rotation, snap, forward);
+                    LayerTransform.compose(CORNER_X, CORNER_Y, 13f, 17f, zoom, rotation, snap,
+                            forward);
                     assertEveryCellRoundTrips(forward, point, zoom, rotation);
                 }
             }
         }
     }
 
-    private void assertEveryCellRoundTrips(Affine2 forward, Vector2 point, float zoom, float rotation) {
+    private void assertEveryCellRoundTrips(Affine2 forward, Vector2 point, float zoom,
+            float rotation) {
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 point.set((column + 0.5f) * CELL_WIDTH, -(row + 0.5f) * CELL_HEIGHT);
                 forward.applyTo(point);
                 stack.toCell(layer, STACK_X, STACK_Y, point.x, point.y, cell);
-                String where = "zoom " + zoom + " rotation " + rotation + " cell " + column + "," + row;
+                String where =
+                        "zoom " + zoom + " rotation " + rotation + " cell " + column + "," + row;
                 assertEquals(column, cell.x, where);
                 assertEquals(row, cell.y, where);
             }
@@ -239,9 +244,11 @@ class LayerStackHitTest {
         float pointBetweenEdges = 110.2f;
 
         stack.setPixelSnapping(true);
-        assertTrue(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
+        assertTrue(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges,
+                STACK_Y - 5f));
         stack.setPixelSnapping(false);
-        assertFalse(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges, STACK_Y - 5f));
+        assertFalse(stack.isPickableAt(layer, fractionalStackX, STACK_Y, pointBetweenEdges,
+                STACK_Y - 5f));
     }
 
     @Test
@@ -251,7 +258,8 @@ class LayerStackHitTest {
         layer.setRotation(45f);
 
         assertTrue(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + 9f, STACK_Y - 9f));
-        assertFalse(stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 1f, STACK_Y - 9f));
+        assertFalse(
+                stack.isPickableAt(layer, STACK_X, STACK_Y, STACK_X + OFFSET_X + 1f, STACK_Y - 9f));
     }
 
     @Test
@@ -290,7 +298,8 @@ class LayerStackHitTest {
         layer.clipToStack();
         stack.setSize(0f, 0f);
 
-        assertThrows(IllegalStateException.class, () -> stack.isPickableAt(layer, STACK_X, STACK_Y, 0f, 0f));
+        assertThrows(IllegalStateException.class,
+                () -> stack.isPickableAt(layer, STACK_X, STACK_Y, 0f, 0f));
     }
 
     @Test
@@ -298,8 +307,10 @@ class LayerStackHitTest {
         LayerStack other = newStack();
         Layer foreign = other.add(new TerminalGrid(1, 1), new FakeSource());
 
-        assertThrows(IllegalArgumentException.class, () -> stack.toCell(foreign, 0f, 0f, 0f, 0f, cell));
-        assertThrows(IllegalArgumentException.class, () -> stack.isPickableAt(foreign, 0f, 0f, 0f, 0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.toCell(foreign, 0f, 0f, 0f, 0f, cell));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.isPickableAt(foreign, 0f, 0f, 0f, 0f));
     }
 
     @Test
@@ -312,7 +323,9 @@ class LayerStackHitTest {
 
     @Test
     void nullArgumentsThrow() {
-        assertThrows(IllegalArgumentException.class, () -> stack.toCell(layer, 0f, 0f, 0f, 0f, null));
-        assertThrows(IllegalArgumentException.class, () -> stack.toCell(null, 0f, 0f, 0f, 0f, cell));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.toCell(layer, 0f, 0f, 0f, 0f, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> stack.toCell(null, 0f, 0f, 0f, 0f, cell));
     }
 }

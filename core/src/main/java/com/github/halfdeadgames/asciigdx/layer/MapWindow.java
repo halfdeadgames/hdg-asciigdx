@@ -91,22 +91,24 @@ public final class MapWindow {
      * @param backgroundRgba the cell background as packed RGBA8888 ({@code 0xRRGGBBAA})
      * @throws IllegalStateException if this window is detached
      */
-    public void set(int mapColumn, int mapRow, int codePoint, int foregroundRgba, int backgroundRgba) {
+    public void set(int mapColumn, int mapRow, int codePoint, int foregroundRgba,
+            int backgroundRgba) {
         if (!contains(mapColumn, mapRow)) {
             return;
         }
-        grid.set(toGridColumn(mapColumn), toGridRow(mapRow), codePoint, foregroundRgba, backgroundRgba);
+        grid.set(toGridColumn(mapColumn), toGridRow(mapRow), codePoint, foregroundRgba,
+                backgroundRgba);
     }
 
     /**
-     * Returns the handle of the cell at map coordinates, as {@link Layer#obtainCellHandle} does for the grid
-     * position.
+     * Returns the handle of the cell at map coordinates, as {@link Layer#obtainCellHandle} does for
+     * the grid position.
      *
      * <p>A lasting handle is dropped when its cell leaves the window. Lasting handles are meant for
      * display-owned animation such as tweens, flashes, and bumps. Game state that must survive
      * scrolling belongs in the grid, set through the window's filler; per-frame effects belong in
-     * {@link #obtainFrameCellHandle frame handles}. For a tween that must keep writing a cell after it scrolls
-     * out and back in, use {@link #createCellTarget}.
+     * {@link #obtainFrameCellHandle frame handles}. For a tween that must keep writing a cell after
+     * it scrolls out and back in, use {@link #createCellTarget}.
      *
      * @param mapColumn the map column of a cell inside the window
      * @param mapRow the map row of a cell inside the window
@@ -136,11 +138,11 @@ public final class MapWindow {
     }
 
     /**
-     * Returns the frame handle of the cell at map coordinates, as {@link Layer#obtainFrameCellHandle} does for
-     * the grid position. To drive it with a timeline, use
-     * {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a setter
-     * that calls this method on every write; a held handle can be released or detached between
-     * frames.
+     * Returns the frame handle of the cell at map coordinates, as
+     * {@link Layer#obtainFrameCellHandle} does for the grid position. To drive it with a timeline,
+     * use {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a
+     * setter that calls this method on every write; a held handle can be released or detached
+     * between frames.
      *
      * @param mapColumn the map column of a cell inside the window
      * @param mapRow the map row of a cell inside the window
@@ -208,8 +210,8 @@ public final class MapWindow {
      * filling when the window was enabled, when they scrolled into view, or when the grid was
      * resized. This only queries: call {@link #markAllFilled()} afterward.
      *
-     * <p>The visitor may call {@link #set} and {@link #obtainCellHandle}, but must not cause a scroll. Writes do
-     * not clear the flags, because a map cell may have nothing to draw.
+     * <p>The visitor may call {@link #set} and {@link #obtainCellHandle}, but must not cause a
+     * scroll. Writes do not clear the flags, because a map cell may have nothing to draw.
      *
      * @param visitor receives each map cell to fill; not null
      * @throws IllegalArgumentException if the visitor is null
@@ -238,7 +240,9 @@ public final class MapWindow {
         Arrays.fill(needsFill, false);
     }
 
-    /** Flags every cell as needing a fill, for example after a font change made the content stale. */
+    /**
+     * Flags every cell as needing a fill, for example after a font change made the content stale.
+     */
     void markAllNeedFill() {
         resetFlagsIfGridResized();
         Arrays.fill(needsFill, true);
@@ -281,7 +285,8 @@ public final class MapWindow {
             resetFlagsToGridSize();
             return;
         }
-        if (columns <= -flagColumns || columns >= flagColumns || rows <= -flagRows || rows >= flagRows) {
+        if (columns <= -flagColumns || columns >= flagColumns || rows <= -flagRows
+                || rows >= flagRows) {
             Arrays.fill(needsFill, true);
             return;
         }
@@ -300,7 +305,8 @@ public final class MapWindow {
         int column = columns > 0 ? flagColumns - 1 : 0;
         for (int count = 0; count < flagColumns; count++, column += columnStep) {
             int sourceColumn = column - columns;
-            boolean sourceExists = sourceRowExists && sourceColumn >= 0 && sourceColumn < flagColumns;
+            boolean sourceExists =
+                    sourceRowExists && sourceColumn >= 0 && sourceColumn < flagColumns;
             needsFill[row * flagColumns + column] =
                     !sourceExists || needsFill[sourceRow * flagColumns + sourceColumn];
         }

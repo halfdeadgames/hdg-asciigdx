@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
 /**
- * How a layer's zoom factor is applied when the layer is drawn. Set it with {@link Layer#setZoomMode}.
- * Zoom scales the layer about its pivot; see {@link Layer#setPivot}.
+ * How a layer's zoom factor is applied when the layer is drawn. Set it with
+ * {@link Layer#setZoomMode}. Zoom scales the layer about its pivot; see {@link Layer#setPivot}.
  */
 public enum ZoomMode {
     /**

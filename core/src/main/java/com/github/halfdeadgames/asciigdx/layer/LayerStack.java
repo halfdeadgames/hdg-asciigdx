@@ -22,12 +22,12 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
  * downward, like grid rows. The stack position passed to {@link #draw} is a screen
  * position with y growing upward.
  *
- * <p>A layer can be placed in a {@link Panel} made by {@link #addPanel}: its offset and clip are then
- * measured from the panel's top-left corner, and it is clipped to the panel's rectangle.
+ * <p>A layer can be placed in a {@link Panel} made by {@link #addPanel}: its offset and clip are
+ * then measured from the panel's top-left corner, and it is clipped to the panel's rectangle.
  *
- * <p>Layers can also be put in a {@link LayerGroup} made by {@link #addGroup} to share color effects.
- * Nothing in the stack reads a clock: durations and deltas are in seconds, passed in by the game.
- * Use the stack on the GL thread only; it is not thread-safe.
+ * <p>Layers can also be put in a {@link LayerGroup} made by {@link #addGroup} to share color
+ * effects. Nothing in the stack reads a clock: durations and deltas are in seconds, passed in by
+ * the game. Use the stack on the GL thread only; it is not thread-safe.
  *
  * <p>Example:
  * <pre>{@code
@@ -65,10 +65,12 @@ public final class LayerStack implements Disposable {
 
     /** Creates an empty stack that draws layers with {@link GridRenderer}. */
     public LayerStack() {
-        this(LayerRendererFactory.SHARED_GRID_RENDERERS, new GlClipBackend(), new GlOffscreenBackend());
+        this(LayerRendererFactory.SHARED_GRID_RENDERERS, new GlClipBackend(),
+                new GlOffscreenBackend());
     }
 
-    LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend, OffscreenBackend offscreenBackend) {
+    LayerStack(LayerRendererFactory rendererFactory, ClipBackend clipBackend,
+            OffscreenBackend offscreenBackend) {
         this.rendererFactory = rendererFactory;
         this.clipper = new LayerClipper(clipBackend);
         this.offscreenBackend = offscreenBackend;
@@ -165,8 +167,8 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Removes a layer and disposes its renderer. The layer can no longer be used. Its grid and glyph
-     * source are not disposed. Call it on the GL thread.
+     * Removes a layer and disposes its renderer. The layer can no longer be used. Its grid and
+     * glyph source are not disposed. Call it on the GL thread.
      *
      * @param layer a layer of this stack; not null
      * @throws IllegalStateException if the layer was already removed
@@ -235,9 +237,9 @@ public final class LayerStack implements Disposable {
     }
 
     /**
-     * Creates a panel measured in whole cells of a glyph source, stored in pixels as the cell counts
-     * times the source's cell size. The source is not kept, so a later change of font does not
-     * resize the panel.
+     * Creates a panel measured in whole cells of a glyph source, stored in pixels as the cell
+     * counts times the source's cell size. The source is not kept, so a later change of font does
+     * not resize the panel.
      *
      * @param column cells from the stack's left edge; may be negative
      * @param row cells from the stack's top edge, growing downward; may be negative
@@ -245,7 +247,8 @@ public final class LayerStack implements Disposable {
      * @param heightInCells height in cells
      * @param cellSource supplies the cell size
      * @return the new panel
-     * @throws IllegalArgumentException if the source is null, or widthInCells or heightInCells is negative
+     * @throws IllegalArgumentException if the source is null, or widthInCells or heightInCells is
+     *     negative
      * @throws IllegalStateException if the stack was disposed
      */
     public Panel addPanelInCells(int column, int row, int widthInCells, int heightInCells,
@@ -271,7 +274,8 @@ public final class LayerStack implements Disposable {
         requirePanelOwned(panel);
         for (int i = 0; i < layers.size; i++) {
             if (layers.get(i).getPanel() == panel) {
-                throw new IllegalStateException("Panel still has layers; move them out with setPanel(null) first");
+                throw new IllegalStateException(
+                        "Panel still has layers; move them out with setPanel(null) first");
             }
         }
         panels.removeValue(panel, true);
@@ -345,8 +349,8 @@ public final class LayerStack implements Disposable {
      * downward). Each layer shifts by minus the camera times its parallax factor (see
      * {@link Layer#setParallax(float, float)}). Default (0, 0).
      *
-     * <p>Layers in a {@link Panel} ignore this camera and follow the panel's own camera instead; see
-     * {@link Panel#setCamera}.
+     * <p>Layers in a {@link Panel} ignore this camera and follow the panel's own camera instead;
+     * see {@link Panel#setCamera}.
      *
      * <p>The clip does not move with the camera: it stays in stack space.
      *
@@ -366,7 +370,9 @@ public final class LayerStack implements Disposable {
         followCameraOfLayersIn(null);
     }
 
-    /** Re-follows the camera for map window layers that are in {@code panel} (null: in no panel). */
+    /**
+     * Re-follows the camera for map window layers that are in {@code panel} (null: in no panel).
+     */
     void followCameraOfLayersIn(Panel panel) {
         for (int i = 0; i < layers.size; i++) {
             Layer layer = layers.get(i);
@@ -444,12 +450,12 @@ public final class LayerStack implements Disposable {
      *
      * <p>Offscreen fade: a layer whose effective alpha is below 1 and that has at least one drawn
      * free sprite (visible, color alpha above 0) or lifted cell is drawn at full alpha into a
-     * shared offscreen target, then composited with its alpha, so the grid, sprites, and lifted cells fade as one image. This
-     * costs one offscreen target switch per such layer per frame. The layer's own clip still
-     * applies. The batch stays begun with its shader bound. The composite does not use the
-     * batch's blend functions; it always blends premultiplied. Do not draw while another
-     * framebuffer is bound. To skip the offscreen pass, keep the effective alpha at 1. Other layers draw
-     * directly.
+     * shared offscreen target, then composited with its alpha, so the grid, sprites, and lifted
+     * cells fade as one image. This costs one offscreen target switch per such layer per frame. The
+     * layer's own clip still applies. The batch stays begun with its shader bound. The composite
+     * does not use the batch's blend functions; it always blends premultiplied. Do not draw while
+     * another framebuffer is bound. To skip the offscreen pass, keep the effective alpha at 1.
+     * Other layers draw directly.
      *
      * @param batch the active batch; not null
      * @param x screen x of the stack's top-left corner
@@ -509,7 +515,8 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void toCell(Layer layer, float stackX, float stackY, float worldX, float worldY, GridPoint2 out) {
+    public void toCell(Layer layer, float stackX, float stackY, float worldX, float worldY,
+            GridPoint2 out) {
         requireOwned(layer);
         if (out == null) {
             throw new IllegalArgumentException("out must not be null");
@@ -544,7 +551,8 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void toLayerPoint(Layer layer, float stackX, float stackY, float worldX, float worldY, Vector2 out) {
+    public void toLayerPoint(Layer layer, float stackX, float stackY, float worldX, float worldY,
+            Vector2 out) {
         requireOutAndOwned(layer, out);
         LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, inverseTransform);
         inverseTransform.inv();
@@ -574,7 +582,8 @@ public final class LayerStack implements Disposable {
      * @throws IllegalArgumentException if the layer belongs to another stack or out is null
      * @throws IllegalStateException if the layer was removed
      */
-    public void toWorldPoint(Layer layer, float stackX, float stackY, float layerX, float layerY, Vector2 out) {
+    public void toWorldPoint(Layer layer, float stackX, float stackY, float layerX, float layerY,
+            Vector2 out) {
         requireOutAndOwned(layer, out);
         LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, pointTransform);
         LayerTransform.layerPixelsToWorld(pointTransform, layerX, layerY, out);
@@ -607,7 +616,8 @@ public final class LayerStack implements Disposable {
      * @throws IllegalStateException if the layer was removed, or is clipped to the stack while
      *     the stack size is unset
      */
-    public boolean isPickableAt(Layer layer, float stackX, float stackY, float worldX, float worldY) {
+    public boolean isPickableAt(Layer layer, float stackX, float stackY, float worldX,
+            float worldY) {
         requireOwned(layer);
         if (!layer.isVisible()) {
             return false;
@@ -627,11 +637,13 @@ public final class LayerStack implements Disposable {
 
     private void drawLayer(Layer layer, SpriteBatch batch) {
         layer.syncCellHandles();
-        if (OffscreenFade.isNeeded(resolvedEffects.getAlpha(), layer.getSprites(), layer.getCellHandles())) {
+        if (OffscreenFade.isNeeded(resolvedEffects.getAlpha(), layer.getSprites(),
+                layer.getCellHandles())) {
             drawFadedLayer(layer, batch);
             return;
         }
-        layer.getRenderer().draw(batch, layerTransform, resolvedEffects, layer.getSprites(), pixelSnapping);
+        layer.getRenderer()
+                .draw(batch, layerTransform, resolvedEffects, layer.getSprites(), pixelSnapping);
     }
 
     /**
@@ -647,8 +659,9 @@ public final class LayerStack implements Disposable {
         float fadeAlpha = resolvedEffects.getAlpha();
         resolvedEffects.setAlpha(1f);
         offscreenBackend.begin(batch, viewport);
-        layer.getRenderer().drawPremultiplied(batch, layerTransform, resolvedEffects, layer.getSprites(),
-                pixelSnapping);
+        layer.getRenderer()
+                .drawPremultiplied(batch, layerTransform, resolvedEffects, layer.getSprites(),
+                        pixelSnapping);
         offscreenBackend.end(viewport);
         offscreenBackend.composite(batch, fadeAlpha, viewport);
     }
@@ -689,11 +702,11 @@ public final class LayerStack implements Disposable {
 
     /**
      * Call once at the start of each update, before applying cell effects. On every layer, the
-     * frame handles ({@link Layer#obtainFrameCellHandle}) are swept: handles that stayed idle since the last
-     * call add the delta to their unused time, and handles that were used start over at zero.
-     * Handles unused for at least {@link Layer#getFrameReleaseSeconds()} are released, and the
-     * rest are reset. Lasting handles ({@link Layer#obtainCellHandle}) are never touched. A zero, negative,
-     * NaN, or infinite delta adds no unused time, but the reset still happens.
+     * frame handles ({@link Layer#obtainFrameCellHandle}) are swept: handles that stayed idle since
+     * the last call add the delta to their unused time, and handles that were used start over at
+     * zero. Handles unused for at least {@link Layer#getFrameReleaseSeconds()} are released, and
+     * the rest are reset. Lasting handles ({@link Layer#obtainCellHandle}) are never touched. A
+     * zero, negative, NaN, or infinite delta adds no unused time, but the reset still happens.
      *
      * @param deltaSeconds seconds since the previous call, passed in by the game
      * @throws IllegalStateException if the stack was disposed

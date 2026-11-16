@@ -6,8 +6,9 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
- * One grid in a {@link LayerStack}, with an offset, a parallax factor, a zoom, a rotation, a visibility flag,
- * color effects (tint, mix, saturation), a clip, and a switchable glyph source. Created only by the stack.
+ * One grid in a {@link LayerStack}, with an offset, a parallax factor, a zoom, a rotation, a
+ * visibility flag, color effects (tint, mix, saturation), a clip, and a switchable glyph source.
+ * Created only by the stack.
  *
  * <p>The offset is in virtual pixels, measured from the stack's top-left corner, or from the
  * top-left corner of the layer's {@link Panel} if it has one (see {@link #setPanel}),
@@ -24,19 +25,20 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  * CellHandle frameHandle = layer.obtainFrameCellHandle(5, 3);   // per-frame effects
  * }</pre>
  *
- * <p>After the layer is removed from its stack (by {@link #remove()} or {@link LayerStack#remove}), it is
- * detached: its sprites and cell handles are detached, it leaves every {@link LayerGroup}, and its map
- * window is detached. Afterward:
+ * <p>After the layer is removed from its stack (by {@link #remove()} or
+ * {@link LayerStack#remove}), it is detached: its sprites and cell handles are detached, it leaves
+ * every {@link LayerGroup}, and its map window is detached. Afterward:
  * <ul>
- *   <li>These members keep working and return the last values: {@link #getGrid}, {@link #getGlyphSource},
- *       the offset, parallax, zoom, pivot, zoom mode, rotation, visibility, pickable, panel, clip, and
- *       frame release getters, {@link #getEffectiveZoom}, {@link #getColorEffects} (whose setters throw),
- *       {@link #getSpriteCount} (0), {@link #getSprite} (always out of range), {@link #getCellHandleCount},
- *       and {@link #getFrameCellHandleCount} (both 0).</li>
+ *   <li>These members keep working and return the last values: {@link #getGrid},
+ *       {@link #getGlyphSource}, the offset, parallax, zoom, pivot, zoom mode, rotation,
+ *       visibility, pickable, panel, clip, and frame release getters, {@link #getEffectiveZoom},
+ *       {@link #getColorEffects} (whose setters throw), {@link #getSpriteCount} (0),
+ *       {@link #getSprite} (always out of range), {@link #getCellHandleCount}, and
+ *       {@link #getFrameCellHandleCount} (both 0).</li>
  *   <li>{@link #hasMapWindow} and {@link #getMapWindow} throw {@link IllegalStateException}.</li>
- *   <li>Every method that changes or uses the layer throws {@link IllegalStateException}: all setters,
- *       the offset, scroll, map window, sprite, cell handle, clip, and release methods, {@link #moveTo},
- *       and {@link #remove}.</li>
+ *   <li>Every method that changes or uses the layer throws {@link IllegalStateException}: all
+ *       setters, the offset, scroll, map window, sprite, cell handle, clip, and release methods,
+ *       {@link #moveTo}, and {@link #remove}.</li>
  * </ul>
  */
 public final class Layer {
@@ -152,8 +154,8 @@ public final class Layer {
     }
 
     /**
-     * Returns whether the layer is shown. A shown layer with tint alpha 0 is still skipped when drawing.
-     * Works after removal.
+     * Returns whether the layer is shown. A shown layer with tint alpha 0 is still skipped when
+     * drawing. Works after removal.
      *
      * @return true if shown; true by default
      */
@@ -206,8 +208,8 @@ public final class Layer {
 
     /**
      * Sets the offset from the stack's top-left corner, or from the panel's top-left corner for a
-     * member of a {@link Panel}. The stack camera, or the panel's camera for a member, is applied on
-     * top; see {@link LayerStack#setCamera} and {@link Panel#setCamera}.
+     * member of a {@link Panel}. The stack camera, or the panel's camera for a member, is applied
+     * on top; see {@link LayerStack#setCamera} and {@link Panel#setCamera}.
      *
      * @param x virtual pixels to the right
      * @param y virtual pixels downward
@@ -243,7 +245,8 @@ public final class Layer {
      * (the default), 0 stays fixed on screen (a HUD), values between 0 and 1 suit distant
      * backgrounds, and values above 1 suit near foregrounds. Negative values are allowed.
      *
-     * <p>On a {@linkplain #enableMapWindow() map window}, a change that moves the origin scrolls the content.
+     * <p>On a {@linkplain #enableMapWindow() map window}, a change that moves the origin scrolls
+     * the content.
      *
      * @param factorX horizontal factor; finite
      * @param factorY vertical factor; finite
@@ -253,7 +256,8 @@ public final class Layer {
     public void setParallax(float factorX, float factorY) {
         requireAttached();
         if (!Float.isFinite(factorX) || !Float.isFinite(factorY)) {
-            throw new IllegalArgumentException("parallax must be finite: " + factorX + ", " + factorY);
+            throw new IllegalArgumentException(
+                    "parallax must be finite: " + factorX + ", " + factorY);
         }
         parallaxX = factorX;
         parallaxY = factorY;
@@ -308,7 +312,8 @@ public final class Layer {
     }
 
     /**
-     * Returns the requested zoom. See {@link #getEffectiveZoom()} for the applied one. Works after removal.
+     * Returns the requested zoom. See {@link #getEffectiveZoom()} for the applied one. Works after
+     * removal.
      *
      * @return the zoom; 1 by default
      */
@@ -317,8 +322,8 @@ public final class Layer {
     }
 
     /**
-     * Returns the zoom and rotation pivot's x in layer pixels from the layer's left edge. Works after
-     * removal. In map window mode the pivot is in map pixels.
+     * Returns the zoom and rotation pivot's x in layer pixels from the layer's left edge. Works
+     * after removal. In map window mode the pivot is in map pixels.
      *
      * @return the pivot x in pixels; 0 by default
      */
@@ -327,8 +332,8 @@ public final class Layer {
     }
 
     /**
-     * Returns the zoom and rotation pivot's y in layer pixels from the layer's top edge, growing down.
-     * Works after removal. In map window mode the pivot is in map pixels.
+     * Returns the zoom and rotation pivot's y in layer pixels from the layer's top edge, growing
+     * down. Works after removal. In map window mode the pivot is in map pixels.
      *
      * @return the pivot y in pixels; 0 by default
      */
@@ -346,8 +351,8 @@ public final class Layer {
     }
 
     /**
-     * Returns the zoom actually drawn: the requested zoom for SMOOTH, or a whole number of at least 1
-     * for WHOLE. Works after removal.
+     * Returns the zoom actually drawn: the requested zoom for SMOOTH, or a whole number of at least
+     * 1 for WHOLE. Works after removal.
      *
      * @return the applied zoom; above 0
      */
@@ -443,8 +448,12 @@ public final class Layer {
         float shiftX = x - pivotX;
         float shiftY = y - pivotY;
         float zoomApplied = getEffectiveZoom();
-        float newOffsetX = LayerTransform.offsetXKeepingPlacement(offsetX, shiftX, shiftY, zoomApplied, rotation);
-        float newOffsetY = LayerTransform.offsetYKeepingPlacement(offsetY, shiftX, shiftY, zoomApplied, rotation);
+        float newOffsetX =
+                LayerTransform.offsetXKeepingPlacement(offsetX, shiftX, shiftY, zoomApplied,
+                        rotation);
+        float newOffsetY =
+                LayerTransform.offsetYKeepingPlacement(offsetY, shiftX, shiftY, zoomApplied,
+                        rotation);
         setPivot(x, y);
         setOffset(newOffsetX, newOffsetY);
     }
@@ -461,12 +470,13 @@ public final class Layer {
      * @throws IllegalStateException if the layer was removed
      */
     public void setPivotCell(int column, int row) {
-        setPivot((column + 0.5f) * glyphSource.getCellWidth(), (row + 0.5f) * glyphSource.getCellHeight());
+        setPivot((column + 0.5f) * glyphSource.getCellWidth(),
+                (row + 0.5f) * glyphSource.getCellHeight());
     }
 
     /**
-     * Moves the pivot to the center of a cell as {@link #setPivotCell} does, keeping the picture
-     * in place as {@link #setPivotKeepingPlacement} does. In map window mode the cell is a map cell.
+     * Moves the pivot to the center of a cell as {@link #setPivotCell} does, keeping the picture in
+     * place as {@link #setPivotKeepingPlacement} does. In map window mode the cell is a map cell.
      *
      * @param column cells from the layer's left edge
      * @param row cells from the layer's top edge, growing down
@@ -550,7 +560,8 @@ public final class Layer {
     }
 
     /**
-     * Returns whether the clip follows the stack's size instead of a fixed rectangle. Works after removal.
+     * Returns whether the clip follows the stack's size instead of a fixed rectangle. Works after
+     * removal.
      *
      * @return true if set by {@link #clipToStack}
      */
@@ -733,7 +744,8 @@ public final class Layer {
      * <p>In a {@linkplain #enableMapWindow() map window} layer, a lasting handle is dropped when
      * its cell leaves the window. Lasting handles are meant for display-owned animation such as
      * tweens, flashes, and bumps. Game state that must survive scrolling belongs in the grid, set
-     * through the map window's filler; per-frame effects belong in {@link #obtainFrameCellHandle frame handles}.
+     * through the map window's filler; per-frame effects belong in
+     * {@link #obtainFrameCellHandle frame handles}.
      *
      * @param column grid column, from 0 up to the grid's column count - 1
      * @param row grid row, from 0 up to the grid's row count - 1, growing downward
@@ -749,18 +761,19 @@ public final class Layer {
 
     /**
      * Returns the frame handle for one cell, creating it on the first request (the only time this
-     * allocates). It is meant for effects applied again every frame: {@link LayerStack#beginCellEffects}
-     * resets it, and releases it once it stays unused for {@link #getFrameReleaseSeconds()}. The
-     * same handle is returned until it is released or detached, so request it again after a release.
+     * allocates). It is meant for effects applied again every frame:
+     * {@link LayerStack#beginCellEffects} resets it, and releases it once it stays unused for
+     * {@link #getFrameReleaseSeconds()}. The same handle is returned until it is released or
+     * detached, so request it again after a release.
      *
-     * <p>A cell can have both a lasting handle ({@link #obtainCellHandle}) and a frame handle. They are separate
-     * objects and never change each other's values; the cell is drawn with both effects combined, as
-     * described in {@link CellHandle}. A frame handle has no pivot of its own, and its pivot setters
-     * throw; the effective pivot is the lasting handle's.
+     * <p>A cell can have both a lasting handle ({@link #obtainCellHandle}) and a frame handle. They
+     * are separate objects and never change each other's values; the cell is drawn with both
+     * effects combined, as described in {@link CellHandle}. A frame handle has no pivot of its own,
+     * and its pivot setters throw; the effective pivot is the lasting handle's.
      *
-     * <p>Frame handles move with {@link #scroll} and are detached by a grid shrink or layer removal,
-     * like lasting handles. {@link #resetCellHandles} and {@link #releaseIdleCellHandles} do not
-     * touch them; {@link LayerStack#beginCellEffects} manages them.
+     * <p>Frame handles move with {@link #scroll} and are detached by a grid shrink or layer
+     * removal, like lasting handles. {@link #resetCellHandles} and {@link #releaseIdleCellHandles}
+     * do not touch them; {@link LayerStack#beginCellEffects} manages them.
      *
      * <p>To drive a frame handle with a timeline, use
      * {@link com.github.halfdeadgames.asciigdx.tween.Timeline#writingEveryApply()} with a setter
@@ -797,8 +810,9 @@ public final class Layer {
      * are 0. The cells of released handles draw as plain grid cells.
      *
      * <p>A released handle is detached: its getters keep working and its setters throw
-     * {@link IllegalStateException}. Call {@link #obtainCellHandle} again for a fresh handle. Call this when an
-     * effect ends or moves on, not every frame, because each re-request allocates a new handle.
+     * {@link IllegalStateException}. Call {@link #obtainCellHandle} again for a fresh handle. Call
+     * this when an effect ends or moves on, not every frame, because each re-request allocates a
+     * new handle.
      *
      * <p>Settings that do not lift the cell, such as a custom pivot, do not keep a handle from
      * being released, and they are lost with it.
@@ -811,8 +825,8 @@ public final class Layer {
     }
 
     /**
-     * Sets how many seconds a frame handle must stay idle before {@link LayerStack#beginCellEffects}
-     * releases it. Lasting handles are not affected. Default 1.
+     * Sets how many seconds a frame handle must stay idle before
+     * {@link LayerStack#beginCellEffects} releases it. Lasting handles are not affected. Default 1.
      *
      * @param seconds idle time in seconds; finite and above 0
      * @throws IllegalArgumentException if {@code seconds} is not a finite number above 0
@@ -821,7 +835,8 @@ public final class Layer {
     public void setFrameReleaseSeconds(float seconds) {
         requireAttached();
         if (Float.isNaN(seconds) || Float.isInfinite(seconds) || seconds <= 0f) {
-            throw new IllegalArgumentException("Release seconds must be finite and above 0: " + seconds);
+            throw new IllegalArgumentException(
+                    "Release seconds must be finite and above 0: " + seconds);
         }
         frameReleaseSeconds = seconds;
     }
@@ -849,7 +864,8 @@ public final class Layer {
      * <p>Unlike {@link TerminalGrid#scroll}, which moves content only and leaves handles keyed to
      * their positions, this keeps each handle's motion and overrides with its content. Handles
      * pushed out of the grid are detached as after a shrink: getters work, setters throw, and
-     * {@link #obtainCellHandle} gives a new handle. Free sprites are pixel-positioned and stay where they are.
+     * {@link #obtainCellHandle} gives a new handle. Free sprites are pixel-positioned and stay
+     * where they are.
      *
      * <p>Nothing is allocated except a possible rehash of the position index. A zero shift does
      * nothing.
@@ -864,7 +880,8 @@ public final class Layer {
     public void scroll(int columns, int rows) {
         requireAttached();
         if (mapWindow != null) {
-            throw new IllegalStateException("A map window scrolls with the camera, not by scroll()");
+            throw new IllegalStateException(
+                    "A map window scrolls with the camera, not by scroll()");
         }
         scrollContent(columns, rows);
     }
@@ -909,8 +926,8 @@ public final class Layer {
      * offset never exposes an edge, plus the margins for zoom or rotation.
      *
      * <p>In this mode the pivot (see {@link #setPivot}) is measured in map pixels, and the default
-     * pivot (0, 0) is the map's top-left corner. A game that zooms or rotates a map window should set
-     * the pivot to the map point it wants to stay fixed, for example the player. Cell queries
+     * pivot (0, 0) is the map's top-left corner. A game that zooms or rotates a map window should
+     * set the pivot to the map point it wants to stay fixed, for example the player. Cell queries
      * still return grid cells.
      *
      * <p>Changing the glyph source of a map window changes the cell size, so it asks for a full
@@ -972,14 +989,18 @@ public final class Layer {
         return mapWindow != null;
     }
 
-    /** Re-reads the camera and scrolls the content by any origin change; does nothing outside map window mode. */
+    /**
+     * Re-reads the camera and scrolls the content by any origin change; does nothing outside map
+     * window mode.
+     */
     void followCamera() {
         if (mapWindow == null) {
             return;
         }
         updateMapWindowOrigin();
         if (mapWindow.hasShifted()) {
-            // Origins are bounded by MapWindowOrigin.MAX_ORIGIN, so negating the shift cannot overflow.
+            // Origins are bounded by MapWindowOrigin.MAX_ORIGIN, so negating the shift cannot
+            // overflow.
             scrollContent(-mapWindow.getShiftColumns(), -mapWindow.getShiftRows());
         }
     }
@@ -1054,7 +1075,10 @@ public final class Layer {
         Guards.requireCellInside(column, row, grid.getColumns(), grid.getRows());
     }
 
-    /** Brings the renderer in line with the cell handles before drawing; see {@link CellHandleSet#syncBeforeDraw}. */
+    /**
+     * Brings the renderer in line with the cell handles before drawing; see
+     * {@link CellHandleSet#syncBeforeDraw}.
+     */
     void syncCellHandles() {
         cellHandleSet.syncBeforeDraw();
     }

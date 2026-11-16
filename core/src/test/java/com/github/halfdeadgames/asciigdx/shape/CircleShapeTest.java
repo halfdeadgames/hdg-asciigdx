@@ -35,8 +35,10 @@ class CircleShapeTest {
 
     @Test
     void outlineIsTheFilledCellsWithAnOutsideSideNeighbor() {
-        final RecordedVisits filled = RecordedVisits.of(new CircleShape(10.5f, 10.5f, 3f, ShapeFill.FILLED, 1f));
-        final RecordedVisits outline = RecordedVisits.of(new CircleShape(10.5f, 10.5f, 3f, ShapeFill.OUTLINE, 1f));
+        final RecordedVisits filled =
+                RecordedVisits.of(new CircleShape(10.5f, 10.5f, 3f, ShapeFill.FILLED, 1f));
+        final RecordedVisits outline =
+                RecordedVisits.of(new CircleShape(10.5f, 10.5f, 3f, ShapeFill.OUTLINE, 1f));
 
         assertTrue(outline.hasNoDuplicates());
         assertTrue(outline.isInRowMajorOrder());
@@ -53,14 +55,16 @@ class CircleShapeTest {
 
     @Test
     void outlineIsAClosedRing() {
-        final RecordedVisits outline = RecordedVisits.of(new CircleShape(10.5f, 10.5f, 5f, ShapeFill.OUTLINE, 1f));
+        final RecordedVisits outline =
+                RecordedVisits.of(new CircleShape(10.5f, 10.5f, 5f, ShapeFill.OUTLINE, 1f));
 
         for (final RecordedVisits.Visit cell : outline.visits) {
             int neighbors = 0;
             for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
                 for (int columnOffset = -1; columnOffset <= 1; columnOffset++) {
                     final boolean isSelf = rowOffset == 0 && columnOffset == 0;
-                    if (!isSelf && outline.contains(cell.column() + columnOffset, cell.row() + rowOffset)) {
+                    if (!isSelf && outline.contains(cell.column() + columnOffset,
+                            cell.row() + rowOffset)) {
                         neighbors++;
                     }
                 }
@@ -89,7 +93,8 @@ class CircleShapeTest {
 
     @Test
     void tinyRadiusAroundACellCenterKeepsThatCell() {
-        final RecordedVisits visits = RecordedVisits.of(new CircleShape(5.5f, 5.5f, 0.1f, ShapeFill.FILLED, 1f));
+        final RecordedVisits visits =
+                RecordedVisits.of(new CircleShape(5.5f, 5.5f, 0.1f, ShapeFill.FILLED, 1f));
 
         assertEquals(1, visits.count());
         assertTrue(visits.contains(5, 5));
@@ -111,7 +116,8 @@ class CircleShapeTest {
 
     @Test
     void offCenterSingleMemberCellHasFractionZero() {
-        final RecordedVisits visits = RecordedVisits.of(new CircleShape(5.6f, 5.6f, 0.2f, ShapeFill.FILLED, 1f));
+        final RecordedVisits visits =
+                RecordedVisits.of(new CircleShape(5.6f, 5.6f, 0.2f, ShapeFill.FILLED, 1f));
 
         assertEquals(1, visits.count());
         assertTrue(visits.contains(5, 5));
@@ -121,9 +127,12 @@ class CircleShapeTest {
     @Test
     void outOfRangeCenterOrRadiusThrows() {
         final float huge = CircleShape.COORDINATE_LIMIT * 2f;
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(huge, 0f, 1f, ShapeFill.FILLED, 1f));
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(0f, huge, 1f, ShapeFill.FILLED, 1f));
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(0f, 0f, huge, ShapeFill.FILLED, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(huge, 0f, 1f, ShapeFill.FILLED, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(0f, huge, 1f, ShapeFill.FILLED, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(0f, 0f, huge, ShapeFill.FILLED, 1f));
         assertThrows(IllegalArgumentException.class,
                 () -> new CircleShape(0f, 0f, Float.MAX_VALUE, ShapeFill.FILLED, 1f));
         assertThrows(IllegalArgumentException.class,
@@ -152,15 +161,18 @@ class CircleShapeTest {
 
     @Test
     void invalidArgumentsThrow() {
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(0f, 0f, 0f, ShapeFill.FILLED, 1f));
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(0f, 0f, -1f, ShapeFill.FILLED, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(0f, 0f, 0f, ShapeFill.FILLED, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(0f, 0f, -1f, ShapeFill.FILLED, 1f));
         assertThrows(IllegalArgumentException.class,
                 () -> new CircleShape(0f, 0f, Float.POSITIVE_INFINITY, ShapeFill.FILLED, 1f));
         assertThrows(IllegalArgumentException.class,
                 () -> new CircleShape(Float.NaN, 0f, 1f, ShapeFill.FILLED, 1f));
         assertThrows(IllegalArgumentException.class,
                 () -> new CircleShape(0f, Float.POSITIVE_INFINITY, 1f, ShapeFill.FILLED, 1f));
-        assertThrows(IllegalArgumentException.class, () -> new CircleShape(0f, 0f, 1f, ShapeFill.FILLED, 0f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CircleShape(0f, 0f, 1f, ShapeFill.FILLED, 0f));
         assertThrows(IllegalArgumentException.class,
                 () -> new CircleShape(0f, 0f, 1f, ShapeFill.FILLED, Float.NaN));
         assertThrows(IllegalArgumentException.class,

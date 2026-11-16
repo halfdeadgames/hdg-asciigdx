@@ -79,7 +79,7 @@ class CellColorTest {
 
     @Test
     void rgbaRejectsOutOfRangeChannels() {
-        for (int bad : new int[] {-1, 256}) {
+        for (int bad : new int[]{-1, 256}) {
             assertThrows(IllegalArgumentException.class, () -> CellColor.rgba(bad, 0, 0, 0));
             assertThrows(IllegalArgumentException.class, () -> CellColor.rgba(0, bad, 0, 0));
             assertThrows(IllegalArgumentException.class, () -> CellColor.rgba(0, 0, bad, 0));

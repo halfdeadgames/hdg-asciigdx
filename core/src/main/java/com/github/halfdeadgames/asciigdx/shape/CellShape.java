@@ -1,8 +1,9 @@
 package com.github.halfdeadgames.asciigdx.shape;
 
 /**
- * A set of grid cells. Shapes are never empty, so the bounds are always valid. Coordinates may be negative
- * or outside any grid; consumers clip. {@link ShapeCellVisitor} describes the distance units.
+ * A set of grid cells. Shapes are never empty, so the bounds are always valid. Coordinates may be
+ * negative or outside any grid; consumers clip. {@link ShapeCellVisitor} describes the distance
+ * units.
  */
 public interface CellShape {
 

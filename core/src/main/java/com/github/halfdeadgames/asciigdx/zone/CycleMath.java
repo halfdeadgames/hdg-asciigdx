@@ -9,10 +9,10 @@ final class CycleMath {
     }
 
     /**
-     * Position in cycles: time divided by the period, minus the cell's phase. A larger phase delays the
-     * cell, so a phase that grows with distance sends the pattern outward over time. The time part is
-     * wrapped to 0..1 in double precision first, so the result stays precise after hours of play. The
-     * phase is not wrapped, so the result can fall outside 0..1.
+     * Position in cycles: time divided by the period, minus the cell's phase. A larger phase delays
+     * the cell, so a phase that grows with distance sends the pattern outward over time. The time
+     * part is wrapped to 0..1 in double precision first, so the result stays precise after hours of
+     * play. The phase is not wrapped, so the result can fall outside 0..1.
      */
     static float position(float timeSeconds, float periodSeconds, Phase phase, ZoneCell where) {
         double cycles = (double) timeSeconds / periodSeconds;

@@ -33,10 +33,10 @@ final class ResolvedEffects {
     }
 
     /**
-     * Resolves the layer's own effects, then the effects of every group it reaches, directly or as an
-     * ancestor: the color transforms run in sequence and the alphas multiply. A group's effects run
-     * after those of every descendant group the layer is in; groups that are not ancestors of each
-     * other run in the order the layer joined them. Each reached group is applied once.
+     * Resolves the layer's own effects, then the effects of every group it reaches, directly or as
+     * an ancestor: the color transforms run in sequence and the alphas multiply. A group's effects
+     * run after those of every descendant group the layer is in; groups that are not ancestors of
+     * each other run in the order the layer joined them. Each reached group is applied once.
      */
     void resolve(ColorEffects own, Array<LayerGroup> groups) {
         resolveOwn(own);
@@ -55,7 +55,8 @@ final class ResolvedEffects {
      * already counted.
      */
     private void markChain(LayerGroup start) {
-        for (LayerGroup group = start; group != null && !group.isMarkedIn(resolveId); group = group.getParent()) {
+        for (LayerGroup group = start;
+             group != null && !group.isMarkedIn(resolveId); group = group.getParent()) {
             group.markIn(resolveId);
             LayerGroup parent = group.getParent();
             if (parent != null) {
@@ -65,12 +66,13 @@ final class ResolvedEffects {
     }
 
     /**
-     * Applies the group unless it is already applied or still waits on a child, then moves up to each
-     * parent that has no children left to wait on.
+     * Applies the group unless it is already applied or still waits on a child, then moves up to
+     * each parent that has no children left to wait on.
      */
     private void applyWhenReady(LayerGroup start) {
         LayerGroup group = start;
-        while (group != null && !group.isAppliedIn(resolveId) && !group.hasPendingChildrenIn(resolveId)) {
+        while (group != null && !group.isAppliedIn(resolveId) && !group.hasPendingChildrenIn(
+                resolveId)) {
             applyGroup(group);
             LayerGroup parent = group.getParent();
             if (parent != null) {

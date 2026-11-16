@@ -10,7 +10,8 @@ class ColorMatrixTest {
 
     private static final float TOLERANCE = 1e-5f;
     private static final float[][] SAMPLE_COLORS = {
-        {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f}, {0.5f, 0.5f, 0.5f}
+            {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f},
+            {0.5f, 0.5f, 0.5f}
     };
 
     private static ColorEffects identity() {
@@ -156,7 +157,7 @@ class ColorMatrixTest {
         for (float[] color : SAMPLE_COLORS) {
             matrix.apply(color[0], color[1], color[2], expected);
             Vector3 actual = new Vector3(color[0], color[1], color[2]).mul(uploaded);
-            assertArrayClose(expected, new float[] {actual.x, actual.y, actual.z});
+            assertArrayClose(expected, new float[]{actual.x, actual.y, actual.z});
         }
     }
 }

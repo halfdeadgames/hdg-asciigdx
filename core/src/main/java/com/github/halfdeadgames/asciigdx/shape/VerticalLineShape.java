@@ -3,13 +3,14 @@ package com.github.halfdeadgames.asciigdx.shape;
 /**
  * A one-cell-thick vertical line. Its center is the middle of the line. It has no fill mode.
  *
- * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are visited
- * from the top row to the bottom row, as guaranteed by {@link CellShape}.
+ * <p>Coordinates are cells: columns grow to the right and rows grow downward (y-down). Cells are
+ * visited from the top row to the bottom row, as guaranteed by {@link CellShape}.
  * {@link #forEachCell(ShapeCellVisitor)} allocates nothing.
  *
  * <p>Instances are mutable and not thread-safe. A setter takes effect on the next
- * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from inside
- * its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape is unchanged.
+ * {@code forEachCell} call, and the bounds getters reflect it immediately. Changing the shape from
+ * inside its own {@code forEachCell} visitor gives undefined results. If a setter throws, the shape
+ * is unchanged.
  *
  * <p>Create instances with {@link #forSquareCells(int, int, int)} or
  * {@link #forCellAspect(int, int, int, float)}.
@@ -46,21 +47,21 @@ public final class VerticalLineShape implements CellShape {
     }
 
     /**
-     * Creates a vertical line for cells of any shape. The aspect only affects reported distances, never
-     * which cells are visited.
+     * Creates a vertical line for cells of any shape. The aspect only affects reported distances,
+     * never which cells are visited.
      *
      * @param column                  column of the line, in cells; may be negative
      * @param top                     top row, in cells; may be negative
      * @param length                  length in cells, at least 1
-     * @param rowHeightPerColumnWidth cell height divided by cell width (2 for tall 1:2 cells); finite and
-     *                                above 0
+     * @param rowHeightPerColumnWidth cell height divided by cell width (2 for tall 1:2 cells);
+     *                                finite and above 0
      * @return a new vertical line
-     * @throws IllegalArgumentException if {@code rowHeightPerColumnWidth} is not finite or is not above 0,
-     *                                  if {@code length} is below 1, or if the last row would reach
-     *                                  {@link Integer#MAX_VALUE}
+     * @throws IllegalArgumentException if {@code rowHeightPerColumnWidth} is not finite or is not
+     *                                  above 0, if {@code length} is below 1, or if the last row
+     *                                  would reach {@link Integer#MAX_VALUE}
      */
     public static VerticalLineShape forCellAspect(int column, int top, int length,
-                                                  float rowHeightPerColumnWidth) {
+            float rowHeightPerColumnWidth) {
         return new VerticalLineShape(column, top, length, rowHeightPerColumnWidth);
     }
 
@@ -69,8 +70,8 @@ public final class VerticalLineShape implements CellShape {
      *
      * @param column column of the line, in cells; may be negative
      * @param top    top row, in cells; may be negative
-     * @throws IllegalArgumentException if the last row would reach {@link Integer#MAX_VALUE}; the shape is
-     *                                  then unchanged
+     * @throws IllegalArgumentException if the last row would reach {@link Integer#MAX_VALUE}; the
+     *                                  shape is then unchanged
      */
     public void setPosition(int column, int top) {
         ShapeMath.requireSpan(top, length, "length");
@@ -106,7 +107,8 @@ public final class VerticalLineShape implements CellShape {
         for (int current = top; current <= bottom; current++) {
             final double rowDelta = Math.abs(current + 0.5 - (top + length / 2.0));
             final float distance = (float) (rowDelta * rowHeightPerColumnWidth);
-            visitor.visit(column, current, distance, ShapeMath.distanceFraction(distance, largestDistance));
+            visitor.visit(column, current, distance,
+                    ShapeMath.distanceFraction(distance, largestDistance));
         }
     }
 

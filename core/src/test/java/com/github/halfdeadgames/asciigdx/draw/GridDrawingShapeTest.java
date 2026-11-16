@@ -41,7 +41,8 @@ class GridDrawingShapeTest {
     void outlineRectangleLeavesInsideUntouched() {
         TerminalGrid grid = new TerminalGrid(8, 8);
 
-        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(1, 1, 5, 5, ShapeFill.OUTLINE), '#', RED, BLUE);
+        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(1, 1, 5, 5, ShapeFill.OUTLINE),
+                '#', RED, BLUE);
 
         assertEquals('#', grid.getCodePoint(1, 1));
         assertEquals('#', grid.getCodePoint(5, 5));
@@ -72,10 +73,14 @@ class GridDrawingShapeTest {
     void shapeEntirelyOffGridWritesNothing() {
         TerminalGrid grid = new TerminalGrid(4, 4);
 
-        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(-10, 0, 5, 4, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(4, 0, 3, 4, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(0, -5, 4, 5, ShapeFill.FILLED), '#', RED, BLUE);
-        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(0, 4, 4, 2, ShapeFill.FILLED), '#', RED, BLUE);
+        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(-10, 0, 5, 4, ShapeFill.FILLED),
+                '#', RED, BLUE);
+        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(4, 0, 3, 4, ShapeFill.FILLED),
+                '#', RED, BLUE);
+        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(0, -5, 4, 5, ShapeFill.FILLED),
+                '#', RED, BLUE);
+        GridDrawing.fillShape(grid, RectangleShape.forSquareCells(0, 4, 4, 2, ShapeFill.FILLED),
+                '#', RED, BLUE);
 
         assertEquals(0, countGlyphs(grid, '#'));
     }
@@ -109,7 +114,8 @@ class GridDrawingShapeTest {
     void tallAspectCircleCoversFewerRowsThanColumns() {
         TerminalGrid grid = new TerminalGrid(20, 20);
 
-        GridDrawing.fillShape(grid, new CircleShape(10f, 10f, 6f, ShapeFill.FILLED, 2f), 'o', RED, BLUE);
+        GridDrawing.fillShape(
+                grid, new CircleShape(10f, 10f, 6f, ShapeFill.FILLED, 2f), 'o', RED, BLUE);
 
         int rows = countRowsWithGlyph(grid, 'o');
         int columns = countColumnsWithGlyph(grid, 'o');
@@ -139,8 +145,10 @@ class GridDrawingShapeTest {
         TerminalGrid grid = new TerminalGrid(4, 4);
         RectangleShape shape = RectangleShape.forSquareCells(0, 0, 2, 2, ShapeFill.FILLED);
 
-        assertThrows(NullPointerException.class, () -> GridDrawing.fillShape(null, shape, '#', RED, BLUE));
-        assertThrows(NullPointerException.class, () -> GridDrawing.fillShape(grid, null, '#', RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.fillShape(null, shape, '#', RED, BLUE));
+        assertThrows(NullPointerException.class,
+                () -> GridDrawing.fillShape(grid, null, '#', RED, BLUE));
     }
 
     private static int countCells(CellShape shape) {

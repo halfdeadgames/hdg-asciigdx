@@ -158,7 +158,8 @@ public final class Panel {
     }
 
     private static void requireValidBounds(float x, float y, float width, float height) {
-        if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(width) || !Float.isFinite(height)) {
+        if (!Float.isFinite(x) || !Float.isFinite(y) || !Float.isFinite(width) || !Float.isFinite(
+                height)) {
             throw new IllegalArgumentException("panel bounds must be finite: " + x + ", " + y + ", "
                     + width + ", " + height);
         }

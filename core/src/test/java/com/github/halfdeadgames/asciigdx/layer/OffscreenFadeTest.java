@@ -55,20 +55,22 @@ class OffscreenFadeTest {
     }
 
     private Layer layerWithRecordingRenderer() {
-        LayerStack cellStack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-            @Override
-            public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch,
-                    Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            }
+        LayerStack cellStack =
+                TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                    @Override
+                    public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch,
+                            Affine2 layerTransform, ResolvedEffects effects,
+                            Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                    }
 
-            @Override
-            public void setGlyphSource(GlyphSource glyphSource) {
-            }
+                    @Override
+                    public void setGlyphSource(GlyphSource glyphSource) {
+                    }
 
-            @Override
-            public void dispose() {
-            }
-        });
+                    @Override
+                    public void dispose() {
+                    }
+                });
         return cellStack.add(new TerminalGrid(2, 2), new NoGlyphs());
     }
 
@@ -131,7 +133,7 @@ class OffscreenFadeTest {
     void fullBackbufferViewportSamplesTheWholeTexture() {
         float[] quad = new float[OffscreenFade.COMPOSITE_FLOATS];
 
-        OffscreenFade.writeCompositeQuad(new int[] {0, 0, 800, 600}, 800, 600, quad);
+        OffscreenFade.writeCompositeQuad(new int[]{0, 0, 800, 600}, 800, 600, quad);
 
         assertVertex(quad, 0, -1f, -1f, 0f, 0f);
         assertVertex(quad, 1, 1f, -1f, 1f, 0f);
@@ -143,7 +145,7 @@ class OffscreenFadeTest {
     void letterboxedViewportSamplesOnlyItsRectangle() {
         float[] quad = new float[OffscreenFade.COMPOSITE_FLOATS];
 
-        OffscreenFade.writeCompositeQuad(new int[] {100, 50, 600, 500}, 800, 600, quad);
+        OffscreenFade.writeCompositeQuad(new int[]{100, 50, 600, 500}, 800, 600, quad);
 
         assertVertex(quad, 0, -1f, -1f, 0.125f, 50f / 600f);
         assertVertex(quad, 1, 1f, -1f, 0.875f, 50f / 600f);

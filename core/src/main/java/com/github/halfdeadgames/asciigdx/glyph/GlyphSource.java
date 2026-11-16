@@ -48,7 +48,8 @@ public interface GlyphSource extends Disposable {
      * Tells whether the source has its own glyph for a code point, rather than the fallback.
      *
      * @param codePoint the Unicode code point; any int is accepted
-     * @return true if {@link #getGlyphRegion(int)} returns that glyph, false if it returns the fallback
+     * @return true if {@link #getGlyphRegion(int)} returns that glyph, false if it returns the
+     *         fallback
      */
     boolean hasGlyph(int codePoint);
 }

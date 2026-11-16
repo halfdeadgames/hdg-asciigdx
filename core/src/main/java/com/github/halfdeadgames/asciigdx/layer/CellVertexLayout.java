@@ -35,14 +35,17 @@ final class CellVertexLayout {
 
     static VertexAttributes createAttributes() {
         return new VertexAttributes(
-                new VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
+                new VertexAttribute(VertexAttributes.Usage.Position, 2,
+                        ShaderProgram.POSITION_ATTRIBUTE),
                 packedColor(BACKGROUND_COLOR_ATTRIBUTE),
                 packedColor(FOREGROUND_COLOR_ATTRIBUTE),
-                new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, TEXCOORD_ATTRIBUTE, 0));
+                new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2,
+                        TEXCOORD_ATTRIBUTE, 0));
     }
 
     private static VertexAttribute packedColor(String name) {
-        return new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, GL20.GL_UNSIGNED_BYTE, true, name);
+        return new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, GL20.GL_UNSIGNED_BYTE,
+                true, name);
     }
 
     /** Number of meshes needed to hold the given quads. */

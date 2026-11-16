@@ -46,27 +46,29 @@ class SpritePivotKeepingPlacementTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-        }
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                @Override
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+                        Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                }
 
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
+                @Override
+                public void setGlyphSource(GlyphSource glyphSource) {
+                }
 
-        @Override
-        public void dispose() {
-        }
-    });
+                @Override
+                public void dispose() {
+                }
+            });
     private final Layer layer = stack.add(new TerminalGrid(6, 5), new FakeSource());
     private final GlyphSprite sprite = layer.addSprite('@', 0xFFFFFFFF, 20f, 15f);
     private final CellHandle handle = layer.obtainCellHandle(3, 2);
 
     private static float[] quadOf(SpriteTransform transform, float x, float y) {
         float[] vertices = new float[CellVertexLayout.FLOATS_PER_QUAD];
-        SpriteQuadWriter.writeQuad(vertices, 0, transform, 0xFFFFFFFF, x, y, CELL_WIDTH, CELL_HEIGHT,
+        SpriteQuadWriter.writeQuad(vertices, 0, transform, 0xFFFFFFFF, x, y, CELL_WIDTH,
+                CELL_HEIGHT,
                 0f, 0f, 1f, 1f);
         return vertices;
     }
@@ -158,8 +160,8 @@ class SpritePivotKeepingPlacementTest {
 
         float[] quad = spriteQuad(sprite);
 
-        // The bottom-left corner is the pivot and stays at the sprite's box corner (x 20, y 15 + 12 down,
-        // stored negated because quad vertices are y-up).
+        // The bottom-left corner is the pivot and stays at the sprite's box corner (x 20, y 15 + 12
+        // down, stored negated because quad vertices are y-up).
         assertEquals(20f, quad[CellVertexLayout.POSITION_OFFSET], TOLERANCE);
         assertEquals(-27f, quad[CellVertexLayout.POSITION_OFFSET + 1], TOLERANCE);
     }
@@ -209,7 +211,9 @@ class SpritePivotKeepingPlacementTest {
     void helperMatchesHandWorkedQuarterTurn() {
         // Clockwise quarter turn, scale (2, 3), shift (4, 1): M = [0 -3; 2 0] in y-down,
         // M * shift = (-3, 8), so the position moves by -(shift - M * shift) = -(7, -7).
-        assertEquals(10f - 7f, SpritePlacement.xKeepingPlacement(10f, 4f, 1f, 2f, 3f, 90f), TOLERANCE);
-        assertEquals(20f + 7f, SpritePlacement.yKeepingPlacement(20f, 4f, 1f, 2f, 3f, 90f), TOLERANCE);
+        assertEquals(10f - 7f, SpritePlacement.xKeepingPlacement(10f, 4f, 1f, 2f, 3f, 90f),
+                TOLERANCE);
+        assertEquals(20f + 7f, SpritePlacement.yKeepingPlacement(20f, 4f, 1f, 2f, 3f, 90f),
+                TOLERANCE);
     }
 }

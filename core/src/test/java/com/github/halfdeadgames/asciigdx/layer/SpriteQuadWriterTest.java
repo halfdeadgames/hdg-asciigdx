@@ -39,13 +39,17 @@ class SpriteQuadWriterTest {
     }
 
     private static void assertCorner(float[] quad, int corner, float x, float y) {
-        assertEquals(x, quad[corner * STRIDE + CellVertexLayout.POSITION_OFFSET], 0f, "x of corner " + corner);
-        assertEquals(y, quad[corner * STRIDE + CellVertexLayout.POSITION_OFFSET + 1], 0f, "y of corner " + corner);
+        assertEquals(x, quad[corner * STRIDE + CellVertexLayout.POSITION_OFFSET], 0f,
+                "x of corner " + corner);
+        assertEquals(y, quad[corner * STRIDE + CellVertexLayout.POSITION_OFFSET + 1], 0f,
+                "y of corner " + corner);
     }
 
     private static void assertUv(float[] quad, int corner, float u, float v) {
-        assertEquals(u, quad[corner * STRIDE + CellVertexLayout.UV_OFFSET], 0f, "u of corner " + corner);
-        assertEquals(v, quad[corner * STRIDE + CellVertexLayout.UV_OFFSET + 1], 0f, "v of corner " + corner);
+        assertEquals(u, quad[corner * STRIDE + CellVertexLayout.UV_OFFSET], 0f,
+                "u of corner " + corner);
+        assertEquals(v, quad[corner * STRIDE + CellVertexLayout.UV_OFFSET + 1], 0f,
+                "v of corner " + corner);
     }
 
     private static void assertRotatedQuarterTurn(float[] quad) {
@@ -75,8 +79,10 @@ class SpriteQuadWriterTest {
         float[] quad = write(spriteAtCellTwoTwo());
         for (int corner = 0; corner < CellVertexLayout.VERTICES_PER_QUAD; corner++) {
             int base = corner * STRIDE;
-            assertEquals(ColorTools.fromRGBA8888(0), quad[base + CellVertexLayout.BACKGROUND_COLOR_OFFSET], 0f);
-            assertEquals(ColorTools.fromRGBA8888(COLOR), quad[base + CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
+            assertEquals(ColorTools.fromRGBA8888(0),
+                    quad[base + CellVertexLayout.BACKGROUND_COLOR_OFFSET], 0f);
+            assertEquals(ColorTools.fromRGBA8888(COLOR),
+                    quad[base + CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
         }
     }
 
@@ -84,13 +90,15 @@ class SpriteQuadWriterTest {
     void writesAtTheGivenStartAndLeavesOtherFloatsAlone() {
         float[] vertices = new float[QUAD * 3];
         Arrays.fill(vertices, -99f);
-        SpriteQuadWriter.writeQuad(vertices, QUAD, spriteAtCellTwoTwo(), CELL_WIDTH, CELL_HEIGHT, U, V, U2, V2);
+        SpriteQuadWriter.writeQuad(vertices, QUAD, spriteAtCellTwoTwo(), CELL_WIDTH, CELL_HEIGHT, U,
+                V, U2, V2);
 
         for (int i = 0; i < QUAD; i++) {
             assertEquals(-99f, vertices[i]);
             assertEquals(-99f, vertices[2 * QUAD + i]);
         }
-        assertArrayEquals(write(spriteAtCellTwoTwo()), Arrays.copyOfRange(vertices, QUAD, 2 * QUAD), 0f);
+        assertArrayEquals(
+                write(spriteAtCellTwoTwo()), Arrays.copyOfRange(vertices, QUAD, 2 * QUAD), 0f);
     }
 
     @Test
@@ -98,11 +106,13 @@ class SpriteQuadWriterTest {
         GlyphSprite sprite = spriteAtCellTwoTwo();
         sprite.setRotation(-90f);
         float[] snapped = new float[QUAD];
-        SpriteQuadWriter.writeQuad(snapped, 0, sprite, 16f, 24f, CELL_WIDTH, CELL_HEIGHT, U, V, U2, V2);
+        SpriteQuadWriter.writeQuad(
+                snapped, 0, sprite, 16f, 24f, CELL_WIDTH, CELL_HEIGHT, U, V, U2, V2);
         assertArrayEquals(write(sprite), snapped, 0f);
 
         sprite.setPosition(16.4f, 24.4f);
-        SpriteQuadWriter.writeQuad(snapped, 0, sprite, ClipMath.snap(sprite.getX()), ClipMath.snap(sprite.getY()),
+        SpriteQuadWriter.writeQuad(snapped, 0, sprite, ClipMath.snap(sprite.getX()),
+                ClipMath.snap(sprite.getY()),
                 CELL_WIDTH, CELL_HEIGHT, U, V, U2, V2);
         assertRotatedQuarterTurn(snapped);
     }

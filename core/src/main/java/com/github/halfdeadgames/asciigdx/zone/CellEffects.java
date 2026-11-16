@@ -4,12 +4,12 @@ import com.github.halfdeadgames.asciigdx.color.HueColor;
 import java.util.Objects;
 
 /**
- * Ready-made {@link CellEffect}s. Motion amounts are in cell fractions: 0.25 is a quarter of a cell,
- * scaled by the cell width for horizontal motion and by the cell height for vertical motion. Rotation is
- * in degrees and scale is a plain factor. Cycle positions and spin angles are wrapped in double
- * precision, so effects stay smooth at large times. Every factory validates its arguments once and
- * returns an effect that allocates nothing when applied. Motion stacks with other zones, and colors are
- * last-wins, as described in {@link CellEffect}.
+ * Ready-made {@link CellEffect}s. Motion amounts are in cell fractions: 0.25 is a quarter of a
+ * cell, scaled by the cell width for horizontal motion and by the cell height for vertical motion.
+ * Rotation is in degrees and scale is a plain factor. Cycle positions and spin angles are wrapped
+ * in double precision, so effects stay smooth at large times. Every factory validates its arguments
+ * once and returns an effect that allocates nothing when applied. Motion stacks with other zones,
+ * and colors are last-wins, as described in {@link CellEffect}.
  */
 public final class CellEffects {
 
@@ -56,11 +56,11 @@ public final class CellEffects {
     }
 
     /**
-     * Jitters each glyph to a new pseudo-random spot {@code stepsPerSecond} times per second. Every grid
-     * cell gets its own offset, and the same cell, step, and seed always give the same offset.
+     * Jitters each glyph to a new pseudo-random spot {@code stepsPerSecond} times per second. Every
+     * grid cell gets its own offset, and the same cell, step, and seed always give the same offset.
      *
-     * @param amplitudeCells largest offset on each axis, in cell widths horizontally and cell heights
-     *     vertically; finite and not negative
+     * @param amplitudeCells largest offset on each axis, in cell widths horizontally and cell
+     *     heights vertically; finite and not negative
      * @param stepsPerSecond offset changes per second; finite and greater than 0
      * @param seed any int; different seeds give different patterns
      * @throws IllegalArgumentException if a number is out of range
@@ -71,8 +71,10 @@ public final class CellEffects {
         return (cell, where, time) -> {
             int step = (int) Math.floor(time * stepsPerSecond);
             float x = signedUnit(CellHash.hash(where.getColumn(), where.getRow(), step, seed));
-            float y = signedUnit(CellHash.hash(where.getColumn(), where.getRow(), step, seed + SHAKE_Y_SALT));
-            cell.offsetBy(amplitudeCells * where.getCellWidth() * x, amplitudeCells * where.getCellHeight() * y);
+            float y = signedUnit(
+                    CellHash.hash(where.getColumn(), where.getRow(), step, seed + SHAKE_Y_SALT));
+            cell.offsetBy(amplitudeCells * where.getCellWidth() * x,
+                    amplitudeCells * where.getCellHeight() * y);
         };
     }
 
@@ -96,9 +98,10 @@ public final class CellEffects {
     }
 
     /**
-     * Turns each glyph at a steady speed. The rotation added is {@code degreesPerSecond * time}, reduced
-     * modulo 360 in double precision so it stays precise at large times, minus {@code 360 * phase}, so a
-     * bigger phase lags behind. Positive degrees turn clockwise on screen.
+     * Turns each glyph at a steady speed. The rotation added is {@code degreesPerSecond * time},
+     * reduced modulo 360 in double precision so it stays precise at large times, minus
+     * {@code 360 * phase}, so a bigger phase lags behind. Positive degrees turn clockwise on
+     * screen.
      *
      * @param degreesPerSecond turning speed; finite, may be negative
      * @param phase offset between cells, in turns
@@ -134,8 +137,8 @@ public final class CellEffects {
     }
 
     /**
-     * Tints the foreground with a hue that goes around the color wheel once per period, starting at red.
-     * If the time is NaN or infinite, the cell is left unchanged.
+     * Tints the foreground with a hue that goes around the color wheel once per period, starting at
+     * red. If the time is NaN or infinite, the cell is left unchanged.
      *
      * @param amount how strongly the hue is mixed in; from 0 to 1
      * @param periodSeconds seconds per trip around the wheel; finite and greater than 0
@@ -156,8 +159,8 @@ public final class CellEffects {
     }
 
     /**
-     * Runs several effects on each cell, in the order given. The array is copied, so later changes to it
-     * have no effect.
+     * Runs several effects on each cell, in the order given. The array is copied, so later changes
+     * to it have no effect.
      *
      * @param effects effects to run, in order
      * @throws NullPointerException if the array or any effect is null

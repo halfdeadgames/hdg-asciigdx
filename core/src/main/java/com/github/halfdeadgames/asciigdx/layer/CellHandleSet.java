@@ -11,8 +11,8 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
  * first handle. A cell with only a lasting handle is drawn through that handle itself, so nothing
  * is copied and the output matches a cell that never had a frame handle. As soon as the cell also
  * has a frame handle, the entry becomes a hidden handle that is never given out; before each draw
- * the two handles are folded into it by {@link CellHandleCombine}. The entry goes back to the lasting
- * handle when the frame handle is released, and is dropped when no handle is left.
+ * the two handles are folded into it by {@link CellHandleCombine}. The entry goes back to the
+ * lasting handle when the frame handle is released, and is dropped when no handle is left.
  *
  * <p>The renderer only learns of appended entries by itself; every replaced or removed entry is
  * followed by a rebind, so the renderer rebuilds its index.
@@ -119,7 +119,9 @@ final class CellHandleSet {
         }
     }
 
-    /** Releases every idle lasting handle, then rebinds the renderer once if the draw list changed. */
+    /**
+     * Releases every idle lasting handle, then rebinds the renderer once if the draw list changed.
+     */
     void releaseIdleLasting() {
         for (int i = lasting.size() - 1; i >= 0; i--) {
             if (lasting.get(i).isIdle()) {
@@ -158,7 +160,8 @@ final class CellHandleSet {
     }
 
     private void dropDrawnEntry(CellHandle entry) {
-        // Detached first: the renderer still indexes this entry, and a rewrite must not use its overrides.
+        // Detached first: the renderer still indexes this entry, and a rewrite must not use its
+        // overrides.
         entry.detach();
         settleRenderer(entry);
         drawn.remove(entry);
@@ -180,7 +183,8 @@ final class CellHandleSet {
      */
     private void settleRenderer(CellHandle entry) {
         if (isOutsideGrid(entry)) {
-            // The grid shrank since the last draw; the renderer's rebuild already forgets this cell.
+            // The grid shrank since the last draw; the renderer's rebuild already forgets this
+            // cell.
             return;
         }
         if (entry.isGlyphHidden()) {
@@ -253,7 +257,8 @@ final class CellHandleSet {
             CellHandle frameHandle = frame.get(i);
             CellHandle entry = drawn.at(frameHandle.getColumn(), frameHandle.getRow());
             CellHandle lastingHandle = lasting.at(frameHandle.getColumn(), frameHandle.getRow());
-            CellHandleCombine.combine(entry, lastingHandle == null ? CellHandleCombine.NO_EFFECT : lastingHandle,
+            CellHandleCombine.combine(entry,
+                    lastingHandle == null ? CellHandleCombine.NO_EFFECT : lastingHandle,
                     frameHandle);
         }
     }
@@ -291,7 +296,10 @@ final class CellHandleSet {
         }
     }
 
-    /** Clears hidden flags before a scroll, so none is left on a position that will hold other content. */
+    /**
+     * Clears hidden flags before a scroll, so none is left on a position that will hold other
+     * content.
+     */
     void showGlyphsAtOldPositions() {
         Array<CellHandle> entries = drawn.list();
         for (int i = 0; i < entries.size; i++) {
@@ -304,7 +312,8 @@ final class CellHandleSet {
             return;
         }
         if (!isInsideGrid(entry)) {
-            // The grid shrank since the last draw; the renderer's rebuild already forgets this flag.
+            // The grid shrank since the last draw; the renderer's rebuild already forgets this
+            // flag.
             entry.setGlyphHidden(false);
             return;
         }
@@ -313,7 +322,8 @@ final class CellHandleSet {
     }
 
     private boolean isInsideGrid(CellHandle cell) {
-        return Guards.isCellInside(cell.getColumn(), cell.getRow(), grid.getColumns(), grid.getRows());
+        return Guards.isCellInside(cell.getColumn(), cell.getRow(), grid.getColumns(),
+                grid.getRows());
     }
 
     /**

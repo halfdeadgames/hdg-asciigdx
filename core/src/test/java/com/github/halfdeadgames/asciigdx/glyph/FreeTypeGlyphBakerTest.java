@@ -19,13 +19,14 @@ import org.junit.jupiter.api.Test;
 
 class FreeTypeGlyphBakerTest {
 
-    private static final String FONT_FOLDER = "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
+    private static final String FONT_FOLDER =
+            "com/github/halfdeadgames/asciigdx/fonts/dungeon-mode/";
     private static final int PIXEL_SIZE = 8;
     private static final int MISSING_CODE_POINT = 0x4E00;
     // The fixture PNG and TTF are different revisions of dungeon.mode; these CP437 slots
     // (e.g. '%', 'i', the dark shade, and NBSP) are drawn differently in the two files.
     private static final Set<Integer> SLOTS_DRAWN_DIFFERENTLY_IN_PNG_AND_TTF =
-        new TreeSet<>(List.of(37, 74, 75, 102, 104, 105, 106, 125, 134, 139, 178, 200, 255));
+            new TreeSet<>(List.of(37, 74, 75, 102, 104, 105, 106, 125, 134, 139, 178, 200, 255));
 
     @BeforeAll
     static void loadNatives() {
@@ -38,13 +39,15 @@ class FreeTypeGlyphBakerTest {
         return new FileHandle(new File(url.toURI()));
     }
 
-    private static int opaquePixels(FreeTypeGlyphBaker.BakedSheet result, int codePoint, GlyphOrder order) {
+    private static int opaquePixels(FreeTypeGlyphBaker.BakedSheet result, int codePoint,
+            GlyphOrder order) {
         int slot = order.findSlot(codePoint);
         GlyphSheetLayout layout = result.getLayout();
         int count = 0;
         for (int y = 0; y < layout.getCellHeight(); y++) {
             for (int x = 0; x < layout.getCellWidth(); x++) {
-                int pixel = result.getPixmap().getPixel(layout.getSlotX(slot) + x, layout.getSlotY(slot) + y);
+                int pixel = result.getPixmap()
+                        .getPixel(layout.getSlotX(slot) + x, layout.getSlotY(slot) + y);
                 if ((pixel & 0xFF) != 0) {
                     count++;
                 }
@@ -55,9 +58,9 @@ class FreeTypeGlyphBakerTest {
 
     @Test
     void squareDesignCellBakesToRequestedSquareCell() throws URISyntaxException {
-        for (int cellHeight : new int[] {8, 16, 24}) {
+        for (int cellHeight : new int[]{8, 16, 24}) {
             FreeTypeGlyphBaker.BakedSheet result =
-                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), cellHeight, GlyphOrder.CP437);
+                    FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), cellHeight, GlyphOrder.CP437);
             try {
                 assertEquals(cellHeight, result.getLayout().getCellHeight());
                 assertEquals(cellHeight, result.getLayout().getCellWidth());
@@ -71,7 +74,7 @@ class FreeTypeGlyphBakerTest {
     void bakedSheetMatchesFixturePngSheetExceptRevisedGlyphs() throws URISyntaxException {
         Pixmap png = new Pixmap(font("dungeon-437.png"));
         FreeTypeGlyphBaker.BakedSheet result =
-            FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);
         try {
             Pixmap baked = result.getPixmap();
             assertEquals(png.getWidth(), baked.getWidth());
@@ -97,10 +100,12 @@ class FreeTypeGlyphBakerTest {
     @Test
     void fullBlockFillsItsWholeCell() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofCodePoints(0x2588);
-        FreeTypeGlyphBaker.BakedSheet result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
+        FreeTypeGlyphBaker.BakedSheet result =
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
             GlyphSheetLayout layout = result.getLayout();
-            assertEquals(layout.getCellWidth() * layout.getCellHeight(), opaquePixels(result, 0x2588, order));
+            assertEquals(layout.getCellWidth() * layout.getCellHeight(),
+                    opaquePixels(result, 0x2588, order));
         } finally {
             result.getPixmap().dispose();
         }
@@ -109,7 +114,8 @@ class FreeTypeGlyphBakerTest {
     @Test
     void letterCellHasOpaquePixels() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofString(" A");
-        FreeTypeGlyphBaker.BakedSheet result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
+        FreeTypeGlyphBaker.BakedSheet result =
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
             assertTrue(result.hasGlyph('A'));
             assertTrue(opaquePixels(result, 'A', order) > 0);
@@ -121,7 +127,8 @@ class FreeTypeGlyphBakerTest {
     @Test
     void opaqueGlyphPixelsAreWhite() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofString("A");
-        FreeTypeGlyphBaker.BakedSheet result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
+        FreeTypeGlyphBaker.BakedSheet result =
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
             Pixmap pixmap = result.getPixmap();
             for (int y = 0; y < pixmap.getHeight(); y++) {
@@ -141,7 +148,7 @@ class FreeTypeGlyphBakerTest {
     void invertedLetterCellIsMostlyOpaque() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofString("A");
         FreeTypeGlyphBaker.BakedSheet result =
-            FreeTypeGlyphBaker.bake(font("dungeon-mode-inverted.ttf"), PIXEL_SIZE, order);
+                FreeTypeGlyphBaker.bake(font("dungeon-mode-inverted.ttf"), PIXEL_SIZE, order);
         try {
             int cellPixels = result.getLayout().getCellWidth() * result.getLayout().getCellHeight();
             assertTrue(opaquePixels(result, 'A', order) * 2 > cellPixels);
@@ -153,7 +160,8 @@ class FreeTypeGlyphBakerTest {
     @Test
     void spaceIsPresentAndBlank() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofString(" A");
-        FreeTypeGlyphBaker.BakedSheet result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
+        FreeTypeGlyphBaker.BakedSheet result =
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
             assertTrue(result.hasGlyph(' '));
             assertEquals(0, opaquePixels(result, ' ', order));
@@ -165,7 +173,8 @@ class FreeTypeGlyphBakerTest {
     @Test
     void codePointMissingFromFontIsReportedAndBlank() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofCodePoints('A', MISSING_CODE_POINT);
-        FreeTypeGlyphBaker.BakedSheet result = FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
+        FreeTypeGlyphBaker.BakedSheet result =
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order);
         try {
             assertTrue(result.hasGlyph('A'));
             assertFalse(result.hasGlyph(MISSING_CODE_POINT));
@@ -178,7 +187,7 @@ class FreeTypeGlyphBakerTest {
     @Test
     void pixmapSizeIsColumnsAndRowsTimesCellSize() throws URISyntaxException {
         FreeTypeGlyphBaker.BakedSheet result =
-            FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, GlyphOrder.CP437);
         try {
             GlyphSheetLayout layout = result.getLayout();
             assertEquals(16, layout.getColumns());
@@ -195,7 +204,7 @@ class FreeTypeGlyphBakerTest {
     void customColumnsRoundRowsUp() throws URISyntaxException {
         GlyphOrder order = GlyphOrder.ofString("ABCDE");
         FreeTypeGlyphBaker.BakedSheet result =
-            FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order, 2, false);
+                FreeTypeGlyphBaker.bake(font("dungeon-mode.ttf"), PIXEL_SIZE, order, 2, false);
         try {
             assertEquals(2, result.getLayout().getColumns());
             assertEquals(3, result.getLayout().getRows());
@@ -209,8 +218,9 @@ class FreeTypeGlyphBakerTest {
         FileHandle file = font("dungeon-mode.ttf");
         GlyphOrder order = GlyphOrder.ofString("A");
         assertThrows(IllegalArgumentException.class, () -> FreeTypeGlyphBaker.bake(file, 0, order));
-        assertThrows(IllegalArgumentException.class, () -> FreeTypeGlyphBaker.bake(file, -1, order));
         assertThrows(IllegalArgumentException.class,
-            () -> FreeTypeGlyphBaker.bake(file, PIXEL_SIZE, order, 0, true));
+                () -> FreeTypeGlyphBaker.bake(file, -1, order));
+        assertThrows(IllegalArgumentException.class,
+                () -> FreeTypeGlyphBaker.bake(file, PIXEL_SIZE, order, 0, true));
     }
 }

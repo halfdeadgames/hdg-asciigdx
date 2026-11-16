@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
-/** The rotation, scale, and pivot of a drawn glyph quad; what {@link SpriteQuadWriter} needs besides position and color. */
+/**
+ * The rotation, scale, and pivot of a drawn glyph quad; what {@link SpriteQuadWriter} needs besides
+ * position and color.
+ */
 interface SpriteTransform {
 
     /** Rotation in degrees, positive is clockwise on screen. */

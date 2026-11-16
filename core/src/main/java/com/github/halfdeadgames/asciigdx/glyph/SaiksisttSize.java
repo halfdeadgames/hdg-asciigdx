@@ -2,7 +2,8 @@ package com.github.halfdeadgames.asciigdx.glyph;
 
 /**
  * The cell sizes the bundled Saiksistt font is drawn in. Square cells suit maps and gameplay, and
- * tall cells suit long text. Pass a size to {@link TextureGlyphSource#loadSaiksistt(SaiksisttSize)}.
+ * tall cells suit long text. Pass a size to
+ * {@link TextureGlyphSource#loadSaiksistt(SaiksisttSize)}.
  */
 public enum SaiksisttSize {
 

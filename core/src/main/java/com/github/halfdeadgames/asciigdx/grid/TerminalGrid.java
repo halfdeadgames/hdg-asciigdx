@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Grid of cells that can be resized with {@link #resize(int, int)}. Each cell holds a code point (the glyph to draw,
- * as a Unicode value that the font maps to a glyph) and foreground and background colors. The grid stores display
- * data only.
+ * Grid of cells that can be resized with {@link #resize(int, int)}. Each cell holds a code point
+ * (the glyph to draw, as a Unicode value that the font maps to a glyph) and foreground and
+ * background colors. The grid stores display data only.
  *
- * <p>The origin (0, 0) is the top-left cell. {@code x} grows to the right and
- * {@code y} grows downward, in text-row order. Coordinates are column and row indices in cells, not pixels.
+ * <p>The origin (0, 0) is the top-left cell. {@code x} grows to the right and {@code y} grows
+ * downward, in text-row order. Coordinates are column and row indices in cells, not pixels.
  *
  * <p>Colors are packed RGBA8888 ints ({@code 0xRRGGBBAA}), the format returned by
  * libGDX {@code Color.rgba8888()}. A 6-digit hex literal such as {@code 0xFF4040} is read as
@@ -48,7 +48,8 @@ import java.util.List;
 public final class TerminalGrid implements TerminalView {
 
     /**
-     * Code point of a cleared cell. Nothing is drawn for it. It is the NUL code point, so NUL cannot be drawn.
+     * Code point of a cleared cell. Nothing is drawn for it. It is the NUL code point, so NUL
+     * cannot be drawn.
      */
     public static final int EMPTY_CODE_POINT = 0;
 
@@ -73,7 +74,7 @@ public final class TerminalGrid implements TerminalView {
     public TerminalGrid(int columns, int rows) {
         if (columns <= 0 || rows <= 0) {
             throw new IllegalArgumentException(
-                "Grid size must be positive, was " + columns + "x" + rows);
+                    "Grid size must be positive, was " + columns + "x" + rows);
         }
         this.columns = columns;
         this.rows = rows;
@@ -105,7 +106,8 @@ public final class TerminalGrid implements TerminalView {
      * <p>The code point is stored as-is without validation. Invalid values are
      * left to the font layer.
      *
-     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is ignored
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
      * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
      * @param codePoint Unicode code point that picks the glyph to draw
      * @param foregroundRgba foreground color as RGBA8888
@@ -117,8 +119,8 @@ public final class TerminalGrid implements TerminalView {
         }
         int index = indexOf(x, y);
         boolean changed = codePoints[index] != codePoint
-            || foregrounds[index] != foregroundRgba
-            || backgrounds[index] != backgroundRgba;
+                || foregrounds[index] != foregroundRgba
+                || backgrounds[index] != backgroundRgba;
         if (!changed) {
             return;
         }
@@ -136,7 +138,8 @@ public final class TerminalGrid implements TerminalView {
      * <p>The code point is stored as-is without validation, like in
      * {@link #set(int, int, int, int, int)}.
      *
-     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is ignored
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
      * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
      * @param codePoint Unicode code point that picks the glyph to draw
      */
@@ -149,7 +152,8 @@ public final class TerminalGrid implements TerminalView {
      * kept. Does nothing if {@code (x, y)} is outside the grid. The cell becomes
      * dirty only if the stored color changes.
      *
-     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is ignored
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
      * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
      * @param foregroundRgba foreground color as RGBA8888
      */
@@ -162,7 +166,8 @@ public final class TerminalGrid implements TerminalView {
      * kept. Does nothing if {@code (x, y)} is outside the grid. The cell becomes
      * dirty only if the stored color changes.
      *
-     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is ignored
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
      * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
      * @param backgroundRgba background color as RGBA8888
      */
@@ -222,8 +227,8 @@ public final class TerminalGrid implements TerminalView {
     public void clear() {
         for (int index = 0; index < codePoints.length; index++) {
             if (codePoints[index] != EMPTY_CODE_POINT
-                || foregrounds[index] != TRANSPARENT_RGBA
-                || backgrounds[index] != TRANSPARENT_RGBA) {
+                    || foregrounds[index] != TRANSPARENT_RGBA
+                    || backgrounds[index] != TRANSPARENT_RGBA) {
                 markTrackers(index);
             }
         }
@@ -264,8 +269,9 @@ public final class TerminalGrid implements TerminalView {
      * be shifted by the same amount. Discarded cells do not come back when the
      * grid grows again.
      *
-     * <p>When recentering across repeated resizes, compute each shift from the content's current position rather than
-     * halving the size change, because integer division makes the halved form drift.
+     * <p>When recentering across repeated resizes, compute each shift from the content's current
+     * position rather than halving the size change, because integer division makes the halved form
+     * drift.
      *
      * <p>Resizing allocates new storage, so call it from resize handling, not
      * from per-frame code.
@@ -284,7 +290,7 @@ public final class TerminalGrid implements TerminalView {
     public void resize(int columns, int rows, int shiftX, int shiftY) {
         if (columns <= 0 || rows <= 0) {
             throw new IllegalArgumentException(
-                "Grid size must be positive, was " + columns + "x" + rows);
+                    "Grid size must be positive, was " + columns + "x" + rows);
         }
         int newCellCount = cellCountOf(columns, rows);
         int oldColumns = this.columns;
@@ -322,16 +328,19 @@ public final class TerminalGrid implements TerminalView {
     }
 
     /**
-     * Moves the content inside the grid without changing its size: every cell {@code (x, y)} moves to
-     * {@code (x + shiftX, y + shiftY)}. Cells that land outside are discarded and do not come back. Cells that
-     * scroll in are empty ({@link #EMPTY_CODE_POINT}, {@link #TRANSPARENT_RGBA}), as after {@link #clear()}.
+     * Moves the content inside the grid without changing its size: every cell {@code (x, y)} moves
+     * to {@code (x + shiftX, y + shiftY)}. Cells that land outside are discarded and do not come
+     * back. Cells that scroll in are empty ({@link #EMPTY_CODE_POINT}, {@link #TRANSPARENT_RGBA}),
+     * as after {@link #clear()}.
      *
-     * <p>This moves content inside the grid, not the layer on screen, and callers must shift their own stored
-     * coordinates by the same amount. It does not allocate, so it is safe for per-step camera scrolling. Use
-     * {@link #resize(int, int, int, int)} for the allocating variant that also changes the size.
+     * <p>This moves content inside the grid, not the layer on screen, and callers must shift their
+     * own stored coordinates by the same amount. It does not allocate, so it is safe for per-step
+     * camera scrolling. Use {@link #resize(int, int, int, int)} for the allocating variant that
+     * also changes the size.
      *
-     * <p>A zero shift does nothing. Any other shift marks every cell of every registered {@link DirtyTracker}
-     * dirty. A shift of at least the column count or row count empties the grid.
+     * <p>A zero shift does nothing. Any other shift marks every cell of every registered
+     * {@link DirtyTracker} dirty. A shift of at least the column count or row count empties the
+     * grid.
      *
      * @param shiftX columns to move the content to the right (negative moves left)
      * @param shiftY rows to move the content down (negative moves up)
@@ -368,7 +377,8 @@ public final class TerminalGrid implements TerminalView {
         }
     }
 
-    private void copyRow(int sourceRow, int sourceColumn, int targetRow, int targetColumn, int length) {
+    private void copyRow(int sourceRow, int sourceColumn, int targetRow, int targetColumn,
+            int length) {
         int source = sourceRow * columns + sourceColumn;
         int target = targetRow * columns + targetColumn;
         System.arraycopy(codePoints, source, codePoints, target, length);
@@ -413,7 +423,7 @@ public final class TerminalGrid implements TerminalView {
             return Math.multiplyExact(columns, rows);
         } catch (ArithmeticException overflow) {
             throw new IllegalArgumentException(
-                "Grid size " + columns + "x" + rows + " is too large", overflow);
+                    "Grid size " + columns + "x" + rows + " is too large", overflow);
         }
     }
 
@@ -429,7 +439,7 @@ public final class TerminalGrid implements TerminalView {
     static void requireCellInside(int x, int y, int columns, int rows) {
         if (x < 0 || x >= columns || y < 0 || y >= rows) {
             throw new IndexOutOfBoundsException(
-                "Cell (" + x + ", " + y + ") is outside a " + columns + "x" + rows + " grid");
+                    "Cell (" + x + ", " + y + ") is outside a " + columns + "x" + rows + " grid");
         }
     }
 }

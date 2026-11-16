@@ -3,14 +3,15 @@
  * {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid}. The entry point is
  * {@link com.github.halfdeadgames.asciigdx.draw.GridDrawing}.
  *
- * <p>Positions are column and row indices in cells, not pixels. The origin (0, 0) is the top-left cell,
- * columns grow to the right, and rows grow downward (y-down).
+ * <p>Positions are column and row indices in cells, not pixels. The origin (0, 0) is the top-left
+ * cell, columns grow to the right, and rows grow downward (y-down).
  *
- * <p>Colors are packed RGBA8888 ints ({@code 0xRRGGBBAA}). A 6-digit hex literal has no alpha byte and draws
- * the wrong color, so wrap it with {@link com.github.halfdeadgames.asciigdx.color.CellColor#rgb(int)}.
+ * <p>Colors are packed RGBA8888 ints ({@code 0xRRGGBBAA}). A 6-digit hex literal has no alpha byte
+ * and draws the wrong color, so wrap it with
+ * {@link com.github.halfdeadgames.asciigdx.color.CellColor#rgb(int)}.
  *
- * <p>Writes outside the grid are skipped, so text, rectangles, boxes, and shapes may start or end off-grid.
- * Size arguments must not be negative, and object arguments must not be {@code null}.
+ * <p>Writes outside the grid are skipped, so text, rectangles, boxes, and shapes may start or end
+ * off-grid. Size arguments must not be negative, and object arguments must not be {@code null}.
  *
  * <p>Nothing in this package is thread-safe. Call it from the render thread.
  *

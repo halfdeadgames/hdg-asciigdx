@@ -45,7 +45,8 @@ class LayerMapWindowTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(10, 6);
     private final Layer layer = stack.add(grid, new SquareSource(16));
     private final Vector2 point = new Vector2();
@@ -59,7 +60,8 @@ class LayerMapWindowTest {
     }
 
     private float screenXOfMapPixel(Layer target, float mapPixelX) {
-        float gridPixelX = mapPixelX - originColumn(target) * target.getGlyphSource().getCellWidth();
+        float gridPixelX =
+                mapPixelX - originColumn(target) * target.getGlyphSource().getCellWidth();
         stack.toWorldPoint(target, 0f, 0f, gridPixelX, 0f, point);
         return point.x;
     }
@@ -236,7 +238,7 @@ class LayerMapWindowTest {
         layer.enableMapWindow();
         float mapCellLeft = 5 * 16f;
 
-        for (float cameraX : new float[] {0f, 4f, 16f, 20f, 37f, 48f}) {
+        for (float cameraX : new float[]{0f, 4f, 16f, 20f, 37f, 48f}) {
             stack.setCamera(cameraX, 0f);
             assertEquals(mapCellLeft - cameraX, screenXOfMapPixel(layer, mapCellLeft), 1e-4f,
                     "camera " + cameraX);
@@ -248,7 +250,7 @@ class LayerMapWindowTest {
         Layer small = addLayer(8);
         small.enableMapWindow();
 
-        for (float cameraX : new float[] {0f, 3f, 8f, 21f, 48f}) {
+        for (float cameraX : new float[]{0f, 3f, 8f, 21f, 48f}) {
             stack.setCamera(cameraX, 0f);
             assertEquals(80f - cameraX, screenXOfMapPixel(small, 80f), 1e-4f, "camera " + cameraX);
         }
@@ -269,10 +271,12 @@ class LayerMapWindowTest {
         layer.setPivot(80f, 0f);
         layer.enableMapWindow();
 
-        for (float cameraX : new float[] {0f, 16f, 32f}) {
+        for (float cameraX : new float[]{0f, 16f, 32f}) {
             stack.setCamera(cameraX, 0f);
-            assertEquals(80f - cameraX, screenXOfMapPixel(layer, 80f), 1e-4f, "pivot, camera " + cameraX);
-            assertEquals(120f - cameraX, screenXOfMapPixel(layer, 100f), 1e-4f, "off pivot, camera " + cameraX);
+            assertEquals(80f - cameraX, screenXOfMapPixel(layer, 80f), 1e-4f,
+                    "pivot, camera " + cameraX);
+            assertEquals(120f - cameraX, screenXOfMapPixel(layer, 100f), 1e-4f,
+                    "off pivot, camera " + cameraX);
         }
     }
 }

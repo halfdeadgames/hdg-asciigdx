@@ -37,7 +37,8 @@ final class CellShaderPass {
         batch.flush();
         applyBlend(batch, blend, allOpaque && effects.getAlpha() == 1f);
         layerMatrix.set(layerTransform);
-        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix()).mul(layerMatrix);
+        combinedMatrix.set(batch.getProjectionMatrix()).mul(batch.getTransformMatrix())
+                .mul(layerMatrix);
         shader.bind();
         shader.setUniformMatrix("u_projTrans", combinedMatrix);
         shader.setUniformi("u_texture", 0);
@@ -51,7 +52,8 @@ final class CellShaderPass {
     }
 
     private void setEffectUniforms(ResolvedEffects effects) {
-        shader.setUniformMatrix4fv("u_colorMatrix", effects.getMatrix().getValues(), 0, ColorMatrix.SIZE);
+        shader.setUniformMatrix4fv("u_colorMatrix", effects.getMatrix().getValues(), 0,
+                ColorMatrix.SIZE);
         shader.setUniformf("u_alpha", effects.getAlpha());
     }
 

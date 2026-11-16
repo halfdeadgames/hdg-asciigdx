@@ -30,15 +30,18 @@ class CellVertexLayoutTest {
     void attributeOffsetsMatchOffsetConstants() {
         VertexAttributes attributes = CellVertexLayout.createAttributes();
         assertEquals(4, attributes.size());
-        assertAttribute(attributes.get(0), ShaderProgram.POSITION_ATTRIBUTE, CellVertexLayout.POSITION_OFFSET);
+        assertAttribute(attributes.get(0), ShaderProgram.POSITION_ATTRIBUTE,
+                CellVertexLayout.POSITION_OFFSET);
         assertAttribute(attributes.get(1), CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE,
                 CellVertexLayout.BACKGROUND_COLOR_OFFSET);
         assertAttribute(attributes.get(2), CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE,
                 CellVertexLayout.FOREGROUND_COLOR_OFFSET);
-        assertAttribute(attributes.get(3), ShaderProgram.TEXCOORD_ATTRIBUTE + "0", CellVertexLayout.UV_OFFSET);
+        assertAttribute(attributes.get(3), ShaderProgram.TEXCOORD_ATTRIBUTE + "0",
+                CellVertexLayout.UV_OFFSET);
     }
 
-    private static void assertAttribute(VertexAttribute attribute, String alias, int offsetInFloats) {
+    private static void assertAttribute(VertexAttribute attribute, String alias,
+            int offsetInFloats) {
         assertEquals(alias, attribute.alias);
         assertEquals(offsetInFloats * Float.BYTES, attribute.offset, alias);
     }

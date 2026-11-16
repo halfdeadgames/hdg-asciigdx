@@ -27,22 +27,29 @@ class TerminalGridScrollTest {
         assertEquals(expected.getRows(), actual.getRows());
         for (int y = 0; y < expected.getRows(); y++) {
             for (int x = 0; x < expected.getColumns(); x++) {
-                assertEquals(expected.getCodePoint(x, y), actual.getCodePoint(x, y), "code point " + x + "," + y);
-                assertEquals(expected.getForeground(x, y), actual.getForeground(x, y), "fg " + x + "," + y);
-                assertEquals(expected.getBackground(x, y), actual.getBackground(x, y), "bg " + x + "," + y);
+                assertEquals(expected.getCodePoint(x, y), actual.getCodePoint(x, y),
+                        "code point " + x + "," + y);
+                assertEquals(expected.getForeground(x, y), actual.getForeground(x, y),
+                        "fg " + x + "," + y);
+                assertEquals(expected.getBackground(x, y), actual.getBackground(x, y),
+                        "bg " + x + "," + y);
             }
         }
     }
 
-    private static void assertMovedOrEmpty(TerminalGrid original, TerminalGrid scrolled, int shiftX, int shiftY) {
+    private static void assertMovedOrEmpty(TerminalGrid original, TerminalGrid scrolled, int shiftX,
+            int shiftY) {
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 int sourceX = x - shiftX;
                 int sourceY = y - shiftY;
                 if (original.contains(sourceX, sourceY)) {
-                    assertEquals(original.getCodePoint(sourceX, sourceY), scrolled.getCodePoint(x, y));
-                    assertEquals(original.getForeground(sourceX, sourceY), scrolled.getForeground(x, y));
-                    assertEquals(original.getBackground(sourceX, sourceY), scrolled.getBackground(x, y));
+                    assertEquals(original.getCodePoint(sourceX, sourceY),
+                            scrolled.getCodePoint(x, y));
+                    assertEquals(original.getForeground(sourceX, sourceY),
+                            scrolled.getForeground(x, y));
+                    assertEquals(original.getBackground(sourceX, sourceY),
+                            scrolled.getBackground(x, y));
                 } else {
                     assertEquals(TerminalGrid.EMPTY_CODE_POINT, scrolled.getCodePoint(x, y));
                     assertEquals(TerminalGrid.TRANSPARENT_RGBA, scrolled.getForeground(x, y));
@@ -123,7 +130,7 @@ class TerminalGridScrollTest {
 
     @Test
     void extremeShiftsEmptyGridWithoutException() {
-        for (int shift : new int[] {Integer.MIN_VALUE, Integer.MAX_VALUE}) {
+        for (int shift : new int[]{Integer.MIN_VALUE, Integer.MAX_VALUE}) {
             assertScrollMovesContent(shift, 0);
             assertScrollMovesContent(0, shift);
             assertScrollMovesContent(shift, shift);
@@ -157,7 +164,9 @@ class TerminalGridScrollTest {
 
     @Test
     void matchesResizeToSameSize() {
-        int[][] shifts = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {2, -1}, {-3, 2}, {1, 1}, {-1, -2}, {3, 2}, {5, 5}};
+        int[][] shifts =
+                {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {2, -1}, {-3, 2}, {1, 1}, {-1, -2}, {3, 2},
+                        {5, 5}};
         for (int[] shift : shifts) {
             var expected = filledGrid(WIDTH, HEIGHT);
             expected.resize(WIDTH, HEIGHT, shift[0], shift[1]);

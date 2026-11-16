@@ -23,7 +23,8 @@ final class GridMesh implements Disposable {
     GridMesh(int quadCount, ShaderProgram shader) {
         this.quadCount = quadCount;
         this.pass = new CellShaderPass(shader);
-        short[] indices = createQuadIndices(Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH));
+        short[] indices =
+                createQuadIndices(Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH));
         chunks = createChunks(CellVertexLayout.chunkCountFor(quadCount), indices);
     }
 
@@ -41,7 +42,8 @@ final class GridMesh implements Disposable {
 
     static short[] createQuadIndices(int quads) {
         short[] indices = new short[quads * CellVertexLayout.INDICES_PER_QUAD];
-        for (int quad = 0, index = 0, vertex = 0; quad < quads; quad++, vertex += CellVertexLayout.VERTICES_PER_QUAD) {
+        for (int quad = 0, index = 0, vertex = 0;
+             quad < quads; quad++, vertex += CellVertexLayout.VERTICES_PER_QUAD) {
             indices[index++] = (short) vertex;
             indices[index++] = (short) (vertex + 1);
             indices[index++] = (short) (vertex + 2);
@@ -55,8 +57,10 @@ final class GridMesh implements Disposable {
     /** Copies the full vertex array to the GPU. */
     void upload(float[] vertices) {
         for (int chunk = 0; chunk < chunks.length; chunk++) {
-            int start = chunk * CellVertexLayout.MAX_QUADS_PER_MESH * CellVertexLayout.FLOATS_PER_QUAD;
-            int count = CellVertexLayout.quadsInChunk(quadCount, chunk) * CellVertexLayout.FLOATS_PER_QUAD;
+            int start =
+                    chunk * CellVertexLayout.MAX_QUADS_PER_MESH * CellVertexLayout.FLOATS_PER_QUAD;
+            int count = CellVertexLayout.quadsInChunk(quadCount, chunk)
+                    * CellVertexLayout.FLOATS_PER_QUAD;
             chunks[chunk].setVertices(vertices, start, count);
         }
     }
@@ -69,7 +73,8 @@ final class GridMesh implements Disposable {
      * Leaves the batch's shader bound.
      */
     void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
-            ResolvedEffects effects, boolean allCellsOpaque, boolean hasVisibleCells, CellBlend blend) {
+            ResolvedEffects effects, boolean allCellsOpaque, boolean hasVisibleCells,
+            CellBlend blend) {
         if (!hasVisibleCells) {
             return;
         }
@@ -80,7 +85,8 @@ final class GridMesh implements Disposable {
 
     private void renderChunks() {
         for (int chunk = 0; chunk < chunks.length; chunk++) {
-            int indexCount = CellVertexLayout.quadsInChunk(quadCount, chunk) * CellVertexLayout.INDICES_PER_QUAD;
+            int indexCount = CellVertexLayout.quadsInChunk(quadCount, chunk)
+                    * CellVertexLayout.INDICES_PER_QUAD;
             chunks[chunk].render(pass.getShader(), GL20.GL_TRIANGLES, 0, indexCount);
         }
     }

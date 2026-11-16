@@ -78,7 +78,8 @@ public final class TweenClock {
     public void setTime(float seconds) {
         TweenChecks.requireFinite("seconds", seconds);
         if (!isLooping() && seconds < 0f) {
-            throw new IllegalArgumentException("seconds must be >= 0 on an unbounded clock: " + seconds);
+            throw new IllegalArgumentException(
+                    "seconds must be >= 0 on an unbounded clock: " + seconds);
         }
         time = normalize(seconds);
     }

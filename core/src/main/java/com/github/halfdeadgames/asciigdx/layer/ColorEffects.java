@@ -8,11 +8,11 @@ import com.badlogic.gdx.graphics.Color;
  * each group owns exactly one instance and reuses it every frame; there is no public constructor.
  * Get it from {@link Layer#getColorEffects()} or {@link LayerGroup#getColorEffects()}.
  *
- * <p>Every change takes effect on the GPU in the next frame. Changing an effect rewrites and uploads
- * nothing, so it is cheap to change every frame, for example to fade a layer or flash it white.
- * Values are never clamped, and the defaults leave every color unchanged: tint white (1, 1, 1, 1),
- * mix amount 0, saturation 1, invert 0. Color components are floats where 1 is full intensity, not
- * 0..255 bytes.
+ * <p>Every change takes effect on the GPU in the next frame. Changing an effect rewrites and
+ * uploads nothing, so it is cheap to change every frame, for example to fade a layer or flash it
+ * white. Values are never clamped, and the defaults leave every color unchanged: tint white (1, 1,
+ * 1, 1), mix amount 0, saturation 1, invert 0. Color components are floats where 1 is full
+ * intensity, not 0..255 bytes.
  *
  * <p>A layer's effects apply to that layer's cells and sprites. A group's effects apply to every
  * member layer after the member's own effects: the color transforms run in sequence and the alphas
@@ -155,9 +155,9 @@ public final class ColorEffects {
      *
      * <p>Alpha fades each cell as one flat color, so a glyph's own background does not show through
      * it; whatever is drawn below shows through the whole faded cell. Inside a cell, glyph and
-     * background always combine with normal "over" blending. The batch's blend functions decide only
-     * how the finished cell combines with what is below. A group's alpha multiplies with the alpha of
-     * each member layer's own tint.
+     * background always combine with normal "over" blending. The batch's blend functions decide
+     * only how the finished cell combines with what is below. A group's alpha multiplies with the
+     * alpha of each member layer's own tint.
      *
      * @param red the red multiplier, 1 for unchanged
      * @param green the green multiplier, 1 for unchanged
@@ -260,7 +260,9 @@ public final class ColorEffects {
         this.invert = invert;
     }
 
-    /** Overwrites {@code out} with saturation, then tint, mix, and invert folded into one transform. */
+    /**
+     * Overwrites {@code out} with saturation, then tint, mix, and invert folded into one transform.
+     */
     void writeColorMatrix(ColorMatrix out) {
         out.setSaturation(saturation);
         out.thenScale(tintRed, tintGreen, tintBlue);

@@ -16,16 +16,19 @@ final class PaddedSheet {
     /** Returns a layout with the same cells, columns, and rows, but a gutter around each cell. */
     static GlyphSheetLayout layoutFor(GlyphSheetLayout source) {
         return new GlyphSheetLayout(
-            source.getCellWidth(), source.getCellHeight(), source.getColumns(), source.getRows(), GUTTER, GUTTER);
+                source.getCellWidth(), source.getCellHeight(), source.getColumns(),
+                source.getRows(), GUTTER, GUTTER);
     }
 
     /**
      * Builds an RGBA8888 pixmap in the padded layout holding the first {@code slotCount} slots of
      * the source. The caller disposes the result.
      */
-    static Pixmap copy(Pixmap source, GlyphSheetLayout sourceLayout, GlyphSheetLayout paddedLayout, int slotCount) {
+    static Pixmap copy(Pixmap source, GlyphSheetLayout sourceLayout, GlyphSheetLayout paddedLayout,
+            int slotCount) {
         Pixmap padded = new Pixmap(
-            paddedLayout.getRequiredImageWidth(), paddedLayout.getRequiredImageHeight(), Pixmap.Format.RGBA8888);
+                paddedLayout.getRequiredImageWidth(), paddedLayout.getRequiredImageHeight(),
+                Pixmap.Format.RGBA8888);
         try {
             padded.setBlending(Pixmap.Blending.None);
             padded.setColor(CLEAR_WHITE);
@@ -41,14 +44,16 @@ final class PaddedSheet {
     }
 
     private static void copySlot(
-        Pixmap source, GlyphSheetLayout sourceLayout, Pixmap padded, GlyphSheetLayout paddedLayout, int slot) {
+            Pixmap source, GlyphSheetLayout sourceLayout, Pixmap padded,
+            GlyphSheetLayout paddedLayout, int slot) {
         int sourceX = sourceLayout.getSlotX(slot);
         int sourceY = sourceLayout.getSlotY(slot);
         int paddedX = paddedLayout.getSlotX(slot);
         int paddedY = paddedLayout.getSlotY(slot);
         for (int y = 0; y < sourceLayout.getCellHeight(); y++) {
             for (int x = 0; x < sourceLayout.getCellWidth(); x++) {
-                padded.drawPixel(paddedX + x, paddedY + y, cleanTexel(source.getPixel(sourceX + x, sourceY + y)));
+                padded.drawPixel(paddedX + x, paddedY + y,
+                        cleanTexel(source.getPixel(sourceX + x, sourceY + y)));
             }
         }
     }

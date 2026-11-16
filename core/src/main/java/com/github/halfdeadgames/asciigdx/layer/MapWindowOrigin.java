@@ -1,15 +1,16 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
 /**
- * Turns a camera position in virtual pixels into the whole-cell map origin shown at grid cell (0,0).
- * Each layer uses its own cell size, so layers with smaller cells get larger origin numbers for the
- * same camera. Only the math lives here; the caller shifts grid contents by the reported difference.
+ * Turns a camera position in virtual pixels into the whole-cell map origin shown at grid cell
+ * (0,0). Each layer uses its own cell size, so layers with smaller cells get larger origin numbers
+ * for the same camera. Only the math lives here; the caller shifts grid contents by the reported
+ * difference.
  */
 final class MapWindowOrigin {
 
     /**
-     * Largest origin magnitude in cells. A quarter of the int range keeps shifts (a difference of two
-     * origins), handle moves, and {@code origin + grid size} from overflowing int.
+     * Largest origin magnitude in cells. A quarter of the int range keeps shifts (a difference of
+     * two origins), handle moves, and {@code origin + grid size} from overflowing int.
      */
     static final int MAX_ORIGIN = Integer.MAX_VALUE / 4;
 
@@ -48,7 +49,8 @@ final class MapWindowOrigin {
      */
     static int originFor(float cameraPixels, float cellSize, int margin) {
         if (!Float.isFinite(cellSize) || cellSize <= 0f) {
-            throw new IllegalArgumentException("Cell size must be finite and positive: " + cellSize);
+            throw new IllegalArgumentException(
+                    "Cell size must be finite and positive: " + cellSize);
         }
         if (Float.isNaN(cameraPixels)) {
             return clampOrigin(-(long) margin);
@@ -62,7 +64,9 @@ final class MapWindowOrigin {
         return (int) Math.max(-MAX_ORIGIN, Math.min(MAX_ORIGIN, origin));
     }
 
-    /** Moves the window to the camera and records the change from the previous origin as the shift. */
+    /**
+     * Moves the window to the camera and records the change from the previous origin as the shift.
+     */
     void follow(float cameraX, float cameraY, float cellWidth, float cellHeight) {
         int newColumn = originFor(cameraX, cellWidth, marginColumns);
         int newRow = originFor(cameraY, cellHeight, marginRows);

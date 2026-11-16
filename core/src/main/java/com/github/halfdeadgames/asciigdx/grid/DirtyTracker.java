@@ -85,12 +85,14 @@ public final class DirtyTracker {
      * <p>A lambda that captures local variables allocates on each call, so
      * per-frame callers should reuse a visitor.
      *
-     * @param visitor receives the column and row index, in cells, of each dirty cell; must not be null
+     * @param visitor receives the column and row index, in cells, of each dirty cell; must not be
+     *         null
      * @throws NullPointerException if {@code visitor} is null
      */
     public void forEachDirtyCell(DirtyCellVisitor visitor) {
         Objects.requireNonNull(visitor, "visitor");
-        for (int index = dirtyCells.nextSetBit(0); index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
+        for (int index = dirtyCells.nextSetBit(0);
+             index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
             visitor.visit(index % columns, index / columns);
         }
     }

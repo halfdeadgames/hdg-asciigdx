@@ -38,7 +38,8 @@ public final class IntegerScaling extends Scaling {
      * @return a vector shared with later calls; never null
      */
     @Override
-    public Vector2 apply(float sourceWidth, float sourceHeight, float targetWidth, float targetHeight) {
+    public Vector2 apply(float sourceWidth, float sourceHeight, float targetWidth,
+            float targetHeight) {
         if (sourceWidth <= 0f || sourceHeight <= 0f || targetWidth <= 0f || targetHeight <= 0f) {
             temp.set(0f, 0f);
             return temp;

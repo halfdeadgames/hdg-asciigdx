@@ -21,11 +21,12 @@ import java.util.List;
  * {@link #forceNextApply()} then.
  *
  * <p>A timeline made with {@link #writingEveryApply()} skips nothing: each apply forces every
- * binding, so every setter is called on every apply, even when the value did not change. Use it
- * for values written to a frame handle ({@code Layer.obtainFrameCellHandle} or {@code MapWindow.obtainFrameCellHandle}).
- * {@code LayerStack.beginCellEffects} resets frame handles every frame, so a skipping timeline's
- * effect would vanish after one frame. Such a timeline must be applied every frame, after
- * {@code LayerStack.beginCellEffects}. The cost is one setter call per binding per apply.
+ * binding, so every setter is called on every apply, even when the value did not change. Use it for
+ * values written to a frame handle ({@code Layer.obtainFrameCellHandle} or
+ * {@code MapWindow.obtainFrameCellHandle}). {@code LayerStack.beginCellEffects} resets frame
+ * handles every frame, so a skipping timeline's effect would vanish after one frame. Such a
+ * timeline must be applied every frame, after {@code LayerStack.beginCellEffects}. The cost is one
+ * setter call per binding per apply.
  *
  * <p>A staggered binding writes one value per index and skips unchanged values per index. A child
  * timeline added with {@link #add(Timeline, float)} runs on local time and is forced along with

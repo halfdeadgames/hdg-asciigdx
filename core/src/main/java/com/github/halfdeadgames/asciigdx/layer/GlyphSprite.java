@@ -120,7 +120,8 @@ public final class GlyphSprite implements SpriteTransform {
      * Sets only the alpha of the glyph color, clamped to 0..1 and rounded to a byte. The red,
      * green, and blue bytes are kept.
      *
-     * @param alpha the new alpha, 0 for transparent and 1 for opaque; values outside 0..1 are clamped
+     * @param alpha the new alpha, 0 for transparent and 1 for opaque; values outside 0..1 are
+     *     clamped
      * @throws IllegalStateException if the sprite was removed
      */
     public void setAlpha(float alpha) {
@@ -131,7 +132,8 @@ public final class GlyphSprite implements SpriteTransform {
     }
 
     /**
-     * Horizontal position of the cell box's left edge, in virtual pixels from the layer's left edge.
+     * Horizontal position of the cell box's left edge, in virtual pixels from the layer's left
+     * edge.
      *
      * @return the x position in virtual pixels
      */

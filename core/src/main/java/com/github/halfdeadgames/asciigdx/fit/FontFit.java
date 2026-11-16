@@ -48,7 +48,7 @@ public final class FontFit {
      *     null, or if a minimum is zero or negative
      */
     public static FontFit choose(int windowWidth, int windowHeight, int minColumns, int minRows,
-                                 GlyphSource... fonts) {
+            GlyphSource... fonts) {
         if (fonts == null) {
             throw new IllegalArgumentException("fonts must not be null");
         }
@@ -70,7 +70,7 @@ public final class FontFit {
      *     a minimum is zero or negative
      */
     public static FontFit choose(int windowWidth, int windowHeight, int minColumns, int minRows,
-                                 List<GlyphSource> fonts) {
+            List<GlyphSource> fonts) {
         if (fonts == null || fonts.isEmpty()) {
             throw new IllegalArgumentException("fonts must not be null or empty");
         }
@@ -85,14 +85,16 @@ public final class FontFit {
             cellWidths[i] = candidate.getCellWidth();
             cellHeights[i] = candidate.getCellHeight();
         }
-        int index = chooseIndex(windowWidth, windowHeight, minColumns, minRows, cellWidths, cellHeights);
-        GridFit fit = GridFit.calculate(windowWidth, windowHeight, cellWidths[index], cellHeights[index],
-                minColumns, minRows);
+        int index = chooseIndex(windowWidth, windowHeight, minColumns, minRows, cellWidths,
+                cellHeights);
+        GridFit fit =
+                GridFit.calculate(windowWidth, windowHeight, cellWidths[index], cellHeights[index],
+                        minColumns, minRows);
         return new FontFit(index, fonts.get(index), fit);
     }
 
     static int chooseIndex(int windowWidth, int windowHeight, int minColumns, int minRows,
-                           int[] cellWidths, int[] cellHeights) {
+            int[] cellWidths, int[] cellHeights) {
         int last = cellWidths.length - 1;
         for (int i = 0; i < last; i++) {
             if (GridFit.calculate(windowWidth, windowHeight, cellWidths[i], cellHeights[i],

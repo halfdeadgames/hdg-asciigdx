@@ -1,11 +1,11 @@
 package com.github.halfdeadgames.asciigdx.zone;
 
 /**
- * Describes the cell an effect is currently running on: where it is in the grid, where it is inside the
- * zone's shape, and how far it is from the shape's center.
+ * Describes the cell an effect is currently running on: where it is in the grid, where it is inside
+ * the zone's shape, and how far it is from the shape's center.
  *
- * <p>The same instance is reused for every cell of every apply. Read it inside the effect call and do not
- * keep it.
+ * <p>The same instance is reused for every cell of every apply. Read it inside the effect call and
+ * do not keep it.
  */
 public final class ZoneCell {
 
@@ -26,7 +26,8 @@ public final class ZoneCell {
         this.cellHeight = cellHeight;
     }
 
-    void set(int column, int row, int zoneColumn, int zoneRow, float distance, float distanceFraction) {
+    void set(int column, int row, int zoneColumn, int zoneRow, float distance,
+            float distanceFraction) {
         this.column = column;
         this.row = row;
         this.zoneColumn = zoneColumn;
@@ -56,8 +57,8 @@ public final class ZoneCell {
     }
 
     /**
-     * Distance from the shape's center to the cell's center, in column widths, with rows scaled by the
-     * shape's aspect.
+     * Distance from the shape's center to the cell's center, in column widths, with rows scaled by
+     * the shape's aspect.
      */
     public float getDistance() {
         return distance;
@@ -69,16 +70,16 @@ public final class ZoneCell {
     }
 
     /**
-     * Width of one cell in virtual pixels. Multiply a horizontal amount in cell widths by it to get a
-     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} x offset.
+     * Width of one cell in virtual pixels. Multiply a horizontal amount in cell widths by it to get
+     * a {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} x offset.
      */
     public float getCellWidth() {
         return cellWidth;
     }
 
     /**
-     * Height of one cell in virtual pixels. Multiply a vertical amount in cell heights by it to get a
-     * {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} y offset.
+     * Height of one cell in virtual pixels. Multiply a vertical amount in cell heights by it to get
+     * a {@link com.github.halfdeadgames.asciigdx.layer.CellHandle} y offset.
      */
     public float getCellHeight() {
         return cellHeight;

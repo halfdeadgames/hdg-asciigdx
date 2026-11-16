@@ -33,10 +33,12 @@ final class CellVertexCache {
      */
     CellVertexCache(int columns, int rows, float cellWidth, float cellHeight) {
         if (columns <= 0 || rows <= 0) {
-            throw new IllegalArgumentException("Grid size must be positive: " + columns + "x" + rows);
+            throw new IllegalArgumentException(
+                    "Grid size must be positive: " + columns + "x" + rows);
         }
         if (!(cellWidth > 0f) || !(cellHeight > 0f)) {
-            throw new IllegalArgumentException("Cell size must be positive: " + cellWidth + "x" + cellHeight);
+            throw new IllegalArgumentException(
+                    "Cell size must be positive: " + cellWidth + "x" + cellHeight);
         }
         this.columns = columns;
         this.rows = rows;
@@ -79,14 +81,15 @@ final class CellVertexCache {
      * @throws IndexOutOfBoundsException if the cell is outside the grid
      */
     public void writeCell(int column, int row, int backgroundRgba, int foregroundRgba,
-                          float u, float v, float u2, float v2) {
+            float u, float v, float u2, float v2) {
         Guards.requireCellInside(column, row, columns, rows);
         int cell = row * columns + column;
         boolean backgroundVisible = !isFullyTransparent(backgroundRgba);
         boolean glyphVisible = !isFullyTransparent(foregroundRgba);
         boolean visible = backgroundVisible || glyphVisible;
 
-        writeQuad(cell, column, row, backgroundRgba, foregroundRgba, backgroundVisible, glyphVisible, u, v, u2, v2);
+        writeQuad(cell, column, row, backgroundRgba, foregroundRgba, backgroundVisible,
+                glyphVisible, u, v, u2, v2);
         updateVisible(cell, visible);
         updateNotOpaque(cell, visible && (backgroundRgba & 0xFF) != 0xFF);
     }
@@ -113,8 +116,8 @@ final class CellVertexCache {
     }
 
     private void writeQuad(int cell, int column, int row, int backgroundRgba, int foregroundRgba,
-                           boolean backgroundVisible, boolean glyphVisible,
-                           float u, float v, float u2, float v2) {
+            boolean backgroundVisible, boolean glyphVisible,
+            float u, float v, float u2, float v2) {
         int start = cell * CellVertexLayout.FLOATS_PER_QUAD;
         int stride = CellVertexLayout.FLOATS_PER_VERTEX;
         float left = column * cellWidth;
@@ -130,11 +133,12 @@ final class CellVertexCache {
             putQuad(start, left, bottom, background, 0f, 0f, 0f, 0f, 0f);
             return;
         }
-        putQuad(start, left, bottom, background, ColorTools.fromRGBA8888(foregroundRgba), u, v, u2, v2);
+        putQuad(start, left, bottom, background, ColorTools.fromRGBA8888(foregroundRgba),
+                u, v, u2, v2);
     }
 
     private void putQuad(int start, float left, float bottom, float background, float foreground,
-                         float u, float v, float u2, float v2) {
+            float u, float v, float u2, float v2) {
         int stride = CellVertexLayout.FLOATS_PER_VERTEX;
         float right = left + cellWidth;
         float top = bottom + cellHeight;
@@ -145,7 +149,8 @@ final class CellVertexCache {
         putVertex(start + 3 * stride, right, bottom, background, foreground, u2, v2);
     }
 
-    private void putVertex(int start, float x, float y, float background, float foreground, float u, float v) {
+    private void putVertex(int start, float x, float y, float background, float foreground, float u,
+            float v) {
         vertices[start + CellVertexLayout.POSITION_OFFSET] = x;
         vertices[start + CellVertexLayout.POSITION_OFFSET + 1] = y;
         vertices[start + CellVertexLayout.BACKGROUND_COLOR_OFFSET] = background;

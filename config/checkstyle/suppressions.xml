@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Unmodified libGDX project template file, kept as published. -->
+    <suppress files="[\\/]StartupHelper\.java$" checks=".*"/>
+    <!-- Javadoc rules cover the library modules only; app modules follow the comment rule. -->
+    <suppress files="[\\/](sandbox|sandbox-desktop|sandbox-android|glyph-workbench)[\\/]" checks="Javadoc|Atclause|RequireEmptyLineBeforeBlockTagGroup"/>
+</suppressions>

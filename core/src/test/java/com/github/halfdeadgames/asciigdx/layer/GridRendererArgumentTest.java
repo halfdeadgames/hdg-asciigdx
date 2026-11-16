@@ -10,14 +10,16 @@ class GridRendererArgumentTest {
 
     @Test
     void nullGridIsRejectedBeforeAnyGlResourceIsCreated() {
-        NullPointerException thrown = assertThrows(NullPointerException.class, () -> new GridRenderer(null, null));
+        NullPointerException thrown =
+                assertThrows(NullPointerException.class, () -> new GridRenderer(null, null));
         assertEquals("grid", thrown.getMessage());
     }
 
     @Test
     void nullGlyphSourceIsRejectedBeforeAnyGlResourceIsCreated() {
         TerminalGrid grid = new TerminalGrid(4, 3);
-        NullPointerException thrown = assertThrows(NullPointerException.class, () -> new GridRenderer(grid, null));
+        NullPointerException thrown =
+                assertThrows(NullPointerException.class, () -> new GridRenderer(grid, null));
         assertEquals("glyphSource", thrown.getMessage());
     }
 }

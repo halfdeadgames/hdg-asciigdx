@@ -54,14 +54,16 @@ class LayerClipperTest {
 
     private final FakeClipBackend backend = new FakeClipBackend();
     private final LayerClipper clipper = new LayerClipper(backend);
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer(),
-            backend);
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer(),
+                    backend);
 
     private Layer addLayer() {
         return HeadlessLayers.add(stack, new TerminalGrid(4, 3));
     }
 
-    private void resolveAndPush(Layer layer, float stackWidth, float stackHeight, boolean stackHasSize) {
+    private void resolveAndPush(Layer layer, float stackWidth, float stackHeight,
+            boolean stackHasSize) {
         clipper.beginFrame();
         clipper.queryViewportOnce(null);
         clipper.resolve(layer, stackWidth, stackHeight, stackHasSize);
@@ -131,7 +133,8 @@ class LayerClipperTest {
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
                 () -> clipper.resolve(layer, 0f, 0f, false));
 
-        assertEquals("Layer is clipped to the stack but the stack size is not set", thrown.getMessage());
+        assertEquals("Layer is clipped to the stack but the stack size is not set",
+                thrown.getMessage());
     }
 
     @Test

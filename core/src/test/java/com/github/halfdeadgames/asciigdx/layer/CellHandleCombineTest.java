@@ -133,7 +133,8 @@ class CellHandleCombineTest {
 
     @Test
     void aFullFrameMixCoversTheLastingMix() {
-        assertEquals(BLUE & ~CHANNEL_MASK, CellHandleCombine.mixColor(RED, 0.5f, BLUE, 1f) & ~CHANNEL_MASK);
+        assertEquals(BLUE & ~CHANNEL_MASK,
+                CellHandleCombine.mixColor(RED, 0.5f, BLUE, 1f) & ~CHANNEL_MASK);
     }
 
     @Test
@@ -148,7 +149,8 @@ class CellHandleCombineTest {
                 for (int frameColor : frameColors) {
                     for (float lastingAmount : amounts) {
                         for (float frameAmount : amounts) {
-                            assertComposedMatchesSequence(cell, lastingColor, lastingAmount, frameColor,
+                            assertComposedMatchesSequence(cell, lastingColor, lastingAmount,
+                                    frameColor,
                                     frameAmount);
                         }
                     }
@@ -157,11 +159,14 @@ class CellHandleCombineTest {
         }
     }
 
-    private static void assertComposedMatchesSequence(int cell, int lastingColor, float lastingAmount,
+    private static void assertComposedMatchesSequence(int cell, int lastingColor,
+            float lastingAmount,
             int frameColor, float frameAmount) {
         int sequential = CellColor.mixRgbKeepingAlpha(
-                CellColor.mixRgbKeepingAlpha(cell, lastingColor, lastingAmount), frameColor, frameAmount);
-        int composedColor = CellHandleCombine.mixColor(lastingColor, lastingAmount, frameColor, frameAmount);
+                CellColor.mixRgbKeepingAlpha(cell, lastingColor, lastingAmount), frameColor,
+                frameAmount);
+        int composedColor =
+                CellHandleCombine.mixColor(lastingColor, lastingAmount, frameColor, frameAmount);
         float composedAmount = CellHandleCombine.mixAmount(lastingAmount, frameAmount);
         int composed = CellColor.mixRgbKeepingAlpha(cell, composedColor, composedAmount);
 
@@ -170,8 +175,10 @@ class CellHandleCombineTest {
             int sequentialChannel = (sequential >>> shift) & CHANNEL_MASK;
             int composedChannel = (composed >>> shift) & CHANNEL_MASK;
             assertTrue(Math.abs(sequentialChannel - composedChannel) <= 1,
-                    "cell " + Integer.toHexString(cell) + " mixes " + lastingAmount + ", " + frameAmount
-                            + " shift " + shift + ": " + sequentialChannel + " vs " + composedChannel);
+                    "cell " + Integer.toHexString(cell) + " mixes " + lastingAmount + ", "
+                            + frameAmount
+                            + " shift " + shift + ": " + sequentialChannel + " vs "
+                            + composedChannel);
         }
     }
 

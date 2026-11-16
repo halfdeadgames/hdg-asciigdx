@@ -52,7 +52,8 @@ class MapWindowTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(COLUMNS, ROWS);
     private final Layer layer = stack.add(grid, new SquareSource(CELL));
 
@@ -75,7 +76,8 @@ class MapWindowTest {
         return cells;
     }
 
-    private static List<String> rectangleCells(int firstColumn, int lastColumn, int firstRow, int lastRow) {
+    private static List<String> rectangleCells(int firstColumn, int lastColumn, int firstRow,
+            int lastRow) {
         List<String> cells = new ArrayList<>();
         for (int row = firstRow; row <= lastRow; row++) {
             for (int column = firstColumn; column <= lastColumn; column++) {
@@ -211,7 +213,8 @@ class MapWindowTest {
         MapWindow window = enable();
 
         assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(1, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(2 + COLUMNS, 1));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> window.obtainCellHandle(2 + COLUMNS, 1));
         assertThrows(IndexOutOfBoundsException.class, () -> window.obtainCellHandle(2, 1 + ROWS));
     }
 
@@ -230,8 +233,10 @@ class MapWindowTest {
         MapWindow window = enable();
 
         assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(1, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(2 + COLUMNS, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> window.obtainFrameCellHandle(2, 1 + ROWS));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> window.obtainFrameCellHandle(2 + COLUMNS, 1));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> window.obtainFrameCellHandle(2, 1 + ROWS));
     }
 
     @Test
@@ -485,7 +490,8 @@ class MapWindowTest {
         assertThrows(IllegalStateException.class, () -> window.toGridRow(0));
         assertThrows(IllegalStateException.class, () -> window.toMapColumn(0));
         assertThrows(IllegalStateException.class, () -> window.toMapRow(0));
-        assertThrows(IllegalStateException.class, () -> window.forEachCellToFill((column, row) -> { }));
+        assertThrows(IllegalStateException.class, () -> window.forEachCellToFill((column, row) -> {
+        }));
         assertThrows(IllegalStateException.class, window::markAllFilled);
     }
 }

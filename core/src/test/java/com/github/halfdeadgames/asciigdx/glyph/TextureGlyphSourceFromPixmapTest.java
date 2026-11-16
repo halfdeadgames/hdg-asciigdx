@@ -26,7 +26,8 @@ class TextureGlyphSourceFromPixmapTest {
     void fallbackMissingFromSheetThrowsAndDisposesSheet() {
         Pixmap sheet = sheet(16, 8);
         assertThrows(IllegalArgumentException.class,
-            () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER, codePoint -> codePoint != '?', '?'));
+                () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER,
+                        codePoint -> codePoint != '?', '?'));
         assertTrue(sheet.isDisposed());
     }
 
@@ -34,7 +35,7 @@ class TextureGlyphSourceFromPixmapTest {
     void fallbackMissingFromOrderThrowsAndDisposesSheet() {
         Pixmap sheet = sheet(16, 8);
         assertThrows(IllegalArgumentException.class,
-            () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER, codePoint -> true, '#'));
+                () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER, codePoint -> true, '#'));
         assertTrue(sheet.isDisposed());
     }
 
@@ -42,7 +43,7 @@ class TextureGlyphSourceFromPixmapTest {
     void sheetSmallerThanLayoutThrowsAndDisposesSheet() {
         Pixmap sheet = sheet(8, 8);
         assertThrows(IllegalArgumentException.class,
-            () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER, codePoint -> true, '?'));
+                () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, ORDER, codePoint -> true, '?'));
         assertTrue(sheet.isDisposed());
     }
 
@@ -51,7 +52,8 @@ class TextureGlyphSourceFromPixmapTest {
         Pixmap sheet = sheet(16, 8);
         GlyphOrder tooLong = GlyphOrder.ofString("?AB");
         assertThrows(IllegalArgumentException.class,
-            () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, tooLong, codePoint -> true, '?'));
+                () -> TextureGlyphSource.fromPixmap(sheet, LAYOUT, tooLong, codePoint -> true,
+                        '?'));
         assertTrue(sheet.isDisposed());
     }
 }

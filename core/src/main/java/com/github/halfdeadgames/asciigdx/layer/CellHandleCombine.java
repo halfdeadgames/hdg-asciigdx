@@ -8,7 +8,9 @@ package com.github.halfdeadgames.asciigdx.layer;
  */
 final class CellHandleCombine {
 
-    /** Stands in for a cell that has no lasting handle: every value at its default. Never modified. */
+    /**
+     * Stands in for a cell that has no lasting handle: every value at its default. Never modified.
+     */
     static final CellHandle NO_EFFECT = new CellHandle(0, 0);
 
     private static final int CHANNEL_MASK = 0xFF;
@@ -33,9 +35,11 @@ final class CellHandleCombine {
     }
 
     private static void combineMotion(CellHandle target, CellHandle lasting, CellHandle frame) {
-        target.setOffset(lasting.getOffsetX() + frame.getOffsetX(), lasting.getOffsetY() + frame.getOffsetY());
+        target.setOffset(lasting.getOffsetX() + frame.getOffsetX(),
+                lasting.getOffsetY() + frame.getOffsetY());
         target.setRotation(lasting.getRotation() + frame.getRotation());
-        target.setScale(lasting.getScaleX() * frame.getScaleX(), lasting.getScaleY() * frame.getScaleY());
+        target.setScale(lasting.getScaleX() * frame.getScaleX(),
+                lasting.getScaleY() * frame.getScaleY());
         target.setPivot(lasting.getPivotX(), lasting.getPivotY());
         target.setAlphaMultiplier(lasting.getAlphaMultiplier() * frame.getAlphaMultiplier());
     }
@@ -51,7 +55,10 @@ final class CellHandleCombine {
                 mixAmount(lasting.getBackgroundMixAmount(), frame.getBackgroundMixAmount()));
     }
 
-    /** The frame glyph if one is set, otherwise the lasting glyph; either may be {@link CellHandle#NO_CODE_POINT}. */
+    /**
+     * The frame glyph if one is set, otherwise the lasting glyph; either may be
+     * {@link CellHandle#NO_CODE_POINT}.
+     */
     static int codePoint(int lastingCodePoint, int frameCodePoint) {
         if (frameCodePoint != CellHandle.NO_CODE_POINT) {
             return frameCodePoint;
@@ -92,13 +99,17 @@ final class CellHandleCombine {
         }
         float composedAmount = mixAmount(lastingAmount, frameAmount);
         float lastingWeight = lastingAmount * (1f - frameAmount);
-        int red = composedChannel(lastingRgba, frameRgba, 24, lastingWeight, frameAmount, composedAmount);
-        int green = composedChannel(lastingRgba, frameRgba, 16, lastingWeight, frameAmount, composedAmount);
-        int blue = composedChannel(lastingRgba, frameRgba, 8, lastingWeight, frameAmount, composedAmount);
+        int red = composedChannel(lastingRgba, frameRgba, 24, lastingWeight, frameAmount,
+                composedAmount);
+        int green = composedChannel(lastingRgba, frameRgba, 16, lastingWeight, frameAmount,
+                composedAmount);
+        int blue = composedChannel(lastingRgba, frameRgba, 8, lastingWeight, frameAmount,
+                composedAmount);
         return (red << 24) | (green << 16) | (blue << 8) | OPAQUE;
     }
 
-    private static int composedChannel(int lastingRgba, int frameRgba, int shift, float lastingWeight,
+    private static int composedChannel(int lastingRgba, int frameRgba, int shift,
+            float lastingWeight,
             float frameWeight, float composedAmount) {
         int lasting = (lastingRgba >>> shift) & CHANNEL_MASK;
         int frame = (frameRgba >>> shift) & CHANNEL_MASK;

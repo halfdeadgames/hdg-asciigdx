@@ -49,14 +49,14 @@ class FontFitTest {
 
     @Test
     void nonSquareCells() {
-        assertEquals(1, pick(1000, 600, 80, 24, new int[] {16, 10}, new int[] {32, 20}));
-        assertEquals(0, pick(1920, 1080, 80, 24, new int[] {10, 8}, new int[] {20, 16}));
+        assertEquals(1, pick(1000, 600, 80, 24, new int[]{16, 10}, new int[]{32, 20}));
+        assertEquals(0, pick(1920, 1080, 80, 24, new int[]{10, 8}, new int[]{20, 16}));
     }
 
     @Test
     void singleFontIsAlwaysChosen() {
-        assertEquals(0, pick(1600, 900, 80, 45, new int[] {16}, new int[] {16}));
-        assertEquals(0, pick(100, 100, 80, 45, new int[] {16}, new int[] {16}));
+        assertEquals(0, pick(1600, 900, 80, 45, new int[]{16}, new int[]{16}));
+        assertEquals(0, pick(100, 100, 80, 45, new int[]{16}, new int[]{16}));
     }
 
     @Test
@@ -77,7 +77,8 @@ class FontFitTest {
     void singleFontWithBadMinimumsThrowsThroughChoose() {
         List<GlyphSource> fonts = List.of(fontWithCellSize(16, 16));
         assertThrows(IllegalArgumentException.class, () -> FontFit.choose(1600, 900, 0, 45, fonts));
-        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(1600, 900, 80, -1, fonts));
+        assertThrows(IllegalArgumentException.class,
+                () -> FontFit.choose(1600, 900, 80, -1, fonts));
     }
 
     private static GlyphSource fontWithCellSize(int width, int height) {
@@ -110,11 +111,15 @@ class FontFitTest {
 
     @Test
     void invalidFontsThrow() {
-        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(100, 100, 1, 1, (GlyphSource[]) null));
-        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[0]));
         assertThrows(IllegalArgumentException.class,
-                () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[] {null}));
-        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(100, 100, 1, 1, (List<GlyphSource>) null));
-        assertThrows(IllegalArgumentException.class, () -> FontFit.choose(100, 100, 1, 1, List.<GlyphSource>of()));
+                () -> FontFit.choose(100, 100, 1, 1, (GlyphSource[]) null));
+        assertThrows(IllegalArgumentException.class,
+                () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[0]));
+        assertThrows(IllegalArgumentException.class,
+                () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[]{null}));
+        assertThrows(IllegalArgumentException.class,
+                () -> FontFit.choose(100, 100, 1, 1, (List<GlyphSource>) null));
+        assertThrows(IllegalArgumentException.class,
+                () -> FontFit.choose(100, 100, 1, 1, List.<GlyphSource>of()));
     }
 }

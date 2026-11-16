@@ -61,7 +61,7 @@ final class OklabMix {
         double blue = -0.0041960863 * lCubed - 0.7034186147 * mCubed + 1.7076147010 * sCubed;
 
         return (toChannel(red) << RED_SHIFT) | (toChannel(green) << GREEN_SHIFT)
-            | (toChannel(blue) << BLUE_SHIFT);
+                | (toChannel(blue) << BLUE_SHIFT);
     }
 
     private static int channelOf(int rgba, int shift) {
@@ -106,8 +106,8 @@ final class OklabMix {
 
     private static int toChannel(double linear) {
         double encoded = linear <= SRGB_ENCODE_THRESHOLD
-            ? 12.92 * linear
-            : 1.055 * Math.pow(linear, 1.0 / 2.4) - 0.055;
+                ? 12.92 * linear
+                : 1.055 * Math.pow(linear, 1.0 / 2.4) - 0.055;
         double clamped = Math.max(0.0, Math.min(1.0, encoded));
         return (int) Math.round(clamped * 255.0);
     }

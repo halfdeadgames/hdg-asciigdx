@@ -78,7 +78,8 @@ class SpriteMeshLiftedCellTest {
         cache.writeCell(column, row, 0, grid.getForeground(column, row),
                 region.getU(), region.getV(), region.getU2(), region.getV2());
         float[] own = new float[QUAD];
-        System.arraycopy(cache.getVertices(), (row * grid.getColumns() + column) * QUAD, own, 0, QUAD);
+        System.arraycopy(
+                cache.getVertices(), (row * grid.getColumns() + column) * QUAD, own, 0, QUAD);
         return own;
     }
 
@@ -89,7 +90,8 @@ class SpriteMeshLiftedCellTest {
                     vertices[base + CellVertexLayout.POSITION_OFFSET], 0f);
             assertEquals(expected[base + CellVertexLayout.POSITION_OFFSET + 1],
                     vertices[base + CellVertexLayout.POSITION_OFFSET + 1], 0f);
-            assertEquals(expected[base + CellVertexLayout.UV_OFFSET], vertices[base + CellVertexLayout.UV_OFFSET], 0f);
+            assertEquals(expected[base + CellVertexLayout.UV_OFFSET],
+                    vertices[base + CellVertexLayout.UV_OFFSET], 0f);
             assertEquals(expected[base + CellVertexLayout.UV_OFFSET + 1],
                     vertices[base + CellVertexLayout.UV_OFFSET + 1], 0f);
         }
@@ -102,7 +104,8 @@ class SpriteMeshLiftedCellTest {
         write(new CellHandle(2, 1));
 
         assertPositionsAndUvsMatch(ownQuadOf(2, 1));
-        assertEquals(ColorTools.fromRGBA8888(FOREGROUND), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
+        assertEquals(ColorTools.fromRGBA8888(FOREGROUND),
+                vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
 
     @Test
@@ -130,7 +133,8 @@ class SpriteMeshLiftedCellTest {
 
         assertTrue(vertices[CellVertexLayout.UV_OFFSET] != firstU);
         assertPositionsAndUvsMatch(ownQuadOf(2, 1));
-        assertEquals(ColorTools.fromRGBA8888(0x11223344), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
+        assertEquals(ColorTools.fromRGBA8888(0x11223344),
+                vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
 
     @Test
@@ -143,7 +147,8 @@ class SpriteMeshLiftedCellTest {
 
         int expected = CellColor.withAlphaScaled(0xFF8040C0, 0.5f);
         assertEquals(0xFF8040 << 8 | 0x60, expected);
-        assertEquals(ColorTools.fromRGBA8888(expected), vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
+        assertEquals(ColorTools.fromRGBA8888(expected),
+                vertices[CellVertexLayout.FOREGROUND_COLOR_OFFSET], 0f);
     }
 
     private static final int TARGET = 0xAABBCC00;

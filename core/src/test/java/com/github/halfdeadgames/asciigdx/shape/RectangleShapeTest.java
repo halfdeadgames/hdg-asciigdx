@@ -35,7 +35,8 @@ class RectangleShapeTest {
 
     @Test
     void centerCellHasZeroDistanceAndCornersHaveFractionOne() {
-        final RecordedVisits visits = RecordedVisits.of(RectangleShape.forSquareCells(0, 0, 3, 3, ShapeFill.FILLED));
+        final RecordedVisits visits =
+                RecordedVisits.of(RectangleShape.forSquareCells(0, 0, 3, 3, ShapeFill.FILLED));
 
         assertEquals(0f, visits.at(1, 1).distance(), 0f);
         assertEquals(0f, visits.at(1, 1).distanceFraction(), 0f);
@@ -129,9 +130,11 @@ class RectangleShapeTest {
         assertThrows(IllegalArgumentException.class,
                 () -> RectangleShape.forSquareCells(Integer.MAX_VALUE, 0, 2, 1, ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> RectangleShape.forSquareCells(Integer.MAX_VALUE - 2, 0, 3, 1, ShapeFill.FILLED));
+                () -> RectangleShape.forSquareCells(Integer.MAX_VALUE - 2, 0, 3, 1,
+                        ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
-                () -> RectangleShape.forSquareCells(0, Integer.MAX_VALUE - 2, 1, 3, ShapeFill.FILLED));
+                () -> RectangleShape.forSquareCells(0, Integer.MAX_VALUE - 2, 1, 3,
+                        ShapeFill.FILLED));
         assertThrows(IllegalArgumentException.class,
                 () -> RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED).setSize(0, 1));
     }

@@ -65,7 +65,8 @@ class GlyphOrderTextTest {
     @Test
     void shortRowBeforeTheLastIsRejected() {
         IllegalArgumentException error =
-            assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read("AB\nCDE\n", 3));
+                assertThrows(IllegalArgumentException.class,
+                        () -> GlyphOrderText.read("AB\nCDE\n", 3));
         assertTrue(error.getMessage().contains("Line 1"));
     }
 
@@ -77,18 +78,19 @@ class GlyphOrderTextTest {
     @Test
     void windowsLineEndingsAndByteOrderMarkAreAccepted() {
         GlyphOrder order = GlyphOrderText.read("﻿AB\r\nCD\r\n", 2);
-        assertArrayEquals(new int[] {'A', 'B', 'C', 'D'}, codePoints(order));
+        assertArrayEquals(new int[]{'A', 'B', 'C', 'D'}, codePoints(order));
     }
 
     @Test
     void escapesAreAcceptedAnywhere() {
         GlyphOrder order = GlyphOrderText.read("\\u{263a}\\\\x\n", 3);
-        assertArrayEquals(new int[] {0x263A, '\\', 'x'}, codePoints(order));
+        assertArrayEquals(new int[]{0x263A, '\\', 'x'}, codePoints(order));
     }
 
     @Test
     void malformedEscapesAreRejected() {
-        for (String bad : new String[] {"\\x", "\\u{}", "\\u{12", "\\u{GG}", "\\u{1234567}", "\\u{110000}", "\\"}) {
+        for (String bad : new String[]{"\\x", "\\u{}", "\\u{12", "\\u{GG}", "\\u{1234567}",
+                "\\u{110000}", "\\"}) {
             assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read(bad, 8), bad);
         }
     }
@@ -101,7 +103,7 @@ class GlyphOrderTextTest {
     @Test
     void readAnyRowLengthKeepsEveryRowInOrder() {
         GlyphOrder order = GlyphOrderText.readAnyRowLength("AB\nCDEF\n\\u{E0D0}\n");
-        assertArrayEquals(new int[] {'A', 'B', 'C', 'D', 'E', 'F', 0xE0D0}, codePoints(order));
+        assertArrayEquals(new int[]{'A', 'B', 'C', 'D', 'E', 'F', 0xE0D0}, codePoints(order));
     }
 
     @Test
@@ -113,6 +115,7 @@ class GlyphOrderTextTest {
     @Test
     void nonPositiveColumnsAreRejected() {
         assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read("A", 0));
-        assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.write(GlyphOrder.CP437, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> GlyphOrderText.write(GlyphOrder.CP437, 0));
     }
 }

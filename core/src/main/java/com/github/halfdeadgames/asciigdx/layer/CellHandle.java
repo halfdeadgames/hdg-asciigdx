@@ -30,23 +30,23 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  *
  * <p>A detached handle keeps its getters working, but it draws nothing: no motion and no overrides.
  *
- * <p>There are two kinds of handle. A lasting handle ({@link Layer#obtainCellHandle}) stays until the game
- * releases it. A frame handle ({@link Layer#obtainFrameCellHandle}) is for effects applied again every frame:
- * {@link LayerStack#beginCellEffects} resets it each frame and releases it after it stays unused for
- * a while. A cell can have both; they are separate objects and never change each other's values. A
- * frame handle has no pivot of its own; it uses the lasting handle's pivot.
+ * <p>There are two kinds of handle. A lasting handle ({@link Layer#obtainCellHandle}) stays until
+ * the game releases it. A frame handle ({@link Layer#obtainFrameCellHandle}) is for effects applied
+ * again every frame: {@link LayerStack#beginCellEffects} resets it each frame and releases it after
+ * it stays unused for a while. A cell can have both; they are separate objects and never change
+ * each other's values. A frame handle has no pivot of its own; it uses the lasting handle's pivot.
  *
- * <p>When a cell has both, the cell is drawn with their effects together: offsets and rotations add,
- * scales and alpha multiply, a frame glyph wins over a lasting glyph, and the frame's
- * color mix is applied on top of the lasting one. Two mixes at once can differ from applying them
- * one after the other by 1 in a color channel, because they are combined into a single mix.
+ * <p>When a cell has both, the cell is drawn with their effects together: offsets and rotations
+ * add, scales and alpha multiply, a frame glyph wins over a lasting glyph, and the frame's color
+ * mix is applied on top of the lasting one. Two mixes at once can differ from applying them one
+ * after the other by 1 in a color channel, because they are combined into a single mix.
  *
- * <p>Handles are keyed by cell position. If {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid}
- * is resized with a content shift, handles do not move: the transform applies to whatever is now at
- * that position. {@link Layer#scroll} instead moves the handles together with the content.
- * Lifting and settling take effect at the next draw. Lifted cells draw before the
- * layer's free sprites, in the order their handles were created, and are positioned relative to the
- * layer like sprites.
+ * <p>Handles are keyed by cell position. If
+ * {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid} is resized with a content shift,
+ * handles do not move: the transform applies to whatever is now at that position.
+ * {@link Layer#scroll} instead moves the handles together with the content. Lifting and settling
+ * take effect at the next draw. Lifted cells draw before the layer's free sprites, in the order
+ * their handles were created, and are positioned relative to the layer like sprites.
  *
  * <p>Offsets are in virtual pixels with y growing downward, like layer offsets. Rotation is in
  * degrees, clockwise on screen. Values are not clamped, except alpha and the mix amounts. Once the
@@ -107,8 +107,8 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Whether this is a frame handle, from {@link Layer#obtainFrameCellHandle(int, int)}, rather than a lasting
-     * handle from {@link Layer#obtainCellHandle(int, int)}.
+     * Whether this is a frame handle, from {@link Layer#obtainFrameCellHandle(int, int)}, rather
+     * than a lasting handle from {@link Layer#obtainCellHandle(int, int)}.
      *
      * @return true for a frame handle, false for a lasting handle
      */
@@ -133,7 +133,10 @@ public final class CellHandle implements SpriteTransform {
         unusedSeconds = 0f;
     }
 
-    /** Moves the handle's position; owned by {@link Layer#scroll}, which keeps the layer's index in step. */
+    /**
+     * Moves the handle's position; owned by {@link Layer#scroll}, which keeps the layer's index in
+     * step.
+     */
     void moveBy(int columns, int rows) {
         column += columns;
         row += rows;
@@ -157,7 +160,8 @@ public final class CellHandle implements SpriteTransform {
     private void requireLastingHandleForPivot() {
         if (frameHandle) {
             throw new IllegalStateException(
-                    "Frame handles use the lasting handle's pivot; set it on Layer.obtainCellHandle(column, row)");
+                    "Frame handles use the lasting handle's pivot; "
+                            + "set it on Layer.obtainCellHandle(column, row)");
         }
     }
 
@@ -198,8 +202,8 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Sets the offset from the cell's own position. A nonzero offset lifts the glyph. Values are not
-     * clamped.
+     * Sets the offset from the cell's own position. A nonzero offset lifts the glyph. Values are
+     * not clamped.
      *
      * @param x horizontal offset in virtual pixels; positive is right
      * @param y vertical offset in virtual pixels; positive is down
@@ -374,8 +378,12 @@ public final class CellHandle implements SpriteTransform {
         GlyphSource glyphSource = owner.getGlyphSource();
         float shiftX = (pivotX - this.pivotX) * glyphSource.getCellWidth();
         float shiftY = (pivotY - this.pivotY) * glyphSource.getCellHeight();
-        float newOffsetX = SpritePlacement.xKeepingPlacement(offsetX, shiftX, shiftY, scaleX, scaleY, rotation);
-        float newOffsetY = SpritePlacement.yKeepingPlacement(offsetY, shiftX, shiftY, scaleX, scaleY, rotation);
+        float newOffsetX =
+                SpritePlacement.xKeepingPlacement(offsetX, shiftX, shiftY, scaleX, scaleY,
+                        rotation);
+        float newOffsetY =
+                SpritePlacement.yKeepingPlacement(offsetY, shiftX, shiftY, scaleX, scaleY,
+                        rotation);
         setPivot(pivotX, pivotY);
         setOffset(newOffsetX, newOffsetY);
     }
@@ -474,16 +482,17 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Mixes both the foreground and the background toward the same color by the same amount. The
-     * color is an RGBA8888 int, e.g. {@code 0xFF6E8AFF}, unlike {@link ColorEffects#setMix(float, float,
-     * float, float)}, which takes float channels or a {@code Color}.
+     * color is an RGBA8888 int, e.g. {@code 0xFF6E8AFF}, unlike
+     * {@link ColorEffects#setMix(float, float, float, float)}, which takes float channels or a
+     * {@code Color}.
      *
      * @param rgba target color as an RGBA8888 int; its alpha is ignored
-     * @param amount 0 shows the cell's own colors, 1 shows {@code rgba}; clamped to 0..1, NaN counts
-     *     as 0
+     * @param amount 0 shows the cell's own colors, 1 shows {@code rgba}; clamped to 0..1, NaN
+     *     counts as 0
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
-     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
-     *     layer after cell-level overrides
+     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to
+     *     the whole layer after cell-level overrides
      */
     public void setMix(int rgba, float amount) {
         setMix(rgba, amount, rgba, amount);
@@ -502,8 +511,8 @@ public final class CellHandle implements SpriteTransform {
      *     clamped to 0..1, NaN counts as 0
      * @throws IllegalStateException if the handle was detached
      * @see #setForegroundMix(int, float)
-     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to the whole
-     *     layer after cell-level overrides
+     * @see ColorEffects#setMix(float, float, float, float) the layer-level mix, which applies to
+     *     the whole layer after cell-level overrides
      */
     public void setMix(int foregroundRgba, float foregroundAmount,
             int backgroundRgba, float backgroundAmount) {
@@ -631,7 +640,8 @@ public final class CellHandle implements SpriteTransform {
         if (foregroundMixAmount <= 0f) {
             return cellForegroundRgba;
         }
-        return CellColor.mixRgbKeepingAlpha(cellForegroundRgba, foregroundMixColor, foregroundMixAmount);
+        return CellColor.mixRgbKeepingAlpha(cellForegroundRgba, foregroundMixColor,
+                foregroundMixAmount);
     }
 
     /** The background to draw for a cell whose grid background is {@code cellBackgroundRgba}. */
@@ -639,7 +649,8 @@ public final class CellHandle implements SpriteTransform {
         if (backgroundMixAmount <= 0f) {
             return cellBackgroundRgba;
         }
-        return CellColor.mixRgbKeepingAlpha(cellBackgroundRgba, backgroundMixColor, backgroundMixAmount);
+        return CellColor.mixRgbKeepingAlpha(cellBackgroundRgba, backgroundMixColor,
+                backgroundMixAmount);
     }
 
     /** The glyph to draw for a cell whose grid glyph is {@code cellCodePoint}. */
@@ -682,7 +693,9 @@ public final class CellHandle implements SpriteTransform {
                 || alpha != 1f;
     }
 
-    /** A handle is idle when it is not lifted, has no temporary glyph, and both mix amounts are 0. */
+    /**
+     * A handle is idle when it is not lifted, has no temporary glyph, and both mix amounts are 0.
+     */
     boolean isIdle() {
         return !isLifted()
                 && !hasCodePoint()

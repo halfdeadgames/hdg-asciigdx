@@ -154,7 +154,7 @@ public final class CellColor {
         int green = mixChannel(fromRgba, toRgba, GREEN_SHIFT, amount);
         int blue = mixChannel(fromRgba, toRgba, BLUE_SHIFT, amount);
         return (red << RED_SHIFT) | (green << GREEN_SHIFT) | (blue << BLUE_SHIFT)
-            | (fromRgba & ALPHA_MASK);
+                | (fromRgba & ALPHA_MASK);
     }
 
     private static int mixChannel(int fromRgba, int toRgba, int shift, float amount) {
@@ -166,7 +166,7 @@ public final class CellColor {
     private static void requireChannel(String name, int value) {
         if (value < 0 || value > MAX_CHANNEL) {
             throw new IllegalArgumentException(
-                "Channel " + name + " must be 0 to 255, was " + value);
+                    "Channel " + name + " must be 0 to 255, was " + value);
         }
     }
 }

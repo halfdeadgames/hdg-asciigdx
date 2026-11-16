@@ -11,21 +11,22 @@ import java.util.Objects;
 /**
  * Runs a {@link CellEffect} on every cell of a {@link CellShape} that lies inside a layer's grid.
  *
- * <p>On a map-window layer the shape is read in map coordinates, not grid coordinates, so the zone stays
- * fixed to the world as the camera moves.
+ * <p>On a map-window layer the shape is read in map coordinates, not grid coordinates, so the zone
+ * stays fixed to the world as the camera moves.
  *
  * <p>The zone writes to frame handles ({@link Layer#obtainFrameCellHandle}). The game must call
- * {@link LayerStack#beginCellEffects} once per frame before applying zones; that call resets the frame
- * handles and releases those left unused for {@link Layer#getFrameReleaseSeconds()}. Without it, the last written values stay on screen. Frame handles
- * combine with the layer's lasting handles, so the zone never clears handles the game holds from
- * {@link Layer#obtainCellHandle}.
+ * {@link LayerStack#beginCellEffects} once per frame before applying zones; that call resets the
+ * frame handles and releases those left unused for {@link Layer#getFrameReleaseSeconds()}. Without
+ * it, the last written values stay on screen. Frame handles combine with the layer's lasting
+ * handles, so the zone never clears handles the game holds from {@link Layer#obtainCellHandle}.
  *
  * <p>The zone holds no handles between calls: each {@link #apply} asks the layer for the handles it
  * needs. Applying allocates nothing itself; the layer only allocates when it creates a cell's frame
  * handle for the first time. The shape and the effect can be swapped between calls with
  * {@link #setShape} and {@link #setEffect}.
  *
- * <p>Not reentrant and not thread-safe: call it from the render thread, and never from inside an effect.
+ * <p>Not reentrant and not thread-safe: call it from the render thread, and never from inside an
+ * effect.
  *
  * <p>Example:
  * <pre>{@code
@@ -94,18 +95,20 @@ public final class EffectZone {
     /**
      * Runs the effect once on every shape cell inside the layer's grid, on each cell's frame handle
      * ({@link Layer#obtainFrameCellHandle}). Cells outside the grid are skipped. On a
-     * {@linkplain Layer#hasMapWindow() map-window layer} the shape is in map coordinates: it stays on
-     * its map cells while the window scrolls, and only cells inside the window are affected.
+     * {@linkplain Layer#hasMapWindow() map-window layer} the shape is in map coordinates: it stays
+     * on its map cells while the window scrolls, and only cells inside the window are affected.
      *
      * <p>Call {@link LayerStack#beginCellEffects} once per frame before the first zone is applied.
      * Frame handles have no pivot of their own, so an effect must not call
-     * {@link CellHandle#setPivot} or {@link CellHandle#setPivotKeepingPlacement}; both throw on a frame
-     * handle.
+     * {@link CellHandle#setPivot} or {@link CellHandle#setPivotKeepingPlacement}; both throw on a
+     * frame handle.
      *
      * @param layer layer whose cells are affected; not null
-     * @param timeSeconds time handed to the effect, in seconds, e.g. seconds since the effect started
-     * @throws IllegalStateException if called from inside an effect, if the layer was removed and the
-     *     shape's bounds overlap its grid, or if the effect sets a pivot on the handle it is given
+     * @param timeSeconds time handed to the effect, in seconds, e.g. seconds since the effect
+     *     started
+     * @throws IllegalStateException if called from inside an effect, if the layer was removed and
+     *     the shape's bounds overlap its grid, or if the effect sets a pivot on the handle it is
+     *     given
      */
     public void apply(Layer layer, float timeSeconds) {
         if (visitor.isRunning()) {
@@ -118,7 +121,8 @@ public final class EffectZone {
         if (!overlaps(grid, originColumn, originRow)) {
             return;
         }
-        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop(), originColumn, originRow);
+        visitor.start(layer, effect, timeSeconds, shape.getLeft(), shape.getTop(), originColumn,
+                originRow);
         try {
             shape.forEachCell(visitor);
         } finally {
@@ -178,7 +182,8 @@ public final class EffectZone {
             if (gridColumn < 0 || gridRow < 0 || gridColumn >= gridWidth || gridRow >= gridHeight) {
                 return;
             }
-            zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance, distanceFraction);
+            zoneCell.set(column, row, column - shapeLeft, row - shapeTop, distance,
+                    distanceFraction);
             effect.apply(layer.obtainFrameCellHandle(gridColumn, gridRow), zoneCell, timeSeconds);
         }
     }

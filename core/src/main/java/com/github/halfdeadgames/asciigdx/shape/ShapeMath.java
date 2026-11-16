@@ -9,7 +9,8 @@ final class ShapeMath {
     static float requireValidAspect(float rowHeightPerColumnWidth) {
         if (!Float.isFinite(rowHeightPerColumnWidth) || rowHeightPerColumnWidth <= 0f) {
             throw new IllegalArgumentException(
-                    "rowHeightPerColumnWidth must be finite and > 0 but was " + rowHeightPerColumnWidth);
+                    "rowHeightPerColumnWidth must be finite and > 0 but was "
+                            + rowHeightPerColumnWidth);
         }
         return rowHeightPerColumnWidth;
     }
@@ -28,13 +29,15 @@ final class ShapeMath {
         // Loops run "i <= last", so last must stay below MAX_VALUE or i++ would wrap around.
         if ((long) start + length - 1 >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException(
-                    "span starting at " + start + " with " + lengthName + " " + length + " overflows");
+                    "span starting at " + start + " with " + lengthName + " " + length
+                            + " overflows");
         }
         return length;
     }
 
     static float distance(double columnDelta, double rowDeltaInColumnWidths) {
-        return (float) Math.sqrt(columnDelta * columnDelta + rowDeltaInColumnWidths * rowDeltaInColumnWidths);
+        return (float) Math.sqrt(
+                columnDelta * columnDelta + rowDeltaInColumnWidths * rowDeltaInColumnWidths);
     }
 
     static float distanceFraction(float distance, float largestDistance) {

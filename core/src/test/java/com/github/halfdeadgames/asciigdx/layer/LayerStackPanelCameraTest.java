@@ -82,21 +82,22 @@ class LayerStackPanelCameraTest {
         }
     };
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
-        @Override
-        public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
-                Array<GlyphSprite> sprites, boolean pixelSnapping) {
-            drawnTransform.set(layerTransform);
-        }
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
+                @Override
+                public void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+                        Array<GlyphSprite> sprites, boolean pixelSnapping) {
+                    drawnTransform.set(layerTransform);
+                }
 
-        @Override
-        public void setGlyphSource(GlyphSource glyphSource) {
-        }
+                @Override
+                public void setGlyphSource(GlyphSource glyphSource) {
+                }
 
-        @Override
-        public void dispose() {
-        }
-    }, backend);
+                @Override
+                public void dispose() {
+                }
+            }, backend);
     private final Vector2 point = new Vector2();
     private final GridPoint2 cell = new GridPoint2();
 
@@ -257,7 +258,8 @@ class LayerStackPanelCameraTest {
         Panel panel = stack.addPanel(0f, 0f, 10f, 10f);
 
         assertThrows(IllegalArgumentException.class, () -> panel.setCamera(Float.NaN, 0f));
-        assertThrows(IllegalArgumentException.class, () -> panel.setCamera(0f, Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> panel.setCamera(0f, Float.POSITIVE_INFINITY));
         assertEquals(0f, panel.getCameraX());
     }
 

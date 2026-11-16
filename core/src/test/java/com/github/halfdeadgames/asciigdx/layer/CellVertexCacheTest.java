@@ -24,7 +24,8 @@ class CellVertexCacheTest {
         return new CellVertexCache(COLUMNS, ROWS, 8f, 12f);
     }
 
-    private static void write(CellVertexCache cache, int column, int row, int background, int foreground) {
+    private static void write(CellVertexCache cache, int column, int row, int background,
+            int foreground) {
         cache.writeCell(column, row, background, foreground, 0f, 0f, 1f, 1f);
     }
 
@@ -35,10 +36,13 @@ class CellVertexCacheTest {
 
     private static void assertVertex(float[] slot, int vertex, float x, float y, float u, float v) {
         int base = vertex * STRIDE;
-        assertEquals(x, slot[base + CellVertexLayout.POSITION_OFFSET], EPSILON, "x of vertex " + vertex);
-        assertEquals(y, slot[base + CellVertexLayout.POSITION_OFFSET + 1], EPSILON, "y of vertex " + vertex);
+        assertEquals(x, slot[base + CellVertexLayout.POSITION_OFFSET], EPSILON,
+                "x of vertex " + vertex);
+        assertEquals(y, slot[base + CellVertexLayout.POSITION_OFFSET + 1], EPSILON,
+                "y of vertex " + vertex);
         assertEquals(u, slot[base + CellVertexLayout.UV_OFFSET], EPSILON, "u of vertex " + vertex);
-        assertEquals(v, slot[base + CellVertexLayout.UV_OFFSET + 1], EPSILON, "v of vertex " + vertex);
+        assertEquals(v, slot[base + CellVertexLayout.UV_OFFSET + 1], EPSILON,
+                "v of vertex " + vertex);
     }
 
     private static void assertCounts(CellVertexCache cache, int visible, int notOpaque) {
@@ -62,7 +66,8 @@ class CellVertexCacheTest {
     void constructorRejectsNonPositiveCellSize() {
         assertThrows(IllegalArgumentException.class, () -> new CellVertexCache(5, 4, 0f, 12f));
         assertThrows(IllegalArgumentException.class, () -> new CellVertexCache(5, 4, 8f, -1f));
-        assertThrows(IllegalArgumentException.class, () -> new CellVertexCache(5, 4, Float.NaN, 12f));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CellVertexCache(5, 4, Float.NaN, 12f));
     }
 
     @Test
@@ -301,9 +306,12 @@ class CellVertexCacheTest {
     @Test
     void outOfRangeCellsThrowIndexOutOfBounds() {
         CellVertexCache cache = newCache();
-        assertThrows(IndexOutOfBoundsException.class, () -> write(cache, -1, 0, OPAQUE_RED, OPAQUE_GREEN));
-        assertThrows(IndexOutOfBoundsException.class, () -> write(cache, COLUMNS, 0, OPAQUE_RED, OPAQUE_GREEN));
-        assertThrows(IndexOutOfBoundsException.class, () -> write(cache, 0, -1, OPAQUE_RED, OPAQUE_GREEN));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> write(cache, -1, 0, OPAQUE_RED, OPAQUE_GREEN));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> write(cache, COLUMNS, 0, OPAQUE_RED, OPAQUE_GREEN));
+        assertThrows(IndexOutOfBoundsException.class,
+                () -> write(cache, 0, -1, OPAQUE_RED, OPAQUE_GREEN));
         assertThrows(IndexOutOfBoundsException.class, () -> write(cache, 0, ROWS, 0, 0));
         assertCounts(cache, 0, 0);
     }

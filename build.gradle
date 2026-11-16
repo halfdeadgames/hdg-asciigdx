@@ -72,4 +72,37 @@ subprojects {
   }
 }
 
+apply plugin: 'checkstyle'
+
+repositories {
+  mavenCentral()
+}
+
+checkstyle {
+  toolVersion = '10.21.4'
+}
+
+// Report-only Google Java Style check for every module (config/checkstyle/style.xml; see CLAUDE.md).
+tasks.register('styleCheck', Checkstyle) {
+  group = 'verification'
+  description = 'Reports Google Java Style violations in all modules. Never fails the build.'
+  source = fileTree(rootDir) {
+    include '*/src/**/*.java'
+    exclude '*/build/**'
+  }
+  classpath = files()
+  checkstyleClasspath = configurations.checkstyle
+  configFile = file('config/checkstyle/style.xml')
+  configDirectory = file('config/checkstyle')
+  ignoreFailures = true
+  maxWarnings = Integer.MAX_VALUE
+  showViolations = false
+  reports {
+    xml.required = true
+    html.required = true
+    xml.outputLocation = layout.buildDirectory.file('reports/style/style.xml')
+    html.outputLocation = layout.buildDirectory.file('reports/style/style.html')
+  }
+}
+
 eclipse.project.name = 'hdg-asciigdx' + '-parent'

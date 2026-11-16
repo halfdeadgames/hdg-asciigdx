@@ -26,21 +26,31 @@ final class SpriteQuadWriter {
      * @param u2 right texture coordinate
      * @param v2 bottom texture coordinate
      */
-    static void writeQuad(float[] vertices, int start, GlyphSprite sprite, float cellWidth, float cellHeight,
-                          float u, float v, float u2, float v2) {
-        writeQuad(vertices, start, sprite, sprite.getX(), sprite.getY(), cellWidth, cellHeight, u, v, u2, v2);
+    static void writeQuad(float[] vertices, int start, GlyphSprite sprite, float cellWidth,
+            float cellHeight,
+            float u, float v, float u2, float v2) {
+        writeQuad(vertices, start, sprite, sprite.getX(), sprite.getY(), cellWidth, cellHeight, u,
+                v, u2, v2);
     }
 
-    /** Like the overload without a position, but places the box at the given position instead of the sprite's. */
+    /**
+     * Like the overload without a position, but places the box at the given position instead of
+     * the sprite's.
+     */
     static void writeQuad(float[] vertices, int start, GlyphSprite sprite, float x, float y,
-                          float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
-        writeQuad(vertices, start, sprite, sprite.getColor(), x, y, cellWidth, cellHeight, u, v, u2, v2);
+            float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
+        writeQuad(vertices, start, sprite, sprite.getColor(), x, y, cellWidth, cellHeight,
+                u, v, u2, v2);
     }
 
-    /** Like the overload with a sprite, for any transform and an explicit glyph color (RGBA8888). */
-    static void writeQuad(float[] vertices, int start, SpriteTransform sprite, int color, float x, float y,
-                          float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
-        // Public rotation is clockwise on screen; the quad math here is y-up, where positive is counterclockwise.
+    /**
+     * Like the overload with a sprite, for any transform and an explicit glyph color (RGBA8888).
+     */
+    static void writeQuad(float[] vertices, int start, SpriteTransform sprite, int color, float x,
+            float y,
+            float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
+        // Public rotation is clockwise on screen; the quad math here is y-up, where positive is
+        // counterclockwise.
         float yUpDegrees = -sprite.getRotation();
         float sin = exactSin(yUpDegrees);
         float cos = exactCos(yUpDegrees);
@@ -53,7 +63,8 @@ final class SpriteQuadWriter {
         float background = ColorTools.fromRGBA8888(0);
         float foreground = ColorTools.fromRGBA8888(color);
 
-        putVertex(vertices, start, pivotX, pivotY, leftOffset, bottomOffset, sin, cos, background, foreground, u, v2);
+        putVertex(vertices, start, pivotX, pivotY, leftOffset, bottomOffset, sin, cos, background,
+                foreground, u, v2);
         putVertex(vertices, start + CellVertexLayout.FLOATS_PER_VERTEX, pivotX, pivotY,
                 leftOffset, topOffset, sin, cos, background, foreground, u, v);
         putVertex(vertices, start + 2 * CellVertexLayout.FLOATS_PER_VERTEX, pivotX, pivotY,
@@ -63,10 +74,12 @@ final class SpriteQuadWriter {
     }
 
     private static void putVertex(float[] vertices, int start, float pivotX, float pivotY,
-                                  float offsetX, float offsetY, float sin, float cos,
-                                  float background, float foreground, float u, float v) {
-        vertices[start + CellVertexLayout.POSITION_OFFSET] = rotatedX(pivotX, offsetX, offsetY, sin, cos);
-        vertices[start + CellVertexLayout.POSITION_OFFSET + 1] = rotatedY(pivotY, offsetX, offsetY, sin, cos);
+            float offsetX, float offsetY, float sin, float cos,
+            float background, float foreground, float u, float v) {
+        vertices[start + CellVertexLayout.POSITION_OFFSET] =
+                rotatedX(pivotX, offsetX, offsetY, sin, cos);
+        vertices[start + CellVertexLayout.POSITION_OFFSET + 1] =
+                rotatedY(pivotY, offsetX, offsetY, sin, cos);
         vertices[start + CellVertexLayout.BACKGROUND_COLOR_OFFSET] = background;
         vertices[start + CellVertexLayout.FOREGROUND_COLOR_OFFSET] = foreground;
         vertices[start + CellVertexLayout.UV_OFFSET] = u;
@@ -97,11 +110,13 @@ final class SpriteQuadWriter {
         return -(1f - sprite.getPivotY()) * cellHeight * sprite.getScaleY();
     }
 
-    private static float rotatedX(float pivotX, float offsetX, float offsetY, float sin, float cos) {
+    private static float rotatedX(float pivotX, float offsetX, float offsetY, float sin,
+            float cos) {
         return pivotX + cos * offsetX - sin * offsetY;
     }
 
-    private static float rotatedY(float pivotY, float offsetX, float offsetY, float sin, float cos) {
+    private static float rotatedY(float pivotY, float offsetX, float offsetY, float sin,
+            float cos) {
         return pivotY + sin * offsetX + cos * offsetY;
     }
 

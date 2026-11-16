@@ -19,7 +19,7 @@ class LayerGroupTest {
 
     private static final float TOLERANCE = 1e-5f;
     private static final float[][] SAMPLE_COLORS = {
-        {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f}
+            {0f, 0f, 0f}, {1f, 1f, 1f}, {1f, 0f, 0f}, {0.2f, 0.6f, 0.9f}, {0.75f, 0.1f, 0.4f}
     };
 
     private static final class FakeSource implements GlyphSource {
@@ -48,7 +48,8 @@ class LayerGroupTest {
         }
     }
 
-    private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
+    private final LayerStack stack =
+            TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final FakeSource font = new FakeSource();
     private final ResolvedEffects resolved = new ResolvedEffects();
 
@@ -366,7 +367,8 @@ class LayerGroupTest {
 
         resolved.resolve(new ColorEffects(), groupsOf(child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects,
+                parentEffects,
                 grandparentEffects);
     }
 
@@ -413,7 +415,8 @@ class LayerGroupTest {
 
         resolved.resolve(new ColorEffects(), groupsOf(parent, child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects,
+                parentEffects);
     }
 
     @Test
@@ -428,7 +431,8 @@ class LayerGroupTest {
 
         resolved.resolve(new ColorEffects(), groupsOf(child, parent));
 
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects,
+                parentEffects);
     }
 
     @Test
@@ -447,7 +451,8 @@ class LayerGroupTest {
 
         resolved.resolve(new ColorEffects(), groupsOf(parent, grandchild, child));
 
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), grandchildEffects, childEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), grandchildEffects,
+                childEffects,
                 parentEffects);
     }
 
@@ -470,7 +475,8 @@ class LayerGroupTest {
 
         assertEquals(0.5f * 0.6f, resolved.getAlpha(), TOLERANCE);
         resolved.resolve(new ColorEffects(), groupsOf(second, first));
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), secondEffects, firstEffects,
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), secondEffects,
+                firstEffects,
                 sharedEffects);
     }
 
@@ -521,7 +527,8 @@ class LayerGroupTest {
         resolved.resolve(new ColorEffects(), groups);
         resolved.resolve(new ColorEffects(), groups);
 
-        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects, parentEffects);
+        assertAppliesInSequence(resolved.getMatrix(), new ColorEffects(), childEffects,
+                parentEffects);
     }
 
     @Test
@@ -639,7 +646,10 @@ class LayerGroupTest {
         return array;
     }
 
-    /** Runs each sample color through every step one after another, and compares with the resolved matrix. */
+    /**
+     * Runs each sample color through every step one after another, and compares with the resolved
+     * matrix.
+     */
     private static void assertAppliesInSequence(ColorMatrix actual, ColorEffects... steps) {
         float[] expected = new float[3];
         float[] resolvedColor = new float[3];

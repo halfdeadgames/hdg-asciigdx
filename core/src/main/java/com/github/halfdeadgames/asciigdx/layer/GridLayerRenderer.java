@@ -5,7 +5,10 @@ import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 
-/** Adapts a {@link GridRenderer} to {@link LayerRenderer}, so its effects draw stays out of the public API. */
+/**
+ * Adapts a {@link GridRenderer} to {@link LayerRenderer}, so its effects draw stays out of the
+ * public API.
+ */
 final class GridLayerRenderer implements LayerRenderer {
 
     private final GridRenderer renderer;
@@ -21,7 +24,8 @@ final class GridLayerRenderer implements LayerRenderer {
     }
 
     @Override
-    public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+    public void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform,
+            ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         renderer.drawPremultiplied(batch, layerTransform, effects, sprites, pixelSnapping);
     }

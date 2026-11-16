@@ -56,7 +56,8 @@ final class GlClipBackend implements ClipBackend {
         if (HdpiUtils.toBackBufferY(logicalMaxY) < maxY) {
             logicalMaxY++;
         }
-        logicalRect.set(logicalMinX, logicalMinY, logicalMaxX - logicalMinX, logicalMaxY - logicalMinY);
+        logicalRect.set(logicalMinX, logicalMinY, logicalMaxX - logicalMinX,
+                logicalMaxY - logicalMinY);
         return ScissorStack.pushScissors(logicalRect);
     }
 

@@ -21,7 +21,8 @@ import org.junit.jupiter.api.Test;
 
 class EffectZoneTest {
 
-    private record Call(int column, int row, int zoneColumn, int zoneRow, float distance, float fraction,
+    private record Call(int column, int row, int zoneColumn, int zoneRow, float distance,
+                        float fraction,
                         float time) {
     }
 
@@ -32,7 +33,8 @@ class EffectZoneTest {
         public void apply(CellHandle cell, ZoneCell where, float timeSeconds) {
             assertEquals(where.getColumn(), cell.getColumn());
             assertEquals(where.getRow(), cell.getRow());
-            calls.add(new Call(where.getColumn(), where.getRow(), where.getZoneColumn(), where.getZoneRow(),
+            calls.add(new Call(where.getColumn(), where.getRow(), where.getZoneColumn(),
+                    where.getZoneRow(),
                     where.getDistance(), where.getDistanceFraction(), timeSeconds));
         }
     }
@@ -46,7 +48,8 @@ class EffectZoneTest {
         return RectangleShape.forSquareCells(left, top, width, height, ShapeFill.FILLED);
     }
 
-    private static List<Call> expectedCalls(CellShape shape, int gridWidth, int gridHeight, float time) {
+    private static List<Call> expectedCalls(CellShape shape, int gridWidth, int gridHeight,
+            float time) {
         List<Call> expected = new ArrayList<>();
         shape.forEachCell((column, row, distance, fraction) -> {
             if (column >= 0 && row >= 0 && column < gridWidth && row < gridHeight) {
@@ -228,7 +231,8 @@ class EffectZoneTest {
 
     @Test
     void applyWritesFrameHandlesAndLeavesLastingHandlesUntouched() {
-        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setOffset(2f, 0f));
+        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1),
+                (cell, where, time) -> cell.setOffset(2f, 0f));
         CellHandle lasting = layer.obtainCellHandle(1, 1);
         lasting.setOffset(5f, 0f);
 
@@ -242,7 +246,8 @@ class EffectZoneTest {
 
     @Test
     void effectSettingAPivotFailsBecauseFrameHandlesHaveNone() {
-        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1), (cell, where, time) -> cell.setPivot(0f, 0f));
+        EffectZone zone = new EffectZone(filledRectangle(1, 1, 1, 1),
+                (cell, where, time) -> cell.setPivot(0f, 0f));
 
         assertThrows(IllegalStateException.class, () -> zone.apply(layer, 0f));
     }

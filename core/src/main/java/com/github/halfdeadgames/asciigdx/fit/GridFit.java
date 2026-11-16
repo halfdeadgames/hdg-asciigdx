@@ -37,8 +37,8 @@ public final class GridFit {
     private final int leftoverY;
 
     private GridFit(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
-                    int minColumns, int minRows, int scale, int columns, int rows,
-                    int leftoverX, int leftoverY) {
+            int minColumns, int minRows, int scale, int columns, int rows,
+            int leftoverX, int leftoverY) {
         this.windowWidth = windowWidth;
         this.windowHeight = windowHeight;
         this.cellWidth = cellWidth;
@@ -66,8 +66,9 @@ public final class GridFit {
      * @return the fit; never null
      * @throws IllegalArgumentException if a cell size or minimum is zero or negative
      */
-    public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
-                                    int minColumns, int minRows) {
+    public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth,
+            int cellHeight,
+            int minColumns, int minRows) {
         return calculate(windowWidth, windowHeight, cellWidth, cellHeight,
                 minColumns, minRows, Integer.MAX_VALUE);
     }
@@ -92,13 +93,15 @@ public final class GridFit {
      * @return the fit; never null
      * @throws IllegalArgumentException if a cell size, minimum, or maxScale is zero or negative
      */
-    public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth, int cellHeight,
-                                    int minColumns, int minRows, int maxScale) {
+    public static GridFit calculate(int windowWidth, int windowHeight, int cellWidth,
+            int cellHeight,
+            int minColumns, int minRows, int maxScale) {
         if (cellWidth <= 0 || cellHeight <= 0 || minColumns <= 0 || minRows <= 0 || maxScale <= 0) {
-            throw new IllegalArgumentException("Cell size, minimums, and max scale must be positive: cellWidth="
-                    + cellWidth + ", cellHeight=" + cellHeight
-                    + ", minColumns=" + minColumns + ", minRows=" + minRows
-                    + ", maxScale=" + maxScale);
+            throw new IllegalArgumentException(
+                    "Cell size, minimums, and max scale must be positive: cellWidth="
+                            + cellWidth + ", cellHeight=" + cellHeight
+                            + ", minColumns=" + minColumns + ", minRows=" + minRows
+                            + ", maxScale=" + maxScale);
         }
         if (windowWidth <= 0 || windowHeight <= 0) {
             return new GridFit(windowWidth, windowHeight, cellWidth, cellHeight,

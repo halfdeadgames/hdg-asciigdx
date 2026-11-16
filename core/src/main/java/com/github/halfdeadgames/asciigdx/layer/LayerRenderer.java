@@ -9,14 +9,16 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 interface LayerRenderer {
 
     /** Draws with {@code layerTransform} mapping layer-local space to batch world space. */
-    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects, Array<GlyphSprite> sprites,
+    void draw(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+            Array<GlyphSprite> sprites,
             boolean pixelSnapping);
 
     /**
      * Draws like {@link #draw} into a transparent offscreen target, blending as premultiplied
      * color. Renderers without an offscreen path may keep this default.
      */
-    default void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform, ResolvedEffects effects,
+    default void drawPremultiplied(SpriteBatch batch, Affine2 layerTransform,
+            ResolvedEffects effects,
             Array<GlyphSprite> sprites, boolean pixelSnapping) {
         draw(batch, layerTransform, effects, sprites, pixelSnapping);
     }

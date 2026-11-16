@@ -22,7 +22,8 @@ final class Guards {
      * @throws IllegalStateException if the item has no owner
      * @throws IllegalArgumentException if the item has a different owner
      */
-    static void requireOwnedBy(Object currentOwner, Object expectedOwner, String typeName, String ownerName) {
+    static void requireOwnedBy(Object currentOwner, Object expectedOwner, String typeName,
+            String ownerName) {
         if (currentOwner == null) {
             throw new IllegalStateException(typeName + " was removed from its " + ownerName);
         }
@@ -43,7 +44,10 @@ final class Guards {
         return column >= 0 && column < columns && row >= 0 && row < rows;
     }
 
-    /** Throws {@link IndexOutOfBoundsException} unless the cell lies inside a grid of the given size. */
+    /**
+     * Throws {@link IndexOutOfBoundsException} unless the cell lies inside a grid of the given
+     * size.
+     */
     static void requireCellInside(int column, int row, int columns, int rows) {
         if (!isCellInside(column, row, columns, rows)) {
             throw new IndexOutOfBoundsException("Cell (" + column + ", " + row + ") outside "

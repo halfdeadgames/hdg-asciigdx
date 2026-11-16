@@ -35,7 +35,9 @@ final class ColorMatrix {
         System.arraycopy(other.values, 0, values, 0, SIZE);
     }
 
-    /** Replaces this transform with a saturation change: 0 gives the luma gray, 1 keeps the color. */
+    /**
+     * Replaces this transform with a saturation change: 0 gives the luma gray, 1 keeps the color.
+     */
     void setSaturation(float saturation) {
         setIdentity();
         for (int column = 0; column < 3; column++) {
@@ -55,8 +57,9 @@ final class ColorMatrix {
             float z = values[base + 2];
             float w = values[base + 3];
             for (int row = 0; row < 3; row++) {
-                float sum = next.values[row] * x + next.values[4 + row] * y + next.values[8 + row] * z
-                        + next.values[12 + row] * w;
+                float sum =
+                        next.values[row] * x + next.values[4 + row] * y + next.values[8 + row] * z
+                                + next.values[12 + row] * w;
                 values[base + row] = sum;
             }
         }
@@ -82,7 +85,9 @@ final class ColorMatrix {
     /** Writes the transformed color of (r, g, b) into the first three floats of {@code out}. */
     void apply(float r, float g, float b, float[] out) {
         for (int row = 0; row < 3; row++) {
-            out[row] = values[row] * r + values[4 + row] * g + values[8 + row] * b + values[TRANSLATION + row];
+            out[row] =
+                    values[row] * r + values[4 + row] * g + values[8 + row] * b + values[TRANSLATION
+                            + row];
         }
     }
 

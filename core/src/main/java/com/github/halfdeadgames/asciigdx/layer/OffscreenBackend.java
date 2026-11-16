@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.layer;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-/** Test seam for {@link LayerStack}: everything fading a layer through an offscreen target needs from GL. */
+/**
+ * Test seam for {@link LayerStack}: everything fading a layer through an offscreen target needs
+ * from GL.
+ */
 interface OffscreenBackend {
 
     /**

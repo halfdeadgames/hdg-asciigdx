@@ -15,22 +15,26 @@ final class GlyphSheetLoader {
 
     // Disposes the decoded pixmap if the layout cannot be built.
     static LoadedSheet readSheet(
-        FileHandle image, FileHandle characterList, int cellWidth, int cellHeight, int fallbackCodePoint) {
+            FileHandle image, FileHandle characterList, int cellWidth, int cellHeight,
+            int fallbackCodePoint) {
         String text = characterList.readString("UTF-8");
         Pixmap pixmap = new Pixmap(image);
         try {
             int columns = pixmap.getWidth() / cellWidth;
             if (columns == 0) {
                 throw new IllegalArgumentException(
-                    "Image " + image.path() + " is narrower than one " + cellWidth + " pixel cell");
+                        "Image " + image.path() + " is narrower than one " + cellWidth
+                                + " pixel cell");
             }
             GlyphOrder order = GlyphOrderText.read(text, columns);
             GlyphSheetLayout layout =
-                GlyphSheetLayout.packed(cellWidth, cellHeight, columns, (order.getGlyphCount() + columns - 1) / columns);
+                    GlyphSheetLayout.packed(cellWidth, cellHeight, columns,
+                            (order.getGlyphCount() + columns - 1) / columns);
             int fallbackSlot = order.findSlot(fallbackCodePoint);
             if (fallbackSlot < 0) {
                 throw new IllegalArgumentException(
-                    "Character list " + characterList.path() + " has no '?' to use as the fallback glyph");
+                        "Character list " + characterList.path()
+                                + " has no '?' to use as the fallback glyph");
             }
             return new LoadedSheet(pixmap, layout, order, fallbackSlot);
         } catch (RuntimeException e) {
@@ -42,17 +46,18 @@ final class GlyphSheetLoader {
     static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {
         if (order.getGlyphCount() > layout.getSlotCount()) {
             throw new IllegalArgumentException(
-                "Order has " + order.getGlyphCount() + " glyphs but the layout has only "
-                    + layout.getSlotCount() + " slots");
+                    "Order has " + order.getGlyphCount() + " glyphs but the layout has only "
+                            + layout.getSlotCount() + " slots");
         }
     }
 
     static void requireImageFits(Pixmap image, String imageName, GlyphSheetLayout layout) {
-        if (image.getWidth() < layout.getRequiredImageWidth() || image.getHeight() < layout.getRequiredImageHeight()) {
+        if (image.getWidth() < layout.getRequiredImageWidth()
+                || image.getHeight() < layout.getRequiredImageHeight()) {
             throw new IllegalArgumentException(
-                imageName + " is " + image.getWidth() + "x" + image.getHeight()
-                    + " but the layout needs at least " + layout.getRequiredImageWidth()
-                    + "x" + layout.getRequiredImageHeight());
+                    imageName + " is " + image.getWidth() + "x" + image.getHeight()
+                            + " but the layout needs at least " + layout.getRequiredImageWidth()
+                            + "x" + layout.getRequiredImageHeight());
         }
     }
 
@@ -63,7 +68,8 @@ final class GlyphSheetLoader {
         if (!mode.shouldConvert(hasNonOpaquePixel(pixmap))) {
             return pixmap;
         }
-        Pixmap target = pixmap.getFormat() == Pixmap.Format.RGBA8888 ? pixmap : copyAsRgba8888(pixmap);
+        Pixmap target =
+                pixmap.getFormat() == Pixmap.Format.RGBA8888 ? pixmap : copyAsRgba8888(pixmap);
         try {
             target.setBlending(Pixmap.Blending.None);
             convertToWhiteWithAlpha(target, keyRgba8888);
@@ -116,7 +122,8 @@ final class GlyphSheetLoader {
     private static void convertToWhiteWithAlpha(Pixmap pixmap, int key) {
         for (int y = 0; y < pixmap.getHeight(); y++) {
             for (int x = 0; x < pixmap.getWidth(); x++) {
-                pixmap.drawPixel(x, y, ColorKeyConversion.toWhiteWithAlpha(pixmap.getPixel(x, y), key));
+                pixmap.drawPixel(x, y,
+                        ColorKeyConversion.toWhiteWithAlpha(pixmap.getPixel(x, y), key));
             }
         }
     }
