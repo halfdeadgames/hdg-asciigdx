@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.utils.Array;
+import com.github.halfdeadgames.asciigdx.render.CellHandle;
 import com.github.halfdeadgames.asciigdx.render.Layer;
+import com.github.halfdeadgames.asciigdx.render.MapCellTarget;
 import com.github.halfdeadgames.asciigdx.render.MapWindow;
 import com.github.halfdeadgames.asciigdx.tween.Timeline;
 import com.github.halfdeadgames.asciigdx.tween.Tween;
@@ -75,18 +77,15 @@ public final class LilyFlashes {
                 int mapColumn = gameColumn * SLOTS_PER_AXIS + eastBit;
                 int mapRow = gameRow * SLOTS_PER_AXIS + southBit;
                 Tween fade = new Tween(startSeconds, DURATION_SECONDS, START_AMOUNT, 0f, Interpolation.pow2Out);
-                timeline.bind(fade, amount -> setWhiteMix(mapColumn, mapRow, amount));
+                MapCellTarget target = window.createCellTarget(mapColumn, mapRow);
+                timeline.bind(fade, amount -> target.writeIfShown(LilyFlashes::setWhiteMix, amount));
             }
         }
         return timeline;
     }
 
-    /** Looks the handle up at write time, because a lasting handle is detached when its cell leaves the window. */
-    private void setWhiteMix(int mapColumn, int mapRow, float amount) {
-        if (!window.contains(mapColumn, mapRow)) {
-            return;
-        }
-        window.cell(mapColumn, mapRow).setForegroundMix(WHITE, amount);
+    private static void setWhiteMix(CellHandle cell, float amount) {
+        cell.setForegroundMix(WHITE, amount);
     }
 
     private boolean hasLilies(int gameColumn, int gameRow) {

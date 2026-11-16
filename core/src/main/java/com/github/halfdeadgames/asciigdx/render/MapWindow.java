@@ -92,7 +92,8 @@ public final class MapWindow {
      * <p>A lasting handle is dropped when its cell leaves the window. Lasting handles are meant for
      * display-owned animation such as tweens, flashes, and bumps. Game state that must survive
      * scrolling belongs in the grid, set through the window's filler; per-frame effects belong in
-     * {@link #frameCell frame handles}.
+     * {@link #frameCell frame handles}. For a tween that must keep writing a cell after it scrolls
+     * out and back in, use {@link #createCellTarget}.
      *
      * @throws IndexOutOfBoundsException if the cell is outside the window
      * @throws IllegalStateException if this window is detached
@@ -100,6 +101,22 @@ public final class MapWindow {
     public CellHandle cell(int mapColumn, int mapRow) {
         requireAttached();
         return layer.cell(toGridColumn(mapColumn), toGridRow(mapRow));
+    }
+
+    /**
+     * Creates a target for the cell at map coordinates, for tween or timeline setters that must
+     * keep working while the cell scrolls out of and back into the window. See
+     * {@link MapCellTarget}.
+     *
+     * @param mapColumn the map column; any value is allowed, and the cell may be outside the window
+     *     now
+     * @param mapRow the map row; any value is allowed, and the cell may be outside the window now
+     * @return a new target, owned by the caller
+     * @throws IllegalStateException if this window is detached
+     */
+    public MapCellTarget createCellTarget(int mapColumn, int mapRow) {
+        requireAttached();
+        return new MapCellTarget(this, mapColumn, mapRow);
     }
 
     /**
