@@ -407,7 +407,7 @@ public final class LayerStack implements Disposable {
             if (resolvedEffects.getAlpha() <= 0f) {
                 continue;
             }
-            composeLayerTransform(layer, x, y, layerTransform);
+            LayerPlacement.compose(layer, x, y, pixelSnapping, layerTransform);
             if (!LayerClipper.isClipped(layer)) {
                 drawLayer(layer, batch);
                 continue;
@@ -487,7 +487,7 @@ public final class LayerStack implements Disposable {
      */
     public void layerPointAt(Layer layer, float stackX, float stackY, float worldX, float worldY, Vector2 out) {
         requireOutAndOwned(layer, out);
-        composeLayerTransform(layer, stackX, stackY, inverseTransform);
+        LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, inverseTransform);
         inverseTransform.inv();
         LayerTransform.worldToLayerPixels(inverseTransform, worldX, worldY, out);
     }
@@ -517,7 +517,7 @@ public final class LayerStack implements Disposable {
      */
     public void worldPointOf(Layer layer, float stackX, float stackY, float layerX, float layerY, Vector2 out) {
         requireOutAndOwned(layer, out);
-        composeLayerTransform(layer, stackX, stackY, pointTransform);
+        LayerPlacement.compose(layer, stackX, stackY, pixelSnapping, pointTransform);
         LayerTransform.layerPixelsToWorld(pointTransform, layerX, layerY, out);
     }
 
@@ -563,24 +563,6 @@ public final class LayerStack implements Disposable {
             return false;
         }
         return clipper.isInside(stackX, stackY, worldX, worldY, pixelSnapping);
-    }
-
-    private void composeLayerTransform(Layer layer, float stackX, float stackY, Affine2 out) {
-        Panel panel = layer.getPanel();
-        float activeCameraX = panel == null ? cameraX : panel.getCameraX();
-        float activeCameraY = panel == null ? cameraY : panel.getCameraY();
-        // Zero for plain layers; for map windows it cancels the whole cells the content already scrolled.
-        float mapOriginX = layer.getMapOriginPixelsX();
-        float mapOriginY = layer.getMapOriginPixelsY();
-        float effectiveOffsetX = LayerClipper.panelCornerX(panel) + layer.getOffsetX()
-                - activeCameraX * layer.getParallaxX() + mapOriginX;
-        float effectiveOffsetY = LayerClipper.panelCornerY(panel) + layer.getOffsetY()
-                - activeCameraY * layer.getParallaxY() + mapOriginY;
-        float screenX = stackX + effectiveOffsetX;
-        float screenY = stackY - effectiveOffsetY;
-        boolean snapCorner = pixelSnapping || layer.getZoomMode() == ZoomMode.WHOLE;
-        LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX, layer.getPivotY() - mapOriginY,
-                layer.getEffectiveZoom(), layer.getRotation(), snapCorner, out);
     }
 
     private void drawLayer(Layer layer, SpriteBatch batch) {

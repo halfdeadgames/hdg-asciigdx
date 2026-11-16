@@ -33,14 +33,6 @@ final class LayerClipper {
         return layer.hasClip() || layer.getPanel() != null;
     }
 
-    static float panelCornerX(Panel panel) {
-        return panel == null ? 0f : panel.getX();
-    }
-
-    static float panelCornerY(Panel panel) {
-        return panel == null ? 0f : panel.getY();
-    }
-
     void beginFrame() {
         viewportQueried = false;
     }
@@ -65,7 +57,8 @@ final class LayerClipper {
         if (layer.isClippedToStack()) {
             resolveStackArea(stackWidth, stackHeight, stackHasSize);
         } else if (layer.hasClip()) {
-            stackRect.set(layer.getClipX() + panelCornerX(panel), layer.getClipY() + panelCornerY(panel),
+            stackRect.set(layer.getClipX() + LayerPlacement.getPanelCornerX(panel),
+                    layer.getClipY() + LayerPlacement.getPanelCornerY(panel),
                     layer.getClipWidth(), layer.getClipHeight());
         } else {
             stackRect.set(panel.getX(), panel.getY(), panel.getWidth(), panel.getHeight());

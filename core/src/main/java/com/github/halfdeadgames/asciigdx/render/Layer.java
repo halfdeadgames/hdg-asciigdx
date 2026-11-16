@@ -985,10 +985,9 @@ public final class Layer {
     }
 
     private void updateMapWindowOrigin() {
-        LayerStack stack = requireAttached();
-        float cameraX = panel == null ? stack.getCameraX() : panel.getCameraX();
-        float cameraY = panel == null ? stack.getCameraY() : panel.getCameraY();
-        mapWindow.origin().follow(cameraX * parallaxX, cameraY * parallaxY,
+        requireAttached();
+        mapWindow.origin().follow(LayerPlacement.getActiveCameraX(this) * parallaxX,
+                LayerPlacement.getActiveCameraY(this) * parallaxY,
                 glyphSource.getCellWidth(), glyphSource.getCellHeight());
     }
 
@@ -1010,6 +1009,10 @@ public final class Layer {
      */
     public void removeFreeSprites() {
         requireAttached();
+        detachAllSprites();
+    }
+
+    private void detachAllSprites() {
         for (int i = sprites.size - 1; i >= 0; i--) {
             sprites.get(i).detach();
         }
@@ -1092,10 +1095,7 @@ public final class Layer {
         owner = null;
         detachMapWindow();
         leaveAllGroups();
-        for (int i = sprites.size - 1; i >= 0; i--) {
-            sprites.get(i).detach();
-        }
-        sprites.clear();
+        detachAllSprites();
         cellHandleSet.detachAll();
     }
 
