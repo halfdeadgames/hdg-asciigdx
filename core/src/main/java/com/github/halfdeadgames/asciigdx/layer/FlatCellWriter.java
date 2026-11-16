@@ -22,7 +22,11 @@ final class FlatCellWriter {
         this.glyphSource = glyphSource;
     }
 
-    /** @param handle the cell's handle, or null if it has none */
+    /**
+     * Writes the cell at the given position into the cache.
+     *
+     * @param handle the cell's handle, or null if it has none
+     */
     void write(int column, int row, boolean glyphHidden, CellHandle handle) {
         int background = CellResolver.background(grid.getBackground(column, row), handle);
         int codePoint = CellResolver.codePoint(grid.getCodePoint(column, row), handle);

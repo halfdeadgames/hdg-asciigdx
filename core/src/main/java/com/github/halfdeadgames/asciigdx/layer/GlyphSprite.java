@@ -184,6 +184,7 @@ public final class GlyphSprite implements SpriteTransform {
      *
      * @return the rotation in degrees, not wrapped to a single turn
      */
+    @Override
     public float getRotation() {
         return rotation;
     }
@@ -216,6 +217,7 @@ public final class GlyphSprite implements SpriteTransform {
      *
      * @return the horizontal scale factor
      */
+    @Override
     public float getScaleX() {
         return scaleX;
     }
@@ -225,6 +227,7 @@ public final class GlyphSprite implements SpriteTransform {
      *
      * @return the vertical scale factor
      */
+    @Override
     public float getScaleY() {
         return scaleY;
     }
@@ -257,6 +260,7 @@ public final class GlyphSprite implements SpriteTransform {
      *
      * @return the horizontal pivot, 0.5 by default
      */
+    @Override
     public float getPivotX() {
         return pivotX;
     }
@@ -266,6 +270,7 @@ public final class GlyphSprite implements SpriteTransform {
      *
      * @return the vertical pivot, 0.5 by default
      */
+    @Override
     public float getPivotY() {
         return pivotY;
     }

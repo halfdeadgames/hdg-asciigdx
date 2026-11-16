@@ -26,6 +26,8 @@ final class CellVertexCache {
     private boolean fullRebuildNeeded = true;
 
     /**
+     * Creates a cache with one empty quad slot per cell.
+     *
      * @param columns number of columns, positive
      * @param rows number of rows, positive
      * @param cellWidth cell width in world units, positive

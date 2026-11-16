@@ -92,7 +92,7 @@ public final class DirtyTracker {
     public void forEachDirtyCell(DirtyCellVisitor visitor) {
         Objects.requireNonNull(visitor, "visitor");
         for (int index = dirtyCells.nextSetBit(0);
-             index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
+                index >= 0; index = dirtyCells.nextSetBit(index + 1)) {
             visitor.visit(index % columns, index / columns);
         }
     }

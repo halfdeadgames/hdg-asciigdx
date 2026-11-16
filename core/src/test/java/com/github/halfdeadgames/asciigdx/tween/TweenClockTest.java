@@ -12,7 +12,7 @@ class TweenClockTest {
     private static final float EPSILON = 1e-5f;
 
     @Test
-    void updateIgnoresNaNDelta() {
+    void updateIgnoresNanDelta() {
         TweenClock clock = TweenClock.looping(10f, 1f);
         clock.setTime(3f);
         clock.update(Float.NaN);
@@ -124,7 +124,7 @@ class TweenClockTest {
     }
 
     @Test
-    void unboundedIgnoresNonPositiveAndNaNDelta() {
+    void unboundedIgnoresNonPositiveAndNanDelta() {
         TweenClock clock = TweenClock.unbounded(1f);
         clock.setTime(3f);
         clock.update(-2f);

@@ -159,16 +159,6 @@ public final class FreeTypeGlyphBaker {
         }
     }
 
-    // FreeType's y_scale is (em in 1/64 px) / unitsPerEm in 16.16 fixed point; the Java binding
-    // does not expose unitsPerEm itself, so it is recovered from the scale at a large em.
-    private static int unitsPerEm(FreeType.Face face) {
-        int probeEmPixels = 1000;
-        face.setPixelSizes(0, probeEmPixels);
-        long yScale = face.getSize().getMetrics().getYscale();
-        return Math.round(
-                (float) ((long) probeEmPixels * SUBPIXEL_UNITS_PER_PIXEL * 65536L) / yScale);
-    }
-
     private static BakedSheet bake(
             FreeType.Face face, GlyphOrder order, int columns, int loadFlags, int renderMode,
             int cellHeight, int ascent) {
@@ -203,6 +193,16 @@ public final class FreeTypeGlyphBaker {
             sheet.dispose();
             throw e;
         }
+    }
+
+    // FreeType's y_scale is (em in 1/64 px) / unitsPerEm in 16.16 fixed point; the Java binding
+    // does not expose unitsPerEm itself, so it is recovered from the scale at a large em.
+    private static int unitsPerEm(FreeType.Face face) {
+        int probeEmPixels = 1000;
+        face.setPixelSizes(0, probeEmPixels);
+        long yScale = face.getSize().getMetrics().getYscale();
+        return Math.round(
+                (float) ((long) probeEmPixels * SUBPIXEL_UNITS_PER_PIXEL * 65536L) / yScale);
     }
 
     private static void drawGlyph(

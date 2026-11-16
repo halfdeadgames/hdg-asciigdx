@@ -43,7 +43,7 @@ final class GridMesh implements Disposable {
     static short[] createQuadIndices(int quads) {
         short[] indices = new short[quads * CellVertexLayout.INDICES_PER_QUAD];
         for (int quad = 0, index = 0, vertex = 0;
-             quad < quads; quad++, vertex += CellVertexLayout.VERTICES_PER_QUAD) {
+                quad < quads; quad++, vertex += CellVertexLayout.VERTICES_PER_QUAD) {
             indices[index++] = (short) vertex;
             indices[index++] = (short) (vertex + 1);
             indices[index++] = (short) (vertex + 2);

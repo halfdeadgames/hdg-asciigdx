@@ -99,6 +99,22 @@ public final class Timeline {
     }
 
     /**
+     * Writes {@code track.valueAt(index, time)} to the setter for every index from 0 to
+     * {@code count - 1}. Skipping unchanged values is tracked per index.
+     *
+     * @throws IllegalArgumentException if an argument is null, count is below 1, or the setter is
+     *     already bound
+     */
+    public void bind(StaggeredTrack track, int count, IndexedFloatSetter setter) {
+        requireNonNull("track", track);
+        requireNonNull("setter", setter);
+        if (count < 1) {
+            throw new IllegalArgumentException("count must be >= 1: " + count);
+        }
+        addBinding(new StaggeredBinding(track, count, setter));
+    }
+
+    /**
      * Writes true while {@code startSeconds <= time < endSeconds}, false otherwise. Equal start
      * and end means never visible.
      *
@@ -115,22 +131,6 @@ public final class Timeline {
         }
         requireNonNull("setter", setter);
         addBinding(new VisibilityBinding(startSeconds, endSeconds, setter));
-    }
-
-    /**
-     * Writes {@code track.valueAt(index, time)} to the setter for every index from 0 to
-     * {@code count - 1}. Skipping unchanged values is tracked per index.
-     *
-     * @throws IllegalArgumentException if an argument is null, count is below 1, or the setter is
-     *     already bound
-     */
-    public void bind(StaggeredTrack track, int count, IndexedFloatSetter setter) {
-        requireNonNull("track", track);
-        requireNonNull("setter", setter);
-        if (count < 1) {
-            throw new IllegalArgumentException("count must be >= 1: " + count);
-        }
-        addBinding(new StaggeredBinding(track, count, setter));
     }
 
     /**

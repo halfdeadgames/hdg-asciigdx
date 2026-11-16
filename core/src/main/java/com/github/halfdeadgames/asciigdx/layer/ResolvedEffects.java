@@ -56,7 +56,7 @@ final class ResolvedEffects {
      */
     private void markChain(LayerGroup start) {
         for (LayerGroup group = start;
-             group != null && !group.isMarkedIn(resolveId); group = group.getParent()) {
+                group != null && !group.isMarkedIn(resolveId); group = group.getParent()) {
             group.markIn(resolveId);
             LayerGroup parent = group.getParent();
             if (parent != null) {

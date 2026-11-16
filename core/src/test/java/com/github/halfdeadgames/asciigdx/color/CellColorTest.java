@@ -29,7 +29,7 @@ class CellColorTest {
     }
 
     @Test
-    void linearMixClampsAmountAndTreatsNaNAsZero() {
+    void linearMixClampsAmountAndTreatsNanAsZero() {
         assertEquals(RED, CellColor.mixRgbKeepingAlpha(RED, BLUE, -0.5f));
         assertEquals(BLUE, CellColor.mixRgbKeepingAlpha(RED, BLUE, 1.5f));
         assertEquals(RED, CellColor.mixRgbKeepingAlpha(RED, BLUE, Float.NaN));
@@ -46,7 +46,7 @@ class CellColorTest {
     }
 
     @Test
-    void scaledAlphaTreatsNaNAsZero() {
+    void scaledAlphaTreatsNanAsZero() {
         assertEquals(0x11223300, CellColor.withAlphaScaled(0x112233C0, Float.NaN));
     }
 

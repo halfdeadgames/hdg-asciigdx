@@ -3,7 +3,7 @@ package com.github.halfdeadgames.asciigdx.layer;
 /** Mutable clip state of one layer: no clip, a fixed rectangle, or the stack's area. */
 final class LayerClip {
 
-    private enum Mode {NONE, RECT, STACK}
+    private enum Mode { NONE, RECT, STACK }
 
     private Mode mode = Mode.NONE;
     private float x;
