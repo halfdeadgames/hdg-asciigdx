@@ -35,15 +35,16 @@ class LabelFieldTest {
     @Test
     void whitespaceAndControlCharactersAreRefused() {
         LabelField field = field("");
-        type(field, "a b\tc\nd\re f\u0007g");
+        // U+00A0 is a no-break space.
+        type(field, "a b\tc\nd\re\u00A0f\u0007g");
         assertEquals("ABCDEFG", field.value());
     }
 
     @Test
     void privateUseCharactersAreRefused() {
         LabelField field = field("");
-        // U+DFFF is a lone low surrogate with no printable form, so it stays escaped.
-        type(field, "abcd\uDFFF");
+        // U+F5E1, U+E000, and U+F8FF are private-use characters; U+DFFF is a lone low surrogate.
+        type(field, "a\uF5E1b\uE000c\uF8FFd\uDFFF");
         assertEquals("ABCD", field.value());
     }
 
