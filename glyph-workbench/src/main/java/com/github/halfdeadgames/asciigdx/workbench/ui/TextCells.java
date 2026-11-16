@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-/** Measures and cuts text in display cells, where one code point is one cell and a surrogate pair is never split. */
+/**
+ * Measures and cuts text in display cells, where one code point is one cell and a surrogate pair is
+ * never split.
+ */
 public final class TextCells {
 
     private TextCells() {
@@ -12,8 +15,8 @@ public final class TextCells {
     }
 
     /**
-     * The char index where {@code cells} cells end, counting from {@code fromIndex}; the text length when it has
-     * fewer cells left. Never lands between the two halves of a surrogate pair.
+     * The char index where {@code cells} cells end, counting from {@code fromIndex}; the text
+     * length when it has fewer cells left. Never lands between the two halves of a surrogate pair.
      */
     public static int indexAfterCells(CharSequence text, int fromIndex, int cells) {
         int index = fromIndex;

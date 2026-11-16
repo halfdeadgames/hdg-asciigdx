@@ -20,20 +20,28 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** A menu in the UI kit style: a focused list on the left, details of the selected entry on the right. */
+/**
+ * A menu in the UI kit style: a focused list on the left, details of the selected entry on the
+ * right.
+ */
 final class MenuScreen implements WorkbenchScreen {
 
     /** The right panel: its title and its lines, such as the actions. */
     record Detail(String title, List<String> lines) {
     }
 
-    /** The words on screen: panel title, breadcrumb, one-word Enter and Esc labels, and a notice (empty for none). */
-    record Text(String listTitle, List<String> crumbs, String enterLabel, String escapeLabel, String notice) {
+    /**
+     * The words on screen: panel title, breadcrumb, one-word Enter and Esc labels, and a notice
+     * (empty for none).
+     */
+    record Text(String listTitle, List<String> crumbs, String enterLabel, String escapeLabel,
+                String notice) {
 
         private static final String DEFAULT_ENTER_LABEL = "OPEN";
 
         /** Text whose Enter label is {@code OPEN}. */
-        static Text opening(String listTitle, List<String> crumbs, String escapeLabel, String notice) {
+        static Text opening(String listTitle, List<String> crumbs, String escapeLabel,
+                String notice) {
             return new Text(listTitle, crumbs, DEFAULT_ENTER_LABEL, escapeLabel, notice);
         }
     }
@@ -68,13 +76,14 @@ final class MenuScreen implements WorkbenchScreen {
      * @param onBack called when the user presses Esc
      */
     MenuScreen(MenuModel model, Text text, Function<MenuModel.Item, Detail> detailFor,
-        Consumer<MenuModel.Item> onChoose, Runnable onBack) {
+            Consumer<MenuModel.Item> onChoose, Runnable onBack) {
         this.model = model;
         this.listTitle = text.listTitle();
         this.crumbs = text.crumbs();
         this.keys = List.of(
-            new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", text.enterLabel()),
-            new StatusBar.Key("1-9", "QUICK PICK"), new StatusBar.Key("ESC", text.escapeLabel()));
+                new StatusBar.Key("↑↓", "CHOOSE"), new StatusBar.Key("ENTER", text.enterLabel()),
+                new StatusBar.Key("1-9", "QUICK PICK"),
+                new StatusBar.Key("ESC", text.escapeLabel()));
         this.notice = text.notice();
         this.detailFor = detailFor;
         this.onChoose = onChoose;
@@ -116,7 +125,7 @@ final class MenuScreen implements WorkbenchScreen {
         }
         for (int number = 1; number <= 9; number++) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0 + number)
-                || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0 + number)) {
+                    || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0 + number)) {
                 int index = model.itemForNumber(number);
                 if (index >= 0) {
                     model.select(index);
@@ -134,7 +143,8 @@ final class MenuScreen implements WorkbenchScreen {
         boolean moved = mouseX != lastMouseX || mouseY != lastMouseY;
         lastMouseX = mouseX;
         lastMouseY = mouseY;
-        boolean clicked = Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
+        boolean clicked =
+                Gdx.input.justTouched() && Gdx.input.isButtonJustPressed(Input.Buttons.LEFT);
         if (!moved && !clicked) {
             return;
         }
@@ -161,7 +171,8 @@ final class MenuScreen implements WorkbenchScreen {
     private List<SelectList.Row> rows() {
         List<SelectList.Row> rows = new ArrayList<>();
         for (MenuModel.Line line : model.lines()) {
-            rows.add(new SelectList.Row(line.text().strip(), line.itemIndex() >= 0, line.dimmed(), line.indent()));
+            rows.add(new SelectList.Row(line.text().strip(), line.itemIndex() >= 0, line.dimmed(),
+                    line.indent()));
         }
         return rows;
     }
@@ -169,7 +180,8 @@ final class MenuScreen implements WorkbenchScreen {
     private int selectedRow() {
         List<MenuModel.Line> lines = model.lines();
         for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).itemIndex() >= 0 && lines.get(i).itemIndex() == model.selectedIndex()) {
+            if (lines.get(i).itemIndex() >= 0
+                    && lines.get(i).itemIndex() == model.selectedIndex()) {
                 return i;
             }
         }
@@ -183,11 +195,14 @@ final class MenuScreen implements WorkbenchScreen {
         int rowCount = kit.rows();
         TopBar.draw(painter, columns, 0, crumbs, TopBarStatus.of("", UiPalette.TEXT));
 
-        int panelHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
-        Panel.draw(painter, new CellRect(LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight), listTitle, true);
+        int panelHeight = Math.max(MIN_PANEL_HEIGHT,
+                Math.min(rowCount - PANEL_TOP - 3, model.lines().size() * SelectList.PITCH + 5));
+        Panel.draw(painter, new CellRect(LIST_X, PANEL_TOP, LIST_WIDTH, panelHeight),
+                listTitle, true);
         List<SelectList.Row> listRows = rows();
-        SelectList.draw(painter, SelectList.areaOf(LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, listRows.size()),
-            listRows, selectedRow());
+        SelectList.draw(painter,
+                SelectList.areaOf(LIST_X + 1, LIST_TOP, LIST_WIDTH - 2, listRows.size()),
+                listRows, selectedRow());
 
         Detail detail = detailFor.apply(model.selectedItem());
         int detailWidth = Math.max(10, Math.min(DETAIL_MAX_WIDTH, columns - DETAIL_X - 2));
@@ -200,7 +215,8 @@ final class MenuScreen implements WorkbenchScreen {
     }
 
     private void drawDetail(Painter painter, Detail detail, int width, int height) {
-        Panel.draw(painter, new CellRect(DETAIL_X, PANEL_TOP, width, height), detail.title(), false);
+        Panel.draw(painter, new CellRect(DETAIL_X, PANEL_TOP, width, height),
+                detail.title(), false);
         int y = LIST_TOP;
         int bottom = PANEL_TOP + height - 1;
         for (String line : detail.lines()) {
@@ -208,7 +224,7 @@ final class MenuScreen implements WorkbenchScreen {
                 break;
             }
             painter.text(TextCells.prefix(line, width - 4),
-                (DETAIL_X + 2) * CELL, y * CELL, UiPalette.TEXT);
+                    (DETAIL_X + 2) * CELL, y * CELL, UiPalette.TEXT);
             y += SelectList.PITCH;
         }
     }

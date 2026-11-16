@@ -60,7 +60,8 @@ class SaiksisttSixteenRulesTest {
     }
 
     private static FontData parseFont() throws IOException {
-        return FontDataParser.parseSizeFile(SIZE, readText(new File(fontDirectory, SIZE.dataFileName())));
+        return FontDataParser.parseSizeFile(SIZE,
+                readText(new File(fontDirectory, SIZE.dataFileName())));
     }
 
     private static List<String> describeWarnings(RulesFile rules, int codePoint, PixelGlyph glyph) {

@@ -46,7 +46,8 @@ public final class NativeFolderPicker implements FolderPicker {
 
     private void throwIfFailed(int result) {
         if (result == NativeFileDialog.NFD_ERROR) {
-            throw new IllegalStateException("Folder dialog failed: " + NativeFileDialog.NFD_GetError());
+            throw new IllegalStateException(
+                    "Folder dialog failed: " + NativeFileDialog.NFD_GetError());
         }
     }
 }

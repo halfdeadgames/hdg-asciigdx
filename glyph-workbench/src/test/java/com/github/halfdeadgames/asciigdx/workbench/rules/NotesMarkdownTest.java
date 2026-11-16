@@ -18,7 +18,8 @@ class NotesMarkdownTest {
 
     @Test
     void headingsLoseTheirHashes() {
-        assertEquals(List.of(new NoteLine(Kind.HEADING, "Title"), new NoteLine(Kind.HEADING, "Sub")),
+        assertEquals(
+                List.of(new NoteLine(Kind.HEADING, "Title"), new NoteLine(Kind.HEADING, "Sub")),
                 NotesMarkdown.parse("# Title\n### Sub"));
     }
 
@@ -30,7 +31,8 @@ class NotesMarkdownTest {
     @Test
     void bulletsAcceptBothMarkersAndIndent() {
         assertEquals(List.of(new NoteLine(Kind.BULLET, "one"), new NoteLine(Kind.BULLET, "two"),
-                new NoteLine(Kind.BULLET, "three")), NotesMarkdown.parse("- one\n* two\n   - three"));
+                        new NoteLine(Kind.BULLET, "three")),
+                NotesMarkdown.parse("- one\n* two\n   - three"));
     }
 
     @Test

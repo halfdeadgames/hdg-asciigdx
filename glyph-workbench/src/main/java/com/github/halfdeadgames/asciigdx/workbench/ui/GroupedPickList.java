@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Rows grouped under headings with a cursor that rests on choosable rows only, and a scrolling window for when
- * the dialog has no room for every row. Each row has a parallel entry; a null entry marks a row that cannot be chosen.
+ * Rows grouped under headings with a cursor that rests on choosable rows only, and a scrolling
+ * window for when the dialog has no room for every row. Each row has a parallel entry; a null entry
+ * marks a row that cannot be chosen.
  *
  * @param <T> what a choosable row stands for
  */
@@ -27,15 +28,16 @@ public final class GroupedPickList<T> {
     }
 
     /**
-     * Replaces the rows and entries, clears the selection, and scrolls back to the top. Call {@link #move(int)}
-     * afterwards to put the cursor on a row.
+     * Replaces the rows and entries, clears the selection, and scrolls back to the top. Call
+     * {@link #move(int)} afterwards to put the cursor on a row.
      *
      * @throws IllegalArgumentException when rows and entries differ in size
      */
     public void setRows(List<SelectList.Row> newRows, List<T> newEntries) {
         if (newRows.size() != newEntries.size()) {
             throw new IllegalArgumentException(
-                "rows and entries must be the same size: " + newRows.size() + " vs " + newEntries.size());
+                    "rows and entries must be the same size: " + newRows.size() + " vs "
+                            + newEntries.size());
         }
         rows = new ArrayList<>(newRows);
         entries = new ArrayList<>(newEntries);
@@ -54,7 +56,9 @@ public final class GroupedPickList<T> {
         window.setTotalRows(0);
     }
 
-    /** Sets how many rows the dialog has room for; the window follows the cursor when this changes. */
+    /**
+     * Sets how many rows the dialog has room for; the window follows the cursor when this changes.
+     */
     public void setCapacity(int roomForRows) {
         if (roomForRows == capacity) {
             return;
@@ -85,7 +89,9 @@ public final class GroupedPickList<T> {
         return rows.subList(first, Math.min(rows.size(), first + shownRows()));
     }
 
-    /** The cursor's place in {@link #visibleRows()}, or -1 when it has been scrolled out of view. */
+    /**
+     * The cursor's place in {@link #visibleRows()}, or -1 when it has been scrolled out of view.
+     */
     public int visibleSelectedIndex() {
         int inView = selected - window.offset();
         return selected == NOTHING || inView < 0 || inView >= shownRows() ? NOTHING : inView;
@@ -96,7 +102,9 @@ public final class GroupedPickList<T> {
         window.scrollBy(ticks);
     }
 
-    /** Moves the cursor to a row of {@link #rows()}; unchoosable and out-of-range rows are ignored. */
+    /**
+     * Moves the cursor to a row of {@link #rows()}; unchoosable and out-of-range rows are ignored.
+     */
     public void hover(int rowIndex) {
         if (isChoosable(rowIndex)) {
             selected = rowIndex;
@@ -128,7 +136,9 @@ public final class GroupedPickList<T> {
         return selected != NOTHING;
     }
 
-    /** Moves to the next choosable row in the direction of {@code step}; stays put at either end. */
+    /**
+     * Moves to the next choosable row in the direction of {@code step}; stays put at either end.
+     */
     public void move(int step) {
         int direction = Integer.signum(step);
         if (direction == 0) {
@@ -149,7 +159,10 @@ public final class GroupedPickList<T> {
         return widthOf(rows);
     }
 
-    /** Width in cells of the widest of the given rows, counting the selection marker on selectable rows. */
+    /**
+     * Width in cells of the widest of the given rows, counting the selection marker on selectable
+     * rows.
+     */
     public static int widthOf(List<SelectList.Row> listRows) {
         int width = 0;
         for (SelectList.Row row : listRows) {

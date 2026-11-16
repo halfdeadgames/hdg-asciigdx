@@ -91,26 +91,30 @@ public final class PaintScreen implements WorkbenchScreen {
     private static final int CRUMB_ROW = 1;
 
     private static final List<StatusBar.Key> KEYS = List.of(
-        new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
-        new StatusBar.Key("CTRL+Z", "UNDO"), new StatusBar.Key("F1", "RULES"), new StatusBar.Key("F2", "GUIDES"),
-        new StatusBar.Key("ESC", "BACK"));
+            new StatusBar.Key("D", "DERIVE"), new StatusBar.Key("CTRL+S", "SAVE"),
+            new StatusBar.Key("CTRL+Z", "UNDO"), new StatusBar.Key("F1", "RULES"),
+            new StatusBar.Key("F2", "GUIDES"),
+            new StatusBar.Key("ESC", "BACK"));
     private static final List<StatusBar.Key> PICK_KEYS = List.of(
-        new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
-        new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ENTER", "USE SOURCE"), new StatusBar.Key("ARROWS", "MOVE SOURCE"),
+            new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> MENU_KEYS = List.of(
-        new StatusBar.Key("ARROWS", "CHOOSE"), new StatusBar.Key("ENTER", "SELECT"),
-        new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ARROWS", "CHOOSE"), new StatusBar.Key("ENTER", "SELECT"),
+            new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> REPLACE_KEYS = List.of(
-        new StatusBar.Key("R", "REPLACE"), new StatusBar.Key("ESC", "BACK"));
+            new StatusBar.Key("R", "REPLACE"), new StatusBar.Key("ESC", "BACK"));
     private static final List<StatusBar.Key> OVERLAY_PICK_KEYS = List.of(
-        new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("; '", "UP/DOWN"),new StatusBar.Key("ENTER", "ADD"),
-        new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
-        new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("[ ]", "SHIFT"), new StatusBar.Key("; '", "UP/DOWN"),
+            new StatusBar.Key("ENTER", "ADD"),
+            new StatusBar.Key("BKSP", "UNDO PART"), new StatusBar.Key("F", "FINISH"),
+            new StatusBar.Key("ESC", "CANCEL"));
     private static final List<Dialog.Button> UNSAVED_BUTTONS = List.of(
-        new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
-        new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
+            new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> SAVE_ONLY_BUTTONS = List.of(
-        new Dialog.Button("S", "SAVE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final DeriveFlow flow = new DeriveFlow();
     private final PaintLayers layers = new PaintLayers();
@@ -120,7 +124,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private final MenuPointer<PaintMenu.Action> menuPointer = new MenuPointer<>(MENU_ROW);
     private final MenuKeys<PaintMenu.Action> menuKeys = new MenuKeys<>();
     private final Predicate<PaintMenu.Action> menuAvailability =
-        action -> PaintMenu.isAvailable(action, menuContext());
+            action -> PaintMenu.isAvailable(action, menuContext());
     private PaintDerivePick derivePick;
     private PaintDerive derive;
     private final ScreenKit kit = new ScreenKit();
@@ -132,10 +136,13 @@ public final class PaintScreen implements WorkbenchScreen {
     private final KeyRepeat repeatDown = new KeyRepeat();
     private final KeyRepeat repeatUndo = new KeyRepeat();
     private final KeyRepeat repeatRedo = new KeyRepeat();
-    private final ArrowRepeats arrowRepeats = new ArrowRepeats(repeatLeft, repeatRight, repeatUp, repeatDown);
-    private final PaintMenuInput menuInput = new PaintMenuInput(new MenuInputHost(), menuPointer, menuKeys,
-        menuAvailability, arrowRepeats);
-    private final NewGlyphDialog newGlyph = new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
+    private final ArrowRepeats arrowRepeats =
+            new ArrowRepeats(repeatLeft, repeatRight, repeatUp, repeatDown);
+    private final PaintMenuInput menuInput =
+            new PaintMenuInput(new MenuInputHost(), menuPointer, menuKeys,
+                    menuAvailability, arrowRepeats);
+    private final NewGlyphDialog newGlyph =
+            new NewGlyphDialog(this::addGlyphSlot, codePoint -> slotOf(codePoint) >= 0);
     private final NewSizeDialog newSize = new NewSizeDialog(this::confirmNewSize);
     private final PaintNewFont newFont;
     private PaintGuideListPanel guideListPanel;
@@ -154,7 +161,8 @@ public final class PaintScreen implements WorkbenchScreen {
     private final GlyphTitle glyphTitle = new GlyphTitle();
     private final MessageStrip messages = new MessageStrip();
     private final PaintDeriveMenu deriveMenu = new PaintDeriveMenu(flow, messages);
-    private final PaintUpscale upscale = new PaintUpscale(messages, arrowRepeats, new PaintUpscaleHost());
+    private final PaintUpscale upscale =
+            new PaintUpscale(messages, arrowRepeats, new PaintUpscaleHost());
     // Static so a paint screen opened later in the same run does not open the capture dialog again.
     private static boolean newFontCaptureOpened;
     private PaintLayout.Result rects;
@@ -192,7 +200,8 @@ public final class PaintScreen implements WorkbenchScreen {
     private final CellSize fontSize;
     private final Consumer<CellSize> openSize;
     // What the unsaved-changes prompt continues with once the changes are saved or discarded.
-    private Runnable afterUnsavedPrompt = () -> { };
+    private Runnable afterUnsavedPrompt = () -> {
+    };
     private String unsavedQuestion = LEAVE_QUESTION;
     private List<Dialog.Button> unsavedButtons = UNSAVED_BUTTONS;
     // Built in show(): the folder memory needs preferences, which need the running app.
@@ -202,22 +211,27 @@ public final class PaintScreen implements WorkbenchScreen {
      * @param onExit called when the user leaves the screen with Esc (after the unsaved prompt)
      * @param fontDir absolute path of the font folder
      * @param fontSize cell size, which is also the data file name without {@code .txt}
-     * @param openSize called with the size of a size file this screen just created, to paint it next
-     * @param openFont called with the folder and first size of a font this screen just created, to paint it next
+     * @param openSize called with the size of a size file this screen just created, to paint it
+     *     next
+     * @param openFont called with the folder and first size of a font this screen just created, to
+     *     paint it next
      */
-    public PaintScreen(Runnable onExit, String fontDir, CellSize fontSize, Consumer<CellSize> openSize,
-                    BiConsumer<Path, CellSize> openFont) {
+    public PaintScreen(Runnable onExit, String fontDir, CellSize fontSize,
+            Consumer<CellSize> openSize,
+            BiConsumer<Path, CellSize> openFont) {
         this.onExit = onExit;
         this.fontDir = fontDir;
         this.fontSize = fontSize;
         this.openSize = openSize;
-        this.newFont = new PaintNewFont(this::fontsRoot, this::runAfterUnsavedCheck, openFont, messages);
+        this.newFont =
+                new PaintNewFont(this::fontsRoot, this::runAfterUnsavedCheck, openFont, messages);
     }
 
     @Override
     public void show() {
         if (fontDir == null) {
-            throw new GdxRuntimeException("workbench.fontDir is not set; start with -Pmode=paint through Gradle");
+            throw new GdxRuntimeException(
+                    "workbench.fontDir is not set; start with -Pmode=paint through Gradle");
         }
         FileHandle directory = Gdx.files.absolute(fontDir);
         loadFont(directory);
@@ -234,11 +248,12 @@ public final class PaintScreen implements WorkbenchScreen {
         dataFile = directory.child(fontSize.dataFileName());
         folderName = directory.name().toUpperCase(java.util.Locale.ROOT);
         editor = new FontEditor(
-            FontDataParser.parseSizeFile(fontSize, dataFile.readString("UTF-8")),
-            GlyphListFile.load(directory.file()));
+                FontDataParser.parseSizeFile(fontSize, dataFile.readString("UTF-8")),
+                GlyphListFile.load(directory.file()));
         stroke = new PaintStroke(editor);
         derivePick = new PaintDerivePick(editor, flow);
-        derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages, new PaintDeriveHost());
+        derive = new PaintDerive(flow, derivePick, deriveMenu, editor, messages,
+                new PaintDeriveHost());
     }
 
     private void pickStartCursor() {
@@ -270,8 +285,9 @@ public final class PaintScreen implements WorkbenchScreen {
         applyMinimumWindowSize();
         loadGuides(directory);
         grid = new PaintGridView(painter, editor, guides);
-        guideListPanel = new PaintGuideListPanel(painter, messages, guidesFile, editor, arrowRepeats,
-            new GuideListPanelHost());
+        guideListPanel =
+                new PaintGuideListPanel(painter, messages, guidesFile, editor, arrowRepeats,
+                        new GuideListPanelHost());
         preview = new PaintPreview(painter, editor);
         PreviewTabs.Tab requestedTab = DevCapture.requestedTab();
         if (requestedTab != null) {
@@ -279,16 +295,20 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         rules = new RulesScreen(rulesPainter);
         helpPanel = new PaintHelpPanel(painter, helpScroll);
-        scrollRouting = new PaintScrollRouting(messages, helpScroll, sheet, wheelTicks, new ScrollRoutingHost());
+        scrollRouting = new PaintScrollRouting(messages, helpScroll, sheet, wheelTicks,
+                new ScrollRoutingHost());
         pointer = new PaintPointer(kit.viewport(), scrollRouting);
         guideListPointerTargets = new PointerTargets(List.of(
-            new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(), () -> rects.grid(), this::cellPixels)));
+                new GuideListPointerTarget(guideListPanel, () -> rects.belowPreview(),
+                        () -> rects.grid(), this::cellPixels)));
         pointerTargets = new PointerTargets(List.of(
-            new PreviewPointerTarget(preview, () -> rects.preview(), this::cellPixels),
-            new SheetBarPointerTarget(sheet),
-            new MessagesPointerTarget(messages, this::cellPixels),
-            new SheetSlotPointerTarget(sheet, flow, derive, messages, new CursorSlotSelection()),
-            new GridStrokePointerTarget(grid, stroke, flow, messages, editor, new CursorStrokeStart())));
+                new PreviewPointerTarget(preview, () -> rects.preview(), this::cellPixels),
+                new SheetBarPointerTarget(sheet),
+                new MessagesPointerTarget(messages, this::cellPixels),
+                new SheetSlotPointerTarget(sheet, flow, derive, messages,
+                        new CursorSlotSelection()),
+                new GridStrokePointerTarget(grid, stroke, flow, messages, editor,
+                        new CursorStrokeStart())));
         loadRules(directory);
     }
 
@@ -303,7 +323,7 @@ public final class PaintScreen implements WorkbenchScreen {
                 return true;
             }
             boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+                    || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
             wheelTicks.add(amountX, amountY, shift);
             return true;
         }
@@ -341,7 +361,8 @@ public final class PaintScreen implements WorkbenchScreen {
                 newSize.type(character);
                 return true;
             }
-            if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen() || Keys.controlDown()) {
+            if (!guideListPanel.isRenaming() || rules.isOpen() || controls.isOpen()
+                    || Keys.controlDown()) {
                 return false;
             }
             guideListPanel.typeChar(character);
@@ -379,7 +400,8 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void openNewSizeForCapture() {
         int moves = DevCapture.newSizeRequest();
-        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()) {
+        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved
+                || newGlyph.isOpen()) {
             return;
         }
         try {
@@ -400,8 +422,9 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void openUpscaleSourceForCapture() {
         int moves = DevCapture.upscaleSourceRequest();
-        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()
-            || newSize.isOpen()) {
+        if (moves < 0 || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved
+                || newGlyph.isOpen()
+                || newSize.isOpen()) {
             return;
         }
         upscale.open();
@@ -495,8 +518,9 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private void openNewFontForCapture() {
-        if (newFontCaptureOpened || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved || newGlyph.isOpen()
-            || newSize.isOpen() || upscale.isActive()) {
+        if (newFontCaptureOpened || flow.isActive() || guideListPanel.isOpen() || confirmingUnsaved
+                || newGlyph.isOpen()
+                || newSize.isOpen() || upscale.isActive()) {
             return;
         }
         stroke.end();
@@ -526,7 +550,8 @@ public final class PaintScreen implements WorkbenchScreen {
             return;
         }
         pointer.updatePosition();
-        newSize.handlePointer(leftClicked(), pointer.pixelX(), pointer.pixelY(), cellPixels(), rects.grid());
+        newSize.handlePointer(leftClicked(), pointer.pixelX(), pointer.pixelY(), cellPixels(),
+                rects.grid());
     }
 
     private void openNewSizeFromMenu() {
@@ -539,7 +564,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
-    // Unsaved changes are asked about after the pick, so canceling the prompt loses nothing and creates nothing.
+    // Unsaved changes are asked about after the pick, so canceling the prompt loses nothing and
+    // creates nothing.
     private void confirmNewSize(CellSize chosen) {
         runAfterUnsavedCheck(() -> createSize(chosen), SWITCH_SIZE_QUESTION);
     }
@@ -569,7 +595,8 @@ public final class PaintScreen implements WorkbenchScreen {
         newGlyph.handle(delta);
     }
 
-    // Later slots shift when a slot is inserted, so everything indexed by slot is rebuilt before the cursor moves.
+    // Later slots shift when a slot is inserted, so everything indexed by slot is rebuilt before
+    // the cursor moves.
     private void addGlyphSlot(int codePoint) {
         boolean existed = slotOf(codePoint) >= 0;
         editor.addSlot(codePoint);
@@ -588,7 +615,8 @@ public final class PaintScreen implements WorkbenchScreen {
         if (!existed) {
             String saveProblem = saveSlotToGlyphList(codePoint);
             if (saveProblem != null) {
-                line.append(" was added but could not be saved to glyphs.txt: ").append(saveProblem);
+                line.append(" was added but could not be saved to glyphs.txt: ")
+                        .append(saveProblem);
                 messages.warn(line.toString());
                 return;
             }
@@ -633,7 +661,7 @@ public final class PaintScreen implements WorkbenchScreen {
         int factor = PaintScale.parseFactor(text);
         if (factor == 0) {
             Gdx.app.error(TAG, "Ignoring workbench.scale=" + text + ": use a whole number from "
-                + UiScale.MIN_FACTOR + " to " + UiScale.MAX_FACTOR);
+                    + UiScale.MIN_FACTOR + " to " + UiScale.MAX_FACTOR);
             return null;
         }
         return factor;
@@ -642,14 +670,15 @@ public final class PaintScreen implements WorkbenchScreen {
     private void showScaleMessage() {
         if (uiScale.overrideTooBig()) {
             messages.setCondition(KEY_SCALE, true,
-                "UI " + uiScale.overrideFactor() + "X too big");
+                    "UI " + uiScale.overrideFactor() + "X too big");
         } else {
             messages.clearCondition(KEY_SCALE);
         }
     }
 
     private static boolean altDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT);
+        return Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(
+                Input.Keys.ALT_RIGHT);
     }
 
     // Runs before the layout each frame, so a new scale never draws one frame with the old layout.
@@ -657,11 +686,14 @@ public final class PaintScreen implements WorkbenchScreen {
         if (!Keys.controlDown()) {
             return;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.EQUALS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.EQUALS) || Gdx.input.isKeyJustPressed(
+                Input.Keys.NUMPAD_ADD)) {
             stepScale(1);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_SUBTRACT)) {
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS) || Gdx.input.isKeyJustPressed(
+                Input.Keys.NUMPAD_SUBTRACT)) {
             stepScale(-1);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_0)) {
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0) || Gdx.input.isKeyJustPressed(
+                Input.Keys.NUMPAD_0)) {
             useAutoScale();
         }
     }
@@ -704,13 +736,15 @@ public final class PaintScreen implements WorkbenchScreen {
         revealCursor = true;
     }
 
-    // Only the lwjgl3 desktop window has size limits; GLFW enforces them, also on a window that is already smaller.
-    // The limits are the smallest scale's minimum, so the window can shrink far enough to step the scale down.
+    // Only the lwjgl3 desktop window has size limits; GLFW enforces them, also on a window that is
+    // already smaller. The limits are the smallest scale's minimum, so the window can shrink far
+    // enough to step the scale down.
     private void applyMinimumWindowSize() {
         if (Gdx.graphics instanceof Lwjgl3Graphics graphics) {
             graphics.getWindow().setSizeLimits(
-                PaintScale.minimumWidth(UiScale.MIN_FACTOR, PaintSheetView.GAP, editor.cellWidth(), editor.cellHeight()),
-                PaintScale.minimumHeight(UiScale.MIN_FACTOR, editor.cellHeight()), -1, -1);
+                    PaintScale.minimumWidth(UiScale.MIN_FACTOR, PaintSheetView.GAP,
+                            editor.cellWidth(), editor.cellHeight()),
+                    PaintScale.minimumHeight(UiScale.MIN_FACTOR, editor.cellHeight()), -1, -1);
         }
     }
 
@@ -838,7 +872,8 @@ public final class PaintScreen implements WorkbenchScreen {
 
         @Override
         public boolean menuClicked(PaintDeriveMenu menu) {
-            return menu.handleClick(rects.grid(), cellPixels(), pointer.pixelX(), pointer.pixelY(), leftClicked());
+            return menu.handleClick(rects.grid(), cellPixels(), pointer.pixelX(), pointer.pixelY(),
+                    leftClicked());
         }
     }
 
@@ -883,7 +918,8 @@ public final class PaintScreen implements WorkbenchScreen {
             return;
         }
         messages.setCondition(KEY_GUIDES, true, "Guides file is bad: guides are off");
-        Gdx.app.error(TAG, "Cannot read " + guidesFile.displayPath() + ": " + guidesFile.readError());
+        Gdx.app.error(TAG,
+                "Cannot read " + guidesFile.displayPath() + ": " + guidesFile.readError());
     }
 
     // The glyph data file is left alone: it holds unsaved edits and the undo history.
@@ -906,7 +942,7 @@ public final class PaintScreen implements WorkbenchScreen {
     // Run again to reload; the next frame checks the current glyph afresh.
     private void loadRules(FileHandle directory) {
         RulesLoadResult result = RulesFileLoad.load(
-            directory.file().toPath(), fontSize, editor.cellWidth(), editor.cellHeight());
+                directory.file().toPath(), fontSize, editor.cellWidth(), editor.cellHeight());
         rulesFile = result.rulesFile();
         grid.setRules(rulesFile);
         ruleGlyph = -1;
@@ -973,7 +1009,7 @@ public final class PaintScreen implements WorkbenchScreen {
             return PaintMenu.Context.RULES_OPEN;
         }
         if (confirmingUnsaved || guideListPanel.isOpen() || newGlyph.isOpen() || newSize.isOpen()
-            || upscale.isActive() || newFont.isOpen()) {
+                || upscale.isActive() || newFont.isOpen()) {
             return PaintMenu.Context.MODAL;
         }
         return flow.isActive() ? PaintMenu.Context.DERIVING : PaintMenu.Context.IDLE;
@@ -1017,8 +1053,9 @@ public final class PaintScreen implements WorkbenchScreen {
         stroke.end();
     }
 
-    // Drops queued wheel ticks and keeps the repeaters tracking the real keys without producing moves,
-    // so a key held through the menu neither bursts nor counts as freshly pressed when the menu closes.
+    // Drops queued wheel ticks and keeps the repeaters tracking the real keys without producing
+    // moves, so a key held through the menu neither bursts nor counts as freshly pressed when the
+    // menu closes.
     private void swallowInput() {
         wheelTicks.clear();
         boolean control = Keys.controlDown();
@@ -1050,7 +1087,8 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private boolean routeMenuAndControls(float delta) {
-        // The Controls panel takes the frame before the menu does, so a click on the bar row can still close it.
+        // The Controls panel takes the frame before the menu does, so a click on the bar row can
+        // still close it.
         boolean controlsOpen = controls.isOpen();
         boolean menuOwnsInput = !controlsOpen && menuInput.handle(delta);
         routeHoverAndScaleKeys(controlsOpen, menuOwnsInput);
@@ -1093,8 +1131,9 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void handleControlsPanel(float delta) {
         controls.handleInput(delta, wheelTicks.vertical(), leftClicked(),
-            Math.floorDiv(pointer.pixelX(), cellPixels()), Math.floorDiv(pointer.pixelY(), cellPixels()),
-            worldWidth() / cellPixels(), worldHeight() / cellPixels());
+                Math.floorDiv(pointer.pixelX(), cellPixels()),
+                Math.floorDiv(pointer.pixelY(), cellPixels()),
+                worldWidth() / cellPixels(), worldHeight() / cellPixels());
     }
 
     private boolean handleNewItemDialogs(float delta) {
@@ -1147,7 +1186,7 @@ public final class PaintScreen implements WorkbenchScreen {
         if (guideListPanel.isOpen()) {
             pointer.updatePosition();
             guideListPointerTargets.dispatch(pointer.pixelX(), pointer.pixelY(), leftClicked(),
-                Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                    Gdx.input.isButtonPressed(Input.Buttons.LEFT));
             guideListPanel.handle(delta, wheelTicks.vertical());
             return true;
         }
@@ -1210,7 +1249,7 @@ public final class PaintScreen implements WorkbenchScreen {
         scrollRouting.handleScrollKeys();
         pointer.updateAndRouteWheel();
         pointerTargets.dispatch(pointer.pixelX(), pointer.pixelY(), leftClicked(),
-            Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                Gdx.input.isButtonPressed(Input.Buttons.LEFT));
     }
 
     private void reportEditProblem() {
@@ -1225,7 +1264,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
-    // The key bar owns the last row only while deriving or editing guides; otherwise the sheet and messages panels reach it.
+    // The key bar owns the last row only while deriving or editing guides; otherwise the sheet and
+    // messages panels reach it.
     private boolean statusBarShown() {
         return flow.isActive() || guideListPanel.isOpen();
     }
@@ -1233,26 +1273,32 @@ public final class PaintScreen implements WorkbenchScreen {
     private void layoutPanels() {
         layoutBarShown = statusBarShown();
         PaintColumns.Split split = PaintColumns.split(
-            worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(), cellPixels());
+                worldWidth(), sheet.slotWidth(), PaintSheetView.GAP, editor.cellWidth(),
+                cellPixels());
         sheet.setVisibleColumns(split.sheetColumns());
         sheet.fitToHeight(worldHeight(), layoutBarShown, cursor, revealCursor);
-        upscale.layoutSheet(split.sheetColumns(), sheet.frameCells(), worldHeight(), layoutBarShown, revealCursor);
+        upscale.layoutSheet(split.sheetColumns(), sheet.frameCells(), worldHeight(), layoutBarShown,
+                revealCursor);
         revealCursor = false;
         rects = PaintLayout.compute(worldWidth() / cellPixels(), worldHeight() / cellPixels(),
-            sheet.frameRight() / cellPixels(), split.rightCells(), new GlyphSize(editor.cellWidth(), editor.cellHeight()),
-            cellPixels(), layoutBarShown);
+                sheet.frameRight() / cellPixels(), split.rightCells(),
+                new GlyphSize(editor.cellWidth(), editor.cellHeight()),
+                cellPixels(), layoutBarShown);
         fitGrid();
     }
 
-    // The grid takes the whole panel interior, with room above for the width labels and to the right for the height labels.
+    // The grid takes the whole panel interior, with room above for the width labels and to the
+    // right for the height labels.
     private void fitGrid() {
         CellRect panel = rects.grid();
         int left = (panel.x() + 2) * cellPixels();
         int top = (panel.y() + 1 + PaintGridLabels.LABEL_ROWS_ABOVE) * cellPixels();
-        grid.fitTo(left, top, (panel.width() - 3) * cellPixels(), (panel.bottom() - 1) * cellPixels() - top - cellPixels() / 2);
+        grid.fitTo(left, top, (panel.width() - 3) * cellPixels(),
+                (panel.bottom() - 1) * cellPixels() - top - cellPixels() / 2);
     }
 
-    // Conditions follow the current state every frame; texts are rebuilt only when their inputs change.
+    // Conditions follow the current state every frame; texts are rebuilt only when their inputs
+    // change.
     private void updateConditions() {
         int codePoint = codePoints[cursor];
         boolean derived = editor.isDerived(codePoint);
@@ -1288,7 +1334,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
-    // Rules run again only when the glyph or the editor state changed, and never while a stroke is still being drawn.
+    // Rules run again only when the glyph or the editor state changed, and never while a stroke is
+    // still being drawn.
     private void refreshRuleWarnings(int codePoint) {
         if (stroke.isActive() || (codePoint == ruleGlyph && editor.revision() == ruleRevision)) {
             return;
@@ -1334,7 +1381,8 @@ public final class PaintScreen implements WorkbenchScreen {
         runAfterUnsavedCheck(paintExport::run, EXPORT_QUESTION, SAVE_ONLY_BUTTONS);
     }
 
-    private void runAfterUnsavedCheck(Runnable action, String question, List<Dialog.Button> buttons) {
+    private void runAfterUnsavedCheck(Runnable action, String question,
+            List<Dialog.Button> buttons) {
         if (editor.isModified()) {
             messages.nextAction();
             afterUnsavedPrompt = action;
@@ -1348,7 +1396,8 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private static boolean shiftDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(
+                Input.Keys.SHIFT_RIGHT);
     }
 
     private static boolean undoHeld(boolean control, boolean shift) {
@@ -1356,10 +1405,12 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private static boolean redoHeld(boolean control, boolean shift) {
-        return control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (shift && Gdx.input.isKeyPressed(Input.Keys.Z)));
+        return control && (Gdx.input.isKeyPressed(Input.Keys.Y) || (shift && Gdx.input.isKeyPressed(
+                Input.Keys.Z)));
     }
 
-    // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active or a derive is in progress.
+    // Ctrl+Z undoes; Ctrl+Y and Ctrl+Shift+Z redo. Ignored while a stroke is active or a derive is
+    // in progress.
     private void handleUndoKeys(boolean control, float delta) {
         boolean shift = shiftDown();
         int undos = repeatUndo.update(undoHeld(control, shift), delta);
@@ -1405,7 +1456,8 @@ public final class PaintScreen implements WorkbenchScreen {
         }
     }
 
-    // While picking a derive source, the arrows move the source cursor and the target cursor stays put.
+    // While picking a derive source, the arrows move the source cursor and the target cursor stays
+    // put.
     private void moveCursor(float delta) {
         boolean picking = flow.isPicking();
         int before = picking ? flow.sourceSlot() : cursor;
@@ -1640,7 +1692,8 @@ public final class PaintScreen implements WorkbenchScreen {
     }
 
     private void draw() {
-        // Input this frame may have started or ended derive or the guide list after the layout was made.
+        // Input this frame may have started or ended derive or the guide list after the layout was
+        // made.
         if (statusBarShown() != layoutBarShown || upscale.needsLayout()) {
             layoutPanels();
         }
@@ -1657,8 +1710,10 @@ public final class PaintScreen implements WorkbenchScreen {
 
     private void drawBase(int codePoint, int columns, int rows) {
         TopBar.draw(painter, columns, CRUMB_ROW,
-            List.of("GLYPH WORKBENCH", folderName, "PAINT " + fontSize.toString().toUpperCase(java.util.Locale.ROOT)),
-            new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "", UiPalette.ORANGE));
+                List.of("GLYPH WORKBENCH", folderName,
+                        "PAINT " + fontSize.toString().toUpperCase(java.util.Locale.ROOT)),
+                new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "",
+                        UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
         drawSheet(choosingSource);
         CellRect panel = rects.grid();
@@ -1671,10 +1726,10 @@ public final class PaintScreen implements WorkbenchScreen {
         drawBelowPreviewPanels();
         CellRect strip = rects.messages();
         messages.draw(painter, strip,
-            Gdx.graphics.getDeltaTime());
+                Gdx.graphics.getDeltaTime());
         if (layoutBarShown) {
             StatusBar.draw(painter, columns, rows - 1,
-                statusKeys(choosingSource));
+                    statusKeys(choosingSource));
         }
     }
 
@@ -1696,8 +1751,9 @@ public final class PaintScreen implements WorkbenchScreen {
         boolean controlsOpen = controls.isOpen();
         boolean rulesShowing = rules.isShowing();
         boolean menuOpen = menuBar.isOpen();
-        layers.update(new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, upscaleSourceOpen,
-            newFontOpen, deriveDims, controlsOpen, rulesShowing, menuOpen));
+        layers.update(new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen,
+                upscaleSourceOpen,
+                newFontOpen, deriveDims, controlsOpen, rulesShowing, menuOpen));
     }
 
     private void drawDialogs(int codePoint, int columns, int rows) {
@@ -1706,8 +1762,9 @@ public final class PaintScreen implements WorkbenchScreen {
         }
         if (layers.unsavedPromptShown()) {
             Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-                DialogContent.of("UNSAVED CHANGES",
-                    List.of("Save changes to " + dataFile.name(), unsavedQuestion), unsavedButtons));
+                    DialogContent.of("UNSAVED CHANGES",
+                            List.of("Save changes to " + dataFile.name(), unsavedQuestion),
+                            unsavedButtons));
         }
         if (layers.newGlyphShown()) {
             newGlyph.draw(painter, columns, rows, rects.grid());
@@ -1758,7 +1815,7 @@ public final class PaintScreen implements WorkbenchScreen {
     // Input runs before the frame's layers are refreshed, so it calls the static check directly.
     private boolean dialogDimsScreen() {
         return PaintLayers.dialogDimsScreen(confirmingUnsaved, newGlyph.isOpen(), newSize.isOpen(),
-            upscale.isDialogShown(), newFont.isOpen(), deriveDimsScreen());
+                upscale.isDialogShown(), newFont.isOpen(), deriveDimsScreen());
     }
 
     private List<StatusBar.Key> statusKeys(boolean choosingSource) {

@@ -20,7 +20,7 @@ class FirstGlyphPlanTest {
     private static final CellSize SIZE = new CellSize(8, 8);
     private static final String EMPTY_FONT = "cell 8x8\n";
     private static final String ONE_GLYPH_FONT = EMPTY_FONT + "\nU+0041 A\n"
-        + String.join("\n", Collections.nCopies(8, "........")) + "\n";
+            + String.join("\n", Collections.nCopies(8, "........")) + "\n";
 
     @TempDir
     Path folder;
@@ -66,7 +66,7 @@ class FirstGlyphPlanTest {
     @Test
     void aMissingSizeFileThrowsAndNamesIt() {
         FontDataException problem = assertThrows(FontDataException.class,
-            () -> FirstGlyphPlan.isNeeded(folder, SIZE));
+                () -> FirstGlyphPlan.isNeeded(folder, SIZE));
 
         assertTrue(problem.getMessage().contains(SIZE.dataFileName()), problem.getMessage());
     }

@@ -48,7 +48,7 @@ class PreviewTabsTest {
         assertEquals(61, PreviewTabs.labelColumn(NARROW, PreviewTabs.Tab.TILE));
         assertEquals(66, PreviewTabs.labelColumn(NARROW, PreviewTabs.Tab.TEXT));
         int lastCell = PreviewTabs.labelColumn(NARROW, PreviewTabs.Tab.TEXT)
-            + PreviewTabs.label(NARROW, PreviewTabs.Tab.TEXT).length() - 1;
+                + PreviewTabs.label(NARROW, PreviewTabs.Tab.TEXT).length() - 1;
         assertTrue(lastCell < NARROW.x() + NARROW.width() - 1);
     }
 

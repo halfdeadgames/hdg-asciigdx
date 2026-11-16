@@ -12,7 +12,7 @@ import java.util.Set;
 final class RulesPageLines {
 
     /** How a line is colored. */
-    public enum Role { TEXT, HEADING, WARNING, INACTIVE }
+    public enum Role {TEXT, HEADING, WARNING, INACTIVE}
 
     /**
      * One line of the page.
@@ -20,7 +20,8 @@ final class RulesPageLines {
      * @param text the characters to draw
      * @param role the color to draw it in
      */
-    public record PageLine(String text, Role role) {}
+    public record PageLine(String text, Role role) {
+    }
 
     private static final String BULLET = "- ";
     private static final String BULLET_CONTINUATION = "  ";
@@ -46,10 +47,14 @@ final class RulesPageLines {
      */
     public static List<PageLine> build(RulesLoadResult rules, String notesMarkdown, int codePoint,
             Set<String> brokenRuleNames, int textWidth) {
-        return build(rules, notesMarkdown, codePoint, brokenRuleNames, textWidth, UnicodeFacts.bundled());
+        return build(rules, notesMarkdown, codePoint, brokenRuleNames, textWidth,
+                UnicodeFacts.bundled());
     }
 
-    /** Same as {@link #build(RulesLoadResult, String, int, Set, int)}, with the Unicode facts given by the caller. */
+    /**
+     * Same as {@link #build(RulesLoadResult, String, int, Set, int)}, with the Unicode facts given
+     * by the caller.
+     */
     public static List<PageLine> build(RulesLoadResult rules, String notesMarkdown, int codePoint,
             Set<String> brokenRuleNames, int textWidth, UnicodeFacts facts) {
         var page = new RulesPageLines(textWidth, facts);
@@ -73,7 +78,8 @@ final class RulesPageLines {
         }
     }
 
-    private void addLoadedRules(List<GlyphRule> allRules, int codePoint, Set<String> brokenRuleNames) {
+    private void addLoadedRules(List<GlyphRule> allRules, int codePoint,
+            Set<String> brokenRuleNames) {
         if (allRules.isEmpty()) {
             addWrapped("No rules yet.", Role.TEXT);
             return;
@@ -100,7 +106,8 @@ final class RulesPageLines {
         }
     }
 
-    private void addSection(String heading, List<GlyphRule> sectionRules, Set<String> brokenRuleNames,
+    private void addSection(String heading, List<GlyphRule> sectionRules,
+            Set<String> brokenRuleNames,
             Role normalRole) {
         if (sectionRules.isEmpty()) {
             return;
@@ -140,7 +147,10 @@ final class RulesPageLines {
         }
     }
 
-    /** Wraps a line; a line starting with a bullet marker gets its continuation lines indented under the text. */
+    /**
+     * Wraps a line; a line starting with a bullet marker gets its continuation lines indented under
+     * the text.
+     */
     private void addHanging(String text, Role role) {
         if (!text.startsWith(BULLET)) {
             addWrapped(text, role);

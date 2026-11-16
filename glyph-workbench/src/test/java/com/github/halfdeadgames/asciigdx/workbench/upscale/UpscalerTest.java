@@ -13,7 +13,8 @@ import org.junit.jupiter.api.Test;
 
 class UpscalerTest {
 
-    // An 8-wide glyph whose last column is lit in every row, so the right edge of the scaled cell is checked.
+    // An 8-wide glyph whose last column is lit in every row, so the right edge of the scaled cell
+    // is checked.
     private static PixelGlyph edgeGlyph() {
         List<String> rows = new ArrayList<>();
         for (int y = 0; y < 8; y++) {
@@ -61,14 +62,14 @@ class UpscalerTest {
 
     private static PixelGlyph staircaseGlyph(int codePoint) {
         return new PixelGlyph(codePoint, PixelGrid.ofRows(List.of(
-            "#.......",
-            "##......",
-            "###.....",
-            "####....",
-            "#####...",
-            "######..",
-            "#######.",
-            "########")));
+                "#.......",
+                "##......",
+                "###.....",
+                "####....",
+                "#####...",
+                "######..",
+                "#######.",
+                "########")));
     }
 
     private static void assertCodePointDoesNotChangeSmoothing(int codePoint) {
@@ -78,7 +79,7 @@ class UpscalerTest {
             PixelGrid special = Upscaler.upscale(staircaseGlyph(codePoint), 2, 2, method);
             assertEquals(ordinary, special, method.name());
             someMethodSmooths |= !ordinary.equals(
-                Upscaler.upscale(staircaseGlyph('A'), 2, 2, Upscaler.Method.NEAREST));
+                    Upscaler.upscale(staircaseGlyph('A'), 2, 2, Upscaler.Method.NEAREST));
         }
         assertTrue(someMethodSmooths, "the staircase must differ from nearest under some method");
     }
@@ -100,10 +101,11 @@ class UpscalerTest {
         assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(3, 3));
         assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(4, 4));
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(edgeGlyph(), 3, 3, Upscaler.Method.MMPX));
+                () -> Upscaler.upscale(edgeGlyph(), 3, 3, Upscaler.Method.MMPX));
     }
 
-    private static void assertEveryPixelMatchesItsSource(PixelGlyph glyph, PixelGrid cell, int factorX, int factorY) {
+    private static void assertEveryPixelMatchesItsSource(PixelGlyph glyph, PixelGrid cell,
+            int factorX, int factorY) {
         PixelGrid source = glyph.pixels();
         assertEquals(source.getWidth() * factorX, cell.getWidth());
         assertEquals(source.getHeight() * factorY, cell.getHeight());
@@ -136,15 +138,15 @@ class UpscalerTest {
         assertEquals(List.of(Upscaler.Method.NEAREST), Upscaler.methodsFor(1, 2));
         assertEquals(6, Upscaler.methodsFor(2, 2).size());
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(edgeGlyph(), 2, 1, Upscaler.Method.SCALE2X));
+                () -> Upscaler.upscale(edgeGlyph(), 2, 1, Upscaler.Method.SCALE2X));
     }
 
     @Test
     void factorBelowOneIsRejected() {
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(edgeGlyph(), 0, 2, Upscaler.Method.NEAREST));
+                () -> Upscaler.upscale(edgeGlyph(), 0, 2, Upscaler.Method.NEAREST));
         assertThrows(IllegalArgumentException.class,
-            () -> Upscaler.upscale(edgeGlyph(), 2, 0, Upscaler.Method.NEAREST));
+                () -> Upscaler.upscale(edgeGlyph(), 2, 0, Upscaler.Method.NEAREST));
     }
 
     @Test

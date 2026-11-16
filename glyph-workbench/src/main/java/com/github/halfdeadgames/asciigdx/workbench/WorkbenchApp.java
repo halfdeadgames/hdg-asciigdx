@@ -51,7 +51,8 @@ final class WorkbenchApp extends ApplicationAdapter {
             scriptSession = new ScriptSession(scriptPath);
         }
         if ("paint".equals(mode)) {
-            switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"), launchFontSize()));
+            switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
+                    launchFontSize()));
         } else if (DevCapture.newFontRequest() != null || DevCapture.newFontSizeRequest() != null) {
             switchTo(newFontScreen());
         } else if (DevCapture.newSizeRequest() >= 0) {
@@ -81,20 +82,23 @@ final class WorkbenchApp extends ApplicationAdapter {
         List<FontChoice> all = fonts();
         Map<String, MenuScreen.Detail> cache = new HashMap<>();
         Function<MenuModel.Item, MenuScreen.Detail> detail = item -> item == null ? null
-            : item.kind() == MenuModel.Kind.NEW_FONT ? newFontDetail()
-            : cache.computeIfAbsent(item.folderName(), folder -> {
-                List<String> actions = new ArrayList<>();
-                for (MenuModel.Line line : MenuModel.fontActions(folder, all).lines()) {
-                    actions.add(line.text().strip());
-                }
-                return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), actions);
-            });
-        MenuScreen.Text text = MenuScreen.Text.opening("FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice);
-        return new MenuScreen(MenuModel.fontList(all), text, detail, this::chooseFont, Gdx.app::exit);
+                : item.kind() == MenuModel.Kind.NEW_FONT ? newFontDetail()
+                        : cache.computeIfAbsent(item.folderName(), folder -> {
+                            List<String> actions = new ArrayList<>();
+                            for (MenuModel.Line line : MenuModel.fontActions(folder, all).lines()) {
+                                actions.add(line.text().strip());
+                            }
+                            return new MenuScreen.Detail(folder.toUpperCase(Locale.ROOT), actions);
+                        });
+        MenuScreen.Text text =
+                MenuScreen.Text.opening("FONTS", List.of("GLYPH WORKBENCH"), "QUIT", notice);
+        return new MenuScreen(MenuModel.fontList(all), text, detail, this::chooseFont,
+                Gdx.app::exit);
     }
 
     private static MenuScreen.Detail newFontDetail() {
-        return new MenuScreen.Detail("NEW FONT", List.of("MAKES A FONT FOLDER", "WITH ITS FIRST SIZE FILE"));
+        return new MenuScreen.Detail("NEW FONT",
+                List.of("MAKES A FONT FOLDER", "WITH ITS FIRST SIZE FILE"));
     }
 
     private void chooseFont(MenuModel.Item item) {
@@ -105,17 +109,21 @@ final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    // Esc on the name page returns to the font list, which is read again so it shows the font just made.
+    // Esc on the name page returns to the font list, which is read again so it shows the font just
+    // made.
     private WorkbenchScreen newFontScreen() {
         String root = fontsRoot();
-        return new NewFontScreen(root == null ? null : Path.of(root), () -> pending = () -> fontListScreen(""),
-            (folder, size) -> pending = () -> paintCreatedFont(folder, size));
+        return new NewFontScreen(root == null ? null : Path.of(root),
+                () -> pending = () -> fontListScreen(""),
+                (folder, size) -> pending = () -> paintCreatedFont(folder, size));
     }
 
-    // Esc from the new font's first paint screen goes to that font's own menu, then to the (refreshed) font list.
+    // Esc from the new font's first paint screen goes to that font's own menu, then to the
+    // (refreshed) font list.
     private WorkbenchScreen paintCreatedFont(Path folder, CellSize size) {
         String folderName = folder.getFileName().toString();
-        Runnable back = fontsRoot() == null ? Gdx.app::exit : () -> pending = () -> fontMenuScreen(folderName);
+        Runnable back = fontsRoot() == null ? Gdx.app::exit
+                : () -> pending = () -> fontMenuScreen(folderName);
         return paintScreen(back, folder.toString(), size);
     }
 
@@ -127,17 +135,21 @@ final class WorkbenchApp extends ApplicationAdapter {
         return fontMenuScreen(folderName, notice, null);
     }
 
-    // The cursor starts on the first item of selectKind, or on the first item when that is null or absent.
-    private WorkbenchScreen fontMenuScreen(String folderName, String notice, MenuModel.Kind selectKind) {
+    // The cursor starts on the first item of selectKind, or on the first item when that is null or
+    // absent.
+    private WorkbenchScreen fontMenuScreen(String folderName, String notice,
+            MenuModel.Kind selectKind) {
         String name = folderName.toUpperCase(Locale.ROOT);
-        Function<MenuModel.Item, MenuScreen.Detail> detail = item -> new MenuScreen.Detail(name, List.of());
+        Function<MenuModel.Item, MenuScreen.Detail> detail =
+                item -> new MenuScreen.Detail(name, List.of());
         MenuModel actions = MenuModel.fontActions(folderName, fonts());
         if (selectKind != null) {
             actions.select(actions.indexOfKind(selectKind));
         }
-        MenuScreen.Text text = MenuScreen.Text.opening("ACTIONS", List.of("GLYPH WORKBENCH", name), "BACK", notice);
+        MenuScreen.Text text = MenuScreen.Text.opening(
+                "ACTIONS", List.of("GLYPH WORKBENCH", name), "BACK", notice);
         return new MenuScreen(actions, text, detail, item -> chooseAction(folderName, item),
-            () -> pending = () -> fontListScreen(""));
+                () -> pending = () -> fontListScreen(""));
     }
 
     private void chooseAction(String folderName, MenuModel.Item item) {
@@ -150,27 +162,28 @@ final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    // Returns the paint screen, or the first-glyph page for a font with no glyph slots. That page opens the paint
-    // screen once a glyph is listed. The paint screen can switch to a size file or a font it creates; Esc goes back
-    // as given.
+    // Returns the paint screen, or the first-glyph page for a font with no glyph slots. That page
+    // opens the paint screen once a glyph is listed. The paint screen can switch to a size file or
+    // a font it creates; Esc goes back as given.
     private WorkbenchScreen paintScreen(Runnable back, String fontDir, CellSize size) {
         if (FirstGlyphPlan.isNeeded(Path.of(fontDir), size)) {
             return new FirstGlyphScreen(Path.of(fontDir), size, back,
-                () -> pending = () -> paintScreen(back, fontDir, size));
+                    () -> pending = () -> paintScreen(back, fontDir, size));
         }
         return new PaintScreen(back, fontDir, size,
-            newSize -> pending = () -> paintScreen(back, fontDir, newSize),
-            (folder, firstSize) -> pending = () -> paintCreatedFont(folder, firstSize));
+                newSize -> pending = () -> paintScreen(back, fontDir, newSize),
+                (folder, firstSize) -> pending = () -> paintCreatedFont(folder, firstSize));
     }
 
-    // Choosing a size creates the file and paints it; closing the dialog or failing to list sizes returns to the font menu.
+    // Choosing a size creates the file and paints it; closing the dialog or failing to list sizes
+    // returns to the font menu.
     private WorkbenchScreen newSizeScreen(Path folder) {
         String folderName = folder.getFileName().toString();
         return new NewSizeScreen(folder,
-            () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE),
-            size -> createSize(folder, size),
-            reason -> pending = () -> fontMenuScreen(folderName, "CANNOT LIST SIZES: " + reason,
-                MenuModel.Kind.NEW_SIZE));
+                () -> pending = () -> fontMenuScreen(folderName, "", MenuModel.Kind.NEW_SIZE),
+                size -> createSize(folder, size),
+                reason -> pending = () -> fontMenuScreen(folderName, "CANNOT LIST SIZES: " + reason,
+                        MenuModel.Kind.NEW_SIZE));
     }
 
     private void createSize(Path folder, CellSize size) {
@@ -179,8 +192,9 @@ final class WorkbenchApp extends ApplicationAdapter {
             NewSizePlan.create(folder, size);
         } catch (IOException | RuntimeException e) {
             Gdx.app.error(TAG, "Cannot create size " + size + ": " + e.getMessage());
-            pending = () -> fontMenuScreen(folderName, "CANNOT CREATE " + size + ": " + e.getMessage(),
-                MenuModel.Kind.NEW_SIZE);
+            pending = () -> fontMenuScreen(folderName,
+                    "CANNOT CREATE " + size + ": " + e.getMessage(),
+                    MenuModel.Kind.NEW_SIZE);
             return;
         }
         Runnable backToFontMenu = () -> pending = () -> fontMenuScreen(folderName);
@@ -198,7 +212,8 @@ final class WorkbenchApp extends ApplicationAdapter {
         next.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
-    // A tool that fails to open (for example a font file with an error) sends the user to the font list with the reason.
+    // A tool that fails to open (for example a font file with an error) sends the user to the font
+    // list with the reason.
     private void applyPending() {
         Supplier<WorkbenchScreen> request = pending;
         pending = null;
@@ -217,7 +232,8 @@ final class WorkbenchApp extends ApplicationAdapter {
         }
     }
 
-    // A minimized window reports a 0x0 size, and the backend still calls render from its resize callback.
+    // A minimized window reports a 0x0 size, and the backend still calls render from its resize
+    // callback.
     @Override
     public void render() {
         if (Gdx.graphics.getWidth() <= 0 || Gdx.graphics.getHeight() <= 0) {

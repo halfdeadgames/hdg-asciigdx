@@ -14,7 +14,10 @@ public final class DialogText {
     private DialogText() {
     }
 
-    /** Splits a message over two lines of {@link #LINE_CELLS}, at a space when there is one; the rest is cut. */
+    /**
+     * Splits a message over two lines of {@link #LINE_CELLS}, at a space when there is one; the
+     * rest is cut.
+     */
     public static List<String> wrapToTwoLines(String message) {
         if (TextCells.cellCount(message) <= LINE_CELLS) {
             return List.of(message, "");
@@ -24,7 +27,8 @@ public final class DialogText {
         if (split <= 0) {
             split = lineEnd;
         }
-        return List.of(message.substring(0, split).stripTrailing(), cut(message.substring(split).strip()));
+        return List.of(message.substring(0, split).stripTrailing(),
+                cut(message.substring(split).strip()));
     }
 
     /** Cuts a value to at most {@link #LINE_CELLS} cells. */
@@ -41,9 +45,9 @@ public final class DialogText {
     }
 
     /**
-     * The typed text followed by a cursor, padded with spaces to {@code width}. Long text scrolls so the cursor
-     * stays visible (the last {@code width - 1} cells are kept). The UI font may lack a typed character, so only
-     * plain BMP characters are drawn; the rest show as '?'.
+     * The typed text followed by a cursor, padded with spaces to {@code width}. Long text scrolls
+     * so the cursor stays visible (the last {@code width - 1} cells are kept). The UI font may lack
+     * a typed character, so only plain BMP characters are drawn; the rest show as '?'.
      */
     public static String typedLine(CharSequence text, char cursor, int width) {
         StringBuilder shown = new StringBuilder(text.length() + 1);
@@ -51,7 +55,8 @@ public final class DialogText {
         for (int i = 0; i < typed.length(); ) {
             int codePoint = typed.codePointAt(i);
             i += Character.charCount(codePoint);
-            boolean drawable = Character.isBmpCodePoint(codePoint) && !Character.isSurrogate((char) codePoint);
+            boolean drawable =
+                    Character.isBmpCodePoint(codePoint) && !Character.isSurrogate((char) codePoint);
             shown.append(drawable ? (char) codePoint : UNDRAWABLE);
         }
         if (shown.length() > width - 1) {

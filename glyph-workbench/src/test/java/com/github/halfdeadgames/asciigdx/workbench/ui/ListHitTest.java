@@ -12,8 +12,10 @@ class ListHitTest {
     private static final int CELL = 10;
     private static final int LIST_TOP = 10;
     private static final int SHOWN_ROWS = 3;
-    // Frame covers columns 10..29 and cell rows 5..18; text columns 13..26, so the bar column is 26.
-    private static final Dialog.Layout LAYOUT = new Dialog.Layout(10, 5, 20, 14, 13, 8, 17, List.of());
+    // Frame covers columns 10..29 and cell rows 5..18; text columns 13..26, so the bar column is
+    // 26.
+    private static final Dialog.Layout LAYOUT =
+            new Dialog.Layout(10, 5, 20, 14, 13, 8, 17, List.of());
     private static final int BAR_COLUMN = 26;
 
     private static int centerOf(int cells) {

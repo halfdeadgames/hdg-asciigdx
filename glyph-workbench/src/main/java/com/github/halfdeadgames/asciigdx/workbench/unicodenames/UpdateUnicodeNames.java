@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Command line entry point behind the Gradle task {@code updateUnicodeNames}. Arguments: the folder holding
- * DerivedName.txt, DerivedGeneralCategory.txt, DerivedAge.txt, Blocks.txt, and license.txt, then the table
- * file to write.
+ * Command line entry point behind the Gradle task {@code updateUnicodeNames}. Arguments: the folder
+ * holding DerivedName.txt, DerivedGeneralCategory.txt, DerivedAge.txt, Blocks.txt, and license.txt,
+ * then the table file to write.
  */
 public final class UpdateUnicodeNames {
 
@@ -31,9 +31,10 @@ public final class UpdateUnicodeNames {
         String license = readText(ucdDirectory.resolve("license.txt"));
 
         String header = UnicodeNamesHeader.build(UnicodeNamesHeader.readVersion(derivedNames),
-            JDK_UNICODE_VERSION, license);
-        String table = UnicodeNamesGenerator.generate(derivedNames, derivedAges, derivedCategories, blocks,
-            header, JDK_UNICODE_VERSION);
+                JDK_UNICODE_VERSION, license);
+        String table =
+                UnicodeNamesGenerator.generate(derivedNames, derivedAges, derivedCategories, blocks,
+                        header, JDK_UNICODE_VERSION);
         Files.writeString(Path.of(args[1]), table, StandardCharsets.UTF_8);
     }
 

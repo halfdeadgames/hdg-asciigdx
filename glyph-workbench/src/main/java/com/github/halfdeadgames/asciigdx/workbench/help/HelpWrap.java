@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Turns help rows into screen lines that all fit a character width: long actions wrap under the action
- * column and long keys wrap inside the key column. It holds no drawing or input code.
+ * Turns help rows into screen lines that all fit a character width: long actions wrap under the
+ * action column and long keys wrap inside the key column. It holds no drawing or input code.
  */
 final class HelpWrap {
 
@@ -21,7 +21,10 @@ final class HelpWrap {
     private HelpWrap() {
     }
 
-    /** The help lines for a state at {@code charsPerLine} characters per line, narrowed by one when they overflow {@code visibleRows}. */
+    /**
+     * The help lines for a state at {@code charsPerLine} characters per line, narrowed by one when
+     * they overflow {@code visibleRows}.
+     */
     static List<Line> lines(PaintHelp.State state, int charsPerLine, int visibleRows) {
         List<Line> full = layout(PaintHelp.rows(state, charsPerLine), charsPerLine);
         if (full.size() <= visibleRows || charsPerLine <= 1) {
@@ -76,7 +79,7 @@ final class HelpWrap {
             int count = Math.max(keys.size(), actions.size());
             for (int i = 0; i < count; i++) {
                 out.add(new Line(row.kind(), i < keys.size() ? keys.get(i) : "",
-                    i < actions.size() ? actions.get(i) : "", actionColumn));
+                        i < actions.size() ? actions.get(i) : "", actionColumn));
             }
         }
     }
@@ -92,7 +95,8 @@ final class HelpWrap {
     /** Breaks at spaces; a word longer than the width is cut. An empty text gives no lines. */
     static List<String> breakText(String text, int width) {
         List<String> wrapped = TextWrap.wrap(text, width);
-        // TextWrap ends with an empty line for empty text or a break at the very end; the only empty line it can produce.
+        // TextWrap ends with an empty line for empty text or a break at the very end; the only
+        // empty line it can produce.
         if (wrapped.get(wrapped.size() - 1).isEmpty()) {
             wrapped.remove(wrapped.size() - 1);
         }

@@ -25,7 +25,7 @@ public final class FirstGlyphPlan {
     public static boolean isNeeded(Path fontFolder, CellSize size) {
         String text = readSizeFile(fontFolder.resolve(size.dataFileName()));
         FontEditor editor = new FontEditor(
-            FontDataParser.parseSizeFile(size, text), GlyphListFile.load(fontFolder.toFile()));
+                FontDataParser.parseSizeFile(size, text), GlyphListFile.load(fontFolder.toFile()));
         return editor.slotCount() == 0;
     }
 
@@ -33,7 +33,8 @@ public final class FirstGlyphPlan {
         try {
             return Files.readString(file, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new FontDataException(0, "Cannot read " + file.getFileName() + ": " + e.getMessage());
+            throw new FontDataException(0,
+                    "Cannot read " + file.getFileName() + ": " + e.getMessage());
         }
     }
 }

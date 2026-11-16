@@ -3,7 +3,10 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 import com.github.halfdeadgames.asciigdx.workbench.ui.GlyphSize;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiScale;
 
-/** Chooses the UI scale of the paint screen: the automatic factor, or a requested override cut down to fit. */
+/**
+ * Chooses the UI scale of the paint screen: the automatic factor, or a requested override cut down
+ * to fit.
+ */
 final class PaintUiScale {
 
     private final int editorCellWidth;
@@ -19,7 +22,8 @@ final class PaintUiScale {
     }
 
     void update(int width, int height) {
-        autoFactor = PaintScale.bestFactor(width, height, PaintSheetView.GAP, editorCellWidth, editorCellHeight);
+        autoFactor = PaintScale.bestFactor(width, height, PaintSheetView.GAP, editorCellWidth,
+                editorCellHeight);
         int factor = chosenFactor(width, height);
         if (factor != scale.factor()) {
             scale = new UiScale(factor);
@@ -66,6 +70,6 @@ final class PaintUiScale {
             return autoFactor;
         }
         return PaintScale.fittingFactor(overrideFactor, width, height, PaintSheetView.GAP,
-            new GlyphSize(editorCellWidth, editorCellHeight));
+                new GlyphSize(editorCellWidth, editorCellHeight));
     }
 }

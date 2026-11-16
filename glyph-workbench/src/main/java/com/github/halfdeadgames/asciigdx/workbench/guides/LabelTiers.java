@@ -4,23 +4,30 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Gives the labels above the grid, from width guides and column bars together, alternating tiers by position. */
+/**
+ * Gives the labels above the grid, from width guides and column bars together, alternating tiers by
+ * position.
+ */
 final class LabelTiers {
 
     private static final int TIER_COUNT = 2;
 
-    record Tiered(List<PaintGuides.ColumnGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) { }
+    record Tiered(List<PaintGuides.ColumnGuide> widths,
+                  List<PaintGuides.ColumnBarGuide> columnBars) {
+    }
 
-    private record Entry(float position, boolean isColumnBar, int index) { }
+    private record Entry(float position, boolean isColumnBar, int index) {
+    }
 
     private LabelTiers() {
     }
 
     /**
-     * Orders all labels by position (a column bar by the middle of its band; a width guide first on a tie) and gives
-     * them tiers 0, 1, 0, ... in that order. Each list keeps its own order.
+     * Orders all labels by position (a column bar by the middle of its band; a width guide first on
+     * a tie) and gives them tiers 0, 1, 0, ... in that order. Each list keeps its own order.
      */
-    static Tiered assign(List<PaintGuides.ColumnGuide> widths, List<PaintGuides.ColumnBarGuide> columnBars) {
+    static Tiered assign(List<PaintGuides.ColumnGuide> widths,
+            List<PaintGuides.ColumnBarGuide> columnBars) {
         List<Entry> ordered = orderedByPosition(widths, columnBars);
         int[] widthTiers = new int[widths.size()];
         int[] columnBarTiers = new int[columnBars.size()];
@@ -29,11 +36,12 @@ final class LabelTiers {
             int[] tiers = entry.isColumnBar() ? columnBarTiers : widthTiers;
             tiers[entry.index()] = rank % TIER_COUNT;
         }
-        return new Tiered(withWidthTiers(widths, widthTiers), withColumnBarTiers(columnBars, columnBarTiers));
+        return new Tiered(withWidthTiers(widths, widthTiers),
+                withColumnBarTiers(columnBars, columnBarTiers));
     }
 
     private static List<Entry> orderedByPosition(List<PaintGuides.ColumnGuide> widths,
-                                                 List<PaintGuides.ColumnBarGuide> columnBars) {
+            List<PaintGuides.ColumnBarGuide> columnBars) {
         List<Entry> entries = new ArrayList<>();
         for (int i = 0; i < widths.size(); i++) {
             entries.add(new Entry(widths.get(i).boundaryColumn(), false, i));
@@ -45,21 +53,25 @@ final class LabelTiers {
         return entries;
     }
 
-    private static List<PaintGuides.ColumnGuide> withWidthTiers(List<PaintGuides.ColumnGuide> widths, int[] tiers) {
+    private static List<PaintGuides.ColumnGuide> withWidthTiers(
+            List<PaintGuides.ColumnGuide> widths, int[] tiers) {
         List<PaintGuides.ColumnGuide> tiered = new ArrayList<>();
         for (int i = 0; i < widths.size(); i++) {
             PaintGuides.ColumnGuide guide = widths.get(i);
-            tiered.add(new PaintGuides.ColumnGuide(guide.label(), guide.boundaryColumn(), tiers[i]));
+            tiered.add(
+                    new PaintGuides.ColumnGuide(guide.label(), guide.boundaryColumn(), tiers[i]));
         }
         return List.copyOf(tiered);
     }
 
-    private static List<PaintGuides.ColumnBarGuide> withColumnBarTiers(List<PaintGuides.ColumnBarGuide> columnBars,
-                                                                       int[] tiers) {
+    private static List<PaintGuides.ColumnBarGuide> withColumnBarTiers(
+            List<PaintGuides.ColumnBarGuide> columnBars,
+            int[] tiers) {
         List<PaintGuides.ColumnBarGuide> tiered = new ArrayList<>();
         for (int i = 0; i < columnBars.size(); i++) {
             PaintGuides.ColumnBarGuide bar = columnBars.get(i);
-            tiered.add(new PaintGuides.ColumnBarGuide(bar.label(), bar.firstColumn(), bar.columnCount(), tiers[i]));
+            tiered.add(new PaintGuides.ColumnBarGuide(bar.label(), bar.firstColumn(),
+                    bar.columnCount(), tiers[i]));
         }
         return List.copyOf(tiered);
     }

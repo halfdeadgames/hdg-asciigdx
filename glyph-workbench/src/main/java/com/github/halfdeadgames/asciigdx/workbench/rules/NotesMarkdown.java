@@ -3,11 +3,14 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Sorts the lines of a notes file into headings, bullets, text, and blanks; other markdown stays literal. */
+/**
+ * Sorts the lines of a notes file into headings, bullets, text, and blanks; other markdown stays
+ * literal.
+ */
 final class NotesMarkdown {
 
     /** What a line of notes is. */
-    public enum Kind { HEADING, BULLET, TEXT, BLANK }
+    public enum Kind {HEADING, BULLET, TEXT, BLANK}
 
     /**
      * One line of notes.
@@ -15,13 +18,15 @@ final class NotesMarkdown {
      * @param kind what the line is
      * @param text the line without its heading or bullet marker, empty for a blank
      */
-    public record NoteLine(Kind kind, String text) {}
+    public record NoteLine(Kind kind, String text) {
+    }
 
     private NotesMarkdown() {
     }
 
     /**
-     * Splits markdown into lines. Runs of blank lines become one, and blanks at the start or end are dropped.
+     * Splits markdown into lines. Runs of blank lines become one, and blanks at the start or end
+     * are dropped.
      *
      * @param markdown the notes text, with any line endings
      * @return the lines, empty for empty input

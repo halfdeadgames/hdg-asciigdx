@@ -1,8 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /**
- * The text being typed for a guide label. The guide file splits on whitespace, so only printable characters
- * without whitespace are accepted; letters are uppercased, {@code #} cannot start a label, and the length is capped.
+ * The text being typed for a guide label. The guide file splits on whitespace, so only printable
+ * characters without whitespace are accepted; letters are uppercased, {@code #} cannot start a
+ * label, and the length is capped.
  */
 public final class LabelField {
 
@@ -15,7 +16,9 @@ public final class LabelField {
     private final StringBuilder text = new StringBuilder();
     private boolean active;
 
-    /** Starts editing from {@code initial}, which is kept as given even when it breaks the rules. */
+    /**
+     * Starts editing from {@code initial}, which is kept as given even when it breaks the rules.
+     */
     public void begin(String initial) {
         text.setLength(0);
         text.append(initial);
@@ -38,7 +41,10 @@ public final class LabelField {
         return text.length() == 0;
     }
 
-    /** Appends the character if the rules accept it; anything else, or any input while not editing, is ignored. */
+    /**
+     * Appends the character if the rules accept it; anything else, or any input while not editing,
+     * is ignored.
+     */
     public void type(char character) {
         if (!active || text.length() >= MAX_LENGTH || !isAccepted(character)) {
             return;
@@ -57,8 +63,8 @@ public final class LabelField {
 
     private static boolean isAccepted(char character) {
         return !Character.isISOControl(character) && !Character.isWhitespace(character)
-            && !Character.isSpaceChar(character) && !Character.isSurrogate(character)
-            && !isPrivateUse(character);
+                && !Character.isSpaceChar(character) && !Character.isSurrogate(character)
+                && !isPrivateUse(character);
     }
 
     // Supplementary characters reach keyTyped truncated to a char, which lands in this range.

@@ -12,8 +12,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * The state of the upscale source list: options grouped under their font folder, the target's own folder first.
- * Unusable options are shown grayed with their reason, and the cursor never lands on them.
+ * The state of the upscale source list: options grouped under their font folder, the target's own
+ * folder first. Unusable options are shown grayed with their reason, and the cursor never lands on
+ * them.
  */
 final class UpscaleSourceList {
 
@@ -30,7 +31,10 @@ final class UpscaleSourceList {
     private UpscaleSources.Font target;
     private boolean open;
 
-    /** Builds the list for {@code target} and puts the cursor on the preferred source, if any is usable. */
+    /**
+     * Builds the list for {@code target} and puts the cursor on the preferred source, if any is
+     * usable.
+     */
     void open(UpscaleSources.Font target, List<UpscaleSources.Font> fonts) {
         this.target = target;
         List<UpscaleSources.Option> options = UpscaleSources.options(target, fonts);
@@ -60,12 +64,15 @@ final class UpscaleSourceList {
         return list.hasSelection();
     }
 
-    /** Why nothing can be chosen, as two lines that fit the dialog; empty while the list is closed. */
+    /**
+     * Why nothing can be chosen, as two lines that fit the dialog; empty while the list is closed.
+     */
     List<String> noChoiceLines() {
         if (target == null) {
             return List.of();
         }
-        return List.of("No smaller font divides", target.cellWidth() + "X" + target.cellHeight() + " evenly");
+        return List.of("No smaller font divides",
+                target.cellWidth() + "X" + target.cellHeight() + " evenly");
     }
 
     /** The highlighted source, or null when none can be chosen. */
@@ -82,16 +89,17 @@ final class UpscaleSourceList {
     }
 
     /**
-     * Sizes the visible window for a dialog drawn in an area this many cells tall. Rows that do not fit are
-     * scrolled; the title, the text above the list, and the buttons always stay.
+     * Sizes the visible window for a dialog drawn in an area this many cells tall. Rows that do not
+     * fit are scrolled; the title, the text above the list, and the buttons always stay.
      */
     void fitTo(int areaHeight) {
-        list.setCapacity(Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) - LINES_ABOVE_LIST + 1) / SelectList.PITCH));
+        list.setCapacity(Math.max(MIN_SHOWN_ROWS,
+                (Dialog.maxLines(areaHeight) - LINES_ABOVE_LIST + 1) / SelectList.PITCH));
     }
 
     /**
-     * Dialog text lines: the "Into" line and a blank one, then blank lines reserving the room the list is drawn
-     * into, or the reason nothing can be chosen. Empty while the list is closed.
+     * Dialog text lines: the "Into" line and a blank one, then blank lines reserving the room the
+     * list is drawn into, or the reason nothing can be chosen. Empty while the list is closed.
      */
     List<String> lines() {
         if (target == null) {
@@ -101,7 +109,8 @@ final class UpscaleSourceList {
         lines.add(intoLine());
         lines.add("");
         if (hasChoices()) {
-            lines.addAll(Collections.nCopies(list.shownRows() * SelectList.PITCH - 1, " ".repeat(list.listWidth())));
+            lines.addAll(Collections.nCopies(list.shownRows() * SelectList.PITCH - 1,
+                    " ".repeat(list.listWidth())));
         } else {
             lines.addAll(noChoiceLines());
         }
@@ -109,16 +118,20 @@ final class UpscaleSourceList {
     }
 
     private String intoLine() {
-        return DialogText.ellipsize("Into " + target.folderName().toUpperCase(Locale.ROOT) + " " + target.cellWidth()
-            + "X" + target.cellHeight());
+        return DialogText.ellipsize(
+                "Into " + target.folderName().toUpperCase(Locale.ROOT) + " " + target.cellWidth()
+                        + "X" + target.cellHeight());
     }
 
-    // Option indexes per folder: the target's folder first, the others in first-appearance order, empty folders left out.
-    private static List<List<Integer>> groupsByFolder(UpscaleSources.Font target, List<UpscaleSources.Option> options) {
+    // Option indexes per folder: the target's folder first, the others in first-appearance order,
+    // empty folders left out.
+    private static List<List<Integer>> groupsByFolder(UpscaleSources.Font target,
+            List<UpscaleSources.Option> options) {
         Map<String, List<Integer>> byFolder = new LinkedHashMap<>();
         byFolder.put(target.folderName(), new ArrayList<>());
         for (int i = 0; i < options.size(); i++) {
-            byFolder.computeIfAbsent(options.get(i).font().folderName(), folder -> new ArrayList<>()).add(i);
+            byFolder.computeIfAbsent(options.get(i).font().folderName(),
+                    folder -> new ArrayList<>()).add(i);
         }
         List<List<Integer>> groups = new ArrayList<>();
         for (List<Integer> group : byFolder.values()) {
@@ -129,8 +142,9 @@ final class UpscaleSourceList {
         return groups;
     }
 
-    private static void addGroup(List<UpscaleSources.Option> options, List<Integer> group, List<SelectList.Row> rows,
-                                 List<UpscaleSources.Option> entries, int[] rowOfOption) {
+    private static void addGroup(List<UpscaleSources.Option> options, List<Integer> group,
+            List<SelectList.Row> rows,
+            List<UpscaleSources.Option> entries, int[] rowOfOption) {
         String folderName = options.get(group.get(0)).font().folderName();
         rows.add(new SelectList.Row(folderName.toUpperCase(Locale.ROOT), false, false, 0));
         entries.add(null);
@@ -145,11 +159,14 @@ final class UpscaleSourceList {
     private static SelectList.Row rowFor(UpscaleSources.Option option) {
         UpscaleSources.Font font = option.font();
         String size = font.cellWidth() + "X" + font.cellHeight();
-        // SelectList indents only selectable rows, so an unusable row carries the indent in its text.
+        // SelectList indents only selectable rows, so an unusable row carries the indent in its
+        // text.
         if (!option.usable()) {
             return new SelectList.Row(INDENT + size + "  " + option.problem(), false, true, 0);
         }
-        return new SelectList.Row(size + "  " + Upscaler.factorLabel(option.factorX(), option.factorY()), true, false, 0);
+        return new SelectList.Row(
+                size + "  " + Upscaler.factorLabel(option.factorX(), option.factorY()),
+                true, false, 0);
     }
 
     private void selectDefault(int defaultOptionIndex, int[] rowOfOption) {

@@ -35,7 +35,7 @@ class RulesFileLoadTest {
     @Test
     void goodFileGivesItsRules() throws IOException {
         RulesLoadResult result = loadWith(
-            "{ rules: [ { name: Ring, check: ring, size: 1, appliesTo: [ all ] } ] }");
+                "{ rules: [ { name: Ring, check: ring, size: 1, appliesTo: [ all ] } ] }");
         assertEquals(RulesLoadResult.Status.LOADED, result.status());
         assertEquals(1, result.rulesFile().rules().size());
         assertEquals("Ring", result.rulesFile().rules().get(0).name());
@@ -53,7 +53,8 @@ class RulesFileLoadTest {
 
     @Test
     void unknownCheckNamesTheProblem() throws IOException {
-        RulesLoadResult result = loadWith("{ rules: [ { name: r, check: nonsense, appliesTo: [ all ] } ] }");
+        RulesLoadResult result =
+                loadWith("{ rules: [ { name: r, check: nonsense, appliesTo: [ all ] } ] }");
         assertEquals(RulesLoadResult.Status.BAD, result.status());
         assertTrue(result.errorText().contains("nonsense"), result.errorText());
     }

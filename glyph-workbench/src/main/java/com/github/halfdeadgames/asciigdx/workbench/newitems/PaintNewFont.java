@@ -10,13 +10,18 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-/** The "new font" dialog as the paint screen hosts it: which folders are taken, and what creating the font does. */
+/**
+ * The "new font" dialog as the paint screen hosts it: which folders are taken, and what creating
+ * the font does.
+ */
 public final class PaintNewFont {
 
     private static final String TAG = "Paint";
     private static final String NEW_FONT_QUESTION = "before starting a new font?";
 
-    private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> { });
+    private final NewFontDialogs dialogs =
+            new NewFontDialogs(this::existingFontFolders, this::createNewFont, () -> {
+            });
     private final Supplier<Path> fontsRoot;
     private final BiConsumer<Runnable, String> runAfterUnsavedCheck;
     private final BiConsumer<Path, CellSize> openFont;
@@ -24,12 +29,13 @@ public final class PaintNewFont {
 
     /**
      * @param fontsRoot the folder that holds the font folders, read each time it is needed
-     * @param runAfterUnsavedCheck runs the action now, or after the unsaved-changes prompt with the given question
+     * @param runAfterUnsavedCheck runs the action now, or after the unsaved-changes prompt with the
+     *     given question
      * @param openFont called with the folder and first cell size of the font just created
      * @param messages the strip that shows warnings
      */
     public PaintNewFont(Supplier<Path> fontsRoot, BiConsumer<Runnable, String> runAfterUnsavedCheck,
-                        BiConsumer<Path, CellSize> openFont, MessageStrip messages) {
+            BiConsumer<Path, CellSize> openFont, MessageStrip messages) {
         this.fontsRoot = fontsRoot;
         this.runAfterUnsavedCheck = runAfterUnsavedCheck;
         this.openFont = openFont;
@@ -66,19 +72,21 @@ public final class PaintNewFont {
         dialogs.draw(painter, columns, rows, area);
     }
 
-    // Font folders sit side by side, so the names already taken are the folders next to the current one.
+    // Font folders sit side by side, so the names already taken are the folders next to the
+    // current one.
     private List<String> existingFontFolders() {
         return NewFontDialogs.foldersIn(fontsRoot.get());
     }
 
-    // Unsaved changes are asked about after the glyph slots are chosen. The dialog stays open (and hidden) under the
-    // prompt, so canceling it returns to the glyph page with the selection kept.
+    // Unsaved changes are asked about after the glyph slots are chosen. The dialog stays open (and
+    // hidden) under the prompt, so canceling it returns to the glyph page with the selection kept.
     private void createNewFont(String name, CellSize size, NewFontGlyphs glyphs) {
         runAfterUnsavedCheck.accept(() -> finishNewFont(name, size, glyphs), NEW_FONT_QUESTION);
     }
 
-    // On success the host opens a fresh paint screen on the new font. A name problem (for example a folder made
-    // since the name page opened) goes back to the name page, which shows it; anything else is shown on the glyph page.
+    // On success the host opens a fresh paint screen on the new font. A name problem (for example a
+    // folder made since the name page opened) goes back to the name page, which shows it; anything
+    // else is shown on the glyph page.
     private void finishNewFont(String name, CellSize size, NewFontGlyphs glyphs) {
         messages.nextAction();
         NewFontPlan.Outcome outcome = NewFontPlan.tryCreate(fontsRoot.get(), name, size, glyphs);

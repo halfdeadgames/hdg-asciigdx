@@ -44,7 +44,8 @@ public final class FontEditor {
     private Map<Integer, PixelGlyph> savedGlyphs;
     private String problem = "";
 
-    // Every distinct state has its own revision id, so "modified" is simply "not the saved revision".
+    // Every distinct state has its own revision id, so "modified" is simply "not the saved
+    // revision".
     private int revision;
     private int savedRevision;
     private int nextRevision = 1;
@@ -59,8 +60,8 @@ public final class FontEditor {
      * Creates the editor.
      *
      * @param data the font
-     * @param glyphList the font's glyph list; its planned code points get empty, selectable slots, and the
-     *        cp437 preset reserves the first 256 slots
+     * @param glyphList the font's glyph list; its planned code points get empty, selectable slots,
+     *        and the cp437 preset reserves the first 256 slots
      */
     public FontEditor(FontData data, GlyphList glyphList) {
         cellWidth = data.cellWidth();
@@ -74,8 +75,9 @@ public final class FontEditor {
         slots = buildSlots(knownCodePoints, reserveCp437);
     }
 
-    // With the cp437 preset, empty CP437 slots keep their own code point so they stay selectable. Other padding
-    // is not selectable. Slots are only added during a session (see addSlot), never removed, so a slot survives undo.
+    // With the cp437 preset, empty CP437 slots keep their own code point so they stay selectable.
+    // Other padding is not selectable. Slots are only added during a session (see addSlot),
+    // never removed, so a slot survives undo.
     private static int[] buildSlots(Set<Integer> codePoints, boolean reserveCp437) {
         int[] ordered = SheetOrder.slotsFor(codePoints, reserveCp437);
         for (int slot = 0; slot < ordered.length; slot++) {
@@ -105,8 +107,8 @@ public final class FontEditor {
     }
 
     /**
-     * The slot the cursor starts on: the slot of U+0021 when the font has no glyphs yet, otherwise the
-     * first selectable slot. Falls back to slot 0 when nothing is selectable.
+     * The slot the cursor starts on: the slot of U+0021 when the font has no glyphs yet, otherwise
+     * the first selectable slot. Falls back to slot 0 when nothing is selectable.
      */
     public int startSlot() {
         if (entries.isEmpty()) {
@@ -124,9 +126,9 @@ public final class FontEditor {
     }
 
     /**
-     * Makes sure a code point has a slot. A new slot is empty and sits in normal
-     * sheet order, so the indexes of later slots can shift. This neither adds a glyph nor counts as a
-     * change: it touches no revision, modified flag, or undo history.
+     * Makes sure a code point has a slot. A new slot is empty and sits in normal sheet order, so
+     * the indexes of later slots can shift. This neither adds a glyph nor counts as a change: it
+     * touches no revision, modified flag, or undo history.
      *
      * @throws IllegalArgumentException if the code point is not a valid glyph code point
      */
@@ -162,8 +164,8 @@ public final class FontEditor {
     /** First source of a derived glyph, or {@link #NO_GLYPH} for any other glyph. */
     public int derivedFrom(int codePoint) {
         return entries.get(codePoint) instanceof DerivedGlyph derived
-            ? derived.op().sources().get(0).codePoint()
-            : NO_GLYPH;
+                ? derived.op().sources().get(0).codePoint()
+                : NO_GLYPH;
     }
 
     /** The drawn pixels of a glyph with derived ones resolved, or null when the slot is empty. */
@@ -192,7 +194,10 @@ public final class FontEditor {
         return savedGlyphs.containsKey(codePoint);
     }
 
-    /** Whether a pixel was lit in the last saved (or loaded) state; false for glyphs that were not saved. */
+    /**
+     * Whether a pixel was lit in the last saved (or loaded) state; false for glyphs that were not
+     * saved.
+     */
     public boolean wasLitWhenSaved(int codePoint, int x, int y) {
         PixelGlyph glyph = savedGlyphs.get(codePoint);
         return glyph != null && glyph.pixels().isLitWithin(x, y);
@@ -200,7 +205,7 @@ public final class FontEditor {
 
     public boolean isPaintable(int codePoint, int x, int y) {
         return codePoint != NO_GLYPH && !isDerived(codePoint)
-            && x >= 0 && y >= 0 && x < cellWidth && y < cellHeight;
+                && x >= 0 && y >= 0 && x < cellWidth && y < cellHeight;
     }
 
     /** Identifies the current state; it changes with every edit, undo, redo, and derive. */
@@ -241,19 +246,25 @@ public final class FontEditor {
     }
 
     private PixelGlyph glyphWithPixel(int codePoint, int x, int y, boolean on, PixelGlyph current) {
-        PixelGrid base = current == null ? PixelGrid.blank(cellWidth, cellHeight) : current.pixels();
+        PixelGrid base =
+                current == null ? PixelGrid.blank(cellWidth, cellHeight) : current.pixels();
         return new PixelGlyph(codePoint, base.withPixel(x, y, on));
     }
 
-    /** What {@link #previewDerived} found: the glyph (null when refused) and the reason, empty when allowed. */
-    public record DerivePreview(PixelGlyph glyph, String problem) { }
+    /**
+     * What {@link #previewDerived} found: the glyph (null when refused) and the reason, empty when
+     * allowed.
+     */
+    public record DerivePreview(PixelGlyph glyph, String problem) {
+    }
 
     // The resolved font (null when refused) and the refusal reason, empty when allowed.
-    private record Resolution(Map<Integer, PixelGlyph> glyphs, String problem) { }
+    private record Resolution(Map<Integer, PixelGlyph> glyphs, String problem) {
+    }
 
     /**
-     * Shows what {@link #derive} would produce. Changes nothing, including {@link #problem()}; a refusal is
-     * explained by the returned {@link DerivePreview#problem()}.
+     * Shows what {@link #derive} would produce. Changes nothing, including {@link #problem()}; a
+     * refusal is explained by the returned {@link DerivePreview#problem()}.
      */
     public DerivePreview previewDerived(int targetCodePoint, GlyphOp op) {
         Resolution resolution = resolveWithDerived(targetCodePoint, op);
@@ -264,8 +275,9 @@ public final class FontEditor {
     }
 
     /**
-     * Replaces the glyph in a slot with a derived one, as one undo step. Whatever was drawn there is lost
-     * (see {@link #wouldReplaceDrawing}). A refusal changes nothing and is explained by {@link #problem()}.
+     * Replaces the glyph in a slot with a derived one, as one undo step. Whatever was drawn there
+     * is lost (see {@link #wouldReplaceDrawing}). A refusal changes nothing and is explained by
+     * {@link #problem()}.
      */
     public void derive(int targetCodePoint, GlyphOp op) {
         Resolution resolution = resolveWithDerived(targetCodePoint, op);
@@ -280,8 +292,8 @@ public final class FontEditor {
     }
 
     /**
-     * Turns a derived glyph into a drawn one holding its current pixels, as one undo step. Does nothing when the
-     * glyph is not derived (see {@link #isDerived}).
+     * Turns a derived glyph into a drawn one holding its current pixels, as one undo step. Does
+     * nothing when the glyph is not derived (see {@link #isDerived}).
      */
     public void unlock(int codePoint) {
         if (!isDerived(codePoint)) {
@@ -292,9 +304,9 @@ public final class FontEditor {
     }
 
     /**
-     * Replaces a slot's glyph with the given whole cell, as one undo step. Refuses when the code point is not
-     * a slot, the cell is the wrong size, the glyph is derived, or a derived glyph would break;
-     * {@link #problem()} then says why and nothing else changes.
+     * Replaces a slot's glyph with the given whole cell, as one undo step. Refuses when the code
+     * point is not a slot, the cell is the wrong size, the glyph is derived, or a derived glyph
+     * would break; {@link #problem()} then says why and nothing else changes.
      */
     public void replaceGlyph(int codePoint, PixelGrid cell) {
         if (!isSlotCodePoint(codePoint)) {
@@ -303,7 +315,7 @@ public final class FontEditor {
         }
         if (cell.getWidth() != cellWidth || cell.getHeight() != cellHeight) {
             problem = "cell is " + cell.getWidth() + "x" + cell.getHeight()
-                + " but the font cell is " + cellWidth + "x" + cellHeight;
+                    + " but the font cell is " + cellWidth + "x" + cellHeight;
             return;
         }
         if (isDerived(codePoint)) {
@@ -322,30 +334,37 @@ public final class FontEditor {
         });
     }
 
-    // Resolves the font as if the entry were stored; no glyphs (with a problem) when a derived glyph would break.
+    // Resolves the font as if the entry were stored; no glyphs (with a problem) when a derived
+    // glyph would break.
     private Resolution resolveWithEntry(int codePoint, GlyphEntry entry) {
         Map<Integer, GlyphEntry> trial = new TreeMap<>(entries);
         trial.put(codePoint, entry);
         try {
-            return new Resolution(GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial)), "");
+            return new Resolution(
+                    GlyphResolver.resolveAll(new FontData(cellWidth, cellHeight, trial)), "");
         } catch (FontDataException e) {
             return refused(e.getMessage());
         }
     }
 
-    /** Whether deriving into this slot would discard a drawing, meaning it holds a drawn glyph with a lit pixel. */
+    /**
+     * Whether deriving into this slot would discard a drawing, meaning it holds a drawn glyph with
+     * a lit pixel.
+     */
     public boolean wouldReplaceDrawing(int codePoint) {
         return entries.get(codePoint) instanceof PixelGlyph drawn && drawn.pixels().hasLitPixel();
     }
 
-    // Resolves the font as if the target were derived; no glyphs (with a problem) when that is refused.
+    // Resolves the font as if the target were derived; no glyphs (with a problem) when that is
+    // refused.
     private Resolution resolveWithDerived(int targetCodePoint, GlyphOp op) {
         if (!isSlotCodePoint(targetCodePoint)) {
             return refused(CodePoints.label(targetCodePoint) + " is not a glyph slot");
         }
         for (GlyphOp.Source source : op.sources()) {
             if (!entries.containsKey(source.codePoint())) {
-                return refused("source " + CodePoints.label(source.codePoint()) + " is empty; draw it first");
+                return refused("source " + CodePoints.label(source.codePoint())
+                        + " is empty; draw it first");
             }
         }
         return resolveWithEntry(targetCodePoint, new DerivedGlyph(targetCodePoint, op));
@@ -385,7 +404,10 @@ public final class FontEditor {
         }
     }
 
-    /** Ends the open edit. It becomes an undo step and clears redo, unless it left the glyphs as they were. */
+    /**
+     * Ends the open edit. It becomes an undo step and clears redo, unless it left the glyphs as
+     * they were.
+     */
     public void commitEdit() {
         if (openEdit == null) {
             return;
@@ -411,22 +433,33 @@ public final class FontEditor {
         return !redoSteps.isEmpty();
     }
 
-    /** Undoes the latest step; does nothing while an edit is open or when there is nothing to undo. */
+    /**
+     * Undoes the latest step; does nothing while an edit is open or when there is nothing to undo.
+     */
     public void undo() {
         travel(undoSteps, redoSteps);
     }
 
-    /** Redoes the latest undone step; does nothing while an edit is open or when there is nothing to redo. */
+    /**
+     * Redoes the latest undone step; does nothing while an edit is open or when there is nothing to
+     * redo.
+     */
     public void redo() {
         travel(redoSteps, undoSteps);
     }
 
-    /** The code point of the glyph {@link #undo()} would change, or {@link #NO_GLYPH} if it would do nothing. */
+    /**
+     * The code point of the glyph {@link #undo()} would change, or {@link #NO_GLYPH} if it would do
+     * nothing.
+     */
     public int undoTarget() {
         return travelTarget(undoSteps);
     }
 
-    /** The code point of the glyph {@link #redo()} would change, or {@link #NO_GLYPH} if it would do nothing. */
+    /**
+     * The code point of the glyph {@link #redo()} would change, or {@link #NO_GLYPH} if it would do
+     * nothing.
+     */
     public int redoTarget() {
         return travelTarget(redoSteps);
     }
@@ -455,7 +488,8 @@ public final class FontEditor {
         return new State(new TreeMap<>(entries), revision);
     }
 
-    private static int firstDifference(Map<Integer, GlyphEntry> first, Map<Integer, GlyphEntry> second) {
+    private static int firstDifference(Map<Integer, GlyphEntry> first,
+            Map<Integer, GlyphEntry> second) {
         for (Map.Entry<Integer, GlyphEntry> entry : first.entrySet()) {
             if (!entry.getValue().equals(second.get(entry.getKey()))) {
                 return entry.getKey();

@@ -43,10 +43,10 @@ final class TickerWords {
         this.available = new HashSet<>(availableCodePoints);
 
         int[] candidates = available.stream()
-            .filter(glyphClass::contains)
-            .sorted()
-            .mapToInt(Integer::intValue)
-            .toArray();
+                .filter(glyphClass::contains)
+                .sorted()
+                .mapToInt(Integer::intValue)
+                .toArray();
         this.candidateCount = candidates.length;
         if (glyphClass == GlyphClass.LETTER) {
             int[] body = lowercaseOrAll(candidates);
@@ -104,8 +104,9 @@ final class TickerWords {
     }
 
     /**
-     * Produces the next word with {@code featured} placed once at a random position, so the glyph being
-     * edited shows up in every word. Falls back to {@link #nextWord()} when the mode can't use it.
+     * Produces the next word with {@code featured} placed once at a random position, so the glyph
+     * being edited shows up in every word. Falls back to {@link #nextWord()} when the mode can't
+     * use it.
      */
     int[] nextWord(int featured) {
         int[] word = nextWord();

@@ -35,8 +35,8 @@ public final class RuleChecker {
         for (GlyphRule rule : rulesFile.rules()) {
             if (rule.checks(codePoint)) {
                 findProblem(rule.check(), rule.settings(), glyph.pixels(), bounds.get())
-                    .map(detail -> warningOf(rule, detail))
-                    .ifPresent(warnings::add);
+                        .map(detail -> warningOf(rule, detail))
+                        .ifPresent(warnings::add);
             }
         }
         return warnings;
@@ -46,11 +46,13 @@ public final class RuleChecker {
         return new RuleWarning(rule.name(), rule.name().toUpperCase(Locale.ROOT) + ": " + detail);
     }
 
-    private static Optional<String> findProblem(RuleCheck check, CheckSettings settings, PixelGrid pixels,
+    private static Optional<String> findProblem(RuleCheck check, CheckSettings settings,
+            PixelGrid pixels,
             InkBounds ink) {
         return switch (check) {
             case NO_INK_ROWS -> inkedLinesProblem("ROW", inkedRows(pixels, settings.rows()));
-            case NO_INK_COLUMNS -> inkedLinesProblem("COLUMN", inkedColumns(pixels, settings.columns()));
+            case NO_INK_COLUMNS ->
+                    inkedLinesProblem("COLUMN", inkedColumns(pixels, settings.columns()));
             case RING -> ringProblem(ink, settings.ringSize());
             case CENTERED_X -> acrossProblem(ink);
             case CENTERED_BOTH -> bothProblem(ink);
@@ -60,7 +62,7 @@ public final class RuleChecker {
     private static BitSet inkedRows(PixelGrid pixels, BitSet watchedRows) {
         BitSet inked = new BitSet();
         for (int row = watchedRows.nextSetBit(0); row >= 0 && row < pixels.getHeight();
-                row = watchedRows.nextSetBit(row + 1)) {
+             row = watchedRows.nextSetBit(row + 1)) {
             if (InkBounds.rowHasInk(pixels, row)) {
                 inked.set(row);
             }
@@ -71,7 +73,7 @@ public final class RuleChecker {
     private static BitSet inkedColumns(PixelGrid pixels, BitSet watchedColumns) {
         BitSet inked = new BitSet();
         for (int column = watchedColumns.nextSetBit(0); column >= 0 && column < pixels.getWidth();
-                column = watchedColumns.nextSetBit(column + 1)) {
+             column = watchedColumns.nextSetBit(column + 1)) {
             if (InkBounds.columnHasInk(pixels, column)) {
                 inked.set(column);
             }

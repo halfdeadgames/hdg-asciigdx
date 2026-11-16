@@ -19,7 +19,7 @@ class PaintExportTest {
 
     private static final CellSize FONT_SIZE = new CellSize(8, 8);
     private static final String TINY_FONT = "cell 8x8\n\nU+0041 A\n#.......\n##......\n"
-        + "........\n........\n........\n........\n........\n........\n";
+            + "........\n........\n........\n........\n........\n........\n";
 
     @TempDir
     File workDirectory;
@@ -37,14 +37,16 @@ class PaintExportTest {
         defaultFolder = new File(workDirectory, "default");
         assertTrue(fontDirectory.mkdirs());
         String text = TINY_FONT;
-        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(), text.getBytes(StandardCharsets.UTF_8));
+        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(),
+                text.getBytes(StandardCharsets.UTF_8));
         store = new MemoryStore();
         messages = new RecordingMessages();
     }
 
     private PaintExport exportWith(FolderPicker picker) {
-        return new PaintExport(picker, new ExportFolderMemory(store, defaultFolder), fontDirectory, FONT_SIZE,
-            messages);
+        return new PaintExport(picker, new ExportFolderMemory(store, defaultFolder), fontDirectory,
+                FONT_SIZE,
+                messages);
     }
 
     @Test
@@ -54,8 +56,9 @@ class PaintExportTest {
         assertTrue(new File(outputDirectory, "tiny-8x8.png").isFile());
         assertTrue(new File(outputDirectory, "tiny-8x8.txt").isFile());
         assertEquals(outputDirectory.getAbsolutePath(), store.path);
-        assertEquals(List.of("ok:Exported tiny-8x8.png and tiny-8x8.txt to:", "ok:" + outputDirectory.getAbsolutePath()),
-            messages.entries);
+        assertEquals(List.of("ok:Exported tiny-8x8.png and tiny-8x8.txt to:",
+                        "ok:" + outputDirectory.getAbsolutePath()),
+                messages.entries);
     }
 
     @Test

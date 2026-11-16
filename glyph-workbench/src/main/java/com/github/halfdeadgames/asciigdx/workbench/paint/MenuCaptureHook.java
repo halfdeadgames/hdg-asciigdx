@@ -10,8 +10,9 @@ final class MenuCaptureHook {
     private MenuCaptureHook() {
     }
 
-    static void apply(DevCapture.MenuRequest request, MenuBar menuBar, Predicate<PaintMenu.Action> availability,
-                      int cellPixels) {
+    static void apply(DevCapture.MenuRequest request, MenuBar menuBar,
+            Predicate<PaintMenu.Action> availability,
+            int cellPixels) {
         for (int i = 0; i < menuBar.menuCount(); i++) {
             if (!menuBar.menu(i).title().equalsIgnoreCase(request.title())) {
                 continue;
@@ -23,7 +24,8 @@ final class MenuCaptureHook {
             } else if (menuBar.canOpenByAccessKey(menuBar.menu(i).accessKey(), availability)) {
                 menuBar.openByAccessKey(menuBar.menu(i).accessKey(), availability);
                 int moves = menuBar.menu(i).items().size();
-                while (request.item() >= 0 && menuBar.highlightedItem() != request.item() && moves-- > 0) {
+                while (request.item() >= 0 && menuBar.highlightedItem() != request.item()
+                        && moves-- > 0) {
                     menuBar.moveItem(1, availability);
                 }
             }
@@ -31,9 +33,13 @@ final class MenuCaptureHook {
         }
     }
 
-    /** Hovers a title (item -1) or an item of that menu, opened via any available entry, as the pointer would. */
-    private static void inspect(MenuBar menuBar, Predicate<PaintMenu.Action> availability, int cellPixels, int menu,
-                                int item) {
+    /**
+     * Hovers a title (item -1) or an item of that menu, opened via any available entry, as the
+     * pointer would.
+     */
+    private static void inspect(MenuBar menuBar, Predicate<PaintMenu.Action> availability,
+            int cellPixels, int menu,
+            int item) {
         if (item < 0) {
             menuBar.hover(menuBar.titleColumn(menu), MenuBar.NOT_IN_DROP_DOWN, 0, availability);
             return;

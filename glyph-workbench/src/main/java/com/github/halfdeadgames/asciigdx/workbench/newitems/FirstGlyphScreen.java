@@ -14,7 +14,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 
-/** Shown instead of the paint screen for a font with no glyph slots: asks for the first glyph and lists it. */
+/**
+ * Shown instead of the paint screen for a font with no glyph slots: asks for the first glyph and
+ * lists it.
+ */
 public final class FirstGlyphScreen implements WorkbenchScreen {
 
     private static final String TAG = "FirstGlyph";
@@ -43,8 +46,8 @@ public final class FirstGlyphScreen implements WorkbenchScreen {
         this.onBack = onBack;
         this.onAdded = onAdded;
         this.page = new NewItemPage(List.of("GLYPH WORKBENCH",
-            fontFolder.getFileName().toString().toUpperCase(Locale.ROOT),
-            size.toString().toUpperCase(Locale.ROOT), "FIRST GLYPH"));
+                fontFolder.getFileName().toString().toUpperCase(Locale.ROOT),
+                size.toString().toUpperCase(Locale.ROOT), "FIRST GLYPH"));
     }
 
     @Override

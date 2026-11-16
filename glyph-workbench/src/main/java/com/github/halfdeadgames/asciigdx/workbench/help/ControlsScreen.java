@@ -15,14 +15,18 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.WheelTicks;
 import java.util.List;
 
 /**
- * The Help > Controls panel: a centered modal box listing every paint control. While it is open it takes
- * the whole frame; Esc, Enter, or a click outside the box closes it. Sizes are in text cells, so it follows the UI scale.
+ * The Help > Controls panel: a centered modal box listing every paint control. While it is open it
+ * takes the whole frame; Esc, Enter, or a click outside the box closes it. Sizes are in text cells,
+ * so it follows the UI scale.
  */
 public final class ControlsScreen {
 
-    private static final String TITLE ="CONTROLS";
+    private static final String TITLE = "CONTROLS";
 
-    /** The box, its text width, and the wrapped lines; {@code visibleRows} is how many lines show at once. */
+    /**
+     * The box, its text width, and the wrapped lines; {@code visibleRows} is how many lines show at
+     * once.
+     */
     record Layout(CellRect rect, int charsPerLine, int visibleRows, List<HelpWrap.Line> lines) {
 
         int maxOffset() {
@@ -45,17 +49,22 @@ public final class ControlsScreen {
     private int layoutColumns = -1;
     private int layoutRows = -1;
 
-    /** The box for a window of the given size in cells: as wide as the longest line, kept inside the window, and as tall as the list. */
+    /**
+     * The box for a window of the given size in cells: as wide as the longest line, kept inside the
+     * window, and as tall as the list.
+     */
     static Layout layout(int columns, int rows) {
         int natural = 0;
         for (PaintHelp.Row row : PaintHelp.allControlRows()) {
             natural = Math.max(natural, row.actionColumn() + row.action().length());
         }
         int extra = FRAME + 2 * PADDING;
-        int width = Math.min(columns, Math.min(natural + extra, Math.max(MIN_WIDTH, columns - 2 * MARGIN)));
+        int width = Math.min(columns,
+                Math.min(natural + extra, Math.max(MIN_WIDTH, columns - 2 * MARGIN)));
         int charsPerLine = Math.max(1, width - extra);
         List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), charsPerLine);
-        int height = Math.min(rows, Math.min(lines.size() + FRAME, Math.max(MIN_HEIGHT, rows - 2 * MARGIN)));
+        int height = Math.min(rows,
+                Math.min(lines.size() + FRAME, Math.max(MIN_HEIGHT, rows - 2 * MARGIN)));
         CellRect rect = new CellRect((columns - width) / 2, (rows - height) / 2, width, height);
         return new Layout(rect, charsPerLine, Math.max(1, height - FRAME), lines);
     }
@@ -95,16 +104,17 @@ public final class ControlsScreen {
     }
 
     /**
-     * Handles one frame while open. The caller must skip all its own input for the frame, also on the
-     * frame this closes, so the Esc that closes it never reaches Back.
+     * Handles one frame while open. The caller must skip all its own input for the frame, also on
+     * the frame this closes, so the Esc that closes it never reaches Back.
      *
      * @param wheelTicks wheel notches this frame, positive towards later lines
      * @param clicked the left button went down this frame, at cell ({@code cellX}, {@code cellY})
      */
-    public void handleInput(float delta, int wheelTicks, boolean clicked, int cellX, int cellY, int columns, int rows) {
+    public void handleInput(float delta, int wheelTicks, boolean clicked, int cellX, int cellY,
+            int columns, int rows) {
         refresh(columns, rows);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Keys.enterJustPressed()
-            || (clicked && isOutside(layout.rect(), cellX, cellY))) {
+                || (clicked && isOutside(layout.rect(), cellX, cellY))) {
             close();
             return;
         }
@@ -120,10 +130,12 @@ public final class ControlsScreen {
         CellRect rect = layout.rect();
         painter.fill(DIM, 0, 0, columns * cellPixels, rows * cellPixels);
         for (int i = 1; i <= rect.height(); i++) {
-            painter.text("▓", (rect.x() + rect.width()) * cellPixels, (rect.y() + i) * cellPixels, UiPalette.SHADOW);
+            painter.text("▓", (rect.x() + rect.width()) * cellPixels, (rect.y() + i) * cellPixels,
+                    UiPalette.SHADOW);
         }
         for (int i = 1; i <= rect.width(); i++) {
-            painter.text("▓", (rect.x() + i) * cellPixels, rect.bottom() * cellPixels, UiPalette.SHADOW);
+            painter.text("▓", (rect.x() + i) * cellPixels, rect.bottom() * cellPixels,
+                    UiPalette.SHADOW);
         }
         Panel.draw(painter, rect, TITLE, true);
         List<HelpWrap.Line> lines = layout.lines();
@@ -136,12 +148,14 @@ public final class ControlsScreen {
             if (!line.key().isEmpty()) {
                 painter.text(line.key(), textX, top, UiPalette.FOCUS);
             }
-            painter.text(line.action(), textX + line.actionColumn() * cellPixels, top, UiPalette.TEXT);
+            painter.text(line.action(), textX + line.actionColumn() * cellPixels, top,
+                    UiPalette.TEXT);
         }
         if (scroll.needed() && layout.visibleRows() >= 2) {
             ScrollBar.drawBar(painter,
-                new CellRect(rect.x() + rect.width() - 2, rect.y() + 1, 1, layout.visibleRows()),
-                lines.size(), layout.visibleRows(), first);
+                    new CellRect(rect.x() + rect.width() - 2, rect.y() + 1, 1,
+                            layout.visibleRows()),
+                    lines.size(), layout.visibleRows(), first);
         }
     }
 }

@@ -31,7 +31,8 @@ class GlyphCandidatesTest {
     void factorTwoListsNearestFirst() {
         List<GlyphCandidates.Candidate> candidates = GlyphCandidates.forGlyph(edgeGlyph(), 2, 2);
         assertEquals("NEAREST 2X", candidates.get(0).label());
-        assertEquals(Upscaler.upscale(edgeGlyph(), 2, 2, Upscaler.Method.NEAREST), candidates.get(0).cell());
+        assertEquals(Upscaler.upscale(edgeGlyph(), 2, 2, Upscaler.Method.NEAREST),
+                candidates.get(0).cell());
     }
 
     @Test

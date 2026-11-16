@@ -13,7 +13,8 @@ class NewGlyphInputTest {
 
     private static void assertCodePoint(int expected, String typed) {
         var result = NewGlyphInput.parse(typed);
-        assertTrue(result.isValid(), "expected valid for '" + typed + "' but got " + result.error());
+        assertTrue(result.isValid(),
+                "expected valid for '" + typed + "' but got " + result.error());
         assertNull(result.error());
         assertEquals(expected, result.codePoint());
     }

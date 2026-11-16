@@ -20,8 +20,9 @@ final class SheetSlotPointerTarget implements PointerTarget {
     private final MessageStrip messages;
     private final Selection selection;
 
-    SheetSlotPointerTarget(PaintSheetView sheet, DeriveFlow flow, PaintDerive derive, MessageStrip messages,
-                           Selection selection) {
+    SheetSlotPointerTarget(PaintSheetView sheet, DeriveFlow flow, PaintDerive derive,
+            MessageStrip messages,
+            Selection selection) {
         this.sheet = sheet;
         this.flow = flow;
         this.derive = derive;

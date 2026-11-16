@@ -13,9 +13,10 @@ import java.util.Set;
 
 /**
  * The "New size" rules for one font folder: which sizes are suggested, and creating the size file.
- * Sizes must be square or twice as tall, within the cell limits. Suggestions are the half (when both sides are even) and the
- * double of each existing {@code <width>x<height>.txt} size; {@code .guides.txt} and other sidecar files
- * are not size files. Files of any other shape (neither square nor twice as tall) are ignored.
+ * Sizes must be square or twice as tall, within the cell limits. Suggestions are the half (when
+ * both sides are even) and the double of each existing {@code <width>x<height>.txt} size;
+ * {@code .guides.txt} and other sidecar files are not size files. Files of any other shape (neither
+ * square nor twice as tall) are ignored.
  */
 public final class NewSizePlan {
 
@@ -29,13 +30,14 @@ public final class NewSizePlan {
     }
 
     private static final Comparator<CellSize> BY_HEIGHT_THEN_WIDTH =
-        Comparator.comparingInt(CellSize::height).thenComparingInt(CellSize::width);
+            Comparator.comparingInt(CellSize::height).thenComparingInt(CellSize::width);
 
     private NewSizePlan() {
     }
 
     /**
-     * Lists the folder's existing sizes and the sizes suggested from them, ascending by height then width.
+     * Lists the folder's existing sizes and the sizes suggested from them, ascending by height then
+     * width.
      *
      * @param fontFolder a font folder holding {@code <width>x<height>.txt} files
      * @return the options, or an empty list when the folder has no size file
@@ -57,7 +59,8 @@ public final class NewSizePlan {
     }
 
     /**
-     * Creates {@code <width>x<height>.txt} containing {@code cell WxH}. An existing file is never touched.
+     * Creates {@code <width>x<height>.txt} containing {@code cell WxH}. An existing file is never
+     * touched.
      *
      * @param fontFolder the font folder
      * @param size the new cell size

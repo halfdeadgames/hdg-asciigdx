@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 class GuideGroupsTest {
 
     private static final RulesFile OVERLAPPING = RulesFile.parse("""
-        {"groups": {"letters": ["A-Z", "a-z"], "capitals": ["A-Z"]}}
-        """, 8, 8);
+            {"groups": {"letters": ["A-Z", "a-z"], "capitals": ["A-Z"]}}
+            """, 8, 8);
 
     @Test
     void allShowsOnEveryGlyph() {
@@ -32,7 +32,8 @@ class GuideGroupsTest {
     @Test
     void rulesWithoutGroupsShowEveryGuideOnEveryGlyph() {
         assertTrue(GuideGroups.showsOnGlyph(Set.of("uppercase"), LOWER, RulesFile.empty()));
-        assertTrue(GuideGroups.showsOnGlyph(Set.of("uppercase"), LOWER, RulesFile.parse("{}", 8, 8)));
+        assertTrue(
+                GuideGroups.showsOnGlyph(Set.of("uppercase"), LOWER, RulesFile.parse("{}", 8, 8)));
     }
 
     @Test

@@ -6,19 +6,21 @@ import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 /**
  * Dev-only startup hooks driven by system properties: {@code workbench.select} picks a glyph and
  * {@code workbench.capture} saves a screenshot after a few frames, then exits, and
- * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the preview tab,
- * {@code workbench.guides} opens the guide list with that row selected, and {@code workbench.menu} opens
- * a menu bar menu, lights a title, or (with {@code controls}) opens the Controls panel, and
- * {@code workbench.newglyph} opens the New glyph dialog with that hex code typed into it, and
- * {@code workbench.newsize} opens the New size dialog: {@code list} (or any other value) just opens the list,
- * {@code down:N} moves N rows into it, and {@code other:<typed>} goes to OTHER SIZE... and types the text.
- * {@code workbench.upscalesource} opens the Upscale from dialog (optionally {@code down:N} rows into the list);
- * {@code pick} or {@code pick:down:N} also chooses the selected font and lands in the glyph pick;
- * {@code cand} or {@code cand:N} goes on to confirm the selected source glyph and select candidate N (default 1).
- * {@code workbench.newfont} opens the New font name dialog with that text typed into it.
- * {@code workbench.newfontsize} opens the New font size page for a name with optional text typed into the size field ({@code name:64x128}).
- * Without {@code workbench.mode=paint}, both New font hooks open on the New font screen of the start flow, and
- * {@code workbench.newsize} opens on the New size screen of the font in {@code workbench.fontDir}.
+ * {@code workbench.derive} opens the derive menu or a source pick, {@code workbench.tab} picks the
+ * preview tab, {@code workbench.guides} opens the guide list with that row selected, and
+ * {@code workbench.menu} opens a menu bar menu, lights a title, or (with {@code controls}) opens
+ * the Controls panel, and {@code workbench.newglyph} opens the New glyph dialog with that hex code
+ * typed into it, and {@code workbench.newsize} opens the New size dialog: {@code list} (or any
+ * other value) just opens the list, {@code down:N} moves N rows into it, and {@code other:<typed>}
+ * goes to OTHER SIZE... and types the text. {@code workbench.upscalesource} opens the Upscale from
+ * dialog (optionally {@code down:N} rows into the list); {@code pick} or {@code pick:down:N} also
+ * chooses the selected font and lands in the glyph pick; {@code cand} or {@code cand:N} goes on to
+ * confirm the selected source glyph and select candidate N (default 1). {@code workbench.newfont}
+ * opens the New font name dialog with that text typed into it. {@code workbench.newfontsize} opens
+ * the New font size page for a name with optional text typed into the size field
+ * ({@code name:64x128}). Without {@code workbench.mode=paint}, both New font hooks open on the New
+ * font screen of the start flow, and {@code workbench.newsize} opens on the New size screen of the
+ * font in {@code workbench.fontDir}.
  */
 public final class DevCapture {
 
@@ -71,7 +73,10 @@ public final class DevCapture {
         return null;
     }
 
-    /** The row to select in the opened guide list named by {@code workbench.guides}, or -1 to leave the list closed. */
+    /**
+     * The row to select in the opened guide list named by {@code workbench.guides}, or -1 to leave
+     * the list closed.
+     */
     public static int guidesRequest() {
         return parseRowIndex(System.getProperty(GUIDES_PROPERTY));
     }
@@ -92,18 +97,28 @@ public final class DevCapture {
         return System.getProperty(MENU_PROPERTY);
     }
 
-    /** The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or null to leave it closed. */
+    /**
+     * The text to type into the opened New glyph dialog named by {@code workbench.newglyph}, or
+     * null to leave it closed.
+     */
     public static String newGlyphRequest() {
         return System.getProperty(NEW_GLYPH_PROPERTY);
     }
 
-    /** The text to type into the opened New font dialog named by {@code workbench.newfont}, or null to leave it closed. */
+    /**
+     * The text to type into the opened New font dialog named by {@code workbench.newfont}, or null
+     * to leave it closed.
+     */
     public static String newFontRequest() {
         return System.getProperty(NEW_FONT_PROPERTY);
     }
 
-    /** A parsed {@code workbench.newfontsize} request: the font name and the text to type into the size field. */
-    public record NewFontSizeRequest(String name, String typed) { }
+    /**
+     * A parsed {@code workbench.newfontsize} request: the font name and the text to type into the
+     * size field.
+     */
+    public record NewFontSizeRequest(String name, String typed) {
+    }
 
     static final String DEFAULT_FONT_NAME = "my-font";
 
@@ -112,7 +127,10 @@ public final class DevCapture {
         return parseNewFontSizeRequest(System.getProperty(NEW_FONT_SIZE_PROPERTY));
     }
 
-    /** Parses {@code <name>}, {@code <name>:<typed>}, {@code :<typed>}, or a blank value; null when unset. */
+    /**
+     * Parses {@code <name>}, {@code <name>:<typed>}, {@code :<typed>}, or a blank value; null when
+     * unset.
+     */
     static NewFontSizeRequest parseNewFontSizeRequest(String request) {
         if (request == null) {
             return null;
@@ -124,7 +142,10 @@ public final class DevCapture {
         return new NewFontSizeRequest(name.isEmpty() ? DEFAULT_FONT_NAME : name, typed);
     }
 
-    /** Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave it closed. */
+    /**
+     * Rows to move down in the New size dialog opened by {@code workbench.newsize}, or -1 to leave
+     * it closed.
+     */
     public static int newSizeRequest() {
         return parseNewSizeRequest(System.getProperty(NEW_SIZE_PROPERTY));
     }
@@ -142,8 +163,8 @@ public final class DevCapture {
     }
 
     /**
-     * The text to type on the typed page of the New size dialog when {@code workbench.newsize} is {@code other} or
-     * {@code other:<typed>}, or null when the hook asks for the list.
+     * The text to type on the typed page of the New size dialog when {@code workbench.newsize} is
+     * {@code other} or {@code other:<typed>}, or null when the hook asks for the list.
      */
     public static String newSizeOtherRequest() {
         return parseNewSizeOther(System.getProperty(NEW_SIZE_PROPERTY));
@@ -163,22 +184,32 @@ public final class DevCapture {
         return trimmed.substring("other:".length()).trim();
     }
 
-    /** Rows to move down in the Upscale from dialog opened by {@code workbench.upscalesource}, or -1 to leave it closed. */
+    /**
+     * Rows to move down in the Upscale from dialog opened by {@code workbench.upscalesource}, or -1
+     * to leave it closed.
+     */
     public static int upscaleSourceRequest() {
         return parseUpscaleSourceRequest(System.getProperty(UPSCALE_SOURCE_PROPERTY));
     }
 
-    /** Whether {@code workbench.upscalesource} also chooses the selected font, landing in the glyph pick. */
+    /**
+     * Whether {@code workbench.upscalesource} also chooses the selected font, landing in the glyph
+     * pick.
+     */
     public static boolean upscaleSourcePickRequested() {
         return parseUpscaleSourcePick(System.getProperty(UPSCALE_SOURCE_PROPERTY));
     }
 
-    /** The 1-based candidate to select after confirming the source glyph, or -1 when not requested. */
+    /**
+     * The 1-based candidate to select after confirming the source glyph, or -1 when not requested.
+     */
     public static int upscaleCandidateRequest() {
         return parseUpscaleCandidate(System.getProperty(UPSCALE_SOURCE_PROPERTY));
     }
 
-    /** {@code cand} means candidate 1, {@code cand:N} candidate N (at least 1); anything else is -1. */
+    /**
+     * {@code cand} means candidate 1, {@code cand:N} candidate N (at least 1); anything else is -1.
+     */
     static int parseUpscaleCandidate(String request) {
         if (request == null) {
             return -1;
@@ -191,7 +222,8 @@ public final class DevCapture {
             return -1;
         }
         try {
-            return Math.max(1, Integer.parseInt(trimmed.substring(CANDIDATE_REQUEST.length() + 1).trim()));
+            return Math.max(1,
+                    Integer.parseInt(trimmed.substring(CANDIDATE_REQUEST.length() + 1).trim()));
         } catch (NumberFormatException e) {
             return -1;
         }
@@ -204,13 +236,13 @@ public final class DevCapture {
         }
         String trimmed = request.trim().toLowerCase(java.util.Locale.ROOT);
         return trimmed.equals(PICK_REQUEST) || trimmed.startsWith(PICK_REQUEST + ":")
-            || parseUpscaleCandidate(trimmed) > 0;
+                || parseUpscaleCandidate(trimmed) > 0;
     }
 
     /**
-     * Only a blank value, {@code open}, {@code down:N}, {@code pick}, {@code pick:down:N}, {@code cand}, or
-     * {@code cand:N} opens the dialog; {@code down:N} also moves the cursor N rows, and a pick or candidate request
-     * chooses the selected font afterwards.
+     * Only a blank value, {@code open}, {@code down:N}, {@code pick}, {@code pick:down:N},
+     * {@code cand}, or {@code cand:N} opens the dialog; {@code down:N} also moves the cursor N
+     * rows, and a pick or candidate request chooses the selected font afterwards.
      */
     static int parseUpscaleSourceRequest(String request) {
         if (request == null) {
@@ -221,7 +253,8 @@ public final class DevCapture {
             return 0;
         }
         if (parseUpscaleSourcePick(trimmed)) {
-            return parseUpscaleSourceRequest(trimmed.substring(PICK_REQUEST.length()).replaceFirst("^:", ""));
+            return parseUpscaleSourceRequest(
+                    trimmed.substring(PICK_REQUEST.length()).replaceFirst("^:", ""));
         }
         if (trimmed.isEmpty() || "open".equalsIgnoreCase(trimmed)) {
             return 0;
@@ -239,11 +272,13 @@ public final class DevCapture {
     }
 
     /** A parsed menu request; {@code item} is -1 for the first available item. */
-    public record MenuRequest(String title, boolean hoverOnly, int item, boolean inspect) { }
+    public record MenuRequest(String title, boolean hoverOnly, int item, boolean inspect) {
+    }
 
     /**
-     * Parses {@code edit}, {@code edit:1}, {@code hover:view}, {@code inspect:file} (hover a title), or
-     * {@code inspect:glyph:0} (open that menu and hover that item); null for anything else.
+     * Parses {@code edit}, {@code edit:1}, {@code hover:view}, {@code inspect:file} (hover a
+     * title), or {@code inspect:glyph:0} (open that menu and hover that item); null for anything
+     * else.
      */
     public static MenuRequest parseMenuRequest(String request) {
         if (request == null) {
@@ -253,7 +288,8 @@ public final class DevCapture {
         if ("inspect".equalsIgnoreCase(fields[0].trim())) {
             return parseInspectRequest(fields);
         }
-        if (fields.length == 2 && "hover".equalsIgnoreCase(fields[0].trim()) && !fields[1].isBlank()) {
+        if (fields.length == 2 && "hover".equalsIgnoreCase(fields[0].trim())
+                && !fields[1].isBlank()) {
             return new MenuRequest(fields[1].trim(), true, -1, false);
         }
         return parseOpenMenuRequest(fields);
@@ -287,7 +323,9 @@ public final class DevCapture {
         return new MenuRequest(fields[0].trim(), false, item, false);
     }
 
-    /** The item index parsed from the field, or -1 if the field is not a whole number of 0 or more. */
+    /**
+     * The item index parsed from the field, or -1 if the field is not a whole number of 0 or more.
+     */
     private static int parseMenuItemIndex(String field) {
         try {
             return Math.max(-1, Integer.parseInt(field.trim()));
@@ -302,7 +340,8 @@ public final class DevCapture {
     }
 
     /** A parsed {@code overlay:<code point>[:<shift>[:<down>]]} request. */
-    public record OverlayRequest(int codePoint, int shift, int down) { }
+    public record OverlayRequest(int codePoint, int shift, int down) {
+    }
 
     /**
      * Parses a derive request such as {@code overlay:U+0021}, {@code overlay:U+0021:5}, or
@@ -313,7 +352,8 @@ public final class DevCapture {
             return null;
         }
         String[] fields = request.trim().split(":", -1);
-        if (fields.length < 2 || fields.length > 4 || !"overlay".equalsIgnoreCase(fields[0].trim())) {
+        if (fields.length < 2 || fields.length > 4 || !"overlay".equalsIgnoreCase(
+                fields[0].trim())) {
             return null;
         }
         int codePoint = parseCodePoint(fields[1]);
@@ -325,7 +365,9 @@ public final class DevCapture {
         return new OverlayRequest(codePoint, shift, down);
     }
 
-    /** The whole number in the field, 0 when the field is absent, or null when it is not a number. */
+    /**
+     * The whole number in the field, 0 when the field is absent, or null when it is not a number.
+     */
     private static Integer optionalNumber(String[] fields, int index) {
         if (index >= fields.length) {
             return 0;

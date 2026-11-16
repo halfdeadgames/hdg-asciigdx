@@ -5,9 +5,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Names, General_Category types, and blocks of characters, read from a bundled text file. Single entries
- * and pattern ranges such as "CJK UNIFIED IDEOGRAPH-*" (whose names end in the code point in hex) share
- * one sorted list of non-overlapping ranges.
+ * Names, General_Category types, and blocks of characters, read from a bundled text file. Single
+ * entries and pattern ranges such as "CJK UNIFIED IDEOGRAPH-*" (whose names end in the code point
+ * in hex) share one sorted list of non-overlapping ranges.
  */
 public final class UnicodeNameTable {
 
@@ -21,7 +21,7 @@ public final class UnicodeNameTable {
     private final UnicodeBlocks blocks;
 
     UnicodeNameTable(int[] firsts, int[] lasts, String[] texts, byte[] types, boolean[] patterns,
-                     UnicodeBlocks blocks) {
+            UnicodeBlocks blocks) {
         this.firsts = firsts;
         this.lasts = lasts;
         this.texts = texts;
@@ -30,7 +30,9 @@ public final class UnicodeNameTable {
         this.blocks = blocks;
     }
 
-    /** Reads the bundled file; a missing or malformed file is a packaging bug, so it fails loudly. */
+    /**
+     * Reads the bundled file; a missing or malformed file is a packaging bug, so it fails loudly.
+     */
     public static UnicodeNameTable loadBundled() {
         try (InputStream stream = UnicodeNameTable.class.getResourceAsStream(RESOURCE_PATH)) {
             if (stream == null) {
@@ -56,7 +58,10 @@ public final class UnicodeNameTable {
         return patterns[index] ? texts[index] + String.format("%04X", codePoint) : texts[index];
     }
 
-    /** Returns the Character type constant of the code point, or {@link Character#UNASSIGNED} if not listed. */
+    /**
+     * Returns the Character type constant of the code point, or {@link Character#UNASSIGNED} if not
+     * listed.
+     */
     public byte typeOf(int codePoint) {
         int index = indexOf(codePoint);
         return index < 0 ? Character.UNASSIGNED : types[index];

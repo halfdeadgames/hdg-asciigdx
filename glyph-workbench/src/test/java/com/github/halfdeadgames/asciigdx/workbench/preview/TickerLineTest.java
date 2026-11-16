@@ -20,7 +20,7 @@ class TickerLineTest {
     // Three-letter words numbered 1, 2, 3 ... so every glyph tells which word it came from.
     private int[] nextWord() {
         suppliedWords++;
-        return new int[] {suppliedWords, suppliedWords, suppliedWords};
+        return new int[]{suppliedWords, suppliedWords, suppliedWords};
     }
 
     private TickerLine line() {
@@ -86,7 +86,8 @@ class TickerLineTest {
         for (int step = 0; step < 500; step++) {
             line.advance(0.016f);
             assertTrue(line.contentEnd() >= WIDTH, "gap at the right edge on step " + step);
-            assertTrue(line.firstWordX() > -4 * ADVANCE, "first word should have been dropped on step " + step);
+            assertTrue(line.firstWordX() > -4 * ADVANCE,
+                    "first word should have been dropped on step " + step);
         }
     }
 

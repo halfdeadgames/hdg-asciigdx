@@ -17,7 +17,7 @@ public final class NoticeLine {
         }
         int room = Math.max(1, columns - 2 * MARGIN_CELLS);
         painter.text(fit(notice, room), MARGIN_CELLS * Painter.TEXT_SIZE,
-            (rows - ROWS_FROM_BOTTOM) * Painter.TEXT_SIZE, UiPalette.WARN);
+                (rows - ROWS_FROM_BOTTOM) * Painter.TEXT_SIZE, UiPalette.WARN);
     }
 
     static String fit(String notice, int room) {

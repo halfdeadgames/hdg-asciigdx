@@ -29,8 +29,9 @@ class GroupedPickListTest {
     private static GroupedPickList<String> sample() {
         var list = new GroupedPickList<String>();
         list.setRows(
-            List.of(heading("H1"), item("a"), item("b"), heading("H2"), item("c"), item("d"), item("e")),
-            Arrays.asList(null, "a", "b", null, "c", "d", "e"));
+                List.of(heading("H1"), item("a"), item("b"), heading("H2"), item("c"), item("d"),
+                        item("e")),
+                Arrays.asList(null, "a", "b", null, "c", "d", "e"));
         return list;
     }
 
@@ -135,7 +136,7 @@ class GroupedPickListTest {
     void cursorFollowDoesNotTreatADimmedRowAsAHeading() {
         var list = new GroupedPickList<String>();
         list.setRows(List.of(item("a"), item("b"), dimmed("x"), item("c"), item("d")),
-            Arrays.asList("a", "b", null, "c", "d"));
+                Arrays.asList("a", "b", null, "c", "d"));
         list.setCapacity(2);
         list.move(1);
         list.move(1);
@@ -206,7 +207,8 @@ class GroupedPickListTest {
         assertFalse(list.hasSelection());
         assertNull(list.selected());
         assertEquals(0, list.shownRows());
-        list.setRows(List.of(item("a"), item("b"), item("c"), item("d")), List.of("a", "b", "c", "d"));
+        list.setRows(List.of(item("a"), item("b"), item("c"), item("d")),
+                List.of("a", "b", "c", "d"));
         assertEquals(4, list.shownRows());
         assertFalse(list.scrolls());
     }

@@ -28,7 +28,9 @@ class NewFontSizePromptTest {
 
     @Test
     void startsClosedAndTracksOpenAndClose() {
-        var prompt = new NewFontSizePrompt(size -> { }, () -> { });
+        var prompt = new NewFontSizePrompt(size -> {
+        }, () -> {
+        });
         assertFalse(prompt.isOpen());
         prompt.open("a");
         assertTrue(prompt.isOpen());
@@ -127,7 +129,9 @@ class NewFontSizePromptTest {
 
     @Test
     void hintShowsOnlyWhileOpenAndEmpty() {
-        var prompt = new NewFontSizePrompt(size -> { }, () -> { });
+        var prompt = new NewFontSizePrompt(size -> {
+        }, () -> {
+        });
         assertFalse(prompt.showsHint());
         prompt.open("a");
         assertTrue(prompt.showsHint());
@@ -144,7 +148,8 @@ class NewFontSizePromptTest {
         assertEquals(5, lines.size());
         assertEquals("Size for my-font", lines.get(0));
         assertEquals("", lines.get(1));
-        assertEquals("16x_" + " ".repeat(NewFontSizePrompt.LINE_CELLS - 4), lines.get(NewFontSizePrompt.INPUT_LINE));
+        assertEquals("16x_" + " ".repeat(NewFontSizePrompt.LINE_CELLS - 4),
+                lines.get(NewFontSizePrompt.INPUT_LINE));
         assertEquals("Write the size as WxH,", lines.get(3));
         assertEquals("e.g. 16x16", lines.get(4));
     }

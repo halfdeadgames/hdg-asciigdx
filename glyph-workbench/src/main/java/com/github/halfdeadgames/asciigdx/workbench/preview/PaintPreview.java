@@ -16,8 +16,9 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * The "PREVIEW" panel: a tab strip over one of three views. SCALES shows the selected glyph's whole cell
- * side by side at 1x to 8x, TILE repeats it in blocks, and TEXT scrolls ticker lines of glyphs.
+ * The "PREVIEW" panel: a tab strip over one of three views. SCALES shows the selected glyph's whole
+ * cell side by side at 1x to 8x, TILE repeats it in blocks, and TEXT scrolls ticker lines of
+ * glyphs.
  */
 public final class PaintPreview {
 
@@ -90,8 +91,8 @@ public final class PaintPreview {
         PixelGlyph glyph = shown != null ? shown : editor.glyph(codePoint);
         int innerWidth = PreviewPanelSize.innerWidth(rect.width(), cellPixels());
         int scaleCount = PreviewFit.scaleCount(innerWidth,
-            PreviewPanelSize.blockBudget(rect.height(), cellPixels()),
-            new GlyphSize(editor.cellWidth(), editor.cellHeight()), sectionGap(), labelWidth());
+                PreviewPanelSize.blockBudget(rect.height(), cellPixels()),
+                new GlyphSize(editor.cellWidth(), editor.cellHeight()), sectionGap(), labelWidth());
         int largestScale = PreviewFit.largestScale(scaleCount);
         if (activeTab == PreviewTabs.Tab.SCALES) {
             drawScales(left, rowTop, glyph, scaleCount);
@@ -103,13 +104,14 @@ public final class PaintPreview {
     }
 
     /** The shortfall wording that fits {@code maxChars}, trying the most explicit form first. */
-    static String shortfallMessage(int lineNumber, GlyphClass glyphClass, int need, int have, int maxChars) {
+    static String shortfallMessage(int lineNumber, GlyphClass glyphClass, int need, int have,
+            int maxChars) {
         String label = glyphClass.pluralLabel();
         String[] candidates = {
-            "LINE " + lineNumber + " NEEDS " + need + " " + label + ", HAS " + have,
-            "NEED " + need + " " + label + ", HAVE " + have,
-            "NEED " + need + " " + label + ", HAS " + have,
-            "NEED " + need + ", HAVE " + have,
+                "LINE " + lineNumber + " NEEDS " + need + " " + label + ", HAS " + have,
+                "NEED " + need + " " + label + ", HAVE " + have,
+                "NEED " + need + " " + label + ", HAS " + have,
+                "NEED " + need + ", HAVE " + have,
         };
         for (String candidate : candidates) {
             if (TextCells.cellCount(candidate) <= maxChars) {
@@ -119,7 +121,8 @@ public final class PaintPreview {
         return TextCells.prefix(candidates[candidates.length - 1], Math.max(0, maxChars));
     }
 
-    // Glyphs are clipped by skipping the pixel columns outside the content area; no GL scissor is involved.
+    // Glyphs are clipped by skipping the pixel columns outside the content area; no GL scissor is
+    // involved.
     private void drawTicker(CellRect rect, int selected, int left, int top, int largestScale) {
         float delta = Math.min(Gdx.graphics.getDeltaTime(), MAX_FRAME_SECONDS);
         tickerSeconds += delta;
@@ -133,14 +136,14 @@ public final class PaintPreview {
         tickerDrawer.clipRight = clipRight;
         tickerDrawer.featured = selected;
         tickerDrawer.featuredColor = tickerSeconds % (WHITE_SECONDS + FLASH_SECONDS) < WHITE_SECONDS
-            ? Color.WHITE : UiPalette.ACCENT;
+                ? Color.WHITE : UiPalette.ACCENT;
         for (int i = 0; i < TICKER_LINES; i++) {
             int bandTop = top + i * bandHeight;
             TickerLine line = tickerLines[i];
             if (line == null) {
                 String message = tickerMessages[i];
                 painter.text(TextCells.prefix(message, visibleWidth / cellPixels()),
-                    left, bandTop + (bandHeight - cellPixels()) / 2, tickerMessageColors[i]);
+                        left, bandTop + (bandHeight - cellPixels()) / 2, tickerMessageColors[i]);
                 continue;
             }
             line.setVisibleWidth(visibleWidth);
@@ -151,7 +154,8 @@ public final class PaintPreview {
         }
     }
 
-    // The lines restart only when the selection or the set of glyphs with ink changes, not on every pixel edit.
+    // The lines restart only when the selection or the set of glyphs with ink changes, not on every
+    // pixel edit.
     private void refreshTicker(int selected, int maxMessageChars) {
         boolean rebuild = false;
         if (editor.revision() != tickerRevision) {
@@ -185,14 +189,16 @@ public final class PaintPreview {
             }
             TickerWords words = new TickerWords(tickerAvailable, classes[i], random);
             if (!words.hasEnough()) {
-                tickerMessages[i] = shortfallMessage(i + 1, classes[i], words.needCount(), words.haveCount(),
-                    maxMessageChars);
+                tickerMessages[i] =
+                        shortfallMessage(i + 1, classes[i], words.needCount(), words.haveCount(),
+                                maxMessageChars);
                 tickerMessageColors[i] = UiPalette.WARN;
                 continue;
             }
             int gapCells = classes[i] == GlyphClass.ANY ? 0 : 1;
-            tickerLines[i] = new TickerLine(() -> words.nextWord(selected), glyphAdvance, TICKER_PIXELS_PER_SECOND,
-                gapCells);
+            tickerLines[i] = new TickerLine(() -> words.nextWord(selected), glyphAdvance,
+                    TICKER_PIXELS_PER_SECOND,
+                    gapCells);
         }
     }
 
@@ -228,7 +234,8 @@ public final class PaintPreview {
             for (int py = 0; py < cell.getHeight(); py++) {
                 for (int px = 0; px < cell.getWidth(); px++) {
                     if (cell.isLit(px, py)) {
-                        fillWithinClip(color, glyphLeft + px * TICKER_SCALE, top + py * TICKER_SCALE);
+                        fillWithinClip(color, glyphLeft + px * TICKER_SCALE,
+                                top + py * TICKER_SCALE);
                     }
                 }
             }
@@ -246,22 +253,27 @@ public final class PaintPreview {
     private void drawTabs(CellRect rect) {
         int top = PreviewTabs.labelRow(rect) * cellPixels();
         for (PreviewTabs.Tab tab : PreviewTabs.Tab.values()) {
-            painter.text(PreviewTabs.label(rect, tab), PreviewTabs.labelColumn(rect, tab) * cellPixels(), top,
-                tab == activeTab ? UiPalette.ACCENT : UiPalette.DIM);
+            painter.text(PreviewTabs.label(rect, tab),
+                    PreviewTabs.labelColumn(rect, tab) * cellPixels(), top,
+                    tab == activeTab ? UiPalette.ACCENT : UiPalette.DIM);
         }
     }
 
-    // Each block is as tall as the largest kept scale (scale * count == largestScale), so switching tabs never needs a taller panel.
+    // Each block is as tall as the largest kept scale (scale * count == largestScale), so switching
+    // tabs never needs a taller panel.
     private void drawTiles(int left, int top, PixelGlyph glyph, int innerWidth, int largestScale) {
-        int blocks = PreviewFit.tileBlockCount(innerWidth, largestScale, editor.cellWidth(), 2 * sectionGap(),
-            labelWidth());
+        int blocks = PreviewFit.tileBlockCount(innerWidth, largestScale, editor.cellWidth(),
+                2 * sectionGap(),
+                labelWidth());
         int blockLeft = left;
         for (int i = 0; i < blocks; i++) {
-            blockLeft = drawTileBlock(blockLeft, top, glyph, SCALE_LABELS[i], SCALES[i], largestScale / SCALES[i]);
+            blockLeft = drawTileBlock(blockLeft, top, glyph, SCALE_LABELS[i], SCALES[i],
+                    largestScale / SCALES[i]);
         }
     }
 
-    private int drawTileBlock(int left, int top, PixelGlyph glyph, String label, int scale, int count) {
+    private int drawTileBlock(int left, int top, PixelGlyph glyph, String label, int scale,
+            int count) {
         int cellWidth = editor.cellWidth();
         int cellHeight = editor.cellHeight();
         int blockTop = top + cellPixels();
@@ -272,12 +284,14 @@ public final class PaintPreview {
             PixelGrid cell = glyph.pixels();
             for (int row = 0; row < count; row++) {
                 for (int column = 0; column < count; column++) {
-                    painter.pixels(cell, left + column * cellWidth * scale, blockTop + row * cellHeight * scale,
-                        scale, Color.WHITE);
+                    painter.pixels(cell, left + column * cellWidth * scale,
+                            blockTop + row * cellHeight * scale,
+                            scale, Color.WHITE);
                 }
             }
         }
-        return left + Math.max(label.length() * cellPixels(), cellWidth * blockSize) + 2 * sectionGap();
+        return left + Math.max(label.length() * cellPixels(), cellWidth * blockSize)
+                + 2 * sectionGap();
     }
 
     private void drawScales(int left, int top, PixelGlyph glyph, int scaleCount) {

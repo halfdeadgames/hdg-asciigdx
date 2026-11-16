@@ -38,19 +38,21 @@ public final class FontDataParser {
     }
 
     /**
-     * Parses the text of a size file such as {@code 16x16.txt}, which must declare the size its name says.
+     * Parses the text of a size file such as {@code 16x16.txt}, which must declare the size its
+     * name says.
      *
      * @param fileSize the size the file name gives
      * @param text the file contents
      * @return the font
-     * @throws FontDataException if the text is invalid, or its cell line disagrees with the file name
+     * @throws FontDataException if the text is invalid, or its cell line disagrees with the file
+     *     name
      */
     public static FontData parseSizeFile(CellSize fileSize, String text) {
         FontData data = parse(text);
         CellSize declared = new CellSize(data.cellWidth(), data.cellHeight());
         if (!declared.equals(fileSize)) {
             throw new FontDataException(0, fileSize.dataFileName() + " declares cell " + declared
-                + "; the file name must match the cell line");
+                    + "; the file name must match the cell line");
         }
         return data;
     }
@@ -105,8 +107,9 @@ public final class FontDataParser {
         int codePoint = parseCodePoint(line.substring(0, codePointEnd), headerIndex);
         int characterEnd = readCharacter(line, codePointEnd + 1, codePoint, headerIndex);
         if (entries.containsKey(codePoint)) {
-            throw error(headerIndex, CodePoints.label(codePoint) + " is defined twice (first on line "
-                + linesByCodePoint.get(codePoint) + ")");
+            throw error(headerIndex,
+                    CodePoints.label(codePoint) + " is defined twice (first on line "
+                            + linesByCodePoint.get(codePoint) + ")");
         }
         String rest = line.substring(characterEnd).strip();
         GlyphEntry entry;
@@ -116,7 +119,8 @@ public final class FontDataParser {
             entry = new DerivedGlyph(codePoint, parseOp(rest.substring(1).strip(), headerIndex));
             next++;
         } else {
-            throw error(headerIndex, "after the character expected '= <operation>' but found: " + rest);
+            throw error(headerIndex,
+                    "after the character expected '= <operation>' but found: " + rest);
         }
         entries.put(codePoint, entry);
         linesByCodePoint.put(codePoint, headerIndex + 1);
@@ -143,13 +147,15 @@ public final class FontDataParser {
         int actual;
         try {
             actual = token.startsWith("\\") && token.length() > 1
-                ? decodeEscape(token)
-                : token.codePointAt(0);
+                    ? decodeEscape(token)
+                    : token.codePointAt(0);
         } catch (IllegalArgumentException e) {
             throw error(lineIndex, "bad character escape: " + e.getMessage());
         }
         if (actual != codePoint) {
-            throw error(lineIndex, "the character is " + CodePoints.label(actual) + " but the header says " + CodePoints.label(codePoint));
+            throw error(lineIndex,
+                    "the character is " + CodePoints.label(actual) + " but the header says "
+                            + CodePoints.label(codePoint));
         }
         return end;
     }
@@ -167,15 +173,16 @@ public final class FontDataParser {
         for (int row = 1; row <= cellHeight; row++) {
             int rowIndex = headerIndex + row;
             if (rowIndex >= lines.length || lines[rowIndex].isBlank()) {
-                throw error(Math.min(rowIndex, lines.length - 1), CodePoints.label(codePoint) + " needs " + cellHeight
-                    + " rows but has " + (row - 1));
+                throw error(Math.min(rowIndex, lines.length - 1),
+                        CodePoints.label(codePoint) + " needs " + cellHeight
+                                + " rows but has " + (row - 1));
             }
             rows.add(checkedRow(lines[rowIndex], cellWidth, rowIndex));
         }
         next = headerIndex + cellHeight + 1;
         if (next < lines.length && !lines[next].isBlank()) {
             throw error(next, CodePoints.label(codePoint) + " has more than " + cellHeight
-                + " rows (separate glyphs with a blank line)");
+                    + " rows (separate glyphs with a blank line)");
         }
         return new PixelGlyph(codePoint, PixelGrid.ofRows(rows));
     }
@@ -183,12 +190,13 @@ public final class FontDataParser {
     private String checkedRow(String row, int width, int rowIndex) {
         if (row.length() != width) {
             throw error(rowIndex, "row is " + row.length() + " wide but must be " + width
-                + " (the cell width)");
+                    + " (the cell width)");
         }
         for (int column = 0; column < row.length(); column++) {
             char pixel = row.charAt(column);
             if (pixel != '#' && pixel != '.') {
-                throw error(rowIndex, "row has '" + pixel + "' at column " + (column + 1) + "; use '#' and '.'");
+                throw error(rowIndex,
+                        "row has '" + pixel + "' at column " + (column + 1) + "; use '#' and '.'");
             }
         }
         return row;
@@ -206,12 +214,15 @@ public final class FontDataParser {
             throw error(lineIndex, "unknown operation '" + words[0] + "'");
         }
         if (kind == GlyphOp.Kind.OVERLAY) {
-            return new GlyphOp(kind, parseOverlaySources(text.substring(words[0].length()), lineIndex));
+            return new GlyphOp(kind,
+                    parseOverlaySources(text.substring(words[0].length()), lineIndex));
         }
         if (words.length != 2) {
-            throw error(lineIndex, kind.keyword() + " takes one code point, like '" + kind.keyword() + " U+0041'");
+            throw error(lineIndex,
+                    kind.keyword() + " takes one code point, like '" + kind.keyword() + " U+0041'");
         }
-        return new GlyphOp(kind, List.of(new GlyphOp.Source(parseCodePoint(words[1], lineIndex), 0)));
+        return new GlyphOp(kind,
+                List.of(new GlyphOp.Source(parseCodePoint(words[1], lineIndex), 0)));
     }
 
     private List<GlyphOp.Source> parseOverlaySources(String text, int lineIndex) {
@@ -226,11 +237,12 @@ public final class FontDataParser {
         String[] words = part.split("\\s+");
         boolean hasDown = words.length == 5;
         boolean wellFormed = (words.length == 3 || hasDown)
-            && words[1].equals("shift")
-            && (!hasDown || words[3].equals("down"));
+                && words[1].equals("shift")
+                && (!hasDown || words[3].equals("down"));
         if (!wellFormed) {
-            throw error(lineIndex, "overlay parts look like 'U+0041 shift 1' or 'U+0041 shift 1 down 2'"
-                + " but found: '" + part + "'");
+            throw error(lineIndex,
+                    "overlay parts look like 'U+0041 shift 1' or 'U+0041 shift 1 down 2'"
+                            + " but found: '" + part + "'");
         }
         int codePoint = parseCodePoint(words[0], lineIndex);
         int shift = parseWholeNumber("shift", words[2], lineIndex);
@@ -252,7 +264,8 @@ public final class FontDataParser {
             throw error(lineIndex, "expected a code point like U+0041 but found '" + text + "'");
         }
         if (!CodePoints.isUsableAsGlyph(codePoint)) {
-            String shown = Character.isValidCodePoint(codePoint) ? CodePoints.label(codePoint) : text;
+            String shown =
+                    Character.isValidCodePoint(codePoint) ? CodePoints.label(codePoint) : text;
             throw error(lineIndex, shown + " cannot be used as a glyph");
         }
         return codePoint;

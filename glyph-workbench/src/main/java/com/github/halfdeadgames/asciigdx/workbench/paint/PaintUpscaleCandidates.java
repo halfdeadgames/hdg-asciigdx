@@ -16,8 +16,9 @@ import com.github.halfdeadgames.asciigdx.workbench.upscale.UpscaleCandidatePick;
 import java.util.List;
 
 /**
- * The last stage of the upscale mode: choosing one upscaled version of the picked source glyph and applying it
- * to the glyph being painted. While it runs, the grid and the preview show the selected version.
+ * The last stage of the upscale mode: choosing one upscaled version of the picked source glyph and
+ * applying it to the glyph being painted. While it runs, the grid and the preview show the
+ * selected version.
  */
 final class PaintUpscaleCandidates {
 
@@ -25,7 +26,8 @@ final class PaintUpscaleCandidates {
 
     private static final int MOST_NUMBERED_CANDIDATES = 9;
     private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
-        new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
+            new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN),
+            new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
 
     /** What this stage needs from the upscale mode it belongs to. */
     interface Host {
@@ -122,10 +124,11 @@ final class PaintUpscaleCandidates {
             return;
         }
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            DialogContent.of("REPLACE DRAWING",
-                List.of("This glyph already holds a drawing.", "Upscaling replaces it.", "Undo restores it."),
-                REPLACE_BUTTONS),
-            area);
+                DialogContent.of("REPLACE DRAWING",
+                        List.of("This glyph already holds a drawing.", "Upscaling replaces it.",
+                                "Undo restores it."),
+                        REPLACE_BUTTONS),
+                area);
     }
 
     private void handleReplacePrompt() {
@@ -141,15 +144,17 @@ final class PaintUpscaleCandidates {
     private void handleSelectionKeys() {
         for (int number = 1; number <= MOST_NUMBERED_CANDIDATES; number++) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1 + number - 1)
-                || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_1 + number - 1)) {
+                    || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_1 + number - 1)) {
                 messages.nextAction();
                 selectNumber(number);
             }
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(
+                Input.Keys.UP)) {
             move(-1);
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(
+                Input.Keys.DOWN)) {
             move(1);
         }
     }

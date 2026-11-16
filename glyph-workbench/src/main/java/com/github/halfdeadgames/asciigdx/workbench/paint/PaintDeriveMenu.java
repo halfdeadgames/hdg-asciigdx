@@ -15,18 +15,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** The derive operation menu: a dialog with a select list of operations, driven by keys and clicks. */
+/**
+ * The derive operation menu: a dialog with a select list of operations, driven by keys and clicks.
+ */
 final class PaintDeriveMenu {
 
     private static final String MENU_TITLE = "DERIVE";
     private static final int MENU_WIDTH = 26;
     private static final List<Dialog.Button> MENU_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "SELECT", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "SELECT", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final Content SQUARE_CONTENT = contentOf(DeriveFlow.operationsFor(true));
     private static final Content NON_SQUARE_CONTENT = contentOf(DeriveFlow.operationsFor(false));
 
-    /** The dialog lines and select rows for one operation list; the lines are the room the rows are drawn into. */
-    private record Content(List<String> lines, List<SelectList.Row> rows) { }
+    /**
+     * The dialog lines and select rows for one operation list; the lines are the room the rows are
+     * drawn into.
+     */
+    private record Content(List<String> lines, List<SelectList.Row> rows) {
+    }
 
     private final DeriveFlow flow;
     private final MessageStrip messages;
@@ -55,7 +62,8 @@ final class PaintDeriveMenu {
     }
 
     /** Highlights the clicked row; returns whether a click chose an operation. */
-    boolean handleClick(CellRect grid, int cellPixels, int pixelX, int pixelY, boolean leftClicked) {
+    boolean handleClick(CellRect grid, int cellPixels, int pixelX, int pixelY,
+            boolean leftClicked) {
         if (!leftClicked) {
             return false;
         }
@@ -72,17 +80,19 @@ final class PaintDeriveMenu {
     void draw(Painter painter, int columns, int rows, CellRect grid) {
         Content content = content();
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            DialogContent.of(MENU_TITLE, content.lines(), MENU_BUTTONS),
-            grid);
+                DialogContent.of(MENU_TITLE, content.lines(), MENU_BUTTONS),
+                grid);
         Dialog.Layout menu = layout(grid);
         SelectList.draw(painter,
-            SelectList.areaOf(menu.textX(), menu.textY(), Math.min(MENU_WIDTH, menu.textWidth()),
-                content.rows().size()),
-            content.rows(), flow.menuIndex());
+                SelectList.areaOf(menu.textX(), menu.textY(),
+                        Math.min(MENU_WIDTH, menu.textWidth()),
+                        content.rows().size()),
+                content.rows(), flow.menuIndex());
     }
 
     private Content content() {
-        return flow.operations().equals(DeriveFlow.operationsFor(true)) ? SQUARE_CONTENT : NON_SQUARE_CONTENT;
+        return flow.operations().equals(DeriveFlow.operationsFor(true)) ? SQUARE_CONTENT
+                : NON_SQUARE_CONTENT;
     }
 
     private Dialog.Layout layout(CellRect area) {
@@ -94,7 +104,8 @@ final class PaintDeriveMenu {
         for (GlyphOp.Kind kind : operations) {
             rows.add(new SelectList.Row(DeriveFlow.label(kind), true, false, 0));
         }
-        return new Content(Collections.nCopies(operations.size() * SelectList.PITCH - 1, " ".repeat(MENU_WIDTH)),
-            List.copyOf(rows));
+        return new Content(Collections.nCopies(operations.size() * SelectList.PITCH - 1,
+                " ".repeat(MENU_WIDTH)),
+                List.copyOf(rows));
     }
 }

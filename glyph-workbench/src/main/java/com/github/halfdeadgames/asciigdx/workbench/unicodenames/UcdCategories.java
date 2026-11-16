@@ -18,7 +18,9 @@ final class UcdCategories {
         this.codes = codes;
     }
 
-    /** Throws IllegalArgumentException for a bad line or a category code Java has no constant for. */
+    /**
+     * Throws IllegalArgumentException for a bad line or a category code Java has no constant for.
+     */
     static UcdCategories parse(String derivedCategoryText) {
         List<UcdEntries.Entry> entries = UcdEntries.parse(derivedCategoryText);
         entries.sort(Comparator.comparingInt(UcdEntries.Entry::first));
@@ -28,8 +30,9 @@ final class UcdCategories {
         for (int index = 0; index < entries.size(); index++) {
             UcdEntries.Entry entry = entries.get(index);
             if (!GeneralCategories.isKnown(entry.value())) {
-                throw new IllegalArgumentException("unknown General_Category '" + entry.value() + "' at "
-                    + CodePoints.label(entry.first()));
+                throw new IllegalArgumentException(
+                        "unknown General_Category '" + entry.value() + "' at "
+                                + CodePoints.label(entry.first()));
             }
             firsts[index] = entry.first();
             lasts[index] = entry.last();
@@ -44,8 +47,8 @@ final class UcdCategories {
     }
 
     /**
-     * Splits a range into the fewest runs of one category each, in code point order. Throws if any code
-     * point of the range is not listed.
+     * Splits a range into the fewest runs of one category each, in code point order. Throws if any
+     * code point of the range is not listed.
      */
     List<UcdEntries.Entry> runsCovering(int first, int last) {
         List<UcdEntries.Entry> runs = new ArrayList<>();
@@ -53,7 +56,8 @@ final class UcdCategories {
         while (next <= last) {
             int index = CodePointRanges.indexOfRangeContaining(firsts, lasts, next);
             if (index < 0) {
-                throw new IllegalArgumentException("no General_Category listed for " + CodePoints.label(next));
+                throw new IllegalArgumentException(
+                        "no General_Category listed for " + CodePoints.label(next));
             }
             int end = Math.min(last, lasts[index]);
             appendRun(runs, next, end, codes[index]);

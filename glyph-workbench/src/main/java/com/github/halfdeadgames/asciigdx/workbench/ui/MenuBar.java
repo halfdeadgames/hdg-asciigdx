@@ -11,7 +11,10 @@ import java.util.function.Predicate;
  */
 public final class MenuBar<A> {
 
-    /** Passed as the row offset when the pointer is not on a drop-down row (for example on the bar itself). */
+    /**
+     * Passed as the row offset when the pointer is not on a drop-down row (for example on the bar
+     * itself).
+     */
     public static final int NOT_IN_DROP_DOWN = Integer.MIN_VALUE;
 
     private static final int FIRST_TITLE_COLUMN = 1;
@@ -80,7 +83,9 @@ public final class MenuBar<A> {
         return hoveredTitle;
     }
 
-    /** Index of the unavailable item under the pointer in the open menu, or -1. Never selectable. */
+    /**
+     * Index of the unavailable item under the pointer in the open menu, or -1. Never selectable.
+     */
     public int inspectedItem() {
         return inspectedItem;
     }
@@ -147,7 +152,10 @@ public final class MenuBar<A> {
         return longestLabel + LABEL_SHORTCUT_GAP + longestShortcut + DROP_DOWN_PADDING;
     }
 
-    /** Drop-down column: the title column, shifted left to stay inside {@code totalColumns} (never below 0). */
+    /**
+     * Drop-down column: the title column, shifted left to stay inside {@code totalColumns} (never
+     * below 0).
+     */
     public int dropDownColumn(int menu, int totalColumns) {
         return Math.max(0, Math.min(titleColumn(menu), totalColumns - dropDownWidth(menu)));
     }
@@ -173,8 +181,8 @@ public final class MenuBar<A> {
     }
 
     /**
-     * Whether a cell lies on the open drop-down's panel, borders included: the panel is the item rows
-     * plus a border row above and below, and the full width.
+     * Whether a cell lies on the open drop-down's panel, borders included: the panel is the item
+     * rows plus a border row above and below, and the full width.
      *
      * @param rowOffset 0 is the first item row, -1 the top border row
      */
@@ -184,12 +192,12 @@ public final class MenuBar<A> {
         }
         int start = dropDownColumn(openMenu, totalColumns);
         return column >= start && column < start + dropDownWidth(openMenu)
-            && rowOffset >= -1 && rowOffset <= menus.get(openMenu).items().size();
+                && rowOffset >= -1 && rowOffset <= menus.get(openMenu).items().size();
     }
 
     /**
-     * Opens the first menu with this access key (any case) that is not locked. Does nothing when the
-     * key is unknown or every menu using it is locked.
+     * Opens the first menu with this access key (any case) that is not locked. Does nothing when
+     * the key is unknown or every menu using it is locked.
      */
     public void openByAccessKey(char key, Predicate<A> availability) {
         int menu = firstUnlockedMenuWithAccessKey(key, availability);
@@ -199,7 +207,10 @@ public final class MenuBar<A> {
         open(menu, availability);
     }
 
-    /** Whether {@link #openByAccessKey} would open a menu: some menu uses this access key (any case) and is not locked. */
+    /**
+     * Whether {@link #openByAccessKey} would open a menu: some menu uses this access key (any case)
+     * and is not locked.
+     */
     public boolean canOpenByAccessKey(char key, Predicate<A> availability) {
         return firstUnlockedMenuWithAccessKey(key, availability) >= 0;
     }
@@ -207,7 +218,8 @@ public final class MenuBar<A> {
     private int firstUnlockedMenuWithAccessKey(char key, Predicate<A> availability) {
         char wanted = Character.toLowerCase(key);
         for (int i = 0; i < menus.size(); i++) {
-            if (Character.toLowerCase(menus.get(i).accessKey()) == wanted && !isLocked(i, availability)) {
+            if (Character.toLowerCase(menus.get(i).accessKey()) == wanted && !isLocked(i,
+                    availability)) {
                 return i;
             }
         }
@@ -215,14 +227,16 @@ public final class MenuBar<A> {
     }
 
     /**
-     * Brings the state in line with current availability: closes the open menu if it became locked, and
-     * moves a highlight that became unavailable to the first available item. Call before acting on state.
+     * Brings the state in line with current availability: closes the open menu if it became locked,
+     * and moves a highlight that became unavailable to the first available item. Call before acting
+     * on state.
      */
     public void refresh(Predicate<A> availability) {
         if (inspectedTitle >= 0 && !isLocked(inspectedTitle, availability)) {
             inspectedTitle = -1;
         }
-        if (inspectedItem >= 0 && (openMenu < 0 || isItemAvailable(openMenu, inspectedItem, availability))) {
+        if (inspectedItem >= 0 && (openMenu < 0 || isItemAvailable(openMenu, inspectedItem,
+                availability))) {
             inspectedItem = -1;
         }
         if (openMenu < 0) {
@@ -231,7 +245,8 @@ public final class MenuBar<A> {
         int first = firstAvailableItem(openMenu, availability);
         if (first < 0) {
             close();
-        } else if (highlightedItem >= 0 && !isItemAvailable(openMenu, highlightedItem, availability)) {
+        } else if (highlightedItem >= 0 && !isItemAvailable(openMenu, highlightedItem,
+                availability)) {
             highlightedItem = first;
         }
     }
@@ -245,7 +260,10 @@ public final class MenuBar<A> {
         }
     }
 
-    /** Moves the open drop-down left or right, wrapping and skipping locked menus. Does nothing when closed. */
+    /**
+     * Moves the open drop-down left or right, wrapping and skipping locked menus. Does nothing when
+     * closed.
+     */
     public void moveMenu(int direction, Predicate<A> availability) {
         int sign = Integer.signum(direction);
         refresh(availability);
@@ -262,7 +280,10 @@ public final class MenuBar<A> {
         }
     }
 
-    /** Moves the highlight up or down, wrapping and skipping unavailable items. Does nothing when closed. */
+    /**
+     * Moves the highlight up or down, wrapping and skipping unavailable items. Does nothing when
+     * closed.
+     */
     public void moveItem(int direction, Predicate<A> availability) {
         int sign = Integer.signum(direction);
         refresh(availability);
@@ -302,8 +323,8 @@ public final class MenuBar<A> {
     /**
      * Updates hover state for a pointer cell.
      *
-     * @param rowOffset item row inside the open drop-down (0 is the first), or {@link #NOT_IN_DROP_DOWN}
-     *                  when the pointer is on the bar row
+     * @param rowOffset item row inside the open drop-down (0 is the first), or
+     *                  {@link #NOT_IN_DROP_DOWN} when the pointer is on the bar row
      */
     public void hover(int column, int rowOffset, int totalColumns, Predicate<A> availability) {
         refresh(availability);
@@ -345,9 +366,9 @@ public final class MenuBar<A> {
     }
 
     /**
-     * Press-drag-release: the action under the pointer, closing the menu; null when the pointer is off
-     * the items or on an unavailable one. The menu then stays open, unless the {@link #refresh} that
-     * runs first closed it for being locked.
+     * Press-drag-release: the action under the pointer, closing the menu; null when the pointer is
+     * off the items or on an unavailable one. The menu then stays open, unless the {@link #refresh}
+     * that runs first closed it for being locked.
      */
     public A releaseOnItem(int column, int rowOffset, int totalColumns, Predicate<A> availability) {
         refresh(availability);

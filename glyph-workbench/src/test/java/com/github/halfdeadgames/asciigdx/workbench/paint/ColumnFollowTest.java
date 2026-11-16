@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollState;
 import org.junit.jupiter.api.Test;
 
-/** The sheet scrolls glyph columns with a {@link ScrollState} that has 16 "rows" and a window of n of them. */
+/**
+ * The sheet scrolls glyph columns with a {@link ScrollState} that has 16 "rows" and a window of n
+ * of them.
+ */
 class ColumnFollowTest {
 
     private static ScrollState window(int visibleColumns) {

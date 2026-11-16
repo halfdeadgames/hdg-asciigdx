@@ -8,7 +8,9 @@ final class UnicodeVersion {
     private UnicodeVersion() {
     }
 
-    /** Parses "major.minor" (the minor part is optional). Throws IllegalArgumentException otherwise. */
+    /**
+     * Parses "major.minor" (the minor part is optional). Throws IllegalArgumentException otherwise.
+     */
     static int parse(String text) {
         String[] parts = text.strip().split("\\.");
         if (parts.length < 1 || parts.length > 2) {

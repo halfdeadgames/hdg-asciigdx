@@ -12,15 +12,16 @@ import org.junit.jupiter.api.Test;
 class ColumnBarGuideTest {
 
     private static final String ALL_KINDS = """
-        row CAP 1 all
-        column C 7 uppercase,digits
-        bar MID 6 1 lowercase
-        colbar STEM 3 2 uppercase,digits
-        colbar WIDE 0 4 all
-        """;
+            row CAP 1 all
+            column C 7 uppercase,digits
+            bar MID 6 1 lowercase
+            colbar STEM 3 2 uppercase,digits
+            colbar WIDE 0 4 all
+            """;
 
     private static String badLineMessage(String text) {
-        return assertThrows(IllegalArgumentException.class, () -> PaintGuides.parse(text)).getMessage();
+        return assertThrows(IllegalArgumentException.class,
+                () -> PaintGuides.parse(text)).getMessage();
     }
 
     private static PaintGuides.Listed only(PaintGuides guides) {
@@ -52,17 +53,21 @@ class ColumnBarGuideTest {
         PaintGuides guides = PaintGuides.parse(ALL_KINDS);
         assertEquals(ALL_KINDS, guides.toText());
         assertEquals(ALL_KINDS, PaintGuides.parse(guides.toText()).toText());
-        List<PaintGuides.ListedKind> kinds = guides.allGuides().stream().map(PaintGuides.Listed::kind).toList();
-        assertEquals(List.of(PaintGuides.ListedKind.ROW, PaintGuides.ListedKind.COLUMN, PaintGuides.ListedKind.BAR,
-            PaintGuides.ListedKind.COLUMN_BAR, PaintGuides.ListedKind.COLUMN_BAR), kinds);
+        List<PaintGuides.ListedKind> kinds =
+                guides.allGuides().stream().map(PaintGuides.Listed::kind).toList();
+        assertEquals(List.of(PaintGuides.ListedKind.ROW, PaintGuides.ListedKind.COLUMN,
+                PaintGuides.ListedKind.BAR,
+                PaintGuides.ListedKind.COLUMN_BAR, PaintGuides.ListedKind.COLUMN_BAR), kinds);
     }
 
     @Test
     void badColumnBarLinesNameTheLine() {
         assertTrue(badLineMessage("colbar A 1 all\n").startsWith("Line 1: expected 'colbar"));
-        assertTrue(badLineMessage("row A 1 all\ncolbar A x 2 all\n").startsWith("Line 2: bad number 'x'"));
+        assertTrue(badLineMessage("row A 1 all\ncolbar A x 2 all\n").startsWith(
+                "Line 2: bad number 'x'"));
         assertTrue(badLineMessage("colbar A 1 two all\n").startsWith("Line 1: bad number 'two'"));
-        assertTrue(badLineMessage("\ncolbar A 1 0 all\n").startsWith("Line 2: '0' must be at least 1"));
+        assertTrue(badLineMessage("\ncolbar A 1 0 all\n").startsWith(
+                "Line 2: '0' must be at least 1"));
         assertTrue(badLineMessage("colbar A -1 2 all\n").contains("must be at least 0"));
         assertTrue(badLineMessage("stripe A 1 all\n").contains("'colbar'"));
     }
@@ -151,7 +156,8 @@ class ColumnBarGuideTest {
 
     @Test
     void relabelingKeepsThePositionAndGroups() {
-        PaintGuides.Listed relabeled = PaintGuides.parse(ALL_KINDS).withGuideRelabeled(3, "BODY").allGuides().get(3);
+        PaintGuides.Listed relabeled =
+                PaintGuides.parse(ALL_KINDS).withGuideRelabeled(3, "BODY").allGuides().get(3);
         assertEquals("BODY", relabeled.label());
         assertEquals(3, relabeled.position());
         assertEquals(2, relabeled.span());
@@ -162,7 +168,8 @@ class ColumnBarGuideTest {
     void togglingAGroupWorksAndTheLastNameGoesBackToAll() {
         PaintGuides guides = PaintGuides.parse("colbar A 1 2 uppercase\n");
         List<String> defined = List.of("uppercase", "lowercase");
-        assertEquals("uppercase,lowercase", only(guides.withGroupToggled(0, "lowercase", defined)).groups());
+        assertEquals("uppercase,lowercase",
+                only(guides.withGroupToggled(0, "lowercase", defined)).groups());
         assertEquals("all", only(guides.withGroupToggled(0, "uppercase", defined)).groups());
         assertSame(guides, guides.withGroupToggled(1, "uppercase", defined));
     }
@@ -170,16 +177,23 @@ class ColumnBarGuideTest {
     @Test
     void shownKeepsOnlyColumnBarsOfTheGroupThatFitTheCellWidth() {
         PaintGuides guides = PaintGuides.parse(ALL_KINDS);
-        List<String> upper = guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 8, 8).columnBars().stream()
-            .map(PaintGuides.ColumnBarGuide::label).toList();
+        List<String> upper =
+                guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 8, 8).columnBars()
+                        .stream()
+                        .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("STEM", "WIDE"), upper);
-        List<String> lower = guides.forGlyph(FourGroupRules.LOWER, FourGroupRules.RULES, 8, 8).columnBars().stream()
-            .map(PaintGuides.ColumnBarGuide::label).toList();
+        List<String> lower =
+                guides.forGlyph(FourGroupRules.LOWER, FourGroupRules.RULES, 8, 8).columnBars()
+                        .stream()
+                        .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("WIDE"), lower);
-        List<String> narrow = guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 4, 8).columnBars().stream()
-            .map(PaintGuides.ColumnBarGuide::label).toList();
+        List<String> narrow =
+                guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 4, 8).columnBars()
+                        .stream()
+                        .map(PaintGuides.ColumnBarGuide::label).toList();
         assertEquals(List.of("WIDE"), narrow);
-        assertTrue(guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 3, 8).columnBars().isEmpty());
+        assertTrue(guides.forGlyph(FourGroupRules.UPPER, FourGroupRules.RULES, 3, 8).columnBars()
+                .isEmpty());
         assertFalse(guides.isEmpty());
     }
 }

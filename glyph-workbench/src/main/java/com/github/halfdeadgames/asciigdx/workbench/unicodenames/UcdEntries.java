@@ -15,7 +15,9 @@ final class UcdEntries {
     private UcdEntries() {
     }
 
-    /** Returns the entries in file order. Throws IllegalArgumentException naming the first bad line. */
+    /**
+     * Returns the entries in file order. Throws IllegalArgumentException naming the first bad line.
+     */
     static List<Entry> parse(String text) {
         List<Entry> entries = new ArrayList<>();
         String[] lines = text.split("\\R", -1);

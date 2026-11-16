@@ -3,7 +3,8 @@ package com.github.halfdeadgames.asciigdx.workbench.rules;
 import java.util.BitSet;
 
 /**
- * The settings of a rule's check. Only the setting its check uses is filled in; the others stay empty or 0.
+ * The settings of a rule's check. Only the setting its check uses is filled in; the others stay
+ * empty or 0.
  *
  * @param rows the row numbers a noInkRows check watches
  * @param columns the column numbers a noInkColumns check watches

@@ -13,7 +13,8 @@ public final class CursorNavigator {
      * @param blank one flag per cell, {@code columns * rows} long
      * @param dx horizontal direction, -1, 0, or 1
      * @param dy vertical direction, -1, 0, or 1
-     * @return the next non-blank cell in that direction, or {@code index} if the whole line is blank
+     * @return the next non-blank cell in that direction, or {@code index} if the whole line is
+     *     blank
      */
     public static int move(boolean[] blank, int columns, int rows, int index, int dx, int dy) {
         int column = index % columns;

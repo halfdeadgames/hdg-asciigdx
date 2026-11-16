@@ -84,7 +84,9 @@ public final class ScrollState {
         return thumbSize(trackCells, totalRows, visibleRows);
     }
 
-    /** First thumb cell in the track; the thumb touches the track end exactly at the last offset. */
+    /**
+     * First thumb cell in the track; the thumb touches the track end exactly at the last offset.
+     */
     public int thumbStart(int trackCells) {
         return thumbStart(trackCells, totalRows, visibleRows, offset);
     }

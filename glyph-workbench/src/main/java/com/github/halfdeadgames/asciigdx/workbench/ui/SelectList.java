@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * Rows on the cell grid, two cells apart. The selected row gets a full-width highlight bar and a
- * "►"; headings use the title color and dimmed rows are grayed. Selection itself is kept by the caller.
+ * "►"; headings use the title color and dimmed rows are grayed. Selection itself is kept by the
+ * caller.
  */
 public final class SelectList {
 
@@ -19,7 +20,10 @@ public final class SelectList {
     private SelectList() {
     }
 
-    /** Row index under a cell row, for a list starting at {@code topRow}; -1 outside. Both cells of a row count. */
+    /**
+     * Row index under a cell row, for a list starting at {@code topRow}; -1 outside. Both cells of
+     * a row count.
+     */
     public static int rowAt(int cellRow, int topRow, int rowCount) {
         int offset = cellRow - topRow;
         if (offset < 0 || offset >= rowCount * PITCH) {
@@ -49,11 +53,13 @@ public final class SelectList {
             int y = (topRow + i * PITCH) * cellPixels;
             int rowX = (x + row.indent() * INDENT_CELLS) * cellPixels;
             if (i == selectedRow) {
-                painter.fill(UiPalette.KEYBG, x * cellPixels, y, widthCells * cellPixels, cellPixels);
+                painter.fill(UiPalette.KEYBG, x * cellPixels, y, widthCells * cellPixels,
+                        cellPixels);
                 painter.text("► " + row.text(), rowX, y, UiPalette.ACCENT);
                 continue;
             }
-            Color color = row.dimmed() ? UiPalette.DIM : row.selectable() ? UiPalette.TEXT : UiPalette.TITLE;
+            Color color = row.dimmed() ? UiPalette.DIM
+                    : row.selectable() ? UiPalette.TEXT : UiPalette.TITLE;
             painter.text(row.selectable() ? "  " + row.text() : row.text(), rowX, y, color);
         }
     }

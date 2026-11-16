@@ -11,12 +11,13 @@ import org.junit.jupiter.api.Test;
 
 class GuideListModelTest {
 
-    private static final List<String> DEFINED = List.of("uppercase", "lowercase", "digits", "punctuation");
+    private static final List<String> DEFINED =
+            List.of("uppercase", "lowercase", "digits", "punctuation");
     private static final String FILE = """
-        row CAP 1 all
-        column C 7 uppercase,digits
-        bar MID 6 1 lowercase
-        """;
+            row CAP 1 all
+            column C 7 uppercase,digits
+            bar MID 6 1 lowercase
+            """;
 
     private static final int CELL_WIDTH = 8;
     private static final int CELL_HEIGHT = 8;

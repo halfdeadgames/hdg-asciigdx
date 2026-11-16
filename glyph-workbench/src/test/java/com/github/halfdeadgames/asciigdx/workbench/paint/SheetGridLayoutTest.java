@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 class SheetGridLayoutTest {
 
     // Panel at (10, 20), 24 px slots, 1 px gaps, 16 x 39 slots: slot 0 spans x 11..34, y 21..44.
-    private final SheetGridLayout layout = new SheetGridLayout(10, 20, new GlyphSize(24, 24), 1, 16, 16, 39);
+    private final SheetGridLayout layout =
+            new SheetGridLayout(10, 20, new GlyphSize(24, 24), 1, 16, 16, 39);
 
     @Test
     void computesPanelSize() {

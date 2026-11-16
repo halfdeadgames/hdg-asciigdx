@@ -15,7 +15,8 @@ public final class FontHeader {
     /**
      * Reads the first line that is not blank or a comment.
      *
-     * @return the declared cell size, or null when that line is missing or is not a valid {@code cell WxH} line
+     * @return the declared cell size, or null when that line is missing or is not a valid
+     *     {@code cell WxH} line
      * @throws IOException if the file cannot be read
      */
     public static CellSize read(Path file) throws IOException {

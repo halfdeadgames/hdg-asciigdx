@@ -12,16 +12,20 @@ import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 
-/** The "new glyph" dialog: a typed hex code to add or go to, with its input handling and drawing. */
+/**
+ * The "new glyph" dialog: a typed hex code to add or go to, with its input handling and drawing.
+ */
 public final class NewGlyphDialog {
 
     private static final String TITLE = "NEW GLYPH";
     // The N that opens the prompt can also arrive as a typed character a frame later.
     private static final int KEY_SWALLOW_FRAMES = 2;
     private static final List<Dialog.Button> BUTTONS = List.of(
-        new Dialog.Button("ENTER", "ADD", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "ADD", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> GO_TO_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "GO TO", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final NewGlyphPrompt prompt = new NewGlyphPrompt();
     private final KeyRepeat repeatBackspace = new KeyRepeat();
@@ -66,8 +70,8 @@ public final class NewGlyphDialog {
         }
     }
 
-    // Typed characters arrive through keyTyped. Returning right after Enter or Esc keeps that key from also
-    // acting on the screen beneath in the same frame.
+    // Typed characters arrive through keyTyped. Returning right after Enter or Esc keeps that key
+    // from also acting on the screen beneath in the same frame.
     public void handle(float delta) {
         keySwallowFrames = Math.max(0, keySwallowFrames - 1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -83,10 +87,10 @@ public final class NewGlyphDialog {
 
     public void draw(Painter painter, int columns, int rows, CellRect area) {
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            new DialogContent(TITLE, prompt.lines(slotExists),
-                prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,
-                0, NewGlyphPrompt.LINE_CELLS),
-            area);
+                new DialogContent(TITLE, prompt.lines(slotExists),
+                        prompt.goesToExisting(slotExists) ? GO_TO_BUTTONS : BUTTONS,
+                        0, NewGlyphPrompt.LINE_CELLS),
+                area);
     }
 
     private void addIfValid() {

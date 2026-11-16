@@ -11,11 +11,11 @@ class GuideResizeTest {
 
     private static final int CELL = 8;
     private static final String TEXT = """
-        row CAP 1 all
-        column C 7 all
-        bar BAR 6 1 all
-        colbar STEM 7 2 all
-        """;
+            row CAP 1 all
+            column C 7 all
+            bar BAR 6 1 all
+            colbar STEM 7 2 all
+            """;
 
     private static final int ROW_INDEX = 0;
     private static final int COLUMN_INDEX = 1;
@@ -31,11 +31,12 @@ class GuideResizeTest {
     @Test
     void barGrowsAndShrinksKeepingItsFirstRow() {
         PaintGuides guides = PaintGuides.parse(TEXT);
-        PaintGuides.Listed grown = guides.withGuideResized(BAR_INDEX, 1, CELL, CELL).allGuides().get(BAR_INDEX);
+        PaintGuides.Listed grown =
+                guides.withGuideResized(BAR_INDEX, 1, CELL, CELL).allGuides().get(BAR_INDEX);
         assertEquals(6, grown.position());
         assertEquals(2, grown.span());
         PaintGuides.Listed shrunk = guides.withGuideResized(BAR_INDEX, 1, CELL, CELL)
-            .withGuideResized(BAR_INDEX, -1, CELL, CELL).allGuides().get(BAR_INDEX);
+                .withGuideResized(BAR_INDEX, -1, CELL, CELL).allGuides().get(BAR_INDEX);
         assertEquals(1, shrunk.span());
     }
 
@@ -43,10 +44,11 @@ class GuideResizeTest {
     void columnBarGrowsAndShrinksKeepingItsFirstColumn() {
         PaintGuides guides = PaintGuides.parse(TEXT);
         PaintGuides.Listed grown = guides.withGuideResized(COLUMN_BAR_INDEX, -1, CELL, CELL)
-            .allGuides().get(COLUMN_BAR_INDEX);
+                .allGuides().get(COLUMN_BAR_INDEX);
         assertEquals(7, grown.position());
         assertEquals(1, grown.span());
-        PaintGuides wide = PaintGuides.parse("colbar W 2 2 all\n").withGuideResized(0, 1, CELL, CELL);
+        PaintGuides wide =
+                PaintGuides.parse("colbar W 2 2 all\n").withGuideResized(0, 1, CELL, CELL);
         assertEquals(2, wide.allGuides().get(0).position());
         assertEquals(3, wide.allGuides().get(0).span());
     }
@@ -70,7 +72,8 @@ class GuideResizeTest {
     void columnBarStopsAtTheCellEdge() {
         PaintGuides guides = PaintGuides.parse("colbar W 6 2 all\n");
         assertSame(guides, guides.withGuideResized(0, 1, CELL, CELL));
-        PaintGuides inner = PaintGuides.parse("colbar W 5 2 all\n").withGuideResized(0, 1, CELL, CELL);
+        PaintGuides inner =
+                PaintGuides.parse("colbar W 5 2 all\n").withGuideResized(0, 1, CELL, CELL);
         assertEquals(3, inner.allGuides().get(0).span());
         assertSame(inner, inner.withGuideResized(0, 1, CELL, CELL));
     }

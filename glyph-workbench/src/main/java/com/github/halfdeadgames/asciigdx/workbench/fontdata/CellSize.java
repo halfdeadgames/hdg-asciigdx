@@ -18,7 +18,8 @@ public record CellSize(int width, int height) {
     /** Rejects sizes with a side below 1. */
     public CellSize {
         if (width < 1 || height < 1) {
-            throw new IllegalArgumentException("Cell size must be at least 1x1, got " + width + "x" + height);
+            throw new IllegalArgumentException(
+                    "Cell size must be at least 1x1, got " + width + "x" + height);
         }
     }
 
@@ -31,11 +32,13 @@ public record CellSize(int width, int height) {
      */
     public static CellSize parse(String text) {
         if (text == null) {
-            throw new IllegalArgumentException("Size is missing, expected width x height, like 16x16");
+            throw new IllegalArgumentException(
+                    "Size is missing, expected width x height, like 16x16");
         }
         Matcher matcher = TEXT_FORM.matcher(text);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Size \"" + text + "\" must be width x height, like 16x16");
+            throw new IllegalArgumentException(
+                    "Size \"" + text + "\" must be width x height, like 16x16");
         }
         return new CellSize(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
     }
@@ -62,8 +65,8 @@ public record CellSize(int width, int height) {
      * Reads the size out of a font data file name such as {@code 16x16.txt}.
      *
      * @param fileName a file name without folders
-     * @return the size, or null when the name is not a size data file: sidecars like {@code 16x16.guides.txt} and
-     *         height-only names like {@code 16.txt} are ignored.
+     * @return the size, or null when the name is not a size data file: sidecars like
+     *         {@code 16x16.guides.txt} and height-only names like {@code 16.txt} are ignored.
      */
     public static CellSize ofDataFileName(String fileName) {
         Matcher matcher = DATA_FILE.matcher(fileName);

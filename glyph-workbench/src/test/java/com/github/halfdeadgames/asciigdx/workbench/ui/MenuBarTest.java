@@ -24,12 +24,12 @@ class MenuBarTest {
     /** FILE at column 1 (new, open, save), EDIT at 7 (undo, redo), VIEW at 13 (zoom, grid). */
     private static MenuBar<String> bar() {
         return new MenuBar<>(List.of(
-            new MenuBar.Menu<>("FILE", 'F', List.of(
-                new MenuBar.Item<>("NEW", "CTRL+N", "new"),
-                new MenuBar.Item<>("OPEN", "CTRL+O", "open"),
-                new MenuBar.Item<>("SAVE", "", "save"))),
-            new MenuBar.Menu<>("EDIT", 'E', List.of(item("undo"), item("redo"))),
-            new MenuBar.Menu<>("VIEW", 'V', List.of(item("zoom"), item("grid")))));
+                new MenuBar.Menu<>("FILE", 'F', List.of(
+                        new MenuBar.Item<>("NEW", "CTRL+N", "new"),
+                        new MenuBar.Item<>("OPEN", "CTRL+O", "open"),
+                        new MenuBar.Item<>("SAVE", "", "save"))),
+                new MenuBar.Menu<>("EDIT", 'E', List.of(item("undo"), item("redo"))),
+                new MenuBar.Menu<>("VIEW", 'V', List.of(item("zoom"), item("grid")))));
     }
 
     private static Predicate<String> without(String... disabled) {
@@ -48,7 +48,8 @@ class MenuBarTest {
 
     @Test
     void titleHitTestingCoversTheLitFillOneCellEachSide() {
-        // The lit fill spans titleColumn-1 through titleColumn+length, so a click on the fill counts.
+        // The lit fill spans titleColumn-1 through titleColumn+length, so a click on the fill
+        // counts.
         MenuBar<String> bar = bar();
         assertEquals(0, bar.titleAt(0));
         assertEquals(0, bar.titleAt(1));
@@ -411,8 +412,8 @@ class MenuBarTest {
     @Test
     void menuWithoutItemsIsLocked() {
         MenuBar<String> bar = new MenuBar<>(List.of(
-            new MenuBar.Menu<>("NONE", 'n', List.of()),
-            new MenuBar.Menu<>("FILE", 'f', List.of(item("a")))));
+                new MenuBar.Menu<>("NONE", 'n', List.of()),
+                new MenuBar.Menu<>("FILE", 'f', List.of(item("a")))));
         assertTrue(bar.isLocked(0, ALL));
         assertFalse(bar.canOpenByAccessKey('n', ALL));
         bar.openByAccessKey('n', ALL);
@@ -428,8 +429,8 @@ class MenuBarTest {
     @Test
     void duplicateAccessKeyFallsThroughALockedMenu() {
         MenuBar<String> bar = new MenuBar<>(List.of(
-            new MenuBar.Menu<>("FIRST", 'x', List.of(item("a"))),
-            new MenuBar.Menu<>("SECOND", 'X', List.of(item("b")))));
+                new MenuBar.Menu<>("FIRST", 'x', List.of(item("a"))),
+                new MenuBar.Menu<>("SECOND", 'X', List.of(item("b")))));
         assertTrue(bar.canOpenByAccessKey('x', without("a")));
         bar.openByAccessKey('x', without("a"));
         assertEquals(1, bar.openMenu());

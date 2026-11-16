@@ -14,14 +14,18 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The "upscale from" dialog: source fonts grouped by folder, with its input handling and drawing. */
+/**
+ * The "upscale from" dialog: source fonts grouped by folder, with its input handling and drawing.
+ */
 public final class UpscaleSourceDialog {
 
     private static final String TITLE = "UPSCALE FROM";
     private static final List<Dialog.Button> CHOOSE_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> CLOSE_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CLOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "CLOSE", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final UpscaleSourceList sources = new UpscaleSourceList();
     private final GroupedPickListPointer pointer = new GroupedPickListPointer();
@@ -59,8 +63,8 @@ public final class UpscaleSourceDialog {
     }
 
     /**
-     * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also act on
-     * what lies beneath in the same frame.
+     * Handles this frame's keys and mouse. Enter and Esc return right away so the key does not also
+     * act on what lies beneath in the same frame.
      *
      * @param wheelTicks wheel notches this frame
      * @param pixelX pointer position in pixels from the left
@@ -68,7 +72,8 @@ public final class UpscaleSourceDialog {
      * @param cellPixels the cell size in pixels
      * @param area the cell rectangle the dialog is centered in
      */
-    public void handleInput(int wheelTicks, boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
+    public void handleInput(int wheelTicks, boolean clicked, int pixelX, int pixelY, int cellPixels,
+            CellRect area) {
         if (!isOpen() || handleKeys()) {
             return;
         }
@@ -79,8 +84,9 @@ public final class UpscaleSourceDialog {
         }
         sources.list().wheel(wheelTicks);
         int listTop = layout.textY() + UpscaleSourceList.LINES_ABOVE_LIST;
-        ListHit hit = ListHit.of(layout, pixelX, pixelY, cellPixels, listTop, sources.list().shownRows(),
-            sources.list().window().offset(), sources.list().scrolls());
+        ListHit hit =
+                ListHit.of(layout, pixelX, pixelY, cellPixels, listTop, sources.list().shownRows(),
+                        sources.list().window().offset(), sources.list().scrolls());
         applyClick(pointer.handle(sources.list(), hit, pixelX, pixelY, clicked, listTop));
     }
 
@@ -92,7 +98,8 @@ public final class UpscaleSourceDialog {
             return;
         }
         int listTop = layout.textY() + UpscaleSourceList.LINES_ABOVE_LIST;
-        GroupedPickListView.draw(painter, sources.list(), layout.textX(), listTop, layout.textWidth());
+        GroupedPickListView.draw(painter, sources.list(), layout.textX(), listTop,
+                layout.textWidth());
     }
 
     /** @return whether Esc or Enter consumed the frame */
@@ -130,7 +137,8 @@ public final class UpscaleSourceDialog {
         }
     }
 
-    private void closeOnOutsideClick(Dialog.Layout layout, boolean clicked, int pixelX, int pixelY, int cellPixels) {
+    private void closeOnOutsideClick(Dialog.Layout layout, boolean clicked, int pixelX, int pixelY,
+            int cellPixels) {
         if (clicked && !layout.containsPixel(pixelX, pixelY, cellPixels)) {
             close();
         }
@@ -142,6 +150,7 @@ public final class UpscaleSourceDialog {
     }
 
     private DialogContent content() {
-        return DialogContent.of(TITLE, sources.lines(), sources.hasChoices() ? CHOOSE_BUTTONS : CLOSE_BUTTONS);
+        return DialogContent.of(TITLE, sources.lines(),
+                sources.hasChoices() ? CHOOSE_BUTTONS : CLOSE_BUTTONS);
     }
 }

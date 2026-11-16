@@ -4,9 +4,9 @@ import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
 /**
- * Names, General_Category types, and blocks of code points, the same on every JDK. The JDK answers first
- * for names and types; the bundled table fills in what the JDK does not know. Blocks always come from the
- * table, so the sheet grouping does not depend on the JDK.
+ * Names, General_Category types, and blocks of code points, the same on every JDK. The JDK answers
+ * first for names and types; the bundled table fills in what the JDK does not know. Blocks always
+ * come from the table, so the sheet grouping does not depend on the JDK.
  */
 public final class UnicodeFacts {
 
@@ -14,7 +14,8 @@ public final class UnicodeFacts {
     private final IntFunction<String> jdkNames;
     private final UnicodeNameTable table;
 
-    private UnicodeFacts(IntUnaryOperator jdkTypes, IntFunction<String> jdkNames, UnicodeNameTable table) {
+    private UnicodeFacts(IntUnaryOperator jdkTypes, IntFunction<String> jdkNames,
+            UnicodeNameTable table) {
         this.jdkTypes = jdkTypes;
         this.jdkNames = jdkNames;
         this.table = table;
@@ -22,8 +23,9 @@ public final class UnicodeFacts {
 
     /** Loads the bundled table on first use only. */
     private static final class Bundled {
-        static final UnicodeFacts INSTANCE = new UnicodeFacts(Character::getType, Character::getName,
-            UnicodeNameTable.loadBundled());
+        static final UnicodeFacts INSTANCE =
+                new UnicodeFacts(Character::getType, Character::getName,
+                        UnicodeNameTable.loadBundled());
     }
 
     public static UnicodeFacts bundled() {
@@ -31,15 +33,15 @@ public final class UnicodeFacts {
     }
 
     /**
-     * Builds facts from table text and stand-ins for the JDK, so a caller can describe a JDK that is
-     * older than the table.
+     * Builds facts from table text and stand-ins for the JDK, so a caller can describe a JDK that
+     * is older than the table.
      *
      * @param jdkTypes gives a {@link Character} type constant
      * @param jdkNames gives a name, or null
      * @throws IllegalArgumentException if the table text is malformed
      */
     public static UnicodeFacts fromTableText(String tableText, IntUnaryOperator jdkTypes,
-                                             IntFunction<String> jdkNames) {
+            IntFunction<String> jdkNames) {
         return new UnicodeFacts(jdkTypes, jdkNames, UnicodeNameTable.parse(tableText));
     }
 
@@ -49,7 +51,10 @@ public final class UnicodeFacts {
         return name != null ? name : table.nameOf(codePoint);
     }
 
-    /** Returns a {@link Character} type constant: the JDK's if it knows the code point, else the table's. */
+    /**
+     * Returns a {@link Character} type constant: the JDK's if it knows the code point, else the
+     * table's.
+     */
     public byte type(int codePoint) {
         int jdkType = jdkTypes.applyAsInt(codePoint);
         if (jdkType != Character.UNASSIGNED) {

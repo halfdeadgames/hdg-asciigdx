@@ -10,11 +10,13 @@ public final class Keys {
     }
 
     public static boolean enterJustPressed() {
-        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER);
+        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(
+                Input.Keys.NUMPAD_ENTER);
     }
 
     public static boolean controlDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+        return Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(
+                Input.Keys.CONTROL_RIGHT);
     }
 
     /** Runs {@code onBackspace} once for every backspace the held key produces this frame. */

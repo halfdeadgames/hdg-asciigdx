@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.function.IntPredicate;
 
 /**
- * Upscales one glyph by a whole factor per axis. The entire cell is scaled. The smoothing methods exist
- * only at factor 2 on both axes.
+ * Upscales one glyph by a whole factor per axis. The entire cell is scaled. The smoothing methods
+ * exist only at factor 2 on both axes.
  */
 final class Upscaler {
 
@@ -40,15 +40,18 @@ final class Upscaler {
     }
 
     /**
-     * Returns the entire target cell: the source cell scaled by a whole factor across and another down.
+     * Returns the entire target cell: the source cell scaled by a whole factor across and another
+     * down.
      */
     static PixelGrid upscale(PixelGlyph glyph, int factorX, int factorY, Method method) {
         if (factorX < 1 || factorY < 1) {
-            throw new IllegalArgumentException("Factors must be at least 1, but they are " + factorX + " and " + factorY);
+            throw new IllegalArgumentException(
+                    "Factors must be at least 1, but they are " + factorX + " and " + factorY);
         }
         if (method != Method.NEAREST && (factorX != 2 || factorY != 2)) {
-            throw new IllegalArgumentException(method + " needs factor 2 on both axes, but the factors are "
-                + factorX + " and " + factorY);
+            throw new IllegalArgumentException(
+                    method + " needs factor 2 on both axes, but the factors are "
+                            + factorX + " and " + factorY);
         }
         PixelGrid pixels = glyph.pixels();
         int width = pixels.getWidth();
@@ -63,29 +66,31 @@ final class Upscaler {
         return toGrid(scaled, width * factorX, height * factorY);
     }
 
-    private static int[] scale(int[] packed, int width, int height, int factorX, int factorY, Method method) {
+    private static int[] scale(int[] packed, int width, int height, int factorX, int factorY,
+            Method method) {
         switch (method) {
             case SCALE2X:
                 return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
-                    PixelScaler.Scale2xMode.FULL, pixel -> pixel == OFF);
+                        PixelScaler.Scale2xMode.FULL, pixel -> pixel == OFF);
             case FILL:
                 return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
-                    PixelScaler.Scale2xMode.FILL_ONLY, pixel -> pixel == OFF);
+                        PixelScaler.Scale2xMode.FILL_ONLY, pixel -> pixel == OFF);
             case TRIM:
                 return PixelScaler.scale2x(packed, width, height, width, height, NO_LOCKED_SLOTS,
-                    PixelScaler.Scale2xMode.TRIM_ONLY, pixel -> pixel == OFF);
+                        PixelScaler.Scale2xMode.TRIM_ONLY, pixel -> pixel == OFF);
             case MMPX:
                 return PixelScaler.mmpx(packed, width, height, width, height, NO_LOCKED_SLOTS,
-                    PixelScaler::lumaRgba8888);
+                        PixelScaler::lumaRgba8888);
             case LIGHT:
                 return PixelScaler.light(packed, width, height, width, height, NO_LOCKED_SLOTS,
-                    pixel -> pixel == OFF);
+                        pixel -> pixel == OFF);
             default:
                 return repeatPixels(packed, width, height, factorX, factorY);
         }
     }
 
-    private static int[] repeatPixels(int[] packed, int width, int height, int factorX, int factorY) {
+    private static int[] repeatPixels(int[] packed, int width, int height, int factorX,
+            int factorY) {
         int targetWidth = width * factorX;
         int[] repeated = new int[targetWidth * height * factorY];
         for (int y = 0; y < height * factorY; y++) {

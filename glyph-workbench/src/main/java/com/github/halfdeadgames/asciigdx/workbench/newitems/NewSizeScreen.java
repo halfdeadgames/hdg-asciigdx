@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-/** The start screen's "new size" flow: an empty page that hosts the New size dialog for one font folder. */
+/**
+ * The start screen's "new size" flow: an empty page that hosts the New size dialog for one font
+ * folder.
+ */
 public final class NewSizeScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewSize";
@@ -35,10 +38,11 @@ public final class NewSizeScreen implements WorkbenchScreen {
      * @param onChosen called with the chosen size after the dialog has closed
      * @param onListFailed called with the reason when the existing sizes cannot be read
      */
-    public NewSizeScreen(Path folder, Runnable onBack, Consumer<CellSize> onChosen, Consumer<String> onListFailed) {
+    public NewSizeScreen(Path folder, Runnable onBack, Consumer<CellSize> onChosen,
+            Consumer<String> onListFailed) {
         this.folder = folder;
         this.page = new NewItemPage(List.of("GLYPH WORKBENCH",
-            folder.getFileName().toString().toUpperCase(Locale.ROOT), "NEW SIZE"));
+                folder.getFileName().toString().toUpperCase(Locale.ROOT), "NEW SIZE"));
         this.onBack = onBack;
         this.onListFailed = onListFailed;
         this.dialog = new NewSizeDialog(onChosen, onBack);

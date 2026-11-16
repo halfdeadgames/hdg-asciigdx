@@ -22,8 +22,9 @@ final class GridStrokePointerTarget implements PointerTarget {
     private final FontEditor editor;
     private final StrokeContext start;
 
-    GridStrokePointerTarget(PaintGridView grid, PaintStroke stroke, DeriveFlow flow, MessageStrip messages,
-                            FontEditor editor, StrokeContext start) {
+    GridStrokePointerTarget(PaintGridView grid, PaintStroke stroke, DeriveFlow flow,
+            MessageStrip messages,
+            FontEditor editor, StrokeContext start) {
         this.grid = grid;
         this.stroke = stroke;
         this.flow = flow;

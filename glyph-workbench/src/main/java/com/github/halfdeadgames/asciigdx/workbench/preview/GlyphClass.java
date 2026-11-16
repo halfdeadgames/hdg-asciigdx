@@ -26,7 +26,10 @@ enum GlyphClass {
         return pluralLabel;
     }
 
-    /** Returns the class of a visible code point, or null for whitespace, control, and invalid code points. */
+    /**
+     * Returns the class of a visible code point, or null for whitespace, control, and invalid code
+     * points.
+     */
     static GlyphClass of(int codePoint) {
         return of(codePoint, UnicodeFacts.bundled());
     }
@@ -47,8 +50,10 @@ enum GlyphClass {
             return BOX_AND_BLOCK;
         }
         return switch (type) {
-            case Character.DECIMAL_DIGIT_NUMBER, Character.LETTER_NUMBER, Character.OTHER_NUMBER -> DIGIT;
-            case Character.CONNECTOR_PUNCTUATION, Character.DASH_PUNCTUATION, Character.START_PUNCTUATION,
+            case Character.DECIMAL_DIGIT_NUMBER, Character.LETTER_NUMBER, Character.OTHER_NUMBER ->
+                    DIGIT;
+            case Character.CONNECTOR_PUNCTUATION, Character.DASH_PUNCTUATION,
+                 Character.START_PUNCTUATION,
                  Character.END_PUNCTUATION, Character.INITIAL_QUOTE_PUNCTUATION,
                  Character.FINAL_QUOTE_PUNCTUATION, Character.OTHER_PUNCTUATION -> PUNCTUATION;
             default -> SYMBOL;
@@ -62,7 +67,7 @@ enum GlyphClass {
 
     private static boolean isVisible(int codePoint, int type) {
         return !Character.isWhitespace(codePoint)
-            && !CategoryTypes.isSeparator(type)
-            && !Character.isISOControl(codePoint);
+                && !CategoryTypes.isSeparator(type)
+                && !Character.isISOControl(codePoint);
     }
 }

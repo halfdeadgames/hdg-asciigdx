@@ -79,11 +79,13 @@ class CellSizeTest {
         assertNull(CellSize.ofCellLine("16x8"));
         assertThrows(IllegalArgumentException.class, () -> CellSize.ofCellLine("cell 0x8"));
         assertEquals(new CellSize(8, 16), CellSize.ofDataFileName("8x16.txt"));
-        assertEquals(new CellSize(16, 16), CellSize.ofDataFileName(new CellSize(16, 16).dataFileName()));
+        assertEquals(new CellSize(16, 16),
+                CellSize.ofDataFileName(new CellSize(16, 16).dataFileName()));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"16.txt", "8x16.guides.txt", "8x16.review.txt", "8x16.rules.json", "8x16.txt.tmp",
+    @ValueSource(strings = {"16.txt", "8x16.guides.txt", "8x16.review.txt", "8x16.rules.json",
+            "8x16.txt.tmp",
             "0x8.txt", "notes.md", "8x16", ".txt"})
     void otherFileNamesAreNotDataFiles(String fileName) {
         assertNull(CellSize.ofDataFileName(fileName));

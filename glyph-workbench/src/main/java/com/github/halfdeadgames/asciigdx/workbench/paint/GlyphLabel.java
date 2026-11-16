@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.workbench.paint;
 
 import com.github.halfdeadgames.asciigdx.workbench.GlyphName;
 
-/** Text formatting of a code point for messages and titles: {@code U+0041 LATIN CAPITAL LETTER A}. */
+/**
+ * Text formatting of a code point for messages and titles: {@code U+0041 LATIN CAPITAL LETTER A}.
+ */
 final class GlyphLabel {
 
     private static final int MIN_HEX_DIGITS = 4;

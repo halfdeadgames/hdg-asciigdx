@@ -18,19 +18,22 @@ final class HexCodePoints {
         return Character.isValidCodePoint(value) ? value : INVALID;
     }
 
-    /** Returns {first, last} for "HEX" or "HEX..HEX", or null if the text is not a valid ascending range. */
+    /**
+     * Returns {first, last} for "HEX" or "HEX..HEX", or null if the text is not a valid ascending
+     * range.
+     */
     static int[] readRange(String text) {
         int separator = text.indexOf(RANGE_SEPARATOR);
         if (separator < 0) {
             int single = read(text);
-            return single == INVALID ? null : new int[] {single, single};
+            return single == INVALID ? null : new int[]{single, single};
         }
         int first = read(text.substring(0, separator));
         int last = read(text.substring(separator + RANGE_SEPARATOR.length()));
         if (first == INVALID || last == INVALID || first > last) {
             return null;
         }
-        return new int[] {first, last};
+        return new int[]{first, last};
     }
 
     static boolean isRange(String text) {

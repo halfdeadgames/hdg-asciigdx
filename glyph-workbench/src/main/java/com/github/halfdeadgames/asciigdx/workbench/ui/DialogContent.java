@@ -3,7 +3,8 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
 import java.util.List;
 
 /** What a dialog says: title, text lines, buttons, and an optional text-field line. */
-public record DialogContent(String title, List<String> lines, List<Dialog.Button> buttons, int inputLine, int inputCells) {
+public record DialogContent(String title, List<String> lines, List<Dialog.Button> buttons,
+                            int inputLine, int inputCells) {
 
     private static final int NO_INPUT_LINE = -1;
 

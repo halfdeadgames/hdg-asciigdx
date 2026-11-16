@@ -6,7 +6,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
-/** Draws the rules page and the font's notes inside a framed, scrollable page; rebuilds the lines only on change. */
+/**
+ * Draws the rules page and the font's notes inside a framed, scrollable page; rebuilds the lines
+ * only on change.
+ */
 final class RulesPanel {
 
     private static final int MAX_CELLS_WIDE = 40;
@@ -31,7 +34,8 @@ final class RulesPanel {
     private int room = 1;
     private int offset;
 
-    RulesPanel(Painter painter, Color frameColor, Color fillColor, Color textColor, Color headingColor,
+    RulesPanel(Painter painter, Color frameColor, Color fillColor, Color textColor,
+            Color headingColor,
             Color warningColor, Color inactiveColor) {
         this.painter = painter;
         this.frameColor = frameColor;
@@ -81,7 +85,10 @@ final class RulesPanel {
         return Math.max(0, lines.size() - room);
     }
 
-    /** Fills the page opaque, then draws the frame and the visible lines with arrows where more text hides. */
+    /**
+     * Fills the page opaque, then draws the frame and the visible lines with arrows where more text
+     * hides.
+     */
     void draw(int x, int top, int cellsWide, int cellsHigh, int pixelHeight, int codePoint) {
         if (stale || codePoint != shownCodePoint || cellsWide != builtCellsWide) {
             rebuild(codePoint, cellsWide);
@@ -97,7 +104,7 @@ final class RulesPanel {
         for (int i = offset; i < end; i++) {
             RulesPageLines.PageLine line = lines.get(i);
             painter.text(line.text(), textLeft,
-                textTop + (i - offset) * cellPixels, colorOf(line.role()));
+                    textTop + (i - offset) * cellPixels, colorOf(line.role()));
         }
         int arrowLeft = textLeft + textChars * cellPixels;
         if (offset > 0) {

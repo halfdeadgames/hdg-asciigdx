@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The rows of the guide list and which one is selected. Row i is guide i in file order, and rows are rebuilt after
- * each edit. Edits work on a copy; the guides the list was opened with stay available through {@link #original()}.
+ * The rows of the guide list and which one is selected. Row i is guide i in file order, and rows
+ * are rebuilt after each edit. Edits work on a copy; the guides the list was opened with stay
+ * available through {@link #original()}.
  */
 final class GuideListModel {
 
@@ -52,15 +53,22 @@ final class GuideListModel {
         return current;
     }
 
-    /** The guides as the grid should show them: while a label is typed, the selected guide carries the typed text. */
+    /**
+     * The guides as the grid should show them: while a label is typed, the selected guide carries
+     * the typed text.
+     */
     PaintGuides guidesForDisplay() {
         if (!label.isActive()) {
             return current;
         }
-        return current.withGuideRelabeled(selected, label.isEmpty() ? EMPTY_LABEL_PLACEHOLDER : label.value());
+        return current.withGuideRelabeled(selected,
+                label.isEmpty() ? EMPTY_LABEL_PLACEHOLDER : label.value());
     }
 
-    /** The selected guide with the typed text as its label while renaming; null when the list is empty. */
+    /**
+     * The selected guide with the typed text as its label while renaming; null when the list is
+     * empty.
+     */
     PaintGuides.Listed selectedGuideForDisplay() {
         if (rows.isEmpty()) {
             return null;
@@ -88,10 +96,14 @@ final class GuideListModel {
     boolean canResizeSelected() {
         PaintGuides.Listed guide = selectedGuide();
         return guide != null
-            && (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR);
+                && (guide.kind() == PaintGuides.ListedKind.BAR
+                || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR);
     }
 
-    /** Grows or shrinks the selected dotted band by {@code delta}; at a size limit or on a solid guide nothing changes. */
+    /**
+     * Grows or shrinks the selected dotted band by {@code delta}; at a size limit or on a solid
+     * guide nothing changes.
+     */
     void resizeSelected(int delta) {
         current = current.withGuideResized(selected, delta, cellWidth, cellHeight);
         rows = buildRows();
@@ -125,7 +137,8 @@ final class GuideListModel {
     /** Adds a centered two-column bar after the last column bar and selects it. */
     void addColumnBar() {
         current = current.withColumnBarAdded(cellWidth);
-        selectAdded(current.rowCount() + current.columnCount() + current.barCount() + current.columnBarCount() - 1);
+        selectAdded(current.rowCount() + current.columnCount() + current.barCount()
+                + current.columnBarCount() - 1);
     }
 
     private void selectAdded(int guideIndex) {
@@ -133,16 +146,18 @@ final class GuideListModel {
         select(guideIndex);
     }
 
-    // Bars show their first row plus the row count, and column bars their first column plus the column count,
-    // for example 6+1.
+    // Bars show their first row plus the row count, and column bars their first column plus the
+    // column count, for example 6+1.
     private static String guideText(PaintGuides.Listed guide) {
         return guideText(guide, guide.label());
     }
 
     private static String guideText(PaintGuides.Listed guide, String label) {
-        StringBuilder text = new StringBuilder(kindWord(guide.kind())).append(' ').append(label).append(' ')
-            .append(guide.position());
-        if (guide.kind() == PaintGuides.ListedKind.BAR || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
+        StringBuilder text =
+                new StringBuilder(kindWord(guide.kind())).append(' ').append(label).append(' ')
+                        .append(guide.position());
+        if (guide.kind() == PaintGuides.ListedKind.BAR
+                || guide.kind() == PaintGuides.ListedKind.COLUMN_BAR) {
             text.append('+').append(guide.span());
         }
         return text.toString();
@@ -157,8 +172,8 @@ final class GuideListModel {
     }
 
     /**
-     * While renaming, the selected row shows the typed text followed by a cursor; a hidden cursor leaves a blank,
-     * so the row keeps its length.
+     * While renaming, the selected row shows the typed text followed by a cursor; a hidden cursor
+     * leaves a blank, so the row keeps its length.
      */
     Row row(int index, boolean cursorVisible) {
         Row row = rows.get(index);
@@ -170,8 +185,8 @@ final class GuideListModel {
     }
 
     /**
-     * Switches a group name on or off for the selected guide, storing its names in {@code definedGroups} order; an
-     * empty list and renaming ignore it.
+     * Switches a group name on or off for the selected guide, storing its names in
+     * {@code definedGroups} order; an empty list and renaming ignore it.
      */
     void toggleGroup(String groupName, List<String> definedGroups) {
         if (selectedGuide() == null || label.isActive()) {
@@ -181,13 +196,19 @@ final class GuideListModel {
         rows = buildRows();
     }
 
-    /** Goes back to an earlier state of the edited guides, such as the one taken when the group list opened. */
+    /**
+     * Goes back to an earlier state of the edited guides, such as the one taken when the group list
+     * opened.
+     */
     void restoreGuides(PaintGuides snapshot) {
         current = snapshot;
         rows = buildRows();
     }
 
-    /** Starts renaming the selected guide from its current label; does nothing when the list is empty. */
+    /**
+     * Starts renaming the selected guide from its current label; does nothing when the list is
+     * empty.
+     */
     void beginRename() {
         if (!canRename()) {
             return;
@@ -195,7 +216,9 @@ final class GuideListModel {
         label.begin(selectedGuide().label());
     }
 
-    /** Whether {@link #beginRename} would start: a guide is selected and no rename is in progress. */
+    /**
+     * Whether {@link #beginRename} would start: a guide is selected and no rename is in progress.
+     */
     boolean canRename() {
         return selectedGuide() != null && !label.isActive();
     }
@@ -229,12 +252,18 @@ final class GuideListModel {
         rows = buildRows();
     }
 
-    /** Whether {@link #acceptRename} would apply: a rename is in progress and the typed label is not empty. */
+    /**
+     * Whether {@link #acceptRename} would apply: a rename is in progress and the typed label is not
+     * empty.
+     */
     boolean canAcceptRename() {
         return label.isActive() && !label.isEmpty();
     }
 
-    /** Ends the rename and keeps the old label; a guide that was being added is dropped and the old selection returns. */
+    /**
+     * Ends the rename and keeps the old label; a guide that was being added is dropped and the old
+     * selection returns.
+     */
     void cancelRename() {
         label.end();
         if (!adding) {
@@ -246,7 +275,10 @@ final class GuideListModel {
         select(selectionBeforeAdd);
     }
 
-    /** Runs {@code add}, which must add one guide and select it, then asks for its label starting empty. */
+    /**
+     * Runs {@code add}, which must add one guide and select it, then asks for its label starting
+     * empty.
+     */
     void beginAdding(Runnable add) {
         guidesBeforeAdd = current;
         selectionBeforeAdd = selected;
@@ -277,9 +309,13 @@ final class GuideListModel {
         return rows.get(selected).guide();
     }
 
-    /** Index of the first row to draw when {@code visibleRows} fit; scrolls only as far as keeping the selection in view. */
+    /**
+     * Index of the first row to draw when {@code visibleRows} fit; scrolls only as far as keeping
+     * the selection in view.
+     */
     int firstVisible(int visibleRows) {
-        firstVisible = GuideListRows.scrolledFirst(firstVisible, selected, rows.size(), visibleRows);
+        firstVisible =
+                GuideListRows.scrolledFirst(firstVisible, selected, rows.size(), visibleRows);
         return firstVisible;
     }
 }

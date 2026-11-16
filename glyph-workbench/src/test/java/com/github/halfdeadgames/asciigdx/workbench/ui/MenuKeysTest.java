@@ -14,15 +14,17 @@ import org.junit.jupiter.api.Test;
 class MenuKeysTest {
 
     private final MenuBar<String> bar = new MenuBar<>(List.of(
-        new Menu<>("FILE", 'f', List.of(new Item<>("OPEN", "", "open"), new Item<>("QUIT", "", "quit"))),
-        new Menu<>("EDIT", 'e', List.of(new Item<>("UNDO", "", "undo"), new Item<>("REDO", "", "redo")))));
+            new Menu<>("FILE", 'f',
+                    List.of(new Item<>("OPEN", "", "open"), new Item<>("QUIT", "", "quit"))),
+            new Menu<>("EDIT", 'e',
+                    List.of(new Item<>("UNDO", "", "undo"), new Item<>("REDO", "", "redo")))));
     private final MenuKeys<String> keys = new MenuKeys<>();
     private Predicate<String> available = action -> true;
 
     private String route(boolean enabled, boolean alt, char accessKey, boolean f10, boolean enter,
-                         int lefts, int rights, int ups, int downs) {
+            int lefts, int rights, int ups, int downs) {
         return keys.route(bar, available,
-            new MenuKeyInput(enabled, alt, accessKey, f10, enter, lefts, rights, ups, downs));
+                new MenuKeyInput(enabled, alt, accessKey, f10, enter, lefts, rights, ups, downs));
     }
 
     private void altKey(char key) {

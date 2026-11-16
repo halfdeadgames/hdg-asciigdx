@@ -12,7 +12,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-/** The start screen's "new font" flow: an empty page that hosts the name, size, and glyph-set dialogs. */
+/**
+ * The start screen's "new font" flow: an empty page that hosts the name, size, and glyph-set
+ * dialogs.
+ */
 public final class NewFontScreen implements WorkbenchScreen {
 
     private static final String TAG = "NewFont";
@@ -20,7 +23,8 @@ public final class NewFontScreen implements WorkbenchScreen {
     private final Path fontsRoot;
     private final Runnable onBack;
     private final BiConsumer<Path, CellSize> onCreated;
-    private final NewFontDialogs dialogs = new NewFontDialogs(this::existingFolders, this::create, this::cancel);
+    private final NewFontDialogs dialogs =
+            new NewFontDialogs(this::existingFolders, this::create, this::cancel);
     private final NewItemPage page = new NewItemPage(List.of("GLYPH WORKBENCH", "NEW FONT"));
     private final ScreenKit kit = new ScreenKit();
     private final DevCapture devCapture = new DevCapture();

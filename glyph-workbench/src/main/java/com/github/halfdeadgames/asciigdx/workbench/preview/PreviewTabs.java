@@ -2,10 +2,13 @@ package com.github.halfdeadgames.asciigdx.workbench.preview;
 
 import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 
-/** The tab strip of the preview panel: label positions and hit-testing in text cells, with no drawing code. */
+/**
+ * The tab strip of the preview panel: label positions and hit-testing in text cells, with no
+ * drawing code.
+ */
 public final class PreviewTabs {
 
-    public enum Tab { SCALES, TILE, TEXT }
+    public enum Tab {SCALES, TILE, TEXT}
 
     private static final int LABEL_GAP = 2;
     private static final int LEFT_PADDING = 2;
@@ -17,7 +20,10 @@ public final class PreviewTabs {
     private PreviewTabs() {
     }
 
-    /** The label for a tab in a panel of this rectangle: the full name, or the short form when the panel is narrow. */
+    /**
+     * The label for a tab in a panel of this rectangle: the full name, or the short form when the
+     * panel is narrow.
+     */
     static String label(CellRect rect, Tab tab) {
         return labelsFor(rect.width())[tab.ordinal()];
     }

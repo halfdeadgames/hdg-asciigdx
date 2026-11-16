@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 class MenuModelTest {
 
     private static final List<FontChoice> FONTS = List.of(
-        new FontChoice("alpha", new CellSize(8, 8)),
-        new FontChoice("saiksistt", new CellSize(8, 8)),
-        new FontChoice("saiksistt", new CellSize(16, 16)));
+            new FontChoice("alpha", new CellSize(8, 8)),
+            new FontChoice("saiksistt", new CellSize(8, 8)),
+            new FontChoice("saiksistt", new CellSize(16, 16)));
 
     @Test
     void fontListHasOneItemPerFolderThenNewFont() {

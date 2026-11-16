@@ -18,7 +18,8 @@ class RulesPageLinesTest {
     private static final int WIDTH = 40;
 
     private static GlyphRule rule(String name, GlyphSet appliesTo, List<RuleException> exceptions) {
-        return new GlyphRule(name, RuleCheck.CENTERED_X, CheckSettings.NONE, appliesTo, List.of("A"), exceptions);
+        return new GlyphRule(name, RuleCheck.CENTERED_X, CheckSettings.NONE, appliesTo,
+                List.of("A"), exceptions);
     }
 
     private static RulesLoadResult loaded(GlyphRule... rules) {
@@ -63,7 +64,7 @@ class RulesPageLinesTest {
     void badFileShowsHeadingAndEveryErrorLine() {
         var result = RulesLoadResult.bad("first problem\nsecond problem", PATH);
         var lines = build(result, null, Set.of());
-        assertEquals(new PageLine("RULES FILE IS BAD",Role.HEADING), lines.get(0));
+        assertEquals(new PageLine("RULES FILE IS BAD", Role.HEADING), lines.get(0));
         assertEquals("first problem", lines.get(1).text());
         assertEquals("second problem", lines.get(2).text());
     }
@@ -121,7 +122,8 @@ class RulesPageLinesTest {
 
     @Test
     void unprintableGlyphIsNamedByCode() {
-        var lines = RulesPageLines.build(loaded(rule("R", GlyphSet.all(), List.of())), null, 0x0A, Set.of(), WIDTH);
+        var lines = RulesPageLines.build(loaded(rule("R", GlyphSet.all(), List.of())), null, 0x0A,
+                Set.of(), WIDTH);
         assertEquals("RULES FOR U+000A", lines.get(0).text());
     }
 
@@ -147,10 +149,10 @@ class RulesPageLinesTest {
     void notesShowHeadingsBulletsAndText() {
         var lines = build(loaded(), "# Title\n\n- first point\nplain words", Set.of());
         int notes = indexOf(lines, "NOTES");
-        assertEquals(new PageLine("Title",Role.HEADING), lines.get(notes + 1));
-        assertEquals(new PageLine("",Role.TEXT), lines.get(notes + 2));
-        assertEquals(new PageLine("- first point",Role.TEXT), lines.get(notes + 3));
-        assertEquals(new PageLine("plain words",Role.TEXT), lines.get(notes + 4));
+        assertEquals(new PageLine("Title", Role.HEADING), lines.get(notes + 1));
+        assertEquals(new PageLine("", Role.TEXT), lines.get(notes + 2));
+        assertEquals(new PageLine("- first point", Role.TEXT), lines.get(notes + 3));
+        assertEquals(new PageLine("plain words", Role.TEXT), lines.get(notes + 4));
     }
 
     @Test

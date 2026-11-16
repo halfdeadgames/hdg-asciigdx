@@ -8,7 +8,10 @@ import java.util.function.Consumer;
 /** The name typed into the "new font" dialog, and the four lines the dialog shows for it. */
 final class NewFontNamePrompt {
 
-    /** Typing stops here so the text stays bounded; it is past the name limit, so the error still shows. */
+    /**
+     * Typing stops here so the text stays bounded; it is past the name limit, so the error still
+     * shows.
+     */
     static final int MAX_TYPED = 40;
     static final int LINE_CELLS = DialogText.LINE_CELLS;
     private static final String HINT_LINE = "Creates the folder";
@@ -34,7 +37,9 @@ final class NewFontNamePrompt {
         return open;
     }
 
-    /** Opens the prompt with {@code initialText} already typed, for coming back from a later page. */
+    /**
+     * Opens the prompt with {@code initialText} already typed, for coming back from a later page.
+     */
     void open(Collection<String> existingFolders, String initialText) {
         text.setLength(0);
         this.existingFolders = List.copyOf(existingFolders);
@@ -49,12 +54,16 @@ final class NewFontNamePrompt {
         open = false;
     }
 
-    /** Appends a non-control character while open, lowercasing A to Z; other characters are left for the error. */
+    /**
+     * Appends a non-control character while open, lowercasing A to Z; other characters are left for
+     * the error.
+     */
     void type(char character) {
         if (!open || Character.isISOControl(character) || text.length() >= MAX_TYPED) {
             return;
         }
-        text.append(character >= 'A' && character <= 'Z' ? (char) (character + ('a' - 'A')) : character);
+        text.append(character >= 'A' && character <= 'Z' ? (char) (character + ('a' - 'A'))
+                : character);
     }
 
     /** Removes the last code point, so a surrogate pair goes in one press. */
@@ -74,7 +83,10 @@ final class NewFontNamePrompt {
         return NewFontInput.nameError(text.toString(), existingFolders);
     }
 
-    /** Hands a valid name to the next-step callback; does nothing while the name is empty or invalid. */
+    /**
+     * Hands a valid name to the next-step callback; does nothing while the name is empty or
+     * invalid.
+     */
     void enter() {
         if (open && error() == null) {
             onNext.accept(text.toString());
@@ -87,7 +99,10 @@ final class NewFontNamePrompt {
         }
     }
 
-    /** Exactly four lines: the typed name with a cursor, a blank line, then the error wrapped over two lines or the hint. */
+    /**
+     * Exactly four lines: the typed name with a cursor, a blank line, then the error wrapped over
+     * two lines or the hint.
+     */
     List<String> lines() {
         String error = error();
         if (error != null) {

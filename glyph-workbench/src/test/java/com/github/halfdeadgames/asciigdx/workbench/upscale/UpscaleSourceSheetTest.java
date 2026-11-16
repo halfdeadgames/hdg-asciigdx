@@ -28,9 +28,9 @@ class UpscaleSourceSheetTest {
     }
 
     private static final String FONT_TEXT = "cell 8x8\n\n"
-        + "U+0041 A\n" + rows(INK_ROW) + "\n\n"
-        + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
-        + "U+0043 C = mirror U+0041\n";
+            + "U+0041 A\n" + rows(INK_ROW) + "\n\n"
+            + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
+            + "U+0043 C = mirror U+0041\n";
 
     @TempDir
     Path sheetRoot;
@@ -135,7 +135,8 @@ class UpscaleSourceSheetTest {
         Path folder = Files.createDirectories(root.resolve("classic"));
         Files.writeString(folder.resolve("8x8.txt"), FONT_TEXT, StandardCharsets.UTF_8);
         Files.writeString(folder.resolve("glyphs.txt"), "nonsense\n", StandardCharsets.UTF_8);
-        FontDataException problem = assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
+        FontDataException problem =
+                assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
         assertTrue(problem.getMessage().startsWith("glyphs.txt: "));
     }
 
@@ -150,7 +151,9 @@ class UpscaleSourceSheetTest {
     void loadRefusesAFileWhoseCellLineDisagreesWithItsName(@TempDir Path root) throws IOException {
         Path folder = Files.createDirectories(root.resolve("classic"));
         Files.writeString(folder.resolve("8x8.txt"), "cell 8x16\n", StandardCharsets.UTF_8);
-        FontDataException problem = assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
-        assertEquals("8x8.txt declares cell 8x16; the file name must match the cell line", problem.getMessage());
+        FontDataException problem =
+                assertThrows(FontDataException.class, () -> UpscaleSourceSheet.load(root, FONT));
+        assertEquals("8x8.txt declares cell 8x16; the file name must match the cell line",
+                problem.getMessage());
     }
 }

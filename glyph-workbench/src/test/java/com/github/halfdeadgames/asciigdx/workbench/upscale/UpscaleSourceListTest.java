@@ -79,7 +79,8 @@ class UpscaleSourceListTest {
         sourceList.open(new Font("a", 16, 24), List.of(square("a", 16)));
         assertFalse(sourceList.hasChoices());
         assertNull(sourceList.selected());
-        assertEquals(List.of("No smaller font divides", "16X24 evenly"), sourceList.noChoiceLines());
+        assertEquals(List.of("No smaller font divides", "16X24 evenly"),
+                sourceList.noChoiceLines());
     }
 
     @Test

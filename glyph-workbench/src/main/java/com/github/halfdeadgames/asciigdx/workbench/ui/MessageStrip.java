@@ -9,14 +9,18 @@ import java.util.Map;
 
 /**
  * A framed "MESSAGES" panel listing what is true now (conditions, set and cleared by key) and what
- * just happened (results, which stay until {@link #nextAction()}). Warnings are listed before ok messages.
+ * just happened (results, which stay until {@link #nextAction()}). Warnings are listed before ok
+ * messages.
  */
 public final class MessageStrip {
 
     public record Message(boolean warning, String text) {
     }
 
-    /** Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll button column. */
+    /**
+     * Columns the panel keeps free around the text: frame, arrow cell, marker, gaps, and the scroll
+     * button column.
+     */
     private static final int RESERVED_COLUMNS = 7;
 
     private int firstIndex;
@@ -32,7 +36,9 @@ public final class MessageStrip {
     private final Map<Message, Float> scrollStartSeconds = new IdentityHashMap<>();
     private float clockSeconds;
 
-    /** Reports something that just happened; it stays until the next call to {@link #nextAction()}. */
+    /**
+     * Reports something that just happened; it stays until the next call to {@link #nextAction()}.
+     */
     public void ok(String text) {
         results.add(new Message(false, text));
         revealNewestResult = true;
@@ -43,7 +49,10 @@ public final class MessageStrip {
         revealNewestResult = true;
     }
 
-    /** Shows a condition until {@link #clearCondition} is called for the key; setting it again replaces it. */
+    /**
+     * Shows a condition until {@link #clearCondition} is called for the key; setting it again
+     * replaces it.
+     */
     public void setCondition(String key, boolean warning, String text) {
         Message existing = conditions.get(key);
         if (existing != null && existing.warning() == warning && existing.text().equals(text)) {
@@ -56,14 +65,17 @@ public final class MessageStrip {
         conditions.remove(key);
     }
 
-    /** The user did something: drops every result. Call before posting the new action's own result. */
+    /**
+     * The user did something: drops every result. Call before posting the new action's own result.
+     */
     public void nextAction() {
         results.clear();
     }
 
     /**
-     * Up to {@code count} messages to show, starting at the scroll position. The order is warnings first, then the
-     * rest; conditions before results in each group. A result posted since the last call is scrolled into view.
+     * Up to {@code count} messages to show, starting at the scroll position. The order is warnings
+     * first, then the rest; conditions before results in each group. A result posted since the last
+     * call is scrolled into view.
      */
     public List<Message> visible(int count) {
         List<Message> ordered = orderedMessages();
@@ -96,7 +108,7 @@ public final class MessageStrip {
     /** Whether the cell lies inside the panel as it was last drawn. */
     public boolean contains(int cellX, int cellY) {
         return cellX >= boundsX && cellX < boundsX + boundsWidth
-            && cellY >= boundsY && cellY < boundsY + boundsHeight;
+                && cellY >= boundsY && cellY < boundsY + boundsHeight;
     }
 
     /** Presses the scroll button under the cell, if any. */
@@ -224,15 +236,16 @@ public final class MessageStrip {
         }
         if (buttonsFit()) {
             painter.text("▲", buttonColumn() * cellPixels, topButtonRow() * cellPixels,
-                hiddenAbove() ? UiPalette.TEXT : UiPalette.DIM);
+                    hiddenAbove() ? UiPalette.TEXT : UiPalette.DIM);
             painter.text("▼", buttonColumn() * cellPixels, bottomButtonRow() * cellPixels,
-                hiddenBelow() ? UiPalette.TEXT : UiPalette.DIM);
+                    hiddenBelow() ? UiPalette.TEXT : UiPalette.DIM);
         }
     }
 
     /**
-     * Draws the panel; messages wider than the text area scroll back and forth, each on its own timer. When messages
-     * are cut off, blinking arrows mark the hidden side and two buttons at the right edge scroll the list.
+     * Draws the panel; messages wider than the text area scroll back and forth, each on its own
+     * timer. When messages are cut off, blinking arrows mark the hidden side and two buttons at the
+     * right edge scroll the list.
      */
     public void draw(Painter painter, CellRect area, float deltaSeconds) {
         int x = area.x();
@@ -248,8 +261,9 @@ public final class MessageStrip {
         int cellPixels = painter.cellPixels();
         for (Message message : shown) {
             painter.text(message.warning() ? "!" : "✓", (x + 2) * cellPixels, row * cellPixels,
-                message.warning() ? UiPalette.WARN : UiPalette.OK);
-            painter.text(lineText(message, room), (x + 4) * cellPixels, row * cellPixels, UiPalette.TEXT);
+                    message.warning() ? UiPalette.WARN : UiPalette.OK);
+            painter.text(lineText(message, room), (x + 4) * cellPixels, row * cellPixels,
+                    UiPalette.TEXT);
             row++;
         }
         drawScrollIndicators(painter);

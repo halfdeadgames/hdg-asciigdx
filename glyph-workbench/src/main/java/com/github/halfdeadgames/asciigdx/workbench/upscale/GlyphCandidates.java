@@ -21,8 +21,8 @@ public final class GlyphCandidates {
     }
 
     /**
-     * Upscales a glyph with every method that exists for the factor. A result equal to an earlier one is
-     * dropped, so the first method that produces it wins.
+     * Upscales a glyph with every method that exists for the factor. A result equal to an earlier
+     * one is dropped, so the first method that produces it wins.
      *
      * @param source the glyph in the smaller font
      * @param factorX whole upscale factor across
@@ -51,7 +51,7 @@ public final class GlyphCandidates {
 
     private static String labelFor(Upscaler.Method method, int factorX, int factorY) {
         return method == Upscaler.Method.NEAREST
-            ? method.name() + " " + Upscaler.factorLabel(factorX, factorY)
-            : method.name();
+                ? method.name() + " " + Upscaler.factorLabel(factorX, factorY)
+                : method.name();
     }
 }

@@ -117,7 +117,8 @@ class GuideGroupListTest {
         toggle(model, list, 0);
         toggle(model, list, 1);
         assertEquals("uppercase,lowercase,digits", model.selectedGuide().groups());
-        assertEquals("BAR: UPPERCASE, LOWERCASE, DIGITS", GuideGroups.summary("BAR", model.selectedGuide().groups()));
+        assertEquals("BAR: UPPERCASE, LOWERCASE, DIGITS",
+                GuideGroups.summary("BAR", model.selectedGuide().groups()));
     }
 
     @Test

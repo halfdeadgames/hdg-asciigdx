@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Reads the `rows`, `columns`, and `size` settings of a rule, checking them against the cell size. */
+/**
+ * Reads the `rows`, `columns`, and `size` settings of a rule, checking them against the cell size.
+ */
 final class CheckSettingsParser {
 
     static final List<String> SETTING_KEYS = List.of("rows", "columns", "size");
@@ -30,11 +32,15 @@ final class CheckSettingsParser {
         }
         JsonValue value = rule.get(usedKey);
         if (value == null) {
-            throw new RulesFileException(label + ": check " + check.fileName() + " needs \"" + usedKey + "\"");
+            throw new RulesFileException(
+                    label + ": check " + check.fileName() + " needs \"" + usedKey + "\"");
         }
         return switch (usedKey) {
-            case "rows" -> new CheckSettings(readLines(value, "row", cellHeight, label), new BitSet(), 0);
-            case "columns" -> new CheckSettings(new BitSet(), readLines(value, "column", cellWidth, label), 0);
+            case "rows" ->
+                    new CheckSettings(readLines(value, "row", cellHeight, label), new BitSet(), 0);
+            case "columns" ->
+                    new CheckSettings(
+                            new BitSet(), readLines(value, "column", cellWidth, label), 0);
             default -> new CheckSettings(new BitSet(), new BitSet(), readRingSize(value, label));
         };
     }
@@ -48,10 +54,12 @@ final class CheckSettingsParser {
         };
     }
 
-    private static void rejectUnusedSettings(JsonValue rule, RuleCheck check, String usedKey, String label) {
+    private static void rejectUnusedSettings(JsonValue rule, RuleCheck check, String usedKey,
+            String label) {
         for (String key : SETTING_KEYS) {
             if (!key.equals(usedKey) && rule.has(key)) {
-                throw new RulesFileException(label + ": check " + check.fileName() + " does not use \"" + key + "\"");
+                throw new RulesFileException(
+                        label + ": check " + check.fileName() + " does not use \"" + key + "\"");
             }
         }
     }
@@ -59,7 +67,8 @@ final class CheckSettingsParser {
     private BitSet readLines(JsonValue array, String noun, int lineCount, String label) {
         String key = noun + "s";
         if (!array.isArray() || array.child == null) {
-            throw new RulesFileException(label + ": \"" + key + "\" must be a non-empty array of numbers or ranges");
+            throw new RulesFileException(
+                    label + ": \"" + key + "\" must be a non-empty array of numbers or ranges");
         }
         var lines = new BitSet();
         for (JsonValue item = array.child; item != null; item = item.next) {
@@ -77,15 +86,17 @@ final class CheckSettingsParser {
         }
         Matcher entry = item.isString() ? NUMBER_OR_RANGE.matcher(item.asString()) : null;
         if (entry == null || !entry.matches()) {
-            throw new RulesFileException(label + ": " + describeItem(item) + " is not a " + noun + " entry: "
-                    + LINE_ALLOWED);
+            throw new RulesFileException(
+                    label + ": " + describeItem(item) + " is not a " + noun + " entry: "
+                            + LINE_ALLOWED);
         }
         long first = Long.parseLong(entry.group(1));
         long last = entry.group(2) == null ? first : Long.parseLong(entry.group(2));
         addRange(lines, item.asString(), first, last, noun, lineCount, label);
     }
 
-    private void addRange(BitSet lines, String text, long first, long last, String noun, int lineCount,
+    private void addRange(BitSet lines, String text, long first, long last, String noun,
+            int lineCount,
             String label) {
         if (first > last) {
             throw new RulesFileException(label + ": " + noun + " range \"" + text
@@ -100,15 +111,18 @@ final class CheckSettingsParser {
         if (line >= 0 && line < lineCount) {
             return;
         }
-        throw new RulesFileException(label + ": " + noun + " " + line + " is outside the " + cellWidth + "x"
-                + cellHeight + " cell (" + noun + "s 0-" + (lineCount - 1) + ")");
+        throw new RulesFileException(
+                label + ": " + noun + " " + line + " is outside the " + cellWidth + "x"
+                        + cellHeight + " cell (" + noun + "s 0-" + (lineCount - 1) + ")");
     }
 
     private int readRingSize(JsonValue value, String label) {
         int largest = (Math.min(cellWidth, cellHeight) - 1) / 2;
         if (!isWholeNumber(value) || value.asDouble() < 1 || value.asDouble() > largest) {
-            throw new RulesFileException(label + ": \"size\" must be a whole number from 1 to " + largest
-                    + " in a " + cellWidth + "x" + cellHeight + " cell, so the middle stays free");
+            throw new RulesFileException(
+                    label + ": \"size\" must be a whole number from 1 to " + largest
+                            + " in a " + cellWidth + "x" + cellHeight
+                            + " cell, so the middle stays free");
         }
         return (int) value.asDouble();
     }

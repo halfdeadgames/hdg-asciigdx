@@ -13,23 +13,24 @@ class UnicodeFactsTest {
     private static final int OPEN_QUOTE = 0x2E42;
     private static final int CLOSE_QUOTE = 0x2E43;
     private static final String TABLE = """
-        1FA8F So SHOVEL
-        2E42 Pi NEW OPENING QUOTE
-        2E43 Pf NEW CLOSING QUOTE
-        31350..33479 Lo CJK UNIFIED IDEOGRAPH-*
-        BLOCK 0000..007F Basic Latin
-        BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
-        BLOCK 1FB00..1FBFF Symbols for Legacy Computing
-        """;
+            1FA8F So SHOVEL
+            2E42 Pi NEW OPENING QUOTE
+            2E43 Pf NEW CLOSING QUOTE
+            31350..33479 Lo CJK UNIFIED IDEOGRAPH-*
+            BLOCK 0000..007F Basic Latin
+            BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
+            BLOCK 1FB00..1FBFF Symbols for Legacy Computing
+            """;
 
     private static int unknownToJdk(int codePoint) {
         return Character.UNASSIGNED;
     }
 
     private static final UnicodeFacts OLD_JDK = UnicodeFacts.fromTableText(TABLE,
-        UnicodeFactsTest::unknownToJdk, codePoint -> null);
-    private static final UnicodeFacts REAL_JDK = UnicodeFacts.fromTableText(TABLE, Character::getType,
-        Character::getName);
+            UnicodeFactsTest::unknownToJdk, codePoint -> null);
+    private static final UnicodeFacts REAL_JDK =
+            UnicodeFacts.fromTableText(TABLE, Character::getType,
+                    Character::getName);
 
     @Test
     void jdkTypeWinsForACodePointTheJdkKnows() {

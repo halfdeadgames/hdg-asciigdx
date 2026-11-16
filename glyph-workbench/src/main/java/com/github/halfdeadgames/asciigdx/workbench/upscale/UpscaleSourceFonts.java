@@ -8,15 +8,17 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Reads the cell size of every font data file under the fonts root, for listing upscale sources. */
+/**
+ * Reads the cell size of every font data file under the fonts root, for listing upscale sources.
+ */
 public final class UpscaleSourceFonts {
 
     private UpscaleSourceFonts() {
     }
 
     /**
-     * Fonts in {@link FontDiscovery} order; files that cannot be read, have no cell line, or declare a cell
-     * other than their name says are left out.
+     * Fonts in {@link FontDiscovery} order; files that cannot be read, have no cell line, or
+     * declare a cell other than their name says are left out.
      */
     public static List<UpscaleSources.Font> discover(Path fontsRoot) {
         List<UpscaleSources.Font> fonts = new ArrayList<>();
@@ -29,7 +31,8 @@ public final class UpscaleSourceFonts {
         return fonts;
     }
 
-    // Null when the file cannot be read, has no cell line, or declares a cell other than its name says.
+    // Null when the file cannot be read, has no cell line, or declares a cell other than its name
+    // says.
     private static UpscaleSources.Font readFont(Path fontsRoot, FontDiscovery.FontChoice choice) {
         Path file = fontsRoot.resolve(choice.folderName()).resolve(choice.size().dataFileName());
         try {

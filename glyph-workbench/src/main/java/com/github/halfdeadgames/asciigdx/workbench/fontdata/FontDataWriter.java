@@ -5,7 +5,10 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphOrderText;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Writes {@link FontData} as font data text, CP437 glyphs first, then the rest by code point, and derived glyphs as recipes. */
+/**
+ * Writes {@link FontData} as font data text, CP437 glyphs first, then the rest by code point, and
+ * derived glyphs as recipes.
+ */
 public final class FontDataWriter {
 
     private FontDataWriter() {
@@ -15,7 +18,8 @@ public final class FontDataWriter {
      * Writes a font.
      *
      * @param data the font
-     * @return text with LF line endings, which {@link FontDataParser#parse} reads back to an equal font
+     * @return text with LF line endings, which {@link FontDataParser#parse} reads back to an equal
+     *     font
      */
     public static String write(FontData data) {
         List<String> blocks = new ArrayList<>();
@@ -56,7 +60,8 @@ public final class FontDataWriter {
         List<String> sources = new ArrayList<>();
         for (GlyphOp.Source source : op.sources()) {
             String reference = CodePoints.label(source.codePoint());
-            sources.add(op.kind() == GlyphOp.Kind.OVERLAY ? writeOverlayPart(reference, source) : reference);
+            sources.add(op.kind() == GlyphOp.Kind.OVERLAY ? writeOverlayPart(reference, source)
+                    : reference);
         }
         return op.kind().keyword() + " " + String.join(", ", sources);
     }
@@ -68,8 +73,8 @@ public final class FontDataWriter {
 
     private static String codePointLabel(int codePoint) {
         String character = codePoint == ' '
-            ? "\\u{20}"
-            : GlyphOrderText.escapeCodePoint(codePoint);
+                ? "\\u{20}"
+                : GlyphOrderText.escapeCodePoint(codePoint);
         return CodePoints.label(codePoint) + " " + character;
     }
 }

@@ -28,7 +28,8 @@ class UiWidgetsTest {
 
     @Test
     void breadcrumbMatchesTheMockupColumns() {
-        List<TopBar.Segment> segments = TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16"));
+        List<TopBar.Segment> segments =
+                TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16"));
         assertEquals(5, segments.size());
         assertEquals(1, segments.get(0).x());
         assertEquals(17, segments.get(1).x());
@@ -50,7 +51,7 @@ class UiWidgetsTest {
     @Test
     void keycapsFollowTheMockupSpacing() {
         List<StatusBar.Cap> caps = StatusBar.layout(List.of(
-            new StatusBar.Key("ESC", "BACK"), new StatusBar.Key("F1", "RULES")));
+                new StatusBar.Key("ESC", "BACK"), new StatusBar.Key("F1", "RULES")));
         assertEquals(1, caps.get(0).capX());
         assertEquals(" ESC ", caps.get(0).capText());
         assertEquals(7, caps.get(0).labelX());
@@ -66,7 +67,8 @@ class UiWidgetsTest {
         assertEquals(-1, SelectList.rowAt(11, 5, 3));
         assertEquals(-1, SelectList.rowAt(4, 5, 3));
         List<SelectList.Row> rows = List.of(
-            new SelectList.Row("HEAD", false, false, 0), new SelectList.Row("ONE", true, false, 0));
+                new SelectList.Row("HEAD", false, false, 0),
+                new SelectList.Row("ONE", true, false, 0));
         assertFalse(SelectList.isSelectable(rows, 0));
         assertTrue(SelectList.isSelectable(rows, 1));
         assertFalse(SelectList.isSelectable(rows, 5));
@@ -75,13 +77,15 @@ class UiWidgetsTest {
     @Test
     void dialogKeepsButtonsAwayFromTheFrameAndIsCentered() {
         List<Dialog.Button> buttons = List.of(
-            new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
-            new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
-            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+                new Dialog.Button("S", "SAVE", Dialog.Tone.OK),
+                new Dialog.Button("D", "DISCARD", Dialog.Tone.WARN),
+                new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
         Dialog.Layout layout = Dialog.layout(
-            DialogContent.of("UNSAVED CHANGES", List.of("Save changes to 8x8.txt", "before leaving?"), buttons),
-            new CellRect(0, 0, 79, 41));
-        int last = layout.buttonXs().get(2) + buttons.get(2).key().length() + 3 + buttons.get(2).label().length();
+                DialogContent.of("UNSAVED CHANGES",
+                        List.of("Save changes to 8x8.txt", "before leaving?"), buttons),
+                new CellRect(0, 0, 79, 41));
+        int last = layout.buttonXs().get(2) + buttons.get(2).key().length() + 3 + buttons.get(2)
+                .label().length();
         assertTrue(layout.buttonXs().get(0) >= layout.x() + 3);
         assertTrue(last <= layout.x() + layout.width() - 3);
         assertEquals((79 - layout.width()) / 2, layout.x());
@@ -219,7 +223,8 @@ class UiWidgetsTest {
         MessageStrip strip = fourMessagesWithNewestResultLast();
         strip.place(10, 20, 30, 4);
         strip.visible(2);
-        // The list sits at its bottom: the up button is usable, the down button is not, but both can be hit.
+        // The list sits at its bottom: the up button is usable, the down button is not, but both
+        // can be hit.
         assertTrue(strip.hiddenAbove());
         assertFalse(strip.hiddenBelow());
         int buttonColumn = 10 + 30 - 2;

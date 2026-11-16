@@ -21,7 +21,8 @@ public final class GlyphName {
         return fullName(codePoint, Character::getName, BundledNames.TABLE);
     }
 
-    static String fullName(int codePoint, IntFunction<String> jdkNames, IntFunction<String> tableNames) {
+    static String fullName(int codePoint, IntFunction<String> jdkNames,
+            IntFunction<String> tableNames) {
         String name = jdkNames.apply(codePoint);
         if (isPrivateUse(codePoint, name)) {
             return CUSTOM;
@@ -34,7 +35,7 @@ public final class GlyphName {
 
     private static boolean isPrivateUse(int codePoint, String jdkName) {
         return Character.getType(codePoint) == Character.PRIVATE_USE
-            || jdkName != null && jdkName.startsWith(PRIVATE_USE_PREFIX);
+                || jdkName != null && jdkName.startsWith(PRIVATE_USE_PREFIX);
     }
 
     /** Loads the table on first use only. */
@@ -54,7 +55,8 @@ public final class GlyphName {
     }
 
     private static void appendCollapsingSpaces(StringBuilder out, char c) {
-        boolean redundantSpace = c == ' ' && (out.length() == 0 || out.charAt(out.length() - 1) == ' ');
+        boolean redundantSpace =
+                c == ' ' && (out.length() == 0 || out.charAt(out.length() - 1) == ' ');
         if (!redundantSpace) {
             out.append(c);
         }

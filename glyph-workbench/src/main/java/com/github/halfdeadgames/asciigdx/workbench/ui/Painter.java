@@ -64,7 +64,8 @@ public final class Painter {
             int codePoint = Character.codePointAt(value, i);
             i += Character.charCount(codePoint);
             if (codePoint != ' ') {
-                batch.draw(font.getGlyphRegion(codePoint), x + column * size, flipY(top, size), size, size);
+                batch.draw(font.getGlyphRegion(codePoint), x + column * size, flipY(top, size),
+                        size, size);
             }
         }
     }

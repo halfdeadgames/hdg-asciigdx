@@ -17,12 +17,12 @@ public record FontData(int cellWidth, int cellHeight, Map<Integer, GlyphEntry> e
     public FontData {
         if (cellWidth < 1 || cellHeight < 1) {
             throw new IllegalArgumentException(
-                "Cell must be at least 1 wide and 1 high, was " + cellWidth + "x" + cellHeight);
+                    "Cell must be at least 1 wide and 1 high, was " + cellWidth + "x" + cellHeight);
         }
         for (Map.Entry<Integer, GlyphEntry> entry : entries.entrySet()) {
             if (entry.getKey() != entry.getValue().codePoint()) {
                 throw new IllegalArgumentException("Entry key " + CodePoints.label(entry.getKey())
-                    + " does not match its glyph");
+                        + " does not match its glyph");
             }
         }
         entries = Collections.unmodifiableMap(new TreeMap<>(entries));

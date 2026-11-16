@@ -13,21 +13,24 @@ public final class GroupedPickListView {
      * @param listTop cell row of the first list line
      * @param textWidth width in cells of the dialog text area; the bar takes its last column
      */
-    public static void draw(Painter painter, GroupedPickList<?> list, int textX, int listTop, int textWidth) {
+    public static void draw(Painter painter, GroupedPickList<?> list, int textX, int listTop,
+            int textWidth) {
         List<SelectList.Row> visibleRows = list.visibleRows();
         SelectList.draw(painter,
-            SelectList.areaOf(textX, listTop, Math.min(list.listWidth(), textWidth), visibleRows.size()),
-            visibleRows, list.visibleSelectedIndex());
+                SelectList.areaOf(textX, listTop, Math.min(list.listWidth(), textWidth),
+                        visibleRows.size()),
+                visibleRows, list.visibleSelectedIndex());
         if (list.scrolls()) {
             drawBar(painter, list, textX + textWidth - 1, listTop);
         }
     }
 
-    // The bar sits in the last text column beside the list: arrows on the first and last cell, track between.
+    // The bar sits in the last text column beside the list: arrows on the first and last cell,
+    // track between.
     private static void drawBar(Painter painter, GroupedPickList<?> list, int column, int listTop) {
         ScrollState window = list.window();
         int barCells = list.shownRows() * SelectList.PITCH - 1;
         ScrollBar.drawBar(painter, column, listTop, barCells,
-            window.totalRows(), window.visibleRows(), window.offset());
+                window.totalRows(), window.visibleRows(), window.offset());
     }
 }

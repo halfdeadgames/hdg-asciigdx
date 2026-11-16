@@ -11,7 +11,10 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.github.halfdeadgames.asciigdx.glyph.TextureGlyphSource;
 import com.github.halfdeadgames.asciigdx.glyph.TransparencyMode;
 
-/** The drawing setup every workbench menu and dialog screen shares: viewport, batch, UI font, painter, and the pointer in world pixels. */
+/**
+ * The drawing setup every workbench menu and dialog screen shares: viewport, batch, UI font,
+ * painter, and the pointer in world pixels.
+ */
 public final class ScreenKit {
 
     private static final String UI_FONT_FOLDER = "com/github/halfdeadgames/asciigdx/workbench/ui/";
@@ -42,11 +45,11 @@ public final class ScreenKit {
     // The workbench UI keeps the 8x8 dungeon.mode sheet until an 8x8 Saiksistt exists.
     private static TextureGlyphSource loadUiFont() {
         return TextureGlyphSource.loadSheet(
-            Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.png"),
-            Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.txt"),
-            UI_FONT_CELL_SIZE,
-            UI_FONT_CELL_SIZE,
-            TransparencyMode.AUTO);
+                Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.png"),
+                Gdx.files.classpath(UI_FONT_FOLDER + "dungeon-extended.txt"),
+                UI_FONT_CELL_SIZE,
+                UI_FONT_CELL_SIZE,
+                TransparencyMode.AUTO);
     }
 
     /** Releases the batch, white pixel, and font; call from {@code hide()}. */
@@ -85,8 +88,8 @@ public final class ScreenKit {
     }
 
     /**
-     * Reads the mouse position into {@link #pointerX()} and {@link #pointerY()}. Window pixels go through the
-     * viewport so UI scale and HiDPI are honored.
+     * Reads the mouse position into {@link #pointerX()} and {@link #pointerY()}. Window pixels go
+     * through the viewport so UI scale and HiDPI are honored.
      */
     public void updatePointer() {
         pointer.set(Gdx.input.getX(), Gdx.input.getY());
@@ -100,7 +103,10 @@ public final class ScreenKit {
         return pointerX;
     }
 
-    /** The pointer's Y in world pixels, measured from the top, as of the last {@link #updatePointer()}. */
+    /**
+     * The pointer's Y in world pixels, measured from the top, as of the last
+     * {@link #updatePointer()}.
+     */
     public int pointerY() {
         return pointerY;
     }
@@ -115,7 +121,9 @@ public final class ScreenKit {
         return viewport;
     }
 
-    /** Another painter on the same batch, font, and viewport, for screens that draw with two scales. */
+    /**
+     * Another painter on the same batch, font, and viewport, for screens that draw with two scales.
+     */
     public Painter newPainter() {
         return new Painter(batch, whitePixel, source, viewport);
     }

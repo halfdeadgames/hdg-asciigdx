@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 class TopBarFitTest {
 
-    private static final List<String> CRUMBS = List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16");
+    private static final List<String> CRUMBS =
+            List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16");
 
     @Test
     void crumbsDropFromTheLeftOnceTheyNoLongerFit() {

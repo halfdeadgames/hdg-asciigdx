@@ -14,7 +14,10 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Set;
 
-/** The source font's sheet the user picks a glyph from during upscale. Slots without ink cannot be picked. */
+/**
+ * The source font's sheet the user picks a glyph from during upscale. Slots without ink cannot be
+ * picked.
+ */
 public final class UpscaleSourceSheet {
 
     private static final int NO_SLOT = -1;
@@ -35,12 +38,15 @@ public final class UpscaleSourceSheet {
      * Reads {@code <fontsRoot>/<folderName>/<cellWidth>x<cellHeight>.txt} as UTF-8.
      *
      * @throws IOException if the file cannot be read
-     * @throws com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException if the file is not valid font
-     *         data, its cell line disagrees with its name, or the font's glyph list is unreadable or invalid
+     * @throws com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException if the file is
+     *         not valid font data, its cell line disagrees with its name, or the font's glyph list
+     *         is unreadable or invalid
      */
-    public static UpscaleSourceSheet load(Path fontsRoot, UpscaleSources.Font font) throws IOException {
+    public static UpscaleSourceSheet load(Path fontsRoot, UpscaleSources.Font font) throws
+            IOException {
         Path folder = fontsRoot.resolve(font.folderName());
-        String text = Files.readString(folder.resolve(font.size().dataFileName()), StandardCharsets.UTF_8);
+        String text = Files.readString(folder.resolve(font.size().dataFileName()),
+                StandardCharsets.UTF_8);
         GlyphList glyphList = GlyphListFile.load(folder.toFile());
         FontData data = FontDataParser.parseSizeFile(font.size(), text);
         return new UpscaleSourceSheet(new FontEditor(data, glyphList), font);
@@ -58,7 +64,8 @@ public final class UpscaleSourceSheet {
         Set<Integer> withInk = editor.codePointsWithInk();
         boolean[] result = new boolean[codePoints.length];
         for (int slot = 0; slot < codePoints.length; slot++) {
-            result[slot] = codePoints[slot] == FontEditor.NO_GLYPH || !withInk.contains(codePoints[slot]);
+            result[slot] =
+                    codePoints[slot] == FontEditor.NO_GLYPH || !withInk.contains(codePoints[slot]);
         }
         return result;
     }
@@ -85,7 +92,9 @@ public final class UpscaleSourceSheet {
         return slot >= 0 && slot < blocked.length && !blocked[slot];
     }
 
-    /** The glyph in the slot with derived glyphs resolved, or null when the slot is not pickable. */
+    /**
+     * The glyph in the slot with derived glyphs resolved, or null when the slot is not pickable.
+     */
     public PixelGlyph glyphAt(int slot) {
         if (!isPickable(slot)) {
             return null;

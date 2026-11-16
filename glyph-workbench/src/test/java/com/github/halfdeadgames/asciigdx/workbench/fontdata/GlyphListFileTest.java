@@ -45,7 +45,8 @@ class GlyphListFileTest {
     void aBrokenFileNamesTheFileAndTheLine() throws IOException {
         writeList("cp437\nnonsense\n");
 
-        FontDataException problem = assertThrows(FontDataException.class, () -> GlyphListFile.load(fontFolder));
+        FontDataException problem =
+                assertThrows(FontDataException.class, () -> GlyphListFile.load(fontFolder));
 
         assertTrue(problem.getMessage().startsWith("glyphs.txt: "), problem.getMessage());
         assertTrue(problem.getMessage().contains("Line 2"), problem.getMessage());
@@ -101,12 +102,14 @@ class GlyphListFileTest {
     }
 
     private String readList() throws IOException {
-        return new String(java.nio.file.Files.readAllBytes(new File(fontFolder, GlyphListFile.FILE_NAME).toPath()),
-            StandardCharsets.UTF_8);
+        return new String(java.nio.file.Files.readAllBytes(
+                new File(fontFolder, GlyphListFile.FILE_NAME).toPath()),
+                StandardCharsets.UTF_8);
     }
 
     private void writeList(String text) throws IOException {
-        try (OutputStream output = new FileOutputStream(new File(fontFolder, GlyphListFile.FILE_NAME))) {
+        try (OutputStream output = new FileOutputStream(
+                new File(fontFolder, GlyphListFile.FILE_NAME))) {
             output.write(text.getBytes(StandardCharsets.UTF_8));
         }
     }

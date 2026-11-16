@@ -2,10 +2,14 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import java.util.Arrays;
 
-/** Spreads labels along one axis so none overlap, moving each as little as possible and never changing their order. */
+/**
+ * Spreads labels along one axis so none overlap, moving each as little as possible and never
+ * changing their order.
+ */
 final class LabelPlacer {
 
-    private LabelPlacer() { }
+    private LabelPlacer() {
+    }
 
     /**
      * @param wanted preferred start of each label along the axis
@@ -13,13 +17,15 @@ final class LabelPlacer {
      * @param min lowest allowed start
      * @param max highest allowed end
      * @param gap free space required between neighbors
-     * @return start of each label, in input order; labels that cannot fit between the bounds are stacked from {@code min}
+     * @return start of each label, in input order; labels that cannot fit between the bounds are
+     *     stacked from {@code min}
      */
     static int[] place(int[] wanted, int[] sizes, int min, int max, int gap) {
         int count = wanted.length;
         Integer[] order = indicesSortedByWanted(wanted);
 
-        // A cluster is a run of touching labels that moves as one block; its position is the mean of what its members want.
+        // A cluster is a run of touching labels that moves as one block; its position is the mean
+        // of what its members want.
         Clusters clusters = new Clusters(count);
         for (int rank = 0; rank < count; rank++) {
             int index = order[rank];
@@ -63,11 +69,13 @@ final class LabelPlacer {
     private static boolean lastTwoClustersTouch(Clusters clusters, int gap) {
         int last = clusters.count - 1;
         int previous = last - 1;
-        return clusters.positionOf[previous] + clusters.extentOf[previous] + gap > clusters.positionOf[last];
+        return clusters.positionOf[previous] + clusters.extentOf[previous] + gap
+                > clusters.positionOf[last];
     }
 
-    private static void mergeLastClusterIntoPrevious(Clusters clusters, Integer[] order, int[] wanted, int[] sizes,
-                                                     int gap, int min, int max) {
+    private static void mergeLastClusterIntoPrevious(Clusters clusters, Integer[] order,
+            int[] wanted, int[] sizes,
+            int gap, int min, int max) {
         int[] firstOf = clusters.firstOf;
         int[] lengthOf = clusters.lengthOf;
         int[] extentOf = clusters.extentOf;
@@ -77,7 +85,8 @@ final class LabelPlacer {
         int mergedExtent = extentOf[previous] + gap + extentOf[last];
         long wantedSum = 0;
         int offset = 0;
-        for (int rankInside = firstOf[previous]; rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
+        for (int rankInside = firstOf[previous];
+             rankInside < firstOf[last] + lengthOf[last]; rankInside++) {
             int member = order[rankInside];
             wantedSum += wanted[member] - offset;
             offset += sizes[member] + gap;
@@ -85,10 +94,12 @@ final class LabelPlacer {
         int memberCount = lengthOf[previous] + lengthOf[last];
         lengthOf[previous] = memberCount;
         extentOf[previous] = mergedExtent;
-        positionOf[previous] = clampStart(Math.floorDiv(wantedSum, memberCount), mergedExtent, min, max);
+        positionOf[previous] =
+                clampStart(Math.floorDiv(wantedSum, memberCount), mergedExtent, min, max);
     }
 
-    private static int[] startsFromClusters(Clusters clusters, Integer[] order, int[] sizes, int gap) {
+    private static int[] startsFromClusters(Clusters clusters, Integer[] order, int[] sizes,
+            int gap) {
         int[] result = new int[order.length];
         for (int cluster = 0; cluster < clusters.count; cluster++) {
             int offset = 0;

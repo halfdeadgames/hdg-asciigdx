@@ -13,16 +13,16 @@ import org.junit.jupiter.api.Test;
 class BrokenGuidesTest {
 
     private static final String GUIDES = """
-        row    TOP    1 all
-        row    CAP    2 symbols
-        column MID    4 uppercase
-        bar    BAR    1 2 uppercase,extra,odd
-        colbar CB     1 2 nothing
-        """;
+            row    TOP    1 all
+            row    CAP    2 symbols
+            column MID    4 uppercase
+            bar    BAR    1 2 uppercase,extra,odd
+            colbar CB     1 2 nothing
+            """;
 
     private static final RulesFile WITH_SYMBOLS = RulesFile.parse("""
-        {"groups": {"uppercase": ["A-Z"], "symbols": ["!-/"]}}
-        """, 8, 8);
+            {"groups": {"uppercase": ["A-Z"], "symbols": ["!-/"]}}
+            """, 8, 8);
 
     private static PaintGuides guides() {
         return PaintGuides.parse(GUIDES);
@@ -32,7 +32,8 @@ class BrokenGuidesTest {
     void onlyBrokenGuidesAreReportedInListOrder() {
         List<BrokenGuides.Broken> broken = BrokenGuides.find(guides(), RULES);
 
-        assertEquals(List.of("CAP", "BAR", "CB"), broken.stream().map(BrokenGuides.Broken::label).toList());
+        assertEquals(List.of("CAP", "BAR", "CB"),
+                broken.stream().map(BrokenGuides.Broken::label).toList());
     }
 
     @Test
@@ -84,7 +85,8 @@ class BrokenGuidesTest {
         assertFalse(shown.isRowBroken(1));
         assertTrue(shown.isBarBroken(0));
         assertEquals(List.of("BAR", "CB"),
-            BrokenGuides.find(guides(), WITH_SYMBOLS).stream().map(BrokenGuides.Broken::label).toList());
+                BrokenGuides.find(guides(), WITH_SYMBOLS).stream().map(BrokenGuides.Broken::label)
+                        .toList());
     }
 
     @Test

@@ -19,11 +19,15 @@ public final class BrokenGuides {
     private BrokenGuides() {
     }
 
-    /** The broken guides in guide-list order: rows, columns, bars, then column bars. None when the rules define no groups. */
+    /**
+     * The broken guides in guide-list order: rows, columns, bars, then column bars. None when the
+     * rules define no groups.
+     */
     public static List<Broken> find(PaintGuides guides, RulesFile rules) {
         List<Broken> broken = new ArrayList<>();
         for (PaintGuides.Listed guide : guides.allGuides()) {
-            List<String> undefined = GuideGroups.undefinedNames(GuideGroups.namesIn(guide.groups()), rules);
+            List<String> undefined =
+                    GuideGroups.undefinedNames(GuideGroups.namesIn(guide.groups()), rules);
             if (!undefined.isEmpty()) {
                 broken.add(new Broken(guide.label(), List.copyOf(undefined)));
             }

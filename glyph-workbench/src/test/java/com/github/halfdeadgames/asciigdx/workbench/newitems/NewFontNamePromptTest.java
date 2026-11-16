@@ -109,7 +109,8 @@ class NewFontNamePromptTest {
     @Test
     void invalidNameShowsTheErrorAndEnterDoesNothing() {
         var prompt = openPrompt("Bad Name");
-        assertEquals(List.of(padded("bad name_"), "", "Use only a-z, 0-9, and", "hyphens"), prompt.lines());
+        assertEquals(List.of(padded("bad name_"), "", "Use only a-z, 0-9, and", "hyphens"),
+                prompt.lines());
         prompt.enter();
         assertTrue(accepted.isEmpty());
     }
@@ -118,14 +119,16 @@ class NewFontNamePromptTest {
     void existingFolderIsAnErrorEvenWithOtherCase() {
         var prompt = openPrompt("saiksistt", "Saiksistt");
         assertEquals("A font with that name already exists", prompt.error());
-        assertEquals(List.of(padded("saiksistt_"), "", "A font with that name", "already exists"), prompt.lines());
+        assertEquals(List.of(padded("saiksistt_"), "", "A font with that name", "already exists"),
+                prompt.lines());
     }
 
     @Test
     void validNameShowsTheHintAndEnterHandsItOver() {
         var prompt = openPrompt("Tiny-8", "other");
         assertNull(prompt.error());
-        assertEquals(List.of(padded("tiny-8_"), "", "Creates the folder", "tiny-8"), prompt.lines());
+        assertEquals(List.of(padded("tiny-8_"), "", "Creates the folder", "tiny-8"),
+                prompt.lines());
         prompt.enter();
         assertEquals(List.of("tiny-8"), accepted);
     }
@@ -148,7 +151,7 @@ class NewFontNamePromptTest {
 
     @Test
     void alwaysReturnsFourLinesAndLineOneIsTwentySixCells() {
-        for (String typed : new String[] {"", "ok", "BAD!", "a".repeat(40)}) {
+        for (String typed : new String[]{"", "ok", "BAD!", "a".repeat(40)}) {
             List<String> lines = openPrompt(typed).lines();
             assertEquals(4, lines.size());
             assertEquals("", lines.get(1));

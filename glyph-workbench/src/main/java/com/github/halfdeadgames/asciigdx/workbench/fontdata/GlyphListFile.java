@@ -23,7 +23,8 @@ public final class GlyphListFile {
      *
      * @param fontFolder the folder that holds the font's size files
      * @return the parsed list, or {@link GlyphList#NONE} when the folder has no glyph list file
-     * @throws FontDataException if the file cannot be read or is not valid; the message starts with the file name
+     * @throws FontDataException if the file cannot be read or is not valid; the message starts with
+     *     the file name
      */
     public static GlyphList load(File fontFolder) {
         File file = new File(fontFolder, FILE_NAME);
@@ -39,8 +40,8 @@ public final class GlyphListFile {
     }
 
     /**
-     * Adds one code point as a {@code U+XXXX} line, creating the file when missing. The existing text is kept
-     * exactly and is not parsed.
+     * Adds one code point as a {@code U+XXXX} line, creating the file when missing. The existing
+     * text is kept exactly and is not parsed.
      *
      * @param fontFolder the folder that holds the font's size files
      * @param codePoint the code point to list
@@ -48,7 +49,8 @@ public final class GlyphListFile {
      */
     public static void append(File fontFolder, int codePoint) throws IOException {
         Path target = new File(fontFolder, FILE_NAME).toPath();
-        String existing = Files.exists(target) ? Files.readString(target, StandardCharsets.UTF_8) : "";
+        String existing =
+                Files.exists(target) ? Files.readString(target, StandardCharsets.UTF_8) : "";
         String separator = existing.isEmpty() || existing.endsWith("\n") ? "" : "\n";
         AtomicFiles.write(target, existing + separator + CodePoints.label(codePoint) + "\n");
     }

@@ -26,31 +26,33 @@ class HelpWrapTest {
     void aLongActionWrapsAtSpacesUnderTheActionColumn() {
         List<HelpWrap.Line> lines = HelpWrap.layout(List.of(control("U", "UNLOCK DERIVED", 4)), 12);
         assertEquals(List.of(
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "U", "UNLOCK", 4),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "DERIVED", 4)), lines);
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "U", "UNLOCK", 4),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "DERIVED", 4)), lines);
     }
 
     @Test
     void aWordLongerThanTheFullWidthIsHardBrokenWhenStacked() {
         List<HelpWrap.Line> lines = HelpWrap.layout(List.of(control("K", "ABCDEFGHIJKLMN", 4)), 12);
         assertEquals(List.of(
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "K", "", 0),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "ABCDEFGHIJ", 2),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "KLMN", 2)), lines);
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "K", "", 0),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "ABCDEFGHIJ", 2),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "KLMN", 2)), lines);
     }
 
     @Test
     void aTableSwitchesToStackedWhenTheActionColumnIsNarrowerThanAWord() {
-        List<PaintHelp.Row> rows = List.of(control("CTRL+S", "SAVE", 8), control("U", "UNLOCK DERIVED", 8));
+        List<PaintHelp.Row> rows =
+                List.of(control("CTRL+S", "SAVE", 8), control("U", "UNLOCK DERIVED", 8));
         List<HelpWrap.Line> stacked = HelpWrap.layout(rows, 12);
         assertEquals(List.of(
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "CTRL+S", "", 0),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "SAVE", 2),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "U", "", 0),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "UNLOCK", 2),
-            new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "DERIVED", 2)), stacked);
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "CTRL+S", "", 0),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "SAVE", 2),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "U", "", 0),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "UNLOCK", 2),
+                new HelpWrap.Line(PaintHelp.Kind.CONTROL, "", "DERIVED", 2)), stacked);
         List<HelpWrap.Line> sideBySide = HelpWrap.layout(rows, 20);
-        assertEquals(new HelpWrap.Line(PaintHelp.Kind.CONTROL, "CTRL+S", "SAVE", 8), sideBySide.get(0));
+        assertEquals(new HelpWrap.Line(PaintHelp.Kind.CONTROL, "CTRL+S", "SAVE", 8),
+                sideBySide.get(0));
         assertEquals(3, sideBySide.size());
     }
 
@@ -65,9 +67,11 @@ class HelpWrapTest {
     @Test
     void separateTablesChooseTheirOwnLayout() {
         PaintHelp.Row blank = new PaintHelp.Row(PaintHelp.Kind.TEXT, "", "", 0);
-        List<PaintHelp.Row> rows = List.of(control("A", "LONGERWORD", 8), blank, control("B", "OK", 3));
+        List<PaintHelp.Row> rows =
+                List.of(control("A", "LONGERWORD", 8), blank, control("B", "OK", 3));
         List<HelpWrap.Line> lines = HelpWrap.layout(rows, 12);
-        assertEquals(new HelpWrap.Line(PaintHelp.Kind.CONTROL, "B", "OK", 3), lines.get(lines.size() - 1));
+        assertEquals(new HelpWrap.Line(PaintHelp.Kind.CONTROL, "B", "OK", 3),
+                lines.get(lines.size() - 1));
         assertEquals(2, lines.get(1).actionColumn());
     }
 
@@ -110,7 +114,8 @@ class HelpWrapTest {
         List<HelpWrap.Line> lines = HelpWrap.layout(PaintHelp.allControlRows(), charsPerLine);
         assertTrue(lines.size() > 18);
         for (HelpWrap.Line line : lines) {
-            assertTrue(line.actionColumn() + line.action().length() <= charsPerLine, line.toString());
+            assertTrue(line.actionColumn() + line.action().length() <= charsPerLine,
+                    line.toString());
             assertTrue(line.key().length() <= charsPerLine, line.toString());
             assertTrue(line.actionColumn() == 0 || line.actionColumn() == 2, line.toString());
             assertTrue(line.key().isEmpty() || line.action().isEmpty(), line.toString());
@@ -119,10 +124,12 @@ class HelpWrapTest {
 
     @Test
     void proseNarrowsByOneColumnWhenTheLinesOverflow() {
-        PaintHelp.State menu = new PaintHelp.State(DeriveFlow.Mode.MENU, GlyphOp.Kind.MIRROR, List.of(), null);
+        PaintHelp.State menu =
+                new PaintHelp.State(DeriveFlow.Mode.MENU, GlyphOp.Kind.MIRROR, List.of(), null);
         int roomy = 0;
         for (HelpWrap.Line line : HelpWrap.lines(menu, 12, 100)) {
-            roomy = Math.max(roomy, line.kind() == PaintHelp.Kind.TEXT ? line.action().length() : 0);
+            roomy = Math.max(roomy,
+                    line.kind() == PaintHelp.Kind.TEXT ? line.action().length() : 0);
         }
         assertEquals(12, roomy);
         for (HelpWrap.Line line : HelpWrap.lines(menu, 12, 1)) {

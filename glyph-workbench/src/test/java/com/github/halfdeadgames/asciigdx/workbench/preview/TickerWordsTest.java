@@ -72,7 +72,7 @@ class TickerWordsTest {
         List<Integer> codePoints = new ArrayList<>(letters());
         codePoints.addAll(range('0', '9'));
         Set<Integer> allowed = Set.copyOf(codePoints);
-        for (GlyphClass mode : new GlyphClass[] {GlyphClass.LETTER, GlyphClass.ANY}) {
+        for (GlyphClass mode : new GlyphClass[]{GlyphClass.LETTER, GlyphClass.ANY}) {
             for (long seed = 0; seed < 5; seed++) {
                 TickerWords source = new TickerWords(codePoints, mode, new Random(seed));
                 for (int i = 0; i < WORD_COUNT; i++) {
@@ -113,7 +113,8 @@ class TickerWordsTest {
     @Test
     void lettersWithoutVowelsStillProduceWords() {
         TickerWords source = words(range('b', 'h').stream()
-                .filter(codePoint -> !isVowel(codePoint)).collect(Collectors.toList()), GlyphClass.LETTER);
+                        .filter(codePoint -> !isVowel(codePoint)).collect(Collectors.toList()),
+                GlyphClass.LETTER);
         assertTrue(source.hasEnough());
         assertTrue(source.nextWord().length >= 2);
     }
@@ -180,7 +181,8 @@ class TickerWordsTest {
 
     @Test
     void wordsStayInsideTheirClass() {
-        Set<Integer> available = "abcdef0123456789!?.,;:".codePoints().boxed().collect(Collectors.toSet());
+        Set<Integer> available =
+                "abcdef0123456789!?.,;:".codePoints().boxed().collect(Collectors.toSet());
         TickerWords digits = new TickerWords(available, GlyphClass.DIGIT, new Random(9));
         TickerWords punctuation = new TickerWords(available, GlyphClass.PUNCTUATION, new Random(9));
         for (int i = 0; i < 200; i++) {

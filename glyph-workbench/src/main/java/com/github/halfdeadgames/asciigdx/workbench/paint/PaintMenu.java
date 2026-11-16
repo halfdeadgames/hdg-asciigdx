@@ -20,9 +20,9 @@ final class PaintMenu {
         IDLE,
         DERIVING,
         /**
-         * A prompt or panel that takes input: the unsaved-changes prompt, the guide list (including its rename
-         * field), and the New glyph, New size, Upscale, and New font flows. While one is open, only the help items
-         * stay available.
+         * A prompt or panel that takes input: the unsaved-changes prompt, the guide list
+         * (including its rename field), and the New glyph, New size, Upscale, and New font flows.
+         * While one is open, only the help items stay available.
          */
         MODAL,
         RULES_OPEN,
@@ -36,32 +36,33 @@ final class PaintMenu {
     /** @param autoScale whether the UI size is automatic, which marks the auto size item */
     static MenuBar<Action> create(boolean autoScale) {
         return new MenuBar<>(List.of(
-            new Menu<>("FILE", 'f', List.of(
-                new Item<>("SAVE", "CTRL+S", Action.SAVE),
-                new Item<>("EXPORT", "CTRL+E", Action.EXPORT),
-                new Item<>("RELOAD FONT FILES", "F5", Action.RELOAD_FILES),
-                new Item<>("NEW SIZE", "", Action.NEW_SIZE),
-                new Item<>("NEW FONT", "", Action.NEW_FONT),
-                new Item<>("BACK", "ESC", Action.BACK))),
-            new Menu<>("EDIT", 'e', List.of(
-                new Item<>("UNDO", "CTRL+Z", Action.UNDO),
-                new Item<>("REDO", "CTRL+Y", Action.REDO))),
-            new Menu<>("GLYPH", 'g', List.of(
-                new Item<>("NEW GLYPH", "N", Action.NEW_GLYPH),
-                new Item<>("DERIVE", "D", Action.DERIVE),
-                new Item<>("UPSCALE", "", Action.UPSCALE),
-                new Item<>("UNLOCK DERIVED", "U", Action.UNLOCK_DERIVED),
-                new Item<>("GO TO SOURCE", "G", Action.GO_TO_SOURCE),
-                new Item<>("CANCEL DERIVE", "ESC", Action.CANCEL_DERIVE))),
-            new Menu<>("VIEW", 'v', List.of(
-                new Item<>("NEXT PREVIEW", "TAB", Action.NEXT_PREVIEW),
-                new Item<>("GUIDES", "F2", Action.GUIDES),
-                new Item<>("BIGGER UI", "CTRL+=", Action.BIGGER_UI),
-                new Item<>("SMALLER UI", "CTRL+-", Action.SMALLER_UI),
-                new Item<>(autoScale ? "*AUTO UI SIZE" : "AUTO UI SIZE", "CTRL+0", Action.AUTO_UI))),
-            new Menu<>("HELP", 'h', List.of(
-                new Item<>("RULES", "F1", Action.RULES),
-                new Item<>("CONTROLS", "", Action.CONTROLS)))));
+                new Menu<>("FILE", 'f', List.of(
+                        new Item<>("SAVE", "CTRL+S", Action.SAVE),
+                        new Item<>("EXPORT", "CTRL+E", Action.EXPORT),
+                        new Item<>("RELOAD FONT FILES", "F5", Action.RELOAD_FILES),
+                        new Item<>("NEW SIZE", "", Action.NEW_SIZE),
+                        new Item<>("NEW FONT", "", Action.NEW_FONT),
+                        new Item<>("BACK", "ESC", Action.BACK))),
+                new Menu<>("EDIT", 'e', List.of(
+                        new Item<>("UNDO", "CTRL+Z", Action.UNDO),
+                        new Item<>("REDO", "CTRL+Y", Action.REDO))),
+                new Menu<>("GLYPH", 'g', List.of(
+                        new Item<>("NEW GLYPH", "N", Action.NEW_GLYPH),
+                        new Item<>("DERIVE", "D", Action.DERIVE),
+                        new Item<>("UPSCALE", "", Action.UPSCALE),
+                        new Item<>("UNLOCK DERIVED", "U", Action.UNLOCK_DERIVED),
+                        new Item<>("GO TO SOURCE", "G", Action.GO_TO_SOURCE),
+                        new Item<>("CANCEL DERIVE", "ESC", Action.CANCEL_DERIVE))),
+                new Menu<>("VIEW", 'v', List.of(
+                        new Item<>("NEXT PREVIEW", "TAB", Action.NEXT_PREVIEW),
+                        new Item<>("GUIDES", "F2", Action.GUIDES),
+                        new Item<>("BIGGER UI", "CTRL+=", Action.BIGGER_UI),
+                        new Item<>("SMALLER UI", "CTRL+-", Action.SMALLER_UI),
+                        new Item<>(autoScale ? "*AUTO UI SIZE" : "AUTO UI SIZE", "CTRL+0",
+                                Action.AUTO_UI))),
+                new Menu<>("HELP", 'h', List.of(
+                        new Item<>("RULES", "F1", Action.RULES),
+                        new Item<>("CONTROLS", "", Action.CONTROLS)))));
     }
 
     static boolean isAvailable(Action action, Context context) {

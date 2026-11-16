@@ -5,7 +5,8 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
  *
  * @param enabled      false while text is being typed: every key is then left to the screen
  * @param altDown      either Alt key is held
- * @param accessKey    letter pressed this frame (any case), or {@link MenuKeys#NO_KEY}; used only with Alt
+ * @param accessKey    letter pressed this frame (any case), or {@link MenuKeys#NO_KEY}; used only
+ *                     with Alt
  * @param f10Pressed   F10 went down this frame
  * @param enterPressed Enter or numpad Enter went down this frame
  * @param lefts        repeat-aware move count for the left arrow this frame

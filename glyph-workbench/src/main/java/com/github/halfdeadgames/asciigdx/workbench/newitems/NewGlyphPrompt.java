@@ -6,7 +6,9 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import java.util.List;
 import java.util.function.IntPredicate;
 
-/** The text typed into the "new glyph" dialog, and the four or five lines the dialog shows for it. */
+/**
+ * The text typed into the "new glyph" dialog, and the four or five lines the dialog shows for it.
+ */
 final class NewGlyphPrompt {
 
     private static final int MAX_CHARS = 10;
@@ -36,7 +38,9 @@ final class NewGlyphPrompt {
         open = false;
     }
 
-    /** Appends a hex digit, {@code U}, {@code u}, or {@code +} while open, up to {@link #MAX_CHARS}. */
+    /**
+     * Appends a hex digit, {@code U}, {@code u}, or {@code +} while open, up to {@link #MAX_CHARS}.
+     */
     void type(char character) {
         if (!open || text.length() >= MAX_CHARS || !isHexEntryCharacter(character)) {
             return;
@@ -46,9 +50,9 @@ final class NewGlyphPrompt {
 
     private static boolean isHexEntryCharacter(char character) {
         return (character >= '0' && character <= '9')
-            || (character >= 'a' && character <= 'f')
-            || (character >= 'A' && character <= 'F')
-            || character == 'U' || character == 'u' || character == '+';
+                || (character >= 'a' && character <= 'f')
+                || (character >= 'A' && character <= 'F')
+                || character == 'U' || character == 'u' || character == '+';
     }
 
     /** Removes the last code point, so a surrogate pair goes in one press. */
@@ -70,8 +74,8 @@ final class NewGlyphPrompt {
     }
 
     /**
-     * Four lines, or five when the glyph name wraps: the typed text with a cursor, a blank line, then either
-     * the hint or error (wrapped over two lines) or the code point and glyph name.
+     * Four lines, or five when the glyph name wraps: the typed text with a cursor, a blank line,
+     * then either the hint or error (wrapped over two lines) or the code point and glyph name.
      *
      * @param hasSlot tells whether the sheet already has a slot for a code point
      */

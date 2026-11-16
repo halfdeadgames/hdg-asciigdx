@@ -34,8 +34,9 @@ public final class RulesScreen {
 
     public RulesScreen(Painter painter) {
         this.painter = painter;
-        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR, UiPalette.WARN,
-            UiPalette.INACTIVE);
+        panel = new RulesPanel(painter, FRAME_COLOR, PAGE_FILL, TEXT_COLOR, HEADING_COLOR,
+                UiPalette.WARN,
+                UiPalette.INACTIVE);
         if (Boolean.getBoolean("workbench.rulesOpen")) {
             open = true;
             slide = 1f;
@@ -81,9 +82,9 @@ public final class RulesScreen {
     }
 
     /**
-     * Advances the slide and handles F1, Esc, and scrolling. Returns true when the overlay used this
-     * frame's input, so the caller must skip its own input handling (and must not quit on Esc).
-     * The wheel ticks are read, not cleared; the caller clears them.
+     * Advances the slide and handles F1, Esc, and scrolling. Returns true when the overlay used
+     * this frame's input, so the caller must skip its own input handling (and must not quit on
+     * Esc). The wheel ticks are read, not cleared; the caller clears them.
      */
     public boolean handleInput(float delta, int wheelTicks) {
         float step = delta / SLIDE_SECONDS;
@@ -95,7 +96,8 @@ public final class RulesScreen {
             }
             return false;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F1) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F1) || Gdx.input.isKeyJustPressed(
+                Input.Keys.ESCAPE)) {
             open = false;
             repeatUp.update(false, delta);
             repeatDown.update(false, delta);
@@ -130,6 +132,7 @@ public final class RulesScreen {
         int cellsWide = RulesPanel.cellsWideFor(worldWidth, cellPixels);
         float eased = 1f - (1f - slide) * (1f - slide);
         int left = worldWidth - Math.round(cellsWide * cellPixels * eased);
-        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / cellPixels), worldHeight, codePoint);
+        panel.draw(left, 0, cellsWide, Math.max(3, worldHeight / cellPixels), worldHeight,
+                codePoint);
     }
 }

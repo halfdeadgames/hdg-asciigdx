@@ -14,7 +14,7 @@ class FontSheetTest {
 
     private static final GlyphList CP437 = GlyphList.parse("cp437");
     private static final FontData DRAWN = FontDataParser.parse(
-        file(glyph("U+0041 A", "#......."), glyph("U+0042 B", "##......")));
+            file(glyph("U+0041 A", "#......."), glyph("U+0042 B", "##......")));
 
     @Test
     void withoutAGlyphListTheSheetHoldsOnlyDrawnGlyphs() {

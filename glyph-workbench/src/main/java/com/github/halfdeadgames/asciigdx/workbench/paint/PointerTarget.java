@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.paint;
 
-/** A panel's share of the pointer: hears presses, may claim one, and may capture the pointer while held. */
+/**
+ * A panel's share of the pointer: hears presses, may claim one, and may capture the pointer while
+ * held.
+ */
 interface PointerTarget {
 
     /** Called on every press, whether or not another target claims it. */

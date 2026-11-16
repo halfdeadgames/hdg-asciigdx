@@ -6,8 +6,9 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * The checklist of rules-file groups for one guide: a row per defined group in file order, then a checked row for
- * each group the guide names that the file does not define. A guide for all glyphs has nothing checked.
+ * The checklist of rules-file groups for one guide: a row per defined group in file order, then a
+ * checked row for each group the guide names that the file does not define. A guide for all glyphs
+ * has nothing checked.
  */
 final class GuideGroupList {
 
@@ -18,7 +19,8 @@ final class GuideGroupList {
     record Row(String name, boolean checked, boolean unknown) {
 
         String text() {
-            return (checked ? CHECKED_BOX : UNCHECKED_BOX) + name.toUpperCase(Locale.ROOT) + (unknown ? UNKNOWN_MARK : "");
+            return (checked ? CHECKED_BOX : UNCHECKED_BOX) + name.toUpperCase(Locale.ROOT) + (
+                    unknown ? UNKNOWN_MARK : "");
         }
     }
 
@@ -37,7 +39,10 @@ final class GuideGroupList {
         return !definedGroups.isEmpty();
     }
 
-    /** Rebuilds the rows from the guide's current groups; the selection stays at its place unless the list got shorter. */
+    /**
+     * Rebuilds the rows from the guide's current groups; the selection stays at its place unless
+     * the list got shorter.
+     */
     void showGroups(String guideGroupsText) {
         rows = buildRows(guideGroupsText);
         select(selected);
@@ -87,7 +92,8 @@ final class GuideGroupList {
     }
 
     int firstVisible(int visibleRows) {
-        firstVisible = GuideListRows.scrolledFirst(firstVisible, selected, rows.size(), visibleRows);
+        firstVisible =
+                GuideListRows.scrolledFirst(firstVisible, selected, rows.size(), visibleRows);
         return firstVisible;
     }
 }

@@ -15,6 +15,7 @@ final class NewSizeFile {
 
     /** Creates {@code file}; an existing file is never touched. */
     static void writeNew(Path file, CellSize size) throws IOException {
-        Files.writeString(file, "cell " + size + "\n", StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        Files.writeString(file, "cell " + size + "\n", StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE_NEW);
     }
 }

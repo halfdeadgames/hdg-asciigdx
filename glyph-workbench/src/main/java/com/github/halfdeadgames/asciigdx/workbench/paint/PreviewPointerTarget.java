@@ -12,7 +12,8 @@ final class PreviewPointerTarget implements PointerTarget {
     private final Supplier<CellRect> previewArea;
     private final IntSupplier cellPixels;
 
-    PreviewPointerTarget(PaintPreview preview, Supplier<CellRect> previewArea, IntSupplier cellPixels) {
+    PreviewPointerTarget(PaintPreview preview, Supplier<CellRect> previewArea,
+            IntSupplier cellPixels) {
         this.preview = preview;
         this.previewArea = previewArea;
         this.cellPixels = cellPixels;

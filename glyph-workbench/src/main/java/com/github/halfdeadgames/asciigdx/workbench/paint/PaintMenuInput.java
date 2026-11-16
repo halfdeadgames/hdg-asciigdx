@@ -16,7 +16,10 @@ final class PaintMenuInput {
 
     /** What the menu input needs from the paint screen. */
     interface Host {
-        /** The current bar. A menu action can swap it mid-frame, so read it again after running one. */
+        /**
+         * The current bar. A menu action can swap it mid-frame, so read it again after running
+         * one.
+         */
         MenuBar<PaintMenu.Action> menuBar();
 
         void updatePointerPosition();
@@ -47,16 +50,19 @@ final class PaintMenuInput {
     private final MenuKeys<PaintMenu.Action> menuKeys;
     private final Predicate<PaintMenu.Action> menuAvailability;
     private final ArrowRepeats arrowRepeats;
-    // A menu state requested by the dev hook stays as set until the pointer moves, a click lands, or Esc is pressed.
+    // A menu state requested by the dev hook stays as set until the pointer moves, a click lands,
+    // or Esc is pressed.
     private boolean menuPinned;
     private boolean menuPinPositionKnown;
     private int menuPinX;
     private int menuPinY;
-    // Alt as the input events saw it, because typed characters arrive before this frame's polling can say so.
+    // Alt as the input events saw it, because typed characters arrive before this frame's polling
+    // can say so.
     private boolean altSeenDown;
 
-    PaintMenuInput(Host host, MenuPointer<PaintMenu.Action> menuPointer, MenuKeys<PaintMenu.Action> menuKeys,
-                   Predicate<PaintMenu.Action> menuAvailability, ArrowRepeats arrowRepeats) {
+    PaintMenuInput(Host host, MenuPointer<PaintMenu.Action> menuPointer,
+            MenuKeys<PaintMenu.Action> menuKeys,
+            Predicate<PaintMenu.Action> menuAvailability, ArrowRepeats arrowRepeats) {
         this.host = host;
         this.menuPointer = menuPointer;
         this.menuKeys = menuKeys;
@@ -123,11 +129,11 @@ final class PaintMenuInput {
 
     private boolean pinHolds(int pixelX, int pixelY) {
         return pixelX == menuPinX && pixelY == menuPinY && !host.leftClicked()
-            && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
+                && !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
     }
 
     private PaintMenu.Action pointMenu(MenuBar<PaintMenu.Action> menuBar, int pixelX, int pixelY,
-                                       boolean escape) {
+            boolean escape) {
         int cellPixels = host.cellPixels();
         int column = Math.floorDiv(pixelX, cellPixels);
         int row = Math.floorDiv(pixelY, cellPixels);
@@ -136,7 +142,8 @@ final class PaintMenuInput {
         boolean buttonDown = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
         boolean pointerBusy = host.pointerBusy();
         return menuPointer.update(menuBar, menuAvailability,
-            new MenuPointerInput(column, row, totalColumns, escape, pressStarted, buttonDown, pointerBusy));
+                new MenuPointerInput(column, row, totalColumns, escape, pressStarted, buttonDown,
+                        pointerBusy));
     }
 
     private void runChosenAction(PaintMenu.Action chosen, boolean wasOpen) {
@@ -153,22 +160,28 @@ final class PaintMenuInput {
     private PaintMenu.Action routeMenuKeys(MenuBar<PaintMenu.Action> menuBar, float delta) {
         boolean alt = host.altDown();
         boolean steering = menuBar.isOpen() && !alt;
-        int lefts = steering ? arrowRepeats.left().update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
-        int rights = steering ? arrowRepeats.right().update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
-        int ups = steering ? arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta) : 0;
-        int downs = steering ? arrowRepeats.down().update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
+        int lefts = steering ? arrowRepeats.left()
+                .update(Gdx.input.isKeyPressed(Input.Keys.LEFT), delta) : 0;
+        int rights = steering ? arrowRepeats.right()
+                .update(Gdx.input.isKeyPressed(Input.Keys.RIGHT), delta) : 0;
+        int ups = steering ? arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta)
+                : 0;
+        int downs = steering ? arrowRepeats.down()
+                .update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta) : 0;
         boolean enter = Keys.enterJustPressed();
         boolean enabled = !host.renamingGuide();
         char accessKey = alt ? pressedAccessKey(menuBar) : MenuKeys.NO_KEY;
         boolean f10Pressed = Gdx.input.isKeyJustPressed(Input.Keys.F10);
         return menuKeys.route(menuBar, menuAvailability,
-            new MenuKeyInput(enabled, alt, accessKey, f10Pressed, enter, lefts, rights, ups, downs));
+                new MenuKeyInput(enabled, alt, accessKey, f10Pressed, enter, lefts, rights, ups,
+                        downs));
     }
 
     private static char pressedAccessKey(MenuBar<PaintMenu.Action> menuBar) {
         for (int i = 0; i < menuBar.menuCount(); i++) {
             char key = Character.toLowerCase(menuBar.menu(i).accessKey());
-            if (key >= 'a' && key <= 'z' && Gdx.input.isKeyJustPressed(Input.Keys.A + (key - 'a'))) {
+            if (key >= 'a' && key <= 'z'
+                    && Gdx.input.isKeyJustPressed(Input.Keys.A + (key - 'a'))) {
                 return key;
             }
         }

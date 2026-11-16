@@ -22,7 +22,9 @@ class NewFontGlyphsPromptTest {
 
     @Test
     void startsClosedAndTracksOpenAndClose() {
-        var prompt = new NewFontGlyphsPrompt(glyphs -> { }, () -> { });
+        var prompt = new NewFontGlyphsPrompt(glyphs -> {
+        }, () -> {
+        });
         assertFalse(prompt.isOpen());
         prompt.open("a");
         assertTrue(prompt.isOpen());
@@ -116,7 +118,8 @@ class NewFontGlyphsPromptTest {
         assertEquals("Glyphs for my-font", lines.get(0));
         int firstRowLine = NewFontGlyphsPrompt.LIST_TOP_LINE;
         assertEquals(" ".repeat(NewFontGlyphsPrompt.LINE_CELLS), lines.get(firstRowLine));
-        assertEquals(" ".repeat(NewFontGlyphsPrompt.LINE_CELLS), lines.get(firstRowLine + SelectList.PITCH));
+        assertEquals(" ".repeat(NewFontGlyphsPrompt.LINE_CELLS),
+                lines.get(firstRowLine + SelectList.PITCH));
         assertEquals(2, prompt.rows().size());
     }
 

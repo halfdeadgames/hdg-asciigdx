@@ -42,7 +42,7 @@ final class GlyphSet {
      * @return the all-matching set
      */
     public static GlyphSet all() {
-        return new GlyphSet(new int[] {0}, new int[] {MAX_CODE_POINT});
+        return new GlyphSet(new int[]{0}, new int[]{MAX_CODE_POINT});
     }
 
     /**
@@ -84,12 +84,12 @@ final class GlyphSet {
         }
         if (token.codePointCount(0, token.length()) == 1) {
             int codePoint = token.codePointAt(0);
-            return new int[] {codePoint, codePoint};
+            return new int[]{codePoint, codePoint};
         }
         int code = CodePoints.readUPlus(token);
         if (code != CodePoints.NOT_A_CODE) {
             int codePoint = requireInUnicode(code, token);
-            return new int[] {codePoint, codePoint};
+            return new int[]{codePoint, codePoint};
         }
         return parseRange(token);
     }
@@ -103,9 +103,11 @@ final class GlyphSet {
             }
             if (first > last) {
                 throw new IllegalArgumentException(
-                        "\"" + token + "\" is not a glyph range: the range runs backwards, so put the lower one first");
+                        "\"" + token
+                                + "\" is not a glyph range: the range runs backwards, "
+                                + "so put the lower one first");
             }
-            return new int[] {first, last};
+            return new int[]{first, last};
         }
         throw new IllegalArgumentException("\"" + token + "\" is not a glyph: " + allowedForms());
     }

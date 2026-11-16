@@ -45,7 +45,8 @@ class RulesFileTest {
             """;
 
     private static String errorOf(String json) {
-        return assertThrows(RulesFileException.class, () -> RulesFile.parse(json, CELL, CELL)).getMessage();
+        return assertThrows(RulesFileException.class,
+                () -> RulesFile.parse(json, CELL, CELL)).getMessage();
     }
 
     private static String errorOfRule(String ruleBody) {
@@ -53,7 +54,8 @@ class RulesFileTest {
     }
 
     private static CheckSettings settingsOf(String ruleBody) {
-        return onlyRule("{ rules: [ { name: r, appliesTo: [ all ], " + ruleBody + " } ] }").settings();
+        return onlyRule(
+                "{ rules: [ { name: r, appliesTo: [ all ], " + ruleBody + " } ] }").settings();
     }
 
     private static GlyphRule onlyRule(String json) {
@@ -75,7 +77,9 @@ class RulesFileTest {
 
     @Test
     void groupNamesFollowFileOrder() {
-        var names = java.util.List.of("zulu", "alpha", "mike", "bravo", "yankee", "charlie", "x1", "b2", "q9", "k");
+        var names =
+                java.util.List.of("zulu", "alpha", "mike", "bravo", "yankee", "charlie", "x1", "b2",
+                        "q9", "k");
         var body = new StringBuilder();
         for (String name : names) {
             body.append(name).append(": [ \"A\" ], ");
@@ -224,7 +228,9 @@ class RulesFileTest {
     @Test
     void rangeEndOutsideCellIsRejected() {
         assertEquals("Rule \"r\": column 20 is outside the 16x16 cell (columns 0-15)",
-                errorOfRule("name: r, check: noInkColumns, columns: [ \"14-20\" ], appliesTo: [ all ]"));
+                errorOfRule(
+                        "name: r, check: noInkColumns, columns: [ \"14-20\" ], "
+                                + "appliesTo: [ all ]"));
     }
 
     @Test
@@ -297,8 +303,10 @@ class RulesFileTest {
 
     @Test
     void exceptionByGroupExcludesItsGlyphs() {
-        var rule = onlyRule("{ groups: { caps: [\"A-Z\"], odd: [\"Q\"] }, rules: [ { name: r, check: centeredX, "
-                + "appliesTo: [ caps ], except: [ { group: odd, why: \"tail\" } ] } ] }");
+        var rule = onlyRule(
+                "{ groups: { caps: [\"A-Z\"], odd: [\"Q\"] }, "
+                        + "rules: [ { name: r, check: centeredX, "
+                        + "appliesTo: [ caps ], except: [ { group: odd, why: \"tail\" } ] } ] }");
         assertTrue(rule.checks('A'));
         assertFalse(rule.checks('Q'));
     }
@@ -328,7 +336,8 @@ class RulesFileTest {
     @Test
     void exceptionByGlyphsKeepsTokensAsWritten() {
         var rule = onlyRule("{ rules: [ { name: r, check: centeredX, appliesTo: [ all ], except: ["
-                + "{ glyphs: [ \"U+00B7\" ], why: \"narrow\" }, { glyphs: [ \"g\", \"j\" ], why: \"tails\" } ] } ] }");
+                + "{ glyphs: [ \"U+00B7\" ], why: \"narrow\" }, "
+                + "{ glyphs: [ \"g\", \"j\" ], why: \"tails\" } ] } ] }");
         assertEquals("U+00B7", rule.exceptions().get(0).source());
         assertEquals("g, j", rule.exceptions().get(1).source());
     }
@@ -346,12 +355,14 @@ class RulesFileTest {
 
     @Test
     void nonObjectFileIsRejected() {
-        assertEquals("The file must hold one object with \"groups\" and \"rules\"", errorOf("[ 1 ]"));
+        assertEquals("The file must hold one object with \"groups\" and \"rules\"",
+                errorOf("[ 1 ]"));
     }
 
     @Test
     void unknownTopLevelKeyIsRejected() {
-        assertEquals("The file: unknown key \"grops\". Known keys: groups, rules", errorOf("{ grops: {} }"));
+        assertEquals("The file: unknown key \"grops\". Known keys: groups, rules",
+                errorOf("{ grops: {} }"));
     }
 
     @Test
@@ -362,19 +373,25 @@ class RulesFileTest {
 
     @Test
     void groupThatIsNotAnArrayIsRejected() {
-        assertEquals("Group \"caps\" must be an array of glyph tokens", errorOf("{ groups: { caps: \"A-Z\" } }"));
+        assertEquals("Group \"caps\" must be an array of glyph tokens",
+                errorOf("{ groups: { caps: \"A-Z\" } }"));
     }
 
     @Test
     void badTokenNamesTheGroup() {
-        assertEquals("Group \"tiling\": \"ZZ\" is not a glyph: use one character like \"A\", a code like "
-                + "\"U+0041\", or a range like \"A-Z\"", errorOf("{ groups: { tiling: [ \"ZZ\" ] } }"));
+        assertEquals(
+                "Group \"tiling\": \"ZZ\" is not a glyph: use one character like \"A\", "
+                        + "a code like \"U+0041\", or a range like \"A-Z\"",
+                errorOf("{ groups: { tiling: [ \"ZZ\" ] } }"));
     }
 
     @Test
     void unknownRuleKeyListsKnownKeys() {
-        assertEquals("Rule \"Blank ring\": unknown key \"apliesTo\". Known keys: name, check, appliesTo, except, "
-                + "rows, columns, size", errorOfRule("name: \"Blank ring\", check: ring, apliesTo: [ all ]"));
+        assertEquals(
+                "Rule \"Blank ring\": unknown key \"apliesTo\". "
+                        + "Known keys: name, check, appliesTo, except, "
+                        + "rows, columns, size",
+                errorOfRule("name: \"Blank ring\", check: ring, apliesTo: [ all ]"));
     }
 
     @Test
@@ -401,20 +418,26 @@ class RulesFileTest {
 
     @Test
     void unknownCheckListsKnownChecks() {
-        assertEquals("Rule \"r\": unknown check \"circle\". Known checks: noInkRows, noInkColumns, ring, "
-                + "centeredX, centeredBoth", errorOfRule("name: r, check: circle, appliesTo: [ all ]"));
+        assertEquals(
+                "Rule \"r\": unknown check \"circle\". "
+                        + "Known checks: noInkRows, noInkColumns, ring, "
+                        + "centeredX, centeredBoth",
+                errorOfRule("name: r, check: circle, appliesTo: [ all ]"));
     }
 
     @Test
     void undefinedGroupInAppliesToIsRejected() {
         assertEquals("Rule \"r\": \"appliesTo\" names the group \"nope\", which is not defined. "
-                + "Define it in \"groups\", or use all", errorOfRule("name: r, check: centeredX, appliesTo: [ nope ]"));
+                        + "Define it in \"groups\", or use all",
+                errorOfRule("name: r, check: centeredX, appliesTo: [ nope ]"));
     }
 
     @Test
     void exceptionNeedsGroupOrGlyphs() {
         assertEquals("Rule \"r\": except entry 1 needs exactly one of \"group\" or \"glyphs\"",
-                errorOfRule("name: r, check: centeredX, appliesTo: [ all ], except: [ { why: \"x\" } ]"));
+                errorOfRule(
+                        "name: r, check: centeredX, appliesTo: [ all ], "
+                                + "except: [ { why: \"x\" } ]"));
     }
 
     @Test
@@ -426,20 +449,32 @@ class RulesFileTest {
 
     @Test
     void exceptionNeedsNonBlankWhy() {
-        assertEquals("Rule \"r\": except entry 1 needs a non-blank \"why\" that says why the rule is skipped",
-                errorOfRule("name: r, check: centeredX, appliesTo: [ all ], except: [ { group: caps, why: \" \" } ]"));
+        assertEquals(
+                "Rule \"r\": except entry 1 needs a non-blank \"why\" "
+                        + "that says why the rule is skipped",
+                errorOfRule(
+                        "name: r, check: centeredX, appliesTo: [ all ], "
+                                + "except: [ { group: caps, why: \" \" } ]"));
     }
 
     @Test
     void exceptionWithUnknownKeyIsRejected() {
-        assertEquals("Rule \"r\": except entry 1: unknown key \"reason\". Known keys: group, glyphs, why",
-                errorOfRule("name: r, check: centeredX, appliesTo: [ all ], except: [ { group: caps, reason: \"x\" } ]"));
+        assertEquals(
+                "Rule \"r\": except entry 1: unknown key \"reason\". "
+                        + "Known keys: group, glyphs, why",
+                errorOfRule(
+                        "name: r, check: centeredX, appliesTo: [ all ], "
+                                + "except: [ { group: caps, reason: \"x\" } ]"));
     }
 
     @Test
     void exceptionWithUndefinedGroupIsRejected() {
-        assertEquals("Rule \"r\": except entry 1: \"group\" names the group \"nope\", which is not defined. "
-                + "Define it in \"groups\", or use all",
-                errorOfRule("name: r, check: centeredX, appliesTo: [ all ], except: [ { group: nope, why: \"x\" } ]"));
+        assertEquals(
+                "Rule \"r\": except entry 1: \"group\" names the group \"nope\", "
+                        + "which is not defined. "
+                        + "Define it in \"groups\", or use all",
+                errorOfRule(
+                        "name: r, check: centeredX, appliesTo: [ all ], "
+                                + "except: [ { group: nope, why: \"x\" } ]"));
     }
 }

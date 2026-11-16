@@ -13,7 +13,7 @@ import java.util.List;
  * @param exceptions glyphs the rule skips
  */
 record GlyphRule(String name, RuleCheck check, CheckSettings settings, GlyphSet appliesTo,
-        List<String> appliesToNames, List<RuleException> exceptions) {
+                 List<String> appliesToNames, List<RuleException> exceptions) {
 
     public GlyphRule {
         appliesToNames = List.copyOf(appliesToNames);

@@ -27,10 +27,10 @@ public record InkBounds(int left, int right, int top, int bottom) {
         int firstRow = firstInkedRow(grid);
         int lastRow = lastInkedRow(grid);
         return Optional.of(new InkBounds(
-            firstColumn,
-            grid.getWidth() - 1 - lastColumn,
-            firstRow,
-            grid.getHeight() - 1 - lastRow));
+                firstColumn,
+                grid.getWidth() - 1 - lastColumn,
+                firstRow,
+                grid.getHeight() - 1 - lastRow));
     }
 
     private static int firstInkedColumn(PixelGrid grid) {

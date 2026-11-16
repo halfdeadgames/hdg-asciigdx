@@ -7,23 +7,27 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * The state of deriving one glyph from another: choosing the operation in a menu, picking the source
- * slot, and confirming a replacement. It holds no drawing or input code.
+ * The state of deriving one glyph from another: choosing the operation in a menu, picking the
+ * source slot, and confirming a replacement. It holds no drawing or input code.
  */
 public final class DeriveFlow {
 
-    public enum Mode { IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE }
+    public enum Mode {IDLE, MENU, PICK_SOURCE, CONFIRM_REPLACE}
 
     /** The operations offered by the menu, in menu order. */
     public static final List<GlyphOp.Kind> OPERATIONS = List.of(
-        GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE90,
-        GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT, GlyphOp.Kind.OVERLAY);
+            GlyphOp.Kind.MIRROR, GlyphOp.Kind.FLIP, GlyphOp.Kind.ROTATE90,
+            GlyphOp.Kind.ROTATE180, GlyphOp.Kind.ROTATE270, GlyphOp.Kind.INVERT,
+            GlyphOp.Kind.OVERLAY);
 
     private static final List<GlyphOp.Kind> NON_SQUARE_OPERATIONS = OPERATIONS.stream()
-        .filter(kind -> kind != GlyphOp.Kind.ROTATE90 && kind != GlyphOp.Kind.ROTATE270)
-        .collect(Collectors.toUnmodifiableList());
+            .filter(kind -> kind != GlyphOp.Kind.ROTATE90 && kind != GlyphOp.Kind.ROTATE270)
+            .collect(Collectors.toUnmodifiableList());
 
-    /** One committed overlay source: the slot it comes from, how far it is shifted right, and how far down. */
+    /**
+     * One committed overlay source: the slot it comes from, how far it is shifted right, and how
+     * far down.
+     */
     public record Part(int slot, int shift, int down) {
     }
 
@@ -40,7 +44,10 @@ public final class DeriveFlow {
     public DeriveFlow() {
     }
 
-    /** The operations a font offers: the quarter turns need a square cell. Same instance on every call. */
+    /**
+     * The operations a font offers: the quarter turns need a square cell. Same instance on every
+     * call.
+     */
     public static List<GlyphOp.Kind> operationsFor(boolean squareCell) {
         return squareCell ? OPERATIONS : NON_SQUARE_OPERATIONS;
     }
@@ -98,7 +105,7 @@ public final class DeriveFlow {
 
     public boolean isOverlayOperation() {
         return operation == GlyphOp.Kind.OVERLAY
-            && (mode == Mode.PICK_SOURCE || mode == Mode.CONFIRM_REPLACE);
+                && (mode == Mode.PICK_SOURCE || mode == Mode.CONFIRM_REPLACE);
     }
 
     public boolean sourceIsTarget() {
@@ -120,7 +127,10 @@ public final class DeriveFlow {
         return pendingDown;
     }
 
-    /** Adds to the down offset of the source being picked (negative moves up); only overlay picking uses it. */
+    /**
+     * Adds to the down offset of the source being picked (negative moves up); only overlay picking
+     * uses it.
+     */
     public void shiftSourceDown(int delta) {
         if (isOverlayPicking()) {
             pendingDown += delta;
@@ -136,7 +146,10 @@ public final class DeriveFlow {
         pendingDown = 0;
     }
 
-    /** Whether an overlay is being picked and has a committed part that {@link #removeLastPart} would remove. */
+    /**
+     * Whether an overlay is being picked and has a committed part that {@link #removeLastPart}
+     * would remove.
+     */
     public boolean canRemovePart() {
         return isOverlayPicking() && !parts.isEmpty();
     }
@@ -152,7 +165,10 @@ public final class DeriveFlow {
         return Collections.unmodifiableList(new ArrayList<>(parts));
     }
 
-    /** The committed parts followed by the part being picked, which counts only while the source is not the target. */
+    /**
+     * The committed parts followed by the part being picked, which counts only while the source is
+     * not the target.
+     */
     public List<Part> partsWithPending() {
         List<Part> all = new ArrayList<>(parts);
         if (isOverlayPicking() && !sourceIsTarget()) {
@@ -212,7 +228,9 @@ public final class DeriveFlow {
         sourceSlot = slot;
     }
 
-    /** Whether a click on this slot lands on the current source while picking, which confirms it. */
+    /**
+     * Whether a click on this slot lands on the current source while picking, which confirms it.
+     */
     public boolean isConfirmingClick(int slot) {
         return mode == Mode.PICK_SOURCE && slot == sourceSlot;
     }
@@ -231,7 +249,10 @@ public final class DeriveFlow {
         }
     }
 
-    /** Backs out one level: the menu and source picking end the flow, the replace question returns to picking. */
+    /**
+     * Backs out one level: the menu and source picking end the flow, the replace question returns
+     * to picking.
+     */
     public void cancel() {
         if (mode == Mode.CONFIRM_REPLACE) {
             mode = Mode.PICK_SOURCE;
@@ -241,7 +262,10 @@ public final class DeriveFlow {
         }
     }
 
-    /** Ends the flow from any mode; unlike {@link #cancel}, the replace question does not step back to picking. */
+    /**
+     * Ends the flow from any mode; unlike {@link #cancel}, the replace question does not step back
+     * to picking.
+     */
     public void finish() {
         clearOverlayState();
         mode = Mode.IDLE;

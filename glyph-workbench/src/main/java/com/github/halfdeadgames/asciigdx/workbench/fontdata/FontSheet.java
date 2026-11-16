@@ -21,14 +21,16 @@ final class FontSheet {
         this.glyphs = glyphs;
         this.slots = slots;
         int rows = (slots.length + SheetOrder.COLUMNS - 1) / SheetOrder.COLUMNS;
-        layout = GlyphSheetLayout.packed(data.cellWidth(), data.cellHeight(), SheetOrder.COLUMNS, rows);
+        layout = GlyphSheetLayout.packed(
+                data.cellWidth(), data.cellHeight(), SheetOrder.COLUMNS, rows);
     }
 
     /**
      * Resolves a font and lays it out.
      *
      * @param data the font
-     * @param list the font's glyph list; only the cp437 preset is used, so planned code points get no slot
+     * @param list the font's glyph list; only the cp437 preset is used, so planned code points get
+     *     no slot
      * @return the sheet
      * @throws FontDataException if a derived glyph cannot be resolved
      */
@@ -56,8 +58,8 @@ final class FontSheet {
     PixelGrid cellAt(int slot) {
         PixelGlyph glyph = glyphs.get(slots[slot]);
         return glyph == null
-            ? PixelGrid.blank(data.cellWidth(), data.cellHeight())
-            : glyph.pixels();
+                ? PixelGrid.blank(data.cellWidth(), data.cellHeight())
+                : glyph.pixels();
     }
 
     /** Returns the slot order as a character list, ready for the sheet's {@code .txt} file. */
@@ -68,7 +70,8 @@ final class FontSheet {
     /** Returns the sheet image: opaque white glyph pixels on a transparent background. */
     BufferedImage toImage() {
         BufferedImage image = new BufferedImage(
-            layout.getRequiredImageWidth(), layout.getRequiredImageHeight(), BufferedImage.TYPE_INT_ARGB);
+                layout.getRequiredImageWidth(), layout.getRequiredImageHeight(),
+                BufferedImage.TYPE_INT_ARGB);
         for (int slot = 0; slot < slots.length; slot++) {
             drawCell(image, slot);
         }

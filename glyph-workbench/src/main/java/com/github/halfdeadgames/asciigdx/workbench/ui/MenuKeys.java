@@ -4,7 +4,8 @@ import java.util.function.Predicate;
 
 /**
  * Turns one frame of keyboard state into {@link MenuBar} calls and says whether the menu owns that
- * frame's keys. Callers pass key-repeat counts rather than raw key states. Nothing here reads input devices.
+ * frame's keys. Callers pass key-repeat counts rather than raw key states. Nothing here reads input
+ * devices.
  */
 public final class MenuKeys<A> {
 
@@ -14,8 +15,8 @@ public final class MenuKeys<A> {
     private boolean consumed;
 
     /**
-     * Whether the last {@link #route} took the frame's keys: the screen must ignore all keys then. Also
-     * true while Alt is held, so no plain letter shortcut fires under an Alt chord.
+     * Whether the last {@link #route} took the frame's keys: the screen must ignore all keys then.
+     * Also true while Alt is held, so no plain letter shortcut fires under an Alt chord.
      */
     public boolean consumed() {
         return consumed;
@@ -64,19 +65,22 @@ public final class MenuKeys<A> {
         }
     }
 
-    private static <A> void repeatMoveMenu(MenuBar<A> bar, Predicate<A> availability, int direction, int count) {
+    private static <A> void repeatMoveMenu(MenuBar<A> bar, Predicate<A> availability, int direction,
+            int count) {
         for (int i = 0; i < count; i++) {
             bar.moveMenu(direction, availability);
         }
     }
 
-    private static <A> void repeatMoveItem(MenuBar<A> bar, Predicate<A> availability, int direction, int count) {
+    private static <A> void repeatMoveItem(MenuBar<A> bar, Predicate<A> availability, int direction,
+            int count) {
         for (int i = 0; i < count; i++) {
             bar.moveItem(direction, availability);
         }
     }
 
-    private static <A> void toggleByAccessKey(MenuBar<A> bar, Predicate<A> availability, char accessKey) {
+    private static <A> void toggleByAccessKey(MenuBar<A> bar, Predicate<A> availability,
+            char accessKey) {
         if (bar.isOpen() && Character.toLowerCase(bar.menu(bar.openMenu()).accessKey())
                 == Character.toLowerCase(accessKey)) {
             bar.close();

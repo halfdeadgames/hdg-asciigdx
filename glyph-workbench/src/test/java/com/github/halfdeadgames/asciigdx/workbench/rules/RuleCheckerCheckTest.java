@@ -36,7 +36,8 @@ class RuleCheckerCheckTest {
         var watched = new BitSet();
         for (String range : ranges) {
             var bounds = range.split("-");
-            watched.set(Integer.parseInt(bounds[0]), Integer.parseInt(bounds[bounds.length - 1]) + 1);
+            watched.set(Integer.parseInt(bounds[0]),
+                    Integer.parseInt(bounds[bounds.length - 1]) + 1);
         }
         return new CheckSettings(watched, new BitSet(), 0);
     }
@@ -48,12 +49,12 @@ class RuleCheckerCheckTest {
     }
 
     private static final PixelGrid TALL = PixelGrid.ofRows(List.of(
-        "#.....",
-        "#.....",
-        "#.....",
-        "#.....",
-        "#.....",
-        "#....."));
+            "#.....",
+            "#.....",
+            "#.....",
+            "#.....",
+            "#.....",
+            "#....."));
 
     @Test
     void noInkRowsPassesWhenWatchedRowsAreBlank() {
@@ -64,39 +65,42 @@ class RuleCheckerCheckTest {
     @Test
     void noInkRowsNamesSingleRow() {
         assertEquals("INK IN ROW 3", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("3-3"), TALL)
-            .orElseThrow());
+                .orElseThrow());
     }
 
     @Test
     void noInkRowsCollapsesConsecutiveRows() {
         assertEquals("INK IN ROWS 3-5", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("3-5"), TALL)
-            .orElseThrow());
+                .orElseThrow());
     }
 
     @Test
     void noInkRowsListsSplitRanges() {
-        assertEquals("INK IN ROWS 0, 3-5", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-0", "3-5"), TALL)
-            .orElseThrow());
+        assertEquals("INK IN ROWS 0, 3-5",
+                RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-0", "3-5"), TALL)
+                        .orElseThrow());
     }
 
     @Test
     void noInkRowsListsOnlyRowsWithInk() {
         var grid = PixelGrid.ofRows(List.of("#.", "..", "#."));
         assertEquals("INK IN ROWS 0, 2", RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-2"), grid)
-            .orElseThrow());
+                .orElseThrow());
     }
 
     @Test
     void noInkColumnsNamesSingleColumn() {
-        assertEquals("INK IN COLUMN 0", RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 2), TALL)
-            .orElseThrow());
+        assertEquals("INK IN COLUMN 0",
+                RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 2), TALL)
+                        .orElseThrow());
     }
 
     @Test
     void noInkColumnsCollapsesRange() {
         var grid = PixelGrid.ofRows(List.of("###."));
-        assertEquals("INK IN COLUMNS 0-2", RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 3), grid)
-            .orElseThrow());
+        assertEquals("INK IN COLUMNS 0-2",
+                RuleProbe.problem(RuleCheck.NO_INK_COLUMNS, columns(0, 3), grid)
+                        .orElseThrow());
     }
 
     @Test
@@ -112,71 +116,71 @@ class RuleCheckerCheckTest {
     @Test
     void glyphPassingEveryRuleGivesNoWarnings() {
         var passing = glyph('A',
-            "......",
-            "..##..",
-            "..##..",
-            "..##..",
-            "......",
-            "......");
+                "......",
+                "..##..",
+                "..##..",
+                "..##..",
+                "......",
+                "......");
         assertTrue(RuleChecker.check(RULES_FILE, 'A', passing).isEmpty());
     }
 
     @Test
     void brokenRuleGivesKeyAndUppercaseMessage() {
         var offCenter = glyph('x',
-            "......",
-            ".#....",
-            "......",
-            "......",
-            "......",
-            "......");
+                "......",
+                ".#....",
+                "......",
+                "......",
+                "......",
+                "......");
         assertEquals(List.of(new RuleWarning("Centered", "CENTERED: LEFT 1, RIGHT 4")),
-            RuleChecker.check(RULES_FILE, 'x', offCenter));
+                RuleChecker.check(RULES_FILE, 'x', offCenter));
     }
 
     @Test
     void exceptedGlyphSkipsItsRule() {
         var touchingEdge = glyph('B',
-            "######",
-            "#....#",
-            "#....#",
-            "#....#",
-            "......",
-            "......");
+                "######",
+                "#....#",
+                "#....#",
+                "#....#",
+                "......",
+                "......");
         assertTrue(RuleChecker.check(RULES_FILE, 'B', touchingEdge).isEmpty());
     }
 
     @Test
     void glyphOutsideAppliesToIsSkipped() {
         var edgeInk = glyph('z',
-            "#.....",
-            "......",
-            "......",
-            "......",
-            "......",
-            "......");
+                "#.....",
+                "......",
+                "......",
+                "......",
+                "......",
+                "......");
         assertTrue(RuleChecker.check(RULES_FILE, 'z', edgeInk).isEmpty());
     }
 
     @Test
     void severalFailuresKeepFileOrder() {
         var broken = glyph('A',
-            "#.....",
-            "......",
-            "......",
-            "......",
-            "#.....",
-            "......");
+                "#.....",
+                "......",
+                "......",
+                "......",
+                "#.....",
+                "......");
         var warnings = RuleChecker.check(RULES_FILE, 'A', broken);
         assertEquals(List.of(
-            new RuleWarning("Blank ring", "BLANK RING: INK IN RING (TOP, LEFT)"),
-            new RuleWarning("Centered", "CENTERED: LEFT 0, RIGHT 5"),
-            new RuleWarning("Clear base", "CLEAR BASE: INK IN ROW 4")), warnings);
+                new RuleWarning("Blank ring", "BLANK RING: INK IN RING (TOP, LEFT)"),
+                new RuleWarning("Centered", "CENTERED: LEFT 0, RIGHT 5"),
+                new RuleWarning("Clear base", "CLEAR BASE: INK IN ROW 4")), warnings);
     }
 
     @Test
     void blankGlyphGivesNoProblem() {
         assertEquals(Optional.empty(),
-            RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-5"), PixelGrid.blank(6, 6)));
+                RuleProbe.problem(RuleCheck.NO_INK_ROWS, rows("0-5"), PixelGrid.blank(6, 6)));
     }
 }

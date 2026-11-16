@@ -1,8 +1,8 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /**
- * Back-and-forth scrolling for text wider than its space: hold at the start, scroll to the end, hold, scroll back.
- * Sides with hidden text show a ".." marker in their outer two cells.
+ * Back-and-forth scrolling for text wider than its space: hold at the start, scroll to the end,
+ * hold, scroll back. Sides with hidden text show a ".." marker in their outer two cells.
  */
 public final class BounceScroll {
 
@@ -14,7 +14,10 @@ public final class BounceScroll {
     private BounceScroll() {
     }
 
-    /** Characters to skip from the left of the text at the given time, between 0 and {@code overflowChars}. */
+    /**
+     * Characters to skip from the left of the text at the given time, between 0 and
+     * {@code overflowChars}.
+     */
     static int offset(int overflowChars, float seconds) {
         if (overflowChars <= 0) {
             return 0;
@@ -41,9 +44,9 @@ public final class BounceScroll {
     }
 
     /**
-     * The visible part of {@code text}, {@code width} cells or fewer, scrolled for the given time. When the text
-     * overflows and the window is at least {@value #MIN_MARKED_WIDTH} cells wide, the two outer cells on each side
-     * that has hidden text are replaced by {@value #HIDDEN_MARKER}.
+     * The visible part of {@code text}, {@code width} cells or fewer, scrolled for the given time.
+     * When the text overflows and the window is at least {@value #MIN_MARKED_WIDTH} cells wide, the
+     * two outer cells on each side that has hidden text are replaced by {@value #HIDDEN_MARKER}.
      */
     public static String window(String text, int width, float seconds) {
         int total = TextCells.cellCount(text);

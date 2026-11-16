@@ -16,10 +16,10 @@ class InkBoundsTest {
     @Test
     void singlePixelLeavesMarginsAroundIt() {
         var grid = PixelGrid.ofRows(List.of(
-            "....",
-            "..#.",
-            "....",
-            "...."));
+                "....",
+                "..#.",
+                "....",
+                "...."));
         assertEquals(new InkBounds(2, 1, 1, 2), InkBounds.measure(grid).orElseThrow());
     }
 
@@ -56,11 +56,11 @@ class InkBoundsTest {
     @Test
     void scatteredInkSpansOutermostPixels() {
         var grid = PixelGrid.ofRows(List.of(
-            ".....",
-            ".#...",
-            ".....",
-            "...#.",
-            "....."));
+                ".....",
+                ".#...",
+                ".....",
+                "...#.",
+                "....."));
         assertEquals(new InkBounds(1, 1, 1, 1), InkBounds.measure(grid).orElseThrow());
     }
 }

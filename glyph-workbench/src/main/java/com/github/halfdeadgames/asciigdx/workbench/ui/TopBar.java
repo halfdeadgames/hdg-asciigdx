@@ -4,10 +4,13 @@ import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8X8, and an optional right-aligned status. */
+/**
+ * The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8X8, and an optional
+ * right-aligned status.
+ */
 public final class TopBar {
 
-    public enum Kind { TITLE, TEXT, ACCENT, SEPARATOR }
+    public enum Kind {TITLE, TEXT, ACCENT, SEPARATOR}
 
     /** A piece of text at a cell column. */
     public record Segment(String text, int x, Kind kind) {
@@ -19,7 +22,10 @@ public final class TopBar {
     private TopBar() {
     }
 
-    /** The first crumb is the title color, the last the accent color, the rest plain; separators are dim. */
+    /**
+     * The first crumb is the title color, the last the accent color, the rest plain; separators are
+     * dim.
+     */
     public static List<Segment> layout(List<String> crumbs) {
         List<Segment> segments = new ArrayList<>();
         int x = DEFAULT_START;
@@ -57,8 +63,11 @@ public final class TopBar {
         return Math.max(0, columns - TextCells.cellCount(text) - 1);
     }
 
-    /** Also draws a plain tag just left of the status; the crumbs shorten to leave room for both. */
-    public static void draw(Painter painter, int columns, int row, List<String> crumbs, TopBarStatus barStatus) {
+    /**
+     * Also draws a plain tag just left of the status; the crumbs shorten to leave room for both.
+     */
+    public static void draw(Painter painter, int columns, int row, List<String> crumbs,
+            TopBarStatus barStatus) {
         String tag = barStatus.tag();
         String status = barStatus.text();
         Color statusColor = barStatus.color();
@@ -68,14 +77,16 @@ public final class TopBar {
         boolean hasTag = isPresent(tag);
         int available = columns - 1 - rightWidth(hasTag ? tag : "", hasStatus ? status : "");
         for (Segment segment : layout(fit(crumbs, available))) {
-            painter.text(segment.text(), segment.x() * cellPixels, row * cellPixels, colorOf(segment.kind()));
+            painter.text(segment.text(), segment.x() * cellPixels, row * cellPixels,
+                    colorOf(segment.kind()));
         }
         if (hasTag) {
             painter.text(tag, tagX(columns, tag, hasStatus ? status : "") * cellPixels,
-                row * cellPixels, UiPalette.TEXT);
+                    row * cellPixels, UiPalette.TEXT);
         }
         if (hasStatus) {
-            painter.text(status, rightX(columns, status) * cellPixels, row * cellPixels, statusColor);
+            painter.text(status, rightX(columns, status) * cellPixels, row * cellPixels,
+                    statusColor);
         }
     }
 
@@ -94,7 +105,8 @@ public final class TopBar {
 
     /** Cells taken at the right edge by a tag and a status, each followed by one blank cell. */
     static int rightWidth(String tag, String status) {
-        return (tag.isEmpty() ? 0 : TextCells.cellCount(tag) + 1) + (status.isEmpty() ? 0 : TextCells.cellCount(status) + 1);
+        return (tag.isEmpty() ? 0 : TextCells.cellCount(tag) + 1) + (status.isEmpty() ? 0
+                : TextCells.cellCount(status) + 1);
     }
 
     /** Column of a tag that sits left of the status, with one blank cell between them. */

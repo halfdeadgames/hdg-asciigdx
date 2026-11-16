@@ -6,25 +6,33 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.PixelGrid;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Blink;
 import java.util.Optional;
 
-/** Judges the overlay part being picked and words the warning for it. It holds no drawing or input code. */
+/**
+ * Judges the overlay part being picked and words the warning for it. It holds no drawing or input
+ * code.
+ */
 public final class OverlayCheck {
 
-    public enum Problem { NONE, SAME_AS_TARGET, EMPTY, OUTSIDE }
+    public enum Problem {NONE, SAME_AS_TARGET, EMPTY, OUTSIDE}
 
     /**
      * @param problem what is wrong with the pending part, or NONE
      * @param message the warning, or empty when there is none
-     * @param hasRange whether {@code minShift} and {@code maxShift} are meaningful (the source has ink)
+     * @param hasRange whether {@code minShift} and {@code maxShift} are meaningful (the source has
+     *     ink)
      * @param minShift the most negative shift that keeps all ink inside
      * @param maxShift the most positive shift that keeps all ink inside
-     * @param minDown the most negative down that keeps all ink inside (meaningful when {@code hasRange})
-     * @param maxDown the most positive down that keeps all ink inside (meaningful when {@code hasRange})
+     * @param minDown the most negative down that keeps all ink inside (meaningful when
+     *     {@code hasRange})
+     * @param maxDown the most positive down that keeps all ink inside (meaningful when
+     *     {@code hasRange})
      */
-    public record Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift,
+    public record Result(Problem problem, String message, boolean hasRange, int minShift,
+                         int maxShift,
                          int minDown, int maxDown) {
 
         /** Creates a result whose down range is empty (0..0). */
-        public Result(Problem problem, String message, boolean hasRange, int minShift, int maxShift) {
+        public Result(Problem problem, String message, boolean hasRange, int minShift,
+                int maxShift) {
             this(problem, message, hasRange, minShift, maxShift, 0, 0);
         }
 
@@ -84,16 +92,17 @@ public final class OverlayCheck {
     }
 
     private static Result outside(String axis, int value, int allowedMin, int allowedMax,
-                                  int minShift, int maxShift, int minDown, int maxDown) {
+            int minShift, int maxShift, int minDown, int maxDown) {
         String message = axis + " " + signed(value) + " PUTS INK OUTSIDE THE CELL: ALLOWED "
-            + signed(allowedMin) + ".." + signed(allowedMax);
+                + signed(allowedMin) + ".." + signed(allowedMax);
         return new Result(Problem.OUTSIDE, message, true, minShift, maxShift, minDown, maxDown);
     }
 
-    public enum OffGrid { NONE, LEFT, RIGHT, UP, DOWN }
+    public enum OffGrid {NONE, LEFT, RIGHT, UP, DOWN}
 
     /**
-     * Which edge all moved ink lies beyond vertically, or NONE when some ink is still inside the grid.
+     * Which edge all moved ink lies beyond vertically, or NONE when some ink is still inside the
+     * grid.
      *
      * @param firstInkRow topmost row holding ink
      * @param lastInkRow bottommost row holding ink

@@ -21,26 +21,28 @@ import org.junit.jupiter.api.Test;
 
 class PaintGuidesTest {
 
-    private static final List<String> DEFINED_GROUPS = List.of("uppercase", "lowercase", "digits", "punctuation");
+    private static final List<String> DEFINED_GROUPS =
+            List.of("uppercase", "lowercase", "digits", "punctuation");
 
     private static final String SAMPLE = """
-        # Saiksistt-like
-        row CAP 1 all
+            # Saiksistt-like
+            row CAP 1 all
 
-        row LOW 3 lowercase
-        column A 1 uppercase
-        column C 7 uppercase,digits
-        column B 6 uppercase
-        bar BAR 3 1 uppercase,digits
-        bar BAR 4 2 lowercase
-        bar MID 6 1 lowercase
-        """;
+            row LOW 3 lowercase
+            column A 1 uppercase
+            column C 7 uppercase,digits
+            column B 6 uppercase
+            bar BAR 3 1 uppercase,digits
+            bar BAR 4 2 lowercase
+            bar MID 6 1 lowercase
+            """;
 
     private static List<Integer> columns(PaintGuides.Shown shown) {
         return shown.widths().stream().map(PaintGuides.ColumnGuide::boundaryColumn).toList();
     }
 
-    private static PaintGuides.Shown shown(PaintGuides guides, int codePoint, int cellWidth, int cellHeight) {
+    private static PaintGuides.Shown shown(PaintGuides guides, int codePoint, int cellWidth,
+            int cellHeight) {
         return guides.forGlyph(codePoint, RULES, cellWidth, cellHeight);
     }
 
@@ -49,7 +51,8 @@ class PaintGuidesTest {
     }
 
     private static String badLineMessage(String text) {
-        return assertThrows(IllegalArgumentException.class, () -> PaintGuides.parse(text)).getMessage();
+        return assertThrows(IllegalArgumentException.class,
+                () -> PaintGuides.parse(text)).getMessage();
     }
 
     private static String readRepoFile(String relativePath) throws IOException {
@@ -77,14 +80,16 @@ class PaintGuidesTest {
     @Test
     void columnLabelTiersAlternate() {
         PaintGuides.Shown shown = shown(PaintGuides.parse(SAMPLE), UPPER, 8, 8);
-        assertEquals(List.of(0, 1, 0), shown.widths().stream().map(PaintGuides.ColumnGuide::tier).toList());
+        assertEquals(List.of(0, 1, 0),
+                shown.widths().stream().map(PaintGuides.ColumnGuide::tier).toList());
     }
 
     @Test
     void groupCanHaveSeveralBars() {
         PaintGuides guides = PaintGuides.parse(SAMPLE);
         List<PaintGuides.BarGuide> lower = shown(guides, LOWER, 8, 8).bars();
-        assertEquals(List.of("BAR", "MID"), lower.stream().map(PaintGuides.BarGuide::label).toList());
+        assertEquals(List.of("BAR", "MID"),
+                lower.stream().map(PaintGuides.BarGuide::label).toList());
         assertEquals(5f, lower.get(0).centerRow());
         assertEquals(3.5f, shown(guides, DIGIT, 8, 8).bars().get(0).centerRow());
         assertTrue(shown(guides, PUNCT, 8, 8).bars().isEmpty());
@@ -96,7 +101,8 @@ class PaintGuidesTest {
         assertEquals(List.of(1, 6), columns(shown(guides, UPPER, 6, 8)));
         assertEquals(List.of("CAP"), rowLabels(shown(guides, LOWER, 8, 2)));
         assertEquals(List.of("BAR"),
-            shown(guides, LOWER, 8, 6).bars().stream().map(PaintGuides.BarGuide::label).toList());
+                shown(guides, LOWER, 8, 6).bars().stream().map(PaintGuides.BarGuide::label)
+                        .toList());
     }
 
     @Test
@@ -110,7 +116,7 @@ class PaintGuidesTest {
     @Test
     void windowsLineEndingsAreAccepted() {
         assertEquals(1, shown(PaintGuides.parse("row CAP 1 all\r\nrow BASE 7 all\r\n"), UPPER, 8, 8)
-            .rows().get(0).boundaryRow());
+                .rows().get(0).boundaryRow());
     }
 
     @Test
@@ -156,7 +162,8 @@ class PaintGuidesTest {
 
     @Test
     void arbitraryGroupNamesRoundTrip() {
-        String text = "row CAP 2 all\ncolumn W 3 box-drawing,Mixed_Case\nbar BAR 6 1 uppercase,digits\n";
+        String text =
+                "row CAP 2 all\ncolumn W 3 box-drawing,Mixed_Case\nbar BAR 6 1 uppercase,digits\n";
         assertEquals(text, PaintGuides.parse(text).toText());
         assertRoundTrips(text);
     }
@@ -174,40 +181,46 @@ class PaintGuidesTest {
         assertEquals("row CAP 1 all\n", PaintGuides.parse("row CAP 1 ALL").toText());
         assertEquals("row CAP 1 all\n", PaintGuides.parse("row CAP 1 all").toText());
         assertEquals("row CAP 1 digits,punctuation,lowercase,uppercase\n",
-            PaintGuides.parse("row CAP 1 digits,punctuation,lowercase,uppercase").toText());
+                PaintGuides.parse("row CAP 1 digits,punctuation,lowercase,uppercase").toText());
     }
 
     @Test
     void groupOrderIsKeptAsWritten() {
         assertEquals("row A 1 punctuation,lowercase,uppercase\n",
-            PaintGuides.parse("row A 1 punctuation,lowercase,uppercase").toText());
-        assertEquals("column B 2 digits,uppercase\n", PaintGuides.parse("column B 2 digits,uppercase").toText());
+                PaintGuides.parse("row A 1 punctuation,lowercase,uppercase").toText());
+        assertEquals("column B 2 digits,uppercase\n",
+                PaintGuides.parse("column B 2 digits,uppercase").toText());
     }
 
     @Test
     void togglingFromAllReplacesAllWithThatName() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 all\n");
-        assertEquals("lowercase", guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0).groups());
+        assertEquals("lowercase",
+                guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0)
+                        .groups());
     }
 
     @Test
     void togglingOffTheLastNameGoesBackToAll() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 digits\n");
-        assertEquals("all", guides.withGroupToggled(0, "digits", DEFINED_GROUPS).allGuides().get(0).groups());
+        assertEquals("all",
+                guides.withGroupToggled(0, "digits", DEFINED_GROUPS).allGuides().get(0).groups());
     }
 
     @Test
     void togglingPlacesANewNameInRulesFileOrder() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 digits\n");
         assertEquals("uppercase,digits",
-            guides.withGroupToggled(0, "uppercase", DEFINED_GROUPS).allGuides().get(0).groups());
+                guides.withGroupToggled(0, "uppercase", DEFINED_GROUPS).allGuides().get(0)
+                        .groups());
     }
 
     @Test
     void togglingKeepsUnknownNamesAfterDefinedOnesInTheirOrder() {
         PaintGuides guides = PaintGuides.parse("row CAP 1 zeta,alpha\n");
         assertEquals("lowercase,zeta,alpha",
-            guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0).groups());
+                guides.withGroupToggled(0, "lowercase", DEFINED_GROUPS).allGuides().get(0)
+                        .groups());
     }
 
     @Test
@@ -225,7 +238,9 @@ class PaintGuidesTest {
     @Test
     void guidesKeepTheirStoredOrderWithinAKind() {
         assertEquals("row B 5 all\nrow A 2 digits\ncolumn Z 6 uppercase\ncolumn Y 1 lowercase\n",
-            PaintGuides.parse("column Z 6 uppercase\nrow B 5 all\ncolumn Y 1 lowercase\nrow A 2 digits\n").toText());
+                PaintGuides.parse(
+                        "column Z 6 uppercase\nrow B 5 all\ncolumn Y 1 lowercase\nrow A 2 digits\n")
+                        .toText());
     }
 
     @Test
@@ -235,7 +250,8 @@ class PaintGuidesTest {
             PaintGuides.Shown shown = shown(guides, codePoint, 8, 8);
             for (PaintGuides.BarGuide bar : shown.bars()) {
                 for (PaintGuides.RowGuide row : shown.rows()) {
-                    assertTrue(Math.abs(row.boundaryRow() - bar.centerRow()) >= 0.5f, bar.label() + " vs " + row.label());
+                    assertTrue(Math.abs(row.boundaryRow() - bar.centerRow()) >= 0.5f,
+                            bar.label() + " vs " + row.label());
                 }
             }
         }

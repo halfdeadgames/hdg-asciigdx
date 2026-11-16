@@ -17,7 +17,8 @@ class GlyphTitleTest {
         GlyphTitle title = new GlyphTitle();
         title.advance(0x41, 0f);
 
-        assertEquals("U+0041  " + GlyphName.fullName(0x41), title.text(0x41, WIDE_PANEL).toString());
+        assertEquals("U+0041  " + GlyphName.fullName(0x41),
+                title.text(0x41, WIDE_PANEL).toString());
     }
 
     @Test

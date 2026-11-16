@@ -27,8 +27,9 @@ final class UnicodeNameTableParser {
         int lineNumber();
     }
 
-    private record Entry(int first, int last, String text, byte type, boolean pattern, int lineNumber)
-        implements Span {
+    private record Entry(int first, int last, String text, byte type, boolean pattern,
+                         int lineNumber)
+            implements Span {
     }
 
     private record Block(int first, int last, String name, int lineNumber) implements Span {
@@ -78,9 +79,11 @@ final class UnicodeNameTableParser {
             throw malformed(lineNumber, "unknown category '" + parts[1] + "'");
         }
         boolean pattern = HexCodePoints.isRange(codeText);
-        String text = pattern ? patternPrefix(parts[2], lineNumber) : singleName(parts[2], lineNumber);
-        entries.add(new Entry(bounds[0], bounds[1], text, GeneralCategories.typeOf(parts[1]), pattern,
-            lineNumber));
+        String text =
+                pattern ? patternPrefix(parts[2], lineNumber) : singleName(parts[2], lineNumber);
+        entries.add(
+                new Entry(bounds[0], bounds[1], text, GeneralCategories.typeOf(parts[1]), pattern,
+                        lineNumber));
     }
 
     private static String singleName(String name, int lineNumber) {
@@ -116,7 +119,8 @@ final class UnicodeNameTableParser {
             if (current.first() <= previous.last()) {
                 int laterLine = Math.max(current.lineNumber(), previous.lineNumber());
                 int earlierLine = Math.min(current.lineNumber(), previous.lineNumber());
-                throw malformed(laterLine, kind + " overlaps the " + kind + " on line " + earlierLine);
+                throw malformed(laterLine,
+                        kind + " overlaps the " + kind + " on line " + earlierLine);
             }
         }
     }
@@ -153,6 +157,7 @@ final class UnicodeNameTableParser {
     }
 
     private static IllegalArgumentException malformed(int lineNumber, String problem) {
-        return new IllegalArgumentException("unicode-names.txt line " + lineNumber + ": " + problem);
+        return new IllegalArgumentException(
+                "unicode-names.txt line " + lineNumber + ": " + problem);
     }
 }

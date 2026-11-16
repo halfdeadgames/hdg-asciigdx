@@ -33,7 +33,9 @@ public final class UpscaleCandidatePick {
         return labels;
     }
 
-    /** Selects the candidate with this 1-based number; a number with no candidate changes nothing. */
+    /**
+     * Selects the candidate with this 1-based number; a number with no candidate changes nothing.
+     */
     public void selectNumber(int number) {
         if (number < 1 || number > candidates.size()) {
             return;

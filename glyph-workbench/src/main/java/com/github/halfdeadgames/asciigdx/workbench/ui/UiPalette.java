@@ -13,7 +13,10 @@ public final class UiPalette {
     public static final Color ACCENT = new Color(0xFFD23CFF);
     public static final Color TEXT = new Color(0xE6E8EEFF);
     public static final Color DIM = new Color(0x6E748CFF);
-    /** Text for rules that do not check the selected glyph, and the gray size example in the New font dialog. */
+    /**
+     * Text for rules that do not check the selected glyph, and the gray size example in the New
+     * font dialog.
+     */
     public static final Color INACTIVE = new Color(0xA4AABCFF);
     public static final Color WARN = new Color(0xFF6B6BFF);
     public static final Color OK = new Color(0x6BDC8AFF);
@@ -21,7 +24,10 @@ public final class UiPalette {
     public static final Color SHADOW = new Color(0x282C40FF);
     public static final Color MENU = new Color(0x2E3A66FF);
     public static final Color MENU_DISABLED = new Color(0x0C0E1AFF);
-    /** Text of an unavailable menu entry under the pointer; its row background is {@link #MENU_DISABLED}. */
+    /**
+     * Text of an unavailable menu entry under the pointer; its row background is
+     * {@link #MENU_DISABLED}.
+     */
     public static final Color MENU_DISABLED_HOVER_TEXT = new Color(0xC4CADCFF);
     public static final Color ORANGE = new Color(0xFF9A30FF);
     /** Glyphs made from other glyphs. */

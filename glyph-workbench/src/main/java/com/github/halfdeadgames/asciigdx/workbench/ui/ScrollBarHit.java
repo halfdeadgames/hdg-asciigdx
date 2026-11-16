@@ -1,12 +1,12 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
 /**
- * Maps a cell of a scroll bar (arrow, track, arrow) to what a click or drag there does. Cell 0 and the last cell
- * are the arrows; the cells between them are the track.
+ * Maps a cell of a scroll bar (arrow, track, arrow) to what a click or drag there does. Cell 0 and
+ * the last cell are the arrows; the cells between them are the track.
  */
 public final class ScrollBarHit {
 
-    public enum Part { NONE, BACK_ARROW, FORWARD_ARROW, TRACK_BEFORE_THUMB, TRACK_AFTER_THUMB, THUMB }
+    public enum Part {NONE, BACK_ARROW, FORWARD_ARROW, TRACK_BEFORE_THUMB, TRACK_AFTER_THUMB, THUMB}
 
     private ScrollBarHit() {
     }
@@ -27,7 +27,8 @@ public final class ScrollBarHit {
         if (trackCell < start) {
             return Part.TRACK_BEFORE_THUMB;
         }
-        return trackCell >= start + scroll.thumbSize(trackCells) ? Part.TRACK_AFTER_THUMB : Part.THUMB;
+        return trackCell >= start + scroll.thumbSize(trackCells) ? Part.TRACK_AFTER_THUMB
+                : Part.THUMB;
     }
 
     /** Applies the click for a part; the thumb itself does nothing here, it starts a drag. */
@@ -47,7 +48,10 @@ public final class ScrollBarHit {
         return cell - 1 - scroll.thumbStart(barCells - 2);
     }
 
-    /** Offset that puts the thumb where a drag holding {@code grabOffset} into the thumb ends up at {@code cell}. */
+    /**
+     * Offset that puts the thumb where a drag holding {@code grabOffset} into the thumb ends up at
+     * {@code cell}.
+     */
     public static int offsetForDrag(ScrollState scroll, int cell, int barCells, int grabOffset) {
         int trackCells = barCells - 2;
         int travel = trackCells - scroll.thumbSize(trackCells);

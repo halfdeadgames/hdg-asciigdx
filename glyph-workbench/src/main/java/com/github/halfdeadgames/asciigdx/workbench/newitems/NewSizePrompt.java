@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The state of the "new size" dialog: a pick list of sizes ending in an "OTHER SIZE..." row, and the typed page
- * that row opens. Taken sizes are shown but the selection never lands on one.
+ * The state of the "new size" dialog: a pick list of sizes ending in an "OTHER SIZE..." row, and
+ * the typed page that row opens. Taken sizes are shown but the selection never lands on one.
  */
 public final class NewSizePrompt {
 
@@ -24,7 +24,8 @@ public final class NewSizePrompt {
 
     private final Consumer<CellSize> onChoose;
     private final Runnable onDismiss;
-    private final NewFontSizePrompt typedPage = new NewFontSizePrompt(this::submitTyped, this::backFromTyped);
+    private final NewFontSizePrompt typedPage =
+            new NewFontSizePrompt(this::submitTyped, this::backFromTyped);
     private final GroupedPickList<SizeChoice> list = new GroupedPickList<>();
     private List<SizeOption> options = List.of();
     private String folderName = "";
@@ -32,7 +33,8 @@ public final class NewSizePrompt {
 
     /** @param onChoose called with the chosen size after the prompt has closed */
     NewSizePrompt(Consumer<CellSize> onChoose) {
-        this(onChoose, () -> { });
+        this(onChoose, () -> {
+        });
     }
 
     /**
@@ -105,7 +107,10 @@ public final class NewSizePrompt {
         return typedPage;
     }
 
-    /** Moves to the next row that is not taken in the direction of {@code step}; stays put when there is none. */
+    /**
+     * Moves to the next row that is not taken in the direction of {@code step}; stays put when
+     * there is none.
+     */
     void move(int step) {
         if (typedPage.isOpen()) {
             return;
@@ -114,13 +119,17 @@ public final class NewSizePrompt {
     }
 
     /**
-     * Sizes the visible window for a dialog drawn in an area this many cells tall; rows that do not fit scroll.
+     * Sizes the visible window for a dialog drawn in an area this many cells tall; rows that do not
+     * fit scroll.
      */
     void fitTo(int areaHeight) {
-        list.setCapacity(Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) + 1) / SelectList.PITCH));
+        list.setCapacity(
+                Math.max(MIN_SHOWN_ROWS, (Dialog.maxLines(areaHeight) + 1) / SelectList.PITCH));
     }
 
-    /** Enter on the list picks the highlighted row; Enter on the typed page submits the typed size. */
+    /**
+     * Enter on the list picks the highlighted row; Enter on the typed page submits the typed size.
+     */
     void enter() {
         if (typedPage.isOpen()) {
             typedPage.enter();
@@ -129,7 +138,10 @@ public final class NewSizePrompt {
         chooseSelected();
     }
 
-    /** Picks the highlighted row: a size closes the prompt and is handed on, OTHER SIZE... opens the typed page. */
+    /**
+     * Picks the highlighted row: a size closes the prompt and is handed on, OTHER SIZE... opens the
+     * typed page.
+     */
     void chooseSelected() {
         if (typedPage.isOpen()) {
             return;
@@ -165,19 +177,24 @@ public final class NewSizePrompt {
         typedPage.backspace();
     }
 
-    /** Dialog text lines: the typed page's lines, or blank lines reserving the room the list is drawn into. */
+    /**
+     * Dialog text lines: the typed page's lines, or blank lines reserving the room the list is
+     * drawn into.
+     */
     List<String> lines() {
         if (typedPage.isOpen()) {
             return typedPage.lines();
         }
-        return Collections.nCopies(list.shownRows() * SelectList.PITCH - 1, " ".repeat(list.listWidth()));
+        return Collections.nCopies(list.shownRows() * SelectList.PITCH - 1,
+                " ".repeat(list.listWidth()));
     }
 
     private void fillList() {
         List<SelectList.Row> rows = new ArrayList<>();
         List<SizeChoice> choices = new ArrayList<>();
         for (SizeOption option : options) {
-            // SelectList indents only selectable rows, so a taken row carries the indent in its text.
+            // SelectList indents only selectable rows, so a taken row carries the indent in its
+            // text.
             if (option.taken()) {
                 rows.add(new SelectList.Row(INDENT + label(option) + TAKEN_SUFFIX, false, true, 0));
                 choices.add(null);

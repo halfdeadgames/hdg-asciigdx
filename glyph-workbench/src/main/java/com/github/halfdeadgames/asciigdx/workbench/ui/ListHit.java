@@ -10,8 +10,9 @@ package com.github.halfdeadgames.asciigdx.workbench.ui;
  */
 public record ListHit(boolean inside, boolean onBar, int cellRow, int row) {
 
-    public static ListHit of(Dialog.Layout layout, int pixelX, int pixelY, int cellPixels, int listTop, int shownRows,
-                             int offset, boolean scrolls) {
+    public static ListHit of(Dialog.Layout layout, int pixelX, int pixelY, int cellPixels,
+            int listTop, int shownRows,
+            int offset, boolean scrolls) {
         int column = Math.floorDiv(pixelX, cellPixels);
         int cellRow = Math.floorDiv(pixelY, cellPixels);
         boolean inside = layout.containsCell(column, cellRow);

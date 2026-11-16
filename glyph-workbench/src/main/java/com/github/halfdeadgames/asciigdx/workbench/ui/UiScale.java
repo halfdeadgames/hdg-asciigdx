@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.workbench.ui;
 
-/** How large the UI is drawn: a whole-number factor on the 8x8 font. Sizes derived from the cell stay whole pixels. */
+/**
+ * How large the UI is drawn: a whole-number factor on the 8x8 font. Sizes derived from the cell
+ * stay whole pixels.
+ */
 public record UiScale(int factor) {
 
     public static final int MIN_FACTOR = 1;
@@ -12,7 +15,8 @@ public record UiScale(int factor) {
 
     public UiScale {
         if (factor < MIN_FACTOR || factor > MAX_FACTOR) {
-            throw new IllegalArgumentException("UI scale factor must be " + MIN_FACTOR + ".." + MAX_FACTOR + ": " + factor);
+            throw new IllegalArgumentException(
+                    "UI scale factor must be " + MIN_FACTOR + ".." + MAX_FACTOR + ": " + factor);
         }
     }
 
@@ -30,7 +34,10 @@ public record UiScale(int factor) {
         return pixelsAt1x * factor;
     }
 
-    /** A length tuned at the default factor, rounded half up and exact at the default. Positive lengths stay at least 1; zero and negative ones are returned unchanged. */
+    /**
+     * A length tuned at the default factor, rounded half up and exact at the default. Positive
+     * lengths stay at least 1; zero and negative ones are returned unchanged.
+     */
     public int scaled(int pixelsAtDefault) {
         if (pixelsAtDefault <= 0) {
             return pixelsAtDefault;

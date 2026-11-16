@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 class GuideAddFlowTest {
 
     private static final String FILE = """
-        row CAP 1 all
-        column C 7 uppercase,digits
-        bar MID 6 1 lowercase
-        """;
+            row CAP 1 all
+            column C 7 uppercase,digits
+            bar MID 6 1 lowercase
+            """;
 
     private final GuideListModel model = new GuideListModel(PaintGuides.parse(FILE), 8, 8);
     private final GuideAddFlow flow = new GuideAddFlow(model);

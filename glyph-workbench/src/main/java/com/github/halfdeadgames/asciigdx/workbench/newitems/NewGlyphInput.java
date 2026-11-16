@@ -21,8 +21,8 @@ final class NewGlyphInput {
     }
 
     /**
-     * Reads a hex code point such as {@code 41} or {@code U+0041}. Every input is hex, so a lone {@code A}
-     * means U+000A.
+     * Reads a hex code point such as {@code 41} or {@code U+0041}. Every input is hex, so a lone
+     * {@code A} means U+000A.
      *
      * @param typed the raw text from the prompt
      * @return the code point, or an error message

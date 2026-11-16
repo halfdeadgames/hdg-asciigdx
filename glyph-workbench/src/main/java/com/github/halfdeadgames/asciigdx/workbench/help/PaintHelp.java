@@ -7,7 +7,10 @@ import com.github.halfdeadgames.asciigdx.workbench.fontdata.GlyphOp;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Builds the rows of the paint screen help panel for the current state. It holds no drawing or input code. */
+/**
+ * Builds the rows of the paint screen help panel for the current state. It holds no drawing or
+ * input code.
+ */
 public final class PaintHelp {
 
     /** One overlay part as the help shows it. */
@@ -23,31 +26,39 @@ public final class PaintHelp {
      * @param pending the overlay part being picked, or null when the source is the target
      * @param upscale the upscale stage being shown, or null; it replaces the derive and paint help
      */
-    public record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
+    public record State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts,
+                        PartView pending,
                         OverlayCheck.Result check, UpscaleHelp upscale) {
 
         /** A derive or paint state. */
-        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending,
-                     OverlayCheck.Result check) {
+        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts,
+                PartView pending,
+                OverlayCheck.Result check) {
             this(mode, operation, committedParts, pending, check, null);
         }
 
         /** A derive or paint state with no overlay check. */
-        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts, PartView pending) {
+        public State(DeriveFlow.Mode mode, GlyphOp.Kind operation, List<PartView> committedParts,
+                PartView pending) {
             this(mode, operation, committedParts, pending, null);
         }
 
         private static final State UPSCALE_PICKING = upscaleState(
-            new UpscaleHelp(UpscaleHelp.Stage.PICK_SOURCE, List.of(), 0));
+                new UpscaleHelp(UpscaleHelp.Stage.PICK_SOURCE, List.of(), 0));
 
         /** The state while an upscale source glyph is picked. */
         public static State upscalePicking() {
             return UPSCALE_PICKING;
         }
 
-        /** The state while one upscaled version is chosen; {@code selected} is the 0-based index of the marked label. */
+        /**
+         * The state while one upscaled version is chosen; {@code selected} is the 0-based index of
+         * the marked label.
+         */
         public static State upscaleChoosing(List<String> labels, int selected) {
-            return upscaleState(new UpscaleHelp(UpscaleHelp.Stage.CHOOSE_CANDIDATE, List.copyOf(labels), selected));
+            return upscaleState(
+                    new UpscaleHelp(UpscaleHelp.Stage.CHOOSE_CANDIDATE, List.copyOf(labels),
+                            selected));
         }
 
         private static State upscaleState(UpscaleHelp upscale) {
@@ -65,23 +76,25 @@ public final class PaintHelp {
     public record UpscaleHelp(Stage stage, List<String> labels, int selected) {
 
         /** The upscale steps that have their own help. */
-        public enum Stage { PICK_SOURCE, CHOOSE_CANDIDATE }
+        public enum Stage {PICK_SOURCE, CHOOSE_CANDIDATE}
     }
 
     /**
-     * TEXT and WARNING rows are prose (already wrapped, or blank); the others are table rows with a key and an action.
-     * WARNING is the highlighted overlay warning and INFO a table row of facts, such as the shift range.
+     * TEXT and WARNING rows are prose (already wrapped, or blank); the others are table rows with a
+     * key and an action. WARNING is the highlighted overlay warning and INFO a table row of facts,
+     * such as the shift range.
      */
-    enum Kind { TEXT, HEADING, CONTROL, PART, PENDING_PART, INFO, WARNING }
+    enum Kind {TEXT, HEADING, CONTROL, PART, PENDING_PART, INFO, WARNING}
 
     /**
-     * One help row. A table row has a key and an action that starts at {@code actionColumn}; a text row
-     * keeps all its text in {@code action} with an empty key.
+     * One help row. A table row has a key and an action that starts at {@code actionColumn}; a text
+     * row keeps all its text in {@code action} with an empty key.
      */
     record Row(Kind kind, String key, String action, int actionColumn) {
 
         boolean isTable() {
-            return kind == Kind.CONTROL || kind == Kind.PART || kind == Kind.PENDING_PART || kind == Kind.INFO;
+            return kind == Kind.CONTROL || kind == Kind.PART || kind == Kind.PENDING_PART
+                    || kind == Kind.INFO;
         }
     }
 
@@ -92,32 +105,43 @@ public final class PaintHelp {
 
     // Each control is {key, action}; a block lines its actions up in one column.
     private static final String[][] IDLE_CONTROLS = {
-        {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"},
-        {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}};
+            {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"ARROWS", "PICK GLYPH"},
+            {"PGUP", "SCROLL UP"},
+            {"PGDN", "SCROLL DOWN"}, {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}};
     private static final String[][] ALL_CONTROLS = {
-        {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"}, {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"}, {"PGDN", "SCROLL DOWN"},
-        {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}, {"N", "NEW GLYPH"}, {"D", "DERIVE"},
-        {"U", "UNLOCK DERIVED"}, {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"}, {"CTRL+E", "EXPORT"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
-        {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
-        {"F1", "RULES"}, {"F2", "GUIDES"}, {"F5", "RELOAD FILES"}, {"ALT+LETTER", "OPEN MENU"}, {"F10", "MENU BAR"}, {"ESC", "BACK"}};
+            {"CLICK", "PAINT PIXEL"}, {"DRAG", "PAINT STROKE"}, {"TABS", "SWITCH VIEW"},
+            {"TAB", "NEXT VIEW"}, {"ARROWS", "PICK GLYPH"}, {"PGUP", "SCROLL UP"},
+            {"PGDN", "SCROLL DOWN"},
+            {"HOME", "TOP"}, {"END", "BOTTOM"}, {"[ ]", "SCROLL HELP"}, {"N", "NEW GLYPH"},
+            {"D", "DERIVE"},
+            {"U", "UNLOCK DERIVED"}, {"G", "GO TO SOURCE"}, {"CTRL+S", "SAVE"},
+            {"CTRL+E", "EXPORT"}, {"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"},
+            {"CTRL+=", "BIGGER UI"}, {"CTRL+-", "SMALLER UI"}, {"CTRL+0", "AUTO UI SIZE"},
+            {"F1", "RULES"}, {"F2", "GUIDES"}, {"F5", "RELOAD FILES"}, {"ALT+LETTER", "OPEN MENU"},
+            {"F10", "MENU BAR"}, {"ESC", "BACK"}};
     private static final String[][] MENU_CONTROLS = {
-        {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
+            {"UP/DOWN", "CHOOSE"}, {"ENTER", "SELECT"}, {"ESC", "CANCEL"}};
     private static final String[][] PICK_CONTROLS = {
-        {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
+            {"ARROWS", "MOVE CURSOR"}, {"ENTER", "CONFIRM"}, {"CLICK", "MOVE OR CONFIRM"},
+            {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] OVERLAY_CONTROLS = {
-        {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"; '", "MOVE 1 ROW"}, {"ENTER", "ADD PART"},
-        {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
+            {"ARROWS", "MOVE CURSOR"}, {"[ ]", "SHIFT 1 COLUMN"}, {"; '", "MOVE 1 ROW"},
+            {"ENTER", "ADD PART"},
+            {"BKSP", "REMOVE LAST"}, {"F", "FINISH"}, {"TAB", "NEXT VIEW"}, {"ESC", "CANCEL"}};
     private static final String[][] REPLACE_CONTROLS = {{"R", "REPLACE"}, {"ESC", "BACK"}};
     private static final String[][] UPSCALE_PICK_CONTROLS = {
-        {"ARROWS", "MOVE"}, {"CLICK", "SELECT"}, {"CLICK AGAIN", "CHOOSE"}, {"ENTER", "CHOOSE"},
-        {"WHEEL", "SCROLL"}, {"ESC", "BACK"}};
+            {"ARROWS", "MOVE"}, {"CLICK", "SELECT"}, {"CLICK AGAIN", "CHOOSE"}, {"ENTER", "CHOOSE"},
+            {"WHEEL", "SCROLL"}, {"ESC", "BACK"}};
     private static final String[][] UPSCALE_CANDIDATE_CONTROLS = {
-        {"1-9", "PICK"}, {"ARROWS", "NEXT"}, {"ENTER", "APPLY"}, {"ESC", "BACK"}};
+            {"1-9", "PICK"}, {"ARROWS", "NEXT"}, {"ENTER", "APPLY"}, {"ESC", "BACK"}};
 
     private PaintHelp() {
     }
 
-    /** The help rows for a state; prose is wrapped to {@code width} characters, table rows never are. */
+    /**
+     * The help rows for a state; prose is wrapped to {@code width} characters, table rows never
+     * are.
+     */
     static List<Row> rows(State state, int width) {
         List<Row> out = new ArrayList<>();
         if (state.upscale() != null) {
@@ -145,7 +169,8 @@ public final class PaintHelp {
                 }
             }
             case CONFIRM_REPLACE -> {
-                addText(out, "This glyph already holds a drawing. Deriving replaces it; undo restores it.", width);
+                addText(out, "This glyph already holds a drawing. Deriving replaces it; "
+                        + "undo restores it.", width);
                 addBlank(out);
                 addControls(out, REPLACE_CONTROLS);
             }
@@ -240,7 +265,8 @@ public final class PaintHelp {
         List<PartView> parts = state.committedParts();
         int actionColumn = Math.max(String.valueOf(parts.size()).length(), 1) + PART_KEY_GAP;
         for (int i = 0; i < parts.size(); i++) {
-            out.add(new Row(Kind.PART, String.valueOf(i + 1), partText(parts.get(i)), actionColumn));
+            out.add(new Row(Kind.PART, String.valueOf(i + 1), partText(parts.get(i)),
+                    actionColumn));
         }
         if (state.pending() != null) {
             out.add(new Row(Kind.PENDING_PART, ">", partText(state.pending()), actionColumn));

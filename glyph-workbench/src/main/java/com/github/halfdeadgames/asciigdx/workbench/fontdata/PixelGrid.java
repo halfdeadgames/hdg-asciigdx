@@ -16,7 +16,8 @@ public final class PixelGrid {
 
     private PixelGrid(int width, int height, BitSet lit) {
         if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException("Grid size must be positive, was " + width + "x" + height);
+            throw new IllegalArgumentException(
+                    "Grid size must be positive, was " + width + "x" + height);
         }
         this.width = width;
         this.height = height;
@@ -50,12 +51,14 @@ public final class PixelGrid {
         for (int y = 0; y < rows.size(); y++) {
             String row = rows.get(y);
             if (row.length() != width) {
-                throw new IllegalArgumentException("Row " + y + " is " + row.length() + " wide, expected " + width);
+                throw new IllegalArgumentException(
+                        "Row " + y + " is " + row.length() + " wide, expected " + width);
             }
             for (int x = 0; x < width; x++) {
                 char pixel = row.charAt(x);
                 if (pixel != LIT && pixel != UNLIT) {
-                    throw new IllegalArgumentException("Row " + y + " has '" + pixel + "' at column " + x);
+                    throw new IllegalArgumentException(
+                            "Row " + y + " has '" + pixel + "' at column " + x);
                 }
                 lit.set(y * width + x, pixel == LIT);
             }
@@ -81,7 +84,8 @@ public final class PixelGrid {
      */
     public boolean isLit(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) {
-            throw new IndexOutOfBoundsException("Pixel " + x + "," + y + " is outside " + width + "x" + height);
+            throw new IndexOutOfBoundsException(
+                    "Pixel " + x + "," + y + " is outside " + width + "x" + height);
         }
         return lit.get(y * width + x);
     }
@@ -153,12 +157,13 @@ public final class PixelGrid {
      * @param shift columns to move {@code other} right (negative moves left)
      * @param down rows to move {@code other} down (negative moves up)
      * @return the combined grid
-     * @throws IllegalArgumentException if sizes differ or a lit pixel of {@code other} leaves the grid
+     * @throws IllegalArgumentException if sizes differ or a lit pixel of {@code other} leaves the
+     *     grid
      */
     public PixelGrid withOverlay(PixelGrid other, int shift, int down) {
         if (other.width != width || other.height != height) {
             throw new IllegalArgumentException("Overlay is " + other.width + "x" + other.height
-                + " but the grid is " + width + "x" + height);
+                    + " but the grid is " + width + "x" + height);
         }
         BitSet combined = (BitSet) lit.clone();
         for (int y = 0; y < height; y++) {
@@ -168,13 +173,15 @@ public final class PixelGrid {
                 }
                 int targetColumn = x + shift;
                 if (targetColumn < 0 || targetColumn >= width) {
-                    throw new IllegalArgumentException("Shift " + shift + " moves a pixel from column " + x
-                        + " outside the " + width + " column cell");
+                    throw new IllegalArgumentException(
+                            "Shift " + shift + " moves a pixel from column " + x
+                                    + " outside the " + width + " column cell");
                 }
                 int targetRow = y + down;
                 if (targetRow < 0 || targetRow >= height) {
-                    throw new IllegalArgumentException("Down " + down + " moves a pixel from row " + y
-                        + " outside the " + height + " row cell");
+                    throw new IllegalArgumentException(
+                            "Down " + down + " moves a pixel from row " + y
+                                    + " outside the " + height + " row cell");
                 }
                 combined.set(targetRow * width + targetColumn);
             }
@@ -184,8 +191,9 @@ public final class PixelGrid {
 
     private void requireSquare() {
         if (width != height) {
-            throw new IllegalArgumentException("Rotating by 90 degrees needs a square grid, but it is "
-                + width + "x" + height);
+            throw new IllegalArgumentException(
+                    "Rotating by 90 degrees needs a square grid, but it is "
+                            + width + "x" + height);
         }
     }
 
@@ -202,7 +210,7 @@ public final class PixelGrid {
     @Override
     public boolean equals(Object other) {
         return other instanceof PixelGrid grid
-            && grid.width == width && grid.height == height && grid.lit.equals(lit);
+                && grid.width == width && grid.height == height && grid.lit.equals(lit);
     }
 
     @Override

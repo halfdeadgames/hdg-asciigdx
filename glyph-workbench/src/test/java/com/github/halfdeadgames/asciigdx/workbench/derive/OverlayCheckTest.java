@@ -13,11 +13,11 @@ class OverlayCheckTest {
 
     // Ink in columns 1 and 3 of a 6 wide cell.
     private static final PixelGlyph INKED = new PixelGlyph(0x41, PixelGrid.ofRows(List.of(
-        ".#.#..", "......")));
+            ".#.#..", "......")));
     private static final PixelGlyph BLANK = new PixelGlyph(0x43, PixelGrid.blank(6, 2));
     // Ink in rows 1 and 2 of a 4-high cell, columns 1 and 3 of a 6-wide cell.
     private static final PixelGlyph TALL = new PixelGlyph(0x44, PixelGrid.ofRows(List.of(
-        "......", ".#....", "...#..", "......")));
+            "......", ".#....", "...#..", "......")));
 
     @Test
     void validShiftHasNoWarningAndReportsTheRange() {
@@ -136,8 +136,8 @@ class OverlayCheckTest {
     @Test
     void warningsUseOnlyUppercaseAsciiAndPunctuationTheFontDraws() {
         for (OverlayCheck.Result result : List.of(
-            OverlayCheck.check(false, INKED, 9, 0), OverlayCheck.check(false, TALL, 0, -7),
-            OverlayCheck.check(true, INKED, 0, 0), OverlayCheck.check(false, null, 0, 0))) {
+                OverlayCheck.check(false, INKED, 9, 0), OverlayCheck.check(false, TALL, 0, -7),
+                OverlayCheck.check(true, INKED, 0, 0), OverlayCheck.check(false, null, 0, 0))) {
             assertTrue(result.message().matches("[A-Z0-9 :.+\\-]+"), result.message());
         }
     }

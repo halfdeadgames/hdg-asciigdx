@@ -15,12 +15,12 @@ class GlyphClassTest {
     private static final int NEW_SPACE = 0x1E5F2;
 
     private static final UnicodeFacts OLD_JDK = UnicodeFacts.fromTableText("""
-        31350 Lo NEW LETTER
-        1E5F1 Nd NEW DIGIT
-        1FA8F So SHOVEL
-        2E5E Po NEW MARK
-        1E5F2 Zs NEW SPACE
-        """, codePoint -> Character.UNASSIGNED, codePoint -> null);
+            31350 Lo NEW LETTER
+            1E5F1 Nd NEW DIGIT
+            1FA8F So SHOVEL
+            2E5E Po NEW MARK
+            1E5F2 Zs NEW SPACE
+            """, codePoint -> Character.UNASSIGNED, codePoint -> null);
 
     @Test
     void newerLetterFromTheTableIsALetter() {

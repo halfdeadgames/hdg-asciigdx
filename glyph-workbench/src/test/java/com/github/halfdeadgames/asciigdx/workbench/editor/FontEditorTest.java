@@ -33,11 +33,11 @@ class FontEditorTest {
     }
 
     private static final String FONT = "# a comment\n"
-        + "cell 8x8\n\n"
-        + "U+0041 A\n" + rows(BLANK_ROW) + "\n\n"
-        + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
-        + "U+0043 C = mirror U+0041\n\n"
-        + "U+0100 \\u{100}\n" + rows(BLANK_ROW) + "\n";
+            + "cell 8x8\n\n"
+            + "U+0041 A\n" + rows(BLANK_ROW) + "\n\n"
+            + "U+0042 B\n" + rows(BLANK_ROW) + "\n\n"
+            + "U+0043 C = mirror U+0041\n\n"
+            + "U+0100 \\u{100}\n" + rows(BLANK_ROW) + "\n";
 
     private static final GlyphList CP437 = GlyphList.parse("cp437");
 
@@ -161,9 +161,8 @@ class FontEditorTest {
 
     @Test
     void savedPixelsAreRememberedUntilTheNextSave() {
-        FontEditor editor = editorWith(
-            "cell 8x8\n\nU+0041 A\n#.......\n" + String.join("\n", java.util.Collections.nCopies(7, BLANK_ROW)) + "\n",
-            CP437);
+        FontEditor editor = editorWith("cell 8x8\n\nU+0041 A\n#.......\n"
+                + String.join("\n", java.util.Collections.nCopies(7, BLANK_ROW)) + "\n", CP437);
         assertTrue(editor.hasSavedGlyph(0x41));
         assertTrue(editor.wasLitWhenSaved(0x41, 0, 0));
         editor.setPixel(0x41, 0, 0, false);
@@ -216,12 +215,14 @@ class FontEditorTest {
         String standingProblem = editor.problem();
         assertFalse(standingProblem.isEmpty());
 
-        FontEditor.DerivePreview allowed = editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
+        FontEditor.DerivePreview allowed =
+                editor.previewDerived(0x44, op(GlyphOp.Kind.ROTATE90, 0x41));
         assertNotNull(allowed.glyph());
         assertEquals("", allowed.problem());
         assertEquals(standingProblem, editor.problem());
 
-        FontEditor.DerivePreview refused = editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x46));
+        FontEditor.DerivePreview refused =
+                editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x46));
         assertNull(refused.glyph());
         assertFalse(refused.problem().isEmpty());
         assertEquals(standingProblem, editor.problem());
@@ -281,7 +282,8 @@ class FontEditorTest {
         editor.setPixel(0x41, 0, 0, true);
         editor.markSaved();
 
-        FontEditor.DerivePreview refused = editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
+        FontEditor.DerivePreview refused =
+                editor.previewDerived(0x44, op(GlyphOp.Kind.MIRROR, 0x45));
         assertNull(refused.glyph());
         assertTrue(refused.problem().contains("U+0045"));
         assertTrue(refused.problem().contains("empty"));
@@ -599,7 +601,9 @@ class FontEditorTest {
         FontData reread = FontDataParser.parse(saved);
         assertEquals(1, reread.entries().size());
         PixelGlyph glyph = (PixelGlyph) reread.entries().get(0x21);
-        assertEquals(1, glyph.pixels().toRows().stream().mapToInt(row -> row.replace(".", "").length()).sum());
+        assertEquals(1,
+                glyph.pixels().toRows().stream().mapToInt(row -> row.replace(".", "").length())
+                        .sum());
         assertTrue(glyph.pixels().isLit(2, 3));
     }
 
@@ -654,7 +658,7 @@ class FontEditorTest {
     void replaceGlyphRefusesADerivedTarget() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x43,cellWithPixels(8, 8, 1, 1));
+        editor.replaceGlyph(0x43, cellWithPixels(8, 8, 1, 1));
 
         assertTrue(editor.problem().contains("unlock"));
         assertTrue(editor.isDerived(0x43));
@@ -666,7 +670,7 @@ class FontEditorTest {
     void replaceGlyphRefusesACodePointThatIsNotASlot() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x1234,cellWithPixels(8, 8, 1, 1));
+        editor.replaceGlyph(0x1234, cellWithPixels(8, 8, 1, 1));
 
         assertEquals("U+1234 is not a glyph slot", editor.problem());
         assertFalse(editor.hasGlyph(0x1234));
@@ -677,7 +681,7 @@ class FontEditorTest {
     void replaceGlyphRefusesACellOfTheWrongSize() {
         FontEditor editor = editor();
 
-        editor.replaceGlyph(0x41, cellWithPixels(16,16, 1, 1));
+        editor.replaceGlyph(0x41, cellWithPixels(16, 16, 1, 1));
 
         assertTrue(editor.problem().contains("16x16"));
         assertTrue(editor.problem().contains("8x8"));

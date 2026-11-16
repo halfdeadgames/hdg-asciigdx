@@ -34,7 +34,8 @@ class FontExporterTest {
         outputDirectory = new File(workDirectory, "out");
         assertTrue(fontDirectory.mkdirs());
         String text = file(glyph("U+0041 A", "#.......", "##......"));
-        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(), text.getBytes(StandardCharsets.UTF_8));
+        Files.write(new File(fontDirectory, FONT_SIZE.dataFileName()).toPath(),
+                text.getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -53,7 +54,8 @@ class FontExporterTest {
     void exportedPngReadsBackWithSize() throws IOException {
         FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory);
 
-        BufferedImage image = ImageIO.read(FontExporter.pngFile(fontDirectory, FONT_SIZE, outputDirectory));
+        BufferedImage image =
+                ImageIO.read(FontExporter.pngFile(fontDirectory, FONT_SIZE, outputDirectory));
         assertNotNull(image);
         assertTrue(image.getWidth() > 0);
         assertTrue(image.getHeight() > 0);
@@ -75,7 +77,7 @@ class FontExporterTest {
         assertEquals(8, ImageIO.read(png).getHeight());
 
         Files.write(new File(fontDirectory, GlyphListFile.FILE_NAME).toPath(),
-            "cp437\nU+2603\n".getBytes(StandardCharsets.UTF_8));
+                "cp437\nU+2603\n".getBytes(StandardCharsets.UTF_8));
         FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory);
 
         assertEquals(16 * 8, ImageIO.read(png).getHeight());
@@ -84,10 +86,10 @@ class FontExporterTest {
     @Test
     void exportRefusesABrokenGlyphList() throws IOException {
         Files.write(new File(fontDirectory, GlyphListFile.FILE_NAME).toPath(),
-            "nonsense\n".getBytes(StandardCharsets.UTF_8));
+                "nonsense\n".getBytes(StandardCharsets.UTF_8));
 
         FontDataException problem = assertThrows(FontDataException.class,
-            () -> FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory));
+                () -> FontExporter.export(fontDirectory, FONT_SIZE, outputDirectory));
 
         assertTrue(problem.getMessage().startsWith("glyphs.txt: "));
         assertFalse(outputDirectory.exists());
@@ -109,9 +111,10 @@ class FontExporterTest {
         assertTrue(new File(fontDirectory, FONT_SIZE.dataFileName()).renameTo(misnamed));
 
         FontDataException problem = assertThrows(FontDataException.class,
-            () -> FontExporter.export(fontDirectory, wrongName, outputDirectory));
+                () -> FontExporter.export(fontDirectory, wrongName, outputDirectory));
 
-        assertEquals("8x16.txt declares cell 8x8; the file name must match the cell line", problem.getMessage());
+        assertEquals("8x16.txt declares cell 8x8; the file name must match the cell line",
+                problem.getMessage());
         assertFalse(outputDirectory.exists());
     }
 }

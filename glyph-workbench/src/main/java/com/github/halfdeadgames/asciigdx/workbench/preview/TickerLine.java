@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * One news-ticker line scrolling right to left. Words are queued with a configurable gap of blank cells after each (one by default); new words
- * are requested whenever the queue ends before the visible width, and words that have fully left on the left
- * are dropped. Positions are in pixels from the left edge of the line.
+ * One news-ticker line scrolling right to left. Words are queued with a configurable gap of blank
+ * cells after each (one by default); new words are requested whenever the queue ends before the
+ * visible width, and words that have fully left on the left are dropped. Positions are in pixels
+ * from the left edge of the line.
  */
 final class TickerLine {
 
@@ -28,7 +29,8 @@ final class TickerLine {
      * @param wordSource      supplies non-empty words
      * @param glyphAdvance    pixels from one glyph to the next
      * @param pixelsPerSecond scroll speed to the left
-     * @param gapCells        blank cells after each word; 0 runs the words together into one continuous string
+     * @param gapCells        blank cells after each word; 0 runs the words together into one
+     *     continuous string
      */
     TickerLine(Supplier<int[]> wordSource, int glyphAdvance, float pixelsPerSecond, int gapCells) {
         this.wordSource = wordSource;

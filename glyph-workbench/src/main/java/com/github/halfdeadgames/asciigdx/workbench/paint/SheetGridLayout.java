@@ -26,7 +26,7 @@ final class SheetGridLayout {
      * room in the panel and answer {@link #slotAt}.
      */
     SheetGridLayout(int left, int top, GlyphSize slotSize, int gap, int columns,
-                    int visibleColumns, int rows) {
+            int visibleColumns, int rows) {
         this.visibleColumns = Math.max(1, Math.min(columns, visibleColumns));
         this.left = left;
         this.top = top;
@@ -63,7 +63,9 @@ final class SheetGridLayout {
         return slotHeight;
     }
 
-    /** Top of a slot when the panel is scrolled so that {@code firstRow} is the first visible row. */
+    /**
+     * Top of a slot when the panel is scrolled so that {@code firstRow} is the first visible row.
+     */
     int slotTop(int index, int firstRow) {
         return top + gap + (index / columns - firstRow) * pitchY;
     }
@@ -93,8 +95,9 @@ final class SheetGridLayout {
         int column = visibleColumn + firstColumn;
         int visibleRow = y / pitchY;
         int row = visibleRow + firstRow;
-        if (visibleColumn >= visibleColumns || column >= columns || visibleRow >= visibleRows || row >= rows
-            || x % pitchX >= slotWidth || y % pitchY >= slotHeight) {
+        if (visibleColumn >= visibleColumns || column >= columns || visibleRow >= visibleRows
+                || row >= rows
+                || x % pitchX >= slotWidth || y % pitchY >= slotHeight) {
             return -1;
         }
         return row * columns + column;

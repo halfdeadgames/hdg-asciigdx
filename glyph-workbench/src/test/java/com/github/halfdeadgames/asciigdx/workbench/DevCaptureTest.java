@@ -12,11 +12,16 @@ class DevCaptureTest {
 
     @Test
     void overlayRequestHasACodePointAndAnOptionalShiftAndDown() {
-        assertEquals(new DevCapture.OverlayRequest(0x21, 0, 0), DevCapture.parseOverlayRequest("overlay:U+0021"));
-        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 0), DevCapture.parseOverlayRequest("overlay:U+0021:5"));
-        assertEquals(new DevCapture.OverlayRequest(0x41, -2, 0), DevCapture.parseOverlayRequest(" OVERLAY:A:-2 "));
-        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 2), DevCapture.parseOverlayRequest("overlay:U+0021:5:2"));
-        assertEquals(new DevCapture.OverlayRequest(0x21, 0, -1), DevCapture.parseOverlayRequest("overlay:U+0021:0:-1"));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 0, 0),
+                DevCapture.parseOverlayRequest("overlay:U+0021"));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 0),
+                DevCapture.parseOverlayRequest("overlay:U+0021:5"));
+        assertEquals(new DevCapture.OverlayRequest(0x41, -2, 0),
+                DevCapture.parseOverlayRequest(" OVERLAY:A:-2 "));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 5, 2),
+                DevCapture.parseOverlayRequest("overlay:U+0021:5:2"));
+        assertEquals(new DevCapture.OverlayRequest(0x21, 0, -1),
+                DevCapture.parseOverlayRequest("overlay:U+0021:0:-1"));
     }
 
     @Test
@@ -125,12 +130,16 @@ class DevCaptureTest {
     @Test
     void newFontSizeRequestHasANameAndOptionalTypedText() {
         assertNull(DevCapture.parseNewFontSizeRequest(null));
-        assertEquals(new DevCapture.NewFontSizeRequest("my-font", ""), DevCapture.parseNewFontSizeRequest(""));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""), DevCapture.parseNewFontSizeRequest("tiny"));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", ""),
+                DevCapture.parseNewFontSizeRequest(""));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""),
+                DevCapture.parseNewFontSizeRequest("tiny"));
         assertEquals(new DevCapture.NewFontSizeRequest("tiny", "64x128"),
-            DevCapture.parseNewFontSizeRequest("tiny:64x128"));
-        assertEquals(new DevCapture.NewFontSizeRequest("my-font", "7x13"), DevCapture.parseNewFontSizeRequest(":7x13"));
-        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""), DevCapture.parseNewFontSizeRequest("tiny:"));
+                DevCapture.parseNewFontSizeRequest("tiny:64x128"));
+        assertEquals(new DevCapture.NewFontSizeRequest("my-font", "7x13"),
+                DevCapture.parseNewFontSizeRequest(":7x13"));
+        assertEquals(new DevCapture.NewFontSizeRequest("tiny", ""),
+                DevCapture.parseNewFontSizeRequest("tiny:"));
     }
 
     @Test

@@ -18,7 +18,8 @@ final class UpscaleSheetFiles {
     static UpscaleSourceSheet load(Path fontsRoot, String fontText) {
         try {
             Path folder = Files.createDirectories(fontsRoot.resolve(FONT.folderName()));
-            Files.writeString(folder.resolve(FONT.size().dataFileName()), fontText, StandardCharsets.UTF_8);
+            Files.writeString(folder.resolve(FONT.size().dataFileName()), fontText,
+                    StandardCharsets.UTF_8);
             Files.writeString(folder.resolve("glyphs.txt"), "cp437\n", StandardCharsets.UTF_8);
             return UpscaleSourceSheet.load(fontsRoot, FONT);
         } catch (IOException problem) {

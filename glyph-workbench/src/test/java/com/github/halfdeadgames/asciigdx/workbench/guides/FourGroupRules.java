@@ -11,13 +11,13 @@ final class FourGroupRules {
     static final int PUNCT = '!';
 
     static final RulesFile RULES = RulesFile.parse("""
-        {"groups": {
-          "uppercase": ["A-Z"],
-          "lowercase": ["a-z"],
-          "digits": ["0-9"],
-          "punctuation": ["!-/", ":-@", "[-`", "{-~"]
-        }}
-        """, 8, 8);
+            {"groups": {
+              "uppercase": ["A-Z"],
+              "lowercase": ["a-z"],
+              "digits": ["0-9"],
+              "punctuation": ["!-/", ":-@", "[-`", "{-~"]
+            }}
+            """, 8, 8);
 
     private FourGroupRules() {
     }

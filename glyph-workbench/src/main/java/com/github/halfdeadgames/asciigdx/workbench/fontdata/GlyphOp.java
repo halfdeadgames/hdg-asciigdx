@@ -41,7 +41,7 @@ public record GlyphOp(Kind kind, List<Source> sources) {
         boolean overlay = kind == Kind.OVERLAY;
         if (overlay ? sources.isEmpty() : sources.size() != 1) {
             throw new IllegalArgumentException(kind.keyword() + " needs "
-                + (overlay ? "at least one source" : "exactly one source"));
+                    + (overlay ? "at least one source" : "exactly one source"));
         }
     }
 }

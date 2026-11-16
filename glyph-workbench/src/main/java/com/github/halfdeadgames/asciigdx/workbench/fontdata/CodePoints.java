@@ -16,24 +16,25 @@ public final class CodePoints {
     }
 
     /**
-     * Reads a code written as {@code U+} or {@code u+} followed by 1 to 8 ASCII hex digits, either case, and
-     * nothing else. A value above U+10FFFF comes back as {@link #OUT_OF_UNICODE}, so callers can report
-     * "out of Unicode" themselves with {@link Character#isValidCodePoint(int)}.
+     * Reads a code written as {@code U+} or {@code u+} followed by 1 to 8 ASCII hex digits,
+     * either case, and nothing else. A value above U+10FFFF comes back as {@link #OUT_OF_UNICODE},
+     * so callers can report "out of Unicode" themselves with
+     * {@link Character#isValidCodePoint(int)}.
      *
      * @param text the text to read, not null
      * @return the value, or {@link #NOT_A_CODE} if the text is not in that form
      */
     public static int readUPlus(String text) {
         if (text.length() <= PREFIX_LENGTH || (text.charAt(0) != 'U' && text.charAt(0) != 'u')
-            || text.charAt(1) != '+') {
+                || text.charAt(1) != '+') {
             return NOT_A_CODE;
         }
         return readHexDigits(text, PREFIX_LENGTH);
     }
 
     /**
-     * Reads 1 to 8 ASCII hex digits, either case, and nothing else. Like {@link #readUPlus(String)}, a value
-     * above U+10FFFF comes back as {@link #OUT_OF_UNICODE}.
+     * Reads 1 to 8 ASCII hex digits, either case, and nothing else. Like
+     * {@link #readUPlus(String)}, a value above U+10FFFF comes back as {@link #OUT_OF_UNICODE}.
      *
      * @param text the digits, not null
      * @return the value, or {@link #NOT_A_CODE} if the text is not 1 to 8 hex digits
@@ -43,20 +44,21 @@ public final class CodePoints {
     }
 
     /**
-     * Tells whether a code point can be a glyph: a valid Unicode code point that is not a surrogate and not
-     * {@link SheetOrder#FILLER}.
+     * Tells whether a code point can be a glyph: a valid Unicode code point that is not a surrogate
+     * and not {@link SheetOrder#FILLER}.
      *
      * @param codePoint the code point to check
      * @return true if it can be used as a glyph
      */
     public static boolean isUsableAsGlyph(int codePoint) {
         return Character.isValidCodePoint(codePoint)
-            && Character.getType(codePoint) != Character.SURROGATE
-            && codePoint != SheetOrder.FILLER;
+                && Character.getType(codePoint) != Character.SURROGATE
+                && codePoint != SheetOrder.FILLER;
     }
 
     /**
-     * Writes a code point the way font files and messages name it, like {@code U+0041} or {@code U+1F600}.
+     * Writes a code point the way font files and messages name it, like {@code U+0041} or
+     * {@code U+1F600}.
      *
      * @param codePoint the code point
      * @return {@code U+} and at least 4 uppercase hex digits

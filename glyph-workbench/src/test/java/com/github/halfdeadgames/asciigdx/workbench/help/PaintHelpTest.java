@@ -21,7 +21,7 @@ class PaintHelpTest {
     private static final int WIDTH = 20;
 
     private static List<PaintHelp.Row> rows(DeriveFlow.Mode mode, GlyphOp.Kind kind,
-                                            List<PaintHelp.PartView> parts, PaintHelp.PartView pending, int width) {
+            List<PaintHelp.PartView> parts, PaintHelp.PartView pending, int width) {
         return PaintHelp.rows(new PaintHelp.State(mode, kind, parts, pending), width);
     }
 
@@ -78,7 +78,8 @@ class PaintHelpTest {
             assertEquals(8, row.actionColumn());
             assertEquals(8, plain(row).indexOf(row.action()), plain(row));
         }
-        assertEquals(List.of("CLICK", "DRAG", "ARROWS", "PGUP", "PGDN", "HOME", "END", "[ ]"), keys);
+        assertEquals(
+                List.of("CLICK", "DRAG", "ARROWS", "PGUP", "PGDN", "HOME", "END", "[ ]"), keys);
         assertTrue(plain(rows).contains("ARROWS  PICK GLYPH"));
         assertNoOnce(rows);
     }
@@ -99,7 +100,7 @@ class PaintHelpTest {
     @Test
     void upscaleChoosingListsTheCandidatesAndMarksTheSelectedOne() {
         List<PaintHelp.Row> rows = PaintHelp.rows(
-            PaintHelp.State.upscaleChoosing(List.of("NEAREST 2X", "SMOOTH"), 1), 40);
+                PaintHelp.State.upscaleChoosing(List.of("NEAREST 2X", "SMOOTH"), 1), 40);
         assertEquals("Pick how to upscale.", rows.get(0).action());
         List<PaintHelp.Row> candidates = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -121,9 +122,10 @@ class PaintHelpTest {
 
     @Test
     void upscaleStagesAreDifferentStates() {
-        assertNotEquals(PaintHelp.State.upscalePicking(), PaintHelp.State.upscaleChoosing(List.of("A"), 0));
+        assertNotEquals(PaintHelp.State.upscalePicking(),
+                PaintHelp.State.upscaleChoosing(List.of("A"), 0));
         assertNotEquals(PaintHelp.State.upscaleChoosing(List.of("A", "B"), 0),
-            PaintHelp.State.upscaleChoosing(List.of("A", "B"), 1));
+                PaintHelp.State.upscaleChoosing(List.of("A", "B"), 1));
     }
 
     @Test
@@ -174,7 +176,8 @@ class PaintHelpTest {
         assertNoOnce(mirror);
         assertProseFits(mirror);
         for (GlyphOp.Kind kind : DeriveFlow.OPERATIONS) {
-            String joined = String.join(" ", plain(rows(DeriveFlow.Mode.MENU, kind, List.of(), null, 80)));
+            String joined =
+                    String.join(" ", plain(rows(DeriveFlow.Mode.MENU, kind, List.of(), null, 80)));
             assertTrue(joined.contains(PaintHelp.describe(kind)), kind.name());
         }
         assertTrue(PaintHelp.describe(GlyphOp.Kind.ROTATE270).contains("270 degrees clockwise"));
@@ -203,9 +206,10 @@ class PaintHelpTest {
 
     @Test
     void overlayPickListsControlsAndNumberedParts() {
-        List<PaintHelp.PartView> parts = List.of(new PaintHelp.PartView(0x21, -1, 0), new PaintHelp.PartView(0xE000, 0, 0));
+        List<PaintHelp.PartView> parts =
+                List.of(new PaintHelp.PartView(0x21, -1, 0), new PaintHelp.PartView(0xE000, 0, 0));
         List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY, parts,
-            new PaintHelp.PartView(0x21, 2, 0), WIDTH);
+                new PaintHelp.PartView(0x21, 2, 0), WIDTH);
         List<String> lines = plain(rows);
         assertTrue(lines.contains("[ ]     SHIFT 1 COLUMN"));
         assertTrue(lines.contains("; '     MOVE 1 ROW"));
@@ -226,9 +230,12 @@ class PaintHelpTest {
     @Test
     void overlayShowsTheShiftRangeAndTheWarningUnderTheParts() {
         String message = "SHIFT +9 PUTS INK OUTSIDE THE CELL: ALLOWED -1..+2";
-        OverlayCheck.Result check = new OverlayCheck.Result(OverlayCheck.Problem.OUTSIDE, message, true, -1, 2);
-        List<PaintHelp.Row> rows = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
-            List.of(new PaintHelp.PartView(0x21, 0, 0)), new PaintHelp.PartView(0x22, 9, 0), check), WIDTH);
+        OverlayCheck.Result check =
+                new OverlayCheck.Result(OverlayCheck.Problem.OUTSIDE, message, true, -1, 2);
+        List<PaintHelp.Row> rows = PaintHelp.rows(
+                new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
+                        List.of(new PaintHelp.PartView(0x21, 0, 0)),
+                        new PaintHelp.PartView(0x22, 9, 0), check), WIDTH);
         PaintHelp.Row range = find(rows, "SHIFT RANGE");
         assertEquals(PaintHelp.Kind.INFO, range.kind());
         assertTrue(range.isTable());
@@ -253,9 +260,9 @@ class PaintHelpTest {
     @Test
     void partTextShowsDownOnlyWhenNotZero() {
         List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
-            List.of(new PaintHelp.PartView(0x21, 1, 2), new PaintHelp.PartView(0x22, 0, -1),
-                new PaintHelp.PartView(0x23, 0, 0)),
-            new PaintHelp.PartView(0x24, 1, 3), WIDTH);
+                List.of(new PaintHelp.PartView(0x21, 1, 2), new PaintHelp.PartView(0x22, 0, -1),
+                        new PaintHelp.PartView(0x23, 0, 0)),
+                new PaintHelp.PartView(0x24, 1, 3), WIDTH);
         List<String> lines = plain(rows);
         assertTrue(lines.contains("1 U+0021 ! SHIFT +1 DOWN +2"));
         assertTrue(lines.contains("2 U+0022 \" SHIFT 0 DOWN -1"));
@@ -265,9 +272,11 @@ class PaintHelpTest {
 
     @Test
     void overlayShowsTheDownRangeLinedUpWithTheShiftRange() {
-        OverlayCheck.Result check = new OverlayCheck.Result(OverlayCheck.Problem.NONE, "", true, -1, 2, -3, 4);
-        List<PaintHelp.Row> rows = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
-            List.of(), new PaintHelp.PartView(0x22, 1, 0), check), WIDTH);
+        OverlayCheck.Result check =
+                new OverlayCheck.Result(OverlayCheck.Problem.NONE, "", true, -1, 2, -3, 4);
+        List<PaintHelp.Row> rows = PaintHelp.rows(
+                new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
+                        List.of(), new PaintHelp.PartView(0x22, 1, 0), check), WIDTH);
         PaintHelp.Row shiftRange = find(rows, "SHIFT RANGE");
         PaintHelp.Row downRange = find(rows, "DOWN RANGE");
         assertEquals("DOWN RANGE  -3..+4", plain(downRange));
@@ -278,13 +287,16 @@ class PaintHelpTest {
 
     @Test
     void overlayWithoutPendingPartOrWarningHasNoRangeOrWarningRows() {
-        OverlayCheck.Result none = new OverlayCheck.Result(OverlayCheck.Problem.NONE, "", true, -1, 2);
-        List<PaintHelp.Row> clean = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
-            List.of(), null, none), WIDTH);
+        OverlayCheck.Result none =
+                new OverlayCheck.Result(OverlayCheck.Problem.NONE, "", true, -1, 2);
+        List<PaintHelp.Row> clean = PaintHelp.rows(
+                new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY,
+                        List.of(), null, none), WIDTH);
         assertNull(find(clean, "SHIFT RANGE"));
         assertTrue(clean.stream().noneMatch(row -> row.kind() == PaintHelp.Kind.WARNING));
-        List<PaintHelp.Row> withPending = PaintHelp.rows(new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE,
-            GlyphOp.Kind.OVERLAY, List.of(), new PaintHelp.PartView(0x22, 1, 0), none), WIDTH);
+        List<PaintHelp.Row> withPending = PaintHelp.rows(
+                new PaintHelp.State(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY, List.of(),
+                        new PaintHelp.PartView(0x22, 1, 0), none), WIDTH);
         assertEquals("SHIFT RANGE -1..+2", plain(find(withPending, "SHIFT RANGE")));
         assertTrue(withPending.stream().noneMatch(row -> row.kind() == PaintHelp.Kind.WARNING));
     }
@@ -296,7 +308,7 @@ class PaintHelpTest {
             parts.add(new PaintHelp.PartView(0x21 + i, i, 0));
         }
         List<PaintHelp.Row> rows = rows(DeriveFlow.Mode.PICK_SOURCE, GlyphOp.Kind.OVERLAY, parts,
-            new PaintHelp.PartView(0x30, 1, 0), WIDTH);
+                new PaintHelp.PartView(0x30, 1, 0), WIDTH);
         assertEquals(3, find(rows, "10").actionColumn());
         assertEquals(3, find(rows, ">").actionColumn());
         assertTrue(plain(rows).contains("1  U+0021 ! SHIFT 0"));
@@ -356,7 +368,8 @@ class PaintHelpTest {
         assertTrue(box.x() >= 0 && box.x() + box.width() <= 30);
         assertEquals(box.width() - 4, layout.charsPerLine());
         for (HelpWrap.Line line : layout.lines()) {
-            assertTrue(line.actionColumn() + line.action().length() <= layout.charsPerLine(), line.toString());
+            assertTrue(line.actionColumn() + line.action().length() <= layout.charsPerLine(),
+                    line.toString());
             assertTrue(line.key().length() <= layout.charsPerLine(), line.toString());
         }
         assertTrue(layout.lines().size() > PaintHelp.allControlRows().size());

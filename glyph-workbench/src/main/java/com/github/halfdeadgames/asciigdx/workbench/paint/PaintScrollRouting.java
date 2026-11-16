@@ -33,7 +33,7 @@ final class PaintScrollRouting {
     private final Host host;
 
     PaintScrollRouting(MessageStrip messages, ScrollState helpScroll, PaintSheetView sheet,
-                       WheelTicks wheelTicks, Host host) {
+            WheelTicks wheelTicks, Host host) {
         this.messages = messages;
         this.helpScroll = helpScroll;
         this.sheet = sheet;
@@ -54,7 +54,8 @@ final class PaintScrollRouting {
         }
     }
 
-    // Applied before the modal checks so ticks never pile up; the view scroll never moves the cursor.
+    // Applied before the modal checks so ticks never pile up; the view scroll never moves the
+    // cursor.
     void scrollSheetSideways() {
         if (wheelTicks.sideways() == 0) {
             return;
@@ -76,7 +77,8 @@ final class PaintScrollRouting {
 
     private void scrollPanelUnderPointer(int ticks, int pixelX, int pixelY) {
         int cellPixels = host.cellPixels();
-        if (messages.contains(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels))) {
+        if (messages.contains(Math.floorDiv(pixelX, cellPixels),
+                Math.floorDiv(pixelY, cellPixels))) {
             messages.scrollBy(ticks);
         } else if (host.helpContains(pixelX, pixelY)) {
             helpScroll.scrollBy(ticks * WheelTicks.ROWS_PER_TICK);

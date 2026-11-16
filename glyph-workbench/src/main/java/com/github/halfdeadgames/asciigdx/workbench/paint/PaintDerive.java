@@ -16,11 +16,15 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The derive actions of the paint screen: opening the menu, picking sources, applying, and canceling. */
+/**
+ * The derive actions of the paint screen: opening the menu, picking sources, applying, and
+ * canceling.
+ */
 final class PaintDerive {
 
     private static final List<Dialog.Button> REPLACE_BUTTONS = List.of(
-        new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("R", "REPLACE", Dialog.Tone.WARN),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
 
     private final StringBuilder replaceLine = new StringBuilder();
 
@@ -59,12 +63,16 @@ final class PaintDerive {
         /** Tracks the pointer's pixel position and routes the mouse wheel to the panel under it. */
         void updateAndRouteWheel();
 
-        /** Highlights the row under a click on the menu and returns whether the click chose an operation. */
+        /**
+         * Highlights the row under a click on the menu and returns whether the click chose an
+         * operation.
+         */
         boolean menuClicked(PaintDeriveMenu menu);
     }
 
-    PaintDerive(DeriveFlow flow, PaintDerivePick derivePick, PaintDeriveMenu deriveMenu, FontEditor editor,
-                MessageStrip messages, Host host) {
+    PaintDerive(DeriveFlow flow, PaintDerivePick derivePick, PaintDeriveMenu deriveMenu,
+            FontEditor editor,
+            MessageStrip messages, Host host) {
         this.flow = flow;
         this.derivePick = derivePick;
         this.deriveMenu = deriveMenu;
@@ -77,9 +85,13 @@ final class PaintDerive {
         return derivePick.overlayCheck(host.codePoints());
     }
 
-    /** Whether a derive dialog is open and dims the screen, so the help must be drawn again above it. */
+    /**
+     * Whether a derive dialog is open and dims the screen, so the help must be drawn again above
+     * it.
+     */
     boolean dialogShown() {
-        return flow.mode() == DeriveFlow.Mode.MENU || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
+        return flow.mode() == DeriveFlow.Mode.MENU
+                || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;
     }
 
     void drawDialog(Painter painter, int columns, int rows, CellRect area, int codePoint) {
@@ -93,38 +105,45 @@ final class PaintDerive {
     PaintHelp.State helpState() {
         int[] codePoints = host.codePoints();
         DeriveFlow.Mode mode = flow.mode();
-        GlyphOp.Kind operation = mode == DeriveFlow.Mode.MENU ? flow.operations().get(flow.menuIndex()) : flow.operation();
+        GlyphOp.Kind operation =
+                mode == DeriveFlow.Mode.MENU ? flow.operations().get(flow.menuIndex())
+                        : flow.operation();
         if (!flow.isOverlayOperation() || mode != DeriveFlow.Mode.PICK_SOURCE) {
             return new PaintHelp.State(mode, operation, List.of(), null);
         }
         List<PaintHelp.PartView> committed = new ArrayList<>();
         for (DeriveFlow.Part part : flow.parts()) {
-            committed.add(new PaintHelp.PartView(codePoints[part.slot()], part.shift(), part.down()));
+            committed.add(
+                    new PaintHelp.PartView(codePoints[part.slot()], part.shift(), part.down()));
         }
         PaintHelp.PartView pending = flow.sourceIsTarget()
-            ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift(), flow.pendingDown());
+                ? null : new PaintHelp.PartView(codePoints[flow.sourceSlot()], flow.pendingShift(),
+                flow.pendingDown());
         return new PaintHelp.State(mode, operation, committed, pending, overlayCheck());
     }
 
-    // The pending overlay part shows as a ghost only while its shift or down offset puts ink outside the cell.
+    // The pending overlay part shows as a ghost only while its shift or down offset puts ink
+    // outside the cell.
     PaintGridView.Ghost pendingGhost() {
         if (!flow.isOverlayOperation() || !flow.isPicking() || flow.sourceIsTarget()
-            || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
+                || overlayCheck().problem() != OverlayCheck.Problem.OUTSIDE) {
             return null;
         }
         return new PaintGridView.Ghost(editor.glyph(host.codePoints()[flow.sourceSlot()]).pixels(),
-            flow.pendingShift(), flow.pendingDown());
+                flow.pendingShift(), flow.pendingDown());
     }
 
-    private void drawReplaceDialog(Painter painter, int columns, int rows, CellRect area, int codePoint) {
+    private void drawReplaceDialog(Painter painter, int columns, int rows, CellRect area,
+            int codePoint) {
         replaceLine.setLength(0);
         replaceLine.append("U+");
         GlyphLabel.appendHex(replaceLine, codePoint);
         Dialog.draw(painter, new CellRect(0, 0, columns, rows),
-            DialogContent.of("REPLACE DRAWING",
-                List.of(replaceLine + " holds a drawing.", "Deriving replaces it.", "Undo restores it."),
-                REPLACE_BUTTONS),
-            area);
+                DialogContent.of("REPLACE DRAWING",
+                        List.of(replaceLine + " holds a drawing.", "Deriving replaces it.",
+                                "Undo restores it."),
+                        REPLACE_BUTTONS),
+                area);
     }
 
     void openDerive() {
@@ -158,7 +177,10 @@ final class PaintDerive {
         }
     }
 
-    /** Routes keys to the menu or replace prompt when one is open, and returns whether it consumed the frame. */
+    /**
+     * Routes keys to the menu or replace prompt when one is open, and returns whether it consumed
+     * the frame.
+     */
     boolean handleModalKeys() {
         if (flow.mode() == DeriveFlow.Mode.MENU) {
             handleDeriveMenu();
@@ -265,7 +287,8 @@ final class PaintDerive {
         derivePick.refresh(host.codePoints(), host.cursorSlot());
     }
 
-    // A refused source is already listed as a pick problem, so only the same-glyph case needs a result.
+    // A refused source is already listed as a pick problem, so only the same-glyph case needs a
+    // result.
     private void confirmSource() {
         messages.nextAction();
         if (flow.isOverlayOperation()) {
@@ -281,7 +304,8 @@ final class PaintDerive {
         applyOrAskReplace();
     }
 
-    // Leaves derive from any mode. Nothing reaches the font before applyDerive's editor.derive call.
+    // Leaves derive from any mode. Nothing reaches the font before applyDerive's editor.derive
+    // call.
     void cancelDerive() {
         messages.nextAction();
         flow.finish();

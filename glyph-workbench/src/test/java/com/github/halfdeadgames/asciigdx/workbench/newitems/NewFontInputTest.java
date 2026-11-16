@@ -82,8 +82,10 @@ class NewFontInputTest {
 
     @Test
     void cellSidesAboveTheLimitAreRefused() {
-        assertEquals("Width and height go up to 128", NewFontInput.sizeError(new CellSize(129, 16)));
-        assertEquals("Width and height go up to 128", NewFontInput.sizeError(new CellSize(16, 129)));
+        assertEquals("Width and height go up to 128",
+                NewFontInput.sizeError(new CellSize(129, 16)));
+        assertEquals("Width and height go up to 128",
+                NewFontInput.sizeError(new CellSize(16, 129)));
     }
 
     @Test

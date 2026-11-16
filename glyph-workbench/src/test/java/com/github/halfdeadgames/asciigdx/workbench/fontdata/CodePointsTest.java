@@ -37,7 +37,8 @@ class CodePointsTest {
     @Test
     void rejectsOtherForms() {
         for (String bad : List.of("", "U", "U+", "u+", "+0041", "0041", "U0041", "U+000000041",
-            "U+00G1", "U+ 41", "U+41 ", " U+41", "U+-1", "V+0041", "U+０041", "U+0041..U+0042")) {
+                "U+00G1", "U+ 41", "U+41 ", " U+41", "U+-1", "V+0041", "U+０041",
+                "U+0041..U+0042")) {
             assertEquals(CodePoints.NOT_A_CODE, CodePoints.readUPlus(bad), bad);
         }
     }

@@ -14,8 +14,8 @@ final class RuleText {
     }
 
     /**
-     * Lists the lines that explain a rule: its name, what it needs, what it checks, and what it skips.
-     * The lines are not wrapped.
+     * Lists the lines that explain a rule: its name, what it needs, what it checks, and what it
+     * skips. The lines are not wrapped.
      *
      * @param rule the rule to describe
      * @return the lines, starting with the upper-case rule name
@@ -26,7 +26,8 @@ final class RuleText {
         lines.add(BULLET + describeCheck(rule));
         lines.add(BULLET + "Checks: " + describeCheckedGroups(rule) + ".");
         for (RuleException exception : rule.exceptions()) {
-            lines.add(BULLET + "Skips " + exception.source() + ": " + withFinalPunctuation(exception.why()));
+            lines.add(BULLET + "Skips " + exception.source() + ": " + withFinalPunctuation(
+                    exception.why()));
         }
         return lines;
     }
@@ -38,7 +39,8 @@ final class RuleText {
             case NO_INK_COLUMNS -> describeNoInk("column", settings.columns());
             case RING -> "Blank ring of " + settings.ringSize() + " px on every side.";
             case CENTERED_X -> "Centered across: equal blank columns left and right.";
-            case CENTERED_BOTH -> "Centered both ways: equal blank columns and rows on opposite sides.";
+            case CENTERED_BOTH ->
+                    "Centered both ways: equal blank columns and rows on opposite sides.";
         };
     }
 

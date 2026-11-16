@@ -10,7 +10,10 @@ public final class Panel {
     private Panel() {
     }
 
-    /** The top edge, {@code width} cells, with " TITLE " inset after two cells; long titles are shortened. */
+    /**
+     * The top edge, {@code width} cells, with " TITLE " inset after two cells; long titles are
+     * shortened.
+     */
     public static String topEdge(int width, String title, boolean focus) {
         char horizontal = focus ? '═' : '─';
         StringBuilder edge = new StringBuilder(width);
@@ -31,7 +34,10 @@ public final class Panel {
         return width - 2 * TITLE_INSET - 2;
     }
 
-    /** The title as drawn, with a space on each side; empty when there is none or the panel is too narrow. */
+    /**
+     * The title as drawn, with a space on each side; empty when there is none or the panel is too
+     * narrow.
+     */
     public static String titleLabel(int width, String title) {
         if (title == null || title.isEmpty() || width < MIN_WIDTH_FOR_TITLE) {
             return "";
@@ -58,10 +64,12 @@ public final class Panel {
         int width = area.width();
         int height = area.height();
         int cellPixels = painter.cellPixels();
-        painter.fill(UiPalette.PANEL, x * cellPixels, y * cellPixels, width * cellPixels, height * cellPixels);
+        painter.fill(UiPalette.PANEL, x * cellPixels, y * cellPixels, width * cellPixels,
+                height * cellPixels);
         var color = focus ? UiPalette.FOCUS : UiPalette.FRAME;
         painter.text(topEdge(width, title, focus), x * cellPixels, y * cellPixels, color);
-        painter.text(bottomEdge(width, focus), x * cellPixels, (y + height - 1) * cellPixels, color);
+        painter.text(
+                bottomEdge(width, focus), x * cellPixels, (y + height - 1) * cellPixels, color);
         String vertical = focus ? "║" : "│";
         for (int row = 1; row < height - 1; row++) {
             painter.text(vertical, x * cellPixels, (y + row) * cellPixels, color);
@@ -70,9 +78,9 @@ public final class Panel {
         String label = titleLabel(width, title);
         if (!label.isEmpty()) {
             painter.fill(UiPalette.PANEL, (x + TITLE_INSET) * cellPixels, y * cellPixels,
-                TextCells.cellCount(label) * cellPixels, cellPixels);
+                    TextCells.cellCount(label) * cellPixels, cellPixels);
             painter.text(label, (x + TITLE_INSET) * cellPixels, y * cellPixels,
-                focus ? UiPalette.ACCENT : UiPalette.TITLE);
+                    focus ? UiPalette.ACCENT : UiPalette.TITLE);
         }
     }
 }

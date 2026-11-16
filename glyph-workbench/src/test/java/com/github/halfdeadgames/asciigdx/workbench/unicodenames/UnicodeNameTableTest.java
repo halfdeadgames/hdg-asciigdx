@@ -14,13 +14,14 @@ class UnicodeNameTableTest {
 
     private static void assertRejectedAtLine(int lineNumber, String text) {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-            () -> UnicodeNameTable.parse(text));
+                () -> UnicodeNameTable.parse(text));
         assertTrue(error.getMessage().contains("line " + lineNumber), error.getMessage());
     }
 
     @Test
     void parsesEntryAndSkipsCommentsAndBlankLines() {
-        UnicodeNameTable table = UnicodeNameTable.parse("# header\n\n1FA8F So SHOVEL\n   \n# end\n");
+        UnicodeNameTable table =
+                UnicodeNameTable.parse("# header\n\n1FA8F So SHOVEL\n   \n# end\n");
         assertEquals("SHOVEL", table.nameOf(SHOVEL));
         assertNull(table.nameOf(SHOVEL + 1));
     }
@@ -43,7 +44,8 @@ class UnicodeNameTableTest {
     @Test
     void blockLinesGiveBlockNamesWithExactBoundaries() {
         UnicodeNameTable table = UnicodeNameTable.parse(
-            "BLOCK 1FB00..1FBFF Symbols for Legacy Computing\nBLOCK 1FA80..1FAFF Pictographs Extended-A\n");
+                "BLOCK 1FB00..1FBFF Symbols for Legacy Computing\n"
+                        + "BLOCK 1FA80..1FAFF Pictographs Extended-A\n");
         assertEquals("Symbols for Legacy Computing", table.blockOf(0x1FB00));
         assertEquals("Symbols for Legacy Computing", table.blockOf(0x1FBFF));
         assertEquals("Pictographs Extended-A", table.blockOf(0x1FAFF));
@@ -61,11 +63,14 @@ class UnicodeNameTableTest {
 
     @Test
     void everyCategoryCodeIsAccepted() {
-        String[] codes = {"Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Mc", "Me", "Nd", "Nl", "No", "Pc", "Pd", "Ps",
-            "Pe", "Pi", "Pf", "Po", "Sm", "Sc", "Sk", "So", "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Cn"};
+        String[] codes =
+                {"Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Mc", "Me", "Nd", "Nl", "No", "Pc", "Pd", "Ps",
+                        "Pe", "Pi", "Pf", "Po", "Sm", "Sc", "Sk", "So", "Zs", "Zl", "Zp", "Cc",
+                        "Cf", "Cs", "Co", "Cn"};
         StringBuilder text = new StringBuilder();
         for (int index = 0; index < codes.length; index++) {
-            text.append(Integer.toHexString(0x1000 + index)).append(' ').append(codes[index]).append(" N\n");
+            text.append(Integer.toHexString(0x1000 + index)).append(' ').append(codes[index])
+                    .append(" N\n");
         }
         UnicodeNameTable table = UnicodeNameTable.parse(text.toString());
         assertEquals(Character.INITIAL_QUOTE_PUNCTUATION, table.typeOf(0x1000 + 15));
@@ -129,7 +134,8 @@ class UnicodeNameTableTest {
 
     @Test
     void codePointsOutsideRangesHaveNoName() {
-        UnicodeNameTable table = UnicodeNameTable.parse(CJK_RANGE + "3D000..3FC3F Lo SMALL SEAL CHARACTER-*\n");
+        UnicodeNameTable table =
+                UnicodeNameTable.parse(CJK_RANGE + "3D000..3FC3F Lo SMALL SEAL CHARACTER-*\n");
         assertNull(table.nameOf(0x3134F));
         assertNull(table.nameOf(0x3347A));
         assertEquals("SMALL SEAL CHARACTER-3D000", table.nameOf(0x3D000));
@@ -137,13 +143,15 @@ class UnicodeNameTableTest {
 
     @Test
     void singleRangeEntryWorks() {
-        UnicodeNameTable table = UnicodeNameTable.parse("18CFF..18CFF Lo KHITAN SMALL SCRIPT CHARACTER-*\n");
+        UnicodeNameTable table =
+                UnicodeNameTable.parse("18CFF..18CFF Lo KHITAN SMALL SCRIPT CHARACTER-*\n");
         assertEquals("KHITAN SMALL SCRIPT CHARACTER-18CFF", table.nameOf(0x18CFF));
     }
 
     @Test
     void rangesAndSinglesInAnyFileOrderAreFound() {
-        UnicodeNameTable table = UnicodeNameTable.parse("3D000..3FC3F Lo B-*\n1FA8F So SHOVEL\n" + CJK_RANGE);
+        UnicodeNameTable table =
+                UnicodeNameTable.parse("3D000..3FC3F Lo B-*\n1FA8F So SHOVEL\n" + CJK_RANGE);
         assertEquals("CJK UNIFIED IDEOGRAPH-31350", table.nameOf(0x31350));
         assertEquals("B-3D000", table.nameOf(0x3D000));
         assertEquals("SHOVEL", table.nameOf(SHOVEL));

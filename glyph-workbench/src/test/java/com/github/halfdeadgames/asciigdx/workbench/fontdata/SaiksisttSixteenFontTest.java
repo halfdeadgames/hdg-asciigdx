@@ -26,7 +26,8 @@ class SaiksisttSixteenFontTest {
         String repoRoot = System.getProperty("workbench.repoRoot");
         assertNotNull(repoRoot, "workbench.repoRoot must be set by the build");
         File fontFolder = new File(repoRoot, "fonts/saiksistt");
-        data = FontDataParser.parseSizeFile(new CellSize(16, 16), readText(new File(fontFolder, "16x16.txt")));
+        data = FontDataParser.parseSizeFile(new CellSize(16, 16),
+                readText(new File(fontFolder, "16x16.txt")));
         glyphList = GlyphListFile.load(fontFolder);
     }
 
@@ -47,7 +48,8 @@ class SaiksisttSixteenFontTest {
                 if ((argb >>> 24) == 0) {
                     continue;
                 }
-                assertEquals(OPAQUE_WHITE, argb, "lit pixel at " + x + "," + y + " must be opaque white");
+                assertEquals(OPAQUE_WHITE, argb,
+                        "lit pixel at " + x + "," + y + " must be opaque white");
                 litPixels++;
             }
         }
@@ -66,7 +68,8 @@ class SaiksisttSixteenFontTest {
         for (int y = 0; y < cell.getHeight(); y++) {
             for (int x = 0; x < cell.getWidth(); x++) {
                 int argb = image.getRGB(originX + x, originY + y);
-                assertEquals(cell.isLit(x, y) ? OPAQUE_WHITE : 0, cell.isLit(x, y) ? argb : argb >>> 24);
+                assertEquals(cell.isLit(x, y) ? OPAQUE_WHITE : 0,
+                        cell.isLit(x, y) ? argb : argb >>> 24);
             }
         }
     }

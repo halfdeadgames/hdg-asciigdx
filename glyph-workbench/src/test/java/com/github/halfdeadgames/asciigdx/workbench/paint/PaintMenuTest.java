@@ -14,7 +14,7 @@ class PaintMenuTest {
     private static void assertAvailableOnly(Context context, Set<Action> expected) {
         for (Action action : Action.values()) {
             assertEquals(expected.contains(action), PaintMenu.isAvailable(action, context),
-                context + " " + action.name());
+                    context + " " + action.name());
         }
     }
 
@@ -51,7 +51,8 @@ class PaintMenuTest {
     @Test
     void newGlyphIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
-            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_GLYPH, context), context.name());
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_GLYPH, context),
+                    context.name());
         }
     }
 
@@ -66,8 +67,9 @@ class PaintMenuTest {
     @Test
     void exportIsAvailableWhereverSaveIs() {
         for (Context context : Context.values()) {
-            assertEquals(PaintMenu.isAvailable(Action.SAVE, context), PaintMenu.isAvailable(Action.EXPORT, context),
-                context.name());
+            assertEquals(PaintMenu.isAvailable(Action.SAVE, context),
+                    PaintMenu.isAvailable(Action.EXPORT, context),
+                    context.name());
         }
     }
 
@@ -95,15 +97,17 @@ class PaintMenuTest {
     @Test
     void reloadFontFilesIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
-            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.RELOAD_FILES, context),
-                context.name());
+            assertEquals(context == Context.IDLE,
+                    PaintMenu.isAvailable(Action.RELOAD_FILES, context),
+                    context.name());
         }
     }
 
     @Test
     void newFontIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
-            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_FONT, context), context.name());
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_FONT, context),
+                    context.name());
         }
     }
 
@@ -118,20 +122,23 @@ class PaintMenuTest {
     @Test
     void upscaleIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
-            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.UPSCALE, context), context.name());
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.UPSCALE, context),
+                    context.name());
         }
     }
 
     @Test
     void newSizeIsAvailableOnlyWhenIdle() {
         for (Context context : Context.values()) {
-            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_SIZE, context), context.name());
+            assertEquals(context == Context.IDLE, PaintMenu.isAvailable(Action.NEW_SIZE, context),
+                    context.name());
         }
     }
 
     @Test
     void whileDerivingOnlyCancelAndTheHelpItemsAreAvailable() {
-        assertAvailableOnly(Context.DERIVING, Set.of(Action.CANCEL_DERIVE, Action.RULES, Action.CONTROLS));
+        assertAvailableOnly(Context.DERIVING,
+                Set.of(Action.CANCEL_DERIVE, Action.RULES, Action.CONTROLS));
     }
 
     @Test
@@ -152,8 +159,9 @@ class PaintMenuTest {
     @Test
     void controlsIsAvailableWhereverRulesIs() {
         for (Context context : Context.values()) {
-            assertEquals(PaintMenu.isAvailable(Action.RULES, context), PaintMenu.isAvailable(Action.CONTROLS, context),
-                context.name());
+            assertEquals(PaintMenu.isAvailable(Action.RULES, context),
+                    PaintMenu.isAvailable(Action.CONTROLS, context),
+                    context.name());
         }
     }
 

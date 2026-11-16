@@ -18,37 +18,44 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.StatusBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
-/** The guide list panel of the paint screen: lists, edits, renames, and saves the guides of one font size. */
+/**
+ * The guide list panel of the paint screen: lists, edits, renames, and saves the guides of one font
+ * size.
+ */
 public final class PaintGuideListPanel {
 
     private static final String TAG = "Paint";
     private static final List<StatusBar.Key> LIST_KEYS = List.of(
-        new StatusBar.Key("ENTER", "SAVE"), new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ENTER", "SAVE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> RENAME_KEYS = List.of(
-        new StatusBar.Key("ENTER", "OK"), new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ENTER", "OK"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> PICK_KIND_KEYS = List.of(
-        new StatusBar.Key("1-4", "PICK"), new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("1-4", "PICK"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> NEW_GUIDE_NAME_KEYS = List.of(
-        new StatusBar.Key("ENTER", "ADD GUIDE"), new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ENTER", "ADD GUIDE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<StatusBar.Key> GROUP_LIST_KEYS = List.of(
-        new StatusBar.Key("ENTER", "DONE"), new StatusBar.Key("ESC", "CANCEL"));
+            new StatusBar.Key("ENTER", "DONE"), new StatusBar.Key("ESC", "CANCEL"));
     private static final List<String[]> EDIT_LEGEND = List.of(
-        new String[] {"ARROWS", "PICK"}, new String[] {"[ ]", "MOVE"},
-        new String[] {"SH+[ ]", "SIZE"},
-        new String[] {"A", "ADD"}, new String[] {"DEL", "REMOVE"},
-        new String[] {"G", "GROUPS"}, new String[] {"L", "RENAME"});
+            new String[]{"ARROWS", "PICK"}, new String[]{"[ ]", "MOVE"},
+            new String[]{"SH+[ ]", "SIZE"},
+            new String[]{"A", "ADD"}, new String[]{"DEL", "REMOVE"},
+            new String[]{"G", "GROUPS"}, new String[]{"L", "RENAME"});
     private static final List<String[]> GROUP_LEGEND = List.of(
-        new String[] {"ARROWS", "PICK"}, new String[] {"SPACE", "TOGGLE"}, new String[] {"CLICK", "TOGGLE"},
-        new String[] {"NONE = ALL GLYPHS"});
+            new String[]{"ARROWS", "PICK"}, new String[]{"SPACE", "TOGGLE"},
+            new String[]{"CLICK", "TOGGLE"},
+            new String[]{"NONE = ALL GLYPHS"});
     private static final int LEGEND_ACTION_COLUMN = 8;
     private static final int LEGEND_MIN_LIST_ROWS = 8;
     private static final int GROUP_LEGEND_MIN_LIST_ROWS = 4;
     private static final String KEY_SELECTED_GROUPS = "guideGroups";
-    private static final String NO_GROUPS_MESSAGE = "This font has no groups: guides show on all glyphs";
-    private static final int[] KIND_KEYS = {Input.Keys.NUM_1, Input.Keys.NUM_2, Input.Keys.NUM_3, Input.Keys.NUM_4};
+    private static final String NO_GROUPS_MESSAGE =
+            "This font has no groups: guides show on all glyphs";
+    private static final int[] KIND_KEYS =
+            {Input.Keys.NUM_1, Input.Keys.NUM_2, Input.Keys.NUM_3, Input.Keys.NUM_4};
     private static final int[] KIND_NUMPAD_KEYS = {
-        Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
-    // The L that starts a rename can also arrive as a typed character a frame later; it must not enter the text.
+            Input.Keys.NUMPAD_1, Input.Keys.NUMPAD_2, Input.Keys.NUMPAD_3, Input.Keys.NUMPAD_4};
+    // The L that starts a rename can also arrive as a typed character a frame later; it must not
+    // enter the text.
     private static final int RENAME_KEY_SWALLOW_FRAMES = 2;
 
     private final Painter painter;
@@ -78,7 +85,9 @@ public final class PaintGuideListPanel {
         /** The guides as shown now, which the list is rebuilt from when it closes. */
         PaintGuides currentGuides();
 
-        /** Told about every guide change, so the grid and the rule warnings drop what they cached. */
+        /**
+         * Told about every guide change, so the grid and the rule warnings drop what they cached.
+         */
         void showGuides(PaintGuides guides);
 
         /** Ends a pixel stroke in progress when the list opens. */
@@ -89,12 +98,16 @@ public final class PaintGuideListPanel {
         /** Whether the pointer is over the area the list is drawn in. */
         boolean pointerOverList();
 
-        /** The rules of the font being painted. A reload cannot happen while the panel is open, so it stays valid. */
+        /**
+         * The rules of the font being painted. A reload cannot happen while the panel is open, so
+         * it stays valid.
+         */
         RulesFile currentRules();
     }
 
-    public PaintGuideListPanel(Painter painter, MessageStrip messages, PaintGuidesFile guidesFile, FontEditor editor,
-                               ArrowRepeats arrowRepeats, Host host) {
+    public PaintGuideListPanel(Painter painter, MessageStrip messages, PaintGuidesFile guidesFile,
+            FontEditor editor,
+            ArrowRepeats arrowRepeats, Host host) {
         this.painter = painter;
         this.messages = messages;
         this.guidesFile = guidesFile;
@@ -104,7 +117,9 @@ public final class PaintGuideListPanel {
         this.guideList = newModel();
     }
 
-    /** Saves to the given file from now on; call after the host shows the guides that file holds. */
+    /**
+     * Saves to the given file from now on; call after the host shows the guides that file holds.
+     */
     public void useFile(PaintGuidesFile reloadedFile) {
         guidesFile = reloadedFile;
         guideList = newModel();
@@ -167,9 +182,11 @@ public final class PaintGuideListPanel {
         }
     }
 
-    // Reads the typed character only while a label is being renamed; the caller decides whether the input is free.
+    // Reads the typed character only while a label is being renamed; the caller decides whether
+    // the input is free.
     public void typeChar(char character) {
-        boolean startingKey = character == 'l' || character == 'L' || (character >= '1' && character <= '4');
+        boolean startingKey =
+                character == 'l' || character == 'L' || (character >= '1' && character <= '4');
         if (renameKeySwallowFrames > 0 && startingKey) {
             return;
         }
@@ -200,7 +217,8 @@ public final class PaintGuideListPanel {
             return;
         }
         repeatLabelBackspace.update(false, 0f);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(Input.Keys.F2)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.isKeyJustPressed(
+                Input.Keys.F2)) {
             host.showGuides(guideList.original());
             close();
             return;
@@ -220,7 +238,7 @@ public final class PaintGuideListPanel {
     // Rows to move by this frame from the held arrow keys and the wheel over the list.
     private int selectionStep(float delta, int wheelTicks) {
         int step = arrowRepeats.down().update(Gdx.input.isKeyPressed(Input.Keys.DOWN), delta)
-            - arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
+                - arrowRepeats.up().update(Gdx.input.isKeyPressed(Input.Keys.UP), delta);
         if (wheelTicks != 0) {
             if (host.pointerOverList()) {
                 step += wheelTicks;
@@ -237,7 +255,8 @@ public final class PaintGuideListPanel {
             cancelGroups();
             return;
         }
-        if (Keys.enterJustPressed() || (Gdx.input.isKeyJustPressed(Input.Keys.G) && !Keys.controlDown())) {
+        if (Keys.enterJustPressed() || (Gdx.input.isKeyJustPressed(Input.Keys.G)
+                && !Keys.controlDown())) {
             closeGroups();
             return;
         }
@@ -302,19 +321,23 @@ public final class PaintGuideListPanel {
             int top = (area.y() + 1 + i) * cellPixels;
             int textX = (area.x() + 1 + Panel.TEXT_PADDING) * cellPixels;
             if (index == selectedRow()) {
-                painter.fill(UiPalette.KEYBG, (area.x() + 1) * cellPixels, top, (area.width() - 2) * cellPixels,
-                    cellPixels);
+                painter.fill(UiPalette.KEYBG, (area.x() + 1) * cellPixels, top,
+                        (area.width() - 2) * cellPixels,
+                        cellPixels);
                 painter.text("►", (area.x() + 1) * cellPixels, top, UiPalette.ACCENT);
-                painter.text(BounceScroll.window(text, charsPerLine, seconds), textX, top, UiPalette.ACCENT);
+                painter.text(BounceScroll.window(text, charsPerLine, seconds), textX, top,
+                        UiPalette.ACCENT);
             } else {
-                painter.text(text.length() > charsPerLine ? text.substring(0, charsPerLine) : text, textX, top, UiPalette.TEXT);
+                painter.text(text.length() > charsPerLine ? text.substring(0, charsPerLine) : text,
+                        textX, top, UiPalette.TEXT);
             }
         }
     }
 
     /**
-     * Selects the guide whose row is at the clicked cell, like arrowing there; a click on the selected guide opens its
-     * groups. While the group list is open a click on a group toggles it. Other clicks change nothing.
+     * Selects the guide whose row is at the clicked cell, like arrowing there; a click on the
+     * selected guide opens its groups. While the group list is open a click on a group toggles it.
+     * Other clicks change nothing.
      */
     public void click(CellRect area, CellRect pickerArea, int cellX, int cellY) {
         if (!open) {
@@ -328,7 +351,8 @@ public final class PaintGuideListPanel {
             return;
         }
         int visible = visibleRows(area);
-        int index = GuideListRows.indexAt(area, visible, firstVisibleRow(visible), rowCount(), cellX, cellY);
+        int index = GuideListRows.indexAt(
+                area, visible, firstVisibleRow(visible), rowCount(), cellX, cellY);
         if (groupList != null) {
             clickGroup(index);
             return;
@@ -348,7 +372,8 @@ public final class PaintGuideListPanel {
         switch (GuideListRows.clickOutcome(index, guideList.selectedIndex())) {
             case SELECT -> moveSelection(index - guideList.selectedIndex());
             case OPEN_GROUPS -> openGroups();
-            case NONE -> { }
+            case NONE -> {
+            }
         }
     }
 
@@ -361,11 +386,13 @@ public final class PaintGuideListPanel {
     }
 
     private int firstVisibleRow(int visible) {
-        return groupList != null ? groupList.firstVisible(visible) : guideList.firstVisible(visible);
+        return groupList != null ? groupList.firstVisible(visible)
+                : guideList.firstVisible(visible);
     }
 
     private String rowText(int index) {
-        return groupList != null ? groupList.rowText(index) : guideList.row(index, cursorBlink.isOn()).text();
+        return groupList != null ? groupList.rowText(index)
+                : guideList.row(index, cursorBlink.isOn()).text();
     }
 
     private List<String[]> legend() {
@@ -397,7 +424,8 @@ public final class PaintGuideListPanel {
     }
 
     private GuideListModel newModel() {
-        GuideListModel model = new GuideListModel(host.currentGuides(), editor.cellWidth(), editor.cellHeight());
+        GuideListModel model =
+                new GuideListModel(host.currentGuides(), editor.cellWidth(), editor.cellHeight());
         addFlow = new GuideAddFlow(model);
         return model;
     }
@@ -414,7 +442,8 @@ public final class PaintGuideListPanel {
     // 1-based number of the digit key (top row or numpad) just pressed, or 0.
     private static int pressedNumber() {
         for (int i = 0; i < KIND_KEYS.length; i++) {
-            if (Gdx.input.isKeyJustPressed(KIND_KEYS[i]) || Gdx.input.isKeyJustPressed(KIND_NUMPAD_KEYS[i])) {
+            if (Gdx.input.isKeyJustPressed(KIND_KEYS[i]) || Gdx.input.isKeyJustPressed(
+                    KIND_NUMPAD_KEYS[i])) {
                 return i + 1;
             }
         }
@@ -445,7 +474,7 @@ public final class PaintGuideListPanel {
             return;
         }
         messages.setCondition(KEY_SELECTED_GROUPS, false,
-            GuideGroups.summary(selectedGuide.label(), selectedGuide.groups()));
+                GuideGroups.summary(selectedGuide.label(), selectedGuide.groups()));
     }
 
     private void refreshTitle() {
@@ -456,15 +485,19 @@ public final class PaintGuideListPanel {
         }
         boolean renamingExisting = guideList.isRenaming() && !addFlow.isNaming();
         title = titleFor(addFlow.isNaming(), renamingExisting ? labelBeforeRename : null,
-            guideList.selectedIndex(), guideList.size());
+                guideList.selectedIndex(), guideList.size());
     }
 
     static String groupsTitle(String guideLabel) {
         return "GROUPS " + guideLabel;
     }
 
-    /** The title while typing a label wins over the list title; {@code renamedLabel} is null when no rename is going on. */
-    static String titleFor(boolean namingNewGuide, String renamedLabel, int selectedIndex, int guideCount) {
+    /**
+     * The title while typing a label wins over the list title; {@code renamedLabel} is null when no
+     * rename is going on.
+     */
+    static String titleFor(boolean namingNewGuide, String renamedLabel, int selectedIndex,
+            int guideCount) {
         if (namingNewGuide) {
             return "NAME NEW GUIDE";
         }
@@ -501,7 +534,8 @@ public final class PaintGuideListPanel {
         }
     }
 
-    // Writes nothing when the list is unchanged, so comments in the file survive opening and closing the list.
+    // Writes nothing when the list is unchanged, so comments in the file survive opening and
+    // closing the list.
     private void save() {
         messages.nextAction();
         if (!guideList.isChanged()) {
@@ -510,7 +544,8 @@ public final class PaintGuideListPanel {
             return;
         }
         if (guidesFile.isUnreadable()) {
-            messages.warn("Not saved: " + guidesFile.fileName() + " could not be read and would be overwritten");
+            messages.warn("Not saved: " + guidesFile.fileName()
+                    + " could not be read and would be overwritten");
             return;
         }
         try {
@@ -560,7 +595,8 @@ public final class PaintGuideListPanel {
     }
 
     private static boolean shiftDown() {
-        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(
+                Input.Keys.SHIFT_RIGHT);
     }
 
     private boolean moveSelected(int delta) {
@@ -568,7 +604,8 @@ public final class PaintGuideListPanel {
         return true;
     }
 
-    // Returns whether the size changed; a solid guide shows a warning, and a size limit changes nothing silently.
+    // Returns whether the size changed; a solid guide shows a warning, and a size limit changes
+    // nothing silently.
     private boolean resizeSelected(int delta) {
         if (!guideList.canResizeSelected()) {
             messages.warn("Only dotted guides have a size");
@@ -579,8 +616,9 @@ public final class PaintGuideListPanel {
         return guideList.guides() != before;
     }
 
-    // Only Enter, Esc, and Backspace act here; typed characters arrive through keyTyped. Returning right after
-    // Enter or Esc keeps that key from also saving or closing the list in the same frame.
+    // Only Enter, Esc, and Backspace act here; typed characters arrive through keyTyped. Returning
+    // right after Enter or Esc keeps that key from also saving or closing the list in the same
+    // frame.
     private void handleRename(float delta) {
         host.clearWheelTicks();
         renameKeySwallowFrames = Math.max(0, renameKeySwallowFrames - 1);

@@ -19,7 +19,8 @@ final class RulesFileParser {
     private static final Pattern LINE_IN_MESSAGE = Pattern.compile("line (\\d+)");
     private static final List<String> TOP_LEVEL_KEYS = List.of("groups", "rules");
     private static final List<String> RULE_KEYS =
-            concat(List.of("name", "check", "appliesTo", "except"), CheckSettingsParser.SETTING_KEYS);
+            concat(List.of("name", "check", "appliesTo", "except"),
+                    CheckSettingsParser.SETTING_KEYS);
     private static final List<String> EXCEPTION_KEYS = List.of("group", "glyphs", "why");
 
     private final Map<String, GlyphSet> groups = new LinkedHashMap<>();
@@ -47,7 +48,8 @@ final class RulesFileParser {
             throw new RulesFileException(describeSyntaxError(syntaxError));
         }
         if (root == null || !root.isObject()) {
-            throw new RulesFileException("The file must hold one object with \"groups\" and \"rules\"");
+            throw new RulesFileException(
+                    "The file must hold one object with \"groups\" and \"rules\"");
         }
         return root;
     }
@@ -79,7 +81,8 @@ final class RulesFileParser {
     private static GlyphSet readGroup(JsonValue group) {
         String label = "Group \"" + group.name + "\"";
         if (group.name.equals(ALL_GROUP)) {
-            throw new RulesFileException(label + " cannot be defined: \"all\" is built in and means every glyph");
+            throw new RulesFileException(
+                    label + " cannot be defined: \"all\" is built in and means every glyph");
         }
         if (!group.isArray()) {
             throw new RulesFileException(label + " must be an array of glyph tokens");
@@ -88,7 +91,8 @@ final class RulesFileParser {
     }
 
     private static GlyphSet readGlyphTokens(JsonValue tokenArray, String label) {
-        List<String> tokens = readStrings(tokenArray, label, "every glyph token must be a quoted string");
+        List<String> tokens =
+                readStrings(tokenArray, label, "every glyph token must be a quoted string");
         return parseGlyphTokens(tokens, label);
     }
 
@@ -100,7 +104,8 @@ final class RulesFileParser {
         }
     }
 
-    private static List<String> readStrings(JsonValue array, String label, String notStringMessage) {
+    private static List<String> readStrings(JsonValue array, String label,
+            String notStringMessage) {
         var strings = new ArrayList<String>();
         for (JsonValue item = array.child; item != null; item = item.next) {
             if (!item.isString()) {
@@ -141,7 +146,8 @@ final class RulesFileParser {
         CheckSettings settings = settingsParser.read(rule, check, label);
         List<String> appliesToNames = readAppliesToNames(rule, label);
         GlyphSet appliesTo = resolveGroups(appliesToNames, label + ": \"appliesTo\"");
-        return new GlyphRule(name, check, settings, appliesTo, appliesToNames, readExceptions(rule, label));
+        return new GlyphRule(name, check, settings, appliesTo, appliesToNames,
+                readExceptions(rule, label));
     }
 
     private static String ruleLabel(JsonValue rule, int number) {
@@ -163,7 +169,8 @@ final class RulesFileParser {
     private static RuleCheck readCheck(JsonValue rule, String label) {
         String fileName = requireString(rule, "check", label);
         return RuleCheck.fromFileName(fileName).orElseThrow(() -> new RulesFileException(
-                label + ": unknown check \"" + fileName + "\". Known checks: " + knownCheckNames()));
+                label + ": unknown check \"" + fileName + "\". Known checks: "
+                        + knownCheckNames()));
     }
 
     private static String knownCheckNames() {
@@ -183,9 +190,11 @@ final class RulesFileParser {
             throw new RulesFileException(label + ": \"appliesTo\" must be an array of group names");
         }
         if (appliesTo.child == null) {
-            throw new RulesFileException(label + ": appliesTo is empty, so the rule would never check anything");
+            throw new RulesFileException(
+                    label + ": appliesTo is empty, so the rule would never check anything");
         }
-        return readStrings(appliesTo, label + ": \"appliesTo\"", "every entry must be a group name");
+        return readStrings(appliesTo, label + ": \"appliesTo\"",
+                "every entry must be a group name");
     }
 
     private GlyphSet resolveGroups(List<String> groupNames, String label) {
@@ -227,7 +236,8 @@ final class RulesFileParser {
 
     private RuleException readException(JsonValue entry, String label) {
         if (!entry.isObject()) {
-            throw new RulesFileException(label + " must be an object with \"group\" or \"glyphs\", and \"why\"");
+            throw new RulesFileException(
+                    label + " must be an object with \"group\" or \"glyphs\", and \"why\"");
         }
         checkKnownKeys(entry, EXCEPTION_KEYS, label);
         JsonValue group = entry.get("group");
@@ -252,7 +262,8 @@ final class RulesFileParser {
         if (!glyphs.isArray()) {
             throw new RulesFileException(label + ": \"glyphs\" must be an array of glyph tokens");
         }
-        List<String> tokens = readStrings(glyphs, label, "every glyph token must be a quoted string");
+        List<String> tokens =
+                readStrings(glyphs, label, "every glyph token must be a quoted string");
         return new RuleException(parseGlyphTokens(tokens, label), String.join(", ", tokens),
                 readWhy(entry, label));
     }
@@ -260,7 +271,8 @@ final class RulesFileParser {
     private static String readWhy(JsonValue entry, String label) {
         JsonValue why = entry.get("why");
         if (why == null || !why.isString() || why.asString().isBlank()) {
-            throw new RulesFileException(label + " needs a non-blank \"why\" that says why the rule is skipped");
+            throw new RulesFileException(
+                    label + " needs a non-blank \"why\" that says why the rule is skipped");
         }
         return why.asString();
     }

@@ -32,7 +32,10 @@ final class UnicodeAges {
         return new UnicodeAges(firsts, lasts, versions);
     }
 
-    /** Tells whether the code point was assigned after the given version; throws if its age is unknown. */
+    /**
+     * Tells whether the code point was assigned after the given version; throws if its age is
+     * unknown.
+     */
     boolean isNewerThan(int codePoint, int version) {
         int index = CodePointRanges.indexOfRangeContaining(firsts, lasts, codePoint);
         if (index < 0) {

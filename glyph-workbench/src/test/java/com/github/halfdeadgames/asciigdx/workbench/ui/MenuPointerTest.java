@@ -11,20 +11,24 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
-// The FILE title sits at columns 1-4 and EDIT at 7-10; each drop-down has its items on rows 2 and 3.
+// The FILE title sits at columns 1-4 and EDIT at 7-10; each drop-down has its items on rows 2 and
+// 3.
 class MenuPointerTest {
 
     private static final int COLUMNS = 80;
 
     private final MenuBar<String> bar = new MenuBar<>(List.of(
-        new Menu<>("FILE", 'f', List.of(new Item<>("OPEN", "", "open"), new Item<>("QUIT", "", "quit"))),
-        new Menu<>("EDIT", 'e', List.of(new Item<>("UNDO", "", "undo"), new Item<>("REDO", "", "redo")))));
+            new Menu<>("FILE", 'f',
+                    List.of(new Item<>("OPEN", "", "open"), new Item<>("QUIT", "", "quit"))),
+            new Menu<>("EDIT", 'e',
+                    List.of(new Item<>("UNDO", "", "undo"), new Item<>("REDO", "", "redo")))));
     private final MenuPointer<String> pointer = new MenuPointer<>(0);
     private Predicate<String> available = action -> true;
 
-    private String frame(int column, int row, boolean escape, boolean pressStarted, boolean down, boolean busy) {
+    private String frame(int column, int row, boolean escape, boolean pressStarted, boolean down,
+            boolean busy) {
         return pointer.update(bar, available,
-            new MenuPointerInput(column, row, COLUMNS, escape, pressStarted, down, busy));
+                new MenuPointerInput(column, row, COLUMNS, escape, pressStarted, down, busy));
     }
 
     private String press(int column, int row) {
@@ -117,7 +121,8 @@ class MenuPointerTest {
         assertFalse(pointer.captured());
     }
 
-    // FILE's panel covers columns 1..8 and rows 1..4: a border ring around the items on rows 2 and 3.
+    // FILE's panel covers columns 1..8 and rows 1..4: a border ring around the items on rows 2 and
+    // 3.
     @Test
     void pressingThePanelBordersOrPaddingKeepsTheMenuOpenAndRunsNothing() {
         press(2, 0);

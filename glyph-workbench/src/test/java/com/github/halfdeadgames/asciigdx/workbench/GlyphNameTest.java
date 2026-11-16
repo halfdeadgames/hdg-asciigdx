@@ -45,18 +45,19 @@ class GlyphNameTest {
     @Test
     void tableFillsInWhenJdkHasNoName() {
         assertEquals("SHOVEL", GlyphName.fullName(SHOVEL, codePoint -> null,
-            codePoint -> codePoint == SHOVEL ? "SHOVEL" : null));
+                codePoint -> codePoint == SHOVEL ? "SHOVEL" : null));
     }
 
     @Test
     void missingEverywhereGivesFallback() {
         assertEquals(GlyphName.UNNAMED,
-            GlyphName.fullName(POST_13_NOT_IN_TABLE, codePoint -> null, codePoint -> null));
+                GlyphName.fullName(POST_13_NOT_IN_TABLE, codePoint -> null, codePoint -> null));
     }
 
     @Test
     void runsLeadingAndTrailingSpacesCollapse() {
-        assertEquals("A B-C D", GlyphName.fullName(0x41, codePoint -> "  a!!b-c   (d)  ", codePoint -> null));
+        assertEquals("A B-C D",
+                GlyphName.fullName(0x41, codePoint -> "  a!!b-c   (d)  ", codePoint -> null));
     }
 
     @Test
@@ -66,6 +67,7 @@ class GlyphNameTest {
 
     @Test
     void privateUseStaysCustomEvenWithoutJdkName() {
-        assertEquals(GlyphName.CUSTOM, GlyphName.fullName(0xE000, codePoint -> null, codePoint -> null));
+        assertEquals(GlyphName.CUSTOM,
+                GlyphName.fullName(0xE000, codePoint -> null, codePoint -> null));
     }
 }

@@ -61,7 +61,10 @@ public final class GlyphList {
         return cp437;
     }
 
-    /** Returns the explicitly listed code points, sorted and unmodifiable; the cp437 preset is not expanded. */
+    /**
+     * Returns the explicitly listed code points, sorted and unmodifiable; the cp437 preset is not
+     * expanded.
+     */
     public Set<Integer> plannedCodePoints() {
         return planned;
     }
@@ -69,16 +72,19 @@ public final class GlyphList {
     private static void addEntry(String line, int lineNumber, TreeSet<Integer> planned) {
         int rangeMarker = line.indexOf(RANGE_MARKER);
         int first = CodePoints.readUPlus(rangeMarker < 0 ? line : line.substring(0, rangeMarker));
-        int last = rangeMarker < 0 ? first : CodePoints.readUPlus(line.substring(rangeMarker + RANGE_MARKER.length()));
+        int last = rangeMarker < 0 ? first
+                : CodePoints.readUPlus(line.substring(rangeMarker + RANGE_MARKER.length()));
         if (first == CodePoints.NOT_A_CODE || last == CodePoints.NOT_A_CODE) {
-            throw new FontDataException(lineNumber, "expected cp437, a code point like U+2588, or a range like "
-                + "U+2190..U+2193 but found '" + line + "'");
+            throw new FontDataException(lineNumber,
+                    "expected cp437, a code point like U+2588, or a range like "
+                            + "U+2190..U+2193 but found '" + line + "'");
         }
         requireInUnicode(first, line, lineNumber);
         requireInUnicode(last, line, lineNumber);
         if (last < first) {
-            throw new FontDataException(lineNumber, "range runs backwards; write the lower code point first, "
-                + "like U+2190..U+2193");
+            throw new FontDataException(lineNumber,
+                    "range runs backwards; write the lower code point first, "
+                            + "like U+2190..U+2193");
         }
         if (last - first + 1 > MAX_PLANNED) {
             throw tooMany(lineNumber);
@@ -94,17 +100,20 @@ public final class GlyphList {
 
     private static void requireInUnicode(int codePoint, String line, int lineNumber) {
         if (!Character.isValidCodePoint(codePoint)) {
-            throw new FontDataException(lineNumber, "'" + line + "' goes past U+10FFFF, the last code point");
+            throw new FontDataException(lineNumber,
+                    "'" + line + "' goes past U+10FFFF, the last code point");
         }
     }
 
     private static void requireUsable(int codePoint, int lineNumber) {
         if (!CodePoints.isUsableAsGlyph(codePoint)) {
-            throw new FontDataException(lineNumber, CodePoints.label(codePoint) + " cannot be used as a glyph");
+            throw new FontDataException(lineNumber,
+                    CodePoints.label(codePoint) + " cannot be used as a glyph");
         }
     }
 
     private static FontDataException tooMany(int lineNumber) {
-        return new FontDataException(lineNumber, "the list names more than " + MAX_PLANNED + " code points");
+        return new FontDataException(lineNumber,
+                "the list names more than " + MAX_PLANNED + " code points");
     }
 }

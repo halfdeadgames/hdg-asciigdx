@@ -12,7 +12,7 @@ class SheetOrderTest {
     private static final int FILLER = SheetOrder.FILLER;
 
     private final int[] slots = SheetOrder.slotsFor(
-        Set.of(0x41, 0x263A, 0xE9, 0x391, 0x392, 0x410, 0xE000), true);
+            Set.of(0x41, 0x263A, 0xE9, 0x391, 0x392, 0x410, 0xE000), true);
 
     @Test
     void cp437GlyphsKeepTheirStandardSlots() {
@@ -84,11 +84,11 @@ class SheetOrderTest {
     @Test
     void twoDifferentBlocksNewerThanTheJdkGetSeparateRows() {
         UnicodeFacts oldJdk = UnicodeFacts.fromTableText("""
-            1FA8F So SHOVEL
-            1FB00 So LEGACY ONE
-            BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
-            BLOCK 1FB00..1FBFF Symbols for Legacy Computing
-            """, codePoint -> Character.UNASSIGNED, codePoint -> null);
+                1FA8F So SHOVEL
+                1FB00 So LEGACY ONE
+                BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
+                BLOCK 1FB00..1FBFF Symbols for Legacy Computing
+                """, codePoint -> Character.UNASSIGNED, codePoint -> null);
 
         int[] order = SheetOrder.slotsFor(Set.of(0x1FA8F, 0x1FB00), false, oldJdk);
 
@@ -101,10 +101,10 @@ class SheetOrderTest {
     @Test
     void sameNewerBlockSharesARow() {
         UnicodeFacts oldJdk = UnicodeFacts.fromTableText("""
-            1FA8F So SHOVEL
-            1FA90 So OTHER
-            BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
-            """, codePoint -> Character.UNASSIGNED, codePoint -> null);
+                1FA8F So SHOVEL
+                1FA90 So OTHER
+                BLOCK 1FA80..1FAFF Symbols and Pictographs Extended-A
+                """, codePoint -> Character.UNASSIGNED, codePoint -> null);
 
         int[] order = SheetOrder.slotsFor(Set.of(0x1FA8F, 0x1FA90), false, oldJdk);
 

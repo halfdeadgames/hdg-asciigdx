@@ -26,9 +26,10 @@ class FontDiscoveryTest {
         touch(root, "saiksistt/8x8.txt");
         touch(root, "alpha/8x8.txt");
         assertEquals(
-            List.of(new FontChoice("alpha", new CellSize(8, 8)), new FontChoice("saiksistt", new CellSize(8, 8)),
-                new FontChoice("saiksistt", new CellSize(16, 16))),
-            FontDiscovery.discover(root));
+                List.of(new FontChoice("alpha", new CellSize(8, 8)),
+                        new FontChoice("saiksistt", new CellSize(8, 8)),
+                        new FontChoice("saiksistt", new CellSize(16, 16))),
+                FontDiscovery.discover(root));
     }
 
     @Test
@@ -36,8 +37,9 @@ class FontDiscoveryTest {
         touch(root, "tall/16x16.txt");
         touch(root, "tall/8x16.txt");
         assertEquals(
-            List.of(new FontChoice("tall", new CellSize(8, 16)), new FontChoice("tall", new CellSize(16, 16))),
-            FontDiscovery.discover(root));
+                List.of(new FontChoice("tall", new CellSize(8, 16)),
+                        new FontChoice("tall", new CellSize(16, 16))),
+                FontDiscovery.discover(root));
     }
 
     @Test
@@ -46,15 +48,17 @@ class FontDiscoveryTest {
         touch(root, "shapes/8x16.txt");
         touch(root, "shapes/16x8.txt");
         assertEquals(
-            List.of(new FontChoice("shapes", new CellSize(8, 16)), new FontChoice("shapes", new CellSize(16, 16))),
-            FontDiscovery.discover(root));
+                List.of(new FontChoice("shapes", new CellSize(8, 16)),
+                        new FontChoice("shapes", new CellSize(16, 16))),
+                FontDiscovery.discover(root));
     }
 
     @Test
     void ignoresHeightOnlyNames(@TempDir Path root) throws IOException {
         touch(root, "saiksistt/16.txt");
         touch(root, "saiksistt/8x8.txt");
-        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))), FontDiscovery.discover(root));
+        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))),
+                FontDiscovery.discover(root));
     }
 
     @Test
@@ -74,7 +78,8 @@ class FontDiscoveryTest {
     void theGlyphListIsNotASize(@TempDir Path root) throws IOException {
         touch(root, "saiksistt/glyphs.txt");
         touch(root, "saiksistt/8x8.txt");
-        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))), FontDiscovery.discover(root));
+        assertEquals(List.of(new FontChoice("saiksistt", new CellSize(8, 8))),
+                FontDiscovery.discover(root));
     }
 
     @Test

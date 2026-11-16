@@ -9,7 +9,10 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.ScrollBar;
 import com.github.halfdeadgames.asciigdx.workbench.ui.UiPalette;
 import java.util.List;
 
-/** The help panel of the paint screen: wraps the help lines, scrolls them, and tracks where it was last drawn. */
+/**
+ * The help panel of the paint screen: wraps the help lines, scrolls them, and tracks where it was
+ * last drawn.
+ */
 public final class PaintHelpPanel {
 
     private final Painter painter;
@@ -26,16 +29,18 @@ public final class PaintHelpPanel {
         this.scroll = scroll;
     }
 
-    // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll when taller than the panel.
+    // The help lines are rebuilt only when the state or panel size changes; they wrap, and scroll
+    // when taller than the panel.
     public void draw(CellRect drawArea, PaintHelp.State state, int cellPixels) {
         Panel.draw(painter, drawArea,
-            "HELP", false);
+                "HELP", false);
         int charsPerLine = Math.max(1, drawArea.width() - 2 * Panel.TEXT_PADDING - 2);
         int visible = Math.max(1, drawArea.height() - 2);
         if (!state.equals(shownState)) {
             scroll.toTop();
         }
-        if (!state.equals(shownState) || charsPerLine != shownCharsPerLine || visible != shownVisible) {
+        if (!state.equals(shownState) || charsPerLine != shownCharsPerLine
+                || visible != shownVisible) {
             shownState = state;
             shownCharsPerLine = charsPerLine;
             shownVisible = visible;
@@ -53,8 +58,8 @@ public final class PaintHelpPanel {
         }
         if (scroll.needed() && visible >= 2) {
             ScrollBar.drawBar(painter,
-                new CellRect(drawArea.x() + drawArea.width() - 2, drawArea.y() + 1, 1, visible),
-                lines.size(), visible, first);
+                    new CellRect(drawArea.x() + drawArea.width() - 2, drawArea.y() + 1, 1, visible),
+                    lines.size(), visible, first);
         }
     }
 
@@ -65,8 +70,8 @@ public final class PaintHelpPanel {
 
     private void drawLine(HelpWrap.Line line, int textX, int top, int cellPixels) {
         Color color = line.kind() == PaintHelp.Kind.HEADING ? UiPalette.TITLE
-            : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
-            : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
+                : line.kind() == PaintHelp.Kind.PENDING_PART ? UiPalette.ACCENT
+                        : line.kind() == PaintHelp.Kind.WARNING ? UiPalette.WARN : UiPalette.TEXT;
         if (!line.key().isEmpty()) {
             painter.text(line.key(), textX, top, color == UiPalette.TEXT ? UiPalette.FOCUS : color);
         }
@@ -75,7 +80,8 @@ public final class PaintHelpPanel {
 
     public boolean contains(int pixelX, int pixelY, int cellPixels) {
         return shown && area != null
-            && area.contains(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels));
+                && area.contains(Math.floorDiv(pixelX, cellPixels),
+                Math.floorDiv(pixelY, cellPixels));
     }
 
     public boolean isShown() {

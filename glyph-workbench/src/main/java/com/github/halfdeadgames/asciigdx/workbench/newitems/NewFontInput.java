@@ -13,9 +13,9 @@ final class NewFontInput {
 
     private static final int MAX_NAME_LENGTH = 32;
     private static final List<String> RESERVED_NAMES = List.of(
-        "con", "prn", "aux", "nul",
-        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
-        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9");
+            "con", "prn", "aux", "nul",
+            "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+            "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9");
 
     private NewFontInput() {
     }
@@ -49,8 +49,8 @@ final class NewFontInput {
     }
 
     /**
-     * Checks a cell size against the largest side allowed, then against the allowed shapes (square or twice as
-     * tall). {@link CellSize} itself already refuses sides below 1.
+     * Checks a cell size against the largest side allowed, then against the allowed shapes (square
+     * or twice as tall). {@link CellSize} itself already refuses sides below 1.
      *
      * @param size the cell size
      * @return null when the size is fine, otherwise a user-facing message
@@ -105,7 +105,8 @@ final class NewFontInput {
         return typed.trim().replace('X', 'x');
     }
 
-    // Digits-x-digits that CellSize still refused: a zero side, or a side too long to be a sane number.
+    // Digits-x-digits that CellSize still refused: a zero side, or a side too long to be a sane
+    // number.
     private static String unparsedSizeError(String normalized) {
         if (!normalized.matches("\\d+x\\d+")) {
             return "Write the size as WxH, e.g. 16x16";

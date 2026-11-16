@@ -47,8 +47,10 @@ class BounceScrollTest {
     void cycleRepeats() {
         float cycle = 2 * (HOLD + SCROLL);
         assertEquals(0, BounceScroll.offset(OVERFLOW, cycle));
-        assertEquals(BounceScroll.offset(OVERFLOW, 2.5f), BounceScroll.offset(OVERFLOW, 2.5f + cycle));
-        assertEquals(BounceScroll.offset(OVERFLOW, 5.2f), BounceScroll.offset(OVERFLOW, 5.2f + 3 * cycle));
+        assertEquals(BounceScroll.offset(OVERFLOW, 2.5f),
+                BounceScroll.offset(OVERFLOW, 2.5f + cycle));
+        assertEquals(BounceScroll.offset(OVERFLOW, 5.2f),
+                BounceScroll.offset(OVERFLOW, 5.2f + 3 * cycle));
     }
 
     @Test
@@ -57,7 +59,8 @@ class BounceScrollTest {
         int width = 16;
         int overflow = text.length() - width;
         String atStart = BounceScroll.window(text, width, 0f);
-        String atEnd = BounceScroll.window(text, width, HOLD + overflow / BounceScroll.CHARS_PER_SECOND);
+        String atEnd =
+                BounceScroll.window(text, width, HOLD + overflow / BounceScroll.CHARS_PER_SECOND);
         assertEquals(width, atStart.length());
         assertEquals("DOUBLE EXCLAMA..", atStart);
         assertEquals(width, atEnd.length());

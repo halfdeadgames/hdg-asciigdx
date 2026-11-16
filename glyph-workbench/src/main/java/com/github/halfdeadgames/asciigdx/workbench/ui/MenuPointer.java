@@ -4,12 +4,15 @@ import java.util.function.Predicate;
 
 /**
  * Turns one frame of pointer state into {@link MenuBar} calls and says whether the menu owns that
- * frame's input. Holds only the press that the menu took, so that press's drag and release never reach
- * the rest of the screen. Nothing here reads input devices.
+ * frame's input. Holds only the press that the menu took, so that press's drag and release never
+ * reach the rest of the screen. Nothing here reads input devices.
  */
 public final class MenuPointer<A> {
 
-    /** Rows from the bar row down to the first item; the drop-down's top border row sits between them. */
+    /**
+     * Rows from the bar row down to the first item; the drop-down's top border row sits between
+     * them.
+     */
     private static final int FIRST_ITEM_ROW_OFFSET = 2;
 
     private final int barRow;
@@ -23,12 +26,18 @@ public final class MenuPointer<A> {
         this.barRow = barRow;
     }
 
-    /** True while a menu is open or a press the menu took is still held: the screen must ignore all input. */
+    /**
+     * True while a menu is open or a press the menu took is still held: the screen must ignore all
+     * input.
+     */
     public boolean isCapturing(MenuBar<A> bar) {
         return pressHeld || bar.isOpen();
     }
 
-    /** Whether the last {@link #update} left the menu owning the frame, including the frame it closed on. */
+    /**
+     * Whether the last {@link #update} left the menu owning the frame, including the frame it
+     * closed on.
+     */
     public boolean captured() {
         return captured;
     }
@@ -82,17 +91,19 @@ public final class MenuPointer<A> {
     }
 
     /**
-     * Whether the pointer may move the highlight this frame. A pointer that sits still must not undo
-     * keyboard movement in an open menu, so it counts only when it changed cell or a press is active. With
-     * nothing open there is no highlight to protect, so title hover keeps following live availability.
+     * Whether the pointer may move the highlight this frame. A pointer that sits still must not
+     * undo keyboard movement in an open menu, so it counts only when it changed cell or a press is
+     * active. With nothing open there is no highlight to protect, so title hover keeps following
+     * live availability.
      */
     static boolean shouldHover(boolean menuOpen, boolean cellChanged, boolean pressActive) {
         return !menuOpen || cellChanged || pressActive;
     }
 
     // Returns whether the menu took the press. Any press on the bar row is taken, even on no title.
-    private boolean press(MenuBar<A> bar, Predicate<A> availability, int column, int row, int rowOffset,
-                          int totalColumns) {
+    private boolean press(MenuBar<A> bar, Predicate<A> availability, int column, int row,
+            int rowOffset,
+            int totalColumns) {
         if (row == barRow) {
             int title = bar.titleAt(column);
             if (title >= 0 && !bar.isLocked(title, availability)) {

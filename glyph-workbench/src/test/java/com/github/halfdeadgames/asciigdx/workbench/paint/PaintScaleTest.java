@@ -17,7 +17,8 @@ class PaintScaleTest {
     @Test
     void eightByEightMinimumsAreExact() {
         for (int factor = 1; factor <= 4; factor++) {
-            assertEquals(EIGHT_BARE_WIDTHS[factor - 1], PaintScale.minimumWidth(factor, PaintSheetView.GAP, 8, 8));
+            assertEquals(EIGHT_BARE_WIDTHS[factor - 1],
+                    PaintScale.minimumWidth(factor, PaintSheetView.GAP, 8, 8));
             assertEquals(EIGHT_HEIGHTS[factor - 1], PaintScale.minimumHeight(factor, 8));
         }
     }
@@ -64,27 +65,35 @@ class PaintScaleTest {
 
     @Test
     void fittingFactorKeepsARequestThatFitsItsBareMinimum() {
-        assertEquals(4, PaintScale.fittingFactor(4, 1152, 672, PaintSheetView.GAP, new GlyphSize(8, 8)));
-        assertEquals(2, PaintScale.fittingFactor(2, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(4,
+                PaintScale.fittingFactor(4, 1152, 672, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2,
+                PaintScale.fittingFactor(2, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
     void fittingFactorDropsToTheLargestBareFit() {
-        assertEquals(3, PaintScale.fittingFactor(4, 1151, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
-        assertEquals(3, PaintScale.fittingFactor(4, 1900, 671, PaintSheetView.GAP, new GlyphSize(8, 8)));
-        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(3,
+                PaintScale.fittingFactor(4, 1151, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(3,
+                PaintScale.fittingFactor(4, 1900, 671, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2,
+                PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
         assertEquals(1, PaintScale.fittingFactor(4, 1, 1, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
     void fittingFactorNeverRaisesTheRequest() {
-        assertEquals(2, PaintScale.fittingFactor(2, 100_000, 100_000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2, PaintScale.fittingFactor(2, 100_000, 100_000, PaintSheetView.GAP,
+                new GlyphSize(8, 8)));
     }
 
     @Test
     void enlargingTheWindowRestoresTheRequestedFactor() {
-        assertEquals(2, PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
-        assertEquals(4, PaintScale.fittingFactor(4, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(2,
+                PaintScale.fittingFactor(4, 800, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
+        assertEquals(4,
+                PaintScale.fittingFactor(4, 1900, 1000, PaintSheetView.GAP, new GlyphSize(8, 8)));
     }
 
     @Test
@@ -109,8 +118,10 @@ class PaintScaleTest {
         for (int[] font : FONTS) {
             for (int factor = 2; factor <= 4; factor++) {
                 assertTrue(PaintScale.minimumWidth(factor, PaintSheetView.GAP, font[0], font[1])
-                    > PaintScale.minimumWidth(factor - 1, PaintSheetView.GAP, font[0], font[1]));
-                assertTrue(PaintScale.minimumHeight(factor, font[1]) > PaintScale.minimumHeight(factor - 1, font[1]));
+                        > PaintScale.minimumWidth(factor - 1, PaintSheetView.GAP, font[0],
+                        font[1]));
+                assertTrue(PaintScale.minimumHeight(factor, font[1]) > PaintScale.minimumHeight(
+                        factor - 1, font[1]));
             }
         }
     }

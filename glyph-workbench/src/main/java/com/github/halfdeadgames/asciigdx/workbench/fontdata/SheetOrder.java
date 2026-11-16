@@ -10,8 +10,8 @@ import java.util.TreeSet;
 
 /**
  * Decides which glyph goes in which sheet slot. When Code Page 437 is reserved, the first 256 slots
- * follow it; then come the other glyphs by code point, each Unicode block starting on a new row; then
- * the private use glyphs, laid out the same way.
+ * follow it; then come the other glyphs by code point, each Unicode block starting on a new row;
+ * then the private use glyphs, laid out the same way.
  *
  * <p>The character list file cannot leave a slot out, so empty slots hold {@link #FILLER}.
  */
@@ -30,16 +30,19 @@ public final class SheetOrder {
      * Returns the slots for a set of glyphs.
      *
      * @param codePoints the glyphs the font has
-     * @param reserveCp437 whether the first 256 slots are reserved for Code Page 437; when false, CP437
-     *        code points are placed with the others by code point and Unicode block
+     * @param reserveCp437 whether the first 256 slots are reserved for Code Page 437; when false,
+     *        CP437 code points are placed with the others by code point and Unicode block
      * @return code points by slot, with {@link #FILLER} in empty slots
      */
     public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437) {
         return slotsFor(codePoints, reserveCp437, UnicodeFacts.bundled());
     }
 
-    /** Same as {@link #slotsFor(Collection, boolean)}, with the Unicode facts given by the caller. */
-    public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437, UnicodeFacts facts) {
+    /**
+     * Same as {@link #slotsFor(Collection, boolean)}, with the Unicode facts given by the caller.
+     */
+    public static int[] slotsFor(Collection<Integer> codePoints, boolean reserveCp437,
+            UnicodeFacts facts) {
         List<Integer> slots = new ArrayList<>();
         if (reserveCp437) {
             for (int slot = 0; slot < GlyphOrder.CP437.getGlyphCount(); slot++) {
@@ -61,7 +64,7 @@ public final class SheetOrder {
     }
 
     private static void appendByBlock(List<Integer> slots, Collection<Integer> sortedCodePoints,
-                                      UnicodeFacts facts) {
+            UnicodeFacts facts) {
         String currentBlock = null;
         for (int codePoint : sortedCodePoints) {
             String block = facts.blockOf(codePoint);

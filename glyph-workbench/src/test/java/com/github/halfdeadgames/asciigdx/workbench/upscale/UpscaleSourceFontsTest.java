@@ -32,8 +32,8 @@ class UpscaleSourceFontsTest {
         write("a", "16x16.txt", "cell 16x16\n");
         write("a", "8x8.txt", "cell 8x8\n");
         assertEquals(
-            List.of(new Font("a", 8, 8), new Font("a", 16, 16), new Font("b", 8, 16)),
-            UpscaleSourceFonts.discover(root));
+                List.of(new Font("a", 8, 8), new Font("a", 16, 16), new Font("b", 8, 16)),
+                UpscaleSourceFonts.discover(root));
     }
 
     @Test
@@ -53,7 +53,7 @@ class UpscaleSourceFontsTest {
     @Test
     void skipsFilesThatCannotBeDecoded() throws IOException {
         write("a", "8x8.txt", "cell 8x8\n");
-        write("a", "16x16.txt", new byte[] {(byte) 0xFF, (byte) 0xFE, (byte) 0xC3, (byte) 0x28});
+        write("a", "16x16.txt", new byte[]{(byte) 0xFF, (byte) 0xFE, (byte) 0xC3, (byte) 0x28});
         assertEquals(List.of(new Font("a", 8, 8)), UpscaleSourceFonts.discover(root));
     }
 

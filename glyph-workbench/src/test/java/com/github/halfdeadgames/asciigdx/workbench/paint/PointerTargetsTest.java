@@ -55,17 +55,20 @@ class PointerTargetsTest {
     @Test
     void everyTargetIsNotifiedInOrderBeforeAnyClaim() {
         targets(new FakeTarget("a", false, false), new FakeTarget("b", false, false))
-            .dispatch(3, 4, true, true);
+                .dispatch(3, 4, true, true);
 
         assertEquals(List.of("a.notify(3,4)", "b.notify(3,4)", "a.claim", "b.claim"), calls);
     }
 
     @Test
     void firstClaimStopsLaterClaims() {
-        targets(new FakeTarget("a", false, false), new FakeTarget("b", true, false), new FakeTarget("c", true, false))
-            .dispatch(1, 2, true, true);
+        targets(new FakeTarget("a", false, false), new FakeTarget("b", true, false),
+                new FakeTarget("c", true, false))
+                .dispatch(1, 2, true, true);
 
-        assertEquals(List.of("a.notify(1,2)", "b.notify(1,2)", "c.notify(1,2)", "a.claim", "b.claim"), calls);
+        assertEquals(
+                List.of("a.notify(1,2)", "b.notify(1,2)", "c.notify(1,2)", "a.claim", "b.claim"),
+                calls);
     }
 
     @Test
@@ -84,8 +87,9 @@ class PointerTargetsTest {
 
     @Test
     void firstCapturedTargetGetsDragWhilePressed() {
-        targets(new FakeTarget("a", false, false), new FakeTarget("b", false, true), new FakeTarget("c", false, true))
-            .dispatch(7, 8, false, true);
+        targets(new FakeTarget("a", false, false), new FakeTarget("b", false, true),
+                new FakeTarget("c", false, true))
+                .dispatch(7, 8, false, true);
 
         assertEquals(List.of("b.drag(7,8)"), calls);
     }
@@ -93,7 +97,7 @@ class PointerTargetsTest {
     @Test
     void firstCapturedTargetGetsReleaseWhenNotPressed() {
         targets(new FakeTarget("a", false, true), new FakeTarget("b", false, true))
-            .dispatch(7, 8, false, false);
+                .dispatch(7, 8, false, false);
 
         assertEquals(List.of("a.release"), calls);
     }

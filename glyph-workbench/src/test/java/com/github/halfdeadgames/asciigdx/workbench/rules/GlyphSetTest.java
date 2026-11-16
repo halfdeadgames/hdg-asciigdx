@@ -106,14 +106,16 @@ class GlyphSetTest {
 
     @Test
     void backwardsRangeIsRejected() {
-        var error = assertThrows(IllegalArgumentException.class, () -> GlyphSet.parse(List.of("Z-A")));
+        var error =
+                assertThrows(IllegalArgumentException.class, () -> GlyphSet.parse(List.of("Z-A")));
         assertTrue(error.getMessage().contains("runs backwards"));
         assertTrue(error.getMessage().contains("\"Z-A\""));
     }
 
     @Test
     void badTokenMessageQuotesTokenAndListsAllowedForms() {
-        var error = assertThrows(IllegalArgumentException.class, () -> GlyphSet.parse(List.of("ZZ")));
+        var error =
+                assertThrows(IllegalArgumentException.class, () -> GlyphSet.parse(List.of("ZZ")));
         assertEquals("\"ZZ\" is not a glyph: use one character like \"A\", a code like \"U+0041\", "
                 + "or a range like \"A-Z\"", error.getMessage());
     }
@@ -125,7 +127,8 @@ class GlyphSetTest {
 
     @Test
     void codeAboveUnicodeIsRejected() {
-        var error = assertThrows(IllegalArgumentException.class, () -> GlyphSet.parse(List.of("U+110000")));
+        var error = assertThrows(IllegalArgumentException.class,
+                () -> GlyphSet.parse(List.of("U+110000")));
         assertTrue(error.getMessage().contains("out of Unicode"));
     }
 
@@ -139,7 +142,8 @@ class GlyphSetTest {
 
     @Test
     void unionHoldsGlyphsOfEverySet() {
-        var set = GlyphSet.union(List.of(GlyphSet.parse(List.of("A-C")), GlyphSet.parse(List.of("x"))));
+        var set = GlyphSet.union(
+                List.of(GlyphSet.parse(List.of("A-C")), GlyphSet.parse(List.of("x"))));
         assertTrue(set.contains('B'));
         assertTrue(set.contains('x'));
         assertFalse(set.contains('D'));

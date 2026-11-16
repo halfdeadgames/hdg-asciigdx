@@ -27,8 +27,8 @@ class PaintDerivePickTest {
     }
 
     private static final String FONT = "cell 8x8\n\n"
-        + "U+0041 A\n" + rows("........") + "\n\n"
-        + "U+0100 \\u{100}\n" + rows("........") + "\n";
+            + "U+0041 A\n" + rows("........") + "\n\n"
+            + "U+0100 \\u{100}\n" + rows("........") + "\n";
 
     private FontEditor editor;
     private DeriveFlow flow;

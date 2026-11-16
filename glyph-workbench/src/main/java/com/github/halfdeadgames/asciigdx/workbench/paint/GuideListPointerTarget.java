@@ -13,8 +13,9 @@ final class GuideListPointerTarget implements PointerTarget {
     private final Supplier<CellRect> pickerArea;
     private final IntSupplier cellPixels;
 
-    GuideListPointerTarget(PaintGuideListPanel panel, Supplier<CellRect> listArea, Supplier<CellRect> pickerArea,
-                           IntSupplier cellPixels) {
+    GuideListPointerTarget(PaintGuideListPanel panel, Supplier<CellRect> listArea,
+            Supplier<CellRect> pickerArea,
+            IntSupplier cellPixels) {
         this.panel = panel;
         this.listArea = listArea;
         this.pickerArea = pickerArea;
@@ -24,6 +25,7 @@ final class GuideListPointerTarget implements PointerTarget {
     @Override
     public void notifyPress(int x, int y) {
         int size = cellPixels.getAsInt();
-        panel.click(listArea.get(), pickerArea.get(), Math.floorDiv(x, size), Math.floorDiv(y, size));
+        panel.click(listArea.get(), pickerArea.get(), Math.floorDiv(x, size),
+                Math.floorDiv(y, size));
     }
 }

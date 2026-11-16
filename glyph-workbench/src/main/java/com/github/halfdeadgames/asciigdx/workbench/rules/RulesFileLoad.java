@@ -13,7 +13,8 @@ public final class RulesFileLoad {
     }
 
     /**
-     * Reads {@code <width>x<height>.rules.json} from a font directory. Safe to call again to reload.
+     * Reads {@code <width>x<height>.rules.json} from a font directory. Safe to call again to
+     * reload.
      *
      * @param fontDirectory the directory holding the font files
      * @param size the font size, which names the file, such as 16x16
@@ -21,7 +22,8 @@ public final class RulesFileLoad {
      * @param cellHeight glyph height in pixels
      * @return missing, loaded with its rules, or bad with the reason
      */
-    public static RulesLoadResult load(Path fontDirectory, CellSize size, int cellWidth, int cellHeight) {
+    public static RulesLoadResult load(Path fontDirectory, CellSize size, int cellWidth,
+            int cellHeight) {
         Path file = fontDirectory.resolve(size.rulesFileName());
         if (!Files.isRegularFile(file)) {
             return RulesLoadResult.missing(file);

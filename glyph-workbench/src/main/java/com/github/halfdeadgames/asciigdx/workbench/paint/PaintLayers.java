@@ -13,15 +13,23 @@ final class PaintLayers {
     private boolean coveringPanelShown;
     private boolean promptShown;
 
-    // The dialogs that dim the whole screen when drawn. Static so input code can ask before a frame refresh.
-    static boolean dialogDimsScreen(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen,
-                                    boolean upscaleSourceOpen, boolean newFontOpen, boolean deriveDims) {
-        return confirmingUnsaved || newGlyphOpen || newSizeOpen || upscaleSourceOpen || newFontOpen || deriveDims;
+    // The dialogs that dim the whole screen when drawn. Static so input code can ask before a
+    // frame refresh.
+    static boolean dialogDimsScreen(boolean confirmingUnsaved, boolean newGlyphOpen,
+            boolean newSizeOpen,
+            boolean upscaleSourceOpen, boolean newFontOpen, boolean deriveDims) {
+        return confirmingUnsaved || newGlyphOpen || newSizeOpen || upscaleSourceOpen || newFontOpen
+                || deriveDims;
     }
 
-    /** What is open this frame; deriveDims is true while the derive flow shows its menu or the replace confirmation. */
-    record State(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen, boolean upscaleSourceOpen,
-                 boolean newFontOpen, boolean deriveDims, boolean controlsOpen, boolean rulesShowing,
+    /**
+     * What is open this frame; deriveDims is true while the derive flow shows its menu or the
+     * replace confirmation.
+     */
+    record State(boolean confirmingUnsaved, boolean newGlyphOpen, boolean newSizeOpen,
+                 boolean upscaleSourceOpen,
+                 boolean newFontOpen, boolean deriveDims, boolean controlsOpen,
+                 boolean rulesShowing,
                  boolean menuOpen) {
     }
 
@@ -33,11 +41,15 @@ final class PaintLayers {
         this.newFontOpen = state.newFontOpen();
         this.deriveDialogShown = state.deriveDims();
         this.controlsOpen = state.controlsOpen();
-        // Each dialog dims the screen itself, so one under a covering panel would dim the background twice.
+        // Each dialog dims the screen itself, so one under a covering panel would dim the
+        // background twice.
         coveringPanelShown = state.controlsOpen() || state.rulesShowing();
-        // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and must stay clear.
-        promptShown = dialogDimsScreen(state.confirmingUnsaved(), state.newGlyphOpen(), state.newSizeOpen(),
-            state.upscaleSourceOpen(), state.newFontOpen(), state.deriveDims()) && !coveringPanelShown && !state.menuOpen();
+        // A dialog dims everything, so the bar is drawn beneath the dim, unless a menu is open and
+        // must stay clear.
+        promptShown = dialogDimsScreen(state.confirmingUnsaved(), state.newGlyphOpen(),
+                state.newSizeOpen(),
+                state.upscaleSourceOpen(), state.newFontOpen(), state.deriveDims())
+                && !coveringPanelShown && !state.menuOpen();
     }
 
     boolean coveringPanelShown() {

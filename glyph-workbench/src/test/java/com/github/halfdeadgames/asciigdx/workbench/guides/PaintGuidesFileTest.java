@@ -20,17 +20,17 @@ import org.junit.jupiter.api.io.TempDir;
 class PaintGuidesFileTest {
 
     private static final String VALID_TEXT = """
-        row CAP 1 all
-        row X-HT 2 all
-        row BASE 7 all
-        column 5 1 uppercase
-        column 5/6 6 uppercase
-        column 7 7 uppercase
-        column 5 1 lowercase
-        column 5 6 digits
-        bar BAR 3 1 uppercase,digits
-        bar BAR 4 1 lowercase
-        """;
+            row CAP 1 all
+            row X-HT 2 all
+            row BASE 7 all
+            column 5 1 uppercase
+            column 5/6 6 uppercase
+            column 7 7 uppercase
+            column 5 1 lowercase
+            column 5 6 digits
+            bar BAR 3 1 uppercase,digits
+            bar BAR 4 1 lowercase
+            """;
 
     private static final CellSize SIZE = new CellSize(8, 8);
 
@@ -58,7 +58,8 @@ class PaintGuidesFileTest {
 
     @Test
     void badContentIsUnreadableWithNoGuides() throws IOException {
-        Files.writeString(directory.resolve("8x8.guides.txt"), "row CAP one all\n", StandardCharsets.UTF_8);
+        Files.writeString(directory.resolve("8x8.guides.txt"), "row CAP one all\n",
+                StandardCharsets.UTF_8);
         PaintGuidesFile file = PaintGuidesFile.open(directory, SIZE);
         assertSame(PaintGuides.NONE, file.guides());
         assertTrue(file.isUnreadable());
@@ -81,7 +82,8 @@ class PaintGuidesFileTest {
         PaintGuides guides = PaintGuides.parse(VALID_TEXT);
         PaintGuidesFile file = PaintGuidesFile.open(directory, SIZE);
         file.save(guides);
-        assertEquals(guides.toText(), Files.readString(directory.resolve("8x8.guides.txt"), StandardCharsets.UTF_8));
+        assertEquals(guides.toText(),
+                Files.readString(directory.resolve("8x8.guides.txt"), StandardCharsets.UTF_8));
         assertFalse(file.isUnreadable());
         assertEquals(guides.toText(), PaintGuidesFile.open(directory, SIZE).guides().toText());
     }

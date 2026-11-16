@@ -31,7 +31,8 @@ class RuleTextTest {
 
     @Test
     void firstLineIsTheUpperCasedName() {
-        assertEquals("SOME RULE", RuleText.describe(rule(RuleCheck.CENTERED_X, CheckSettings.NONE)).get(0));
+        assertEquals("SOME RULE",
+                RuleText.describe(rule(RuleCheck.CENTERED_X, CheckSettings.NONE)).get(0));
     }
 
     @Test
@@ -49,7 +50,8 @@ class RuleTextTest {
     @Test
     void rowsMixSinglesAndRanges() {
         var settings = new CheckSettings(bits(0, 12, 13, 14, 15), new BitSet(), 0);
-        assertEquals("- No ink in rows 0, 12-15.", checkLine(rule(RuleCheck.NO_INK_ROWS, settings)));
+        assertEquals("- No ink in rows 0, 12-15.",
+                checkLine(rule(RuleCheck.NO_INK_ROWS, settings)));
     }
 
     @Test
@@ -63,13 +65,15 @@ class RuleTextTest {
         var single = new CheckSettings(new BitSet(), bits(0), 0);
         var several = new CheckSettings(new BitSet(), bits(0, 1, 15), 0);
         assertEquals("- No ink in column 0.", checkLine(rule(RuleCheck.NO_INK_COLUMNS, single)));
-        assertEquals("- No ink in columns 0-1, 15.", checkLine(rule(RuleCheck.NO_INK_COLUMNS, several)));
+        assertEquals("- No ink in columns 0-1, 15.",
+                checkLine(rule(RuleCheck.NO_INK_COLUMNS, several)));
     }
 
     @Test
     void ringStatesItsSize() {
         var settings = new CheckSettings(new BitSet(), new BitSet(), 2);
-        assertEquals("- Blank ring of 2 px on every side.", checkLine(rule(RuleCheck.RING, settings)));
+        assertEquals("- Blank ring of 2 px on every side.",
+                checkLine(rule(RuleCheck.RING, settings)));
     }
 
     @Test
@@ -88,7 +92,9 @@ class RuleTextTest {
 
     @Test
     void groupNamesAreJoinedInOrder() {
-        var rule = rule(RuleCheck.CENTERED_X, CheckSettings.NONE, List.of("capitals", "all", "digits"), List.of());
+        var rule =
+                rule(RuleCheck.CENTERED_X, CheckSettings.NONE, List.of("capitals", "all", "digits"),
+                        List.of());
         assertEquals("- Checks: capitals, all glyphs, digits.", RuleText.describe(rule).get(2));
     }
 
@@ -103,7 +109,8 @@ class RuleTextTest {
                 new RuleException(GlyphSet.all(), "tiling", "joins its neighbors"),
                 new RuleException(GlyphSet.all(), "g, j", "tails drop!"),
                 new RuleException(GlyphSet.all(), "U+00B7", "is it narrow?"));
-        var lines = RuleText.describe(rule(RuleCheck.CENTERED_X, CheckSettings.NONE, List.of("all"), exceptions));
+        var lines = RuleText.describe(
+                rule(RuleCheck.CENTERED_X, CheckSettings.NONE, List.of("all"), exceptions));
         assertEquals("- Skips tiling: joins its neighbors.", lines.get(3));
         assertEquals("- Skips g, j: tails drop!", lines.get(4));
         assertEquals("- Skips U+00B7: is it narrow?", lines.get(5));

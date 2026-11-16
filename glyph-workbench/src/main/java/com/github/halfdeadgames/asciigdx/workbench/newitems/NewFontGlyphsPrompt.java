@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The glyph-slot choice on the last page of the "new font" dialog, and the lines the dialog shows for it. */
+/**
+ * The glyph-slot choice on the last page of the "new font" dialog, and the lines the dialog shows
+ * for it.
+ */
 final class NewFontGlyphsPrompt {
 
     static final int LINE_CELLS = NewFontSizePrompt.LINE_CELLS;
@@ -15,8 +18,8 @@ final class NewFontGlyphsPrompt {
     static final int LIST_TOP_LINE = 2;
 
     private static final List<SelectList.Row> ROWS = List.of(
-        new SelectList.Row("CP437 - 256 SLOTS", true, false, 0),
-        new SelectList.Row("EMPTY - ADD AS YOU GO", true, false, 0));
+            new SelectList.Row("CP437 - 256 SLOTS", true, false, 0),
+            new SelectList.Row("EMPTY - ADD AS YOU GO", true, false, 0));
 
     private final Consumer<NewFontGlyphs> onCreate;
     private final Runnable onBack;
@@ -106,8 +109,8 @@ final class NewFontGlyphsPrompt {
     }
 
     /**
-     * Exactly eight lines: the "Glyphs for" line, a blank, the two list rows (each a blank line the list is drawn
-     * over, with a blank line between), a blank, then the problem over two lines.
+     * Exactly eight lines: the "Glyphs for" line, a blank, the two list rows (each a blank line the
+     * list is drawn over, with a blank line between), a blank, then the problem over two lines.
      */
     List<String> lines() {
         List<String> problemLines = DialogText.wrapToTwoLines(problem());

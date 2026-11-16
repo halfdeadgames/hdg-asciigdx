@@ -8,8 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * The {@code <width>x<height>.guides.txt} file of one font size. A missing file means no guides; a file that cannot be read or
- * parsed also means no guides, but is marked unreadable so it is never overwritten by mistake.
+ * The {@code <width>x<height>.guides.txt} file of one font size. A missing file means no guides; a
+ * file that cannot be read or parsed also means no guides, but is marked unreadable so it is never
+ * overwritten by mistake.
  */
 public final class PaintGuidesFile {
 
@@ -48,7 +49,10 @@ public final class PaintGuidesFile {
         return readError != null;
     }
 
-    /** The message of the failure that made the file unreadable, or null when it was read or is missing. */
+    /**
+     * The message of the failure that made the file unreadable, or null when it was read or is
+     * missing.
+     */
     public String readError() {
         return readError;
     }
@@ -66,10 +70,14 @@ public final class PaintGuidesFile {
         return path.toString().replace('\\', '/');
     }
 
-    /** Throws instead of writing when the file is unreadable, so its content is never destroyed. Check {@link #isUnreadable()} first to warn instead. */
+    /**
+     * Throws instead of writing when the file is unreadable, so its content is never destroyed.
+     * Check {@link #isUnreadable()} first to warn instead.
+     */
     void save(PaintGuides guidesToWrite) throws IOException {
         if (isUnreadable()) {
-            throw new IllegalStateException(fileName() + " could not be read and would be overwritten");
+            throw new IllegalStateException(
+                    fileName() + " could not be read and would be overwritten");
         }
         AtomicFiles.write(path, guidesToWrite.toText());
     }

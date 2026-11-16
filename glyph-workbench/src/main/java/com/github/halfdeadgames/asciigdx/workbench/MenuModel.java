@@ -43,8 +43,8 @@ final class MenuModel {
     }
 
     /**
-     * The font list: one item per font folder, in the order the folders appear in {@code fonts}, then the
-     * new font entry, which is there even when there are no fonts.
+     * The font list: one item per font folder, in the order the folders appear in {@code fonts},
+     * then the new font entry, which is there even when there are no fonts.
      */
     static MenuModel fontList(List<FontChoice> fonts) {
         MenuModel model = new MenuModel();
@@ -74,8 +74,9 @@ final class MenuModel {
             }
         }
         for (FontChoice font : sizes) {
-            model.addItem(Kind.PAINT, "PAINT " + font.size().toString().toUpperCase(Locale.ROOT), folderName,
-                font.size(), 0);
+            model.addItem(Kind.PAINT, "PAINT " + font.size().toString().toUpperCase(Locale.ROOT),
+                    folderName,
+                    font.size(), 0);
         }
         if (!sizes.isEmpty()) {
             model.addItem(Kind.NEW_SIZE, "NEW SIZE", folderName, null, 0);

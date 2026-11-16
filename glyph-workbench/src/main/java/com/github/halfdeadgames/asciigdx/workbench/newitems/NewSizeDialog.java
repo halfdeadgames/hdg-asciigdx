@@ -17,16 +17,21 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The "new size" dialog: a list of sizes to add plus a typed page for any other size, with input handling and drawing. */
+/**
+ * The "new size" dialog: a list of sizes to add plus a typed page for any other size, with input
+ * handling and drawing.
+ */
 public final class NewSizeDialog {
 
     private static final String TITLE = "NEW SIZE";
     // Typed characters of the key that opened the dialog can arrive a frame or two after it.
     private static final int OPENING_SWALLOW_FRAMES = 2;
     private static final List<Dialog.Button> LIST_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK), new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "CHOOSE", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "CANCEL", Dialog.Tone.DIM));
     private static final List<Dialog.Button> TYPED_BUTTONS = List.of(
-        new Dialog.Button("ENTER", "CREATE", Dialog.Tone.OK), new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
+            new Dialog.Button("ENTER", "CREATE", Dialog.Tone.OK),
+            new Dialog.Button("ESC", "BACK", Dialog.Tone.DIM));
 
     private final NewSizePrompt prompt;
     private final KeyRepeat repeatBackspace = new KeyRepeat();
@@ -56,14 +61,18 @@ public final class NewSizeDialog {
      *
      * @param folderName the font folder name shown on the typed page
      */
-    public void open(List<NewSizePlan.SizeOption> options, String folderName, int pixelX, int pixelY) {
+    public void open(List<NewSizePlan.SizeOption> options, String folderName, int pixelX,
+            int pixelY) {
         pointer.prime(pixelX, pixelY);
         swallowFrames = OPENING_SWALLOW_FRAMES;
         prompt.open(options, folderName);
         repeatBackspace.hold(Gdx.input.isKeyPressed(Input.Keys.BACKSPACE));
     }
 
-    /** Applies the {@code workbench.newsize} hook: moves down the list, or goes to OTHER SIZE... and types the text. */
+    /**
+     * Applies the {@code workbench.newsize} hook: moves down the list, or goes to OTHER SIZE... and
+     * types the text.
+     */
     public void applyCaptureRequest(int moves, String otherTyped) {
         swallowFrames = 0;
         if (otherTyped == null) {
@@ -90,8 +99,8 @@ public final class NewSizeDialog {
     }
 
     /**
-     * Handles Esc, Enter, the arrow keys, and Backspace. Enter or Esc returns right away so the key does not also
-     * act on the screen beneath in the same frame.
+     * Handles Esc, Enter, the arrow keys, and Backspace. Enter or Esc returns right away so the key
+     * does not also act on the screen beneath in the same frame.
      *
      * @return whether Esc or Enter consumed the frame
      */
@@ -119,22 +128,25 @@ public final class NewSizeDialog {
     }
 
     /**
-     * Handles the pointer: hover follows it once it moves, a click outside closes the dialog, and a click on a selectable row picks it.
+     * Handles the pointer: hover follows it once it moves, a click outside closes the dialog, and
+     * a click on a selectable row picks it.
      *
      * @param pixelX pointer position in pixels from the left
      * @param pixelY pointer position in pixels from the top
      * @param cellPixels the cell size in pixels
      * @param area the cell rectangle the dialog is centered in
      */
-    public void handlePointer(boolean clicked, int pixelX, int pixelY, int cellPixels, CellRect area) {
+    public void handlePointer(boolean clicked, int pixelX, int pixelY, int cellPixels,
+            CellRect area) {
         Dialog.Layout layout = fittedLayout(area);
         if (prompt.isTyping()) {
             closeOnOutsideClick(clicked, layout.containsPixel(pixelX, pixelY, cellPixels));
             return;
         }
         GroupedPickList<SizeChoice> list = prompt.list();
-        ListHit hit = ListHit.of(layout, pixelX, pixelY, cellPixels, layout.textY(), list.shownRows(),
-            list.window().offset(), list.scrolls());
+        ListHit hit =
+                ListHit.of(layout, pixelX, pixelY, cellPixels, layout.textY(), list.shownRows(),
+                        list.window().offset(), list.scrolls());
         applyClick(pointer.handle(list, hit, pixelX, pixelY, clicked, layout.textY()));
     }
 
@@ -145,7 +157,8 @@ public final class NewSizeDialog {
             NewFontDialogs.drawSizeHint(painter, prompt.typedPage(), layout);
             return;
         }
-        GroupedPickListView.draw(painter, prompt.list(), layout.textX(), layout.textY(), layout.textWidth());
+        GroupedPickListView.draw(painter, prompt.list(), layout.textX(), layout.textY(),
+                layout.textWidth());
     }
 
     private void backspaceInPrompt() {
@@ -174,7 +187,7 @@ public final class NewSizeDialog {
     private DialogContent content() {
         if (prompt.isTyping()) {
             return new DialogContent(TITLE, prompt.lines(), TYPED_BUTTONS,
-                NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
+                    NewFontSizePrompt.INPUT_LINE, NewFontSizePrompt.LINE_CELLS);
         }
         return DialogContent.of(TITLE, prompt.lines(), LIST_BUTTONS);
     }

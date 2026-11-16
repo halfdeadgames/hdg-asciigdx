@@ -6,9 +6,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Builds the text of the bundled table from DerivedName.txt, DerivedAge.txt, DerivedGeneralCategory.txt, and
- * Blocks.txt. The output is deterministic: UTF-8 text, '\n' line endings, a trailing newline, and entries in
- * code point order.
+ * Builds the text of the bundled table from DerivedName.txt, DerivedAge.txt,
+ * DerivedGeneralCategory.txt, and Blocks.txt. The output is deterministic: UTF-8 text, '\n' line
+ * endings, a trailing newline, and entries in code point order.
  */
 final class UnicodeNamesGenerator {
 
@@ -18,16 +18,17 @@ final class UnicodeNamesGenerator {
     }
 
     /**
-     * Writes the header, then every single character assigned after the cutoff version, then every pattern
-     * range whatever its age (they are few, and a lookup only reaches the table when the JDK has no name),
-     * then every block. A pattern range that spans several categories becomes one line per category, each
-     * group preceded by a comment line.
+     * Writes the header, then every single character assigned after the cutoff version, then every
+     * pattern range whatever its age (they are few, and a lookup only reaches the table when the
+     * JDK has no name), then every block. A pattern range that spans several categories becomes one
+     * line per category, each group preceded by a comment line.
      *
      * @param header comment lines each ending in '\n'
      * @param cutoffVersion the newest version the JDK already knows, e.g. "13.0"
      */
-    static String generate(String derivedNameText, String derivedAgeText, String derivedCategoryText,
-                           String blocksText, String header, String cutoffVersion) {
+    static String generate(String derivedNameText, String derivedAgeText,
+            String derivedCategoryText,
+            String blocksText, String header, String cutoffVersion) {
         UnicodeAges ages = UnicodeAges.parse(derivedAgeText);
         UcdCategories categories = UcdCategories.parse(derivedCategoryText);
         int cutoff = UnicodeVersion.parse(cutoffVersion);
@@ -41,7 +42,7 @@ final class UnicodeNamesGenerator {
         out.append('\n');
         for (UcdEntries.Entry entry : singlesNewerThan(entries, ages, cutoff)) {
             out.append(hex(entry.first())).append(' ').append(categories.categoryOf(entry.first()))
-                .append(' ').append(entry.value()).append('\n');
+                    .append(' ').append(entry.value()).append('\n');
         }
         for (UcdEntries.Entry entry : patternRanges(entries)) {
             appendPatternRange(out, entry, categories);
@@ -58,15 +59,17 @@ final class UnicodeNamesGenerator {
         return hex(first) + ".." + hex(last);
     }
 
-    private static void appendPatternRange(StringBuilder out, UcdEntries.Entry entry, UcdCategories categories) {
+    private static void appendPatternRange(StringBuilder out, UcdEntries.Entry entry,
+            UcdCategories categories) {
         List<UcdEntries.Entry> runs = categories.runsCovering(entry.first(), entry.last());
         if (runs.size() > 1) {
-            out.append("# Split by category: ").append(hexRange(entry.first(), entry.last())).append(' ')
-                .append(entry.value()).append('\n');
+            out.append("# Split by category: ").append(hexRange(entry.first(), entry.last()))
+                    .append(' ')
+                    .append(entry.value()).append('\n');
         }
         for (UcdEntries.Entry run : runs) {
             out.append(hexRange(run.first(), run.last())).append(' ').append(run.value())
-                .append(' ').append(entry.value()).append('\n');
+                    .append(' ').append(entry.value()).append('\n');
         }
     }
 
@@ -75,12 +78,13 @@ final class UnicodeNamesGenerator {
         blocks.sort(Comparator.comparingInt(UcdEntries.Entry::first));
         for (UcdEntries.Entry block : blocks) {
             out.append("BLOCK ").append(hexRange(block.first(), block.last())).append(' ')
-                .append(block.value()).append('\n');
+                    .append(block.value()).append('\n');
         }
     }
 
-    private static List<UcdEntries.Entry> singlesNewerThan(List<UcdEntries.Entry> entries, UnicodeAges ages,
-                                                           int cutoff) {
+    private static List<UcdEntries.Entry> singlesNewerThan(List<UcdEntries.Entry> entries,
+            UnicodeAges ages,
+            int cutoff) {
         List<UcdEntries.Entry> newer = new ArrayList<>();
         for (UcdEntries.Entry entry : entries) {
             if (isPattern(entry)) {
@@ -111,7 +115,7 @@ final class UnicodeNamesGenerator {
     private static void requireSingleCodePoint(UcdEntries.Entry entry) {
         if (entry.first() != entry.last()) {
             throw new IllegalArgumentException("range without a name pattern at "
-                + CodePoints.label(entry.first()) + ": " + entry.value());
+                    + CodePoints.label(entry.first()) + ": " + entry.value());
         }
     }
 }

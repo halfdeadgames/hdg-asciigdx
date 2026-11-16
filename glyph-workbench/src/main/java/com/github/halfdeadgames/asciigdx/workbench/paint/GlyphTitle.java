@@ -6,7 +6,10 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.CellRect;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import com.github.halfdeadgames.asciigdx.workbench.ui.Panel;
 
-/** The grid panel title: the code point followed by the glyph name, which scrolls when it does not fit. */
+/**
+ * The grid panel title: the code point followed by the glyph name, which scrolls when it does not
+ * fit.
+ */
 final class GlyphTitle {
 
     private static final int PANEL_BORDER_CHARS = 6;

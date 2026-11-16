@@ -124,11 +124,11 @@ class NewGlyphPromptTest {
     @Test
     void wholeDialogTextIsExact() {
         assertEquals(List.of(padded("_"), "", "TYPE A HEX CODE, E.G. 263A", "OR U+1F5E1"),
-            openPrompt("").lines(cp -> false));
+                openPrompt("").lines(cp -> false));
         assertEquals(List.of(padded("2603_"), "", "U+2603 ALREADY IN FONT", "SNOWMAN"),
-            openPrompt("2603").lines(cp -> true));
+                openPrompt("2603").lines(cp -> true));
         assertEquals(List.of(padded("U+_"), "", "Add hex digits after U+", ""),
-            openPrompt("U+").lines(cp -> false));
+                openPrompt("U+").lines(cp -> false));
     }
 
     @Test

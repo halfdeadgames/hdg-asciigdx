@@ -24,32 +24,35 @@ class NewSizePlanTest {
     void squareSizeSuggestsHalfAndDouble() throws IOException {
         addSizeFile("16x16.txt");
         assertEquals(List.of(option(8, 8, false), option(16, 16, true), option(32, 32, false)),
-            NewSizePlan.options(folder));
+                NewSizePlan.options(folder));
     }
 
     @Test
     void oddSizeSuggestsOnlyDouble() throws IOException {
         addSizeFile("15x15.txt");
-        assertEquals(List.of(option(15, 15, true), option(30, 30, false)), NewSizePlan.options(folder));
+        assertEquals(List.of(option(15, 15, true), option(30, 30, false)),
+                NewSizePlan.options(folder));
     }
 
     @Test
     void sizeWithOneOddSideSuggestsOnlyDouble() throws IOException {
         addSizeFile("7x14.txt");
-        assertEquals(List.of(option(7, 14, true), option(14, 28, false)), NewSizePlan.options(folder));
+        assertEquals(List.of(option(7, 14, true), option(14, 28, false)),
+                NewSizePlan.options(folder));
     }
 
     @Test
     void tallSizeSuggestsHalfAndDouble() throws IOException {
         addSizeFile("8x16.txt");
         assertEquals(List.of(option(4, 8, false), option(8, 16, true), option(16, 32, false)),
-            NewSizePlan.options(folder));
+                NewSizePlan.options(folder));
     }
 
     @Test
     void suggestionsOverTheLimitAreDropped() throws IOException {
         addSizeFile("128x128.txt");
-        assertEquals(List.of(option(64, 64, false), option(128, 128, true)), NewSizePlan.options(folder));
+        assertEquals(List.of(option(64, 64, false), option(128, 128, true)),
+                NewSizePlan.options(folder));
     }
 
     @Test
@@ -62,8 +65,9 @@ class NewSizePlanTest {
     void suggestionEqualToExistingSizeIsOnlyTheTakenRow() throws IOException {
         addSizeFile("8x8.txt");
         addSizeFile("16x16.txt");
-        assertEquals(List.of(option(4, 4, false), option(8, 8, true), option(16, 16, true), option(32, 32, false)),
-            NewSizePlan.options(folder));
+        assertEquals(List.of(option(4, 4, false), option(8, 8, true), option(16, 16, true),
+                        option(32, 32, false)),
+                NewSizePlan.options(folder));
     }
 
     @Test
@@ -71,8 +75,9 @@ class NewSizePlanTest {
         addSizeFile("8x16.txt");
         addSizeFile("8x8.txt");
         List<CellSize> sizes = NewSizePlan.options(folder).stream().map(SizeOption::size).toList();
-        assertEquals(List.of(new CellSize(4, 4), new CellSize(4, 8), new CellSize(8, 8), new CellSize(8, 16),
-            new CellSize(16, 16), new CellSize(16, 32)), sizes);
+        assertEquals(List.of(new CellSize(4, 4), new CellSize(4, 8), new CellSize(8, 8),
+                new CellSize(8, 16),
+                new CellSize(16, 16), new CellSize(16, 32)), sizes);
     }
 
     @Test
@@ -88,7 +93,8 @@ class NewSizePlanTest {
         addSizeFile("16x16.txt");
         addSizeFile("16x12.txt");
         List<CellSize> sizes = NewSizePlan.options(folder).stream().map(SizeOption::size).toList();
-        assertEquals(List.of(new CellSize(8, 8), new CellSize(16, 16), new CellSize(32, 32)), sizes);
+        assertEquals(
+                List.of(new CellSize(8, 8), new CellSize(16, 16), new CellSize(32, 32)), sizes);
     }
 
     @Test
@@ -100,36 +106,44 @@ class NewSizePlanTest {
     void createWritesTheSizeFile() throws IOException {
         addSizeFile("8x8.txt");
         NewSizePlan.create(folder, new CellSize(16, 32));
-        assertEquals("cell 16x32\n", Files.readString(folder.resolve("16x32.txt"), StandardCharsets.UTF_8));
+        assertEquals("cell 16x32\n",
+                Files.readString(folder.resolve("16x32.txt"), StandardCharsets.UTF_8));
     }
 
     @Test
     void createWorksInAnEmptyFolder() throws IOException {
         NewSizePlan.create(folder, new CellSize(5, 5));
-        assertEquals("cell 5x5\n", Files.readString(folder.resolve("5x5.txt"), StandardCharsets.UTF_8));
+        assertEquals("cell 5x5\n",
+                Files.readString(folder.resolve("5x5.txt"), StandardCharsets.UTF_8));
     }
 
     @Test
     void createRefusesSidesOutsideTheLimits() {
-        var tooSmall = assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(folder, new CellSize(0, 5)));
+        var tooSmall = assertThrows(IllegalArgumentException.class,
+                () -> NewSizePlan.create(folder, new CellSize(0, 5)));
         assertTrue(tooSmall.getMessage().length() > 0);
-        var tooBig = assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(folder, new CellSize(129, 8)));
+        var tooBig = assertThrows(IllegalArgumentException.class,
+                () -> NewSizePlan.create(folder, new CellSize(129, 8)));
         assertEquals("Width and height go up to 128", tooBig.getMessage());
         assertTrue(folderIsEmpty());
     }
 
     @Test
     void createRefusesShapesThatAreNeitherSquareNorTwiceAsTall() {
-        var wide = assertThrows(IllegalArgumentException.class, () -> NewSizePlan.create(folder, new CellSize(16, 8)));
+        var wide = assertThrows(IllegalArgumentException.class,
+                () -> NewSizePlan.create(folder, new CellSize(16, 8)));
         assertEquals("Must be square or 2x tall", wide.getMessage());
         assertTrue(folderIsEmpty());
     }
 
     @Test
     void createNeverOverwritesATakenSize() throws IOException {
-        Files.writeString(folder.resolve("16x16.txt"), "cell 16x16\nkeep\n", StandardCharsets.UTF_8);
-        assertThrows(FileAlreadyExistsException.class, () -> NewSizePlan.create(folder, new CellSize(16, 16)));
-        assertEquals("cell 16x16\nkeep\n", Files.readString(folder.resolve("16x16.txt"), StandardCharsets.UTF_8));
+        Files.writeString(folder.resolve("16x16.txt"), "cell 16x16\nkeep\n",
+                StandardCharsets.UTF_8);
+        assertThrows(FileAlreadyExistsException.class,
+                () -> NewSizePlan.create(folder, new CellSize(16, 16)));
+        assertEquals("cell 16x16\nkeep\n",
+                Files.readString(folder.resolve("16x16.txt"), StandardCharsets.UTF_8));
     }
 
     private static SizeOption option(int width, int height, boolean taken) {

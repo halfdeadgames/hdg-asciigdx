@@ -6,7 +6,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-/** The paint screen's export command: asks for a folder, exports the open font size there, and remembers the folder. */
+/**
+ * The paint screen's export command: asks for a folder, exports the open font size there, and
+ * remembers the folder.
+ */
 public final class PaintExport {
 
     /** Where the outcome of an export is reported. */
@@ -25,8 +28,9 @@ public final class PaintExport {
     private final CellSize fontSize;
     private final Messages messages;
 
-    public PaintExport(FolderPicker picker, ExportFolderMemory memory, File fontDirectory, CellSize fontSize,
-                       Messages messages) {
+    public PaintExport(FolderPicker picker, ExportFolderMemory memory, File fontDirectory,
+            CellSize fontSize,
+            Messages messages) {
         this.picker = picker;
         this.memory = memory;
         this.fontDirectory = fontDirectory;
@@ -58,8 +62,9 @@ public final class PaintExport {
             messages.warn("Export failed: " + e.getMessage());
             return;
         }
-        messages.ok("Exported " + FontExporter.pngFile(fontDirectory, fontSize, folder).getName() + " and "
-            + FontExporter.charsFile(fontDirectory, fontSize, folder).getName() + " to:");
+        messages.ok("Exported " + FontExporter.pngFile(fontDirectory, fontSize, folder).getName()
+                + " and "
+                + FontExporter.charsFile(fontDirectory, fontSize, folder).getName() + " to:");
         messages.ok(folder.getAbsolutePath());
         rememberFolder(folder);
     }

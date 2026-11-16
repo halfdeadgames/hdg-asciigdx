@@ -18,7 +18,7 @@ class PaintStrokeTest {
 
     private static FontEditor editor() {
         return new FontEditor(FontDataParser.parse(
-            "cell 8x8\n\nU+0041 A\n" + BLANK_ROWS + "\n\nU+0043 C = mirror U+0041\n"), CP437);
+                "cell 8x8\n\nU+0041 A\n" + BLANK_ROWS + "\n\nU+0043 C = mirror U+0041\n"), CP437);
     }
 
     @Test

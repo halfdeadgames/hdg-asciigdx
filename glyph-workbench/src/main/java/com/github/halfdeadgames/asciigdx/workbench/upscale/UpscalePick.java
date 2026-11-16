@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.workbench.upscale;
 
 import com.github.halfdeadgames.asciigdx.workbench.CursorNavigator;
 
-/** The cursor on the source sheet while the user picks a glyph to upscale. It only rests on pickable slots. */
+/**
+ * The cursor on the source sheet while the user picks a glyph to upscale. It only rests on pickable
+ * slots.
+ */
 public final class UpscalePick {
 
     private final UpscaleSourceSheet sheet;
@@ -44,7 +47,9 @@ public final class UpscalePick {
         }
     }
 
-    /** Whether a click on the slot confirms the pick: it is the slot the cursor already rests on. */
+    /**
+     * Whether a click on the slot confirms the pick: it is the slot the cursor already rests on.
+     */
     public boolean isConfirmingClick(int slot) {
         return slot == cursor && sheet.isPickable(slot);
     }

@@ -11,9 +11,9 @@ class CursorNavigatorTest {
     //  . X X .
     //  X . . X
     private static final boolean[] BLANK = {
-        false, false, false, false,
-        false, true, true, false,
-        true, false, false, true
+            false, false, false, false,
+            false, true, true, false,
+            true, false, false, true
     };
 
     @Test
@@ -51,9 +51,9 @@ class CursorNavigatorTest {
     @Test
     void staysPutWhenTheWholeLineIsBlank() {
         boolean[] lonely = {
-            false, true, true,
-            true, true, true,
-            true, true, true
+                false, true, true,
+                true, true, true,
+                true, true, true
         };
         assertEquals(0, CursorNavigator.move(lonely, 3, 3, 0, 1, 0));
         assertEquals(0, CursorNavigator.move(lonely, 3, 3, 0, -1, 0));
@@ -64,7 +64,7 @@ class CursorNavigatorTest {
     @Test
     void findsFirstNonBlank() {
         assertEquals(0, CursorNavigator.firstNonBlank(BLANK));
-        assertEquals(2, CursorNavigator.firstNonBlank(new boolean[] {true, true, false}));
-        assertEquals(-1, CursorNavigator.firstNonBlank(new boolean[] {true, true}));
+        assertEquals(2, CursorNavigator.firstNonBlank(new boolean[]{true, true, false}));
+        assertEquals(-1, CursorNavigator.firstNonBlank(new boolean[]{true, true}));
     }
 }

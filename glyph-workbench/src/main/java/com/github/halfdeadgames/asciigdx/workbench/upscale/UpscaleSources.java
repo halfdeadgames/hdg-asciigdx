@@ -69,7 +69,8 @@ public final class UpscaleSources {
             if (firstUsable == NO_INDEX) {
                 firstUsable = i;
             }
-            if (isInTargetFolder(target, option) && isTallerThanBest(option, options, bestSameFolder)) {
+            if (isInTargetFolder(target, option) && isTallerThanBest(option, options,
+                    bestSameFolder)) {
                 bestSameFolder = i;
             }
         }
@@ -94,15 +95,17 @@ public final class UpscaleSources {
     private static Option optionFor(Font target, Font source) {
         boolean widerThanTarget = source.cellWidth() > target.cellWidth();
         boolean tallerThanTarget = source.cellHeight() > target.cellHeight();
-        boolean sameSize = source.cellWidth() == target.cellWidth() && source.cellHeight() == target.cellHeight();
+        boolean sameSize = source.cellWidth() == target.cellWidth()
+                && source.cellHeight() == target.cellHeight();
         if (widerThanTarget || tallerThanTarget || sameSize) {
             return unusable(source, TOO_BIG);
         }
-        if (target.cellWidth() % source.cellWidth() != 0 || target.cellHeight() % source.cellHeight() != 0) {
+        if (target.cellWidth() % source.cellWidth() != 0
+                || target.cellHeight() % source.cellHeight() != 0) {
             return unusable(source, NOT_EVEN);
         }
         return new Option(source, target.cellWidth() / source.cellWidth(),
-            target.cellHeight() / source.cellHeight(), "");
+                target.cellHeight() / source.cellHeight(), "");
     }
 
     private static Option unusable(Font source, String problem) {

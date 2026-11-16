@@ -24,7 +24,8 @@ class GuideBandsTest {
 
     @Test
     void shownBandMatchesTheSelectedGuideOnlyWhenEverythingAgrees() {
-        PaintGuides.Listed selected = new PaintGuides.Listed(ListedKind.BAR, "x-height", 3, 4, "lower");
+        PaintGuides.Listed selected =
+                new PaintGuides.Listed(ListedKind.BAR, "x-height", 3, 4, "lower");
         assertTrue(GuideBands.isSelected(selected, ListedKind.BAR, "x-height", 3, 4));
         assertFalse(GuideBands.isSelected(selected, ListedKind.COLUMN_BAR, "x-height", 3, 4));
         assertFalse(GuideBands.isSelected(selected, ListedKind.BAR, "other", 3, 4));

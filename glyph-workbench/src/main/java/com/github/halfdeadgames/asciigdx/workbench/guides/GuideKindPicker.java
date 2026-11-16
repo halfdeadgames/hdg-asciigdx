@@ -7,7 +7,10 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.Painter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The dialog that offers the guide kinds as numbered buttons, and finds which button a cell belongs to. */
+/**
+ * The dialog that offers the guide kinds as numbered buttons, and finds which button a cell belongs
+ * to.
+ */
 final class GuideKindPicker {
 
     private static final String TITLE = "ADD GUIDE";
@@ -40,7 +43,10 @@ final class GuideKindPicker {
         return null;
     }
 
-    /** The kind whose number key is {@code number} (1 is the first button), or null when there is none. */
+    /**
+     * The kind whose number key is {@code number} (1 is the first button), or null when there is
+     * none.
+     */
     static GuideAddFlow.Kind kindForNumber(int number) {
         if (number < 1 || number > KINDS.size()) {
             return null;

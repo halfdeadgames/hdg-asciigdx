@@ -25,7 +25,8 @@ public final class GlyphResolver {
      *
      * @param data the font
      * @return pixel glyphs by code point
-     * @throws FontDataException if a reference is unknown, a derivation is circular, or an operation is not allowed
+     * @throws FontDataException if a reference is unknown, a derivation is circular, or an
+     *     operation is not allowed
      */
     public static Map<Integer, PixelGlyph> resolveAll(FontData data) {
         return resolveAll(data, codePoint -> 0);
@@ -37,9 +38,11 @@ public final class GlyphResolver {
      * @param data the font
      * @param lineOfCodePoint gives the 1-based definition line of a code point, or 0
      * @return pixel glyphs by code point
-     * @throws FontDataException if a reference is unknown, a derivation is circular, or an operation is not allowed
+     * @throws FontDataException if a reference is unknown, a derivation is circular, or an
+     *     operation is not allowed
      */
-    public static Map<Integer, PixelGlyph> resolveAll(FontData data, IntUnaryOperator lineOfCodePoint) {
+    public static Map<Integer, PixelGlyph> resolveAll(FontData data,
+            IntUnaryOperator lineOfCodePoint) {
         GlyphResolver resolver = new GlyphResolver(data, lineOfCodePoint);
         Map<Integer, PixelGlyph> all = new TreeMap<>();
         for (int codePoint : data.entries().keySet()) {
@@ -95,8 +98,8 @@ public final class GlyphResolver {
     private PixelGrid rotate(PixelGlyph source, int clockwiseQuarterTurns) {
         if (data.cellWidth() != data.cellHeight()) {
             throw new IllegalArgumentException("rotate90 and rotate270 need a square glyph, but "
-                + name(source.codePoint()) + " is " + data.cellWidth() + "x" + data.cellHeight()
-                + "; use a font whose cell height equals its cell width");
+                    + name(source.codePoint()) + " is " + data.cellWidth() + "x" + data.cellHeight()
+                    + "; use a font whose cell height equals its cell width");
         }
         PixelGrid pixels = source.pixels();
         for (int turn = 0; turn < clockwiseQuarterTurns; turn++) {

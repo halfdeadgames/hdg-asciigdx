@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * The upscale mode of the paint screen: first the source font dialog, then a pick of one glyph on that font's
- * sheet, which takes the place of the main sheet, then a choice between the upscaled versions of that glyph.
- * While any stage runs, nothing reaches painting.
+ * The upscale mode of the paint screen: first the source font dialog, then a pick of one glyph on
+ * that font's sheet, which takes the place of the main sheet, then a choice between the upscaled
+ * versions of that glyph. While any stage runs, nothing reaches painting.
  */
 final class PaintUpscale {
 
@@ -80,7 +80,8 @@ final class PaintUpscale {
         this.messages = messages;
         this.arrowRepeats = arrowRepeats;
         this.host = host;
-        this.candidates = new PaintUpscaleCandidates(messages, host, this::backToSourcePick, this::end);
+        this.candidates =
+                new PaintUpscaleCandidates(messages, host, this::backToSourcePick, this::end);
     }
 
     boolean isActive() {
@@ -100,7 +101,10 @@ final class PaintUpscale {
         return candidates.isChoosing();
     }
 
-    /** Whether a dialog of this mode dims the screen: the source font list or the replace confirmation. */
+    /**
+     * Whether a dialog of this mode dims the screen: the source font list or the replace
+     * confirmation.
+     */
     boolean isDialogShown() {
         return isChoosingFont() || candidates.isConfirmingReplace();
     }
@@ -133,8 +137,9 @@ final class PaintUpscale {
     /** Handles one frame of the dialog or of the glyph pick, whichever stage is running. */
     void handleInput(float delta, int verticalTicks, int sidewaysTicks) {
         if (isChoosingFont()) {
-            dialog.handleInput(verticalTicks, host.leftClicked(), host.pixelX(), host.pixelY(), host.cellPixels(),
-                host.dialogArea());
+            dialog.handleInput(verticalTicks, host.leftClicked(), host.pixelX(), host.pixelY(),
+                    host.cellPixels(),
+                    host.dialogArea());
             return;
         }
         if (isChoosingCandidate()) {
@@ -153,7 +158,10 @@ final class PaintUpscale {
         candidates.drawReplaceDialog(painter, columns, rows, area);
     }
 
-    /** The upscaled version to show in place of the painted glyph, or null when none is being chosen. */
+    /**
+     * The upscaled version to show in place of the painted glyph, or null when none is being
+     * chosen.
+     */
     PixelGlyph previewGlyph() {
         return candidates.previewGlyph();
     }
@@ -163,7 +171,10 @@ final class PaintUpscale {
         return isChoosingCandidate() ? candidates.helpState() : PaintHelp.State.upscalePicking();
     }
 
-    /** Confirms the selected source glyph, then selects candidate {@code number}, for the capture hook. */
+    /**
+     * Confirms the selected source glyph, then selects candidate {@code number}, for the capture
+     * hook.
+     */
     void chooseCandidateForCapture(int number) {
         if (!isPicking() || isChoosingCandidate()) {
             return;
@@ -180,9 +191,12 @@ final class PaintUpscale {
         }
     }
 
-    /** Fits the source sheet like the main one; its frame is at least as wide as the main sheet's. */
-    void layoutSheet(int visibleColumns, int minimumFrameCells, int worldHeight, boolean statusBarShown,
-                     boolean revealNow) {
+    /**
+     * Fits the source sheet like the main one; its frame is at least as wide as the main sheet's.
+     */
+    void layoutSheet(int visibleColumns, int minimumFrameCells, int worldHeight,
+            boolean statusBarShown,
+            boolean revealNow) {
         if (!isPicking()) {
             return;
         }
@@ -211,14 +225,16 @@ final class PaintUpscale {
         beginPicking(option, loaded, startSlot);
     }
 
-    private void beginPicking(UpscaleSources.Option option, UpscaleSourceSheet loaded, int startSlot) {
+    private void beginPicking(UpscaleSources.Option option, UpscaleSourceSheet loaded,
+            int startSlot) {
         chosen = option;
         pick = new UpscalePick(loaded, startSlot, PaintSheetView.COLUMNS);
         view = host.createSheetView(loaded.editor());
         view.setTitle(loaded.title(), loaded.shortTitle());
         messages.ok("Pick a glyph from " + label(option.font())
-            + ". Enter or click it again to choose, Esc to go back.");
-        pointerTargets = new PointerTargets(List.of(new SheetBarPointerTarget(view), new SourceSlotTarget()));
+                + ". Enter or click it again to choose, Esc to go back.");
+        pointerTargets = new PointerTargets(
+                List.of(new SheetBarPointerTarget(view), new SourceSlotTarget()));
         layoutPending = true;
         revealCursor = true;
         // A key still down from the dialog must not count as a fresh press on the sheet.
@@ -238,7 +254,7 @@ final class PaintUpscale {
         Keys.scrollByPageKeys(view.scroll());
         scrollByWheel(verticalTicks, sidewaysTicks);
         pointerTargets.dispatch(host.pixelX(), host.pixelY(), host.leftClicked(),
-            Gdx.input.isButtonPressed(Input.Buttons.LEFT));
+                Gdx.input.isButtonPressed(Input.Buttons.LEFT));
     }
 
     private void moveCursor(float delta) {
@@ -277,8 +293,9 @@ final class PaintUpscale {
 
     private void confirm() {
         messages.nextAction();
-        List<GlyphCandidates.Candidate> found = GlyphCandidates.forGlyph(pick.sheet().glyphAt(pick.cursor()),
-            chosen.factorX(), chosen.factorY());
+        List<GlyphCandidates.Candidate> found =
+                GlyphCandidates.forGlyph(pick.sheet().glyphAt(pick.cursor()),
+                        chosen.factorX(), chosen.factorY());
         if (found.isEmpty()) {
             messages.warn("No upscaled version of this glyph");
             return;
@@ -290,7 +307,7 @@ final class PaintUpscale {
     private void backToSourcePick() {
         candidates.clear();
         messages.ok("Pick a glyph from " + label(chosen.font())
-            + ". Enter or click it again to choose, Esc to go back.");
+                + ". Enter or click it again to choose, Esc to go back.");
         Keys.holdArrows(arrowRepeats);
     }
 
@@ -304,10 +321,13 @@ final class PaintUpscale {
     }
 
     private static String label(UpscaleSources.Font font) {
-        return font.folderName().toUpperCase(Locale.ROOT) + " " + font.cellWidth() + "X" + font.cellHeight();
+        return font.folderName().toUpperCase(Locale.ROOT) + " " + font.cellWidth() + "X"
+                + font.cellHeight();
     }
 
-    /** A press on a source slot selects it, or confirms the pick when the slot is already selected. */
+    /**
+     * A press on a source slot selects it, or confirms the pick when the slot is already selected.
+     */
     private final class SourceSlotTarget implements PointerTarget {
 
         @Override

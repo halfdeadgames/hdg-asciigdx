@@ -14,7 +14,8 @@ import javax.imageio.ImageIO;
  * Exports a font data file to a glyph sheet PNG plus its character list, without opening a window.
  * Call {@link #export} from code, or run {@link #main}. The {@code exportFont} Gradle task runs
  * {@link #main}, which reads the {@code workbench.export.output}, {@code workbench.export.fontDir},
- * and {@code workbench.export.fontSize} system properties; the last one is a size like {@code 16x16}.
+ * and {@code workbench.export.fontSize} system properties; the last one is a size like
+ * {@code 16x16}.
  */
 public final class FontExporter {
 
@@ -22,16 +23,19 @@ public final class FontExporter {
     }
 
     /**
-     * Reads {@code <fontDirectory>/<width>x<height>.txt} and writes the sheet PNG and character list to
-     * the output directory, creating it if missing. See {@link #pngFile} and {@link #charsFile}.
+     * Reads {@code <fontDirectory>/<width>x<height>.txt} and writes the sheet PNG and character
+     * list to the output directory, creating it if missing. See {@link #pngFile} and
+     * {@link #charsFile}.
      *
      * @param fontDirectory   folder holding the font data files; its name prefixes the output names
      * @param fontSize        cell size, which selects the data file
      * @param outputDirectory folder that receives the exported files
      * @throws IOException if a file cannot be read or written, or the folder cannot be created
-     * @throws FontDataException if the data file is invalid or its cell line disagrees with its name
+     * @throws FontDataException if the data file is invalid or its cell line disagrees with its
+     *     name
      */
-    public static void export(File fontDirectory, CellSize fontSize, File outputDirectory) throws IOException {
+    public static void export(File fontDirectory, CellSize fontSize, File outputDirectory)
+            throws IOException {
         FontSheet sheet = loadSheet(fontDirectory, fontSize);
         if (!outputDirectory.isDirectory() && !outputDirectory.mkdirs()) {
             throw new IOException("Cannot create output directory " + outputDirectory);
@@ -79,9 +83,12 @@ public final class FontExporter {
 
         FontSheet sheet = loadSheet(fontDirectory, fontSize);
         System.out.println("Exported " + sheet.getSlots().length + " slots, "
-            + sheet.getLayout().getCellWidth() + "x" + sheet.getLayout().getCellHeight() + " cells");
-        System.out.println("  " + pngFile(fontDirectory, fontSize, outputDirectory).getAbsolutePath());
-        System.out.println("  " + charsFile(fontDirectory, fontSize, outputDirectory).getAbsolutePath());
+                + sheet.getLayout().getCellWidth() + "x" + sheet.getLayout().getCellHeight()
+                + " cells");
+        System.out.println(
+                "  " + pngFile(fontDirectory, fontSize, outputDirectory).getAbsolutePath());
+        System.out.println(
+                "  " + charsFile(fontDirectory, fontSize, outputDirectory).getAbsolutePath());
     }
 
     private static String exportName(File fontDirectory, CellSize fontSize) {

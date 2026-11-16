@@ -2,7 +2,10 @@ package com.github.halfdeadgames.asciigdx.workbench.guides;
 
 import java.util.function.Consumer;
 
-/** Adding a guide to the list in two steps: pick the kind, then type its label. Nothing is kept until the label is accepted. */
+/**
+ * Adding a guide to the list in two steps: pick the kind, then type its label. Nothing is kept
+ * until the label is accepted.
+ */
 final class GuideAddFlow {
 
     /** The kinds the picker offers, in button order. */
@@ -25,7 +28,7 @@ final class GuideAddFlow {
         }
     }
 
-    enum State { CLOSED, PICKING, NAMING }
+    enum State {CLOSED, PICKING, NAMING}
 
     private final GuideListModel model;
     private State state = State.CLOSED;

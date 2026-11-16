@@ -7,7 +7,7 @@ import java.util.List;
 /** A centered, focused panel over a dimmed screen, with a shadow and keycap buttons. */
 public final class Dialog {
 
-    public enum Tone { OK, WARN, DIM }
+    public enum Tone {OK, WARN, DIM}
 
     public record Button(String key, String label, Tone tone) {
 
@@ -18,7 +18,8 @@ public final class Dialog {
     }
 
     /** Where everything goes, in cells. */
-    public record Layout(int x, int y, int width, int height, int textX, int textY, int buttonY, List<Integer> buttonXs) {
+    public record Layout(int x, int y, int width, int height, int textX, int textY, int buttonY,
+                         List<Integer> buttonXs) {
 
         /** Cells available to a text line between the frame paddings. */
         public int textWidth() {
@@ -32,7 +33,8 @@ public final class Dialog {
 
         /** Whether the pixel lies within the dialog frame. */
         public boolean containsPixel(int pixelX, int pixelY, int cellPixels) {
-            return containsCell(Math.floorDiv(pixelX, cellPixels), Math.floorDiv(pixelY, cellPixels));
+            return containsCell(Math.floorDiv(pixelX, cellPixels),
+                    Math.floorDiv(pixelY, cellPixels));
         }
     }
 
@@ -56,8 +58,8 @@ public final class Dialog {
     }
 
     /**
-     * Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centers it in the
-     * area, capped so the frame and its one-cell shadow stay inside it.
+     * Sizes the dialog so text and buttons keep {@link #PADDING} cells from the frame, and centers
+     * it in the area, capped so the frame and its one-cell shadow stay inside it.
      */
     public static Layout layout(DialogContent dialog, CellRect area) {
         String title = dialog.title();
@@ -73,9 +75,11 @@ public final class Dialog {
         }
         int width = content + 2 * (PADDING + 1);
         width = Math.min(width, Math.max(MIN_CAPPED_WIDTH, areaWidth - SHADOW_MARGIN));
-        // The button row keeps BUTTON_EDGE_PADDING cells inside the frame: the gap shrinks first, then the frame grows.
+        // The button row keeps BUTTON_EDGE_PADDING cells inside the frame: the gap shrinks first,
+        // then the frame grows.
         int gap = BUTTON_GAP;
-        while (gap > MIN_BUTTON_GAP && buttonsWidth(buttons, gap) + 2 * (1 + BUTTON_EDGE_PADDING) > width) {
+        while (gap > MIN_BUTTON_GAP
+                && buttonsWidth(buttons, gap) + 2 * (1 + BUTTON_EDGE_PADDING) > width) {
             gap--;
         }
         width = Math.max(width, buttonsWidth(buttons, gap) + 2 * (1 + BUTTON_EDGE_PADDING));
@@ -94,7 +98,10 @@ public final class Dialog {
         return new Layout(x, y, width, height, textX, y + 2, buttonY, buttonXs);
     }
 
-    /** Most text lines a dialog can have and still fit, with its shadow, in an area this many cells tall. */
+    /**
+     * Most text lines a dialog can have and still fit, with its shadow, in an area this many cells
+     * tall.
+     */
     public static int maxLines(int areaHeight) {
         return areaHeight - NON_LINE_CELLS - SHADOW_ROWS;
     }
@@ -113,10 +120,12 @@ public final class Dialog {
     }
 
     /**
-     * Dims the whole screen but places the dialog and its shadow inside the given cell rectangle. Draws the
-     * content's {@code inputLine} as a text field: a black box {@code inputCells} wide behind white text.
+     * Dims the whole screen but places the dialog and its shadow inside the given cell rectangle.
+     * Draws the content's {@code inputLine} as a text field: a black box {@code inputCells} wide
+     * behind white text.
      */
-    public static void draw(Painter painter, CellRect screen, DialogContent content, CellRect area) {
+    public static void draw(Painter painter, CellRect screen, DialogContent content,
+            CellRect area) {
         String title = content.title();
         List<String> lines = content.lines();
         List<Button> buttons = content.buttons();
@@ -126,44 +135,52 @@ public final class Dialog {
         painter.fill(DIM_COLOR, 0, 0, screen.width() * cellPixels, screen.height() * cellPixels);
         Layout layout = layout(content, area);
         drawShadow(painter, layout);
-        Panel.draw(painter, new CellRect(layout.x(), layout.y(), layout.width(), layout.height()), title, true);
+        Panel.draw(painter, new CellRect(layout.x(), layout.y(), layout.width(), layout.height()),
+                title, true);
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             boolean input = i == inputLine;
             if (input) {
                 int inset = Math.max(MIN_INPUT_INSET, cellPixels / INPUT_INSET_DIVISOR);
                 painter.fill(INPUT_BACKGROUND, layout.textX() * cellPixels - inset,
-                    (layout.textY() + i) * cellPixels - inset,
-                    Math.min(inputCells, layout.textWidth()) * cellPixels + 2 * inset, cellPixels + 2 * inset);
+                        (layout.textY() + i) * cellPixels - inset,
+                        Math.min(inputCells, layout.textWidth()) * cellPixels + 2 * inset,
+                        cellPixels + 2 * inset);
             }
             painter.text(TextCells.prefix(line, layout.textWidth()),
-                layout.textX() * cellPixels, (layout.textY() + i) * cellPixels, input ? INPUT_TEXT : UiPalette.TEXT);
+                    layout.textX() * cellPixels, (layout.textY() + i) * cellPixels,
+                    input ? INPUT_TEXT : UiPalette.TEXT);
         }
         for (int i = 0; i < buttons.size(); i++) {
             Button button = buttons.get(i);
             int capWidth = TextCells.cellCount(button.key()) + 2;
             int bx = layout.buttonXs().get(i);
-            painter.fill(UiPalette.KEYBG, bx * cellPixels, layout.buttonY() * cellPixels, capWidth * cellPixels,
-                cellPixels);
-            painter.text(" " + button.key() + " ", bx * cellPixels, layout.buttonY() * cellPixels, UiPalette.TEXT);
+            painter.fill(UiPalette.KEYBG, bx * cellPixels, layout.buttonY() * cellPixels,
+                    capWidth * cellPixels,
+                    cellPixels);
+            painter.text(" " + button.key() + " ", bx * cellPixels, layout.buttonY() * cellPixels,
+                    UiPalette.TEXT);
             Color label = switch (button.tone()) {
                 case OK -> UiPalette.OK;
                 case WARN -> UiPalette.WARN;
                 case DIM -> UiPalette.DIM;
             };
-            painter.text(button.label(), (bx + capWidth + 1) * cellPixels, layout.buttonY() * cellPixels, label);
+            painter.text(button.label(), (bx + capWidth + 1) * cellPixels,
+                    layout.buttonY() * cellPixels, label);
         }
     }
 
     private static void drawShadow(Painter painter, Layout layout) {
         int cellPixels = painter.cellPixels();
         for (int i = 1; i <= layout.height(); i++) {
-            painter.text("▓", (layout.x() + layout.width()) * cellPixels, (layout.y() + i) * cellPixels,
-                UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + layout.width()) * cellPixels,
+                    (layout.y() + i) * cellPixels,
+                    UiPalette.SHADOW);
         }
         for (int i = 1; i <= layout.width(); i++) {
-            painter.text("▓", (layout.x() + i) * cellPixels, (layout.y() + layout.height()) * cellPixels,
-                UiPalette.SHADOW);
+            painter.text("▓", (layout.x() + i) * cellPixels,
+                    (layout.y() + layout.height()) * cellPixels,
+                    UiPalette.SHADOW);
         }
     }
 }

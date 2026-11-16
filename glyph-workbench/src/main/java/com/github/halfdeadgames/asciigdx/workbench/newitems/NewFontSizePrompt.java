@@ -5,7 +5,10 @@ import com.github.halfdeadgames.asciigdx.workbench.ui.DialogText;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** The size typed into the size page of the "new font" dialog, and the lines the dialog shows for it. */
+/**
+ * The size typed into the size page of the "new font" dialog, and the lines the dialog shows for
+ * it.
+ */
 final class NewFontSizePrompt {
 
     static final int LINE_CELLS = DialogText.LINE_CELLS;
@@ -41,7 +44,10 @@ final class NewFontSizePrompt {
         open(fontName, "");
     }
 
-    /** Opens the page for the given font name with {@code initialText} already typed, for coming back from a later page. */
+    /**
+     * Opens the page for the given font name with {@code initialText} already typed, for coming
+     * back from a later page.
+     */
     void open(String fontName, String initialText) {
         name = fontName;
         text.setLength(0);
@@ -69,7 +75,10 @@ final class NewFontSizePrompt {
         return text.toString();
     }
 
-    /** Appends a digit or an x (a capital X is stored as x) while open; anything else, or a full field, is ignored. */
+    /**
+     * Appends a digit or an x (a capital X is stored as x) while open; anything else, or a full
+     * field, is ignored.
+     */
     void type(char character) {
         if (!open || text.length() >= MAX_TYPED || !isSizeCharacter(character)) {
             return;
@@ -121,8 +130,8 @@ final class NewFontSizePrompt {
     }
 
     /**
-     * Exactly five lines: the "Size for" line, a blank line (the input box is drawn a little above its line),
-     * the typed text with a cursor, then the problem over two lines.
+     * Exactly five lines: the "Size for" line, a blank line (the input box is drawn a little above
+     * its line), the typed text with a cursor, then the problem over two lines.
      */
     List<String> lines() {
         List<String> problemLines = DialogText.wrapToTwoLines(problem());

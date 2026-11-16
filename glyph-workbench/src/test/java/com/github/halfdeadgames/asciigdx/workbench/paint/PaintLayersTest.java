@@ -20,8 +20,9 @@ class PaintLayersTest {
 
     @Test
     void coveringPanelHidesDialogs() {
-        layers.update(nothingOpen().confirmingUnsaved().newGlyphOpen().newSizeOpen().upscaleSourceOpen()
-            .newFontOpen().deriveDims().controlsOpen().build());
+        layers.update(
+                nothingOpen().confirmingUnsaved().newGlyphOpen().newSizeOpen().upscaleSourceOpen()
+                        .newFontOpen().deriveDims().controlsOpen().build());
 
         assertTrue(layers.coveringPanelShown());
         assertFalse(layers.upscaleSourceShown());
@@ -197,8 +198,9 @@ class PaintLayersTest {
         }
 
         PaintLayers.State build() {
-            return new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen, upscaleSourceOpen,
-                newFontOpen, deriveDims, controlsOpen, rulesShowing, menuOpen);
+            return new PaintLayers.State(confirmingUnsaved, newGlyphOpen, newSizeOpen,
+                    upscaleSourceOpen,
+                    newFontOpen, deriveDims, controlsOpen, rulesShowing, menuOpen);
         }
     }
 }
