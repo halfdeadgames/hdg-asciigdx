@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
 import com.badlogic.gdx.utils.Array;
+import java.util.Objects;
 
 /**
  * A set of layers of one {@link LayerStack} that share color effects (tint, alpha, mix, saturation,
@@ -75,7 +76,8 @@ public final class LayerGroup {
      * keeps its own effects and joins the end of the member order.
      *
      * @param layer a layer of the same stack; not null
-     * @throws IllegalArgumentException if the layer is null or belongs to another stack
+     * @throws NullPointerException if the layer is null
+     * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the group or the layer was removed
      */
     public void add(Layer layer) {
@@ -93,14 +95,12 @@ public final class LayerGroup {
      * layer stays in the stack.
      *
      * @param layer the layer to remove; not null
-     * @throws IllegalArgumentException if the layer is null
+     * @throws NullPointerException if the layer is null
      * @throws IllegalStateException if the group was removed
      */
     public void remove(Layer layer) {
         requireAttached();
-        if (layer == null) {
-            throw new IllegalArgumentException("layer must not be null");
-        }
+        Objects.requireNonNull(layer, "layer");
         if (!members.removeValue(layer, true)) {
             return;
         }

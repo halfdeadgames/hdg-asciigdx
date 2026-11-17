@@ -27,7 +27,7 @@ final class LayerClip {
         resetTo(Mode.NONE);
     }
 
-    boolean isSet() {
+    boolean isClipping() {
         return mode != Mode.NONE;
     }
 

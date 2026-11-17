@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.tween;
 
+import java.util.Objects;
+
 /**
  * The same track repeated for several items, each item starting {@code stepSeconds} later than the
  * previous one.
@@ -14,13 +16,11 @@ public final class StaggeredTrack {
      *
      * @param track the track every item plays; not null
      * @param stepSeconds delay between consecutive items in seconds; finite and at least 0
-     * @throws IllegalArgumentException if the track is null or the step is NaN, infinite, or
-     *     negative
+     * @throws NullPointerException if the track is null
+     * @throws IllegalArgumentException if the step is NaN, infinite, or negative
      */
     public StaggeredTrack(FloatTrack track, float stepSeconds) {
-        if (track == null) {
-            throw new IllegalArgumentException("track must not be null");
-        }
+        Objects.requireNonNull(track, "track");
         TweenChecks.requireFinite("stepSeconds", stepSeconds);
         if (stepSeconds < 0f) {
             throw new IllegalArgumentException("stepSeconds must be >= 0: " + stepSeconds);

@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
 import com.badlogic.gdx.math.Interpolation;
+import java.util.Objects;
 
 /**
  * One glyph sliding into a map cell. Offsets are in cells, measured from the target cell, and
@@ -24,9 +25,7 @@ final class CellSlide {
             float startSeconds,
             float durationSeconds,
             Interpolation easing) {
-        if (easing == null) {
-            throw new IllegalArgumentException("easing must not be null");
-        }
+        Objects.requireNonNull(easing, "easing");
         requireFinite(durationSeconds, "durationSeconds");
         if (durationSeconds < 0f) {
             throw new IllegalArgumentException(

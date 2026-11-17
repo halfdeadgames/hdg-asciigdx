@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.tween;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Binds tracks to property setters and writes their values for a given time.
@@ -84,11 +85,12 @@ public final class Timeline {
      *
      * @param track the track to read; not null
      * @param setter receives the value; not null and not already bound in this timeline
-     * @throws IllegalArgumentException if an argument is null or the setter is already bound
+     * @throws NullPointerException if an argument is null
+     * @throws IllegalArgumentException if the setter is already bound
      */
     public void bind(FloatTrack track, FloatSetter setter) {
-        requireNonNull("track", track);
-        requireNonNull("setter", setter);
+        Objects.requireNonNull(track, "track");
+        Objects.requireNonNull(setter, "setter");
         addBinding(new FloatBinding(track, setter));
     }
 
@@ -99,11 +101,12 @@ public final class Timeline {
      *
      * @param track the track to read; not null
      * @param setter receives the color; not null and not already bound in this timeline
-     * @throws IllegalArgumentException if an argument is null or the setter is already bound
+     * @throws NullPointerException if an argument is null
+     * @throws IllegalArgumentException if the setter is already bound
      */
     public void bind(ColorTrack track, ColorSetter setter) {
-        requireNonNull("track", track);
-        requireNonNull("setter", setter);
+        Objects.requireNonNull(track, "track");
+        Objects.requireNonNull(setter, "setter");
         addBinding(new ColorBinding(track, setter));
     }
 
@@ -115,12 +118,12 @@ public final class Timeline {
      * @param count number of items, at least 1
      * @param setter receives each index and value; not null and not already bound in this
      *     timeline
-     * @throws IllegalArgumentException if an argument is null, count is below 1, or the setter is
-     *     already bound
+     * @throws NullPointerException if the track or the setter is null
+     * @throws IllegalArgumentException if count is below 1 or the setter is already bound
      */
     public void bind(StaggeredTrack track, int count, IndexedFloatSetter setter) {
-        requireNonNull("track", track);
-        requireNonNull("setter", setter);
+        Objects.requireNonNull(track, "track");
+        Objects.requireNonNull(setter, "setter");
         if (count < 1) {
             throw new IllegalArgumentException("count must be >= 1: " + count);
         }
@@ -135,8 +138,9 @@ public final class Timeline {
      * @param endSeconds time from which the value is false again, in seconds; finite and not
      *     before {@code startSeconds}
      * @param setter receives the visibility; not null and not already bound in this timeline
-     * @throws IllegalArgumentException if a time is not finite, end is before start, the setter is
-     *     null, or the setter is already bound
+     * @throws NullPointerException if the setter is null
+     * @throws IllegalArgumentException if a time is not finite, end is before start, or the setter
+     *     is already bound
      */
     public void bindVisibility(float startSeconds, float endSeconds, BooleanSetter setter) {
         TweenChecks.requireFinite("startSeconds", startSeconds);
@@ -146,7 +150,7 @@ public final class Timeline {
                     "endSeconds must not be before startSeconds: " + endSeconds + " < "
                             + startSeconds);
         }
-        requireNonNull("setter", setter);
+        Objects.requireNonNull(setter, "setter");
         addBinding(new VisibilityBinding(startSeconds, endSeconds, setter));
     }
 
@@ -163,11 +167,12 @@ public final class Timeline {
      *     containing this timeline
      * @param startSeconds parent time at which the child's local time is 0, in seconds; must be
      *     finite
-     * @throws IllegalArgumentException if the child is null, this timeline, already has a parent,
-     *     or already contains this timeline (a cycle), or if startSeconds is not finite
+     * @throws NullPointerException if the child is null
+     * @throws IllegalArgumentException if the child is this timeline, already has a parent, or
+     *     already contains this timeline (a cycle), or if startSeconds is not finite
      */
     public void addChild(Timeline child, float startSeconds) {
-        requireNonNull("child", child);
+        Objects.requireNonNull(child, "child");
         TweenChecks.requireFinite("startSeconds", startSeconds);
         if (child.hasParent) {
             throw new IllegalArgumentException("child already has a parent");
@@ -240,11 +245,5 @@ public final class Timeline {
             }
         }
         return false;
-    }
-
-    private static void requireNonNull(String name, Object value) {
-        if (value == null) {
-            throw new IllegalArgumentException(name + " must not be null");
-        }
     }
 }

@@ -175,6 +175,6 @@ class TweenTest {
 
     @Test
     void nullEasingIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> Tween.eased(0f, 1f, 0f, 1f, null));
+        assertThrows(NullPointerException.class, () -> Tween.eased(0f, 1f, 0f, 1f, null));
     }
 }

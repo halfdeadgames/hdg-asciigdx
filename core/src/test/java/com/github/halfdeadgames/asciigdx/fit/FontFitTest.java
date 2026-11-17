@@ -111,13 +111,13 @@ class FontFitTest {
 
     @Test
     void invalidFontsThrow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> FontFit.choose(100, 100, 1, 1, (GlyphSource[]) null));
         assertThrows(IllegalArgumentException.class,
                 () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[0]));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> FontFit.choose(100, 100, 1, 1, new GlyphSource[]{null}));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> FontFit.choose(100, 100, 1, 1, (List<GlyphSource>) null));
         assertThrows(IllegalArgumentException.class,
                 () -> FontFit.choose(100, 100, 1, 1, List.<GlyphSource>of()));

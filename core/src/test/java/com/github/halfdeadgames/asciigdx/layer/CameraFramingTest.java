@@ -123,7 +123,7 @@ class CameraFramingTest {
 
     @Test
     void nullAlignmentThrows() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> CameraFraming.centerOn(1f, 10f, 20f, null));
     }
 }

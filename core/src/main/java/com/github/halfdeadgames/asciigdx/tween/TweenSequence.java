@@ -102,8 +102,9 @@ public final class TweenSequence implements FloatTrack {
          * @param durationSeconds length of the piece in seconds; finite and at least 0
          * @param easing curve applied to the progress; not null
          * @return this builder
-         * @throws IllegalArgumentException if a number is NaN or infinite, the duration is
-         *     negative, or the easing is null
+         * @throws NullPointerException if the easing is null
+         * @throws IllegalArgumentException if a number is NaN or infinite or the duration is
+         *     negative
          */
         public Builder to(float value, float durationSeconds, Interpolation easing) {
             pieces.add(Tween.eased(currentEnd(), durationSeconds, currentValue(), value, easing));

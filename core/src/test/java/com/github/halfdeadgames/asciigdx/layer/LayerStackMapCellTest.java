@@ -121,10 +121,10 @@ class LayerStackMapCellTest {
     }
 
     @Test
-    void nullOutThrowsIllegalArgument() {
+    void nullOutThrows() {
         layer.enableMapWindow();
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> stack.toMapCell(layer, 0f, 0f, 0f, 0f, null));
     }
 }

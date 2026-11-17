@@ -4,6 +4,7 @@ import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import java.util.Objects;
 
 /**
  * One grid in a {@link LayerStack}, with an offset, a parallax factor, a zoom, a rotation, a
@@ -115,14 +116,13 @@ public final class Layer {
      * <p>Call on the GL thread, because the renderer's glyph source is replaced immediately.
      *
      * @param glyphSource the new source; must not be null and is not owned by the layer
-     * @throws IllegalArgumentException if the source is null
-     * @throws IllegalStateException if the layer was removed
+     * @throws NullPointerException if the source is null
+     * @throws IllegalStateException if the layer was removed, or the source was disposed and
+     *     checks for it (see {@link GlyphSource})
      */
     public void setGlyphSource(GlyphSource glyphSource) {
         requireAttached();
-        if (glyphSource == null) {
-            throw new IllegalArgumentException("glyphSource must not be null");
-        }
+        Objects.requireNonNull(glyphSource, "glyphSource");
         if (glyphSource == this.glyphSource) {
             return;
         }
@@ -492,14 +492,12 @@ public final class Layer {
      * Chooses how the zoom is applied. Default {@link ZoomMode#SMOOTH}.
      *
      * @param mode the zoom mode; must not be null
-     * @throws IllegalArgumentException if the mode is null
+     * @throws NullPointerException if the mode is null
      * @throws IllegalStateException if the layer was removed
      */
     public void setZoomMode(ZoomMode mode) {
         requireAttached();
-        if (mode == null) {
-            throw new IllegalArgumentException("mode must not be null");
-        }
+        Objects.requireNonNull(mode, "mode");
         zoomMode = mode;
     }
 
@@ -557,7 +555,7 @@ public final class Layer {
      * @return true if a clip is set
      */
     public boolean hasClip() {
-        return clip.isSet();
+        return clip.isClipping();
     }
 
     /**
@@ -699,7 +697,8 @@ public final class Layer {
      * <p>Later sprites shift down one index; when removing in a loop, iterate backward.
      *
      * @param sprite the sprite to remove; must not be null
-     * @throws IllegalArgumentException if the sprite is null or belongs to another layer
+     * @throws NullPointerException if the sprite is null
+     * @throws IllegalArgumentException if the sprite belongs to another layer
      * @throws IllegalStateException if the layer or the sprite was already removed
      */
     public void removeSprite(GlyphSprite sprite) {
@@ -1150,7 +1149,7 @@ public final class Layer {
     }
 
     private void requireOwnedSprite(GlyphSprite sprite) {
-        Guards.requireNotNull(sprite, "sprite");
+        Objects.requireNonNull(sprite, "sprite");
         Guards.requireOwnedBy(sprite.getOwner(), this, "Sprite", "layer");
     }
 

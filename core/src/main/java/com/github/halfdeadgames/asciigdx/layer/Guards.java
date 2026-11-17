@@ -6,13 +6,6 @@ final class Guards {
     private Guards() {
     }
 
-    /** Throws {@link IllegalArgumentException} when {@code value} is null. */
-    static void requireNotNull(Object value, String name) {
-        if (value == null) {
-            throw new IllegalArgumentException(name + " must not be null");
-        }
-    }
-
     /**
      * Checks that an item's current owner is the expected one.
      *

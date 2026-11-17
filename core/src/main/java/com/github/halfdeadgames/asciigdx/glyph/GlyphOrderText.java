@@ -40,7 +40,7 @@ public final class GlyphOrderText {
      * @throws IllegalArgumentException if {@code columns} is not positive
      */
     public static String write(GlyphOrder order, int columns) {
-        Objects.requireNonNull(order, "order must not be null");
+        Objects.requireNonNull(order, "order");
         requirePositiveColumns(columns);
         StringBuilder text = new StringBuilder();
         for (int slot = 0; slot < order.getGlyphCount(); slot++) {
@@ -93,7 +93,7 @@ public final class GlyphOrderText {
      *         longer than {@code columns}, or the text holds no slots
      */
     public static GlyphOrder read(String text, int columns) {
-        Objects.requireNonNull(text, "text must not be null");
+        Objects.requireNonNull(text, "text");
         requirePositiveColumns(columns);
         return readRows(text, columns);
     }
@@ -107,7 +107,7 @@ public final class GlyphOrderText {
      * @throws IllegalArgumentException if an escape is malformed or the text holds no slots
      */
     public static GlyphOrder readAnyRowLength(String text) {
-        Objects.requireNonNull(text, "text must not be null");
+        Objects.requireNonNull(text, "text");
         return readRows(text, Integer.MAX_VALUE);
     }
 

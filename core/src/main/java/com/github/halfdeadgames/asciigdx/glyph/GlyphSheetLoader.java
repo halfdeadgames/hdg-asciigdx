@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.glyph;
 
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
+import java.util.Locale;
 
 // Reads, checks, and color-converts glyph sheet images. Knows nothing about textures.
 final class GlyphSheetLoader {
@@ -34,13 +35,23 @@ final class GlyphSheetLoader {
             if (fallbackSlot < 0) {
                 throw new IllegalArgumentException(
                         "Character list " + characterList.path()
-                                + " has no '?' to use as the fallback glyph");
+                                + " has no " + describeCodePoint(fallbackCodePoint)
+                                + " to use as the fallback glyph");
             }
             return new LoadedSheet(pixmap, layout, order, fallbackSlot);
         } catch (RuntimeException e) {
             pixmap.dispose();
             throw e;
         }
+    }
+
+    // Example: '@' (U+0040).
+    static String describeCodePoint(int codePoint) {
+        if (!Character.isValidCodePoint(codePoint)) {
+            return "invalid code point " + codePoint;
+        }
+        return "'" + new String(Character.toChars(codePoint)) + "' ("
+                + String.format(Locale.ROOT, "U+%04X", codePoint) + ")";
     }
 
     static void requireOrderFits(GlyphOrder order, GlyphSheetLayout layout) {

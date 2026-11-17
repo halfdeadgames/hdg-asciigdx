@@ -323,9 +323,9 @@ class LayerStackHitTest {
 
     @Test
     void nullArgumentsThrow() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> stack.toCell(layer, 0f, 0f, 0f, 0f, null));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> stack.toCell(null, 0f, 0f, 0f, 0f, cell));
     }
 }

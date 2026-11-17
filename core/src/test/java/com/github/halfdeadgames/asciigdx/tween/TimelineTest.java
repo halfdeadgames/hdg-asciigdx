@@ -266,15 +266,15 @@ class TimelineTest {
     @Test
     void nullArgumentsThrow() {
         Timeline timeline = new Timeline();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind((FloatTrack) null, new FloatRecorder()));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind(new RampTrack(), (FloatSetter) null));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind((ColorTrack) null, new ColorRecorder()));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind(colorTrack(), (ColorSetter) null));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bindVisibility(0f, 1f, null));
     }
 

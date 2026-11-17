@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.tween;
 import static com.github.halfdeadgames.asciigdx.tween.TweenChecks.requireFinite;
 
 import com.badlogic.gdx.math.Interpolation;
+import java.util.Objects;
 
 /**
  * A value that changes from {@code from} to {@code to} over a time span. The value is computed from
@@ -25,9 +26,7 @@ public final class Tween implements FloatTrack {
         }
         requireFinite("from", from);
         requireFinite("to", to);
-        if (easing == null) {
-            throw new IllegalArgumentException("easing must not be null");
-        }
+        Objects.requireNonNull(easing, "easing");
         this.startSeconds = startSeconds;
         this.durationSeconds = durationSeconds;
         this.from = from;
@@ -61,8 +60,9 @@ public final class Tween implements FloatTrack {
      * @param easing curve applied to the progress from 0 to 1; not null. Curves that overshoot
      *     make the value leave the range between {@code from} and {@code to} inside the span.
      * @return a new immutable tween
-     * @throws IllegalArgumentException if a number is NaN or infinite, the duration is negative,
-     *     or the easing is null
+     * @throws NullPointerException if the easing is null
+     * @throws IllegalArgumentException if a number is NaN or infinite or the duration is
+     *     negative
      */
     public static Tween eased(float startSeconds, float durationSeconds, float from, float to,
             Interpolation easing) {

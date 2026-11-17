@@ -147,7 +147,7 @@ class LayerStackPanelTest {
         Panel own = stack.addPanel(0f, 0f, 10f, 10f);
 
         assertThrows(IllegalArgumentException.class, () -> stack.removePanel(foreign));
-        assertThrows(IllegalArgumentException.class, () -> stack.removePanel(null));
+        assertThrows(NullPointerException.class, () -> stack.removePanel(null));
         stack.removePanel(own);
         assertThrows(IllegalStateException.class, () -> stack.removePanel(own));
     }

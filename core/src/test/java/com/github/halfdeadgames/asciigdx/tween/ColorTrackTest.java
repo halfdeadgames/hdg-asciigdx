@@ -70,6 +70,6 @@ class ColorTrackTest {
 
     @Test
     void nullAmountThrows() {
-        assertThrows(IllegalArgumentException.class, () -> new ColorTrack(null, FROM, TO));
+        assertThrows(NullPointerException.class, () -> new ColorTrack(null, FROM, TO));
     }
 }

@@ -193,7 +193,7 @@ class MapWindowSlideTest {
     void invalidArgumentsThrowAndLeaveExistingSlidesUntouched() {
         window.startSlide(0, 0, 1, 0, 0f, 1f, Interpolation.linear);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> window.startSlide(1, 0, 2, 0, 0.5f, 1f, null));
         assertThrows(IllegalArgumentException.class,
                 () -> window.startSlide(1, 0, 2, 0, 0.5f, -1f, Interpolation.linear));

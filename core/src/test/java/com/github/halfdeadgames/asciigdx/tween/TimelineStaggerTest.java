@@ -125,9 +125,9 @@ class TimelineStaggerTest {
     @Test
     void nullArgumentsThrow() {
         Timeline timeline = new Timeline();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind((StaggeredTrack) null, 2, new IndexedRecorder()));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> timeline.bind(staggeredTrack(), 2, (IndexedFloatSetter) null));
     }
 

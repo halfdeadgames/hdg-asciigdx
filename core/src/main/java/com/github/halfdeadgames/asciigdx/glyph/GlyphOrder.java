@@ -75,13 +75,11 @@ public final class GlyphOrder {
      * @param codePoints code points in slot order; each must be in {@code [0, 0x10FFFF]}. May be
      *        empty. Must not be null
      * @return the order
-     * @throws IllegalArgumentException if the array is null or a value is not a valid Unicode
-     *         code point
+     * @throws NullPointerException if the array is null
+     * @throws IllegalArgumentException if a value is not a valid Unicode code point
      */
     public static GlyphOrder ofCodePoints(int... codePoints) {
-        if (codePoints == null) {
-            throw new IllegalArgumentException("codePoints must not be null");
-        }
+        Objects.requireNonNull(codePoints, "codePoints");
         for (int codePoint : codePoints) {
             if (!Character.isValidCodePoint(codePoint)) {
                 throw new IllegalArgumentException("Invalid code point: " + codePoint);
@@ -102,7 +100,7 @@ public final class GlyphOrder {
      * @throws IllegalArgumentException if no slots remain after skipping
      */
     public static GlyphOrder ofString(String glyphs) {
-        Objects.requireNonNull(glyphs, "glyphs must not be null");
+        Objects.requireNonNull(glyphs, "glyphs");
         int[] kept = glyphs.codePoints().filter(cp -> !isSkipped(cp)).toArray();
         if (kept.length == 0) {
             throw new IllegalArgumentException("glyphs must contain at least one glyph");

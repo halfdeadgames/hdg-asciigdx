@@ -122,8 +122,8 @@ public final class FreeTypeGlyphBaker {
      */
     public static BakedSheet bake(
             FileHandle fontFile, int cellHeight, GlyphOrder order, int columns, boolean pixelFont) {
-        Objects.requireNonNull(fontFile, "fontFile must not be null");
-        Objects.requireNonNull(order, "order must not be null");
+        Objects.requireNonNull(fontFile, "fontFile");
+        Objects.requireNonNull(order, "order");
         if (cellHeight <= 0) {
             throw new IllegalArgumentException("Cell height must be positive, was " + cellHeight);
         }

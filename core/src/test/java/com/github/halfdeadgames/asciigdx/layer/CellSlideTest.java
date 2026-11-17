@@ -122,7 +122,7 @@ class CellSlideTest {
 
     @Test
     void rejectsNullEasing() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> new CellSlide().start(0, 0, 1f, 1f, 0f, 1f, null));
     }
 

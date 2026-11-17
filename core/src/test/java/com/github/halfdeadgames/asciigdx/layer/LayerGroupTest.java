@@ -291,7 +291,7 @@ class LayerGroupTest {
         LayerGroup group = stack.addGroup();
 
         assertThrows(IllegalArgumentException.class, () -> group.add(foreign));
-        assertThrows(IllegalArgumentException.class, () -> group.add(null));
+        assertThrows(NullPointerException.class, () -> group.add(null));
         assertFalse(group.contains(foreign));
     }
 

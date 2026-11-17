@@ -359,7 +359,7 @@ class LayerStackTest {
         assertThrows(IllegalArgumentException.class, () -> layer.setZoom(-1f));
         assertThrows(IllegalArgumentException.class, () -> layer.setZoom(Float.NaN));
         assertThrows(IllegalArgumentException.class, () -> layer.setZoom(Float.POSITIVE_INFINITY));
-        assertThrows(IllegalArgumentException.class, () -> layer.setZoomMode(null));
+        assertThrows(NullPointerException.class, () -> layer.setZoomMode(null));
         assertEquals(1f, layer.getZoom());
         assertEquals(ZoomMode.SMOOTH, layer.getZoomMode());
     }
@@ -799,7 +799,7 @@ class LayerStackTest {
     @Test
     void setGlyphSourceRejectsNull() {
         Layer layer = addLayer();
-        assertThrows(IllegalArgumentException.class, () -> layer.setGlyphSource(null));
+        assertThrows(NullPointerException.class, () -> layer.setGlyphSource(null));
         assertSame(font, layer.getGlyphSource());
         assertEquals(0, renderers.get(0).glyphSources.size());
     }

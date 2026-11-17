@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.fit;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The font chosen for a window, with its {@link GridFit}.
@@ -44,14 +45,13 @@ public final class FontFit {
      * @param fonts candidates in order of preference, largest cells first; must not be null or
      *     empty, and must not contain null
      * @return the chosen font and its fit; never null
-     * @throws IllegalArgumentException if the fonts array is null or empty, if an element is
-     *     null, or if a minimum is zero or negative
+     * @throws NullPointerException if the fonts array is null or an element is null
+     * @throws IllegalArgumentException if the fonts array is empty or a minimum is zero or
+     *     negative
      */
     public static FontFit choose(int windowWidth, int windowHeight, int minColumns, int minRows,
             GlyphSource... fonts) {
-        if (fonts == null) {
-            throw new IllegalArgumentException("fonts must not be null");
-        }
+        Objects.requireNonNull(fonts, "fonts");
         return choose(windowWidth, windowHeight, minColumns, minRows, Arrays.asList(fonts));
     }
 
@@ -66,13 +66,14 @@ public final class FontFit {
      * @param fonts candidates in order of preference, largest cells first; must not be null or
      *     empty, and must not contain null
      * @return the chosen font and its fit; never null
-     * @throws IllegalArgumentException if the list is null or empty, if an element is null, or if
-     *     a minimum is zero or negative
+     * @throws NullPointerException if the list is null or an element is null
+     * @throws IllegalArgumentException if the list is empty or a minimum is zero or negative
      */
     public static FontFit choose(int windowWidth, int windowHeight, int minColumns, int minRows,
             List<GlyphSource> fonts) {
-        if (fonts == null || fonts.isEmpty()) {
-            throw new IllegalArgumentException("fonts must not be null or empty");
+        Objects.requireNonNull(fonts, "fonts");
+        if (fonts.isEmpty()) {
+            throw new IllegalArgumentException("fonts must not be empty");
         }
         int count = fonts.size();
         int[] cellWidths = new int[count];
@@ -80,7 +81,7 @@ public final class FontFit {
         for (int i = 0; i < count; i++) {
             GlyphSource candidate = fonts.get(i);
             if (candidate == null) {
-                throw new IllegalArgumentException("fonts must not contain null: index " + i);
+                throw new NullPointerException("fonts must not contain null: index " + i);
             }
             cellWidths[i] = candidate.getCellWidth();
             cellHeights[i] = candidate.getCellHeight();

@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
+import java.util.Objects;
+
 /**
  * A target for one map cell that a tween or timeline setter can keep writing while the map window
  * scrolls, without throwing. Create it with {@link MapWindow#createCellTarget}.
@@ -61,13 +63,11 @@ public final class MapCellTarget {
      * @param writer receives the cell's lasting handle and {@code value}; must not be null, and
      *     should be a static method reference or non-capturing lambda
      * @param value the value passed on to {@code writer}
-     * @throws IllegalArgumentException if {@code writer} is null
+     * @throws NullPointerException if {@code writer} is null
      * @throws IllegalStateException if the window is detached
      */
     public void writeIfShown(CellFloatWriter writer, float value) {
-        if (writer == null) {
-            throw new IllegalArgumentException("Writer must not be null");
-        }
+        Objects.requireNonNull(writer, "writer");
         if (!window.contains(mapColumn, mapRow)) {
             return;
         }

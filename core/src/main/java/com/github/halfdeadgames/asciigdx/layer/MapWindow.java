@@ -5,6 +5,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A layer's grid seen as a window onto a larger map, addressed in map coordinates. Get it from
@@ -211,8 +212,9 @@ public final class MapWindow {
      *     must be finite, and may be in the past or the future
      * @param durationSeconds how long the slide lasts, in seconds; finite, 0 or more
      * @param easing the curve from start to arrival; not null
-     * @throws IllegalArgumentException if easing is null, durationSeconds is negative or not
-     *     finite, or startSeconds is not finite
+     * @throws NullPointerException if easing is null
+     * @throws IllegalArgumentException if durationSeconds is negative or not finite, or
+     *     startSeconds is not finite
      * @throws IllegalStateException if this window is detached
      */
     public void startSlide(int fromColumn, int fromRow, int toColumn, int toRow,
@@ -459,14 +461,12 @@ public final class MapWindow {
      * scroll. Writes do not clear the flags, because a map cell may have nothing to draw.
      *
      * @param visitor receives each map cell to fill; not null
-     * @throws IllegalArgumentException if the visitor is null
+     * @throws NullPointerException if the visitor is null
      * @throws IllegalStateException if this window is detached
      */
     public void forEachCellToFill(MapCellVisitor visitor) {
         requireAttached();
-        if (visitor == null) {
-            throw new IllegalArgumentException("Visitor must not be null");
-        }
+        Objects.requireNonNull(visitor, "visitor");
         resetFlagsIfGridResized();
         for (int row = 0; row < flagRows; row++) {
             visitFlaggedCellsInRow(row, visitor);

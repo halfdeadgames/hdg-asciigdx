@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
+import java.util.Objects;
+
 /**
  * Computes camera positions that keep a target centered in the view without showing space
  * outside the map. Each call handles one axis, so a game with tall 1:2 cells passes a different
@@ -41,8 +43,9 @@ public final class CameraFraming {
      * @param mapSize the map's size along this axis in virtual pixels; finite, 0 or more
      * @param smallMapAlignment where a map smaller than the view sits; not null
      * @return the camera position in virtual pixels
-     * @throws IllegalArgumentException if a value is NaN or infinite, viewSize or mapSize is
-     *     negative, or the alignment is null
+     * @throws NullPointerException if smallMapAlignment is null
+     * @throws IllegalArgumentException if a value is NaN or infinite, or viewSize or mapSize is
+     *     negative
      */
     public static float centerOn(
             float targetCenter,
@@ -82,8 +85,6 @@ public final class CameraFraming {
             throw new IllegalArgumentException(
                     "viewSize and mapSize must not be negative: " + viewSize + ", " + mapSize);
         }
-        if (alignment == null) {
-            throw new IllegalArgumentException("smallMapAlignment must not be null");
-        }
+        Objects.requireNonNull(alignment, "smallMapAlignment");
     }
 }

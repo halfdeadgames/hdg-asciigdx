@@ -141,7 +141,7 @@ class LayerSpriteTest {
         GlyphSprite sprite = layer.addSprite('a', 0, 0f, 0f);
         GlyphSprite foreign = other.addSprite('b', 0, 0f, 0f);
 
-        assertThrows(IllegalArgumentException.class, () -> layer.removeSprite(null));
+        assertThrows(NullPointerException.class, () -> layer.removeSprite(null));
         assertThrows(IllegalArgumentException.class, () -> layer.removeSprite(foreign));
         layer.removeSprite(sprite);
         assertThrows(IllegalStateException.class, () -> layer.removeSprite(sprite));

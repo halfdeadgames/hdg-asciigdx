@@ -69,6 +69,8 @@ public final class GridRenderer implements Disposable {
      * @param glyphSource supplies glyph regions and the cell size; not null. Not owned and not
      *     disposed
      * @throws NullPointerException if the grid or glyph source is null
+     * @throws IllegalStateException if the glyph source was disposed and checks for it (see
+     *     {@link GlyphSource})
      */
     public GridRenderer(TerminalView grid, GlyphSource glyphSource) {
         this(Objects.requireNonNull(grid, "grid"),
@@ -133,9 +135,15 @@ public final class GridRenderer implements Disposable {
      * @param tintGreen green multiplier, 1 for unchanged
      * @param tintBlue blue multiplier, 1 for unchanged
      * @param tintAlpha alpha multiplier, 1 for opaque and 0 for invisible
+     * @throws IllegalArgumentException if a tint value is NaN or infinite
      */
     public void draw(SpriteBatch batch, float x, float y,
             float tintRed, float tintGreen, float tintBlue, float tintAlpha) {
+        if (!Float.isFinite(tintRed) || !Float.isFinite(tintGreen)
+                || !Float.isFinite(tintBlue) || !Float.isFinite(tintAlpha)) {
+            throw new IllegalArgumentException("tint must be finite: " + tintRed + ", "
+                    + tintGreen + ", " + tintBlue + ", " + tintAlpha);
+        }
         tintOnlyEffects.reset();
         tintOnlyEffects.setTint(tintRed, tintGreen, tintBlue, tintAlpha);
         translation.setToTranslation(x, y);
@@ -305,6 +313,8 @@ public final class GridRenderer implements Disposable {
      *
      * @param glyphSource the new source; not null. All its glyph regions must share one texture
      * @throws NullPointerException if the glyph source is null
+     * @throws IllegalStateException if the glyph source was disposed and checks for it (see
+     *     {@link GlyphSource})
      */
     public void setGlyphSource(GlyphSource glyphSource) {
         Objects.requireNonNull(glyphSource, "glyphSource");

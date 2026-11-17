@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.tween;
 
 import com.github.halfdeadgames.asciigdx.color.CellColor;
+import java.util.Objects;
 
 /**
  * A color over time, mixed in Oklab between two RGBA8888 colors by an amount track. Amount 0 is
@@ -20,12 +21,10 @@ public final class ColorTrack {
      *     when {@code amount} does.
      * @param fromRgba color at amount 0, packed as RGBA8888
      * @param toRgba color at amount 1, packed as RGBA8888
-     * @throws IllegalArgumentException if {@code amount} is null
+     * @throws NullPointerException if {@code amount} is null
      */
     public ColorTrack(FloatTrack amount, int fromRgba, int toRgba) {
-        if (amount == null) {
-            throw new IllegalArgumentException("amount must not be null");
-        }
+        Objects.requireNonNull(amount, "amount");
         this.amount = amount;
         this.fromRgba = fromRgba;
         this.toRgba = toRgba;

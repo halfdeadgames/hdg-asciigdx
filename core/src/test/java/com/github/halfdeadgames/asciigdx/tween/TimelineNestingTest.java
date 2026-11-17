@@ -122,7 +122,7 @@ class TimelineNestingTest {
     @Test
     void nullChildThrows() {
         Timeline parent = new Timeline();
-        assertThrows(IllegalArgumentException.class, () -> parent.addChild(null, 0f));
+        assertThrows(NullPointerException.class, () -> parent.addChild(null, 0f));
     }
 
     @Test

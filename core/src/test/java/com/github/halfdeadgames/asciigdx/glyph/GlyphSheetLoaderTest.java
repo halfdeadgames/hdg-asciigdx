@@ -6,10 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.utils.SharedLibraryLoader;
+import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class GlyphSheetLoaderTest {
 
@@ -155,5 +159,30 @@ class GlyphSheetLoaderTest {
 
         GlyphSheetLoader.requireImageFits(image, "Image", GlyphSheetLayout.packed(8, 8, 2, 1));
         image.dispose();
+    }
+
+    @Test
+    void missingFallbackErrorNamesTheChosenFallback(@TempDir Path folder) {
+        FileHandle image = new FileHandle(folder.resolve("sheet.png").toFile());
+        Pixmap pixmap = new Pixmap(16, 8, Pixmap.Format.RGBA8888);
+        PixmapIO.writePNG(image, pixmap);
+        pixmap.dispose();
+        FileHandle characterList = new FileHandle(folder.resolve("sheet.txt").toFile());
+        characterList.writeString("AB\n", false, "UTF-8");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> GlyphSheetLoader.readSheet(image, characterList, 8, 8, '@'));
+
+        assertTrue(error.getMessage().contains("'@' (U+0040)"), error.getMessage());
+    }
+
+    @Test
+    void describeCodePointShowsSupplementaryCharacters() {
+        assertEquals("'😀' (U+1F600)", GlyphSheetLoader.describeCodePoint(0x1F600));
+    }
+
+    @Test
+    void describeCodePointNamesAnInvalidValueInsteadOfThrowing() {
+        assertEquals("invalid code point -1", GlyphSheetLoader.describeCodePoint(-1));
     }
 }

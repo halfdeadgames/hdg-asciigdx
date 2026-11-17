@@ -80,7 +80,7 @@ class MapCellTargetTest {
     void nullWriterThrows() {
         MapCellTarget target = enable().createCellTarget(0, 0);
 
-        assertThrows(IllegalArgumentException.class, () -> target.writeIfShown(null, 1f));
+        assertThrows(NullPointerException.class, () -> target.writeIfShown(null, 1f));
     }
 
     @Test

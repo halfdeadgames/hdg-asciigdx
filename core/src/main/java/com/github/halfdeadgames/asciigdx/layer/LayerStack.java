@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.Objects;
 
 /**
  * An ordered stack of {@link Layer}s drawn into one {@link SpriteBatch}. Index 0
@@ -124,7 +125,7 @@ public final class LayerStack implements Disposable {
      * @param glyphSource supplies glyphs and the cell size; not null. The layer does not own or
      *     dispose it
      * @return the new layer
-     * @throws IllegalArgumentException if the grid or glyph source is null
+     * @throws NullPointerException if the grid or glyph source is null
      * @throws IllegalStateException if the stack was disposed
      */
     public Layer add(TerminalGrid grid, GlyphSource glyphSource) {
@@ -141,15 +142,14 @@ public final class LayerStack implements Disposable {
      * @param glyphSource supplies glyphs and the cell size; not null. The layer does not own or
      *     dispose it
      * @return the new layer
-     * @throws IllegalArgumentException if the grid or glyph source is null
+     * @throws NullPointerException if the grid or glyph source is null
      * @throws IndexOutOfBoundsException if the index is outside 0 to size
      * @throws IllegalStateException if the stack was disposed
      */
     public Layer insert(int index, TerminalGrid grid, GlyphSource glyphSource) {
         requireNotDisposed();
-        if (grid == null || glyphSource == null) {
-            throw new IllegalArgumentException("grid and glyphSource must not be null");
-        }
+        Objects.requireNonNull(grid, "grid");
+        Objects.requireNonNull(glyphSource, "glyphSource");
         if (index < 0 || index > layers.size) {
             throw new IndexOutOfBoundsException("Index " + index + ", size " + layers.size);
         }
@@ -172,6 +172,7 @@ public final class LayerStack implements Disposable {
      *
      * @param layer a layer of this stack; not null
      * @throws IllegalStateException if the layer was already removed
+     * @throws NullPointerException if the layer is null
      * @throws IllegalArgumentException if the layer belongs to another stack
      */
     public void remove(Layer layer) {
@@ -188,6 +189,7 @@ public final class LayerStack implements Disposable {
      * @param index new position from 0 (bottom) to {@link #getLayerCount()} - 1 (top)
      * @throws IndexOutOfBoundsException if the index is outside 0 to size - 1
      * @throws IllegalStateException if the layer was removed
+     * @throws NullPointerException if the layer is null
      * @throws IllegalArgumentException if the layer belongs to another stack
      */
     public void moveTo(Layer layer, int index) {
@@ -247,15 +249,13 @@ public final class LayerStack implements Disposable {
      * @param heightInCells height in cells
      * @param cellSource supplies the cell size
      * @return the new panel
-     * @throws IllegalArgumentException if the source is null, or widthInCells or heightInCells is
-     *     negative
+     * @throws NullPointerException if the source is null
+     * @throws IllegalArgumentException if widthInCells or heightInCells is negative
      * @throws IllegalStateException if the stack was disposed
      */
     public Panel addPanelInCells(int column, int row, int widthInCells, int heightInCells,
             GlyphSource cellSource) {
-        if (cellSource == null) {
-            throw new IllegalArgumentException("cellSource must not be null");
-        }
+        Objects.requireNonNull(cellSource, "cellSource");
         float cellWidth = cellSource.getCellWidth();
         float cellHeight = cellSource.getCellHeight();
         return addPanel(column * cellWidth, row * cellHeight, widthInCells * cellWidth,
@@ -266,7 +266,8 @@ public final class LayerStack implements Disposable {
      * Removes a panel. The panel stays readable but can no longer be changed.
      *
      * @param panel a panel of this stack; not null
-     * @throws IllegalArgumentException if the panel is null or belongs to another stack
+     * @throws NullPointerException if the panel is null
+     * @throws IllegalArgumentException if the panel belongs to another stack
      * @throws IllegalStateException if the panel was already removed, or a layer of this stack is
      *     still placed in it
      */
@@ -301,7 +302,8 @@ public final class LayerStack implements Disposable {
      * readable but can no longer be changed. Children of the group become parentless.
      *
      * @param group a group of this stack; not null
-     * @throws IllegalArgumentException if the group is null or belongs to another stack
+     * @throws NullPointerException if the group is null
+     * @throws IllegalArgumentException if the group belongs to another stack
      * @throws IllegalStateException if the group was already removed
      */
     public void removeGroup(LayerGroup group) {
@@ -325,12 +327,12 @@ public final class LayerStack implements Disposable {
     }
 
     private void requireGroupOwned(LayerGroup group) {
-        Guards.requireNotNull(group, "group");
+        Objects.requireNonNull(group, "group");
         Guards.requireOwnedBy(group.getOwner(), this, "LayerGroup", "stack");
     }
 
     private void requirePanelOwned(Panel panel) {
-        Guards.requireNotNull(panel, "panel");
+        Objects.requireNonNull(panel, "panel");
         Guards.requireOwnedBy(panel.getOwner(), this, "Panel", "stack");
     }
 
@@ -515,15 +517,14 @@ public final class LayerStack implements Disposable {
      * @param worldX x of the point in batch world space
      * @param worldY y of the point in batch world space
      * @param out receives the column in x and the row in y, row 0 at the top
-     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws NullPointerException if the layer or out is null
+     * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed
      */
     public void toCell(Layer layer, float stackX, float stackY, float worldX, float worldY,
             GridPoint2 out) {
         requireOwned(layer);
-        if (out == null) {
-            throw new IllegalArgumentException("out must not be null");
-        }
+        Objects.requireNonNull(out, "out");
         toLayerPoint(layer, stackX, stackY, worldX, worldY, layerPixel);
         GlyphSource source = layer.getGlyphSource();
         out.x = (int) Math.floor(layerPixel.x / source.getCellWidth());
@@ -558,16 +559,15 @@ public final class LayerStack implements Disposable {
      * @param worldY y of the point in batch world space
      * @param out receives the map column in x and the map row in y; map rows count down, like
      *     grid rows
-     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws NullPointerException if the layer or out is null
+     * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed or is not in map window mode; out
      *     is left unchanged
      */
     public void toMapCell(Layer layer, float stackX, float stackY, float worldX, float worldY,
             GridPoint2 out) {
         requireOwned(layer);
-        if (out == null) {
-            throw new IllegalArgumentException("out must not be null");
-        }
+        Objects.requireNonNull(out, "out");
         if (!layer.hasMapWindow()) {
             throw new IllegalStateException(
                     "toMapCell needs a map window layer; call enableMapWindow() first");
@@ -599,7 +599,8 @@ public final class LayerStack implements Disposable {
      * @param worldX x of the point in batch world space
      * @param worldY y of the point in batch world space
      * @param out receives the point in layer pixels
-     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws NullPointerException if the layer or out is null
+     * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed
      */
     public void toLayerPoint(Layer layer, float stackX, float stackY, float worldX, float worldY,
@@ -630,7 +631,8 @@ public final class LayerStack implements Disposable {
      * @param layerX x of the point in layer pixels
      * @param layerY y of the point in layer pixels (y grows downward)
      * @param out receives the point in batch world space
-     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws NullPointerException if the layer or out is null
+     * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed
      */
     public void toWorldPoint(Layer layer, float stackX, float stackY, float layerX, float layerY,
@@ -642,9 +644,7 @@ public final class LayerStack implements Disposable {
 
     private void requireOutAndOwned(Layer layer, Vector2 out) {
         requireOwned(layer);
-        if (out == null) {
-            throw new IllegalArgumentException("out must not be null");
-        }
+        Objects.requireNonNull(out, "out");
     }
 
     /**
@@ -663,6 +663,7 @@ public final class LayerStack implements Disposable {
      * @param worldX x of the point in batch world space
      * @param worldY y of the point in batch world space
      * @return true if the layer is visible, pickable, and the point is inside its clip window
+     * @throws NullPointerException if the layer is null
      * @throws IllegalArgumentException if the layer belongs to another stack
      * @throws IllegalStateException if the layer was removed, or is clipped to the stack while
      *     the stack size is unset
@@ -776,7 +777,7 @@ public final class LayerStack implements Disposable {
     }
 
     void requireOwned(Layer layer) {
-        Guards.requireNotNull(layer, "layer");
+        Objects.requireNonNull(layer, "layer");
         Guards.requireOwnedBy(layer.getOwner(), this, "Layer", "stack");
     }
 }

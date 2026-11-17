@@ -174,10 +174,10 @@ public final class TextureGlyphSource implements GlyphSource {
             TransparencyMode mode,
             int fallbackCodePoint,
             UnaryOperator<Pixmap> transparencyStep) {
-        Objects.requireNonNull(file, "file must not be null");
-        Objects.requireNonNull(layout, "layout must not be null");
-        Objects.requireNonNull(order, "order must not be null");
-        Objects.requireNonNull(mode, "mode must not be null");
+        Objects.requireNonNull(file, "file");
+        Objects.requireNonNull(layout, "layout");
+        Objects.requireNonNull(order, "order");
+        Objects.requireNonNull(mode, "mode");
         GlyphSheetLoader.requireOrderFits(order, layout);
         int fallbackSlot = order.findSlot(fallbackCodePoint);
         if (fallbackSlot < 0) {
@@ -251,10 +251,10 @@ public final class TextureGlyphSource implements GlyphSource {
             int cellHeight,
             TransparencyMode mode,
             GlyphFilter filter) {
-        Objects.requireNonNull(image, "image must not be null");
-        Objects.requireNonNull(characterList, "characterList must not be null");
-        Objects.requireNonNull(mode, "mode must not be null");
-        Objects.requireNonNull(filter, "filter must not be null");
+        Objects.requireNonNull(image, "image");
+        Objects.requireNonNull(characterList, "characterList");
+        Objects.requireNonNull(mode, "mode");
+        Objects.requireNonNull(filter, "filter");
         if (cellWidth <= 0 || cellHeight <= 0) {
             throw new IllegalArgumentException(
                     "Cell size must be positive, was " + cellWidth + "x" + cellHeight);
@@ -361,11 +361,11 @@ public final class TextureGlyphSource implements GlyphSource {
             int fallbackCodePoint,
             GlyphFilter filter) {
         try {
-            Objects.requireNonNull(filter, "filter must not be null");
-            Objects.requireNonNull(sheet, "sheet must not be null");
-            Objects.requireNonNull(layout, "layout must not be null");
-            Objects.requireNonNull(order, "order must not be null");
-            Objects.requireNonNull(presentInSheet, "presentInSheet must not be null");
+            Objects.requireNonNull(filter, "filter");
+            Objects.requireNonNull(sheet, "sheet");
+            Objects.requireNonNull(layout, "layout");
+            Objects.requireNonNull(order, "order");
+            Objects.requireNonNull(presentInSheet, "presentInSheet");
             GlyphSheetLoader.requireOrderFits(order, layout);
             int fallbackSlot = order.findSlot(fallbackCodePoint);
             if (fallbackSlot < 0 || !presentInSheet.test(fallbackCodePoint)) {
@@ -470,8 +470,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * @throws NullPointerException if {@code size} or {@code filter} is null
      */
     public static TextureGlyphSource loadSaiksistt(SaiksisttSize size, GlyphFilter filter) {
-        Objects.requireNonNull(size, "size must not be null");
-        Objects.requireNonNull(filter, "filter must not be null");
+        Objects.requireNonNull(size, "size");
+        Objects.requireNonNull(filter, "filter");
         return loadSheet(
                 Gdx.files.classpath(size.getSheetPath()),
                 Gdx.files.classpath(size.getCharacterListPath()),
@@ -491,8 +491,21 @@ public final class TextureGlyphSource implements GlyphSource {
         return cellHeight;
     }
 
+    /**
+     * Returns the region of a glyph. The region is owned by this source and must not be
+     * modified or disposed by the caller. The region is {@link #getCellWidth()} by
+     * {@link #getCellHeight()} pixels. Allocates nothing.
+     *
+     * @param codePoint the Unicode code point; any int is accepted
+     * @return the glyph region, or the fallback glyph's region if the order has no glyph for
+     *         the code point; never null
+     * @throws IllegalStateException if {@link #dispose()} has been called
+     */
     @Override
     public TextureRegion getGlyphRegion(int codePoint) {
+        if (disposed) {
+            throw new IllegalStateException("glyph source is disposed");
+        }
         int slot = order.findSlot(codePoint);
         return slot >= 0 ? regionsBySlot[slot] : fallbackRegion;
     }
@@ -504,7 +517,8 @@ public final class TextureGlyphSource implements GlyphSource {
 
     /**
      * Releases the texture. Safe to call more than once; later calls do nothing. Call on the
-     * render thread. Every region obtained from this source is invalid afterwards.
+     * render thread. Every region obtained from this source is invalid afterwards, and
+     * {@link #getGlyphRegion(int)} throws {@link IllegalStateException}.
      */
     @Override
     public void dispose() {

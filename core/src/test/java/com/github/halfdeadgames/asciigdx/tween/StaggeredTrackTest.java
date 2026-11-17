@@ -70,6 +70,6 @@ class StaggeredTrackTest {
 
     @Test
     void nullTrackThrows() {
-        assertThrows(IllegalArgumentException.class, () -> new StaggeredTrack(null, 0.1f));
+        assertThrows(NullPointerException.class, () -> new StaggeredTrack(null, 0.1f));
     }
 }

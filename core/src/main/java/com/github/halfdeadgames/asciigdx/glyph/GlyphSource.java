@@ -9,7 +9,8 @@ import com.badlogic.gdx.utils.Disposable;
  *
  * <p>An implementation owns its textures. {@link #dispose()} releases them, and every
  * region obtained from the source is invalid afterwards. Dispose the source on the render
- * thread, once, when it is no longer drawn.
+ * thread, once, when it is no longer drawn. Looking up a region after disposal is a usage
+ * error; an implementation may throw {@link IllegalStateException} for it.
  *
  * <p>Every region returned by {@link #getGlyphRegion(int)} must belong to the same texture;
  * {@code GridRenderer} reads that texture from the region of the space glyph.
@@ -41,6 +42,8 @@ public interface GlyphSource extends Disposable {
      * @param codePoint the Unicode code point; any int is accepted
      * @return the glyph region, or the fallback glyph's region if the source has no glyph
      *         for the code point; never null
+     * @throws IllegalStateException if the source has been disposed and the implementation
+     *         checks for it
      */
     TextureRegion getGlyphRegion(int codePoint);
 

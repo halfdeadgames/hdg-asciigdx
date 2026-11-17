@@ -209,9 +209,9 @@ class LayerStackPointMappingTest {
 
     @Test
     void nullOutThrows() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> stack.toLayerPoint(layer, 0f, 0f, 0f, 0f, null));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
                 () -> stack.toWorldPoint(layer, 0f, 0f, 0f, 0f, null));
     }
 

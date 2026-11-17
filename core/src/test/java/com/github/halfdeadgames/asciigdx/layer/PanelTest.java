@@ -76,7 +76,7 @@ class PanelTest {
 
     @Test
     void addPanelInCellsRejectsNullSourceAndNegativeCounts() {
-        assertThrows(IllegalArgumentException.class, () -> stack.addPanelInCells(0, 0, 1, 1, null));
+        assertThrows(NullPointerException.class, () -> stack.addPanelInCells(0, 0, 1, 1, null));
         assertThrows(IllegalArgumentException.class,
                 () -> stack.addPanelInCells(0, 0, -1, 1, new FakeSource()));
         assertThrows(IllegalArgumentException.class,
