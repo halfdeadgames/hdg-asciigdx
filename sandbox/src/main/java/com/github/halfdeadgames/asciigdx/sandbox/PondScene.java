@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
@@ -101,6 +102,9 @@ class PondScene implements SandboxScene {
         }
     };
 
+    private final Vector2 pointerWorld = new Vector2();
+    private final GridPoint2 pointerMapCell = new GridPoint2();
+
     private float elapsed;
     private int pointerScreenX;
     private int pointerScreenY;
@@ -113,6 +117,8 @@ class PondScene implements SandboxScene {
     private int shownRow = NO_PLAYER_YET;
     private int shownCameraX = NO_PLAYER_YET;
     private int shownCameraY = NO_PLAYER_YET;
+    private int shownPointerColumn = NO_PLAYER_YET;
+    private int shownPointerRow = NO_PLAYER_YET;
     private String statusLine = "";
 
     /**
@@ -251,6 +257,12 @@ class PondScene implements SandboxScene {
 
     @Override
     public boolean touchDragged(int screenX, int screenY) {
+        rememberPointer(screenX, screenY);
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
         rememberPointer(screenX, screenY);
         return false;
     }
@@ -470,16 +482,28 @@ class PondScene implements SandboxScene {
         int row = motion.getRow();
         int cameraX = showsCamera ? Math.round(layers.getCameraX()) : 0;
         int cameraY = showsCamera ? Math.round(layers.getCameraY()) : 0;
+        findPointerMapCell();
         if (column == shownColumn && row == shownRow && cameraX == shownCameraX
-                && cameraY == shownCameraY) {
+                && cameraY == shownCameraY && pointerMapCell.x == shownPointerColumn
+                && pointerMapCell.y == shownPointerRow) {
             return;
         }
         shownColumn = column;
         shownRow = row;
         shownCameraX = cameraX;
         shownCameraY = cameraY;
+        shownPointerColumn = pointerMapCell.x;
+        shownPointerRow = pointerMapCell.y;
         String suffix = showsCamera ? "camera " + cameraX + "," + cameraY : helpText;
-        statusLine = "player " + column + "," + row + "  " + suffix;
+        statusLine = "@" + column + "," + row + " ptr " + pointerMapCell.x + ","
+                + pointerMapCell.y + "  " + suffix;
+    }
+
+    private void findPointerMapCell() {
+        pointerWorld.set(pointerScreenX, pointerScreenY);
+        viewport.unproject(pointerWorld);
+        layers.toMapCell(waterLayer, 0, viewport.getWorldHeight(), pointerWorld.x, pointerWorld.y,
+                pointerMapCell);
     }
 
     private boolean pinClockIfRequested(String pondTimeSetting) {

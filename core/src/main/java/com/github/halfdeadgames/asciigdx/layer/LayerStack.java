@@ -506,6 +506,9 @@ public final class LayerStack implements Disposable {
      * below it. Visibility, the pickable flag, and clip are ignored; use {@link #isPickableAt}
      * for those.
      *
+     * <p>On a map window layer the result is a grid cell. Use {@link #toMapCell} to get the map
+     * cell.
+     *
      * @param layer a layer of this stack
      * @param stackX the x passed to {@link #draw}
      * @param stackY the y passed to {@link #draw} (y grows upward)
@@ -525,6 +528,54 @@ public final class LayerStack implements Disposable {
         GlyphSource source = layer.getGlyphSource();
         out.x = (int) Math.floor(layerPixel.x / source.getCellWidth());
         out.y = (int) Math.floor(layerPixel.y / source.getCellHeight());
+    }
+
+    /**
+     * Finds which map cell of a map window layer lies under a point. It works like
+     * {@link #toCell}, then adds the window's origin so the result is in map coordinates rather
+     * than grid coordinates. The layer must be in map window mode; see
+     * {@link Layer#enableMapWindow()}.
+     *
+     * <p>This takes two steps. The caller first turns a window pixel into batch world space
+     * with its viewport, for example {@code viewport.unproject}, then passes that point here
+     * with the same stack position it gives to {@code draw}.
+     *
+     * <p>The result is always written to {@code out}, even outside the grid or the map, so the
+     * column and row can be negative. The result names a whole cell; the point's position inside
+     * that cell is not reported. A point exactly on a cell border belongs to the cell to its
+     * right or below it. Visibility, the pickable flag, and clip are ignored; use
+     * {@link #isPickableAt} for those.
+     *
+     * <p>The window's origin follows the camera (scaled by the layer's parallax) as soon as
+     * {@link #setCamera}, {@link Panel#setCamera}, {@link Layer#setParallax}, or
+     * {@link Layer#setPanel} changes it, not when the layer is drawn. The result therefore
+     * matches what was last drawn only if none of these has changed since that draw.
+     *
+     * @param layer a layer of this stack that is in map window mode
+     * @param stackX the x passed to {@link #draw}
+     * @param stackY the y passed to {@link #draw} (y grows upward)
+     * @param worldX x of the point in batch world space
+     * @param worldY y of the point in batch world space
+     * @param out receives the map column in x and the map row in y; map rows count down, like
+     *     grid rows
+     * @throws IllegalArgumentException if the layer belongs to another stack or out is null
+     * @throws IllegalStateException if the layer was removed or is not in map window mode; out
+     *     is left unchanged
+     */
+    public void toMapCell(Layer layer, float stackX, float stackY, float worldX, float worldY,
+            GridPoint2 out) {
+        requireOwned(layer);
+        if (out == null) {
+            throw new IllegalArgumentException("out must not be null");
+        }
+        if (!layer.hasMapWindow()) {
+            throw new IllegalStateException(
+                    "toMapCell needs a map window layer; call enableMapWindow() first");
+        }
+        toCell(layer, stackX, stackY, worldX, worldY, out);
+        MapWindow window = layer.getMapWindow();
+        out.x = window.toMapColumn(out.x);
+        out.y = window.toMapRow(out.y);
     }
 
     /**
