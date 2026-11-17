@@ -2,8 +2,10 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.badlogic.gdx.math.Interpolation;
 import org.junit.jupiter.api.Test;
 
 class StepSchedulerTest {
@@ -23,8 +25,8 @@ class StepSchedulerTest {
         scheduler.press(1, 0, 0f);
         assertTrue(scheduler.isStepping());
         assertEquals(6, scheduler.getColumn());
-        assertEquals(1f, scheduler.slideRemainingAt(0f), TOLERANCE);
-        assertEquals(0.25f, scheduler.slideRemainingAt(STEP / 2f), TOLERANCE);
+        assertEquals(0f, scheduler.getStepStartSeconds(), TOLERANCE);
+        assertSame(Interpolation.pow2Out, scheduler.getStepEasing());
     }
 
     @Test
@@ -34,7 +36,6 @@ class StepSchedulerTest {
         scheduler.update(STEP + 0.01f, 0, 0);
         assertFalse(scheduler.isStepping());
         assertEquals(6, scheduler.getColumn());
-        assertEquals(0f, scheduler.slideRemainingAt(STEP + 0.01f), TOLERANCE);
     }
 
     @Test
@@ -44,7 +45,8 @@ class StepSchedulerTest {
         scheduler.update(STEP + 0.01f, 1, 0);
         assertTrue(scheduler.isStepping());
         assertEquals(7, scheduler.getColumn());
-        assertEquals(0.5f, scheduler.slideRemainingAt(STEP * 1.5f), TOLERANCE);
+        assertEquals(STEP, scheduler.getStepStartSeconds(), TOLERANCE);
+        assertSame(Interpolation.linear, scheduler.getStepEasing());
     }
 
     @Test
@@ -65,7 +67,8 @@ class StepSchedulerTest {
         scheduler.update(STEP + STEP / 6f, 0, 0);
         assertEquals(6, scheduler.getRow());
         assertEquals(1, scheduler.getStepRow());
-        assertEquals(0.6944f, scheduler.slideRemainingAt(STEP + STEP / 6f), TOLERANCE);
+        assertEquals(STEP, scheduler.getStepStartSeconds(), TOLERANCE);
+        assertSame(Interpolation.pow2Out, scheduler.getStepEasing());
     }
 
     @Test
@@ -73,7 +76,8 @@ class StepSchedulerTest {
         var scheduler = schedulerAt(5, 5);
         scheduler.update(0f, 1, 0);
         assertEquals(6, scheduler.getColumn());
-        assertEquals(0.25f, scheduler.slideRemainingAt(STEP / 2f), TOLERANCE);
+        assertEquals(0f, scheduler.getStepStartSeconds(), TOLERANCE);
+        assertSame(Interpolation.pow2Out, scheduler.getStepEasing());
     }
 
     @Test

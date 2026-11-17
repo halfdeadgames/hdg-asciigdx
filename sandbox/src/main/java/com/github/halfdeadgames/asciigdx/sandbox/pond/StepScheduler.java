@@ -86,16 +86,14 @@ public final class StepScheduler {
         return stepRow;
     }
 
-    /**
-     * Returns the part of the step still to slide at the time: 1 at its start, 0 at its end or when
-     * idle.
-     */
-    public float slideRemainingAt(float nowSeconds) {
-        if (!stepping) {
-            return 0f;
-        }
-        float progress = Math.max(0f, Math.min(1f, (nowSeconds - stepStartSeconds) / stepSeconds));
-        return 1f - stepEasing.apply(progress);
+    /** Returns the start time in seconds of the step in progress, or of the last step if idle. */
+    public float getStepStartSeconds() {
+        return stepStartSeconds;
+    }
+
+    /** Returns the easing of the step in progress, or of the last step when none is running. */
+    public Interpolation getStepEasing() {
+        return stepEasing;
     }
 
     private boolean hasStepEndedBy(float nowSeconds) {

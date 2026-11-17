@@ -16,6 +16,7 @@ import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
 import com.github.halfdeadgames.asciigdx.layer.MapWindow;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.ActorLayerFiller;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.AutoMotion;
+import com.github.halfdeadgames.asciigdx.sandbox.pond.AutoWalk;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.Lily;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyFlashes;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.LilyLayerFiller;
@@ -301,6 +302,7 @@ class PondScene implements SandboxScene {
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
+        actorLayer.getMapWindow().clearSlides();
     }
 
     /**
@@ -323,8 +325,8 @@ class PondScene implements SandboxScene {
     }
 
     /**
-     * Starts the lily push and a wake ring for a one-cell step; a bigger jump, such as after a
-     * restart, only resyncs.
+     * Starts the glyph slide, the lily push, a wake ring, and a lily flash for a one-cell step;
+     * a bigger jump, such as after a restart, clears all slides and only resyncs.
      *
      * @param stepSeconds scene clock time at which the step happened
      */
@@ -335,7 +337,12 @@ class PondScene implements SandboxScene {
             return;
         }
         markVisited(motion.getColumn(), motion.getRow());
-        if (Math.abs(deltaColumn) + Math.abs(deltaRow) == 1) {
+        if (Math.abs(deltaColumn) + Math.abs(deltaRow) != 1) {
+            actorLayer.getMapWindow().clearSlides();
+        } else {
+            actorLayer.getMapWindow().startSlide(lastStepColumn, lastStepRow,
+                    motion.getColumn(), motion.getRow(), motion.getStepStartSeconds(),
+                    AutoWalk.STEP_SECONDS, motion.getStepEasing());
             lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow);
             wakeRipples.start(motion.getColumn(), motion.getRow(), stepSeconds);
             lilyFlashes.start(motion.getColumn(), motion.getRow(), stepSeconds);
@@ -374,60 +381,44 @@ class PondScene implements SandboxScene {
         motion.update(elapsed);
         trackPlayerStep(elapsed);
         movingLilies.advance(lilyDelta);
-        float remaining = motion.getSlideRemaining();
-        layers.setCamera(cameraX(remaining), cameraY(remaining));
+        layers.setCamera(cameraX(), cameraY());
         eraseStalePlayer();
         fillExposedCells();
         applyWakeRipples();
         applyLilyOffsets();
         lilyFlashes.apply(elapsed);
         drawPlayer();
-        slidePlayerGlyph(remaining);
+        actorLayer.getMapWindow().applySlides(elapsed);
         showStatus();
     }
 
-    /**
-     * The player's position in cells, trailing the logical cell by the part of the step still to
-     * slide.
-     */
-    private float fractionalColumn(float remaining) {
-        return motion.getColumn() - motion.getStepColumn() * remaining;
+    /** Returns the drawn player center X in map pixels, including any slide in progress. */
+    private float playerMapCenterX() {
+        return (motion.getColumn() + 0.5f) * gameCellWidth + actorLayer.getMapWindow()
+                .getSlideOffsetX(motion.getColumn(), motion.getRow(), elapsed);
     }
 
-    private float fractionalRow(float remaining) {
-        return motion.getRow() - motion.getStepRow() * remaining;
+    private float playerMapCenterY() {
+        return (motion.getRow() + 0.5f) * gameCellHeight + actorLayer.getMapWindow()
+                .getSlideOffsetY(motion.getColumn(), motion.getRow(), elapsed);
     }
 
-    private float cameraX(float remaining) {
-        return CameraFraming.centerOn((fractionalColumn(remaining) + 0.5f) * gameCellWidth,
-                WINDOW_COLUMNS * gameCellWidth, WORLD_COLUMNS * gameCellWidth,
-                FrameAlignment.START);
+    private float cameraX() {
+        return CameraFraming.centerOn(playerMapCenterX(), WINDOW_COLUMNS * gameCellWidth,
+                WORLD_COLUMNS * gameCellWidth, FrameAlignment.START);
     }
 
-    private float cameraY(float remaining) {
-        return CameraFraming.centerOn((fractionalRow(remaining) + 0.5f) * gameCellHeight,
-                WINDOW_ROWS * gameCellHeight, WORLD_ROWS * gameCellHeight,
-                FrameAlignment.START);
+    private float cameraY() {
+        return CameraFraming.centerOn(playerMapCenterY(), WINDOW_ROWS * gameCellHeight,
+                WORLD_ROWS * gameCellHeight, FrameAlignment.START);
     }
 
     private float playerCenterX() {
-        return (fractionalColumn(motion.getSlideRemaining()) + 0.5f) * gameCellWidth
-                - layers.getCameraX();
+        return playerMapCenterX() - layers.getCameraX();
     }
 
     private float playerCenterY() {
-        return (fractionalRow(motion.getSlideRemaining()) + 0.5f) * gameCellHeight
-                - layers.getCameraY();
-    }
-
-    private void slidePlayerGlyph(float remaining) {
-        MapWindow actorWindow = actorLayer.getMapWindow();
-        if (!actorWindow.contains(motion.getColumn(), motion.getRow())) {
-            return;
-        }
-        actorWindow.obtainFrameCellHandle(motion.getColumn(), motion.getRow()).setOffset(
-                -motion.getStepColumn() * gameCellWidth * remaining,
-                -motion.getStepRow() * gameCellHeight * remaining);
+        return playerMapCenterY() - layers.getCameraY();
     }
 
     private void eraseStalePlayer() {

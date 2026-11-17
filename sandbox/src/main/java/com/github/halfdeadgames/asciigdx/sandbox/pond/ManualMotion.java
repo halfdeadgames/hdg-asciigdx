@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import java.util.List;
 
@@ -72,18 +73,13 @@ public final class ManualMotion implements PlayerMotion {
     }
 
     @Override
-    public int getStepColumn() {
-        return scheduler.getStepColumn();
+    public float getStepStartSeconds() {
+        return scheduler.getStepStartSeconds();
     }
 
     @Override
-    public int getStepRow() {
-        return scheduler.getStepRow();
-    }
-
-    @Override
-    public float getSlideRemaining() {
-        return scheduler.slideRemainingAt(clockSeconds);
+    public Interpolation getStepEasing() {
+        return scheduler.getStepEasing();
     }
 
     private void readHeldDirection() {

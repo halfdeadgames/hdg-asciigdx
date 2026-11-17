@@ -1,7 +1,10 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
+import com.badlogic.gdx.math.Interpolation;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A layer's grid seen as a window onto a larger map, addressed in map coordinates. Get it from
@@ -21,6 +24,21 @@ import java.util.Arrays;
  * <p>Keep {@code filler} in a field, not a lambda created inside the frame loop, which would
  * allocate every frame. For the grid size to use, see {@link Layer#enableMapWindow(int, int)}.
  *
+ * <p>To slide a glyph between map cells, write the glyph at its destination yourself, blank the
+ * old cell, and call {@link #startSlide}. Each frame, {@link #applySlides} then offsets the
+ * destination cell so the glyph appears to travel:
+ *
+ * <pre>{@code
+ * // when the glyph moves from (4, 2) to (5, 2):
+ * window.startSlide(4, 2, 5, 2, nowSeconds, 0.15f, Interpolation.smooth);
+ * // each frame:
+ * stack.beginCellEffects(deltaSeconds);
+ * stack.setCamera(cameraX, cameraY);
+ * window.forEachCellToFill(filler);
+ * window.markAllFilled();
+ * window.applySlides(nowSeconds);
+ * }</pre>
+ *
  * <p>A window is detached when the layer disables map window mode, enables it again (which creates
  * a new window), or is removed. Every method of a detached window throws
  * {@link IllegalStateException}.
@@ -35,6 +53,10 @@ public final class MapWindow {
     private int flagColumns;
     private int flagRows;
     private boolean detached;
+
+    /** Slots below activeSlideCount are running; the rest are spare and reused. */
+    private final List<CellSlide> slides = new ArrayList<>();
+    private int activeSlideCount;
 
     MapWindow(Layer layer, TerminalGrid grid, MapWindowOrigin origin) {
         this.layer = layer;
@@ -154,6 +176,228 @@ public final class MapWindow {
     public CellHandle obtainFrameCellHandle(int mapColumn, int mapRow) {
         requireAttached();
         return layer.obtainFrameCellHandle(toGridColumn(mapColumn), toGridRow(mapRow));
+    }
+
+    /**
+     * Starts a glyph sliding from one map cell into another. The game writes the glyph at the
+     * destination cell and blanks the old cell itself; if the old cell is not blanked, the glyph
+     * is drawn twice. The window only animates an offset on the destination cell: it starts
+     * pointing back toward the old cell and eases to zero, so the glyph appears to travel. Before
+     * {@code startSeconds}, the glyph is held at the full start offset. The cells do not need to
+     * be next to each other. Offsets are applied by {@link #applySlides}, and they use frame
+     * handles, so the game must call {@link LayerStack#beginCellEffects} every frame.
+     *
+     * <pre>{@code
+     * // the game moved the monster from (fromColumn, fromRow) to (toColumn, toRow):
+     * window.startSlide(fromColumn, fromRow, toColumn, toRow, nowSeconds, 0.15f,
+     *         Interpolation.smooth);
+     * }</pre>
+     *
+     * <p>If a running slide already ends at ({@code fromColumn}, {@code fromRow}), the new slide
+     * starts from where that glyph is drawn at {@code startSeconds}, and the old slide is
+     * removed. A running slide that ends at ({@code toColumn}, {@code toRow}) is replaced. At
+     * most one slide runs per destination cell. A duration of 0 adds no slide but still removes
+     * the slides described above.
+     *
+     * <p>If an argument is invalid, no running slide is changed. Call it when the game moves the
+     * glyph, on the same thread as the frame loop.
+     *
+     * @param fromColumn the map column the glyph leaves; any value is allowed
+     * @param fromRow the map row the glyph leaves, counting down; any value is allowed
+     * @param toColumn the map column the glyph arrives in; any value is allowed, and the cell may
+     *     be outside the window
+     * @param toRow the map row the glyph arrives in, counting down; any value is allowed
+     * @param startSeconds the time the slide starts, on the same clock as {@link #applySlides};
+     *     must be finite, and may be in the past or the future
+     * @param durationSeconds how long the slide lasts, in seconds; finite, 0 or more
+     * @param easing the curve from start to arrival; not null
+     * @throws IllegalArgumentException if easing is null, durationSeconds is negative or not
+     *     finite, or startSeconds is not finite
+     * @throws IllegalStateException if this window is detached
+     */
+    public void startSlide(int fromColumn, int fromRow, int toColumn, int toRow,
+            float startSeconds, float durationSeconds, Interpolation easing) {
+        requireAttached();
+        CellSlide candidate = obtainSpareSlide();
+        int chainedIndex = findSlideTargeting(fromColumn, fromRow);
+        float startOffsetColumns = fromColumn - toColumn;
+        float startOffsetRows = fromRow - toRow;
+        if (chainedIndex >= 0) {
+            CellSlide chained = slides.get(chainedIndex);
+            startOffsetColumns += chained.getOffsetColumnsAt(startSeconds);
+            startOffsetRows += chained.getOffsetRowsAt(startSeconds);
+        }
+        candidate.start(toColumn, toRow, startOffsetColumns, startOffsetRows, startSeconds,
+                durationSeconds, easing);
+        removeSlideAt(chainedIndex);
+        removeSlideAt(findSlideTargeting(toColumn, toRow));
+        if (durationSeconds > 0f) {
+            commitSpareSlide(candidate);
+        }
+    }
+
+    /**
+     * Removes finished slides and offsets the destination cell of every other slide, so its glyph
+     * appears to travel. Slides whose destination is outside the window are skipped but keep
+     * running on the clock. A slide whose start time is still ahead holds its full start offset.
+     *
+     * <p>Call it once per frame, in this order: {@link LayerStack#beginCellEffects}, then the
+     * camera move, then the fill ({@link #forEachCellToFill} and {@link #markAllFilled}), then
+     * this method. Frame handles belong to grid positions, so a scroll after this call would leave
+     * the offset on the wrong cell. The offset in pixels is added to the cell's frame handle with
+     * {@link CellHandle#offsetBy}, so it combines with other frame effects. Calling this twice in
+     * one frame doubles the offset, and without {@link LayerStack#beginCellEffects} the offsets
+     * pile up from frame to frame.
+     *
+     * @param timeSeconds the current time in seconds, on the same clock as the start times given
+     *     to {@link #startSlide}; must be finite
+     * @throws IllegalArgumentException if timeSeconds is NaN or infinite
+     * @throws IllegalStateException if this window is detached
+     */
+    public void applySlides(float timeSeconds) {
+        requireAttached();
+        requireFiniteTime(timeSeconds);
+        float cellWidth = layer.getGlyphSource().getCellWidth();
+        float cellHeight = layer.getGlyphSource().getCellHeight();
+        // Walk backward so removing the current slide swaps in one already visited.
+        for (int index = activeSlideCount - 1; index >= 0; index--) {
+            applySlideAt(index, timeSeconds, cellWidth, cellHeight);
+        }
+    }
+
+    /**
+     * Returns the horizontal offset, in virtual pixels, of the glyph sliding into a map cell at a
+     * given time, or 0 if no slide ends there. The offset is measured from the destination cell,
+     * so a glyph moving right starts negative. It is reported for cells outside the window too.
+     * This only queries: finished slides are not removed, and no handle is written.
+     *
+     * <p>To make a camera follow a sliding glyph, call it before moving the camera;
+     * {@link #applySlides} adds the same offset later in the frame, so the camera and the glyph
+     * stay in step. The result below is in map pixels, with {@code cellWidth} taken from
+     * {@code layer.getGlyphSource().getCellWidth()}:
+     *
+     * <pre>{@code
+     * float playerX = (playerColumn + 0.5f) * cellWidth
+     *         + window.getSlideOffsetX(playerColumn, playerRow, nowSeconds);
+     * }</pre>
+     *
+     * @param mapColumn the map column of the slide's destination; any value is allowed, and the
+     *     cell may be outside the window
+     * @param mapRow the map row of the slide's destination; any value is allowed
+     * @param timeSeconds the time in seconds, on the same clock as the start times given to
+     *     {@link #startSlide}; must be finite
+     * @return the offset in virtual pixels, using the layer's current cell width; positive is
+     *     right, and 0 once the slide has finished or if there is none
+     * @throws IllegalArgumentException if timeSeconds is NaN or infinite
+     * @throws IllegalStateException if this window is detached
+     */
+    public float getSlideOffsetX(int mapColumn, int mapRow, float timeSeconds) {
+        requireAttached();
+        requireFiniteTime(timeSeconds);
+        int index = findSlideTargeting(mapColumn, mapRow);
+        if (index < 0) {
+            return 0f;
+        }
+        return slides.get(index).getOffsetColumnsAt(timeSeconds)
+                * layer.getGlyphSource().getCellWidth();
+    }
+
+    /**
+     * Returns the vertical offset, in virtual pixels growing downward, of the glyph sliding into a
+     * map cell at a given time, or 0 if no slide ends there. The offset is measured from the
+     * destination cell, so a glyph moving down starts negative. Like {@link #getSlideOffsetX},
+     * this only queries and reports cells outside the window; see that method for the
+     * camera-follow example.
+     *
+     * @param mapColumn the map column of the slide's destination; any value is allowed, and the
+     *     cell may be outside the window
+     * @param mapRow the map row of the slide's destination; any value is allowed
+     * @param timeSeconds the time in seconds, on the same clock as the start times given to
+     *     {@link #startSlide}; must be finite
+     * @return the offset in virtual pixels, using the layer's current cell height; positive is
+     *     down, and 0 once the slide has finished or if there is none
+     * @throws IllegalArgumentException if timeSeconds is NaN or infinite
+     * @throws IllegalStateException if this window is detached
+     */
+    public float getSlideOffsetY(int mapColumn, int mapRow, float timeSeconds) {
+        requireAttached();
+        requireFiniteTime(timeSeconds);
+        int index = findSlideTargeting(mapColumn, mapRow);
+        if (index < 0) {
+            return 0f;
+        }
+        return slides.get(index).getOffsetRowsAt(timeSeconds)
+                * layer.getGlyphSource().getCellHeight();
+    }
+
+    /**
+     * Removes every running slide. Call it for teleports and scene resets, where the glyph should
+     * appear at its destination at once. Cells keep the glyphs the game wrote. Offsets that
+     * {@link #applySlides} already added this frame stay until the next
+     * {@link LayerStack#beginCellEffects}, so call this before {@link #applySlides} to take
+     * effect in the same frame.
+     *
+     * @throws IllegalStateException if this window is detached
+     */
+    public void clearSlides() {
+        requireAttached();
+        activeSlideCount = 0;
+    }
+
+    private void applySlideAt(int index, float timeSeconds, float cellWidth, float cellHeight) {
+        CellSlide slide = slides.get(index);
+        if (slide.isFinishedAt(timeSeconds)) {
+            removeSlideAt(index);
+            return;
+        }
+        int column = slide.getTargetColumn();
+        int row = slide.getTargetRow();
+        if (!contains(column, row)) {
+            return;
+        }
+        obtainFrameCellHandle(column, row).offsetBy(
+                slide.getOffsetColumnsAt(timeSeconds) * cellWidth,
+                slide.getOffsetRowsAt(timeSeconds) * cellHeight);
+    }
+
+    /** Returns the first spare slot, growing the pool only when none is free. */
+    private CellSlide obtainSpareSlide() {
+        if (activeSlideCount == slides.size()) {
+            slides.add(new CellSlide());
+        }
+        return slides.get(activeSlideCount);
+    }
+
+    /** Makes the spare slot returned by {@link #obtainSpareSlide} active. */
+    private void commitSpareSlide(CellSlide candidate) {
+        // Removals since obtainSpareSlide may have shrunk the active range, so the candidate can
+        // sit past the first spare slot.
+        int candidateIndex = slides.indexOf(candidate);
+        int firstSpare = activeSlideCount;
+        slides.set(candidateIndex, slides.get(firstSpare));
+        slides.set(firstSpare, candidate);
+        activeSlideCount++;
+    }
+
+    private int findSlideTargeting(int column, int row) {
+        for (int index = 0; index < activeSlideCount; index++) {
+            CellSlide slide = slides.get(index);
+            if (slide.getTargetColumn() == column && slide.getTargetRow() == row) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private void removeSlideAt(int index) {
+        if (index < 0) {
+            return;
+        }
+        int lastIndex = activeSlideCount - 1;
+        CellSlide removed = slides.get(index);
+        slides.set(index, slides.get(lastIndex));
+        slides.set(lastIndex, removed);
+        activeSlideCount--;
     }
 
     /**
@@ -278,6 +522,7 @@ public final class MapWindow {
 
     void detach() {
         detached = true;
+        activeSlideCount = 0;
     }
 
     /** Moves the flags with the content that just scrolled; cells that scrolled in are flagged. */
@@ -337,6 +582,13 @@ public final class MapWindow {
         flagRows = grid.getRows();
         needsFill = new boolean[flagColumns * flagRows];
         Arrays.fill(needsFill, true);
+    }
+
+    private static void requireFiniteTime(float timeSeconds) {
+        if (Float.isNaN(timeSeconds) || Float.isInfinite(timeSeconds)) {
+            throw new IllegalArgumentException(
+                    "timeSeconds must be finite, was " + timeSeconds);
+        }
     }
 
     private void requireAttached() {

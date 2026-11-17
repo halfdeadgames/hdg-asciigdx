@@ -1,7 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
+import com.badlogic.gdx.math.Interpolation;
+
 /**
- * Decides where the player is and how far the glyph still has to slide, whether from a script or
+ * Decides where the player is and when and how each step slides, whether from a script or
  * from input. The logical cell is already the step's target while the step runs; the display
  * slides in after it.
  */
@@ -16,16 +18,11 @@ public interface PlayerMotion {
     /** Returns the logical row. */
     int getRow();
 
-    /**
-     * Returns the column change of the step in progress, or of the last step when none is running.
-     */
-    int getStepColumn();
+    /** Returns the start time in seconds of the step in progress, or of the last step if idle. */
+    float getStepStartSeconds();
 
-    /** Returns the row change of the step in progress, or of the last step when none is running. */
-    int getStepRow();
-
-    /** Returns the part of the step still to slide, 1 at its start and 0 at its end. */
-    float getSlideRemaining();
+    /** Returns the easing of the step in progress, or of the last step when none is running. */
+    Interpolation getStepEasing();
 
     /** Whether the player moves with no input, so captures should record an animation. */
     default boolean movesWithoutInput() {

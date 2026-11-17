@@ -2,7 +2,6 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -66,21 +65,19 @@ class AutoWalkTest {
     }
 
     @Test
-    void progressRunsFromZeroToJustBelowOneAcrossAStep() {
-        assertEquals(0f, walk.stepProgressAt(0f), 1e-4f);
-        assertEquals(0.5f, walk.stepProgressAt(0.15f), 1e-3f);
-        assertEquals(0.5f, walk.stepProgressAt(startOfStep(7) + 0.15f), 1e-3f);
-        assertEquals(0.97f, walk.stepProgressAt(startOfStep(1) - 0.009f), 1e-2f);
-        assertEquals(0f, walk.stepProgressAt(startOfStep(5)), 1e-3f);
+    void stepStartIsTheStartOfTheStepInProgress() {
+        assertEquals(0f, walk.stepStartSecondsAt(0f), 1e-4f);
+        assertEquals(0f, walk.stepStartSecondsAt(0.15f), 1e-4f);
+        assertEquals(startOfStep(7), walk.stepStartSecondsAt(startOfStep(7) + 0.15f), 1e-4f);
+        assertEquals(startOfStep(0), walk.stepStartSecondsAt(startOfStep(1) - 0.009f), 1e-4f);
+        assertEquals(startOfStep(5), walk.stepStartSecondsAt(startOfStep(5)), 1e-4f);
     }
 
     @Test
-    void progressStaysInsideZeroToOneAtBoundaries() {
+    void stepStartAtABoundaryIsThatStepsStart() {
         for (int step = 0; step < 300; step++) {
-            float progress = walk.stepProgressAt(startOfStep(step));
-            assertTrue(progress >= 0f && progress <= 1f, "progress " + progress);
-            progress = walk.stepProgressAt(startOfStep(step) - 0.0004f * (step > 0 ? 1 : 0));
-            assertTrue(progress >= 0f && progress <= 1f, "progress " + progress);
+            assertEquals(startOfStep(step), walk.stepStartSecondsAt(startOfStep(step)), 1e-3f,
+                    "start of step " + step);
         }
     }
 

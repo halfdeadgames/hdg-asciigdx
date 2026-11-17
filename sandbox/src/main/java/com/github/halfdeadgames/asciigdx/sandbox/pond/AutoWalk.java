@@ -72,11 +72,9 @@ public final class AutoWalk {
         out.set(columnDelta(step), rowDelta(step));
     }
 
-    /** Returns how far the step in progress has run, from 0 at its start to 1 at its end. */
-    public float stepProgressAt(float seconds) {
-        double stepStartMillis = stepCountAt(seconds) * STEP_MILLIS;
-        double progress = (seconds * 1000.0 - stepStartMillis) / STEP_MILLIS;
-        return (float) Math.max(0.0, Math.min(1.0, progress));
+    /** Returns the start time, in seconds, of the step in progress at the given time. */
+    public float stepStartSecondsAt(float seconds) {
+        return (float) (stepCountAt(seconds) * STEP_MILLIS / 1000.0);
     }
 
     private static String exploringLoopRoute() {
