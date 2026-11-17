@@ -24,10 +24,10 @@ public final class MovingLilies {
         size++;
     }
 
-    /** Advances every lily, then drops those that are home. */
-    public void advance(float deltaSeconds) {
+    /** Advances every lily to the scene time, then drops those that are home. */
+    public void advanceTo(float nowSeconds) {
         for (int i = 0; i < size; i++) {
-            lilies[i].advance(deltaSeconds);
+            lilies[i].advanceTo(nowSeconds);
         }
         // Backward, so the entry swapped into a removed slot was already checked.
         for (int i = size - 1; i >= 0; i--) {

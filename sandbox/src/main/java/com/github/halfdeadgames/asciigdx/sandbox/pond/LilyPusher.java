@@ -41,9 +41,11 @@ public final class LilyPusher {
      * @param fromRow row of the cell being left
      * @param deltaColumn -1, 0, or 1 columns moved
      * @param deltaRow -1, 0, or 1 rows moved; exactly one of the two deltas is not 0
+     * @param stepSeconds scene time at which the step starts; the lily events start then
      * @throws IllegalArgumentException if the step is not one cell orthogonally
      */
-    public void onStepStart(int fromColumn, int fromRow, int deltaColumn, int deltaRow) {
+    public void onStepStart(int fromColumn, int fromRow, int deltaColumn, int deltaRow,
+            float stepSeconds) {
         if (Math.abs(deltaColumn) + Math.abs(deltaRow) != 1) {
             throw new IllegalArgumentException(
                     "step must be one cell orthogonally but was (" + deltaColumn + ", " + deltaRow
@@ -51,13 +53,13 @@ public final class LilyPusher {
         }
         var destinationColumn = fromColumn + deltaColumn;
         var destinationRow = fromRow + deltaRow;
-        releaseLeftCell(fromColumn, fromRow);
-        disturbDestination(destinationColumn, destinationRow, deltaColumn, deltaRow);
+        releaseLeftCell(fromColumn, fromRow, stepSeconds);
+        disturbDestination(destinationColumn, destinationRow, deltaColumn, deltaRow, stepSeconds);
         pushNeighbors(destinationColumn, destinationRow, fromColumn, fromRow, deltaColumn,
-                deltaRow);
+                deltaRow, stepSeconds);
     }
 
-    private void releaseLeftCell(int column, int row) {
+    private void releaseLeftCell(int column, int row, float stepSeconds) {
         if (!map.contains(column, row)) {
             return;
         }
@@ -66,13 +68,14 @@ public final class LilyPusher {
             var slot = SLOTS.get(i);
             if (cell.hasLily(slot)) {
                 var lily = cell.lilyAt(slot);
-                lily.setTarget(0f, 0f);
+                lily.setTarget(0f, 0f, stepSeconds);
                 markMoving(lily, column, row, slot);
             }
         }
     }
 
-    private void disturbDestination(int column, int row, int deltaColumn, int deltaRow) {
+    private void disturbDestination(int column, int row, int deltaColumn, int deltaRow,
+            float stepSeconds) {
         if (!map.contains(column, row)) {
             return;
         }
@@ -86,17 +89,18 @@ public final class LilyPusher {
             var sideX = movesAlongRow ? 0f : (slot.columnOffset() == 0 ? -1f : 1f);
             var sideY = movesAlongRow ? (slot.rowOffset() == 0 ? -1f : 1f) : 0f;
             var lily = cell.lilyAt(slot);
-            lily.push(deltaColumn * BOW_WAVE_SPEED, deltaRow * BOW_WAVE_SPEED);
-            lily.pushLater(sideX * ARC_SIDE_SPEED, sideY * ARC_SIDE_SPEED, ARC_DELAY_SECONDS);
+            lily.push(deltaColumn * BOW_WAVE_SPEED, deltaRow * BOW_WAVE_SPEED, stepSeconds);
+            lily.push(sideX * ARC_SIDE_SPEED, sideY * ARC_SIDE_SPEED,
+                    stepSeconds + ARC_DELAY_SECONDS);
             lily.setTarget(sideX * HELD_SIDE + deltaColumn * HELD_AHEAD,
-                    sideY * HELD_SIDE + deltaRow * HELD_AHEAD);
+                    sideY * HELD_SIDE + deltaRow * HELD_AHEAD, stepSeconds);
             markMoving(lily, column, row, slot);
         }
     }
 
     private void pushNeighbors(int destinationColumn, int destinationRow, int fromColumn,
             int fromRow,
-            int deltaColumn, int deltaRow) {
+            int deltaColumn, int deltaRow, float stepSeconds) {
         for (var offsetRow = -NEIGHBOR_RADIUS; offsetRow <= NEIGHBOR_RADIUS; offsetRow++) {
             for (var offsetColumn = -NEIGHBOR_RADIUS;
                     offsetColumn <= NEIGHBOR_RADIUS; offsetColumn++) {
@@ -108,13 +112,13 @@ public final class LilyPusher {
                     continue;
                 }
                 pushCell(map.cell(column, row), column, row, offsetColumn, offsetRow, deltaColumn,
-                        deltaRow);
+                        deltaRow, stepSeconds);
             }
         }
     }
 
     private void pushCell(PondCell cell, int column, int row, int offsetColumn, int offsetRow,
-            int deltaColumn, int deltaRow) {
+            int deltaColumn, int deltaRow, float stepSeconds) {
         var cellDistance = (float) Math.sqrt(offsetColumn * offsetColumn + offsetRow * offsetRow);
         var falloff = 1f - (cellDistance - 1f) / (NEIGHBOR_RADIUS - 1f);
         if (falloff <= 0f) {
@@ -126,14 +130,14 @@ public final class LilyPusher {
             if (cell.hasLily(slot)) {
                 var lily = cell.lilyAt(slot);
                 pushNeighborLily(lily, slot, offsetColumn, offsetRow, deltaColumn, deltaRow,
-                        falloff);
+                        falloff, stepSeconds);
                 markMoving(lily, column, row, slot);
             }
         }
     }
 
     private void pushNeighborLily(Lily lily, LilySlot slot, int offsetColumn, int offsetRow,
-            int deltaColumn, int deltaRow, float falloff) {
+            int deltaColumn, int deltaRow, float falloff, float stepSeconds) {
         // Slot centers sit at 0.25 or 0.75 of a cell; the destination center is at 0.5.
         var awayX = offsetColumn + 0.5f * slot.columnOffset() - 0.25f;
         var awayY = offsetRow + 0.5f * slot.rowOffset() - 0.25f;
@@ -151,6 +155,6 @@ public final class LilyPusher {
             directionY /= directionLength;
         }
         var speed = NEIGHBOR_SPEED * falloff;
-        lily.push(directionX * speed, directionY * speed);
+        lily.push(directionX * speed, directionY * speed, stepSeconds);
     }
 }

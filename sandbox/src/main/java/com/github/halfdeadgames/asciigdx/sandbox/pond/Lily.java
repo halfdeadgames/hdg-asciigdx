@@ -1,18 +1,39 @@
 package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
-/** Game state of one lily pad; the display reads it every frame. */
+import com.badlogic.gdx.math.Vector2;
+import com.github.halfdeadgames.asciigdx.tween.DampedSpring;
+import com.github.halfdeadgames.asciigdx.tween.SoftLimit;
+
+/**
+ * Game state of one lily pad; the display reads it every frame. Motion is a sum of stored spring
+ * events (pushes and rest point moves) evaluated at the scene time, so it does not depend on the
+ * frame rate.
+ */
 public final class Lily {
 
     private static final int BULLET_CODE_POINT = 0x2022;
+    private static final DampedSpring SPRING = DampedSpring.ofFrequency(1.2f, 0.3f);
+    private static final SoftLimit LIMIT = SoftLimit.of(0.5f, 0.75f);
+    /** About a sixth of a source pixel on an 8 px lily cell, so the snap to rest is invisible. */
+    private static final float SETTLE_TOLERANCE = 0.02f;
+    private static final int EVENT_CAPACITY = 16;
 
     /** The color of a lily nobody recolored, as RGBA. */
     public static final int BASE_COLOR = LilyPalette.BASE_GREEN;
 
-    private final SpringOffset motion = new SpringOffset();
-    private float pendingPushX;
-    private float pendingPushY;
-    private float pendingPushDelaySeconds;
-    private boolean hasPendingPush;
+    private final boolean[] isPush = new boolean[EVENT_CAPACITY];
+    private final float[] eventX = new float[EVENT_CAPACITY];
+    private final float[] eventY = new float[EVENT_CAPACITY];
+    private final float[] startSeconds = new float[EVENT_CAPACITY];
+    private final float[] settledAtSeconds = new float[EVENT_CAPACITY];
+    private final Vector2 limitedOffset = new Vector2();
+    private int eventCount;
+    private float baseX;
+    private float baseY;
+    private float targetX;
+    private float targetY;
+    private float offsetX;
+    private float offsetY;
     private float scale = 1f;
     private int color = BASE_COLOR;
 
@@ -31,97 +52,105 @@ public final class Lily {
         return BULLET_CODE_POINT;
     }
 
-    /** Returns the horizontal offset in lily cells; 0 is centered on the slot. */
+    /**
+     * Returns the horizontal offset in lily cells as of the last {@link #advanceTo}; 0 is centered
+     * on the slot.
+     */
     public float getOffsetX() {
-        return motion.getOffsetX();
-    }
-
-    /** Returns the vertical offset in lily cells; 0 is centered on the slot. */
-    public float getOffsetY() {
-        return motion.getOffsetY();
-    }
-
-    /** Pushes the lily, adding to its velocity in lily cells per second. */
-    public void push(float velocityX, float velocityY) {
-        motion.push(velocityX, velocityY);
+        return offsetX;
     }
 
     /**
-     * Pushes the lily after a delay; a new call replaces a push that is still pending.
-     *
-     * @param delaySeconds seconds of {@link #advance} time before the push lands
+     * Returns the vertical offset in lily cells as of the last {@link #advanceTo}; 0 is centered on
+     * the slot.
      */
-    public void pushLater(float velocityX, float velocityY, float delaySeconds) {
-        pendingPushX = velocityX;
-        pendingPushY = velocityY;
-        pendingPushDelaySeconds = delaySeconds;
-        hasPendingPush = true;
+    public float getOffsetY() {
+        return offsetY;
     }
 
-    /** Moves the point the lily's spring settles at, in lily cells from the slot center. */
-    public void setTarget(float x, float y) {
-        motion.setTarget(x, y);
+    /**
+     * Pushes the lily with a velocity in lily cells per second; pushes accumulate. A push that
+     * starts later than the current time has no effect until then.
+     *
+     * @param startSeconds scene time at which the push lands
+     */
+    public void push(float velocityX, float velocityY, float startSeconds) {
+        var pushSettleSeconds = SPRING.getImpulseSettleSeconds(
+                length(velocityX, velocityY), SETTLE_TOLERANCE);
+        addEvent(true, velocityX, velocityY, startSeconds, startSeconds + pushSettleSeconds);
+    }
+
+    /**
+     * Moves the point the lily's spring settles at, in lily cells from the slot center; does
+     * nothing when the point does not change.
+     *
+     * @param startSeconds scene time at which the rest point moves
+     */
+    public void setTarget(float x, float y, float startSeconds) {
+        if (x == targetX && y == targetY) {
+            return;
+        }
+        var deltaX = x - targetX;
+        var deltaY = y - targetY;
+        var moveSettleSeconds = SPRING.getStepSettleSeconds(
+                length(deltaX, deltaY), SETTLE_TOLERANCE);
+        addEvent(false, deltaX, deltaY, startSeconds, startSeconds + moveSettleSeconds);
+        targetX = x;
+        targetY = y;
     }
 
     /** Returns the horizontal rest point in lily cells. */
     public float getTargetX() {
-        return motion.getTargetX();
+        return targetX;
     }
 
     /** Returns the vertical rest point in lily cells. */
     public float getTargetY() {
-        return motion.getTargetY();
-    }
-
-    /** Returns the horizontal velocity in lily cells per second. */
-    public float getVelocityX() {
-        return motion.getVelocityX();
-    }
-
-    /** Returns the vertical velocity in lily cells per second. */
-    public float getVelocityY() {
-        return motion.getVelocityY();
-    }
-
-    /** Steps the lily's spring motion forward by the given seconds. */
-    public void advance(float deltaSeconds) {
-        if (deltaSeconds > 0f) {
-            applyPendingPushWhenDue(deltaSeconds);
-        }
-        motion.advance(deltaSeconds);
-    }
-
-    private void applyPendingPushWhenDue(float deltaSeconds) {
-        if (!hasPendingPush) {
-            return;
-        }
-        pendingPushDelaySeconds -= deltaSeconds;
-        if (pendingPushDelaySeconds > 0f) {
-            return;
-        }
-        motion.push(pendingPushX, pendingPushY);
-        hasPendingPush = false;
-    }
-
-    /** Returns true when the lily is on its rest point, not moving, and has no push pending. */
-    public boolean isAtRest() {
-        return !hasPendingPush && motion.isAtRest();
-    }
-
-    /** Puts the lily back at its slot center at rest, with target 0,0 and no push pending. */
-    public void reset() {
-        motion.reset();
-        hasPendingPush = false;
-        pendingPushX = 0f;
-        pendingPushY = 0f;
-        pendingPushDelaySeconds = 0f;
+        return targetY;
     }
 
     /**
-     * Returns true when the lily is at rest, has no push pending, and its target is exactly 0,0.
+     * Evaluates the lily's spring motion at a scene time and caches the offset. Events that have
+     * settled are dropped.
+     *
+     * @param nowSeconds scene time
      */
+    public void advanceTo(float nowSeconds) {
+        dropSettledEvents(nowSeconds);
+        if (eventCount == 0) {
+            baseX = targetX;
+            baseY = targetY;
+        }
+        var sumX = baseX;
+        var sumY = baseY;
+        for (int i = 0; i < eventCount; i++) {
+            var elapsedSeconds = nowSeconds - startSeconds[i];
+            var weight = isPush[i]
+                    ? SPRING.getImpulseOffsetAt(elapsedSeconds)
+                    : SPRING.getStepProgressAt(elapsedSeconds);
+            sumX += eventX[i] * weight;
+            sumY += eventY[i] * weight;
+        }
+        limitedOffset.set(sumX, sumY);
+        LIMIT.limit(limitedOffset);
+        offsetX = limitedOffset.x;
+        offsetY = limitedOffset.y;
+    }
+
+    /** Puts the lily back at its slot center at rest, with target 0,0 and no events. */
+    public void reset() {
+        eventCount = 0;
+        baseX = 0f;
+        baseY = 0f;
+        targetX = 0f;
+        targetY = 0f;
+        offsetX = 0f;
+        offsetY = 0f;
+    }
+
+    /** Returns true when the lily has no events left and its target is exactly 0,0. */
     public boolean isHome() {
-        return isAtRest() && motion.getTargetX() == 0f && motion.getTargetY() == 0f;
+        return eventCount == 0 && targetX == 0f && targetY == 0f;
     }
 
     /** Returns the draw scale; 1 is the normal size. */
@@ -132,5 +161,48 @@ public final class Lily {
     /** Sets the draw scale. */
     public void setScale(float scale) {
         this.scale = scale;
+    }
+
+    int getEventCount() {
+        return eventCount;
+    }
+
+    private static float length(float x, float y) {
+        return (float) Math.sqrt((double) x * x + (double) y * y);
+    }
+
+    private void addEvent(boolean push, float x, float y, float start, float settledAt) {
+        if (eventCount == EVENT_CAPACITY) {
+            removeEventFoldingRestMove(0);
+        }
+        isPush[eventCount] = push;
+        eventX[eventCount] = x;
+        eventY[eventCount] = y;
+        startSeconds[eventCount] = start;
+        settledAtSeconds[eventCount] = settledAt;
+        eventCount++;
+    }
+
+    private void dropSettledEvents(float nowSeconds) {
+        for (int i = eventCount - 1; i >= 0; i--) {
+            if (nowSeconds >= settledAtSeconds[i]) {
+                removeEventFoldingRestMove(i);
+            }
+        }
+    }
+
+    private void removeEventFoldingRestMove(int index) {
+        if (!isPush[index]) {
+            baseX += eventX[index];
+            baseY += eventY[index];
+        }
+        for (int i = index + 1; i < eventCount; i++) {
+            isPush[i - 1] = isPush[i];
+            eventX[i - 1] = eventX[i];
+            eventY[i - 1] = eventY[i];
+            startSeconds[i - 1] = startSeconds[i];
+            settledAtSeconds[i - 1] = settledAtSeconds[i];
+        }
+        eventCount--;
     }
 }

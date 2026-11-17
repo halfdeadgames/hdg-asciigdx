@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 class MovingLiliesTest {
 
     private static final float FRAME_SECONDS = 1f / 60f;
+    private static final float TOLERANCE = 1e-5f;
 
     private final MovingLilies moving = new MovingLilies();
 
@@ -26,15 +27,15 @@ class MovingLiliesTest {
     @Test
     void pushedLilyStaysUntilItSettlesThenLeavesOnce() {
         var lily = new Lily();
-        lily.push(2f, 0f);
+        lily.push(2f, 0f, 0f);
         moving.add(lily, 0, 0);
-        moving.advance(FRAME_SECONDS);
+        moving.advanceTo(FRAME_SECONDS);
         assertEquals(1, moving.size());
 
         var advances = 0;
         while (moving.size() > 0 && advances < 1000) {
-            moving.advance(FRAME_SECONDS);
             advances++;
+            moving.advanceTo(FRAME_SECONDS * (advances + 1));
         }
         assertEquals(0, moving.size());
         assertTrue(lily.isHome());
@@ -43,22 +44,22 @@ class MovingLiliesTest {
     @Test
     void lilyHeldAwayFromZeroStaysEvenAtRest() {
         var lily = new Lily();
-        lily.setTarget(0.3f, 0f);
+        lily.setTarget(0.3f, 0f, 0f);
         moving.add(lily, 0, 0);
-        for (var i = 0; i < 600; i++) {
-            moving.advance(FRAME_SECONDS);
+        for (var i = 1; i <= 600; i++) {
+            moving.advanceTo(FRAME_SECONDS * i);
         }
-        assertTrue(lily.isAtRest());
+        assertEquals(0.3f, lily.getOffsetX(), TOLERANCE);
         assertEquals(1, moving.size());
     }
 
     @Test
     void resetAllSendsLiliesHomeAndEmptiesTheSet() {
         var lily = new Lily();
-        lily.push(2f, 1f);
-        lily.setTarget(0.3f, 0.2f);
+        lily.push(2f, 1f, 0f);
+        lily.setTarget(0.3f, 0.2f, 0f);
         moving.add(lily, 1, 1);
-        moving.advance(FRAME_SECONDS);
+        moving.advanceTo(FRAME_SECONDS);
         moving.resetAll();
         assertEquals(0, moving.size());
         assertTrue(lily.isHome());
@@ -85,14 +86,14 @@ class MovingLiliesTest {
     @Test
     void settledLiliesAreRemovedWhileOthersStay() {
         var held = new Lily();
-        held.setTarget(0.3f, 0f);
+        held.setTarget(0.3f, 0f, 0f);
         var homeLily = new Lily();
         var otherHeld = new Lily();
-        otherHeld.setTarget(0f, 0.3f);
+        otherHeld.setTarget(0f, 0.3f, 0f);
         moving.add(held, 0, 0);
         moving.add(homeLily, 1, 1);
         moving.add(otherHeld, 2, 2);
-        moving.advance(FRAME_SECONDS);
+        moving.advanceTo(FRAME_SECONDS);
         assertEquals(2, moving.size());
     }
 }

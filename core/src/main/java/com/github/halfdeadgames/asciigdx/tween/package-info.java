@@ -7,7 +7,10 @@
  * {@link ColorSetter}, {@link IndexedFloatSetter}, and {@link BooleanSetter}) and writes their
  * values for the time passed to {@link Timeline#apply}. Time is in seconds, passed in by the game;
  * nothing reads a global clock and nothing counts frames. A {@link TweenClock} is an optional
- * clock the game advances by the frame delta, with a delta cap and an optional loop length.
+ * clock the game advances by the frame delta, with a delta cap and an optional loop length. A
+ * {@link DampedSpring} is a closed-form spring whose motion is a pure function of the seconds
+ * elapsed since one event, rather than an absolute time. Games sum the responses of their own
+ * pushes, and a {@link SoftLimit} keeps that summed offset within a maximum distance.
  *
  * <p>Example:
  * <pre>{@code

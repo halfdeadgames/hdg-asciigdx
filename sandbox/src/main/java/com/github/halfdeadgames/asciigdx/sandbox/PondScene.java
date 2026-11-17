@@ -53,7 +53,6 @@ class PondScene implements SandboxScene {
     private static final int START_COLUMN = 40;
     private static final int START_ROW = 22;
     private static final int LILIES_PER_GAME_CELL_AXIS = 2;
-    private static final float REPLAY_FRAMES_PER_SECOND = 60f;
     private static final int NO_PLAYER_YET = Integer.MIN_VALUE;
 
     /**
@@ -173,7 +172,7 @@ class PondScene implements SandboxScene {
                 + actorGrid.getColumns() * actorGrid.getRows();
         clockPinned = pinClockIfRequested(pondTimeSetting);
         if (clockPinned) {
-            replayLiliesUpToPinnedTime();
+            replayStepsUpToPinnedTime();
         }
     }
 
@@ -306,31 +305,29 @@ class PondScene implements SandboxScene {
     }
 
     /**
-     * Plays the lily logic from time 0 at 60 steps per second so a pinned scene shows the lilies as
-     * they would be at that time. The route is a pure function of time, so afterward the motion
-     * simply jumps to the pinned time.
+     * Visits each route step from time 0 up to the pinned time, so a pinned scene holds the same
+     * lily events, wake rings, and flashes a live run would have at that time. Every effect of a
+     * step starts at the step's own start time, so one visit per step is enough; the first frame
+     * then updates the motion to the pinned time itself.
      */
-    private void replayLiliesUpToPinnedTime() {
+    private void replayStepsUpToPinnedTime() {
         lastStepColumn = START_COLUMN;
         lastStepRow = START_ROW;
-        int frames = (int) (elapsed * REPLAY_FRAMES_PER_SECOND);
-        for (int frame = 0; frame < frames; frame++) {
-            float frameSeconds = frame / REPLAY_FRAMES_PER_SECOND;
-            motion.update(frameSeconds);
-            trackPlayerStep(frameSeconds);
-            movingLilies.advance(1f / REPLAY_FRAMES_PER_SECOND);
+        int lastStep = (int) (elapsed / AutoWalk.STEP_SECONDS);
+        for (int step = 0; step <= lastStep; step++) {
+            float stepSeconds = step * AutoWalk.STEP_SECONDS;
+            motion.update(stepSeconds);
+            trackPlayerStep();
+            movingLilies.advanceTo(stepSeconds);
         }
-        motion.update(elapsed);
-        trackPlayerStep(elapsed);
     }
 
     /**
-     * Starts the glyph slide, the lily push, a wake ring, and a lily flash for a one-cell step;
-     * a bigger jump, such as after a restart, clears all slides and only resyncs.
-     *
-     * @param stepSeconds scene clock time at which the step happened
+     * Starts the glyph slide, the lily push, a wake ring, and a lily flash for a one-cell step, all
+     * at the step's start time; a bigger jump, such as after a restart, clears all slides and only
+     * resyncs.
      */
-    private void trackPlayerStep(float stepSeconds) {
+    private void trackPlayerStep() {
         int deltaColumn = motion.getColumn() - lastStepColumn;
         int deltaRow = motion.getRow() - lastStepRow;
         if (deltaColumn == 0 && deltaRow == 0) {
@@ -340,10 +337,12 @@ class PondScene implements SandboxScene {
         if (Math.abs(deltaColumn) + Math.abs(deltaRow) != 1) {
             actorLayer.getMapWindow().clearSlides();
         } else {
+            float stepSeconds = motion.getStepStartSeconds();
             actorLayer.getMapWindow().startSlide(lastStepColumn, lastStepRow,
-                    motion.getColumn(), motion.getRow(), motion.getStepStartSeconds(),
+                    motion.getColumn(), motion.getRow(), stepSeconds,
                     AutoWalk.STEP_SECONDS, motion.getStepEasing());
-            lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow);
+            lilyPusher.onStepStart(lastStepColumn, lastStepRow, deltaColumn, deltaRow,
+                    stepSeconds);
             wakeRipples.start(motion.getColumn(), motion.getRow(), stepSeconds);
             lilyFlashes.start(motion.getColumn(), motion.getRow(), stepSeconds);
         }
@@ -379,8 +378,8 @@ class PondScene implements SandboxScene {
     private void updateWorld(float lilyDelta) {
         layers.beginCellEffects(lilyDelta);
         motion.update(elapsed);
-        trackPlayerStep(elapsed);
-        movingLilies.advance(lilyDelta);
+        trackPlayerStep();
+        movingLilies.advanceTo(elapsed);
         layers.setCamera(cameraX(), cameraY());
         eraseStalePlayer();
         fillExposedCells();
