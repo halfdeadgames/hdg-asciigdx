@@ -139,11 +139,6 @@ public final class GridRenderer implements Disposable {
      */
     public void draw(SpriteBatch batch, float x, float y,
             float tintRed, float tintGreen, float tintBlue, float tintAlpha) {
-        if (!Float.isFinite(tintRed) || !Float.isFinite(tintGreen)
-                || !Float.isFinite(tintBlue) || !Float.isFinite(tintAlpha)) {
-            throw new IllegalArgumentException("tint must be finite: " + tintRed + ", "
-                    + tintGreen + ", " + tintBlue + ", " + tintAlpha);
-        }
         tintOnlyEffects.reset();
         tintOnlyEffects.setTint(tintRed, tintGreen, tintBlue, tintAlpha);
         translation.setToTranslation(x, y);

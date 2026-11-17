@@ -148,6 +148,35 @@ class ColorEffectsTest {
         assertEquals(alpha, effects.getTintAlpha());
     }
 
+    @Test
+    void settersRejectNaNAndInfinityAndKeepTheOldValues() {
+        float nan = Float.NaN;
+        float infinity = Float.POSITIVE_INFINITY;
+
+        assertThrows(IllegalArgumentException.class, () -> effects.setTint(1f, 1f, 1f, nan));
+        assertThrows(IllegalArgumentException.class, () -> effects.setTint(infinity, 1f, 1f, 1f));
+        assertThrows(IllegalArgumentException.class,
+                () -> effects.setTint(new Color(nan, 1f, 1f, 1f)));
+        assertThrows(IllegalArgumentException.class, () -> effects.setAlpha(nan));
+        assertThrows(IllegalArgumentException.class, () -> effects.setMix(1f, nan, 1f, 0f));
+        assertThrows(IllegalArgumentException.class, () -> effects.setMix(1f, 1f, 1f, infinity));
+        assertThrows(IllegalArgumentException.class,
+                () -> effects.setMix(new Color(1f, 1f, nan, 1f), 0.5f));
+        assertThrows(IllegalArgumentException.class, () -> effects.setSaturation(nan));
+        assertThrows(IllegalArgumentException.class, () -> effects.setInvert(-infinity));
+
+        assertTint(1f, 1f, 1f, 1f);
+        assertMix(1f, 1f, 1f, 0f);
+        assertEquals(1f, effects.getSaturation());
+        assertEquals(0f, effects.getInvert());
+    }
+
+    @Test
+    void colorSettersRejectNullColor() {
+        assertThrows(NullPointerException.class, () -> effects.setTint(null));
+        assertThrows(NullPointerException.class, () -> effects.setMix(null, 0.5f));
+    }
+
     private void assertMix(float red, float green, float blue, float amount) {
         assertEquals(red, effects.getMixRed());
         assertEquals(green, effects.getMixGreen());

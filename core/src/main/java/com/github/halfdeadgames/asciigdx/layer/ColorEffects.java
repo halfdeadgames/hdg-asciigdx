@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.layer;
 
 import com.badlogic.gdx.graphics.Color;
+import java.util.Objects;
 
 /**
  * The color effects the GPU applies to everything a {@link Layer} or a {@link LayerGroup} draws:
@@ -10,9 +11,9 @@ import com.badlogic.gdx.graphics.Color;
  *
  * <p>Every change takes effect on the GPU in the next frame. Changing an effect rewrites and
  * uploads nothing, so it is cheap to change every frame, for example to fade a layer or flash it
- * white. Values are never clamped, and the defaults leave every color unchanged: tint white (1, 1,
- * 1, 1), mix amount 0, saturation 1, invert 0. Color components are floats where 1 is full
- * intensity, not 0..255 bytes.
+ * white. Values are never clamped, but every setter rejects NaN and infinite values. The defaults
+ * leave every color unchanged: tint white (1, 1, 1, 1), mix amount 0, saturation 1, invert 0.
+ * Color components are floats where 1 is full intensity, not 0..255 bytes.
  *
  * <p>A layer's effects apply to that layer's cells and sprites. A group's effects apply to every
  * member layer after the member's own effects: the color transforms run in sequence and the alphas
@@ -87,6 +88,7 @@ public final class ColorEffects {
      *
      * @param out the color to overwrite; must not be null
      * @return {@code out}, holding the tint's red, green, blue, and alpha
+     * @throws NullPointerException if {@code out} is null
      */
     public Color getTint(Color out) {
         return out.set(tintRed, tintGreen, tintBlue, tintAlpha);
@@ -163,10 +165,15 @@ public final class ColorEffects {
      * @param green the green multiplier, 1 for unchanged
      * @param blue the blue multiplier, 1 for unchanged
      * @param alpha the opacity multiplier, 1 for opaque and 0 for invisible
+     * @throws IllegalArgumentException if a value is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      */
     public void setTint(float red, float green, float blue, float alpha) {
         requireAttached();
+        requireFinite(red, "red");
+        requireFinite(green, "green");
+        requireFinite(blue, "blue");
+        requireFinite(alpha, "alpha");
         assignTint(red, green, blue, alpha);
     }
 
@@ -175,10 +182,13 @@ public final class ColorEffects {
      * modified.
      *
      * @param color the tint, including its alpha; must not be null
+     * @throws NullPointerException if the color is null
+     * @throws IllegalArgumentException if a component is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      * @see #setTint(float, float, float, float)
      */
     public void setTint(Color color) {
+        Objects.requireNonNull(color, "color");
         setTint(color.r, color.g, color.b, color.a);
     }
 
@@ -186,11 +196,13 @@ public final class ColorEffects {
      * Sets only the tint's alpha, keeping red, green, and blue.
      *
      * @param alpha the opacity multiplier, 1 for opaque and 0 for invisible; not clamped
+     * @throws IllegalArgumentException if alpha is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      * @see #setTint(float, float, float, float)
      */
     public void setAlpha(float alpha) {
         requireAttached();
+        requireFinite(alpha, "alpha");
         tintAlpha = alpha;
     }
 
@@ -207,12 +219,17 @@ public final class ColorEffects {
      * @param green the mix color's green component, 1 is full intensity
      * @param blue the mix color's blue component, 1 is full intensity
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully
+     * @throws IllegalArgumentException if a value is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      * @see CellHandle#setMix(int, float) the cell-level mix, which takes an RGBA8888 int and
      *     changes one cell's own colors before these effects run
      */
     public void setMix(float red, float green, float blue, float amount) {
         requireAttached();
+        requireFinite(red, "red");
+        requireFinite(green, "green");
+        requireFinite(blue, "blue");
+        requireFinite(amount, "amount");
         assignMix(red, green, blue, amount);
     }
 
@@ -222,10 +239,13 @@ public final class ColorEffects {
      *
      * @param color the mix color; must not be null
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully
+     * @throws NullPointerException if the color is null
+     * @throws IllegalArgumentException if a red, green, or blue component or the amount is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      * @see #setMix(float, float, float, float)
      */
     public void setMix(Color color, float amount) {
+        Objects.requireNonNull(color, "color");
         setMix(color.r, color.g, color.b, amount);
     }
 
@@ -237,10 +257,12 @@ public final class ColorEffects {
      * tint gives a one-hue look, such as sepia or night vision.
      *
      * @param saturation the saturation, 1 for unchanged
+     * @throws IllegalArgumentException if the saturation is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      */
     public void setSaturation(float saturation) {
         requireAttached();
+        requireFinite(saturation, "saturation");
         this.saturation = saturation;
     }
 
@@ -253,10 +275,12 @@ public final class ColorEffects {
      * transparent parts stay transparent, so they are not inverted.
      *
      * @param invert the invert amount, 0 for unchanged and 1 for a full negative
+     * @throws IllegalArgumentException if the amount is NaN or infinite
      * @throws IllegalStateException if the owning layer or group was removed
      */
     public void setInvert(float invert) {
         requireAttached();
+        requireFinite(invert, "invert");
         this.invert = invert;
     }
 
@@ -293,6 +317,12 @@ public final class ColorEffects {
         if (detached) {
             throw new IllegalStateException(
                     "The layer or group that owns these color effects was removed from its stack");
+        }
+    }
+
+    private static void requireFinite(float value, String name) {
+        if (!Float.isFinite(value)) {
+            throw new IllegalArgumentException(name + " must be finite: " + value);
         }
     }
 
