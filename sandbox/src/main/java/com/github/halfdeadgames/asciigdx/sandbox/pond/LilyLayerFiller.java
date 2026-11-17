@@ -41,26 +41,6 @@ public final class LilyLayerFiller implements MapCellVisitor {
         window.set(mapColumn, mapRow, lily.codePoint(), color, TerminalGrid.TRANSPARENT_RGBA);
     }
 
-    /** Draws the lily cells of one game cell again, for when its game state changed. */
-    public void redrawGameCell(int gameColumn, int gameRow) {
-        for (int southBit = 0; southBit < SLOTS_PER_AXIS; southBit++) {
-            for (int eastBit = 0; eastBit < SLOTS_PER_AXIS; eastBit++) {
-                visit(gameColumn * SLOTS_PER_AXIS + eastBit, gameRow * SLOTS_PER_AXIS + southBit);
-            }
-        }
-    }
-
-    /** Draws every cell of the window again, for when the game state changed everywhere. */
-    public void redrawWindow(int windowColumns, int windowRows) {
-        int originColumn = window.getOriginColumn();
-        int originRow = window.getOriginRow();
-        for (int row = 0; row < windowRows; row++) {
-            for (int column = 0; column < windowColumns; column++) {
-                visit(originColumn + column, originRow + row);
-            }
-        }
-    }
-
     private LilySlot slotAt(int mapColumn, int mapRow) {
         int eastBit = mapColumn & 1;
         int southBit = mapRow & 1;

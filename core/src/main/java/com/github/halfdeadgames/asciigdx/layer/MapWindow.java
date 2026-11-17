@@ -25,6 +25,10 @@ import java.util.Objects;
  * <p>Keep {@code filler} in a field, not a lambda created inside the frame loop, which would
  * allocate every frame. For the grid size to use, see {@link Layer#enableMapWindow(int, int)}.
  *
+ * <p>When the game data behind a cell changes, flag it with {@link #markNeedsFill},
+ * {@link #markAreaNeedsFill}, or {@link #markAllNeedFill}, and the next fill redraws it through
+ * the same filler.
+ *
  * <p>To slide a glyph between map cells, write the glyph at its destination yourself, blank the
  * old cell, and call {@link #startSlide}. Each frame, {@link #applySlides} then offsets the
  * destination cell so the glyph appears to travel:
@@ -486,9 +490,69 @@ public final class MapWindow {
     }
 
     /**
-     * Flags every cell as needing a fill, for example after a font change made the content stale.
+     * Flags one map cell as needing a fill, so the next {@link #forEachCellToFill} visits it. Call
+     * it when the game data behind the cell changed, such as a door opening, instead of writing
+     * the cell outside the filler. A cell outside the window is skipped silently; it is filled
+     * anyway when it scrolls into view.
+     *
+     * <p>The flag takes effect at the next {@link #forEachCellToFill}, even later in the same
+     * frame. It allocates nothing, so it is safe to call every frame.
+     *
+     * @param mapColumn the map column; any value is allowed
+     * @param mapRow the map row, counting down; any value is allowed
+     * @throws IllegalStateException if this window is detached
      */
-    void markAllNeedFill() {
+    public void markNeedsFill(int mapColumn, int mapRow) {
+        markAreaNeedsFill(mapColumn, mapRow, 1, 1);
+    }
+
+    /**
+     * Flags a rectangle of map cells as needing a fill, so the next {@link #forEachCellToFill}
+     * visits them. Only the part of the rectangle inside the window is flagged; the rest is
+     * skipped silently, and a size of 0 flags nothing. See {@link #markNeedsFill} for when to call
+     * it.
+     *
+     * <pre>{@code
+     * // a game cell covers 2 x 2 map cells of this layer:
+     * window.markAreaNeedsFill(gameColumn * 2, gameRow * 2, 2, 2);
+     * }</pre>
+     *
+     * @param mapColumn the map column of the rectangle's left edge; any value is allowed
+     * @param mapRow the map row of the rectangle's top edge, counting down; any value is allowed
+     * @param columnCount the width of the rectangle in cells; 0 or more
+     * @param rowCount the height of the rectangle in cells; 0 or more
+     * @throws IllegalArgumentException if columnCount or rowCount is negative
+     * @throws IllegalStateException if this window is detached
+     */
+    public void markAreaNeedsFill(int mapColumn, int mapRow, int columnCount, int rowCount) {
+        requireAttached();
+        requireNonNegativeCount(columnCount, "columnCount");
+        requireNonNegativeCount(rowCount, "rowCount");
+        resetFlagsIfGridResized();
+        long gridLeft = (long) mapColumn - origin.getOriginColumn();
+        long gridTop = (long) mapRow - origin.getOriginRow();
+        int firstColumn = clampToFlagRange(gridLeft, flagColumns);
+        int endColumn = clampToFlagRange(gridLeft + columnCount, flagColumns);
+        int firstRow = clampToFlagRange(gridTop, flagRows);
+        int endRow = clampToFlagRange(gridTop + rowCount, flagRows);
+        if (firstColumn >= endColumn) {
+            return;
+        }
+        for (int row = firstRow; row < endRow; row++) {
+            int rowStart = row * flagColumns;
+            Arrays.fill(needsFill, rowStart + firstColumn, rowStart + endColumn, true);
+        }
+    }
+
+    /**
+     * Flags every cell of the window as needing a fill, so the next {@link #forEachCellToFill}
+     * visits them all. Call it when game data changed everywhere, such as after a level reload or
+     * a palette change. Changing the layer's glyph source calls it already.
+     *
+     * @throws IllegalStateException if this window is detached
+     */
+    public void markAllNeedFill() {
+        requireAttached();
         resetFlagsIfGridResized();
         Arrays.fill(needsFill, true);
     }
@@ -582,6 +646,17 @@ public final class MapWindow {
         flagRows = grid.getRows();
         needsFill = new boolean[flagColumns * flagRows];
         Arrays.fill(needsFill, true);
+    }
+
+    /** Limits a grid position to 0..size, so it can bound a range of flags. */
+    private static int clampToFlagRange(long gridPosition, int size) {
+        return (int) Math.max(0, Math.min(size, gridPosition));
+    }
+
+    private static void requireNonNegativeCount(int count, String name) {
+        if (count < 0) {
+            throw new IllegalArgumentException(name + " must be 0 or more, was " + count);
+        }
     }
 
     private static void requireFiniteTime(float timeSeconds) {

@@ -296,8 +296,7 @@ class PondScene implements SandboxScene {
         wakeRipples.clear();
         lilyFlashes.clear();
         map.clearVisited();
-        lilyFiller.redrawWindow((WINDOW_COLUMNS + 1) * LILIES_PER_GAME_CELL_AXIS,
-                (WINDOW_ROWS + 1) * LILIES_PER_GAME_CELL_AXIS);
+        lilyLayer.getMapWindow().markAllNeedFill();
         motion.update(elapsed);
         lastStepColumn = motion.getColumn();
         lastStepRow = motion.getRow();
@@ -351,7 +350,8 @@ class PondScene implements SandboxScene {
     }
 
     /**
-     * Remembers the visit in the game cell and repaints its lilies, which the filler draws paler.
+     * Remembers the visit in the game cell and flags its lilies for the next fill, which draws
+     * them paler.
      */
     private void markVisited(int gameColumn, int gameRow) {
         PondCell gameCell = map.cell(gameColumn, gameRow);
@@ -359,7 +359,9 @@ class PondScene implements SandboxScene {
             return;
         }
         gameCell.markVisited();
-        lilyFiller.redrawGameCell(gameColumn, gameRow);
+        lilyLayer.getMapWindow().markAreaNeedsFill(gameColumn * LILIES_PER_GAME_CELL_AXIS,
+                gameRow * LILIES_PER_GAME_CELL_AXIS, LILIES_PER_GAME_CELL_AXIS,
+                LILIES_PER_GAME_CELL_AXIS);
     }
 
     /** The ring lift is a pure function of time; handles were reset at the start of the frame. */
