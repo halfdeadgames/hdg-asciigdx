@@ -33,6 +33,7 @@ final class GlyphReviewScene extends GridScene {
     private static final List<Integer> REVIEW_LIST = List.of(
             0x2660, 0x2665, 0x2666, 0x2663, 0x26A1, 0x2654, 0x2605, 0x2620, 0x1F511, 0x1F525);
 
+    private static final int NO_CODE_POINT = -1;
     private static final int COLUMNS = 40;
     private static final int ROWS = 23;
 
@@ -119,6 +120,7 @@ final class GlyphReviewScene extends GridScene {
     private ReviewSession session = new ReviewSession(reviewList);
     private final Vector2 touchPoint = new Vector2();
 
+    private int shownCodePoint = NO_CODE_POINT;
     private boolean reasonMenuOpen;
     private int reasonMenuCursor;
     private String errorMessage = "";
@@ -321,12 +323,11 @@ final class GlyphReviewScene extends GridScene {
 
     @Override
     protected void drawOverGrid(SpriteBatch batch) {
-        OptionalInt current = displayedCodePoint();
-        if (current.isEmpty()) {
+        if (shownCodePoint == NO_CODE_POINT) {
             return;
         }
         if (comparing()) {
-            drawComparePreviews(batch, current.getAsInt());
+            drawComparePreviews(batch, shownCodePoint);
             return;
         }
         int cellWidth = glyphs.getCellWidth();
@@ -339,7 +340,7 @@ final class GlyphReviewScene extends GridScene {
         batch.draw(solid, left, panelBottom, PREVIEW_WIDTH, panelTop - panelBottom);
         setDrawColor(batch, PREVIEW_FOREGROUND);
         TextureRegion region =
-                (candidate != null ? candidate : glyphs).getGlyphRegion(current.getAsInt());
+                (candidate != null ? candidate : glyphs).getGlyphRegion(shownCodePoint);
         for (int i = 0; i < PREVIEW_STEPS.size(); i++) {
             PreviewStep step = PREVIEW_STEPS.get(i);
             batch.draw(region, left + step.x(), panelBottom + PREVIEW_PADDING,
@@ -458,6 +459,7 @@ final class GlyphReviewScene extends GridScene {
             candidateGrid.clear();
         }
         OptionalInt current = displayedCodePoint();
+        shownCodePoint = current.orElse(NO_CODE_POINT);
         if (current.isPresent()) {
             int position = reasonMenuOpen ? session.answeredCount() : session.answeredCount() + 1;
             writeLine(PROGRESS_ROW, String.format(Locale.ROOT, "%d / %d   U+%04X",

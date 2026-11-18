@@ -24,6 +24,7 @@ class ScreenCapture {
 
     private final FileHandle outputDirectory;
     private final Array<Pixmap> recordedFrames = new Array<>(MAX_GIF_FRAMES);
+    private byte[] rowBuffer = new byte[0];
     private String pendingScreenshotName;
     private boolean recording;
 
@@ -116,7 +117,7 @@ class ScreenCapture {
         ByteBuffer source = bottomUp.getPixels();
         ByteBuffer target = topDown.getPixels();
         int rowBytes = width * 4;
-        byte[] row = new byte[rowBytes];
+        byte[] row = rowBufferOfSize(rowBytes);
         for (int y = 0; y < height; y++) {
             source.position((height - 1 - y) * rowBytes);
             source.get(row);
@@ -128,6 +129,13 @@ class ScreenCapture {
         bottomUp.dispose();
         makeOpaque(topDown);
         return topDown;
+    }
+
+    private byte[] rowBufferOfSize(int rowBytes) {
+        if (rowBuffer.length != rowBytes) {
+            rowBuffer = new byte[rowBytes];
+        }
+        return rowBuffer;
     }
 
     private void writeGif(FileHandle file) {

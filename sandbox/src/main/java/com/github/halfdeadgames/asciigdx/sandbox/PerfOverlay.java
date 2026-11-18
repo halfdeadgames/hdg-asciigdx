@@ -16,7 +16,9 @@ class PerfOverlay {
     private static final float SAMPLE_WINDOW_SECONDS = 0.5f;
     private static final int WIDTH = 40;
 
-    private final TerminalGrid grid = new TerminalGrid(WIDTH, 2);
+    private static final int ROWS = 2;
+
+    private final TerminalGrid grid = new TerminalGrid(WIDTH, ROWS);
     private final GridRenderer renderer;
     private final ScreenViewport viewport = new ScreenViewport();
     private final StringBuilder readout = new StringBuilder(WIDTH);
@@ -26,7 +28,16 @@ class PerfOverlay {
 
     PerfOverlay(GlyphSource glyphs) {
         renderer = new GridRenderer(grid, glyphs);
-        viewport.setUnitsPerPixel(1f / Math.max(1, Math.round(Gdx.graphics.getDensity())));
+        viewport.setUnitsPerPixel(1f / screenPixelsPerUnit());
+    }
+
+    /** Returns the height in screen pixels that the overlay covers at the top of the screen. */
+    static int heightInScreenPixels(GlyphSource glyphs) {
+        return ROWS * glyphs.getCellHeight() * screenPixelsPerUnit();
+    }
+
+    private static int screenPixelsPerUnit() {
+        return Math.max(1, Math.round(Gdx.graphics.getDensity()));
     }
 
     /** Restarts measuring for a newly opened scene. */
