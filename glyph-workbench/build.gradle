@@ -60,6 +60,28 @@ tasks.register('exportFont', JavaExec) {
   }
 }
 
+def bundledSaiksisttSizes = ['8x8', '8x16', '16x16', '16x32']
+def bundleExportDirectory = rootProject.layout.buildDirectory.dir('exports')
+def bundleExportTasks = bundledSaiksisttSizes.collect { size ->
+  tasks.register("exportSaiksistt${size}", JavaExec) {
+    description = "Exports the Saiksistt ${size} font data file for bundleSaiksistt."
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.github.halfdeadgames.asciigdx.workbench.fontdata.FontExporter'
+    systemProperty 'workbench.export.output', bundleExportDirectory.get().asFile.absolutePath
+    systemProperty 'workbench.export.fontDir', rootProject.file('fonts/saiksistt').absolutePath
+    systemProperty 'workbench.export.fontSize', size
+  }
+}
+
+// Copy, not Sync: the target folder also holds LICENSE.txt, which the export does not produce.
+tasks.register('bundleSaiksistt', Copy) {
+  group = 'fonts'
+  description = 'Exports every bundled Saiksistt size and copies the results into core resources.'
+  dependsOn bundleExportTasks
+  from(bundleExportDirectory) { include 'saiksistt-*' }
+  into rootProject.file('core/src/main/resources/com/github/halfdeadgames/asciigdx/fonts/saiksistt')
+}
+
 tasks.register('updateUnicodeNames', JavaExec) {
   group = 'unicode'
   description = 'Regenerates src/main/resources/unicode-names.txt. Pass -PucdDir=<folder with DerivedName.txt, DerivedGeneralCategory.txt, DerivedAge.txt, Blocks.txt, and license.txt>.'
