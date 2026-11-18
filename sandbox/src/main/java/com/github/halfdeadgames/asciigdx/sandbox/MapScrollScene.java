@@ -7,6 +7,7 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.layer.MapCellVisitor;
 import com.github.halfdeadgames.asciigdx.layer.MapWindow;
+import java.util.Optional;
 
 /**
  * Pans a camera over a map five screens wide and tall, refilling the cells that scroll into view
@@ -70,6 +71,11 @@ class MapScrollScene extends GridScene {
     @Override
     public String title() {
         return "Map scrolling: moving camera";
+    }
+
+    @Override
+    public Optional<WindowSize> preferredWindowSize() {
+        return Optional.of(WindowSize.FULL_HD);
     }
 
     @Override

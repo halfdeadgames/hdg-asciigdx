@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import java.util.Optional;
 
 /** One test scene in the sandbox menu. Scenes own their grids and renderers. */
 interface SandboxScene {
@@ -8,6 +9,13 @@ interface SandboxScene {
     String id();
 
     String title();
+
+    /**
+     * Window size the app switches to while this scene is open; empty keeps the current window.
+     */
+    default Optional<WindowSize> preferredWindowSize() {
+        return Optional.empty();
+    }
 
     void show();
 

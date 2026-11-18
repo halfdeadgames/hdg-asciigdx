@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.RandomXS128;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.Optional;
 
 /**
  * Recolors every cell of a full-screen grid on every frame, and moves, rotates, scales, and fades
@@ -64,6 +65,11 @@ class AnimatedCellsScene extends GridScene {
     @Override
     public String title() {
         return "Animated cells: half the cells move and fade, all recolor";
+    }
+
+    @Override
+    public Optional<WindowSize> preferredWindowSize() {
+        return Optional.of(WindowSize.FULL_HD);
     }
 
     @Override

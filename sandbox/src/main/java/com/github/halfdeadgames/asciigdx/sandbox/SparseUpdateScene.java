@@ -9,6 +9,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Fills a large grid once, then rewrites an adjustable share of distinct cells each frame (1% by
@@ -52,6 +53,11 @@ class SparseUpdateScene extends GridScene {
     @Override
     public String title() {
         return "Large grid: sparse updates";
+    }
+
+    @Override
+    public Optional<WindowSize> preferredWindowSize() {
+        return Optional.of(WindowSize.FULL_HD);
     }
 
     @Override

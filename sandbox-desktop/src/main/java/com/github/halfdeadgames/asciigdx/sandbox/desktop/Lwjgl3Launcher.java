@@ -44,6 +44,7 @@ public class Lwjgl3Launcher {
     private static Lwjgl3Application createApplication() {
         SandboxApp app = new SandboxApp(Lwjgl3Launcher::systemSetting);
         app.setGpuTimer(new OpenGlGpuTimer());
+        app.setWindowResizer(new Lwjgl3WindowResizer());
         return new Lwjgl3Application(app, getDefaultConfiguration());
     }
 

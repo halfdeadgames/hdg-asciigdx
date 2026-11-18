@@ -7,6 +7,7 @@ import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import java.util.Optional;
 
 /**
  * Replays precomputed frames of up to eight full layers with see-through backgrounds, so the
@@ -51,6 +52,11 @@ class LayeredBlendStressScene extends GridScene {
     @Override
     public String title() {
         return "Stress: layered blending";
+    }
+
+    @Override
+    public Optional<WindowSize> preferredWindowSize() {
+        return Optional.of(WindowSize.FULL_HD);
     }
 
     @Override

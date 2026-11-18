@@ -15,6 +15,8 @@ class CaptureScript {
      * of the timing. Warm-up also lasts at least the configured warm-up seconds.
      */
     private static final int WARM_UP_FRAMES = 30;
+    /** Longest wait for a scene's requested window size before warm-up starts anyway. */
+    private static final float WINDOW_SETTLE_TIMEOUT_SECONDS = 2f;
     private static final float NANOS_PER_MILLISECOND = 1_000_000f;
     private static final int NOT_SWEEPING = -1;
     private static final String PERF_TAG = "CaptureScript";
@@ -22,7 +24,7 @@ class CaptureScript {
     static final long GPU_DRAW_UNMEASURED = -1L;
 
     private enum Phase {
-        MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE
+        MENU_REQUEST, MENU_SAVING, SETTLING_WINDOW, WARMING_UP, MEASURING, SAVING, RECORDING, DONE
     }
 
     private final SandboxApp app;
@@ -118,6 +120,21 @@ class CaptureScript {
                 phase = Phase.MENU_SAVING;
             }
             case MENU_SAVING -> openScene(0);
+            case SETTLING_WINDOW -> {
+                // The first frame's delta still holds the previous scene's file writes.
+                if (framesInPhase > 0) {
+                    secondsInPhase += Gdx.graphics.getDeltaTime();
+                }
+                framesInPhase++;
+                if (app.isWindowSettled()) {
+                    beginWarmUp();
+                } else if (secondsInPhase >= WINDOW_SETTLE_TIMEOUT_SECONDS) {
+                    Gdx.app.log(PERF_TAG, "Window size not settled after "
+                            + WINDOW_SETTLE_TIMEOUT_SECONDS + " s in "
+                            + app.getScene(sceneIndex).id() + "; measuring anyway");
+                    beginWarmUp();
+                }
+            }
             case WARMING_UP -> {
                 framesInPhase++;
                 secondsInPhase += Gdx.graphics.getDeltaTime();
@@ -217,6 +234,7 @@ class CaptureScript {
         }
         visitPosition = position;
         sceneIndex = sceneOrder[position];
+        waitForWindowThenWarmUp();
         app.openScene(sceneIndex);
         sweepIndex = NOT_SWEEPING;
         SandboxScene scene = app.getScene(sceneIndex);
@@ -228,7 +246,7 @@ class CaptureScript {
             startSweepStep(0);
             return;
         }
-        beginWarmUp();
+        waitForWindowThenWarmUp();
     }
 
     private int sweepStepCount() {
@@ -269,7 +287,13 @@ class CaptureScript {
             scene.setDirtyPercent(sceneDirtyPercents.get(index % dirtyStepCount()));
         }
         app.refreshStatus();
-        beginWarmUp();
+        waitForWindowThenWarmUp();
+    }
+
+    private void waitForWindowThenWarmUp() {
+        framesInPhase = 0;
+        secondsInPhase = 0f;
+        phase = Phase.SETTLING_WINDOW;
     }
 
     private void beginWarmUp() {

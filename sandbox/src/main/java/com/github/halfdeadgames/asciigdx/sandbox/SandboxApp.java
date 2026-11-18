@@ -22,6 +22,8 @@ public class SandboxApp extends ApplicationAdapter {
     private final Function<String, String> settings;
     private final Runnable orientationToggle;
     private GpuTimer gpuTimer = GpuTimer.UNAVAILABLE;
+    private WindowResizer windowResizer = WindowResizer.NONE;
+    private boolean windowResizedForScene;
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
@@ -54,6 +56,15 @@ public class SandboxApp extends ApplicationAdapter {
     /** Sets the GPU timer that capture mode uses; call before the app starts. */
     public void setGpuTimer(GpuTimer gpuTimer) {
         this.gpuTimer = gpuTimer;
+    }
+
+    /** Sets what resizes the window for scenes that ask for a size; call before the app starts. */
+    public void setWindowResizer(WindowResizer windowResizer) {
+        this.windowResizer = windowResizer;
+    }
+
+    boolean isWindowSettled() {
+        return windowResizer.isSettled();
     }
 
     @Override
@@ -254,6 +265,7 @@ public class SandboxApp extends ApplicationAdapter {
         activeScene.show();
         perfOverlay.begin(activeScene.cellCount());
         perfOverlay.setStatus(activeScene.statusText());
+        activeScene.preferredWindowSize().ifPresent(this::resizeWindowForScene);
     }
 
     void refreshStatus() {
@@ -268,7 +280,17 @@ public class SandboxApp extends ApplicationAdapter {
         }
         activeScene.hide();
         activeScene = null;
+        if (windowResizedForScene) {
+            windowResizer.restorePreviousSize();
+            windowResizedForScene = false;
+        }
         menu.show();
+    }
+
+    /** Desktop libGDX renders a frame inside the resize callback, so state must be set first. */
+    private void resizeWindowForScene(WindowSize size) {
+        windowResizedForScene = true;
+        windowResizer.resizeTo(size);
     }
 
     @Override
