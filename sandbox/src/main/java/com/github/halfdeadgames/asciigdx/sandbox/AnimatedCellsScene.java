@@ -68,6 +68,11 @@ class AnimatedCellsScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.BENCHMARKS;
+    }
+
+    @Override
     public Optional<WindowSize> preferredWindowSize() {
         return Optional.of(WindowSize.FULL_HD);
     }

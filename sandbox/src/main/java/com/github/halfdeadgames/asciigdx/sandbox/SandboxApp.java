@@ -95,11 +95,12 @@ public class SandboxApp extends ApplicationAdapter {
                     perfOverlay.setStatus(activeScene.statusText());
                     return handled;
                 }
-                int index = menu.indexAt(screenX, screenY);
-                if (index < 0) {
+                int row = menu.rowAt(screenX, screenY);
+                if (row < 0) {
                     return false;
                 }
-                openScene(index);
+                menu.selectRow(row);
+                activateMenuSelection();
                 return true;
             }
 
@@ -188,6 +189,8 @@ public class SandboxApp extends ApplicationAdapter {
         if (keycode == Input.Keys.BACK) {
             if (activeScene != null) {
                 returnToMenu();
+            } else if (!menu.isShowingGroupList()) {
+                menu.showGroupList();
             } else {
                 Gdx.app.exit();
             }
@@ -199,7 +202,11 @@ public class SandboxApp extends ApplicationAdapter {
         }
         if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.BACKSPACE) {
             if (activeScene == null) {
-                return false;
+                if (menu.isShowingGroupList()) {
+                    return false;
+                }
+                menu.showGroupList();
+                return true;
             }
             if (activeScene.keyDown(keycode)) {
                 perfOverlay.setStatus(activeScene.statusText());
@@ -218,7 +225,7 @@ public class SandboxApp extends ApplicationAdapter {
                 return true;
             }
             if (keycode == Input.Keys.ENTER || keycode == Input.Keys.NUMPAD_ENTER) {
-                openScene(menu.selectedIndex());
+                activateMenuSelection();
                 return true;
             }
         }
@@ -235,6 +242,14 @@ public class SandboxApp extends ApplicationAdapter {
             return true;
         }
         return false;
+    }
+
+    private void activateMenuSelection() {
+        if (menu.isShowingGroupList()) {
+            menu.openSelectedGroup();
+            return;
+        }
+        openScene(menu.selectedSceneIndex());
     }
 
     private void createScreenCapture() {
@@ -262,6 +277,7 @@ public class SandboxApp extends ApplicationAdapter {
     void openScene(int index) {
         returnToMenu();
         activeScene = scenes.get(index);
+        menu.showSceneInGroup(index);
         activeScene.show();
         perfOverlay.begin(activeScene.cellCount());
         perfOverlay.setStatus(activeScene.statusText());

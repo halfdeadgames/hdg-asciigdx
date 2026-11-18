@@ -120,6 +120,11 @@ class LayerTransformScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.GRIDS_LAYERS_AND_SPRITES;
+    }
+
+    @Override
     public boolean recordsAnimation() {
         return true;
     }

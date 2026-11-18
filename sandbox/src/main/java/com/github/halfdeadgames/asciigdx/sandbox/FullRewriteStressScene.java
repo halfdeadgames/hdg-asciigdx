@@ -23,6 +23,11 @@ class FullRewriteStressScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.BENCHMARKS;
+    }
+
+    @Override
     public boolean recordsAnimation() {
         return true;
     }

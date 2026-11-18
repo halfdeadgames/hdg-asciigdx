@@ -180,6 +180,11 @@ final class GlyphReviewScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.GLYPHS;
+    }
+
+    @Override
     public void show() {
         reasonMenuOpen = false;
         loadResults();

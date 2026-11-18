@@ -31,6 +31,11 @@ class RendererBasicsScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.GRIDS_LAYERS_AND_SPRITES;
+    }
+
+    @Override
     public void resize(int width, int height) {
         super.resize(width, height);
         showScaleIndicator();

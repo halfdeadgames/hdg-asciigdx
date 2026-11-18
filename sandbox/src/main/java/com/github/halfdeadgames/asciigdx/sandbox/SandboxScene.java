@@ -10,6 +10,11 @@ interface SandboxScene {
 
     String title();
 
+    /** Menu group this scene is listed under; OTHER until a scene picks one. */
+    default SceneGroup group() {
+        return SceneGroup.OTHER;
+    }
+
     /**
      * Window size the app switches to while this scene is open; empty keeps the current window.
      */

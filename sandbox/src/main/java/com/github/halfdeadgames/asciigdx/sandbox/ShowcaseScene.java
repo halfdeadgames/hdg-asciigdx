@@ -444,6 +444,11 @@ class ShowcaseScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.DEMOS;
+    }
+
+    @Override
     public boolean recordsAnimation() {
         return true;
     }

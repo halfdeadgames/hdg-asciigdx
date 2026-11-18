@@ -69,6 +69,11 @@ class GlyphFilterScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.GLYPHS;
+    }
+
+    @Override
     public boolean recordsAnimation() {
         return true;
     }

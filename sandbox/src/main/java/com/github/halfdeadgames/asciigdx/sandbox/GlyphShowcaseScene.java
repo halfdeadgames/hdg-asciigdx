@@ -109,6 +109,11 @@ final class GlyphShowcaseScene extends GridScene {
         return "Glyph sheet showcase " + sizeLabel();
     }
 
+    @Override
+    public SceneGroup group() {
+        return SceneGroup.GLYPHS;
+    }
+
     private String sizeLabel() {
         return size.getCellWidth() + "x" + size.getCellHeight();
     }

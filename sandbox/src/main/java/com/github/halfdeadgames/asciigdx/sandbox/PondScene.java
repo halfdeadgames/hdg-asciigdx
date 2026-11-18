@@ -187,6 +187,11 @@ class PondScene implements SandboxScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.DEMOS;
+    }
+
+    @Override
     public boolean recordsAnimation() {
         return motion.movesWithoutInput();
     }

@@ -51,6 +51,11 @@ class FlexibleGridScene extends GridScene {
     }
 
     @Override
+    public SceneGroup group() {
+        return SceneGroup.GRIDS_LAYERS_AND_SPRITES;
+    }
+
+    @Override
     public void resize(int width, int height) {
         resizeStartNanos = System.nanoTime();
         GridFit fit = GridFit.calculate(width, height, font.getCellWidth(), font.getCellHeight(),
