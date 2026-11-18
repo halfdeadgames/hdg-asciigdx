@@ -56,6 +56,10 @@ Compares the last commit with the working tree on the sparse-update scene at 50%
 .EXAMPLE
 .\tools\perf-ab.ps1 -OldRef HEAD -Scene map-scroll
 Compares the last commit with the working tree on the map-scroll scene (moving camera over a large map).
+
+.EXAMPLE
+.\tools\perf-ab.ps1 -OldRef HEAD -Scene animated-cells
+Compares the last commit with the working tree on the animated-cells scene (every cell moves, fades, and recolors each frame).
 #>
 param(
     [string]$OldRef = 'HEAD',
