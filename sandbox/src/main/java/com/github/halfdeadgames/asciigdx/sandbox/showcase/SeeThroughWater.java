@@ -1,6 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.shape.CellShape;
+import com.github.halfdeadgames.asciigdx.shape.CircleShape;
+import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 
 /**
  * Makes the water cells around the splash point translucent during the dive, then writes them back
@@ -36,50 +39,31 @@ public final class SeeThroughWater {
         if (dive == null || waterGrid == null) {
             throw new IllegalArgumentException("dive and waterGrid must not be null");
         }
-        if (!Float.isFinite(rowHeightPerColumnWidth) || rowHeightPerColumnWidth <= 0f) {
-            throw new IllegalArgumentException(
-                    "rowHeightPerColumnWidth must be finite and > 0: " + rowHeightPerColumnWidth);
-        }
         this.dive = dive;
         this.waterGrid = waterGrid;
         this.glyphColor = glyphColor;
         this.backgroundColor = backgroundColor;
-        int maxCells =
-                boundingCellCount(UnderwaterDive.seeThroughRadiusCells(), rowHeightPerColumnWidth);
+        CircleShape seeThroughArea = new CircleShape(splashColumn, splashRow,
+                UnderwaterDive.seeThroughRadiusCells(), ShapeFill.FILLED,
+                rowHeightPerColumnWidth);
+        int maxCells = boundingCellCount(seeThroughArea);
         columns = new int[maxCells];
         rows = new int[maxCells];
         distancesCells = new float[maxCells];
-        collectCellsNear(splashColumn, splashRow, rowHeightPerColumnWidth);
+        seeThroughArea.forEachCell(this::addCellIfOnGrid);
     }
 
-    private static int boundingCellCount(float radiusCells, float rowHeightPerColumnWidth) {
-        int columnSpan = (int) Math.ceil(2f * radiusCells) + 2;
-        int rowSpan = (int) Math.ceil(2f * radiusCells / rowHeightPerColumnWidth) + 2;
+    private static int boundingCellCount(CellShape shape) {
+        int columnSpan = shape.getRight() - shape.getLeft() + 1;
+        int rowSpan = shape.getBottom() - shape.getTop() + 1;
         return columnSpan * rowSpan;
     }
 
-    private void collectCellsNear(float splashColumn, float splashRow,
-            float rowHeightPerColumnWidth) {
-        float radius = UnderwaterDive.seeThroughRadiusCells();
-        int firstColumn = Math.max(0, (int) Math.floor(splashColumn - radius));
-        int lastColumn =
-                Math.min(waterGrid.getColumns() - 1, (int) Math.ceil(splashColumn + radius));
-        int firstRow = Math.max(0, (int) Math.floor(splashRow - radius / rowHeightPerColumnWidth));
-        int lastRow = Math.min(waterGrid.getRows() - 1,
-                (int) Math.ceil(splashRow + radius / rowHeightPerColumnWidth));
-        for (int row = firstRow; row <= lastRow; row++) {
-            for (int column = firstColumn; column <= lastColumn; column++) {
-                float columnDelta = column + 0.5f - splashColumn;
-                float rowDelta = (row + 0.5f - splashRow) * rowHeightPerColumnWidth;
-                float distance = (float) Math.sqrt(columnDelta * columnDelta + rowDelta * rowDelta);
-                if (distance < radius) {
-                    addCell(column, row, distance);
-                }
-            }
+    private void addCellIfOnGrid(int column, int row, float distanceCells,
+            float unusedDistanceFraction) {
+        if (!waterGrid.contains(column, row)) {
+            return;
         }
-    }
-
-    private void addCell(int column, int row, float distanceCells) {
         columns[cellCount] = column;
         rows[cellCount] = row;
         distancesCells[cellCount] = distanceCells;
