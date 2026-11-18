@@ -42,8 +42,9 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new SandboxApp(Lwjgl3Launcher::systemSetting),
-                getDefaultConfiguration());
+        SandboxApp app = new SandboxApp(Lwjgl3Launcher::systemSetting);
+        app.setGpuTimer(new OpenGlGpuTimer());
+        return new Lwjgl3Application(app, getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

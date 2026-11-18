@@ -6,18 +6,20 @@ import java.util.Locale;
 
 /**
  * Unattended run: menu screenshot, then per scene a screenshot, perf line and optional GIF, then
- * exit. Driven by {@link #onFrameRendered(long)}.
+ * exit. Driven by {@link #onFrameRendered(long, long, long)}.
  */
 class CaptureScript {
     private static final int GIF_FRAMES = 30;
     /**
      * Frames skipped after opening a scene, so setup and the previous scene's file writes stay out
-     * of the timing.
+     * of the timing. Warm-up also lasts at least the configured warm-up seconds.
      */
     private static final int WARM_UP_FRAMES = 30;
     private static final float NANOS_PER_MILLISECOND = 1_000_000f;
     private static final int NOT_SWEEPING = -1;
     private static final String PERF_TAG = "CaptureScript";
+    /** Passed as GPU draw time when the platform has no GPU timer. */
+    static final long GPU_DRAW_UNMEASURED = -1L;
 
     private enum Phase {
         MENU_REQUEST, MENU_SAVING, WARMING_UP, MEASURING, SAVING, RECORDING, DONE
@@ -28,14 +30,22 @@ class CaptureScript {
     private Phase phase = Phase.MENU_REQUEST;
     private int sceneIndex;
     private int framesInPhase;
+    private float secondsInPhase;
 
     private final StringBuilder report = new StringBuilder();
     private final float sampleSeconds;
+    private final float warmUpSeconds;
     private final float[] sampleMeansMs;
+    private final float[] gpuWaitMeansMs;
+    private final float[] cpuMeansMs;
+    private final float[] gpuDrawMeansMs;
+    private boolean gpuDrawMeasured;
     private int sampleCount;
     private int windowFrames;
     private float windowSeconds;
     private long windowRenderNanos;
+    private long windowGpuWaitNanos;
+    private long windowGpuDrawNanos;
     private int totalMeasuredFrames;
     private final int[] sceneOrder;
     private int visitPosition;
@@ -50,7 +60,11 @@ class CaptureScript {
         this.app = app;
         this.capture = capture;
         this.sampleSeconds = config.getSampleSeconds();
+        this.warmUpSeconds = config.getWarmUpSeconds();
         this.sampleMeansMs = new float[config.getSamples()];
+        this.gpuWaitMeansMs = new float[config.getSamples()];
+        this.cpuMeansMs = new float[config.getSamples()];
+        this.gpuDrawMeansMs = new float[config.getSamples()];
         this.dirtyPercents = config.getDirtyPercents();
         this.layerCounts = config.getLayerCounts();
         this.sceneOrder = resolveSceneOrder(app, config);
@@ -92,8 +106,12 @@ class CaptureScript {
      *
      * @param renderNanos nanoseconds the scene's render work took this frame, GPU work included; 0
      *        when no scene was drawn
+     * @param gpuWaitNanos the part of renderNanos spent waiting for the GPU to finish after all
+     *        draw calls were submitted; the rest is CPU time
+     * @param gpuDrawNanos nanoseconds the GPU itself spent on the scene's commands, from a GPU
+     *        timer query; {@link #GPU_DRAW_UNMEASURED} when the platform has no GPU timer
      */
-    void onFrameRendered(long renderNanos) {
+    void onFrameRendered(long renderNanos, long gpuWaitNanos, long gpuDrawNanos) {
         switch (phase) {
             case MENU_REQUEST -> {
                 capture.requestScreenshot("menu.png");
@@ -102,7 +120,8 @@ class CaptureScript {
             case MENU_SAVING -> openScene(0);
             case WARMING_UP -> {
                 framesInPhase++;
-                if (framesInPhase >= WARM_UP_FRAMES) {
+                secondsInPhase += Gdx.graphics.getDeltaTime();
+                if (framesInPhase >= WARM_UP_FRAMES && secondsInPhase >= warmUpSeconds) {
                     beginMeasuring();
                 }
             }
@@ -110,6 +129,9 @@ class CaptureScript {
                 totalMeasuredFrames++;
                 windowFrames++;
                 windowRenderNanos += renderNanos;
+                windowGpuWaitNanos += gpuWaitNanos;
+                gpuDrawMeasured = gpuDrawNanos != GPU_DRAW_UNMEASURED;
+                windowGpuDrawNanos += Math.max(gpuDrawNanos, 0L);
                 windowSeconds += Gdx.graphics.getDeltaTime();
                 if (windowSeconds >= sampleSeconds) {
                     closeWindow();
@@ -147,11 +169,19 @@ class CaptureScript {
         windowFrames = 0;
         windowSeconds = 0f;
         windowRenderNanos = 0L;
+        windowGpuWaitNanos = 0L;
+        windowGpuDrawNanos = 0L;
     }
 
     private void closeWindow() {
-        sampleMeansMs[sampleCount++] =
-                windowRenderNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        float renderMs = windowRenderNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        float gpuWaitMs = windowGpuWaitNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        sampleMeansMs[sampleCount] = renderMs;
+        gpuWaitMeansMs[sampleCount] = gpuWaitMs;
+        cpuMeansMs[sampleCount] = renderMs - gpuWaitMs;
+        gpuDrawMeansMs[sampleCount] =
+                windowGpuDrawNanos / (float) windowFrames / NANOS_PER_MILLISECOND;
+        sampleCount++;
         resetWindow();
     }
 
@@ -244,6 +274,7 @@ class CaptureScript {
 
     private void beginWarmUp() {
         framesInPhase = 0;
+        secondsInPhase = 0f;
         phase = Phase.WARMING_UP;
     }
 
@@ -254,7 +285,15 @@ class CaptureScript {
                 .append(" minMs=").append(formatMilliseconds(summary.minMs()))
                 .append(" maxMs=").append(formatMilliseconds(summary.maxMs()))
                 .append(" spreadPct=").append(summary.spreadPercent())
-                .append(" samples=[");
+                .append(" cpuMs=")
+                .append(formatMilliseconds(PerfSummary.of(cpuMeansMs).medianMs()))
+                .append(" gpuWaitMs=")
+                .append(formatMilliseconds(PerfSummary.of(gpuWaitMeansMs).medianMs()));
+        if (gpuDrawMeasured) {
+            report.append(" gpuDrawMs=")
+                    .append(formatMilliseconds(PerfSummary.of(gpuDrawMeansMs).medianMs()));
+        }
+        report.append(" samples=[");
         for (int i = 0; i < sampleMeansMs.length; i++) {
             if (i > 0) {
                 report.append(',');

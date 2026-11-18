@@ -11,28 +11,32 @@ public final class CaptureConfig {
     public static final String KEY_SCENES = "scenes";
     public static final String KEY_SAMPLES = "samples";
     public static final String KEY_SAMPLE_SECONDS = "sampleSeconds";
+    public static final String KEY_WARM_UP_SECONDS = "warmUpSeconds";
     public static final String KEY_DIRTY = "dirty";
     public static final String KEY_LAYERS = "layers";
     static final int MAX_LAYER_COUNT = 8;
     private static final int DEFAULT_SAMPLES = 5;
     private static final float DEFAULT_SAMPLE_SECONDS = 0.5f;
+    private static final float DEFAULT_WARM_UP_SECONDS = 0f;
     private static final int MAX_DIRTY_PERCENT = 100;
 
     private final String outputDirectory;
     private final List<String> sceneIds;
     private final int samples;
     private final float sampleSeconds;
+    private final float warmUpSeconds;
     private final List<Integer> dirtyPercents;
     private final List<Integer> layerCounts;
 
     private CaptureConfig(String outputDirectory, List<String> sceneIds, int samples,
-            float sampleSeconds,
+            float sampleSeconds, float warmUpSeconds,
             List<Integer> dirtyPercents, List<Integer> layerCounts) {
         this.layerCounts = Collections.unmodifiableList(new ArrayList<>(layerCounts));
         this.outputDirectory = outputDirectory;
         this.sceneIds = Collections.unmodifiableList(new ArrayList<>(sceneIds));
         this.samples = samples;
         this.sampleSeconds = sampleSeconds;
+        this.warmUpSeconds = warmUpSeconds;
         this.dirtyPercents = Collections.unmodifiableList(new ArrayList<>(dirtyPercents));
     }
 
@@ -40,8 +44,8 @@ public final class CaptureConfig {
      * Returns null when capture mode is off (no "capture" value).
      *
      * @param lookup returns the value for a key, or null when missing
-     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds", "dirty" or
-     *        "layers" holds an invalid value
+     * @throws IllegalArgumentException when "scenes", "samples", "sampleSeconds",
+     *        "warmUpSeconds", "dirty", or "layers" holds an invalid value
      */
     public static CaptureConfig fromSettings(Function<String, String> lookup) {
         String outputDirectory = lookup.apply(KEY_CAPTURE);
@@ -51,6 +55,7 @@ public final class CaptureConfig {
         return new CaptureConfig(outputDirectory, parseSceneIds(lookup.apply(KEY_SCENES)),
                 parseSamples(lookup.apply(KEY_SAMPLES)),
                 parseSampleSeconds(lookup.apply(KEY_SAMPLE_SECONDS)),
+                parseWarmUpSeconds(lookup.apply(KEY_WARM_UP_SECONDS)),
                 parseDirtyPercents(lookup.apply(KEY_DIRTY)),
                 parseLayerCounts(lookup.apply(KEY_LAYERS)));
     }
@@ -124,21 +129,39 @@ public final class CaptureConfig {
     }
 
     private static float parseSampleSeconds(String value) {
+        float parsed = parseFiniteSeconds(value, KEY_SAMPLE_SECONDS, DEFAULT_SAMPLE_SECONDS);
+        if (!(parsed > 0f)) {
+            throw new IllegalArgumentException(
+                    "Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value
+                            + "' must be positive");
+        }
+        return parsed;
+    }
+
+    private static float parseWarmUpSeconds(String value) {
+        float parsed = parseFiniteSeconds(value, KEY_WARM_UP_SECONDS, DEFAULT_WARM_UP_SECONDS);
+        if (parsed < 0f) {
+            throw new IllegalArgumentException(
+                    "Invalid value for '" + KEY_WARM_UP_SECONDS + "': '" + value
+                            + "' must not be negative");
+        }
+        return parsed;
+    }
+
+    private static float parseFiniteSeconds(String value, String key, float defaultSeconds) {
         if (value == null || value.trim().isEmpty()) {
-            return DEFAULT_SAMPLE_SECONDS;
+            return defaultSeconds;
         }
         float parsed;
         try {
             parsed = Float.parseFloat(value.trim());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value
-                            + "' is not a number", e);
+                    "Invalid value for '" + key + "': '" + value + "' is not a number", e);
         }
-        if (!(parsed > 0f) || Float.isInfinite(parsed)) {
+        if (Float.isNaN(parsed) || Float.isInfinite(parsed)) {
             throw new IllegalArgumentException(
-                    "Invalid value for '" + KEY_SAMPLE_SECONDS + "': '" + value
-                            + "' must be positive");
+                    "Invalid value for '" + key + "': '" + value + "' must be a finite number");
         }
         return parsed;
     }
@@ -165,6 +188,14 @@ public final class CaptureConfig {
     /** Number of timing windows collected per scene after warm-up. */
     int getSamples() {
         return samples;
+    }
+
+    /**
+     * Minimum wall-clock seconds of warm-up after opening a scene; 0 by default. Warm-up ends
+     * only when both this time and the fixed warm-up frame count have passed.
+     */
+    float getWarmUpSeconds() {
+        return warmUpSeconds;
     }
 
     /** Minimum wall-clock length of each timing window. */

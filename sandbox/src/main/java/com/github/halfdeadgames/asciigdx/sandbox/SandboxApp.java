@@ -21,6 +21,7 @@ public class SandboxApp extends ApplicationAdapter {
     private final Array<SandboxScene> scenes = new Array<>();
     private final Function<String, String> settings;
     private final Runnable orientationToggle;
+    private GpuTimer gpuTimer = GpuTimer.UNAVAILABLE;
 
     private SpriteBatch batch;
     private GlyphSource glyphs;
@@ -48,6 +49,11 @@ public class SandboxApp extends ApplicationAdapter {
     public SandboxApp(Function<String, String> settings, Runnable orientationToggle) {
         this.settings = settings;
         this.orientationToggle = orientationToggle;
+    }
+
+    /** Sets the GPU timer that capture mode uses; call before the app starts. */
+    public void setGpuTimer(GpuTimer gpuTimer) {
+        this.gpuTimer = gpuTimer;
     }
 
     @Override
@@ -137,6 +143,9 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(glyphs));
+        if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+            scenes.add(new LayeredBlendStressScene(smallGlyphs));
+        }
         scenes.add(new GlyphShowcaseScene(smallGlyphs, SaiksisttSize.SQUARE_8X8));
         scenes.add(new GlyphShowcaseScene(glyphs, SaiksisttSize.SQUARE_16X16));
         scenes.add(new GlyphShowcaseScene(narrowTallGlyphs, SaiksisttSize.TALL_8X16));
@@ -275,14 +284,29 @@ public class SandboxApp extends ApplicationAdapter {
         float delta = Gdx.graphics.getDeltaTime();
         ScreenUtils.clear(0f, 0f, 0f, 1f);
         long renderNanos = 0L;
+        long gpuWaitNanos = 0L;
+        long gpuDrawNanos = CaptureScript.GPU_DRAW_UNMEASURED;
         if (activeScene == null) {
             menu.render(batch, delta);
         } else {
+            boolean timingGpu = captureScript != null && gpuTimer.isAvailable();
             long renderStartNanos = System.nanoTime();
+            if (timingGpu) {
+                gpuTimer.begin();
+            }
             activeScene.render(batch, delta);
+            if (timingGpu) {
+                gpuTimer.end();
+            }
             if (captureScript != null) {
+                long submittedNanos = System.nanoTime();
                 Gdx.gl.glFinish();
-                renderNanos = System.nanoTime() - renderStartNanos;
+                long finishedNanos = System.nanoTime();
+                renderNanos = finishedNanos - renderStartNanos;
+                gpuWaitNanos = finishedNanos - submittedNanos;
+            }
+            if (timingGpu) {
+                gpuDrawNanos = gpuTimer.readElapsedNanos();
             }
             if (activeScene.hasLiveStatus()) {
                 refreshStatus();
@@ -294,7 +318,7 @@ public class SandboxApp extends ApplicationAdapter {
             screenCapture.onFrameRendered();
         }
         if (captureScript != null) {
-            captureScript.onFrameRendered(renderNanos);
+            captureScript.onFrameRendered(renderNanos, gpuWaitNanos, gpuDrawNanos);
         }
     }
 

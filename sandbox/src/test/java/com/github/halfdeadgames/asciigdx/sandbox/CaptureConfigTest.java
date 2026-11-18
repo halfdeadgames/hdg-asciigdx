@@ -116,6 +116,55 @@ class CaptureConfigTest {
     }
 
     @Test
+    void warmUpSecondsDefaultToZero() {
+        assertEquals(0f, parse(CaptureConfig.KEY_CAPTURE, "out").getWarmUpSeconds());
+    }
+
+    @Test
+    void warmUpSecondsAreParsed() {
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS, " 3.5 ");
+
+        assertEquals(3.5f, config.getWarmUpSeconds());
+    }
+
+    @Test
+    void zeroWarmUpSecondsAreAllowed() {
+        CaptureConfig config =
+                parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS, "0");
+
+        assertEquals(0f, config.getWarmUpSeconds());
+    }
+
+    @Test
+    void negativeWarmUpSecondsThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS,
+                        "-1"));
+    }
+
+    @Test
+    void nonNumericWarmUpSecondsThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS,
+                        "soon"));
+    }
+
+    @Test
+    void notANumberWarmUpSecondsThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS,
+                        "NaN"));
+    }
+
+    @Test
+    void infiniteWarmUpSecondsThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_WARM_UP_SECONDS,
+                        "Infinity"));
+    }
+
+    @Test
     void sceneListIsUnmodifiable() {
         CaptureConfig config =
                 parse(CaptureConfig.KEY_CAPTURE, "out", CaptureConfig.KEY_SCENES, "a");

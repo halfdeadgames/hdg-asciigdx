@@ -101,8 +101,14 @@ run {
       if (project.hasProperty('scenes')) systemProperty 'asciigdx.scenes', project.property('scenes')
       if (project.hasProperty('samples')) systemProperty 'asciigdx.samples', project.property('samples')
       if (project.hasProperty('sampleSeconds')) systemProperty 'asciigdx.sampleSeconds', project.property('sampleSeconds')
+      if (project.hasProperty('warmUpSeconds')) systemProperty 'asciigdx.warmUpSeconds', project.property('warmUpSeconds')
       if (project.hasProperty('dirty')) systemProperty 'asciigdx.dirty', project.property('dirty')
       if (project.hasProperty('layers')) systemProperty 'asciigdx.layers', project.property('layers')
+      if (project.hasProperty('profile')) {
+        def recordingFile = new File(captureDirectory, 'capture.jfr')
+        jvmArgs "-XX:StartFlightRecording=filename=${recordingFile.absolutePath},settings=profile,dumponexit=true"
+        println "Flight recording: ${recordingFile.absolutePath}"
+      }
       println "Capture output: ${captureDirectory.absolutePath}"
     }
   }
