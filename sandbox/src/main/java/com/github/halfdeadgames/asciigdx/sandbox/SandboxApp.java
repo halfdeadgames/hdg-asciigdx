@@ -142,7 +142,7 @@ public class SandboxApp extends ApplicationAdapter {
     private void registerScenes() {
         scenes.add(new RendererBasicsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
-        scenes.add(new SparseUpdateScene(glyphs));
+        scenes.add(new SparseUpdateScene(smallGlyphs));
         if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
             scenes.add(new LayeredBlendStressScene(smallGlyphs));
         }

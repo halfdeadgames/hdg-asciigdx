@@ -48,6 +48,10 @@ Compares the last commit with the working tree.
 .EXAMPLE
 .\tools\perf-ab.ps1 -OldPath . -OldArgs '-Players=7' -NewArgs '-Players=8'
 Compares 7 and 8 layers in the same tree.
+
+.EXAMPLE
+.\tools\perf-ab.ps1 -OldRef HEAD -Scene sparse-update -OldArgs '-Pdirty=50' -NewArgs '-Pdirty=50'
+Compares the last commit with the working tree on the sparse-update scene at 50% changed cells.
 #>
 param(
     [string]$OldRef = 'HEAD',
