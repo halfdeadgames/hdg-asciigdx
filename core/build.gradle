@@ -1,3 +1,7 @@
+plugins {
+  id 'me.champeau.jmh' version '0.7.4'
+}
+
 eclipse.project.name = appName + '-core'
 
 dependencies {
@@ -21,4 +25,18 @@ test {
 
 jar {
   duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// CPU-only microbenchmarks in src/jmh/java; never part of the core jar.
+// Run all: .\gradlew.bat :core:jmh   Run some: .\gradlew.bat :core:jmh -PjmhIncludes=GridSet
+// Tighter error margins for before/after comparisons: -PjmhForks=3 -PjmhIterations=10
+jmh {
+  jmhVersion = '1.37'
+  includes = [project.findProperty('jmhIncludes') ?: '.*']
+  fork = (project.findProperty('jmhForks') ?: '2') as int
+  warmupIterations = 5
+  warmup = '1s'
+  iterations = (project.findProperty('jmhIterations') ?: '5') as int
+  timeOnIteration = '1s'
+  resultFormat = 'JSON'
 }

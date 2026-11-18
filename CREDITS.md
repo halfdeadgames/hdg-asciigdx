@@ -37,11 +37,13 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 
 ## Development tools
 
-Used only by the `sandbox` demo modules, the glyph workbench (the native folder dialog), and the build (Checkstyle). Not part of any release artifact.
+Used only by the `sandbox` demo modules, the glyph workbench (the native folder dialog), the build (Checkstyle), and the CPU benchmarks in `core/src/jmh` (JMH). Not part of any release artifact.
 
 | Library | Author | License | Used for |
 |---|---|---|---|
 | [anim8-gdx](https://github.com/tommyettinger/anim8-gdx) | Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Recording GIF captures of the demo |
 | [sjInGameConsole](https://github.com/tommyettinger/sjInGameConsole) | StrongJoshua, Tommy Ettinger | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | In-game debug console |
 | [Checkstyle](https://checkstyle.org/) | Checkstyle contributors | [LGPL 2.1 or later](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt) | Google Java Style reports for all modules (`styleCheck`) and code size and nesting reports for the glyph workbench; runs at build time only. `config/checkstyle/style.xml` is adapted from Checkstyle's bundled `google_checks.xml` (Checkstyle 10.21.4, LGPL 2.1 or later; authors Max Vetrenko, Mauryan Kansara, Ruslan Diachenko, and Roman Ivanov) |
+| [JMH](https://github.com/openjdk/jmh) (Java Microbenchmark Harness) | Oracle and OpenJDK contributors | [GPL 2.0 with the Classpath Exception](https://openjdk.org/legal/gplv2+ce.html) | Timing CPU-side code (grid writes, dirty tracking, cell vertex building) in `core/src/jmh`; never on core's runtime classpath |
+| [JMH Gradle plugin](https://github.com/melix/jmh-gradle-plugin) (`me.champeau.jmh`) | Cédric Champeau and contributors | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Building and running the JMH benchmarks (`:core:jmh`) |
 | [LWJGL NFD bindings](https://www.lwjgl.org/) (`org.lwjgl:lwjgl-nfd`) | Ioannis Tsakpinis and LWJGL contributors; bundled native library [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended) by Bernard Teo | [BSD 3-Clause](https://www.lwjgl.org/license); bundled native library under the [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE) | Folder dialog behind the glyph workbench's File > Export command |
