@@ -7,8 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,42 +18,10 @@ class MapWindowTest {
     private static final int ROWS = 6;
     private static final int CELL = 16;
 
-    private static final class SquareSource implements GlyphSource {
-        private final int cellSize;
-
-        SquareSource(int cellSize) {
-            this.cellSize = cellSize;
-        }
-
-        @Override
-        public int getCellWidth() {
-            return cellSize;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return cellSize;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(COLUMNS, ROWS);
-    private final Layer layer = stack.add(grid, new SquareSource(CELL));
+    private final Layer layer = stack.add(grid, TestGlyphSource.ofSquareCells(CELL));
 
     private MapWindow enable() {
         layer.enableMapWindow();
@@ -143,7 +109,7 @@ class MapWindowTest {
 
     @Test
     void originPixelsAreTheOriginTimesTheCellSizeForEachLayer() {
-        Layer small = stack.add(new TerminalGrid(COLUMNS, ROWS), new SquareSource(8));
+        Layer small = stack.add(new TerminalGrid(COLUMNS, ROWS), TestGlyphSource.ofSquareCells(8));
         small.enableMapWindow();
         MapWindow window = enable();
 

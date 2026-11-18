@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -20,40 +19,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class LayerStackTest {
-
-    private static final class FakeSource implements GlyphSource {
-        private final int cellWidth;
-        private final int cellHeight;
-
-        FakeSource(int cellWidth, int cellHeight) {
-            this.cellWidth = cellWidth;
-            this.cellHeight = cellHeight;
-        }
-
-        @Override
-        public int getCellWidth() {
-            return cellWidth;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return cellHeight;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private static final class FakeRenderer implements LayerRenderer {
         final String name;
@@ -99,7 +64,7 @@ class LayerStackTest {
         renderers.add(renderer);
         return renderer;
     });
-    private final FakeSource font = new FakeSource(8, 12);
+    private final TestGlyphSource font = TestGlyphSource.ofCellSize(8, 12);
 
     private Layer addLayer() {
         return stack.add(new TerminalGrid(4, 3), font);
@@ -227,8 +192,8 @@ class LayerStackTest {
 
     @Test
     void cellOffsetUsesThatLayersCellSize() {
-        Layer small = stack.add(new TerminalGrid(4, 3), new FakeSource(8, 12));
-        Layer big = stack.add(new TerminalGrid(4, 3), new FakeSource(16, 24));
+        Layer small = stack.add(new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(8, 12));
+        Layer big = stack.add(new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(16, 24));
 
         small.setOffsetInCells(10, 4);
         big.setOffsetInCells(10, 4);
@@ -255,7 +220,7 @@ class LayerStackTest {
 
     @Test
     void cellOffsetByUsesThatLayersCellSize() {
-        Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource(8, 12));
+        Layer layer = stack.add(new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(8, 12));
         layer.setOffsetInCells(1, 1);
 
         layer.offsetByCells(2, -3);
@@ -520,7 +485,7 @@ class LayerStackTest {
     @Test
     void layersOfDifferentGridSizesCoexist() {
         stack.add(new TerminalGrid(80, 25), font);
-        stack.add(new TerminalGrid(10, 4), new FakeSource(16, 24));
+        stack.add(new TerminalGrid(10, 4), TestGlyphSource.ofCellSize(16, 24));
         assertOrder("L0", "L1");
         assertEquals(80, stack.getLayer(0).getGrid().getColumns());
         assertEquals(10, stack.getLayer(1).getGrid().getColumns());
@@ -778,7 +743,7 @@ class LayerStackTest {
     void setGlyphSourceReachesRendererAndGetterReturnsIt() {
         Layer layer = addLayer();
         assertSame(font, layer.getGlyphSource());
-        FakeSource bigger = new FakeSource(16, 24);
+        TestGlyphSource bigger = TestGlyphSource.ofCellSize(16, 24);
 
         layer.setGlyphSource(bigger);
 
@@ -809,7 +774,7 @@ class LayerStackTest {
         Layer layer = addLayer();
         stack.remove(layer);
         assertThrows(IllegalStateException.class,
-                () -> layer.setGlyphSource(new FakeSource(16, 24)));
+                () -> layer.setGlyphSource(TestGlyphSource.ofCellSize(16, 24)));
         assertSame(font, layer.getGlyphSource());
         assertEquals(0, renderers.get(0).glyphSources.size());
     }

@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -18,32 +17,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class LayerCellTest {
-
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private static final class RecordingRenderer implements LayerRenderer {
         final List<String> events = new ArrayList<>();
@@ -85,7 +58,7 @@ class LayerCellTest {
     private final RecordingRenderer renderer = new RecordingRenderer();
     private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> renderer);
     private final TerminalGrid grid = new TerminalGrid(6, 4);
-    private final Layer layer = stack.add(grid, new FakeSource());
+    private final Layer layer = stack.add(grid, TestGlyphSource.ofCellSize(8, 12));
 
     private void draw() {
         stack.draw(null, 0f, 0f);

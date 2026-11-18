@@ -3,9 +3,7 @@ package com.github.halfdeadgames.asciigdx.layer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.GridPoint2;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
@@ -13,35 +11,10 @@ class LayerStackMapCellTest {
 
     private static final int CELL_SIZE = 16;
 
-    private static final class SquareSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL_SIZE;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL_SIZE;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
-    private final Layer layer = stack.add(new TerminalGrid(10, 6), new SquareSource());
+    private final Layer layer =
+            stack.add(new TerminalGrid(10, 6), TestGlyphSource.ofSquareCells(CELL_SIZE));
     private final GridPoint2 mapCell = new GridPoint2();
     private final GridPoint2 gridCell = new GridPoint2();
 
@@ -113,7 +86,7 @@ class LayerStackMapCellTest {
     @Test
     void layerOfAnotherStackThrowsIllegalArgument() {
         LayerStack other = TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
-        Layer foreign = other.add(new TerminalGrid(2, 2), new SquareSource());
+        Layer foreign = other.add(new TerminalGrid(2, 2), TestGlyphSource.ofSquareCells(CELL_SIZE));
         foreign.enableMapWindow();
 
         assertThrows(IllegalArgumentException.class,

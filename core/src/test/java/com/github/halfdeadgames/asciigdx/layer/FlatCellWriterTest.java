@@ -3,8 +3,6 @@ package com.github.halfdeadgames.asciigdx.layer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.tommyettinger.colorful.rgb.ColorTools;
 import org.junit.jupiter.api.Test;
@@ -18,56 +16,10 @@ class FlatCellWriterTest {
     private static final int GRID_BACKGROUND = 0x445566FF;
     private static final int TARGET = 0xAABBCC00;
 
-    /** Gives each code point its own u so a test can tell which glyph was written. */
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return new TextureRegion() {
-                @Override
-                public float getU() {
-                    return codePoint;
-                }
-
-                @Override
-                public float getV() {
-                    return 0f;
-                }
-
-                @Override
-                public float getU2() {
-                    return codePoint + 1f;
-                }
-
-                @Override
-                public float getV2() {
-                    return 1f;
-                }
-            };
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return true;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final TerminalGrid grid = new TerminalGrid(COLUMNS, ROWS);
     private final CellVertexCache cache = new CellVertexCache(COLUMNS, ROWS, 8f, 12f);
-    private final FlatCellWriter writer = new FlatCellWriter(grid, cache, new FakeSource());
+    private final FlatCellWriter writer =
+            new FlatCellWriter(grid, cache, TestGlyphSource.ofCodePointRegions(8, 12));
     private final CellHandle handle = new CellHandle(2, 1);
 
     private float vertexValue(int column, int row, int offset) {

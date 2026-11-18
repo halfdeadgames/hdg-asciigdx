@@ -7,8 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
@@ -16,35 +14,10 @@ class FrameCellHandlesTest {
 
     private static final float DELTA = 0.0001f;
 
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
-    private final Layer layer = stack.add(new TerminalGrid(6, 4), new FakeSource());
+    private final Layer layer =
+            stack.add(new TerminalGrid(6, 4), TestGlyphSource.ofCellSize(8, 12));
 
     @Test
     void repeatRequestsReturnTheSameHandle() {
@@ -280,7 +253,7 @@ class FrameCellHandlesTest {
     void panelMemberAndGroupMemberLayersAreSwept() {
         Panel panel = stack.addPanel(0f, 0f, 100f, 100f);
         layer.setPanel(panel);
-        Layer grouped = stack.add(new TerminalGrid(6, 4), new FakeSource());
+        Layer grouped = stack.add(new TerminalGrid(6, 4), TestGlyphSource.ofCellSize(8, 12));
         stack.addGroup().add(grouped);
         CellHandle panelHandle = layer.obtainFrameCellHandle(0, 0);
         CellHandle groupedHandle = grouped.obtainFrameCellHandle(0, 0);

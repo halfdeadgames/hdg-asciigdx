@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,36 +17,10 @@ class MapWindowMarkTest {
     private static final int ORIGIN_COLUMN = 3;
     private static final int ORIGIN_ROW = 2;
 
-    private static final class SquareSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(COLUMNS, ROWS);
-    private final Layer layer = stack.add(grid, new SquareSource());
+    private final Layer layer = stack.add(grid, TestGlyphSource.ofSquareCells(CELL));
     private final MapWindow window = enableFilledAtOrigin();
 
     /** Puts the window's origin at (ORIGIN_COLUMN, ORIGIN_ROW) with no cell flagged. */

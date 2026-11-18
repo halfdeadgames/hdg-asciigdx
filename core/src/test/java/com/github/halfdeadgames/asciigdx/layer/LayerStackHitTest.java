@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
@@ -28,32 +27,6 @@ class LayerStackHitTest {
     private static final float CORNER_X = STACK_X + OFFSET_X;
     private static final float CORNER_Y = STACK_Y - OFFSET_Y;
 
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL_WIDTH;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL_HEIGHT;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private static LayerStack newStack() {
         return TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
             @Override
@@ -72,7 +45,8 @@ class LayerStackHitTest {
     }
 
     private final LayerStack stack = newStack();
-    private final Layer layer = stack.add(new TerminalGrid(COLUMNS, ROWS), new FakeSource());
+    private final Layer layer = stack.add(
+            new TerminalGrid(COLUMNS, ROWS), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
     private final GridPoint2 cell = new GridPoint2();
 
     {
@@ -305,7 +279,8 @@ class LayerStackHitTest {
     @Test
     void foreignLayerThrows() {
         LayerStack other = newStack();
-        Layer foreign = other.add(new TerminalGrid(1, 1), new FakeSource());
+        Layer foreign = other.add(
+                new TerminalGrid(1, 1), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
 
         assertThrows(IllegalArgumentException.class,
                 () -> stack.toCell(foreign, 0f, 0f, 0f, 0f, cell));

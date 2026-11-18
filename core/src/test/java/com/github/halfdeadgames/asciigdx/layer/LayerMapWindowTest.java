@@ -5,54 +5,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
 class LayerMapWindowTest {
 
-    private static final class SquareSource implements GlyphSource {
-        private final int cellSize;
-
-        SquareSource(int cellSize) {
-            this.cellSize = cellSize;
-        }
-
-        @Override
-        public int getCellWidth() {
-            return cellSize;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return cellSize;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
     private final TerminalGrid grid = new TerminalGrid(10, 6);
-    private final Layer layer = stack.add(grid, new SquareSource(16));
+    private final Layer layer = stack.add(grid, TestGlyphSource.ofSquareCells(16));
     private final Vector2 point = new Vector2();
 
     private Layer addLayer(int cellSize) {
-        return stack.add(new TerminalGrid(10, 6), new SquareSource(cellSize));
+        return stack.add(new TerminalGrid(10, 6), TestGlyphSource.ofSquareCells(cellSize));
     }
 
     private static int originColumn(Layer target) {
@@ -168,7 +134,7 @@ class LayerMapWindowTest {
         stack.setCamera(48f, 0f);
         layer.enableMapWindow();
 
-        layer.setGlyphSource(new SquareSource(8));
+        layer.setGlyphSource(TestGlyphSource.ofSquareCells(8));
 
         assertEquals(6, originColumn(layer));
     }
@@ -180,7 +146,7 @@ class LayerMapWindowTest {
         MapWindow window = layer.getMapWindow();
         window.markAllFilled();
 
-        layer.setGlyphSource(new SquareSource(8));
+        layer.setGlyphSource(TestGlyphSource.ofSquareCells(8));
 
         int[] visited = {0};
         window.forEachCellToFill((mapColumn, mapRow) -> visited[0]++);

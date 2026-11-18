@@ -2,8 +2,6 @@ package com.github.halfdeadgames.asciigdx.layer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
@@ -14,53 +12,7 @@ class FlatAndLiftedCellParityTest {
     private static final int ROW = 1;
     private static final int TARGET = 0xAABBCC00;
 
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return new TextureRegion() {
-                @Override
-                public float getU() {
-                    return codePoint;
-                }
-
-                @Override
-                public float getV() {
-                    return 0f;
-                }
-
-                @Override
-                public float getU2() {
-                    return codePoint + 1f;
-                }
-
-                @Override
-                public float getV2() {
-                    return 1f;
-                }
-            };
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return true;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
-    private final FakeSource source = new FakeSource();
+    private final TestGlyphSource source = TestGlyphSource.ofCodePointRegions(8, 12);
     private final TerminalGrid grid = new TerminalGrid(4, 3);
     private final CellVertexCache cache = new CellVertexCache(4, 3, 8f, 12f);
     private final float[] liftedVertices = new float[CellVertexLayout.FLOATS_PER_QUAD];

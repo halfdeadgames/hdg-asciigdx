@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Array;
@@ -23,32 +22,6 @@ class LayerStackCameraTest {
     private static final float OFFSET_X = 10f;
     private static final float OFFSET_Y = 5f;
     private static final float DELTA = 0.0001f;
-
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL_WIDTH;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL_HEIGHT;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private static final class RecordingRenderer implements LayerRenderer {
         private final Affine2 lastTransform = new Affine2();
@@ -74,7 +47,8 @@ class LayerStackCameraTest {
         renderers.add(renderer);
         return renderer;
     });
-    private final Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource());
+    private final Layer layer = stack.add(
+            new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
     private final GridPoint2 cell = new GridPoint2();
 
     {

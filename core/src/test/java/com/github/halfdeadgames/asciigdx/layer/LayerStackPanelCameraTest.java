@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Matrix4;
@@ -23,32 +22,6 @@ import org.junit.jupiter.api.Test;
 class LayerStackPanelCameraTest {
 
     private static final float TOLERANCE = 1e-3f;
-
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private final List<Rectangle> pushed = new ArrayList<>();
     private final Affine2 drawnTransform = new Affine2();
@@ -107,7 +80,7 @@ class LayerStackPanelCameraTest {
     }
 
     private Layer addLayer() {
-        return stack.add(new TerminalGrid(4, 3), new FakeSource());
+        return stack.add(new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(8, 12));
     }
 
     private Layer addMember(Panel panel) {

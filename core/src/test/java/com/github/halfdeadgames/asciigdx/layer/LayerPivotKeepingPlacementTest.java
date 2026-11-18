@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
@@ -24,32 +23,6 @@ class LayerPivotKeepingPlacementTest {
     private record Point(float x, float y) {
     }
 
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
                 @Override
@@ -65,7 +38,8 @@ class LayerPivotKeepingPlacementTest {
                 public void dispose() {
                 }
             });
-    private final Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource());
+    private final Layer layer =
+            stack.add(new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(8, 12));
     private final Vector2 world = new Vector2();
 
     {

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Vector2;
@@ -22,32 +21,6 @@ class LayerStackPointMappingTest {
     private static final float OFFSET_X = 10f;
     private static final float OFFSET_Y = 5f;
     private static final float TOLERANCE = 1e-3f;
-
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL_WIDTH;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL_HEIGHT;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private static LayerStack newStack() {
         return TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
@@ -67,7 +40,8 @@ class LayerStackPointMappingTest {
     }
 
     private final LayerStack stack = newStack();
-    private final Layer layer = stack.add(new TerminalGrid(4, 3), new FakeSource());
+    private final Layer layer = stack.add(
+            new TerminalGrid(4, 3), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
     private final Vector2 world = new Vector2();
     private final Vector2 point = new Vector2();
     private final GridPoint2 cell = new GridPoint2();
@@ -217,7 +191,8 @@ class LayerStackPointMappingTest {
 
     @Test
     void foreignLayerThrows() {
-        Layer foreign = newStack().add(new TerminalGrid(2, 2), new FakeSource());
+        Layer foreign = newStack().add(
+                new TerminalGrid(2, 2), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
 
         assertThrows(IllegalArgumentException.class,
                 () -> stack.toLayerPoint(foreign, 0f, 0f, 0f, 0f, point));

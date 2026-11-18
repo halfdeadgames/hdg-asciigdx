@@ -4,39 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import org.junit.jupiter.api.Test;
 
 class PanelTest {
-
-    private static final class FakeSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 12;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
 
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new LayerRenderer() {
@@ -66,7 +39,7 @@ class PanelTest {
 
     @Test
     void addPanelInCellsMultipliesByCellSize() {
-        Panel panel = stack.addPanelInCells(2, 3, 4, 5, new FakeSource());
+        Panel panel = stack.addPanelInCells(2, 3, 4, 5, TestGlyphSource.ofCellSize(8, 12));
 
         assertEquals(16f, panel.getX());
         assertEquals(36f, panel.getY());
@@ -78,9 +51,9 @@ class PanelTest {
     void addPanelInCellsRejectsNullSourceAndNegativeCounts() {
         assertThrows(NullPointerException.class, () -> stack.addPanelInCells(0, 0, 1, 1, null));
         assertThrows(IllegalArgumentException.class,
-                () -> stack.addPanelInCells(0, 0, -1, 1, new FakeSource()));
+                () -> stack.addPanelInCells(0, 0, -1, 1, TestGlyphSource.ofCellSize(8, 12)));
         assertThrows(IllegalArgumentException.class,
-                () -> stack.addPanelInCells(0, 0, 1, -1, new FakeSource()));
+                () -> stack.addPanelInCells(0, 0, 1, -1, TestGlyphSource.ofCellSize(8, 12)));
     }
 
     @Test

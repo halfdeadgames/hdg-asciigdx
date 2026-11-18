@@ -17,37 +17,11 @@ class OffscreenFadeTest {
     private final LayerStack stack = TestStacks.withRenderers((grid, source, shared) -> null);
 
     private Layer layerWithSprites(int count) {
-        Layer layer = stack.add(new TerminalGrid(2, 2), new NoGlyphs());
+        Layer layer = stack.add(new TerminalGrid(2, 2), TestGlyphSource.ofSquareCells(8));
         for (int i = 0; i < count; i++) {
             layer.addSprite('a', 0xFFFFFFFF, 0f, 0f);
         }
         return layer;
-    }
-
-    private static final class NoGlyphs implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return 8;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return 8;
-        }
-
-        @Override
-        public com.badlogic.gdx.graphics.g2d.TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
     }
 
     private static boolean isNeeded(float tintAlpha, Layer layer) {
@@ -71,7 +45,7 @@ class OffscreenFadeTest {
                     public void dispose() {
                     }
                 });
-        return cellStack.add(new TerminalGrid(2, 2), new NoGlyphs());
+        return cellStack.add(new TerminalGrid(2, 2), TestGlyphSource.ofSquareCells(8));
     }
 
     @Test

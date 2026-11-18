@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
@@ -18,35 +16,10 @@ class MapWindowSlideTest {
     private static final int CELL_HEIGHT = 16;
     private static final float DELTA = 0.001f;
 
-    private static final class TallSource implements GlyphSource {
-        @Override
-        public int getCellWidth() {
-            return CELL_WIDTH;
-        }
-
-        @Override
-        public int getCellHeight() {
-            return CELL_HEIGHT;
-        }
-
-        @Override
-        public TextureRegion getGlyphRegion(int codePoint) {
-            return null;
-        }
-
-        @Override
-        public boolean hasGlyph(int codePoint) {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-        }
-    }
-
     private final LayerStack stack =
             TestStacks.withRenderers((grid, source, shared) -> new SilentRenderer());
-    private final Layer layer = stack.add(new TerminalGrid(COLUMNS, ROWS), new TallSource());
+    private final Layer layer = stack.add(
+            new TerminalGrid(COLUMNS, ROWS), TestGlyphSource.ofCellSize(CELL_WIDTH, CELL_HEIGHT));
     private final MapWindow window = enable();
 
     private MapWindow enable() {
