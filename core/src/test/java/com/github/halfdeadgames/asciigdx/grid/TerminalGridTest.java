@@ -2,9 +2,11 @@ package com.github.halfdeadgames.asciigdx.grid;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.badlogic.gdx.graphics.Color;
 import org.junit.jupiter.api.Test;
 
 class TerminalGridTest {
@@ -117,6 +119,107 @@ class TerminalGridTest {
     @Test
     void rejectsSizeThatOverflows() {
         assertThrows(IllegalArgumentException.class, () -> new TerminalGrid(50000, 50000));
+    }
+
+    @Test
+    void colorOverloadSetStoresRgba8888() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color foreground = new Color(0.2f, 0.4f, 0.6f, 0.8f);
+        Color background = new Color(0.9f, 0.1f, 0.3f, 1f);
+
+        grid.set(1, 1, 'Q', foreground, background);
+
+        assertEquals('Q', grid.getCodePoint(1, 1));
+        assertEquals(Color.rgba8888(foreground), grid.getForeground(1, 1));
+        assertEquals(Color.rgba8888(background), grid.getBackground(1, 1));
+    }
+
+    @Test
+    void colorOverloadsStoreLiteralRgba8888NotToIntBits() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color color = new Color(1f, 0f, 0f, 0.5f);
+
+        grid.set(0, 0, 'A', color, color);
+        grid.setForeground(1, 0, color);
+        grid.setBackground(2, 0, color);
+
+        assertEquals(0xFF00007F, grid.getForeground(0, 0));
+        assertEquals(0xFF00007F, grid.getBackground(0, 0));
+        assertEquals(0xFF00007F, grid.getForeground(1, 0));
+        assertEquals(0xFF00007F, grid.getBackground(2, 0));
+        assertNotEquals(color.toIntBits(), grid.getForeground(0, 0));
+    }
+
+    @Test
+    void colorOverloadsSetSingleChannels() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color color = new Color(0.5f, 0.25f, 0.75f, 1f);
+
+        grid.setForeground(0, 0, color);
+        grid.setBackground(2, 1, color);
+
+        assertEquals(Color.rgba8888(color), grid.getForeground(0, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getBackground(0, 0));
+        assertEquals(Color.rgba8888(color), grid.getBackground(2, 1));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, grid.getForeground(2, 1));
+    }
+
+    @Test
+    void colorOverloadsWithEqualColorDoNotMarkDirty() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color color = new Color(0.5f, 0.25f, 0.75f, 1f);
+        grid.set(1, 0, 'A', color, color);
+        DirtyTracker tracker = grid.createDirtyTracker();
+        tracker.markAllClean();
+
+        grid.set(1, 0, 'A', new Color(color), new Color(color));
+        grid.setForeground(1, 0, new Color(color));
+        grid.setBackground(1, 0, new Color(color));
+
+        assertFalse(tracker.isDirty(1, 0));
+        tracker.release();
+    }
+
+    @Test
+    void colorOverloadsIgnoreWritesOutsideGrid() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color color = Color.RED;
+
+        grid.set(3, 0, 'A', color, color);
+        grid.setForeground(-1, 0, color);
+        grid.setBackground(0, 2, color);
+
+        assertGridEmpty(grid);
+    }
+
+    @Test
+    void colorOverloadsRejectNullEvenOutsideGrid() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+
+        assertThrows(NullPointerException.class, () -> grid.set(0, 0, 'A', null, Color.RED));
+        assertThrows(NullPointerException.class, () -> grid.set(0, 0, 'A', Color.RED, null));
+        assertThrows(NullPointerException.class, () -> grid.set(9, 9, 'A', null, Color.RED));
+        assertThrows(NullPointerException.class, () -> grid.setForeground(0, 0, (Color) null));
+        assertThrows(NullPointerException.class, () -> grid.setForeground(9, 9, (Color) null));
+        assertThrows(NullPointerException.class, () -> grid.setBackground(0, 0, (Color) null));
+        assertThrows(NullPointerException.class, () -> grid.setBackground(9, 9, (Color) null));
+    }
+
+    @Test
+    void colorOverloadsCopyValueAtCallTime() {
+        TerminalGrid grid = new TerminalGrid(3, 2);
+        Color color = new Color(0.2f, 0.4f, 0.6f, 1f);
+        int expected = Color.rgba8888(color);
+
+        grid.set(0, 0, 'A', color, color);
+        grid.setForeground(1, 0, color);
+        grid.setBackground(2, 0, color);
+        color.set(1f, 1f, 1f, 1f);
+
+        assertEquals(expected, grid.getForeground(0, 0));
+        assertEquals(expected, grid.getBackground(0, 0));
+        assertEquals(expected, grid.getForeground(1, 0));
+        assertEquals(expected, grid.getBackground(2, 0));
     }
 
     private static void assertCellEmpty(TerminalGrid grid, int x, int y) {

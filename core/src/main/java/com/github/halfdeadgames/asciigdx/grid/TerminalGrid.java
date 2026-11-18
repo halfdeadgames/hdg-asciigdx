@@ -1,8 +1,10 @@
 package com.github.halfdeadgames.asciigdx.grid;
 
+import com.badlogic.gdx.graphics.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Grid of cells that can be resized with {@link #resize(int, int)}. Each cell holds a code point
@@ -15,7 +17,11 @@ import java.util.List;
  * <p>Colors are packed RGBA8888 ints ({@code 0xRRGGBBAA}), the format returned by
  * libGDX {@code Color.rgba8888()}. A 6-digit hex literal such as {@code 0xFF4040} is read as
  * {@code 0x00FF4040} and draws the wrong color; wrap it with
- * {@link com.github.halfdeadgames.asciigdx.color.CellColor#rgb(int)}.
+ * {@link com.github.halfdeadgames.asciigdx.color.CellColor#rgb(int)}. To pass a libGDX
+ * {@code Color} instead, use {@link #set(int, int, int, Color, Color)},
+ * {@link #setForeground(int, int, Color)}, or {@link #setBackground(int, int, Color)}.
+ * {@code Color} arguments must be non-null, which matters for Kotlin callers, where
+ * {@code Color} is a platform type.
  *
  * <p>Bounds rule: writes outside the grid are silently ignored, which allows
  * clipped drawing. Reads outside the grid throw {@link IndexOutOfBoundsException}.
@@ -131,6 +137,38 @@ public final class TerminalGrid implements TerminalView {
     }
 
     /**
+     * Writes a code point and its colors to a cell from libGDX {@code Color} objects. This is
+     * a convenience form of {@link #set(int, int, int, int, int)}: it converts each color with
+     * {@code Color.rgba8888(color)} and then behaves exactly like the int method. The int
+     * method is the fast path, with no conversion, so prefer it in per-frame loops.
+     *
+     * <p>Writes outside the grid are ignored. The cell becomes dirty only if a stored value
+     * changes, the same as the int method. The {@code Color} objects are not retained: their
+     * values are copied at call time, so changing them later does not change the cell.
+     *
+     * <p>Each component is truncated to 8 bits without clamping, so components outside 0 to 1
+     * give unspecified colors. Clamp first, for example with {@code Color.clamp()}.
+     *
+     * <p>Do not pass {@code Color.toIntBits()} to the int methods: it packs the bytes in
+     * ABGR order, not RGBA8888. This overload avoids that mistake.
+     *
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
+     * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
+     * @param codePoint Unicode code point that picks the glyph to draw
+     * @param foreground foreground color; must not be null, even when {@code (x, y)} is
+     *         outside the grid
+     * @param background background color; must not be null, even when {@code (x, y)} is
+     *         outside the grid
+     * @throws NullPointerException if {@code foreground} or {@code background} is null
+     */
+    public void set(int x, int y, int codePoint, Color foreground, Color background) {
+        Objects.requireNonNull(foreground, "foreground");
+        Objects.requireNonNull(background, "background");
+        set(x, y, codePoint, Color.rgba8888(foreground), Color.rgba8888(background));
+    }
+
+    /**
      * Writes only the code point of a cell. The colors are kept. Does nothing if
      * {@code (x, y)} is outside the grid. The cell becomes dirty only if the
      * stored code point changes.
@@ -162,6 +200,34 @@ public final class TerminalGrid implements TerminalView {
     }
 
     /**
+     * Writes only the foreground color of a cell from a libGDX {@code Color}. This is a
+     * convenience form of {@link #setForeground(int, int, int)}: it converts the color with
+     * {@code Color.rgba8888(color)} and then behaves exactly like the int method. The int
+     * method is the fast path, with no conversion, so prefer it in per-frame loops.
+     *
+     * <p>Writes outside the grid are ignored. The cell becomes dirty only if the stored value
+     * changes, the same as the int method. The {@code Color} object is not retained: its value
+     * is copied at call time, so changing it later does not change the cell.
+     *
+     * <p>Each component is truncated to 8 bits without clamping, so components outside 0 to 1
+     * give unspecified colors. Clamp first, for example with {@code Color.clamp()}.
+     *
+     * <p>Do not pass {@code Color.toIntBits()} to the int methods: it packs the bytes in
+     * ABGR order, not RGBA8888. This overload avoids that mistake.
+     *
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
+     * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
+     * @param foreground foreground color; must not be null, even when {@code (x, y)} is
+     *         outside the grid
+     * @throws NullPointerException if {@code foreground} is null
+     */
+    public void setForeground(int x, int y, Color foreground) {
+        Objects.requireNonNull(foreground, "foreground");
+        setForeground(x, y, Color.rgba8888(foreground));
+    }
+
+    /**
      * Writes only the background color of a cell. The code point and foreground are
      * kept. Does nothing if {@code (x, y)} is outside the grid. The cell becomes
      * dirty only if the stored color changes.
@@ -173,6 +239,34 @@ public final class TerminalGrid implements TerminalView {
      */
     public void setBackground(int x, int y, int backgroundRgba) {
         writeChannel(backgrounds, x, y, backgroundRgba);
+    }
+
+    /**
+     * Writes only the background color of a cell from a libGDX {@code Color}. This is a
+     * convenience form of {@link #setBackground(int, int, int)}: it converts the color with
+     * {@code Color.rgba8888(color)} and then behaves exactly like the int method. The int
+     * method is the fast path, with no conversion, so prefer it in per-frame loops.
+     *
+     * <p>Writes outside the grid are ignored. The cell becomes dirty only if the stored value
+     * changes, the same as the int method. The {@code Color} object is not retained: its value
+     * is copied at call time, so changing it later does not change the cell.
+     *
+     * <p>Each component is truncated to 8 bits without clamping, so components outside 0 to 1
+     * give unspecified colors. Clamp first, for example with {@code Color.clamp()}.
+     *
+     * <p>Do not pass {@code Color.toIntBits()} to the int methods: it packs the bytes in
+     * ABGR order, not RGBA8888. This overload avoids that mistake.
+     *
+     * @param x column index in cells, valid from 0 to getColumns()-1; outside it the call is
+     *         ignored
+     * @param y row index in cells, valid from 0 to getRows()-1; outside it the call is ignored
+     * @param background background color; must not be null, even when {@code (x, y)} is
+     *         outside the grid
+     * @throws NullPointerException if {@code background} is null
+     */
+    public void setBackground(int x, int y, Color background) {
+        Objects.requireNonNull(background, "background");
+        setBackground(x, y, Color.rgba8888(background));
     }
 
     private void writeChannel(int[] channel, int x, int y, int value) {
