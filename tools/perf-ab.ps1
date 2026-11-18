@@ -52,6 +52,10 @@ Compares 7 and 8 layers in the same tree.
 .EXAMPLE
 .\tools\perf-ab.ps1 -OldRef HEAD -Scene sparse-update -OldArgs '-Pdirty=50' -NewArgs '-Pdirty=50'
 Compares the last commit with the working tree on the sparse-update scene at 50% changed cells.
+
+.EXAMPLE
+.\tools\perf-ab.ps1 -OldRef HEAD -Scene map-scroll
+Compares the last commit with the working tree on the map-scroll scene (moving camera over a large map).
 #>
 param(
     [string]$OldRef = 'HEAD',
