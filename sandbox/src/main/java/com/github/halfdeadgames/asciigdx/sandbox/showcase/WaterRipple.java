@@ -2,23 +2,28 @@ package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
 import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
+import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
+import com.github.halfdeadgames.asciigdx.zone.CellEffect;
+import com.github.halfdeadgames.asciigdx.zone.EffectZone;
+import com.github.halfdeadgames.asciigdx.zone.ZoneCell;
 
 /**
- * Swells the water glyphs near a splash point as rings pass. Only the scale of lifted cells is
- * touched, so other effects can use the same handles for alpha.
+ * Swells the water glyphs near a splash point as rings pass. The swell is written to frame handles
+ * through an {@link EffectZone}, so the game must call {@code beginCellEffects} every frame before
+ * {@link #update}. Only the scale is touched, so other effects can use the same frame handles for
+ * alpha.
  */
 public final class WaterRipple {
 
     private final RippleRings rings;
-    private final float maxScaleBump;
-    private final CellHandle[] cells;
-    private final float[] distancesCells;
-    private boolean atRest = true;
+    private final EffectZone zone;
+    private final Layer waterLayer;
 
     /**
      * Cell coordinates are in cell units from the grid's top-left corner, so the center of cell
-     * (c, r) is (c + 0.5, r + 0.5). Handles are made for the cells whose centers lie within the
-     * half extents of the splash point.
+     * (c, r) is (c + 0.5, r + 0.5). The zone covers the cells whose centers lie within the half
+     * extents of the splash point.
      *
      * @param rowHeightPerColumnWidth cell height divided by cell width, so rings look round on
      *        screen
@@ -33,26 +38,24 @@ public final class WaterRipple {
         requireFinitePositive(halfWidthCells, "halfWidthCells");
         requireFinitePositive(halfHeightCells, "halfHeightCells");
         requireFinitePositive(maxScaleBump, "maxScaleBump");
+        this.waterLayer = waterLayer;
         this.rings = rings;
-        this.maxScaleBump = maxScaleBump;
         int firstColumn = clampedFirstCell(splashColumn - halfWidthCells);
         int lastColumn =
                 clampedLastCell(splashColumn + halfWidthCells, waterLayer.getGrid().getColumns());
         int firstRow = clampedFirstCell(splashRow - halfHeightCells);
         int lastRow = clampedLastCell(splashRow + halfHeightCells, waterLayer.getGrid().getRows());
-        int columnCount = Math.max(0, lastColumn - firstColumn + 1);
-        int rowCount = Math.max(0, lastRow - firstRow + 1);
-        cells = new CellHandle[columnCount * rowCount];
-        distancesCells = new float[cells.length];
-        for (int row = 0; row < rowCount; row++) {
-            for (int column = 0; column < columnCount; column++) {
-                int index = row * columnCount + column;
-                cells[index] = waterLayer.obtainCellHandle(firstColumn + column, firstRow + row);
-                distancesCells[index] = distanceCells(
-                        firstColumn + column + 0.5f - splashColumn,
-                        (firstRow + row + 0.5f - splashRow) * rowHeightPerColumnWidth);
-            }
+        int columnCount = lastColumn - firstColumn + 1;
+        int rowCount = lastRow - firstRow + 1;
+        if (columnCount < 1 || rowCount < 1) {
+            zone = null;
+            return;
         }
+        RectangleShape coveredCells = RectangleShape.forCellAspect(
+                firstColumn, firstRow, columnCount, rowCount, ShapeFill.FILLED,
+                rowHeightPerColumnWidth);
+        zone = new EffectZone(coveredCells, new RippleSwell(
+                rings, maxScaleBump, splashColumn, splashRow, rowHeightPerColumnWidth));
     }
 
     private static void requireFinitePositive(float value, String name) {
@@ -70,33 +73,37 @@ public final class WaterRipple {
         return Math.min(gridSize - 1, (int) Math.floor(edge - 0.5f));
     }
 
-    private static float distanceCells(float columnDelta, float rowDelta) {
-        return (float) Math.sqrt(columnDelta * columnDelta + rowDelta * rowDelta);
-    }
-
-    public int handleCount() {
-        return cells.length;
-    }
-
     public void update(float timeSeconds) {
-        if (!rings.isActiveAt(timeSeconds)) {
-            settleIfLifted();
+        if (zone == null || !rings.isActiveAt(timeSeconds)) {
             return;
         }
-        atRest = false;
-        for (int index = 0; index < cells.length; index++) {
-            cells[index].setScale(
-                    1f + maxScaleBump * rings.liftAt(distancesCells[index], timeSeconds));
-        }
+        zone.apply(waterLayer, timeSeconds);
     }
 
-    private void settleIfLifted() {
-        if (atRest) {
-            return;
+    private static final class RippleSwell implements CellEffect {
+
+        private final RippleRings rings;
+        private final float maxScaleBump;
+        private final float splashColumn;
+        private final float splashRow;
+        private final float rowHeightPerColumnWidth;
+
+        RippleSwell(RippleRings rings, float maxScaleBump, float splashColumn, float splashRow,
+                float rowHeightPerColumnWidth) {
+            this.rings = rings;
+            this.maxScaleBump = maxScaleBump;
+            this.splashColumn = splashColumn;
+            this.splashRow = splashRow;
+            this.rowHeightPerColumnWidth = rowHeightPerColumnWidth;
         }
-        atRest = true;
-        for (int index = 0; index < cells.length; index++) {
-            cells[index].setScale(1f);
+
+        @Override
+        public void apply(CellHandle cell, ZoneCell where, float timeSeconds) {
+            float columnDelta = where.getColumn() + 0.5f - splashColumn;
+            float rowDelta = (where.getRow() + 0.5f - splashRow) * rowHeightPerColumnWidth;
+            float distanceCells =
+                    (float) Math.sqrt(columnDelta * columnDelta + rowDelta * rowDelta);
+            cell.scaleBy(1f + maxScaleBump * rings.liftAt(distanceCells, timeSeconds));
         }
     }
 }
