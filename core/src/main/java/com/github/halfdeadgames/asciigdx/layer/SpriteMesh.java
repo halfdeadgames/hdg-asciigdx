@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
-import com.github.halfdeadgames.asciigdx.color.CellColor;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
@@ -73,7 +72,10 @@ final class SpriteMesh implements Disposable {
         return false;
     }
 
-    /** Counts lifted cells that have a glyph to draw; blank cells draw nothing. */
+    /**
+     * Counts lifted cells that have a glyph to draw; blank cells and cells at cell alpha 0 draw
+     * nothing.
+     */
     static int countDrawnLifted(Array<CellHandle> cells, TerminalView grid) {
         int drawn = 0;
         for (int i = 0; i < cells.size; i++) {
@@ -85,7 +87,7 @@ final class SpriteMesh implements Disposable {
     }
 
     private static boolean isDrawnLifted(CellHandle cell, TerminalView grid) {
-        if (!cell.isLifted()) {
+        if (!cell.isLifted() || !(cell.getCellAlpha() > 0f)) {
             return false;
         }
         return !GridRenderer.isBlankGlyph(resolvedCodePoint(cell, grid),
@@ -149,16 +151,16 @@ final class SpriteMesh implements Disposable {
     /**
      * Writes one quad for a lifted cell: the cell's current glyph and foreground with the handle's
      * temporary overrides applied, placed at the cell's position plus the handle's offset, with the
-     * handle's rotation, scale, and pivot, and its alpha multiplied into the glyph alpha. The cell
-     * must not be blank.
+     * handle's rotation, scale, and pivot. The handle's foreground alpha is already part of the
+     * resolved foreground, so it is not applied again here; the handle's cell alpha is written into
+     * the quad. The cell must not be blank.
      */
     static void writeLiftedCell(float[] vertices, int quad, CellHandle cell, TerminalView grid,
             GlyphSource glyphSource, boolean pixelSnapping) {
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
         TextureRegion region = glyphSource.getGlyphRegion(resolvedCodePoint(cell, grid));
-        int color = CellColor.withAlphaScaled(resolvedForeground(cell, grid),
-                cell.getAlphaMultiplier());
+        int color = resolvedForeground(cell, grid);
         float x = cell.getColumn() * cellWidth + cell.getOffsetX();
         float y = cell.getRow() * cellHeight + cell.getOffsetY();
         if (pixelSnapping) {
@@ -168,7 +170,7 @@ final class SpriteMesh implements Disposable {
         SpriteQuadWriter.writeQuad(vertices, quad * CellVertexLayout.FLOATS_PER_QUAD, cell, color,
                 x, y,
                 cellWidth, cellHeight, region.getU(), region.getV(), region.getU2(),
-                region.getV2());
+                region.getV2(), cell.getCellAlpha());
     }
 
     private void writeSprite(int quad, GlyphSprite sprite, GlyphSource glyphSource, float cellWidth,

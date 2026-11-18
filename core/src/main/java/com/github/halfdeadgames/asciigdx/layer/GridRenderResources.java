@@ -11,7 +11,9 @@ final class GridRenderResources implements Disposable {
                     + "attribute vec4 " + CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE + ";\n"
                     + "attribute vec4 " + CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE + ";\n"
                     + "attribute vec2 " + CellVertexLayout.TEXCOORD_ATTRIBUTE + ";\n"
+                    + "attribute float " + CellVertexLayout.CELL_ALPHA_ATTRIBUTE + ";\n"
                     + "uniform mat4 u_projTrans;\n"
+                    + "varying float v_cellAlpha;\n"
                     + "varying vec4 v_background;\n"
                     + "varying vec4 v_foreground;\n"
                     + "varying vec2 v_texCoords;\n"
@@ -23,12 +25,15 @@ final class GridRenderResources implements Disposable {
                     + "   v_foreground = " + CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE + ";\n"
                     + "   v_foreground.a = v_foreground.a * (255.0/254.0);\n"
                     + "   v_texCoords = " + CellVertexLayout.TEXCOORD_ATTRIBUTE + ";\n"
+                    + "   v_cellAlpha = " + CellVertexLayout.CELL_ALPHA_ATTRIBUTE + ";\n"
                     + "   gl_Position = u_projTrans * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n"
                     + "}\n";
 
     // Glyph over background (Porter-Duff over), then the layer effects as one color matrix built
-    // from saturation, tint, mix, and invert in that order (see ColorEffects), then alpha. Alpha
-    // fades the cell as one color; the matrix never touches it. Mix comes before invert so a flash
+    // from saturation, tint, mix, and invert in that order (see ColorEffects), then alpha. The
+    // cell alpha is applied next and capped at opaque, then the layer alpha. The cell alpha is
+    // mediump, not lowp, because it may exceed lowp's guaranteed range of 2. Alpha fades the cell
+    // as one color; the matrix never touches it. Mix comes before invert so a flash
     // can reach its color even on a darkly tinted layer; invert comes last so it negates the
     // finished look.
     private static final String FRAGMENT_SOURCE =
@@ -40,6 +45,7 @@ final class GridRenderResources implements Disposable {
                     + "#endif\n"
                     + "varying LOWP vec4 v_background;\n"
                     + "varying LOWP vec4 v_foreground;\n"
+                    + "varying float v_cellAlpha;\n"
                     + "varying vec2 v_texCoords;\n"
                     + "uniform sampler2D u_texture;\n"
                     + "uniform mat4 u_colorMatrix;\n"
@@ -52,7 +58,7 @@ final class GridRenderResources implements Disposable {
                             + "v_background.rgb * v_background.a * (1.0 - glyph.a);\n"
                     + "  vec3 rgb = alpha > 0.0 ? premultiplied / alpha : vec3(0.0);\n"
                     + "  rgb = (u_colorMatrix * vec4(rgb, 1.0)).rgb;\n"
-                    + "  gl_FragColor = vec4(rgb, alpha * u_alpha);\n"
+                    + "  gl_FragColor = vec4(rgb, min(1.0, alpha * v_cellAlpha) * u_alpha);\n"
                     + "}";
 
     private final ShaderProgram shader;

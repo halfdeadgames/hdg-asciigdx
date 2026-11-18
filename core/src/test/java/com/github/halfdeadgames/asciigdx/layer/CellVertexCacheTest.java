@@ -19,6 +19,7 @@ class CellVertexCacheTest {
     private static final int TRANSLUCENT_BLUE = 0x0000FF80;
     private static final int PER_CELL = CellVertexLayout.FLOATS_PER_QUAD;
     private static final int STRIDE = CellVertexLayout.FLOATS_PER_VERTEX;
+    private static final float UNFADED = CellVertexLayout.OPAQUE_CELL_ALPHA;
 
     private static CellVertexCache newCache() {
         return new CellVertexCache(COLUMNS, ROWS, 8f, 12f);
@@ -26,7 +27,7 @@ class CellVertexCacheTest {
 
     private static void write(CellVertexCache cache, int column, int row, int background,
             int foreground) {
-        cache.writeCell(column, row, background, foreground, 0f, 0f, 1f, 1f);
+        cache.writeCell(column, row, background, foreground, 0f, 0f, 1f, 1f, UNFADED);
     }
 
     private static float[] slotOf(float[] vertices, int column, int row) {
@@ -71,11 +72,26 @@ class CellVertexCacheTest {
     }
 
     @Test
-    void arrayHoldsTwentyFourFloatsPerCell() {
+    void arrayHoldsOneQuadOfFloatsPerCell() {
         CellVertexCache cache = newCache();
-        assertEquals(COLUMNS * ROWS * 24, cache.getVertices().length);
+        assertEquals(COLUMNS * ROWS * PER_CELL, cache.getVertices().length);
         assertEquals(COLUMNS, cache.getColumns());
         assertEquals(ROWS, cache.getRows());
+    }
+
+    @Test
+    void everyVertexOfVisibleAndEmptyCellsHoldsOpaqueCellAlpha() {
+        CellVertexCache cache = newCache();
+        write(cache, 1, 1, OPAQUE_RED, OPAQUE_GREEN);
+        write(cache, 2, 2, 0, 0);
+
+        float[] vertices = cache.getVertices();
+        for (int cell : new int[] {1 * COLUMNS + 1, 2 * COLUMNS + 2}) {
+            for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
+                int index = cell * PER_CELL + vertex * STRIDE + CellVertexLayout.CELL_ALPHA_OFFSET;
+                assertEquals(1f, vertices[index], 0f, "cell " + cell + " vertex " + vertex);
+            }
+        }
     }
 
     @Test
@@ -124,17 +140,19 @@ class CellVertexCacheTest {
     @Test
     void uvPlacementUsesRegionBounds() {
         CellVertexCache cache = newCache();
-        cache.writeCell(1, 2, OPAQUE_RED, OPAQUE_GREEN, 0.25f, 0.5f, 0.75f, 0.625f);
+        cache.writeCell(1, 2, OPAQUE_RED, OPAQUE_GREEN, 0.25f, 0.5f, 0.75f, 0.625f, UNFADED);
 
         float[] slot = slotOf(cache.getVertices(), 1, 2);
-        assertEquals(0.25f, slot[4], 0f);
-        assertEquals(0.625f, slot[5], 0f);
-        assertEquals(0.25f, slot[10], 0f);
-        assertEquals(0.5f, slot[11], 0f);
-        assertEquals(0.75f, slot[16], 0f);
-        assertEquals(0.5f, slot[17], 0f);
-        assertEquals(0.75f, slot[22], 0f);
-        assertEquals(0.625f, slot[23], 0f);
+        assertUv(slot, 0, 0.25f, 0.625f);
+        assertUv(slot, 1, 0.25f, 0.5f);
+        assertUv(slot, 2, 0.75f, 0.5f);
+        assertUv(slot, 3, 0.75f, 0.625f);
+    }
+
+    private static void assertUv(float[] slot, int vertex, float u, float v) {
+        int uvIndex = vertex * CellVertexLayout.FLOATS_PER_VERTEX + CellVertexLayout.UV_OFFSET;
+        assertEquals(u, slot[uvIndex], 0f, "u of vertex " + vertex);
+        assertEquals(v, slot[uvIndex + 1], 0f, "v of vertex " + vertex);
     }
 
     @Test
@@ -159,7 +177,7 @@ class CellVertexCacheTest {
     @Test
     void backgroundOnlyCellWritesBackgroundColorAndNoGlyph() {
         CellVertexCache cache = newCache();
-        cache.writeCell(2, 1, OPAQUE_RED, 0xFFFFFF00, 0.1f, 0.2f, 0.3f, 0.4f);
+        cache.writeCell(2, 1, OPAQUE_RED, 0xFFFFFF00, 0.1f, 0.2f, 0.3f, 0.4f, UNFADED);
 
         float expectedBackground = ColorTools.fromRGBA8888(OPAQUE_RED);
         float[] slot = slotOf(cache.getVertices(), 2, 1);
@@ -178,7 +196,7 @@ class CellVertexCacheTest {
     @Test
     void glyphOnlyCellKeepsGlyphColorAndUv() {
         CellVertexCache cache = newCache();
-        cache.writeCell(0, 0, 0x11223300, OPAQUE_GREEN, 0.1f, 0.2f, 0.3f, 0.4f);
+        cache.writeCell(0, 0, 0x11223300, OPAQUE_GREEN, 0.1f, 0.2f, 0.3f, 0.4f, UNFADED);
 
         float[] slot = slotOf(cache.getVertices(), 0, 0);
         assertVertex(slot, 0, 0f, -12f, 0.1f, 0.4f);
@@ -190,7 +208,7 @@ class CellVertexCacheTest {
     @Test
     void bothTransparentCellIsZeroAreaAtBottomLeft() {
         CellVertexCache cache = newCache();
-        cache.writeCell(2, 1, 0xFF00FF00, 0x00FF0000, 0.1f, 0.2f, 0.3f, 0.4f);
+        cache.writeCell(2, 1, 0xFF00FF00, 0x00FF0000, 0.1f, 0.2f, 0.3f, 0.4f, UNFADED);
 
         float[] slot = slotOf(cache.getVertices(), 2, 1);
         for (int vertex = 0; vertex < 4; vertex++) {
@@ -259,6 +277,47 @@ class CellVertexCacheTest {
     }
 
     @Test
+    void cellAlphaIsWrittenOnAllFourVertices() {
+        CellVertexCache cache = newCache();
+
+        cache.writeCell(2, 1, OPAQUE_RED, OPAQUE_GREEN, 0f, 0f, 1f, 1f, 0.25f);
+
+        float[] slot = slotOf(cache.getVertices(), 2, 1);
+        for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
+            assertEquals(0.25f, slot[vertex * STRIDE + CellVertexLayout.CELL_ALPHA_OFFSET], 0f,
+                    "cell alpha of vertex " + vertex);
+        }
+    }
+
+    @Test
+    void cellAlphaZeroWritesAnEmptyQuadThatIsNotVisible() {
+        CellVertexCache cache = newCache();
+        write(cache, 2, 1, OPAQUE_RED, OPAQUE_GREEN);
+
+        cache.writeCell(2, 1, OPAQUE_RED, OPAQUE_GREEN, 0f, 0f, 1f, 1f, 0f);
+
+        float[] slot = slotOf(cache.getVertices(), 2, 1);
+        for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
+            assertVertex(slot, vertex, 16f, -24f, 0f, 0f);
+        }
+        assertCounts(cache, 0, 0);
+    }
+
+    @Test
+    void cellAlphaBelowOneCountsAsNotOpaqueButAboveOneOverOpaqueDoesNot() {
+        CellVertexCache cache = newCache();
+
+        cache.writeCell(0, 0, OPAQUE_RED, OPAQUE_GREEN, 0f, 0f, 1f, 1f, 0.5f);
+        assertCounts(cache, 1, 1);
+
+        cache.writeCell(0, 0, OPAQUE_RED, OPAQUE_GREEN, 0f, 0f, 1f, 1f, 2f);
+        assertCounts(cache, 1, 0);
+
+        cache.writeCell(0, 0, TRANSLUCENT_BLUE, OPAQUE_GREEN, 0f, 0f, 1f, 1f, 2f);
+        assertCounts(cache, 1, 1);
+    }
+
+    @Test
     void isFullyTransparentDependsOnlyOnAlphaByte() {
         assertTrue(CellVertexCache.isFullyTransparent(0));
         assertTrue(CellVertexCache.isFullyTransparent(0xFF00FF00));
@@ -272,7 +331,7 @@ class CellVertexCacheTest {
         fillGrid(cache, OPAQUE_RED, OPAQUE_GREEN);
         float[] before = cache.getVertices().clone();
 
-        cache.writeCell(2, 1, 0x00FF00FF, 0xFF00FFFF, 0.5f, 0.5f, 0.6f, 0.6f);
+        cache.writeCell(2, 1, 0x00FF00FF, 0xFF00FFFF, 0.5f, 0.5f, 0.6f, 0.6f, UNFADED);
 
         float[] after = cache.getVertices();
         int offset = (1 * COLUMNS + 2) * PER_CELL;

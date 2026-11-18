@@ -25,7 +25,9 @@ class CellHandleTest {
         assertEquals(1f, cell.getScaleY());
         assertEquals(0.5f, cell.getPivotX());
         assertEquals(0.5f, cell.getPivotY());
-        assertEquals(1f, cell.getAlphaMultiplier());
+        assertEquals(1f, cell.getForegroundAlpha());
+        assertEquals(1f, cell.getBackgroundAlpha());
+        assertEquals(1f, cell.getCellAlpha());
         assertFalse(cell.isLifted());
         assertFalse(cell.isDetached());
     }
@@ -46,9 +48,166 @@ class CellHandleTest {
         cell.reset();
         cell.setScale(-1f, 1f);
         assertTrue(cell.isLifted());
+    }
+
+    @Test
+    void foregroundAlphaDoesNotLiftButCountsAsAnOverride() {
+        cell.setForegroundAlpha(0.9f);
+
+        assertFalse(cell.isLifted());
+        assertTrue(cell.hasOverrides());
+        assertFalse(cell.isIdle());
+    }
+
+    @Test
+    void settingForegroundAlphaMarksOverridesChangedOnlyWhenTheValueChanges() {
+        cell.setForegroundAlpha(0.5f);
+        assertTrue(cell.areOverridesChanged());
+        cell.clearOverridesChanged();
+
+        cell.setForegroundAlpha(0.5f);
+
+        assertFalse(cell.areOverridesChanged());
+    }
+
+    @Test
+    void foregroundForHalvesTheAlphaByte() {
+        cell.setForegroundAlpha(0.5f);
+
+        assertEquals(0x11223380, cell.foregroundFor(0x112233FF));
+    }
+
+    @Test
+    void foregroundForCapsAForegroundAlphaAboveOneAtOpaque() {
+        cell.setForegroundAlpha(2f);
+
+        assertEquals(0x112233FF, cell.foregroundFor(0x11223380));
+        assertEquals(0x112233FF, cell.foregroundFor(0x112233C0));
+    }
+
+    @Test
+    void foregroundForAppliesTheMixAndTheForegroundAlpha() {
+        cell.setForegroundMix(0x000000FF, 1f);
+        cell.setForegroundAlpha(0.5f);
+
+        assertEquals(0x00000080, cell.foregroundFor(0x112233FF));
+    }
+
+    @Test
+    void resetTransformKeepsForegroundAlphaAndClearOverridesResetsIt() {
+        cell.setForegroundAlpha(0.3f);
+
+        cell.resetTransform();
+        assertEquals(0.3f, cell.getForegroundAlpha());
+
+        cell.clearOverrides();
+        assertEquals(1f, cell.getForegroundAlpha());
+        assertFalse(cell.hasOverrides());
+    }
+
+    @Test
+    void resetClearsForegroundAlpha() {
+        cell.setForegroundAlpha(0.3f);
+
         cell.reset();
-        cell.setAlphaMultiplier(0.9f);
-        assertTrue(cell.isLifted());
+
+        assertEquals(1f, cell.getForegroundAlpha());
+    }
+
+    @Test
+    void backgroundAlphaDoesNotLiftButCountsAsAnOverride() {
+        cell.setBackgroundAlpha(0.9f);
+
+        assertFalse(cell.isLifted());
+        assertTrue(cell.hasOverrides());
+        assertFalse(cell.isIdle());
+    }
+
+    @Test
+    void settingBackgroundAlphaMarksOverridesChangedOnlyWhenTheValueChanges() {
+        cell.setBackgroundAlpha(0.5f);
+        assertTrue(cell.areOverridesChanged());
+        cell.clearOverridesChanged();
+
+        cell.setBackgroundAlpha(0.5f);
+
+        assertFalse(cell.areOverridesChanged());
+    }
+
+    @Test
+    void backgroundForAppliesTheMixThenTheBackgroundAlphaAndLeavesTheForeground() {
+        cell.setBackgroundMix(0x000000FF, 1f);
+        cell.setBackgroundAlpha(0.5f);
+
+        assertEquals(0x00000080, cell.backgroundFor(0x112233FF));
+        assertEquals(0x445566FF, cell.foregroundFor(0x445566FF));
+    }
+
+    @Test
+    void backgroundForCapsABackgroundAlphaAboveOneAtOpaque() {
+        cell.setBackgroundAlpha(2f);
+
+        assertEquals(0x112233FF, cell.backgroundFor(0x11223380));
+        assertEquals(0x112233FF, cell.backgroundFor(0x112233C0));
+    }
+
+    @Test
+    void backgroundAlphaKeepsValuesAboveOneRaisesNegativesAndRejectsNonFinite() {
+        cell.setBackgroundAlpha(2f);
+        assertEquals(2f, cell.getBackgroundAlpha());
+        cell.setBackgroundAlpha(-1f);
+        assertEquals(0f, cell.getBackgroundAlpha());
+        assertThrows(IllegalArgumentException.class,
+                () -> cell.setBackgroundAlpha(Float.NaN));
+        assertThrows(IllegalArgumentException.class,
+                () -> cell.setBackgroundAlpha(Float.POSITIVE_INFINITY));
+    }
+
+    @Test
+    void resetTransformKeepsBackgroundAlphaAndClearOverridesResetsIt() {
+        cell.setBackgroundAlpha(0.3f);
+
+        cell.resetTransform();
+        assertEquals(0.3f, cell.getBackgroundAlpha());
+
+        cell.clearOverrides();
+        assertEquals(1f, cell.getBackgroundAlpha());
+        assertFalse(cell.hasOverrides());
+    }
+
+    @Test
+    void cellAlphaDoesNotLiftOrChangeTheColorsButCountsAsAnOverride() {
+        cell.setCellAlpha(0.5f);
+
+        assertFalse(cell.isLifted());
+        assertTrue(cell.hasOverrides());
+        assertFalse(cell.isIdle());
+        assertTrue(cell.areOverridesChanged());
+        assertEquals(0x112233FF, cell.foregroundFor(0x112233FF));
+        assertEquals(0x445566FF, cell.backgroundFor(0x445566FF));
+    }
+
+    @Test
+    void cellAlphaKeepsValuesAboveOneRaisesNegativesAndRejectsNonFinite() {
+        cell.setCellAlpha(3f);
+        assertEquals(3f, cell.getCellAlpha());
+        cell.setCellAlpha(-1f);
+        assertEquals(0f, cell.getCellAlpha());
+        assertThrows(IllegalArgumentException.class, () -> cell.setCellAlpha(Float.NaN));
+        assertThrows(IllegalArgumentException.class,
+                () -> cell.setCellAlpha(Float.NEGATIVE_INFINITY));
+    }
+
+    @Test
+    void resetTransformKeepsCellAlphaAndClearOverridesResetsIt() {
+        cell.setCellAlpha(0.3f);
+
+        cell.resetTransform();
+        assertEquals(0.3f, cell.getCellAlpha());
+
+        cell.clearOverrides();
+        assertEquals(1f, cell.getCellAlpha());
+        assertFalse(cell.hasOverrides());
     }
 
     @Test
@@ -63,11 +222,27 @@ class CellHandleTest {
     }
 
     @Test
-    void alphaIsClamped() {
-        cell.setAlphaMultiplier(2f);
-        assertEquals(1f, cell.getAlphaMultiplier());
-        cell.setAlphaMultiplier(-1f);
-        assertEquals(0f, cell.getAlphaMultiplier());
+    void foregroundAlphaKeepsValuesAboveOneRaisesNegativesAndRejectsNonFinite() {
+        cell.setForegroundAlpha(2f);
+        assertEquals(2f, cell.getForegroundAlpha());
+        cell.setForegroundAlpha(-1f);
+        assertEquals(0f, cell.getForegroundAlpha());
+        assertThrows(IllegalArgumentException.class, () -> cell.setForegroundAlpha(Float.NaN));
+        assertThrows(IllegalArgumentException.class,
+                () -> cell.setForegroundAlpha(Float.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class,
+                () -> cell.setForegroundAlpha(Float.NEGATIVE_INFINITY));
+    }
+
+    @Test
+    void everyAlphaIsCappedAtTheMaximumFactor() {
+        cell.setForegroundAlpha(1000f);
+        cell.setBackgroundAlpha(1000f);
+        cell.setCellAlpha(Float.MAX_VALUE);
+
+        assertEquals(AlphaFactor.MAX_FACTOR, cell.getForegroundAlpha());
+        assertEquals(AlphaFactor.MAX_FACTOR, cell.getBackgroundAlpha());
+        assertEquals(AlphaFactor.MAX_FACTOR, cell.getCellAlpha());
     }
 
     @Test
@@ -87,7 +262,7 @@ class CellHandleTest {
         cell.setRotation(5f);
         cell.setScale(2f);
         cell.setPivot(0f, 0f);
-        cell.setAlphaMultiplier(0.2f);
+        cell.setForegroundAlpha(0.2f);
 
         cell.reset();
 
@@ -95,7 +270,7 @@ class CellHandleTest {
         assertEquals(0.5f, cell.getPivotX());
         assertEquals(0.5f, cell.getPivotY());
         assertEquals(1f, cell.getScaleX());
-        assertEquals(1f, cell.getAlphaMultiplier());
+        assertEquals(1f, cell.getForegroundAlpha());
     }
 
     @Test
@@ -113,7 +288,9 @@ class CellHandleTest {
         assertThrows(IllegalStateException.class, () -> cell.setScale(1f));
         assertThrows(IllegalStateException.class, () -> cell.setScale(1f, 1f));
         assertThrows(IllegalStateException.class, () -> cell.setPivot(0f, 0f));
-        assertThrows(IllegalStateException.class, () -> cell.setAlphaMultiplier(0.5f));
+        assertThrows(IllegalStateException.class, () -> cell.setForegroundAlpha(0.5f));
+        assertThrows(IllegalStateException.class, () -> cell.setBackgroundAlpha(0.5f));
+        assertThrows(IllegalStateException.class, () -> cell.setCellAlpha(0.5f));
         assertThrows(IllegalStateException.class, cell::reset);
         assertThrows(IllegalStateException.class, cell::resetTransform);
         assertThrows(IllegalStateException.class, cell::clearOverrides);

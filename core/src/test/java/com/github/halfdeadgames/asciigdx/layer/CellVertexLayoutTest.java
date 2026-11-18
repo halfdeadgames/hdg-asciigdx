@@ -29,7 +29,7 @@ class CellVertexLayoutTest {
     @Test
     void attributeOffsetsMatchOffsetConstants() {
         VertexAttributes attributes = CellVertexLayout.createAttributes();
-        assertEquals(4, attributes.size());
+        assertEquals(5, attributes.size());
         assertAttribute(attributes.get(0), ShaderProgram.POSITION_ATTRIBUTE,
                 CellVertexLayout.POSITION_OFFSET);
         assertAttribute(attributes.get(1), CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE,
@@ -38,6 +38,8 @@ class CellVertexLayoutTest {
                 CellVertexLayout.FOREGROUND_COLOR_OFFSET);
         assertAttribute(attributes.get(3), ShaderProgram.TEXCOORD_ATTRIBUTE + "0",
                 CellVertexLayout.UV_OFFSET);
+        assertAttribute(attributes.get(4), CellVertexLayout.CELL_ALPHA_ATTRIBUTE,
+                CellVertexLayout.CELL_ALPHA_OFFSET);
     }
 
     private static void assertAttribute(VertexAttribute attribute, String alias,
@@ -50,6 +52,7 @@ class CellVertexLayoutTest {
     void attributeNamesAreFixed() {
         assertEquals("a_background", CellVertexLayout.BACKGROUND_COLOR_ATTRIBUTE);
         assertEquals("a_foreground", CellVertexLayout.FOREGROUND_COLOR_ATTRIBUTE);
+        assertEquals("a_cellAlpha", CellVertexLayout.CELL_ALPHA_ATTRIBUTE);
     }
 
     @Test

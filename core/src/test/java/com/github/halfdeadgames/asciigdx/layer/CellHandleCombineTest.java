@@ -42,14 +42,74 @@ class CellHandleCombineTest {
     void scalesAndAlphaMultiply() {
         lasting.setScale(2f, 3f);
         frame.setScale(0.5f, -1f);
-        lasting.setAlphaMultiplier(0.5f);
-        frame.setAlphaMultiplier(0.5f);
+        lasting.setForegroundAlpha(0.5f);
+        frame.setForegroundAlpha(0.5f);
 
         combine();
 
         assertEquals(1f, target.getScaleX(), DELTA);
         assertEquals(-3f, target.getScaleY(), DELTA);
-        assertEquals(0.25f, target.getAlphaMultiplier(), DELTA);
+        assertEquals(0.25f, target.getForegroundAlpha(), DELTA);
+    }
+
+    @Test
+    void foregroundAlphaAboveOneIsAllowedInTheProduct() {
+        lasting.setForegroundAlpha(2f);
+        frame.setForegroundAlpha(0.75f);
+
+        combine();
+
+        assertEquals(1.5f, target.getForegroundAlpha(), DELTA);
+    }
+
+    @Test
+    void alphaProductIsCappedAtTheMaximumFactor() {
+        lasting.setCellAlpha(200f);
+        frame.setCellAlpha(200f);
+
+        combine();
+
+        assertEquals(AlphaFactor.MAX_FACTOR, target.getCellAlpha());
+    }
+
+    @Test
+    void backgroundAlphasMultiplyAndStayApartFromForegroundAlpha() {
+        lasting.setBackgroundAlpha(2f);
+        frame.setBackgroundAlpha(0.25f);
+
+        combine();
+
+        assertEquals(0.5f, target.getBackgroundAlpha(), DELTA);
+        assertEquals(1f, target.getForegroundAlpha(), DELTA);
+        assertTrue(target.areOverridesChanged());
+    }
+
+    @Test
+    void cellAlphasMultiply() {
+        lasting.setCellAlpha(0.5f);
+        frame.setCellAlpha(0.5f);
+
+        combine();
+
+        assertEquals(0.25f, target.getCellAlpha(), DELTA);
+        assertTrue(target.areOverridesChanged());
+        assertFalse(target.isLifted());
+    }
+
+    @Test
+    void multipliedAlphaCapsAtTheMaximumFactor() {
+        assertEquals(AlphaFactor.MAX_FACTOR,
+                CellHandleCombine.multipliedAlpha(AlphaFactor.MAX_FACTOR, 2f));
+    }
+
+    @Test
+    void foregroundAlphaIsAnOverrideChangeNotMotion() {
+        lasting.setForegroundAlpha(0.5f);
+
+        combine();
+
+        assertTrue(target.areOverridesChanged());
+        assertFalse(target.isLifted());
     }
 
     @Test

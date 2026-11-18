@@ -51,12 +51,15 @@ final class CellVertexCache {
         notOpaqueCells = new boolean[columns * rows];
     }
 
-    /** Number of cells whose quad is non-empty (background or foreground alpha above 0). */
+    /**
+     * Number of cells whose quad is non-empty: cell alpha above 0 and background or foreground
+     * alpha above 0.
+     */
     public int getVisibleCellCount() {
         return visibleCellCount;
     }
 
-    /** Number of visible cells whose background alpha is below 255. */
+    /** Number of visible cells whose background alpha is below 255 or cell alpha below 1. */
     public int getNotOpaqueCellCount() {
         return notOpaqueCellCount;
     }
@@ -80,20 +83,31 @@ final class CellVertexCache {
      * @param v top texture coordinate (TextureRegion.getV())
      * @param u2 right texture coordinate
      * @param v2 bottom texture coordinate (TextureRegion.getV2())
+     * @param cellAlpha whole-cell alpha factor, 0 or more; at 0 the quad is empty
      * @throws IndexOutOfBoundsException if the cell is outside the grid
      */
     public void writeCell(int column, int row, int backgroundRgba, int foregroundRgba,
-            float u, float v, float u2, float v2) {
+            float u, float v, float u2, float v2, float cellAlpha) {
         Guards.requireCellInside(column, row, columns, rows);
         int cell = row * columns + column;
-        boolean backgroundVisible = !isFullyTransparent(backgroundRgba);
-        boolean glyphVisible = !isFullyTransparent(foregroundRgba);
+        boolean cellShown = cellAlpha > 0f;
+        boolean backgroundVisible = cellShown && !isFullyTransparent(backgroundRgba);
+        boolean glyphVisible = cellShown && !isFullyTransparent(foregroundRgba);
         boolean visible = backgroundVisible || glyphVisible;
 
         writeQuad(cell, column, row, backgroundRgba, foregroundRgba, backgroundVisible,
-                glyphVisible, u, v, u2, v2);
+                glyphVisible, u, v, u2, v2, cellAlpha);
         updateVisible(cell, visible);
-        updateNotOpaque(cell, visible && (backgroundRgba & 0xFF) != 0xFF);
+        updateNotOpaque(cell, visible && !coversWhatIsBehind(backgroundRgba, cellAlpha));
+    }
+
+    /**
+     * True when the cell's background is opaque and the cell is not faded. A cell alpha above 1
+     * over a translucent background can also end up opaque; it is counted as not opaque, which
+     * only keeps blending on.
+     */
+    private static boolean coversWhatIsBehind(int backgroundRgba, float cellAlpha) {
+        return (backgroundRgba & 0xFF) == 0xFF && cellAlpha >= CellVertexLayout.OPAQUE_CELL_ALPHA;
     }
 
     private void updateVisible(int cell, boolean visible) {
@@ -119,46 +133,47 @@ final class CellVertexCache {
 
     private void writeQuad(int cell, int column, int row, int backgroundRgba, int foregroundRgba,
             boolean backgroundVisible, boolean glyphVisible,
-            float u, float v, float u2, float v2) {
+            float u, float v, float u2, float v2, float cellAlpha) {
         int start = cell * CellVertexLayout.FLOATS_PER_QUAD;
         int stride = CellVertexLayout.FLOATS_PER_VERTEX;
         float left = column * cellWidth;
         float bottom = -(row + 1) * cellHeight;
         if (!backgroundVisible && !glyphVisible) {
             for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
-                putVertex(start + vertex * stride, left, bottom, 0f, 0f, 0f, 0f);
+                putVertex(start + vertex * stride, left, bottom, 0f, 0f, 0f, 0f, cellAlpha);
             }
             return;
         }
         float background = ColorTools.fromRGBA8888(backgroundRgba);
         if (!glyphVisible) {
-            putQuad(start, left, bottom, background, 0f, 0f, 0f, 0f, 0f);
+            putQuad(start, left, bottom, background, 0f, 0f, 0f, 0f, 0f, cellAlpha);
             return;
         }
         putQuad(start, left, bottom, background, ColorTools.fromRGBA8888(foregroundRgba),
-                u, v, u2, v2);
+                u, v, u2, v2, cellAlpha);
     }
 
     private void putQuad(int start, float left, float bottom, float background, float foreground,
-            float u, float v, float u2, float v2) {
+            float u, float v, float u2, float v2, float cellAlpha) {
         int stride = CellVertexLayout.FLOATS_PER_VERTEX;
         float right = left + cellWidth;
         float top = bottom + cellHeight;
 
-        putVertex(start, left, bottom, background, foreground, u, v2);
-        putVertex(start + stride, left, top, background, foreground, u, v);
-        putVertex(start + 2 * stride, right, top, background, foreground, u2, v);
-        putVertex(start + 3 * stride, right, bottom, background, foreground, u2, v2);
+        putVertex(start, left, bottom, background, foreground, u, v2, cellAlpha);
+        putVertex(start + stride, left, top, background, foreground, u, v, cellAlpha);
+        putVertex(start + 2 * stride, right, top, background, foreground, u2, v, cellAlpha);
+        putVertex(start + 3 * stride, right, bottom, background, foreground, u2, v2, cellAlpha);
     }
 
     private void putVertex(int start, float x, float y, float background, float foreground, float u,
-            float v) {
+            float v, float cellAlpha) {
         vertices[start + CellVertexLayout.POSITION_OFFSET] = x;
         vertices[start + CellVertexLayout.POSITION_OFFSET + 1] = y;
         vertices[start + CellVertexLayout.BACKGROUND_COLOR_OFFSET] = background;
         vertices[start + CellVertexLayout.FOREGROUND_COLOR_OFFSET] = foreground;
         vertices[start + CellVertexLayout.UV_OFFSET] = u;
         vertices[start + CellVertexLayout.UV_OFFSET + 1] = v;
+        vertices[start + CellVertexLayout.CELL_ALPHA_OFFSET] = cellAlpha;
     }
 
     /** Cell vertices; the live array, not a copy. */

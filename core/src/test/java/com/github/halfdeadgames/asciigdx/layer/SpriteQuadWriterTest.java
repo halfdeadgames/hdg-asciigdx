@@ -13,6 +13,7 @@ class SpriteQuadWriterTest {
     private static final float CELL_WIDTH = 8f;
     private static final float CELL_HEIGHT = 12f;
     private static final int COLOR = 0xFF8040C0;
+    private static final float UNFADED = CellVertexLayout.OPAQUE_CELL_ALPHA;
     private static final float U = 0.125f;
     private static final float V = 0.25f;
     private static final float U2 = 0.5f;
@@ -64,7 +65,7 @@ class SpriteQuadWriterTest {
         int column = 2;
         int row = 1;
         CellVertexCache cache = new CellVertexCache(5, 4, CELL_WIDTH, CELL_HEIGHT);
-        cache.writeCell(column, row, 0, COLOR, U, V, U2, V2);
+        cache.writeCell(column, row, 0, COLOR, U, V, U2, V2, UNFADED);
         int offset = (row * 5 + column) * QUAD;
         float[] expected = Arrays.copyOfRange(cache.getVertices(), offset, offset + QUAD);
 
@@ -72,6 +73,15 @@ class SpriteQuadWriterTest {
         sprite.setPosition(column * CELL_WIDTH, row * CELL_HEIGHT);
 
         assertArrayEquals(expected, write(sprite), 0f);
+    }
+
+    @Test
+    void everyVertexHoldsOpaqueCellAlpha() {
+        float[] quad = write(spriteAtCellTwoTwo());
+        for (int corner = 0; corner < CellVertexLayout.VERTICES_PER_QUAD; corner++) {
+            assertEquals(1f, quad[corner * STRIDE + CellVertexLayout.CELL_ALPHA_OFFSET], 0f,
+                    "cell alpha of corner " + corner);
+        }
     }
 
     @Test

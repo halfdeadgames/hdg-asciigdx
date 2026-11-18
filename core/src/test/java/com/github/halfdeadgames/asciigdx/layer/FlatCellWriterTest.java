@@ -117,6 +117,55 @@ class FlatCellWriterTest {
     }
 
     @Test
+    void foregroundAlphaWritesTheFadedForegroundWithoutLifting() {
+        putGridCell('a');
+        handle.setForegroundAlpha(0.5f);
+
+        writer.write(2, 1, false, handle);
+
+        assertEquals(ColorTools.fromRGBA8888(0x11223380), foregroundOf(2, 1), EPSILON);
+        assertEquals(ColorTools.fromRGBA8888(GRID_BACKGROUND), backgroundOf(2, 1), EPSILON);
+    }
+
+    @Test
+    void backgroundAlphaFadesTheBackgroundLeftByAHiddenGlyph() {
+        putGridCell('a');
+        handle.setBackgroundAlpha(0.5f);
+
+        writer.write(2, 1, true, handle);
+
+        assertEquals(ColorTools.fromRGBA8888(0x44556680), backgroundOf(2, 1), EPSILON);
+        assertEquals(1, cache.getNotOpaqueCellCount());
+    }
+
+    @Test
+    void cellAlphaIsWrittenForTheGlyphAndForAHiddenGlyphsBackground() {
+        putGridCell('a');
+        handle.setCellAlpha(0.5f);
+
+        writer.write(2, 1, false, handle);
+        assertEquals(0.5f, vertexValue(2, 1, CellVertexLayout.CELL_ALPHA_OFFSET), EPSILON);
+
+        writer.write(2, 1, true, handle);
+        assertEquals(0.5f, vertexValue(2, 1, CellVertexLayout.CELL_ALPHA_OFFSET), EPSILON);
+        assertEquals(1, cache.getNotOpaqueCellCount());
+    }
+
+    @Test
+    void cellAlphaIsOneWithoutAHandleOrWithADetachedOne() {
+        putGridCell('a');
+        handle.setCellAlpha(0f);
+        handle.detach();
+
+        writer.write(2, 1, false, handle);
+        assertEquals(1f, vertexValue(2, 1, CellVertexLayout.CELL_ALPHA_OFFSET), EPSILON);
+
+        writer.write(2, 1, false, null);
+        assertEquals(1f, vertexValue(2, 1, CellVertexLayout.CELL_ALPHA_OFFSET), EPSILON);
+        assertEquals(1, cache.getVisibleCellCount());
+    }
+
+    @Test
     void overrideGlyphMakesABlankGridCellVisible() {
         grid.set(2, 1, ' ', GRID_FOREGROUND, TerminalGrid.TRANSPARENT_RGBA);
         handle.setCodePoint('z');

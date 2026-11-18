@@ -335,6 +335,7 @@ class ShowcaseScene extends GridScene {
 
     @Override
     protected void update(float delta) {
+        layers.beginCellEffects(delta);
         if (!clockPinned) {
             clock.update(delta);
         }
@@ -723,9 +724,8 @@ class ShowcaseScene extends GridScene {
                 fallEndY + (cellHeight - crispGlyphs.getCellHeight()) / 2f);
         sprite.setVisible(false);
         SeeThroughWater seeThroughWater = new SeeThroughWater(
-                UNDERWATER_DIVE, waterGrid, splashWaterColumn(), splashWaterRow(),
-                cellHeight / cellWidth,
-                WATER_GLYPH_COLOR, WATER_BACKGROUND_COLOR);
+                UNDERWATER_DIVE, waterLayer, splashWaterColumn(), splashWaterRow(),
+                cellHeight / cellWidth);
         return new UnderwaterSwap(UNDERWATER_DIVE, sprite, seeThroughWater);
     }
 

@@ -16,6 +16,7 @@ final class CellVertexLayout {
     static final String BACKGROUND_COLOR_ATTRIBUTE = "a_background";
     static final String FOREGROUND_COLOR_ATTRIBUTE = "a_foreground";
     static final String TEXCOORD_ATTRIBUTE = ShaderProgram.TEXCOORD_ATTRIBUTE + "0";
+    static final String CELL_ALPHA_ATTRIBUTE = "a_cellAlpha";
 
     static final int VERTICES_PER_QUAD = 4;
     static final int INDICES_PER_QUAD = 6;
@@ -24,7 +25,9 @@ final class CellVertexLayout {
     static final int BACKGROUND_COLOR_OFFSET = 2;
     static final int FOREGROUND_COLOR_OFFSET = 3;
     static final int UV_OFFSET = 4;
-    static final int FLOATS_PER_VERTEX = 6;
+    static final int CELL_ALPHA_OFFSET = 6;
+    static final int FLOATS_PER_VERTEX = 7;
+    static final float OPAQUE_CELL_ALPHA = 1f;
     static final int FLOATS_PER_QUAD = VERTICES_PER_QUAD * FLOATS_PER_VERTEX;
 
     /** Indices are 16-bit, so one mesh addresses at most 65535 vertices. */
@@ -40,7 +43,9 @@ final class CellVertexLayout {
                 packedColor(BACKGROUND_COLOR_ATTRIBUTE),
                 packedColor(FOREGROUND_COLOR_ATTRIBUTE),
                 new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2,
-                        TEXCOORD_ATTRIBUTE, 0));
+                        TEXCOORD_ATTRIBUTE, 0),
+                new VertexAttribute(VertexAttributes.Usage.Generic, 1, GL20.GL_FLOAT, false,
+                        CELL_ALPHA_ATTRIBUTE));
     }
 
     private static VertexAttribute packedColor(String name) {

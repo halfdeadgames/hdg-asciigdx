@@ -31,12 +31,14 @@ final class FlatCellWriter {
         int background = CellResolver.background(grid.getBackground(column, row), handle);
         int codePoint = CellResolver.codePoint(grid.getCodePoint(column, row), handle);
         int foreground = CellResolver.foreground(grid.getForeground(column, row), handle);
+        float cellAlpha = CellResolver.cellAlpha(handle);
         if (glyphHidden || GridRenderer.isBlankGlyph(codePoint, foreground)) {
-            cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f);
+            cache.writeCell(column, row, background, TerminalGrid.TRANSPARENT_RGBA, 0f, 0f, 0f, 0f,
+                    cellAlpha);
             return;
         }
         TextureRegion region = glyphSource.getGlyphRegion(codePoint);
         cache.writeCell(column, row, background, foreground,
-                region.getU(), region.getV(), region.getU2(), region.getV2());
+                region.getU(), region.getV(), region.getU2(), region.getV2(), cellAlpha);
     }
 }

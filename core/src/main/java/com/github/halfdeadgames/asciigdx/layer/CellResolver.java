@@ -31,6 +31,13 @@ final class CellResolver {
         return handle.backgroundFor(gridBackground);
     }
 
+    static float cellAlpha(CellHandle handle) {
+        if (!isActive(handle)) {
+            return CellVertexLayout.OPAQUE_CELL_ALPHA;
+        }
+        return handle.getCellAlpha();
+    }
+
     private static boolean isActive(CellHandle handle) {
         return handle != null && !handle.isDetached();
     }

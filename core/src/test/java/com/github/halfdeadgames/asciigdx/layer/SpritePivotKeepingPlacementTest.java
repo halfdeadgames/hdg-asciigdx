@@ -69,7 +69,7 @@ class SpritePivotKeepingPlacementTest {
         float[] vertices = new float[CellVertexLayout.FLOATS_PER_QUAD];
         SpriteQuadWriter.writeQuad(vertices, 0, transform, 0xFFFFFFFF, x, y, CELL_WIDTH,
                 CELL_HEIGHT,
-                0f, 0f, 1f, 1f);
+                0f, 0f, 1f, 1f, CellVertexLayout.OPAQUE_CELL_ALPHA);
         return vertices;
     }
 

@@ -174,8 +174,8 @@ class LayerCellTest {
     void resizingTheGridDetachesOnlyHandlesOutsideAndReappliesTheRest() {
         CellHandle inside = layer.obtainCellHandle(1, 1);
         CellHandle outside = layer.obtainCellHandle(5, 1);
-        inside.setAlphaMultiplier(0.5f);
-        outside.setAlphaMultiplier(0.5f);
+        inside.setOffset(1f, 0f);
+        outside.setOffset(1f, 0f);
         draw();
         renderer.events.clear();
 

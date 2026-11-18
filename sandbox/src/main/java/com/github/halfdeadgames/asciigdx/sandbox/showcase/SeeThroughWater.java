@@ -1,28 +1,24 @@
 package com.github.halfdeadgames.asciigdx.sandbox.showcase;
 
-import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.grid.TerminalView;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.shape.CellShape;
 import com.github.halfdeadgames.asciigdx.shape.CircleShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 
 /**
- * Makes the water cells around the splash point translucent during the dive, then writes them back
- * opaque.
+ * Fades the water cells around the splash point during the dive with frame cell handles, so each
+ * cell's glyph and background fade together as one color. The water grid is never written; the
+ * frame handles go back to opaque when the stack's cell effects begin the next frame.
  */
 public final class SeeThroughWater {
 
-    private static final int OPAQUE_MASK = 0xFFFFFF00;
-    private static final float MAX_ALPHA_BYTE = 255f;
-
     private final UnderwaterDive dive;
-    private final TerminalGrid waterGrid;
-    private final int glyphColor;
-    private final int backgroundColor;
+    private final Layer waterLayer;
     private final int[] columns;
     private final int[] rows;
     private final float[] distancesCells;
     private int cellCount;
-    private boolean cellsTranslucent;
 
     /**
      * Coordinates are in cell units from the grid's top-left corner, so the center of cell (c, r)
@@ -30,19 +26,14 @@ public final class SeeThroughWater {
      *
      * @param rowHeightPerColumnWidth cell height divided by cell width, so the area looks round on
      *        screen
-     * @param glyphColor water glyph color; its alpha byte is replaced
-     * @param backgroundColor water background color; its alpha byte is replaced
      */
-    public SeeThroughWater(UnderwaterDive dive, TerminalGrid waterGrid, float splashColumn,
-            float splashRow,
-            float rowHeightPerColumnWidth, int glyphColor, int backgroundColor) {
-        if (dive == null || waterGrid == null) {
-            throw new IllegalArgumentException("dive and waterGrid must not be null");
+    public SeeThroughWater(UnderwaterDive dive, Layer waterLayer, float splashColumn,
+            float splashRow, float rowHeightPerColumnWidth) {
+        if (dive == null || waterLayer == null) {
+            throw new IllegalArgumentException("dive and waterLayer must not be null");
         }
         this.dive = dive;
-        this.waterGrid = waterGrid;
-        this.glyphColor = glyphColor;
-        this.backgroundColor = backgroundColor;
+        this.waterLayer = waterLayer;
         CircleShape seeThroughArea = new CircleShape(splashColumn, splashRow,
                 UnderwaterDive.seeThroughRadiusCells(), ShapeFill.FILLED,
                 rowHeightPerColumnWidth);
@@ -50,7 +41,9 @@ public final class SeeThroughWater {
         columns = new int[maxCells];
         rows = new int[maxCells];
         distancesCells = new float[maxCells];
-        seeThroughArea.forEachCell(this::addCellIfOnGrid);
+        TerminalView waterGrid = waterLayer.getGrid();
+        seeThroughArea.forEachCell((column, row, distanceCells, unusedDistanceFraction) ->
+                addCellIfOnGrid(waterGrid, column, row, distanceCells));
     }
 
     private static int boundingCellCount(CellShape shape) {
@@ -59,8 +52,8 @@ public final class SeeThroughWater {
         return columnSpan * rowSpan;
     }
 
-    private void addCellIfOnGrid(int column, int row, float distanceCells,
-            float unusedDistanceFraction) {
+    private void addCellIfOnGrid(TerminalView waterGrid, int column, int row,
+            float distanceCells) {
         if (!waterGrid.contains(column, row)) {
             return;
         }
@@ -74,25 +67,14 @@ public final class SeeThroughWater {
         return cellCount;
     }
 
-    /** Call after the full water rewrite each frame, so the translucent cells win over it. */
+    /** Call every frame after the stack's cell effects begin. */
     public void update(float timeSeconds) {
-        boolean seeThrough = dive.seeThroughAt(timeSeconds) > 0f;
-        if (!seeThrough && !cellsTranslucent) {
+        if (!(dive.seeThroughAt(timeSeconds) > 0f)) {
             return;
         }
-        cellsTranslucent = seeThrough;
-        writeCells(timeSeconds);
-    }
-
-    private void writeCells(float timeSeconds) {
         for (int index = 0; index < cellCount; index++) {
-            int alphaByte = Math.round(
-                    MAX_ALPHA_BYTE * dive.waterAlphaAt(distancesCells[index], timeSeconds));
-            waterGrid.set(
-                    columns[index], rows[index],
-                    WaterPattern.codePointAt(columns[index], rows[index], timeSeconds),
-                    (glyphColor & OPAQUE_MASK) | alphaByte,
-                    (backgroundColor & OPAQUE_MASK) | alphaByte);
+            waterLayer.obtainFrameCellHandle(columns[index], rows[index])
+                    .setCellAlpha(dive.waterAlphaAt(distancesCells[index], timeSeconds));
         }
     }
 }

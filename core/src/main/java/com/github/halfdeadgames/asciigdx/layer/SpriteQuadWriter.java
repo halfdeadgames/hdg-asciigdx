@@ -40,15 +40,17 @@ final class SpriteQuadWriter {
     static void writeQuad(float[] vertices, int start, GlyphSprite sprite, float x, float y,
             float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
         writeQuad(vertices, start, sprite, sprite.getColor(), x, y, cellWidth, cellHeight,
-                u, v, u2, v2);
+                u, v, u2, v2, CellVertexLayout.OPAQUE_CELL_ALPHA);
     }
 
     /**
-     * Like the overload with a sprite, for any transform and an explicit glyph color (RGBA8888).
+     * Like the overload with a sprite, for any transform, an explicit glyph color (RGBA8888), and
+     * a whole-quad alpha factor (0 or more).
      */
     static void writeQuad(float[] vertices, int start, SpriteTransform sprite, int color, float x,
             float y,
-            float cellWidth, float cellHeight, float u, float v, float u2, float v2) {
+            float cellWidth, float cellHeight, float u, float v, float u2, float v2,
+            float cellAlpha) {
         // Public rotation is clockwise on screen; the quad math here is y-up, where positive is
         // counterclockwise.
         float yUpDegrees = -sprite.getRotation();
@@ -71,6 +73,14 @@ final class SpriteQuadWriter {
                 rightOffset, topOffset, sin, cos, background, foreground, u2, v);
         putVertex(vertices, start + 3 * CellVertexLayout.FLOATS_PER_VERTEX, pivotX, pivotY,
                 rightOffset, bottomOffset, sin, cos, background, foreground, u2, v2);
+        putCellAlpha(vertices, start, cellAlpha);
+    }
+
+    private static void putCellAlpha(float[] vertices, int start, float cellAlpha) {
+        for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
+            vertices[start + vertex * CellVertexLayout.FLOATS_PER_VERTEX
+                    + CellVertexLayout.CELL_ALPHA_OFFSET] = cellAlpha;
+        }
     }
 
     private static void putVertex(float[] vertices, int start, float pivotX, float pivotY,

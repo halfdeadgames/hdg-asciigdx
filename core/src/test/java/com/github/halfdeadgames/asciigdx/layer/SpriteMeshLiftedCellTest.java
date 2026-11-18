@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 class SpriteMeshLiftedCellTest {
 
     private static final int STRIDE = CellVertexLayout.FLOATS_PER_VERTEX;
+    private static final float UNFADED = CellVertexLayout.OPAQUE_CELL_ALPHA;
     private static final int QUAD = CellVertexLayout.FLOATS_PER_QUAD;
     private static final int FOREGROUND = 0xFF8040C0;
 
@@ -76,7 +77,7 @@ class SpriteMeshLiftedCellTest {
         CellVertexCache cache = new CellVertexCache(grid.getColumns(), grid.getRows(), 8f, 12f);
         TextureRegion region = source.getGlyphRegion(grid.getCodePoint(column, row));
         cache.writeCell(column, row, 0, grid.getForeground(column, row),
-                region.getU(), region.getV(), region.getU2(), region.getV2());
+                region.getU(), region.getV(), region.getU2(), region.getV2(), UNFADED);
         float[] own = new float[QUAD];
         System.arraycopy(
                 cache.getVertices(), (row * grid.getColumns() + column) * QUAD, own, 0, QUAD);
@@ -138,10 +139,11 @@ class SpriteMeshLiftedCellTest {
     }
 
     @Test
-    void handleAlphaIsMultipliedIntoTheGlyphAlpha() {
+    void foregroundAlphaIsScaledExactlyOnceForALiftedCell() {
         grid.set(2, 1, '@', 0xFF8040C0, 0x00000000);
         CellHandle cell = new CellHandle(2, 1);
-        cell.setAlphaMultiplier(0.5f);
+        cell.setOffset(1f, 0f);
+        cell.setForegroundAlpha(0.5f);
 
         write(cell);
 
@@ -225,11 +227,12 @@ class SpriteMeshLiftedCellTest {
     }
 
     @Test
-    void foregroundMixAndAlphaMultiplierBothApply() {
+    void foregroundMixAndForegroundAlphaBothApply() {
         grid.set(2, 1, '@', 0x112233FF, 0x00000000);
         CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
         cell.setForegroundMix(TARGET, 1f);
-        cell.setAlphaMultiplier(0.5f);
+        cell.setForegroundAlpha(0.5f);
 
         write(cell);
 
@@ -253,6 +256,33 @@ class SpriteMeshLiftedCellTest {
         cells.add(drawn);
 
         assertEquals(1, SpriteMesh.countDrawnLifted(cells, grid));
+        assertTrue(SpriteMesh.hasLifted(cells));
+    }
+
+    @Test
+    void liftedQuadCarriesTheCellAlphaOnAllFourVertices() {
+        grid.set(2, 1, '@', FOREGROUND, 0x00000000);
+        CellHandle cell = new CellHandle(2, 1);
+        cell.setOffset(1f, 0f);
+        cell.setCellAlpha(0.25f);
+
+        write(cell);
+
+        for (int vertex = 0; vertex < CellVertexLayout.VERTICES_PER_QUAD; vertex++) {
+            assertEquals(0.25f, vertices[vertex * STRIDE + CellVertexLayout.CELL_ALPHA_OFFSET], 0f);
+        }
+    }
+
+    @Test
+    void liftedCellAtCellAlphaZeroIsNotCountedButStillLifted() {
+        grid.set(2, 0, '@', FOREGROUND, 0x00000000);
+        CellHandle faded = new CellHandle(2, 0);
+        faded.setOffset(1f, 1f);
+        faded.setCellAlpha(0f);
+        Array<CellHandle> cells = new Array<>();
+        cells.add(faded);
+
+        assertEquals(0, SpriteMesh.countDrawnLifted(cells, grid));
         assertTrue(SpriteMesh.hasLifted(cells));
     }
 }

@@ -16,17 +16,28 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  * handle.reset();
  * }</pre>
  *
- * <p>Motion lifts the glyph off the grid so it can move, rotate, scale, and fade on its own. A
- * handle with default motion does nothing: the glyph stays in the grid. As soon as one motion
- * value differs (see {@link #isLifted()}), the glyph is drawn as a sprite instead. The cell's
+ * <p>Motion lifts the glyph off the grid so it can move, rotate, and scale on its own. A handle
+ * with default motion does nothing: the glyph stays in the grid. As soon as one motion value
+ * differs (see {@link #isLifted()}), the glyph is drawn as a sprite instead. The cell's
  * background always stays in the grid. The lifted glyph shows the cell's current glyph and
  * foreground color every frame, so game changes to the cell follow it.
  *
- * <p>Temporary colors and a temporary glyph never lift a cell and are not considered by
- * {@link #isLifted()}. Flat and lifted cells show them the same way. The grid's current glyph and
- * colors are still followed underneath: a mix color is blended on top of whatever the grid holds
- * now, and a temporary glyph replaces the grid's glyph only while it is set. The order is the grid
- * value, then the handle overrides, then the layer effects (tint, mix, saturation, invert, alpha).
+ * <p>Temporary colors, the alphas, and a temporary glyph never lift a cell and are not
+ * considered by {@link #isLifted()}. Flat and lifted cells show them the same way. The grid's
+ * current glyph and colors are still followed underneath: a temporary glyph replaces the grid's
+ * glyph only while it is set, and the colors are worked out from the grid's current colors every
+ * time the cell is drawn, in this order:
+ * <ol>
+ *   <li>the grid's foreground and background colors;</li>
+ *   <li>the handle's foreground and background mixes ({@link #setForegroundMix},
+ *       {@link #setBackgroundMix});</li>
+ *   <li>the handle's foreground and background alphas ({@link #setForegroundAlpha},
+ *       {@link #setBackgroundAlpha});</li>
+ *   <li>the glyph drawn over the background;</li>
+ *   <li>the layer's color effects: tint, mix, saturation, and invert ({@link ColorEffects});</li>
+ *   <li>the handle's cell alpha ({@link #setCellAlpha}), with the result capped at opaque;</li>
+ *   <li>the layer's alpha ({@link ColorEffects#setAlpha}).</li>
+ * </ol>
  *
  * <p>A detached handle keeps its getters working, but it draws nothing: no motion and no overrides.
  *
@@ -37,9 +48,10 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  * each other's values. A frame handle has no pivot of its own; it uses the lasting handle's pivot.
  *
  * <p>When a cell has both, the cell is drawn with their effects together: offsets and rotations
- * add, scales and alpha multiply, a frame glyph wins over a lasting glyph, and the frame's color
- * mix is applied on top of the lasting one. Two mixes at once can differ from applying them one
- * after the other by 1 in a color channel, because they are combined into a single mix.
+ * add, scales and alphas multiply (each alpha product capped at 255), a frame glyph wins over a
+ * lasting glyph, and the frame's color mix is applied on top of the lasting one. Two mixes at
+ * once can differ from applying them one after the other by 1 in a color channel, because they
+ * are combined into a single mix.
  *
  * <p>Handles are keyed by cell position. If
  * {@link com.github.halfdeadgames.asciigdx.grid.TerminalGrid} is resized with a content shift,
@@ -49,10 +61,11 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
  * their handles were created, and are positioned relative to the layer like sprites.
  *
  * <p>Offsets are in virtual pixels with y growing downward, like layer offsets. Rotation is in
- * degrees, clockwise on screen. Values are not clamped, except alpha and the mix amounts. Once the
- * handle is detached (the layer was removed, or the grid shrank so the cell no longer exists),
- * getters keep working but every mutator throws {@link IllegalStateException}; ask the layer for a
- * new handle.
+ * degrees, clockwise on screen. Values are not clamped, except the mix amounts and the alphas;
+ * each alpha is kept within 0 to 255 and rejects NaN and infinity. Once the handle is
+ * detached (the layer was removed, or the grid shrank so the cell no longer exists), getters keep
+ * working but every mutator throws {@link IllegalStateException}; ask the layer for a new
+ * handle.
  *
  * <p>A handle holds no GPU resources and needs no disposing. Use it from the game thread; no GL
  * context is needed to change it.
@@ -79,7 +92,9 @@ public final class CellHandle implements SpriteTransform {
     private float scaleY = 1f;
     private float pivotX = 0.5f;
     private float pivotY = 0.5f;
-    private float alpha = 1f;
+    private float foregroundAlpha = 1f;
+    private float backgroundAlpha = 1f;
+    private float cellAlpha = 1f;
     private int foregroundMixColor;
     private float foregroundMixAmount;
     private int backgroundMixColor;
@@ -413,30 +428,119 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Multiplier on the glyph's alpha, from 0 to 1.
+     * Returns the foreground alpha factor last set, after clamping: a negative value was stored as
+     * 0 and a value above 255 as 255.
      *
-     * @return the alpha multiplier, 1 by default
+     * @return the foreground alpha factor, from 0 to 255, 1 by default
      */
-    public float getAlphaMultiplier() {
-        return alpha;
+    public float getForegroundAlpha() {
+        return foregroundAlpha;
     }
 
     /**
-     * Sets the multiplier applied to the glyph's own alpha, clamped to 0..1. Default 1. A value
-     * below 1 lifts the glyph. It fades the glyph only; the cell's background is not affected.
+     * Sets the factor that fades the foreground, that is the glyph. Default 1. It is a temporary
+     * override like {@link #setForegroundMix}: it never lifts the glyph, and flat and lifted cells
+     * show it the same way. It fades the glyph only; the cell's background is not affected. It is
+     * applied after the foreground mix.
      *
-     * @param alphaMultiplier the multiplier, 0 for invisible and 1 for unchanged; values outside
-     *     0..1 are clamped
+     * <p>The factor scales the alpha of the foreground color, which is stored in 8 bits, and the
+     * result is rounded to one of 256 steps, so a very slow fade moves in small visible steps. A
+     * value above 1 makes a translucent glyph less transparent, and the result is capped at opaque.
+     * A fully transparent foreground color stays transparent whatever the factor.
+     *
+     * @param foregroundAlpha the factor; 0 is invisible and 1 is unchanged; below 0 counts as 0,
+     *     and above 255 counts as 255
+     * @throws IllegalArgumentException if {@code foregroundAlpha} is NaN or infinite
      * @throws IllegalStateException if the handle was detached
      */
-    public void setAlphaMultiplier(float alphaMultiplier) {
+    public void setForegroundAlpha(float foregroundAlpha) {
         requireChangeable();
-        this.alpha = Math.max(0f, Math.min(1f, alphaMultiplier));
+        float validated = AlphaFactor.validated(foregroundAlpha);
+        if (this.foregroundAlpha == validated) {
+            return;
+        }
+        this.foregroundAlpha = validated;
+        overridesChanged = true;
+    }
+
+    /**
+     * Returns the background alpha factor last set, after clamping: a negative value was stored as
+     * 0 and a value above 255 as 255.
+     *
+     * @return the background alpha factor, from 0 to 255, 1 by default
+     */
+    public float getBackgroundAlpha() {
+        return backgroundAlpha;
+    }
+
+    /**
+     * Sets the factor that fades the cell's background. Default 1. It is a temporary override like
+     * {@link #setBackgroundMix} and never lifts the glyph. It fades the background only; the glyph
+     * is not affected, and a lifted glyph keeps its look while the background it left behind
+     * fades. It is applied after the background mix.
+     *
+     * <p>The factor scales the alpha of the background color, which is stored in 8 bits, and the
+     * result is rounded to one of 256 steps, so a very slow fade moves in small visible steps. A
+     * value above 1 makes a translucent background less transparent, and the result is capped at
+     * opaque. A fully transparent background color stays transparent whatever the factor.
+     *
+     * @param backgroundAlpha the factor; 0 is invisible and 1 is unchanged; below 0 counts as 0,
+     *     and above 255 counts as 255
+     * @throws IllegalArgumentException if {@code backgroundAlpha} is NaN or infinite
+     * @throws IllegalStateException if the handle was detached
+     */
+    public void setBackgroundAlpha(float backgroundAlpha) {
+        requireChangeable();
+        float validated = AlphaFactor.validated(backgroundAlpha);
+        if (this.backgroundAlpha == validated) {
+            return;
+        }
+        this.backgroundAlpha = validated;
+        overridesChanged = true;
+    }
+
+    /**
+     * Returns the cell alpha factor last set, after clamping: a negative value was stored as 0
+     * and a value above 255 as 255.
+     *
+     * @return the cell alpha factor, from 0 to 255, 1 by default
+     */
+    public float getCellAlpha() {
+        return cellAlpha;
+    }
+
+    /**
+     * Sets the factor that fades the whole cell as one: its background and glyph together,
+     * including a lifted glyph wherever it is drawn. Default 1. It is a temporary override like the
+     * color mixes and never lifts the glyph. It is applied after the foreground and background
+     * alphas and the layer's color effects, and before the layer's alpha. Unlike the layer's alpha,
+     * which fades every cell of the layer, it fades this one cell. A value above 1 makes a
+     * translucent cell less transparent, and the cell's alpha is capped at opaque before the
+     * layer's alpha is applied. At 0 the cell draws nothing at all.
+     *
+     * <p>Fading the cell as one differs from fading the glyph and the background each on its own
+     * with {@link #setForegroundAlpha(float)} and {@link #setBackgroundAlpha(float)}. Here the
+     * glyph is first drawn over the background and only the combined color is faded, so the
+     * background never shows through the glyph.
+     *
+     * @param cellAlpha the factor; 0 is invisible and 1 is unchanged; below 0 counts as 0, and
+     *     above 255 counts as 255
+     * @throws IllegalArgumentException if {@code cellAlpha} is NaN or infinite
+     * @throws IllegalStateException if the handle was detached
+     */
+    public void setCellAlpha(float cellAlpha) {
+        requireChangeable();
+        float validated = AlphaFactor.validated(cellAlpha);
+        if (this.cellAlpha == validated) {
+            return;
+        }
+        this.cellAlpha = validated;
+        overridesChanged = true;
     }
 
     /**
      * Sets everything back to its default: the motion values ({@link #resetTransform()}) and the
-     * temporary colors and glyph ({@link #clearOverrides()}).
+     * temporary colors, alphas, and glyph ({@link #clearOverrides()}).
      *
      * @throws IllegalStateException if the handle was detached
      */
@@ -447,7 +551,8 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Sets the motion values back to their default: no offset, no rotation, scale 1, pivot at the
-     * center, alpha 1. The glyph settles back into the grid. Temporary colors and glyph are kept.
+     * center. The glyph settles back into the grid. Temporary colors, alphas, and glyph are kept;
+     * to restore the alphas too, call {@link #clearOverrides()} or {@link #reset()}.
      *
      * @throws IllegalStateException if the handle was detached
      */
@@ -460,7 +565,6 @@ public final class CellHandle implements SpriteTransform {
         scaleY = 1f;
         pivotX = 0.5f;
         pivotY = 0.5f;
-        alpha = 1f;
     }
 
     /**
@@ -644,37 +748,56 @@ public final class CellHandle implements SpriteTransform {
     }
 
     /**
-     * Clears the temporary colors and glyph. Same as {@link #clearMix()} plus
-     * {@link #clearCodePoint()}. Motion is kept.
+     * Clears the temporary colors, alphas, and glyph: both mix amounts go back to 0, the
+     * foreground, background, and cell alphas back to 1, and the temporary glyph is removed, so
+     * the grid's own glyph shows again. Motion is kept.
      *
      * @throws IllegalStateException if the handle was detached
      */
     public void clearOverrides() {
         clearMix();
+        setForegroundAlpha(1f);
+        setBackgroundAlpha(1f);
+        setCellAlpha(1f);
         clearCodePoint();
     }
 
-    /** Returns whether any temporary color or glyph is set. */
+    /** Returns whether any temporary color, alpha, or glyph is set. */
     boolean hasOverrides() {
-        return foregroundMixAmount > 0f || backgroundMixAmount > 0f || hasCodePoint();
+        return foregroundMixAmount > 0f || backgroundMixAmount > 0f || foregroundAlpha != 1f
+                || backgroundAlpha != 1f || cellAlpha != 1f || hasCodePoint();
     }
 
-    /** The foreground to draw for a cell whose grid foreground is {@code cellForegroundRgba}. */
+    /**
+     * The foreground to draw for a cell whose grid foreground is {@code cellForegroundRgba}: the
+     * mix first, then the foreground alpha scaled onto the alpha byte and capped at opaque.
+     */
     int foregroundFor(int cellForegroundRgba) {
-        if (foregroundMixAmount <= 0f) {
-            return cellForegroundRgba;
+        int mixed = cellForegroundRgba;
+        if (foregroundMixAmount > 0f) {
+            mixed = CellColor.mixRgbKeepingAlpha(cellForegroundRgba, foregroundMixColor,
+                    foregroundMixAmount);
         }
-        return CellColor.mixRgbKeepingAlpha(cellForegroundRgba, foregroundMixColor,
-                foregroundMixAmount);
+        if (foregroundAlpha == 1f) {
+            return mixed;
+        }
+        return CellColor.withAlphaScaled(mixed, foregroundAlpha);
     }
 
-    /** The background to draw for a cell whose grid background is {@code cellBackgroundRgba}. */
+    /**
+     * The background to draw for a cell whose grid background is {@code cellBackgroundRgba}: the
+     * mix first, then the background alpha scaled onto the alpha byte and capped at opaque.
+     */
     int backgroundFor(int cellBackgroundRgba) {
-        if (backgroundMixAmount <= 0f) {
-            return cellBackgroundRgba;
+        int mixed = cellBackgroundRgba;
+        if (backgroundMixAmount > 0f) {
+            mixed = CellColor.mixRgbKeepingAlpha(cellBackgroundRgba, backgroundMixColor,
+                    backgroundMixAmount);
         }
-        return CellColor.mixRgbKeepingAlpha(cellBackgroundRgba, backgroundMixColor,
-                backgroundMixAmount);
+        if (backgroundAlpha == 1f) {
+            return mixed;
+        }
+        return CellColor.withAlphaScaled(mixed, backgroundAlpha);
     }
 
     /** The glyph to draw for a cell whose grid glyph is {@code cellCodePoint}. */
@@ -707,26 +830,23 @@ public final class CellHandle implements SpriteTransform {
 
     /**
      * Returns whether the glyph is drawn off the grid: any of offset, rotation (other than a
-     * whole number of turns), scale, or alpha differs from its default. Temporary colors and
-     * glyph are not considered. A detached handle keeps its values but is never drawn.
+     * whole number of turns), or scale differs from its default. Temporary colors, alphas,
+     * and glyph are not considered. A detached handle keeps its values but is never drawn.
      *
      * @return true if the glyph is currently lifted off the grid
      */
     public boolean isLifted() {
         return offsetX != 0f || offsetY != 0f
                 || rotation % FULL_TURN_DEGREES != 0f
-                || scaleX != 1f || scaleY != 1f
-                || alpha != 1f;
+                || scaleX != 1f || scaleY != 1f;
     }
 
     /**
-     * A handle is idle when it is not lifted, has no temporary glyph, and both mix amounts are 0.
+     * A handle is idle when it is not lifted and has no override: no temporary glyph, both mix
+     * amounts 0, and all three alphas 1.
      */
     boolean isIdle() {
-        return !isLifted()
-                && !hasCodePoint()
-                && foregroundMixAmount == 0f
-                && backgroundMixAmount == 0f;
+        return !isLifted() && !hasOverrides();
     }
 
     /**

@@ -41,10 +41,14 @@ final class CellHandleCombine {
         target.setScale(lasting.getScaleX() * frame.getScaleX(),
                 lasting.getScaleY() * frame.getScaleY());
         target.setPivot(lasting.getPivotX(), lasting.getPivotY());
-        target.setAlphaMultiplier(lasting.getAlphaMultiplier() * frame.getAlphaMultiplier());
     }
 
     private static void combineMixes(CellHandle target, CellHandle lasting, CellHandle frame) {
+        target.setForegroundAlpha(
+                multipliedAlpha(lasting.getForegroundAlpha(), frame.getForegroundAlpha()));
+        target.setBackgroundAlpha(
+                multipliedAlpha(lasting.getBackgroundAlpha(), frame.getBackgroundAlpha()));
+        target.setCellAlpha(multipliedAlpha(lasting.getCellAlpha(), frame.getCellAlpha()));
         target.setForegroundMix(
                 mixColor(lasting.getForegroundMixColor(), lasting.getForegroundMixAmount(),
                         frame.getForegroundMixColor(), frame.getForegroundMixAmount()),
@@ -53,6 +57,11 @@ final class CellHandleCombine {
                 mixColor(lasting.getBackgroundMixColor(), lasting.getBackgroundMixAmount(),
                         frame.getBackgroundMixColor(), frame.getBackgroundMixAmount()),
                 mixAmount(lasting.getBackgroundMixAmount(), frame.getBackgroundMixAmount()));
+    }
+
+    /** The product of two alpha factors, capped at {@link AlphaFactor#MAX_FACTOR}. */
+    static float multipliedAlpha(float lastingAlpha, float frameAlpha) {
+        return Math.min(AlphaFactor.MAX_FACTOR, lastingAlpha * frameAlpha);
     }
 
     /**
