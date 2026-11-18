@@ -20,5 +20,9 @@
  * disc.forEachCell((column, row, distance, distanceFraction) ->
  *         grid.set(column, row, '*', foreground, background));
  * }</pre>
+ *
+ * <p>Lines run between any two cells with
+ * {@link com.github.halfdeadgames.asciigdx.shape.LineShape}, for example
+ * {@code LineShape.forSquareCells(0, 0, 9, 3, LineStyle.DIAGONAL_STEPS)}.
  */
 package com.github.halfdeadgames.asciigdx.shape;

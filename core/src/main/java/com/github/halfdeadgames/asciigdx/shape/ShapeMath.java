@@ -35,6 +35,14 @@ final class ShapeMath {
         return length;
     }
 
+    static int requireBelowMaxValue(int coordinate, String name) {
+        // Loops run "i <= end", so end must stay below MAX_VALUE or i++ would wrap around.
+        if (coordinate == Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(name + " must be below Integer.MAX_VALUE");
+        }
+        return coordinate;
+    }
+
     static float distance(double columnDelta, double rowDeltaInColumnWidths) {
         return (float) Math.sqrt(
                 columnDelta * columnDelta + rowDeltaInColumnWidths * rowDeltaInColumnWidths);
