@@ -14,8 +14,10 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalView;
 
 /**
  * GPU quads for a layer's lifted cells and sprites, one quad per drawn lifted cell and per drawn
- * sprite (visible, color alpha above 0), lifted cells first. The mesh is created on the first
- * upload and grows by doubling. Frames that need no growth allocate nothing.
+ * sprite (visible, color alpha above 0), lifted cells first. The quads are split into several
+ * meshes (chunks) that fit 16-bit indices, like {@link GridMesh}. The chunks are created on the
+ * first upload and the capacity grows by doubling, without an upper limit. Frames that need no
+ * growth allocate nothing.
  */
 final class SpriteMesh implements Disposable {
 
@@ -23,7 +25,7 @@ final class SpriteMesh implements Disposable {
 
     private final CellShaderPass pass;
     private float[] vertices = new float[0];
-    private Mesh mesh;
+    private Mesh[] chunks;
     private int capacity;
     private int usedQuads;
 
@@ -33,15 +35,23 @@ final class SpriteMesh implements Disposable {
     }
 
     /**
-     * Returns the quad capacity to use so that {@code needed} quads fit, doubling from
-     * {@code current}.
+     * Returns the quad capacity to use so that {@code needed} quads fit, never less than
+     * {@code current}. Up to one chunk it doubles from {@code current}, stopping at a full chunk;
+     * past that it rounds up to whole chunks, so at most one chunk is partly empty.
      */
     static int grownCapacity(int current, int needed) {
+        if (needed > CellVertexLayout.MAX_QUADS_PER_MESH) {
+            return Math.max(current, wholeChunksFor(needed));
+        }
         int grown = Math.max(current, MIN_CAPACITY);
-        while (grown < needed && grown < CellVertexLayout.MAX_QUADS_PER_MESH) {
+        while (grown < needed) {
             grown *= 2;
         }
-        return Math.min(grown, CellVertexLayout.MAX_QUADS_PER_MESH);
+        return Math.max(current, Math.min(grown, CellVertexLayout.MAX_QUADS_PER_MESH));
+    }
+
+    private static int wholeChunksFor(int quads) {
+        return CellVertexLayout.chunkCountFor(quads) * CellVertexLayout.MAX_QUADS_PER_MESH;
     }
 
     /** A sprite draws only when it is visible and its color alpha is above 0. */
@@ -104,27 +114,25 @@ final class SpriteMesh implements Disposable {
 
     /**
      * Writes the quads of the lifted cells (in handle creation order) and then every drawn
-     * sprite (in order), and uploads only the used floats. Quads beyond {@code quadCount}, which
-     * is capped at the mesh limit, are dropped.
+     * sprite (in order), and uploads only the chunks that hold used quads. {@code quadCount} must
+     * be the number of drawn quads.
      */
     void upload(Array<CellHandle> cells, Array<GlyphSprite> sprites, TerminalView grid,
             int quadCount,
             GlyphSource glyphSource, boolean pixelSnapping) {
-        int limit = Math.min(quadCount, CellVertexLayout.MAX_QUADS_PER_MESH);
-        ensureCapacity(limit);
+        ensureCapacity(quadCount);
         float cellWidth = glyphSource.getCellWidth();
         float cellHeight = glyphSource.getCellHeight();
-        int quad = writeLiftedCells(cells, grid, limit, glyphSource, pixelSnapping);
-        quad = writeSprites(quad, sprites, limit, glyphSource, cellWidth, cellHeight,
-                pixelSnapping);
+        int quad = writeLiftedCells(cells, grid, glyphSource, pixelSnapping);
+        quad = writeSprites(quad, sprites, glyphSource, cellWidth, cellHeight, pixelSnapping);
         usedQuads = quad;
-        mesh.setVertices(vertices, 0, usedQuads * CellVertexLayout.FLOATS_PER_QUAD);
+        uploadChunks();
     }
 
-    private int writeLiftedCells(Array<CellHandle> cells, TerminalView grid, int limit,
+    private int writeLiftedCells(Array<CellHandle> cells, TerminalView grid,
             GlyphSource glyphSource, boolean pixelSnapping) {
         int quad = 0;
-        for (int i = 0; i < cells.size && quad < limit; i++) {
+        for (int i = 0; i < cells.size; i++) {
             CellHandle cell = cells.get(i);
             if (!isDrawnLifted(cell, grid)) {
                 continue;
@@ -134,11 +142,11 @@ final class SpriteMesh implements Disposable {
         return quad;
     }
 
-    private int writeSprites(int firstQuad, Array<GlyphSprite> sprites, int limit,
+    private int writeSprites(int firstQuad, Array<GlyphSprite> sprites,
             GlyphSource glyphSource,
             float cellWidth, float cellHeight, boolean pixelSnapping) {
         int quad = firstQuad;
-        for (int i = 0; i < sprites.size && quad < limit; i++) {
+        for (int i = 0; i < sprites.size; i++) {
             GlyphSprite sprite = sprites.get(i);
             if (!isDrawn(sprite)) {
                 continue;
@@ -184,39 +192,69 @@ final class SpriteMesh implements Disposable {
     }
 
     private void ensureCapacity(int quads) {
-        if (mesh != null && quads <= capacity) {
+        if (chunks != null && quads <= capacity) {
             return;
         }
-        if (mesh != null) {
-            mesh.dispose();
-        }
+        dispose();
         capacity = grownCapacity(capacity, quads);
         vertices = new float[capacity * CellVertexLayout.FLOATS_PER_QUAD];
-        int indexCount = capacity * CellVertexLayout.INDICES_PER_QUAD;
-        mesh = new Mesh(false, capacity * CellVertexLayout.VERTICES_PER_QUAD, indexCount,
-                CellVertexLayout.createAttributes());
-        mesh.setIndices(GridMesh.createQuadIndices(capacity), 0, indexCount);
+        chunks = createChunks();
+    }
+
+    private Mesh[] createChunks() {
+        short[] indices = GridMesh.createQuadIndices(
+                Math.min(capacity, CellVertexLayout.MAX_QUADS_PER_MESH));
+        Mesh[] created = new Mesh[CellVertexLayout.chunkCountFor(capacity)];
+        for (int chunk = 0; chunk < created.length; chunk++) {
+            int quads = CellVertexLayout.quadsInChunk(capacity, chunk);
+            int indexCount = quads * CellVertexLayout.INDICES_PER_QUAD;
+            created[chunk] = new Mesh(false, quads * CellVertexLayout.VERTICES_PER_QUAD,
+                    indexCount, CellVertexLayout.createAttributes());
+            created[chunk].setIndices(indices, 0, indexCount);
+        }
+        return created;
+    }
+
+    private void uploadChunks() {
+        int usedChunks = CellVertexLayout.chunkCountFor(usedQuads);
+        for (int chunk = 0; chunk < usedChunks; chunk++) {
+            int offset = chunk * CellVertexLayout.MAX_QUADS_PER_MESH
+                    * CellVertexLayout.FLOATS_PER_QUAD;
+            int count = CellVertexLayout.quadsInChunk(usedQuads, chunk)
+                    * CellVertexLayout.FLOATS_PER_QUAD;
+            chunks[chunk].setVertices(vertices, offset, count);
+        }
     }
 
     /**
      * Draws the uploaded quads like {@link GridMesh#draw}, always blended (never treated as
-     * opaque).
+     * opaque). Draws nothing before the first upload or when no quad is used.
      */
     void draw(SpriteBatch batch, Texture glyphTexture, Affine2 layerTransform,
             ResolvedEffects effects,
             CellBlend blend) {
+        if (usedQuads == 0) {
+            return;
+        }
         pass.begin(batch, glyphTexture, layerTransform, effects, false, blend);
-        mesh.render(pass.getShader(), GL20.GL_TRIANGLES, 0,
-                usedQuads * CellVertexLayout.INDICES_PER_QUAD);
+        int usedChunks = CellVertexLayout.chunkCountFor(usedQuads);
+        for (int chunk = 0; chunk < usedChunks; chunk++) {
+            int indexCount = CellVertexLayout.quadsInChunk(usedQuads, chunk)
+                    * CellVertexLayout.INDICES_PER_QUAD;
+            chunks[chunk].render(pass.getShader(), GL20.GL_TRIANGLES, 0, indexCount);
+        }
         pass.end(batch);
     }
 
     @Override
     public void dispose() {
-        if (mesh == null) {
+        if (chunks == null) {
             return;
         }
-        mesh.dispose();
-        mesh = null;
+        for (int chunk = 0; chunk < chunks.length; chunk++) {
+            chunks[chunk].dispose();
+        }
+        chunks = null;
+        usedQuads = 0;
     }
 }

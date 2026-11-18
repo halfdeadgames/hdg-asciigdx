@@ -29,10 +29,23 @@ class SpriteMeshTest {
     }
 
     @Test
-    void growthIsCappedAtTheIndexLimit() {
+    void doublingStopsAtOneFullChunk() {
         assertEquals(MAX, SpriteMesh.grownCapacity(8192, MAX));
-        assertEquals(MAX, SpriteMesh.grownCapacity(16, MAX + 100));
+        assertEquals(MAX, SpriteMesh.grownCapacity(8192, 10000));
         assertEquals(MAX, SpriteMesh.grownCapacity(MAX, MAX));
+    }
+
+    @Test
+    void growthPastOneChunkUsesWholeChunks() {
+        assertEquals(2 * MAX, SpriteMesh.grownCapacity(8192, MAX + 1));
+        assertEquals(2 * MAX, SpriteMesh.grownCapacity(16, 32400));
+        assertEquals(3 * MAX, SpriteMesh.grownCapacity(2 * MAX, 2 * MAX + 1));
+    }
+
+    @Test
+    void capacityPastOneChunkNeverShrinks() {
+        assertEquals(3 * MAX, SpriteMesh.grownCapacity(3 * MAX, 10));
+        assertEquals(3 * MAX, SpriteMesh.grownCapacity(3 * MAX, 2 * MAX));
     }
 
     @Test
