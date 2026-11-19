@@ -11,6 +11,7 @@ import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
+import com.github.halfdeadgames.asciigdx.ui.Tooltip;
 import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
@@ -32,13 +33,15 @@ class UiWidgetsScene implements SandboxScene {
     private static final LabelStyle STRIP_NORMAL = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
     private static final LabelStyle STRIP_CURRENT = LabelStyle.of(UiFont.SQUARE, BLACK, GOLD);
 
+    private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
+    private final UiRoot uiRoot = UiRoot.of(surface);
+    private final HintsPage hintsPage = new HintsPage(uiRoot);
     private final List<UiPage> pages = List.of(
             new LabelsPage(),
             new TablePage(),
-            new ButtonsPage()
+            new ButtonsPage(),
+            hintsPage
     );
-    private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
-    private final UiRoot uiRoot = UiRoot.of(surface);
     private final List<Label> stripEntries = new ArrayList<>();
     private final LayerStack layers = new LayerStack();
     private final ScalingViewport viewport;
@@ -183,9 +186,19 @@ class UiWidgetsScene implements SandboxScene {
         for (int i = 0; i < pages.size(); i++) {
             if (pages.get(i).id().equals(variant)) {
                 showPage(i);
+                if (pages.get(i) == hintsPage) {
+                    showHintWithoutMouse();
+                }
                 return;
             }
         }
+    }
+
+    private void showHintWithoutMouse() {
+        uiRoot.pointerMoved(content.getX() + hintsPage.captureColumn(),
+                content.getY() + hintsPage.captureRow());
+        uiRoot.update(Tooltip.DEFAULT_DELAY_SECONDS);
+        uiRoot.draw();
     }
 
     @Override

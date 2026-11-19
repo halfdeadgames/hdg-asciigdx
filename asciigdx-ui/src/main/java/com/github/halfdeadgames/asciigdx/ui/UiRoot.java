@@ -82,6 +82,7 @@ public final class UiRoot {
             "Input methods must not be called while an event is being delivered; defer the work "
                     + "to the next frame, for example with a UiUpdateListener";
     private static final UiUpdateListener[] NO_UPDATE_LISTENERS = new UiUpdateListener[0];
+    private static final PressObserver[] NO_PRESS_OBSERVERS = new PressObserver[0];
     private static final int PRIMARY_POINTER = 0;
     private static final int NO_BUTTON = UiEvent.NOT_APPLICABLE;
 
@@ -93,6 +94,7 @@ public final class UiRoot {
     private final Widget[] capturedWidgets = new Widget[MAX_POINTERS];
     private final int[] capturingButtons = new int[MAX_POINTERS];
     private UiUpdateListener[] updateListeners = NO_UPDATE_LISTENERS;
+    private PressObserver[] pressObservers = NO_PRESS_OBSERVERS;
     private boolean delivering;
     private Widget hoveredWidget;
     private Widget keyboardFocus;
@@ -304,6 +306,7 @@ public final class UiRoot {
         }
         Widget target = hitAt(column, row);
         updateHoverForPointer(pointer, target, column, row);
+        notifyPressObservers(pointer);
         keyboardFocus = findFocusable(target);
         if (target == null) {
             return false;
@@ -430,6 +433,44 @@ public final class UiRoot {
         }
         event.setKey(type, focused, keycode, character);
         return bubble(focused);
+    }
+
+    /** Receives every accepted press, even one that a widget consumes before its listeners. */
+    interface PressObserver {
+        /** Called after hover is updated, before the press is delivered; must not call input. */
+        void pointerPressed(int pointer);
+    }
+
+    void addPressObserver(PressObserver observer) {
+        PressObserver[] grown = Arrays.copyOf(pressObservers, pressObservers.length + 1);
+        grown[pressObservers.length] = observer;
+        pressObservers = grown;
+    }
+
+    void removePressObserver(PressObserver observer) {
+        int index = Arrays.asList(pressObservers).indexOf(observer);
+        if (index < 0) {
+            return;
+        }
+        PressObserver[] shrunk = new PressObserver[pressObservers.length - 1];
+        System.arraycopy(pressObservers, 0, shrunk, 0, index);
+        System.arraycopy(pressObservers, index + 1, shrunk, index, shrunk.length - index);
+        pressObservers = shrunk.length == 0 ? NO_PRESS_OBSERVERS : shrunk;
+    }
+
+    int getSurfaceColumns() {
+        return hiddenSurface.getColumns();
+    }
+
+    int getSurfaceRows() {
+        return hiddenSurface.getRows();
+    }
+
+    private void notifyPressObservers(int pointer) {
+        PressObserver[] snapshot = pressObservers;
+        for (int i = 0; i < snapshot.length; i++) {
+            snapshot[i].pointerPressed(pointer);
+        }
     }
 
     private void requireNotDelivering() {

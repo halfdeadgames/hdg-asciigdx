@@ -14,7 +14,8 @@
  * surface, redraws it when something changed, and routes pointer and key events to widgets, with
  * hover, press capture, and keyboard focus. {@link com.github.halfdeadgames.asciigdx.ui.UiInput}
  * feeds it from libGDX input, and {@link com.github.halfdeadgames.asciigdx.ui.TextButton} is the
- * first interactive widget.
+ * first interactive widget. A {@link com.github.halfdeadgames.asciigdx.ui.Tooltip} shows a hint
+ * widget in the popup layer when the pointer rests on another widget.
  *
  * <p>Example with a button:
  * <pre>{@code
