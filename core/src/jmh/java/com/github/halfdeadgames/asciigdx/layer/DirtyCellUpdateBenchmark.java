@@ -25,6 +25,7 @@ public class DirtyCellUpdateBenchmark {
 
     private static final int FOREGROUND = 0xFFFFFFFF;
     private static final int BACKGROUND = 0x000000FF;
+    private static final int ALL_CELLS_PERCENT = 100;
 
     @Param({BenchmarkGridSize.SMALL, BenchmarkGridSize.STRESS_SCENE,
             BenchmarkGridSize.FOUR_K_AT_8_PIXELS})
@@ -63,6 +64,28 @@ public class DirtyCellUpdateBenchmark {
         int stride = 100 / dirtyPercent;
         for (int cell = 0; cell < cellCount; cell += stride) {
             grid.set(cell % columns, cell / columns, codePoint, FOREGROUND, BACKGROUND);
+        }
+        tracker.forEachDirtyCell(rewriteCell);
+        tracker.markAllClean();
+    }
+
+    /**
+     * Same cells and values as {@link #updateDirtyCells()}, with column and row stepped alongside
+     * the flat index instead of divided out of it.
+     */
+    @Benchmark
+    public void updateDirtyCellsWithoutIndexDivision() {
+        codePoint = codePoint == 'a' ? 'b' : 'a';
+        int stride = ALL_CELLS_PERCENT / dirtyPercent;
+        int column = 0;
+        int row = 0;
+        for (int cell = 0; cell < cellCount; cell += stride) {
+            grid.set(column, row, codePoint, FOREGROUND, BACKGROUND);
+            column += stride;
+            while (column >= columns) {
+                column -= columns;
+                row++;
+            }
         }
         tracker.forEachDirtyCell(rewriteCell);
         tracker.markAllClean();
