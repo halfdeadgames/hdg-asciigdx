@@ -37,16 +37,27 @@ JMH forks per benchmark. Defaults to 3, for tighter error margins.
 JMH measurement iterations per fork. Defaults to 10.
 
 .EXAMPLE
-.\tools\bench-all.ps1
+./tools/bench-all.ps1
 Records every default capture scene and JMH benchmark for this repository.
 
 .EXAMPLE
-.\tools\bench-all.ps1 -JmhIncludes @()
+./tools/bench-all.ps1 -JmhIncludes @()
 Records only the capture scenes.
 
 .EXAMPLE
-.\tools\bench-all.ps1 -Scenes @('map-scroll') -JmhIncludes @('TweenTick') -Rounds 2
+./tools/bench-all.ps1 -Scenes @('map-scroll') -JmhIncludes @('TweenTick') -Rounds 2
 Records one scene and one JMH class.
+
+.EXAMPLE
+./tools/bench-all.ps1 -CaptureArgs '-Psamples=10 -PwarmUpSeconds=5 -Pwindow=1280x720'
+Records at 1280x720, for a screen smaller than 1920x1080. CaptureArgs replaces all default
+capture arguments. Numbers taken at different window sizes can't be compared.
+
+.NOTES
+Needs PowerShell 7 (Windows, macOS, or Linux) or Windows PowerShell 5.1, Git, a JDK that can run
+the project's Gradle build, and a desktop session with a screen at least as large as the capture
+window (1920x1080 by default). Run it from any folder. On Windows, if the execution policy
+blocks scripts, start it with: powershell -ExecutionPolicy Bypass -File tools/bench-all.ps1
 #>
 param(
     [string]$TreePath = (Split-Path -Parent $PSScriptRoot),
@@ -62,6 +73,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $invariant = [Globalization.CultureInfo]::InvariantCulture
 $TreePath = (Resolve-Path $TreePath).Path
+$runsOnWindows = $PSVersionTable.PSEdition -eq 'Desktop' -or $IsWindows
 
 function Split-Arguments([string]$text) {
     return @($text -split '\s+' | Where-Object { $_ })
@@ -84,25 +96,41 @@ function Get-SpreadPercent([double[]]$values, [double]$median) {
     return ($measured.Maximum - $measured.Minimum) / $median * 100
 }
 
+function Join-TreePath([string[]]$parts) {
+    return [IO.Path]::Combine([string[]](@($TreePath) + $parts))
+}
+
+function Get-GradleArgumentsForPlatform([string[]]$gradleArgs) {
+    if (-not $runsOnWindows) { return $gradleArgs }
+    # gradlew.bat splits unquoted arguments at commas, and at dots in some Gradle versions.
+    return @($gradleArgs | ForEach-Object { if ($_ -match '[,.]') { "`"$_`"" } else { $_ } })
+}
+
 function Invoke-Gradle([string[]]$gradleArgs) {
-    $quotedArgs = @($gradleArgs | ForEach-Object {
-        if ($_ -match '[,.]') { "`"$_`"" } else { $_ }
-    })
+    $wrapperName = if ($runsOnWindows) { 'gradlew.bat' } else { 'gradlew' }
+    $wrapper = Join-TreePath @($wrapperName)
+    $platformArgs = Get-GradleArgumentsForPlatform $gradleArgs
+    $callerErrorAction = $ErrorActionPreference
+    # Java prints notes on stderr; Windows PowerShell treats redirected stderr as errors.
+    $ErrorActionPreference = 'Continue'
     Push-Location $TreePath
     try {
-        & .\gradlew.bat @quotedArgs | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Gradle failed: $($gradleArgs -join ' ')" }
+        & $wrapper @platformArgs | Out-Host
+        $exitCode = $LASTEXITCODE
     } finally {
         Pop-Location
+        $ErrorActionPreference = $callerErrorAction
     }
+    if ($exitCode -ne 0) { throw "Gradle failed: $($gradleArgs -join ' ')" }
 }
 
 function Invoke-Capture([string]$entry, [string]$resultFile) {
-    $entryParts = Split-Arguments $entry
-    $perfFile = Join-Path $TreePath 'build\captures\perf.txt'
+    $entryParts = @(Split-Arguments $entry)
+    $perfFile = Join-TreePath @('build', 'captures', 'perf.txt')
     if (Test-Path $perfFile) { Remove-Item $perfFile }
+    $sceneArgs = @($entryParts | Select-Object -Skip 1)
     $gradleArgs = @(':sandbox-desktop:run', '-Pcapture', "-Pscenes=$($entryParts[0])",
-            '--console=plain', '-q') + (Split-Arguments $CaptureArgs) + @($entryParts | Select-Object -Skip 1)
+            '--console=plain', '-q') + @(Split-Arguments $CaptureArgs) + $sceneArgs
     Invoke-Gradle $gradleArgs
     if (-not (Test-Path $perfFile)) { throw "No perf.txt was written for '$entry'." }
     Copy-Item $perfFile $resultFile
@@ -155,7 +183,7 @@ function Add-JmhSummary([string]$include, [string]$resultsFile, $summary) {
     }
 }
 
-$resultDirectory = Join-Path $TreePath ("build\bench-all\" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$resultDirectory = Join-TreePath @('build', 'bench-all', (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force $resultDirectory | Out-Null
 $summary = New-Object System.Collections.Generic.List[string]
 $summary.Add("Tree: $TreePath at $(git -C $TreePath rev-parse --short HEAD)")
@@ -175,7 +203,7 @@ foreach ($entry in $Scenes) {
     Add-CaptureSummary $entry $runFiles $summary
 }
 
-$jmhResults = Join-Path $TreePath 'core\build\results\jmh\results.json'
+$jmhResults = Join-TreePath @('core', 'build', 'results', 'jmh', 'results.json')
 foreach ($include in $JmhIncludes) {
     Write-Host "JMH '$include'"
     if (Test-Path $jmhResults) { Remove-Item $jmhResults }

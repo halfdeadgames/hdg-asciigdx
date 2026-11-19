@@ -42,24 +42,33 @@ Extra Gradle arguments for the old side only, separated by spaces, such as '-Pla
 Extra Gradle arguments for the new side only, separated by spaces.
 
 .EXAMPLE
-.\tools\perf-ab.ps1 -OldRef HEAD
+./tools/perf-ab.ps1 -OldRef HEAD
 Compares the last commit with the working tree.
 
 .EXAMPLE
-.\tools\perf-ab.ps1 -OldPath . -OldArgs '-Players=7' -NewArgs '-Players=8'
+./tools/perf-ab.ps1 -OldPath . -OldArgs '-Players=7' -NewArgs '-Players=8'
 Compares 7 and 8 layers in the same tree.
 
 .EXAMPLE
-.\tools\perf-ab.ps1 -OldRef HEAD -Scene sparse-update -OldArgs '-Pdirty=50' -NewArgs '-Pdirty=50'
+./tools/perf-ab.ps1 -OldRef HEAD -Scene sparse-update -OldArgs '-Pdirty=50' -NewArgs '-Pdirty=50'
 Compares the last commit with the working tree on the sparse-update scene at 50% changed cells.
 
 .EXAMPLE
-.\tools\perf-ab.ps1 -OldRef HEAD -Scene map-scroll
-Compares the last commit with the working tree on the map-scroll scene (moving camera over a large map).
+./tools/perf-ab.ps1 -OldRef HEAD -Scene map-scroll
+Compares the last commit with the working tree on the map-scroll scene (moving camera over a
+large map).
 
 .EXAMPLE
-.\tools\perf-ab.ps1 -OldRef HEAD -Scene animated-cells
-Compares the last commit with the working tree on the animated-cells scene (every cell moves, fades, and recolors each frame).
+./tools/perf-ab.ps1 -OldRef HEAD -Scene animated-cells
+Compares the last commit with the working tree on the animated-cells scene (every cell moves,
+fades, and recolors each frame).
+
+.NOTES
+Needs PowerShell 7 (Windows, macOS, or Linux) or Windows PowerShell 5.1, Git, a JDK that can run
+the project's Gradle build, and a desktop session with a screen at least as large as the capture
+window (1920x1080 by default). Run it from any folder. The old worktree gets a copy of this
+repository's local.properties when it has none. On Windows, if the execution policy blocks
+scripts, start it with: powershell -ExecutionPolicy Bypass -File tools/perf-ab.ps1
 #>
 param(
     [string]$OldRef = 'HEAD',
@@ -75,38 +84,73 @@ param(
 $ErrorActionPreference = 'Stop'
 $invariant = [Globalization.CultureInfo]::InvariantCulture
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+$runsOnWindows = $PSVersionTable.PSEdition -eq 'Desktop' -or $IsWindows
 
 function Split-Arguments([string]$text) {
     return @($text -split '\s+' | Where-Object { $_ })
 }
 
-$captureArgumentList = Split-Arguments $CaptureArgs
-$oldArgumentList = Split-Arguments $OldArgs
-$newArgumentList = Split-Arguments $NewArgs
+$captureArgumentList = @(Split-Arguments $CaptureArgs)
+$oldArgumentList = @(Split-Arguments $OldArgs)
+$newArgumentList = @(Split-Arguments $NewArgs)
+
+function Join-PathParts([string]$root, [string[]]$parts) {
+    return [IO.Path]::Combine([string[]](@($root) + $parts))
+}
+
+function Copy-LocalProperties([string]$worktreePath) {
+    $source = Join-PathParts $repositoryRoot @('local.properties')
+    $target = Join-PathParts $worktreePath @('local.properties')
+    if ((Test-Path $source) -and -not (Test-Path $target)) { Copy-Item $source $target }
+}
+
+function Invoke-NativeCommand([scriptblock]$command) {
+    $callerErrorAction = $ErrorActionPreference
+    # Git and Java print notes on stderr; Windows PowerShell treats redirected stderr as errors.
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $command | Out-Host
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $callerErrorAction
+    }
+}
 
 function Initialize-OldWorktree([string]$ref) {
-    $worktreePath = Join-Path $env:TEMP 'hdg-asciigdx-perf-old'
+    $worktreePath = Join-PathParts ([IO.Path]::GetTempPath()) @('hdg-asciigdx-perf-old')
     if (Test-Path $worktreePath) {
-        git -C $worktreePath checkout --detach $ref | Out-Host
+        $exitCode = Invoke-NativeCommand { git -C $worktreePath checkout --detach $ref }
     } else {
-        git -C $repositoryRoot worktree add --detach $worktreePath $ref | Out-Host
+        $exitCode = Invoke-NativeCommand {
+            git -C $repositoryRoot worktree add --detach $worktreePath $ref
+        }
     }
-    if ($LASTEXITCODE -ne 0) { throw "Could not prepare the old worktree at '$ref'." }
+    if ($exitCode -ne 0) { throw "Could not prepare the old worktree at '$ref'." }
+    Copy-LocalProperties $worktreePath
     return $worktreePath
 }
 
+function Get-GradleArgumentsForPlatform([string[]]$gradleArgs) {
+    if (-not $runsOnWindows) { return $gradleArgs }
+    # gradlew.bat splits unquoted arguments at commas, and at dots in some Gradle versions.
+    return @($gradleArgs | ForEach-Object { if ($_ -match '[,.]') { "`"$_`"" } else { $_ } })
+}
+
 function Invoke-Capture([string]$treePath, [string[]]$sideArgs, [string]$resultFile) {
-    $perfFile = Join-Path $treePath 'build\captures\perf.txt'
+    $perfFile = Join-PathParts $treePath @('build', 'captures', 'perf.txt')
     if (Test-Path $perfFile) { Remove-Item $perfFile }
     $gradleArgs = @(':sandbox-desktop:run', '-Pcapture', "-Pscenes=$Scene", '--console=plain',
             '-q') + $captureArgumentList + $sideArgs
+    $wrapperName = if ($runsOnWindows) { 'gradlew.bat' } else { 'gradlew' }
+    $wrapper = Join-PathParts $treePath @($wrapperName)
+    $platformArgs = Get-GradleArgumentsForPlatform $gradleArgs
     Push-Location $treePath
     try {
-        & .\gradlew.bat @gradleArgs | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Capture failed in '$treePath'." }
+        $exitCode = Invoke-NativeCommand { & $wrapper @platformArgs }
     } finally {
         Pop-Location
     }
+    if ($exitCode -ne 0) { throw "Capture failed in '$treePath'." }
     if (-not (Test-Path $perfFile)) { throw "No perf.txt was written in '$treePath'." }
     Copy-Item $perfFile $resultFile
 }
@@ -145,7 +189,8 @@ if (-not $OldPath) { $OldPath = Initialize-OldWorktree $OldRef }
 $OldPath = (Resolve-Path $OldPath).Path
 $NewPath = (Resolve-Path $NewPath).Path
 
-$resultDirectory = Join-Path $repositoryRoot ("build\perf-ab\" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$resultDirectory = Join-PathParts $repositoryRoot @('build', 'perf-ab',
+        (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force $resultDirectory | Out-Null
 
 for ($round = 1; $round -le $Rounds; $round++) {
