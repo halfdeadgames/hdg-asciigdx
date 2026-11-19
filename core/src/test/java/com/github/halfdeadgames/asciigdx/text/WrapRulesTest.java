@@ -2,6 +2,8 @@ package com.github.halfdeadgames.asciigdx.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -80,6 +82,52 @@ class WrapRulesTest {
     @Test
     void invalidEllipsisIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> WrapRules.between(0, 9).withEllipsis(-1));
+    }
+
+    @Test
+    void hyphenDefaultsAreSet() {
+        WrapRules rules = WrapRules.between(0, 9);
+
+        assertNull(rules.getHyphenator());
+        assertEquals(TextDrawing.DEFAULT_HYPHEN, rules.getHyphenCodePoint());
+        assertEquals('-', TextDrawing.DEFAULT_HYPHEN);
+    }
+
+    @Test
+    void withHyphenAndWithHyphenatorReturnChangedCopies() {
+        Hyphenator hyphenator = Hyphenator.fromTexPatterns("\\patterns{ 1b }");
+        WrapRules original = WrapRules.between(0, 9);
+
+        WrapRules changed = original.withHyphen('~').withHyphenator(hyphenator);
+
+        assertEquals('~', changed.getHyphenCodePoint());
+        assertSame(hyphenator, changed.getHyphenator());
+        assertNull(original.getHyphenator());
+        assertEquals(TextDrawing.DEFAULT_HYPHEN, original.getHyphenCodePoint());
+    }
+
+    @Test
+    void invalidHyphenIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> WrapRules.between(0, 9).withHyphen(-1));
+        assertThrows(IllegalArgumentException.class,
+                () -> WrapRules.between(0, 9).withHyphen(Character.MAX_CODE_POINT + 1));
+    }
+
+    @Test
+    void nullHyphenatorIsRejected() {
+        assertThrows(NullPointerException.class, () -> WrapRules.between(0, 9).withHyphenator(null));
+    }
+
+    @Test
+    void hyphenSettingsTakePartInEqualsAndHashCode() {
+        Hyphenator hyphenator = Hyphenator.fromTexPatterns("\\patterns{ 1b }");
+        WrapRules first = WrapRules.between(0, 9).withHyphen('~').withHyphenator(hyphenator);
+        WrapRules second = WrapRules.between(0, 9).withHyphen('~').withHyphenator(hyphenator);
+
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertNotEquals(first, second.withHyphen('-'));
+        assertNotEquals(first, WrapRules.between(0, 9).withHyphen('~'));
     }
 
     @Test

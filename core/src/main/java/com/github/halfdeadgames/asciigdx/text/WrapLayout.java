@@ -24,10 +24,15 @@ import java.util.Objects;
  *       {@link BreakMode#CHARACTER}, a line takes as many code points as fit. In both modes the
  *       spaces at a wrap point are dropped: the trailing spaces of the wrapped line and the
  *       leading spaces of the next line.</li>
+ *   <li>With {@link BreakMode#HYPHENATE}, words wrap as in {@code WORD}, but a word that does not
+ *       fit the room left is split at the last allowed point where the piece plus a hyphen fits;
+ *       see {@link #isLineHyphenated(int)}. If no point fits, or the line is narrower than 3
+ *       cells, the word is handled as in {@code WORD}.</li>
  *   <li>If text remains after line {@link WrapRules#getMaxLines()}, ignoring remaining spaces and
  *       newlines, the layout is truncated: the last line is shortened to at most its width minus
  *       one cell, its trailing spaces are trimmed, and drawing puts the ellipsis in the cell after
- *       the content. On a line of width 1, only the ellipsis is shown.</li>
+ *       the content. On a line of width 1, only the ellipsis is shown. On a hyphenated last
+ *       line, the ellipsis replaces the hyphen.</li>
  * </ul>
  *
  * <p>Before the first {@code layOut}, {@link #getLineCount()} is 0, {@link #isTruncated()} is
@@ -36,8 +41,8 @@ import java.util.Objects;
  * lines. Drawing such a layout writes nothing.
  *
  * <p>Not thread-safe; use it from the render thread. The instance is owned by the caller and
- * reusable. Its internal arrays grow by doubling only when a text needs more lines than any
- * earlier one, so {@code layOut} otherwise allocates nothing.
+ * reusable. Its internal arrays grow only when a text needs more lines, or more break points in
+ * one word, than any earlier one, so {@code layOut} otherwise allocates nothing.
  *
  * <p>Example:
  * <pre>{@code
@@ -50,11 +55,18 @@ import java.util.Objects;
 public final class WrapLayout {
 
     private static final int INITIAL_LINE_CAPACITY = 16;
+    private static final int INITIAL_BREAK_CAPACITY = 16;
+    private static final int NO_BREAK = -1;
+    /** Two letters plus the hyphen: the narrowest line that can hold a hyphenated piece. */
+    private static final int MIN_HYPHENATED_WIDTH = 3;
+    private static final char EXISTING_HYPHEN = '-';
 
     private int[] lineStarts = new int[INITIAL_LINE_CAPACITY];
     private int[] lineEnds = new int[INITIAL_LINE_CAPACITY];
     private int[] lineStartColumns = new int[INITIAL_LINE_CAPACITY];
     private int[] lineEndColumns = new int[INITIAL_LINE_CAPACITY];
+    private boolean[] lineHyphenated = new boolean[INITIAL_LINE_CAPACITY];
+    private int[] breakOffsets = new int[INITIAL_BREAK_CAPACITY];
     private int lineCount;
     private int textLength;
     private CharSequence text;
@@ -70,12 +82,15 @@ public final class WrapLayout {
      * Call it only when the text or the rules change; drawing reuses the result every frame. The
      * layout keeps a reference to {@code text} and does not copy it. If a mutable
      * {@code CharSequence} such as a {@code StringBuilder} changes, call this method again before
-     * drawing, or the drawing is undefined. Allocates only when more lines are needed than ever
-     * before.
+     * drawing, or the drawing is undefined. Allocates only when a text needs more lines, or more
+     * break points in one word, than any earlier one; the first hyphenating call may load the
+     * bundled English patterns.
      *
      * @param text text to wrap; must not be {@code null}; may be empty
      * @param rules columns, line limit, break mode, and ellipsis; must not be {@code null}
      * @throws NullPointerException if {@code text} or {@code rules} is {@code null}
+     * @throws IllegalStateException if the break mode is {@code HYPHENATE}, no hyphenator is set,
+     *         and the bundled English patterns cannot be loaded
      */
     public void layOut(CharSequence text, WrapRules rules) {
         Objects.requireNonNull(text, "text");
@@ -154,6 +169,23 @@ public final class WrapLayout {
     }
 
     /**
+     * Returns whether a hyphen is drawn after the line's last character. Drawing puts the hyphen
+     * code point of the rules in the cell right after the line's content; that cell always lies
+     * inside the line's columns, never past {@link #getLineEndColumn(int)}. A line is hyphenated
+     * when {@link BreakMode#HYPHENATE} split a word. A split right after an existing
+     * {@code '-'} is not hyphenated, because the text already shows a hyphen. A truncated last
+     * line is not hyphenated, because its ellipsis takes that cell.
+     *
+     * @param line line index, from 0 to {@code getLineCount() - 1}
+     * @return {@code true} if the hyphen must be drawn after the line
+     * @throws IndexOutOfBoundsException if {@code line} is outside that range
+     */
+    public boolean isLineHyphenated(int line) {
+        checkLine(line);
+        return lineHyphenated[line];
+    }
+
+    /**
      * Returns whether the line limit cut off text. If so, the last line ends with the ellipsis.
      *
      * @return {@code true} if text remained after the last allowed line
@@ -202,6 +234,12 @@ public final class WrapLayout {
                 return index + newlineLength;
             }
             if (cells == width) {
+                int hyphenBreak = findHyphenBreak(text, rules, start, index, width);
+                if (hyphenBreak != NO_BREAK) {
+                    boolean addsHyphen = text.charAt(hyphenBreak - 1) != EXISTING_HYPHEN;
+                    appendLine(start, hyphenBreak, startColumn, endColumn, addsHyphen);
+                    return hyphenBreak;
+                }
                 int breakIndex = chooseBreakIndex(
                         rules.getBreakMode(), text, index, lastSpaceBreak);
                 appendLine(start, trimTrailingSpaces(text, start, breakIndex), startColumn,
@@ -226,10 +264,117 @@ public final class WrapLayout {
     private static int chooseBreakIndex(BreakMode mode, CharSequence text, int overflowIndex,
             int lastSpaceBreak) {
         return switch (mode) {
-            case WORD -> text.charAt(overflowIndex) == ' ' || lastSpaceBreak < 0
+            case WORD, HYPHENATE -> text.charAt(overflowIndex) == ' ' || lastSpaceBreak < 0
                     ? overflowIndex : lastSpaceBreak;
             case CHARACTER -> overflowIndex;
         };
+    }
+
+    /**
+     * Returns the char index where the overflowing word is split, or {@link #NO_BREAK} when the
+     * mode is not hyphenating or no allowed point fits the line.
+     */
+    private int findHyphenBreak(CharSequence text, WrapRules rules, int lineStart,
+            int overflowIndex, int width) {
+        if (rules.getBreakMode() != BreakMode.HYPHENATE || width < MIN_HYPHENATED_WIDTH
+                || text.charAt(overflowIndex) == ' ') {
+            return NO_BREAK;
+        }
+        int wordStart = findWordStart(text, overflowIndex);
+        int wordEnd = findWordEnd(text, overflowIndex);
+        Hyphenator hyphenator = rules.getHyphenator() != null
+                ? rules.getHyphenator() : Hyphenator.englishUs();
+        int bestBreak = NO_BREAK;
+        int runStart = wordStart;
+        while (runStart < wordEnd) {
+            int runEnd = findRunEnd(text, runStart, wordEnd);
+            bestBreak = lastFittingHyphenatorBreak(
+                    text, hyphenator, runStart, runEnd, lineStart, width, bestBreak);
+            boolean hyphenInsideWord = runEnd > runStart && runEnd + 1 < wordEnd;
+            if (hyphenInsideWord && fits(text, lineStart, runEnd + 1, 0, width)) {
+                bestBreak = runEnd + 1;
+            }
+            runStart = runEnd + 1;
+        }
+        return bestBreak;
+    }
+
+    /** Returns the start of the word that contains {@code index}, ignoring the line start. */
+    private static int findWordStart(CharSequence text, int index) {
+        int wordStart = index;
+        while (wordStart > 0 && !isWordBoundary(text.charAt(wordStart - 1))) {
+            wordStart--;
+        }
+        return wordStart;
+    }
+
+    private int findWordEnd(CharSequence text, int index) {
+        int wordEnd = index;
+        while (wordEnd < textLength && !isWordBoundary(text.charAt(wordEnd))
+                && newlineLengthAt(text, wordEnd) == 0) {
+            wordEnd++;
+        }
+        return wordEnd;
+    }
+
+    private static boolean isWordBoundary(char character) {
+        return character == ' ' || character == '\n';
+    }
+
+    private static int findRunEnd(CharSequence text, int runStart, int wordEnd) {
+        int runEnd = runStart;
+        while (runEnd < wordEnd && text.charAt(runEnd) != EXISTING_HYPHEN) {
+            runEnd++;
+        }
+        return runEnd;
+    }
+
+    /**
+     * Returns the last hyphenator break of the letters inside the run that fits the line, or
+     * {@code best} when none does. Punctuation around the letters stays out of the request.
+     */
+    private int lastFittingHyphenatorBreak(CharSequence text, Hyphenator hyphenator,
+            int runStart, int runEnd, int lineStart, int width, int best) {
+        int coreStart = skipNonLettersForward(text, runStart, runEnd);
+        int coreEnd = skipNonLettersBackward(text, coreStart, runEnd);
+        if (coreStart >= coreEnd) {
+            return best;
+        }
+        int count = hyphenator.findBreaks(text, coreStart, coreEnd, breakOffsets);
+        if (count > breakOffsets.length) {
+            breakOffsets = new int[count];
+            hyphenator.findBreaks(text, coreStart, coreEnd, breakOffsets);
+        }
+        int lastFitting = best;
+        for (int i = 0; i < count; i++) {
+            if (fits(text, lineStart, breakOffsets[i], 1, width)) {
+                lastFitting = breakOffsets[i];
+            }
+        }
+        return lastFitting;
+    }
+
+    private static int skipNonLettersForward(CharSequence text, int from, int end) {
+        int index = from;
+        while (index < end && !Character.isLetter(Character.codePointAt(text, index))) {
+            index += Character.charCount(Character.codePointAt(text, index));
+        }
+        return index;
+    }
+
+    private static int skipNonLettersBackward(CharSequence text, int start, int from) {
+        int index = from;
+        while (index > start && !Character.isLetter(Character.codePointBefore(text, index))) {
+            index -= Character.charCount(Character.codePointBefore(text, index));
+        }
+        return index;
+    }
+
+    /** Tells whether the line content up to {@code breakIndex} plus the hyphen cells fits. */
+    private static boolean fits(CharSequence text, int lineStart, int breakIndex, int hyphenCells,
+            int width) {
+        return breakIndex > lineStart
+                && Character.codePointCount(text, lineStart, breakIndex) + hyphenCells <= width;
     }
 
     private int newlineLengthAt(CharSequence text, int index) {
@@ -271,6 +416,7 @@ public final class WrapLayout {
             cells++;
         }
         lineEnds[last] = trimTrailingSpaces(text, lineStarts[last], index);
+        lineHyphenated[last] = false;
         truncated = true;
     }
 
@@ -288,13 +434,20 @@ public final class WrapLayout {
     }
 
     private void appendLine(int start, int end, int startColumn, int endColumn) {
+        appendLine(start, end, startColumn, endColumn, false);
+    }
+
+    private void appendLine(int start, int end, int startColumn, int endColumn,
+            boolean hyphenated) {
         if (lineCount == lineStarts.length) {
             int newCapacity = lineCount * 2;
             lineStarts = Arrays.copyOf(lineStarts, newCapacity);
             lineEnds = Arrays.copyOf(lineEnds, newCapacity);
             lineStartColumns = Arrays.copyOf(lineStartColumns, newCapacity);
             lineEndColumns = Arrays.copyOf(lineEndColumns, newCapacity);
+            lineHyphenated = Arrays.copyOf(lineHyphenated, newCapacity);
         }
+        lineHyphenated[lineCount] = hyphenated;
         lineStarts[lineCount] = start;
         lineEnds[lineCount] = end;
         lineStartColumns[lineCount] = startColumn;

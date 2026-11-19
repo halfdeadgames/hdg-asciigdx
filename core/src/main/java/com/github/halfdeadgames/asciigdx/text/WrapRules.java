@@ -4,7 +4,8 @@ import java.util.Objects;
 
 /**
  * Immutable settings that tell a {@link WrapLayout} how to wrap text: the columns of the first
- * line, the columns of every other line, the line limit, the break mode, and the ellipsis.
+ * line, the columns of every other line, the line limit, the break mode, the ellipsis, and, for
+ * {@link BreakMode#HYPHENATE}, the hyphenator and the hyphen.
  *
  * <p>Columns are grid columns and the end column is included: start 4 and end 20 mean columns 4
  * through 20, a width of 17 cells. Columns may lie outside the grid; drawing clips them.
@@ -14,12 +15,14 @@ import java.util.Objects;
  * same cells as column 4 with a width of 17.
  *
  * <p>Defaults: wrapped lines use the same columns as the first line, there is no line limit,
- * the break mode is {@link BreakMode#WORD}, and the ellipsis is
- * {@link TextDrawing#DEFAULT_ELLIPSIS}.
+ * the break mode is {@link BreakMode#WORD}, the ellipsis is
+ * {@link TextDrawing#DEFAULT_ELLIPSIS}, no hyphenator is set (English is used when hyphenating),
+ * and the hyphen is {@link TextDrawing#DEFAULT_HYPHEN}.
  *
  * <p>Example:
  * <pre>{@code
  * WrapRules rules = WrapRules.between(2, 31).withMaxLines(4);
+ * WrapRules hyphenating = rules.withBreakMode(BreakMode.HYPHENATE);
  * }</pre>
  */
 public final class WrapRules {
@@ -34,10 +37,13 @@ public final class WrapRules {
     private final int maxLines;
     private final BreakMode breakMode;
     private final int ellipsisCodePoint;
+    private final Hyphenator hyphenator;
+    private final int hyphenCodePoint;
 
     private WrapRules(int firstLineStartColumn, int firstLineEndColumn,
             int wrappedLineStartColumn, int wrappedLineEndColumn, int maxLines,
-            BreakMode breakMode, int ellipsisCodePoint) {
+            BreakMode breakMode, int ellipsisCodePoint, Hyphenator hyphenator,
+            int hyphenCodePoint) {
         this.firstLineStartColumn = firstLineStartColumn;
         this.firstLineEndColumn = firstLineEndColumn;
         this.wrappedLineStartColumn = wrappedLineStartColumn;
@@ -45,6 +51,8 @@ public final class WrapRules {
         this.maxLines = maxLines;
         this.breakMode = breakMode;
         this.ellipsisCodePoint = ellipsisCodePoint;
+        this.hyphenator = hyphenator;
+        this.hyphenCodePoint = hyphenCodePoint;
     }
 
     /**
@@ -60,7 +68,7 @@ public final class WrapRules {
     public static WrapRules between(int startColumn, int endColumn) {
         requireValidColumns(startColumn, endColumn);
         return new WrapRules(startColumn, endColumn, startColumn, endColumn, NO_LINE_LIMIT,
-                BreakMode.WORD, TextDrawing.DEFAULT_ELLIPSIS);
+                BreakMode.WORD, TextDrawing.DEFAULT_ELLIPSIS, null, TextDrawing.DEFAULT_HYPHEN);
     }
 
     /**
@@ -77,7 +85,7 @@ public final class WrapRules {
     public WrapRules withWrappedLineColumns(int startColumn, int endColumn) {
         requireValidColumns(startColumn, endColumn);
         return new WrapRules(firstLineStartColumn, firstLineEndColumn, startColumn, endColumn,
-                maxLines, breakMode, ellipsisCodePoint);
+                maxLines, breakMode, ellipsisCodePoint, hyphenator, hyphenCodePoint);
     }
 
     /**
@@ -94,7 +102,8 @@ public final class WrapRules {
             throw new IllegalArgumentException("maxLines must be at least 1: " + maxLines);
         }
         return new WrapRules(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
-                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint);
+                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint, hyphenator,
+                hyphenCodePoint);
     }
 
     /**
@@ -107,7 +116,8 @@ public final class WrapRules {
     public WrapRules withBreakMode(BreakMode mode) {
         Objects.requireNonNull(mode, "mode");
         return new WrapRules(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
-                wrappedLineEndColumn, maxLines, mode, ellipsisCodePoint);
+                wrappedLineEndColumn, maxLines, mode, ellipsisCodePoint, hyphenator,
+                hyphenCodePoint);
     }
 
     /**
@@ -124,7 +134,46 @@ public final class WrapRules {
             throw new IllegalArgumentException("Invalid ellipsis code point: " + codePoint);
         }
         return new WrapRules(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
-                wrappedLineEndColumn, maxLines, breakMode, codePoint);
+                wrappedLineEndColumn, maxLines, breakMode, codePoint, hyphenator,
+                hyphenCodePoint);
+    }
+
+    /**
+     * Returns a copy that finds word break points with the given hyphenator. It has no effect
+     * unless the break mode is {@link BreakMode#HYPHENATE}; the value is kept if the mode changes
+     * later. All copies share the instance, and {@code layOut} reads it. A {@code Hyphenator} is
+     * immutable and thread-safe, so sharing is safe. Without one, the layout uses
+     * {@link Hyphenator#englishUs()}. The first layout that needs it loads the bundled patterns
+     * once, which takes a few milliseconds, so call {@code Hyphenator.englishUs()} while loading
+     * to avoid a stall during play.
+     *
+     * @param hyphenator source of break points; must not be {@code null}
+     * @return changed copy; this object is not modified
+     * @throws NullPointerException if {@code hyphenator} is {@code null}
+     */
+    public WrapRules withHyphenator(Hyphenator hyphenator) {
+        Objects.requireNonNull(hyphenator, "hyphenator");
+        return new WrapRules(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
+                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint, hyphenator,
+                hyphenCodePoint);
+    }
+
+    /**
+     * Returns a copy that draws the given code point at the end of a line that was split inside a
+     * word. It takes one cell. The default is {@link TextDrawing#DEFAULT_HYPHEN}.
+     *
+     * @param codePoint glyph to draw, a valid Unicode code point that the font must contain; used
+     *         only with {@link BreakMode#HYPHENATE} and ignored in other modes
+     * @return changed copy; this object is not modified
+     * @throws IllegalArgumentException if {@code codePoint} is not a valid code point
+     */
+    public WrapRules withHyphen(int codePoint) {
+        if (!Character.isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException("Invalid hyphen code point: " + codePoint);
+        }
+        return new WrapRules(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
+                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint, hyphenator,
+                codePoint);
     }
 
     /**
@@ -190,6 +239,26 @@ public final class WrapRules {
         return ellipsisCodePoint;
     }
 
+    /**
+     * Returns the hyphenator set with {@link #withHyphenator(Hyphenator)}.
+     *
+     * @return the hyphenator, or {@code null} when none was set (the project uses no nullability
+     *         annotations; Kotlin callers should treat the result as nullable); the layout then
+     *         uses {@link Hyphenator#englishUs()}
+     */
+    public Hyphenator getHyphenator() {
+        return hyphenator;
+    }
+
+    /**
+     * Returns the code point drawn at the end of a line that was split inside a word.
+     *
+     * @return a valid Unicode code point; {@link TextDrawing#DEFAULT_HYPHEN} by default
+     */
+    public int getHyphenCodePoint() {
+        return hyphenCodePoint;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -205,13 +274,16 @@ public final class WrapRules {
                 && wrappedLineEndColumn == rules.wrappedLineEndColumn
                 && maxLines == rules.maxLines
                 && breakMode == rules.breakMode
-                && ellipsisCodePoint == rules.ellipsisCodePoint;
+                && ellipsisCodePoint == rules.ellipsisCodePoint
+                && Objects.equals(hyphenator, rules.hyphenator)
+                && hyphenCodePoint == rules.hyphenCodePoint;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(firstLineStartColumn, firstLineEndColumn, wrappedLineStartColumn,
-                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint);
+                wrappedLineEndColumn, maxLines, breakMode, ellipsisCodePoint, hyphenator,
+                hyphenCodePoint);
     }
 
     @Override
@@ -219,7 +291,9 @@ public final class WrapRules {
         return "WrapRules[firstLine=" + firstLineStartColumn + ".." + firstLineEndColumn
                 + ", wrappedLines=" + wrappedLineStartColumn + ".." + wrappedLineEndColumn
                 + ", maxLines=" + maxLines + ", breakMode=" + breakMode
-                + ", ellipsisCodePoint=" + ellipsisCodePoint + "]";
+                + ", ellipsisCodePoint=" + ellipsisCodePoint
+                + ", hyphenator=" + hyphenator
+                + ", hyphenCodePoint=" + hyphenCodePoint + "]";
     }
 
     private static void requireValidColumns(int startColumn, int endColumn) {

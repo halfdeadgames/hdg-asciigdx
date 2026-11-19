@@ -138,6 +138,32 @@ class TextDrawingWrapTest {
         assertEquals("xbc   ", areaText(grid, 0, 0, 5));
     }
 
+    private static WrapRules hyphenatingRules() {
+        return WrapRules.between(0, 3).withBreakMode(BreakMode.HYPHENATE)
+                .withHyphenator(Hyphenator.fromTexPatterns("\\patterns{ 1b 1c 1d 1e 1f }"));
+    }
+
+    @Test
+    void hyphenIsDrawnRightAfterTheSplitPiece() {
+        TerminalGrid grid = new TerminalGrid(10, 3);
+
+        draw(grid, 0, "abcdefg", hyphenatingRules());
+
+        assertEquals("abc-", areaText(grid, 0, 0, 3));
+        assertEquals("defg", areaText(grid, 1, 0, 3));
+        assertEquals(FOREGROUND, grid.getForeground(3, 0));
+        assertEquals(BACKGROUND, grid.getBackground(3, 0));
+    }
+
+    @Test
+    void customHyphenCodePointIsDrawn() {
+        TerminalGrid grid = new TerminalGrid(10, 3);
+
+        draw(grid, 0, "abcdefg", hyphenatingRules().withHyphen('~'));
+
+        assertEquals("abc~", areaText(grid, 0, 0, 3));
+    }
+
     @Test
     void nullArgumentsAreRejected() {
         TerminalGrid grid = new TerminalGrid(10, 2);

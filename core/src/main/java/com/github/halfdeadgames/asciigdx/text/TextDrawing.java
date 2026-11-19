@@ -43,6 +43,14 @@ public final class TextDrawing {
      */
     public static final int DEFAULT_ELLIPSIS = 0x2026;
 
+    /**
+     * The hyphen, U+002D HYPHEN-MINUS. It is one cell wide, drawn at the end of a line that was
+     * split inside a word by {@link BreakMode#HYPHENATE}, and present in all built-in Saiksistt
+     * sizes (CP437 '-'). A custom font must contain it too; a font without it should pass
+     * another single code point to {@link WrapRules#withHyphen(int)}.
+     */
+    public static final int DEFAULT_HYPHEN = 0x2D;
+
     private static final int BLANK_CODE_POINT = ' ';
 
     private TextDrawing() {
@@ -237,7 +245,9 @@ public final class TextDrawing {
      *
      * <p>Every cell of each line's area, from its start column to its end column, is written: cells
      * without text get a space with the given colors. When the layout is truncated, the ellipsis
-     * of its rules is written in the cell right after the content of the last line. Rows beyond
+     * of its rules is written in the cell right after the content of the last line. A line that
+     * {@link WrapLayout#isLineHyphenated} reports as hyphenated gets the hyphen code point of the
+     * rules in the cell right after its content, with the same colors as the text. Rows beyond
      * the line count are not touched. Cells and rows outside the grid are skipped, and the method
      * never throws for off-grid positions. It does not allocate.
      *
@@ -313,6 +323,11 @@ public final class TextDrawing {
             int codePoint = Character.codePointAt(text, index);
             writeCell(grid, column, row, codePoint, foreground, background);
             index += Character.charCount(codePoint);
+            column++;
+        }
+        if (layout.isLineHyphenated(line)) {
+            writeCell(grid, column, row, layout.getRules().getHyphenCodePoint(), foreground,
+                    background);
             column++;
         }
         if (endsWithEllipsis) {

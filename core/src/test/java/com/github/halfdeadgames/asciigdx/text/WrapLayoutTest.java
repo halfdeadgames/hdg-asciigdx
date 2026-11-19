@@ -189,6 +189,99 @@ class WrapLayoutTest {
         assertThrows(IndexOutOfBoundsException.class, () -> layout.getLineEndColumn(1));
     }
 
+    private static Hyphenator simpleHyphenator() {
+        return Hyphenator.fromTexPatterns("\\patterns{ 1b 1c 1d 1e 1f }");
+    }
+
+    private static WrapRules hyphenating(int endColumn) {
+        return WrapRules.between(0, endColumn).withBreakMode(BreakMode.HYPHENATE)
+                .withHyphenator(simpleHyphenator());
+    }
+
+    /** Lines of the text, each followed by '-' when the layout says drawing adds a hyphen. */
+    private static List<String> wrapShowingAddedHyphens(String text, WrapRules rules) {
+        WrapLayout layout = new WrapLayout();
+        layout.layOut(text, rules);
+        List<String> lines = lineTexts(layout, text);
+        for (int line = 0; line < lines.size(); line++) {
+            if (layout.isLineHyphenated(line)) {
+                lines.set(line, lines.get(line) + "-");
+            }
+        }
+        return lines;
+    }
+
+    @Test
+    void hyphenateSplitsAtTheLastPointWherePieceAndHyphenFit() {
+        assertEquals(List.of("abc-", "defg"), wrapShowingAddedHyphens("abcdefg", hyphenating(3)));
+        assertEquals(List.of("xx ab-", "cdefg"),
+                wrapShowingAddedHyphens("xx abcdefg", hyphenating(5)));
+    }
+
+    @Test
+    void hyphenateKeepsPunctuationAttachedToItsPiece() {
+        WrapRules trailingComma = WrapRules.between(0, 6).withBreakMode(BreakMode.HYPHENATE);
+        WrapRules leadingParenthesis = WrapRules.between(0, 7).withBreakMode(BreakMode.HYPHENATE);
+
+        assertEquals(List.of("hyphen-", "ation,"),
+                wrapShowingAddedHyphens("hyphenation,", trailingComma));
+        assertEquals(List.of("(hyphen-", "ation)"),
+                wrapShowingAddedHyphens("(hyphenation)", leadingParenthesis));
+    }
+
+    @Test
+    void hyphenateBreaksAfterAnExistingHyphenWithoutAddingOne() {
+        WrapLayout layout = new WrapLayout();
+        layout.layOut("well-known", hyphenating(6));
+
+        assertEquals(List.of("well-", "known"), lineTexts(layout, "well-known"));
+        assertFalse(layout.isLineHyphenated(0));
+    }
+
+    @Test
+    void hyphenateFallsBackToWordWhenNoPointFits() {
+        assertEquals(List.of("aaaa", "bbbb"), wrap("aaaa bbbb", hyphenating(4)));
+        assertEquals(List.of("xxxxx", "xxx"), wrap("xxxxxxxx", hyphenating(4)));
+        assertEquals(List.of("aaaa", "abcd-", "efg"),
+                wrapShowingAddedHyphens("aaaa abcdefg", hyphenating(4)));
+    }
+
+    @Test
+    void hyphenateOnALineNarrowerThanThreeCellsActsLikeWord() {
+        assertEquals(List.of("ab", "cd", "ef", "g"),
+                wrapShowingAddedHyphens("abcdefg", hyphenating(1)));
+    }
+
+    @Test
+    void ellipsisReplacesTheHyphenOnTheLastAllowedLine() {
+        WrapLayout layout = new WrapLayout();
+        layout.layOut("abcdefg", hyphenating(3).withMaxLines(1));
+
+        assertEquals(1, layout.getLineCount());
+        assertTrue(layout.isTruncated());
+        assertFalse(layout.isLineHyphenated(0));
+        assertEquals(3, layout.getLineEnd(0));
+    }
+
+    @Test
+    void defaultHyphenatorIsEnglish() {
+        WrapRules rules = WrapRules.between(0, 4).withBreakMode(BreakMode.HYPHENATE);
+
+        assertEquals(List.of("hy-", "phen-", "ation"),
+                wrapShowingAddedHyphens("hyphenation", rules));
+    }
+
+    @Test
+    void hyphenatedFlagIsFalseForOtherModesAndRejectsBadIndexes() {
+        WrapLayout layout = new WrapLayout();
+        assertThrows(IndexOutOfBoundsException.class, () -> layout.isLineHyphenated(0));
+
+        layout.layOut("abcdefg", WrapRules.between(0, 3));
+
+        assertFalse(layout.isLineHyphenated(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> layout.isLineHyphenated(2));
+    }
+
     @Test
     void nullArgumentsAreRejected() {
         WrapLayout layout = new WrapLayout();

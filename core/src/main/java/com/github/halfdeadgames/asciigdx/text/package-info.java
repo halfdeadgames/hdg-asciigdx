@@ -1,9 +1,20 @@
 /**
  * Text layout and drawing that handles text longer than its area.
  *
- * <p>{@link com.github.halfdeadgames.asciigdx.text.TextDrawing} fits one line of text into a fixed
- * width, either cut short with an ellipsis or scrolling over time.
+ * <p>Truncation and scrolling: {@link com.github.halfdeadgames.asciigdx.text.TextDrawing} fits
+ * one line of text into a fixed width, either cut short with an ellipsis or scrolling over time.
  * {@link com.github.halfdeadgames.asciigdx.text.TextScroll} describes the scrolling motion.
+ *
+ * <p>Wrapping: {@link com.github.halfdeadgames.asciigdx.text.WrapRules} holds the columns, the
+ * line limit, the ellipsis, and the {@link com.github.halfdeadgames.asciigdx.text.BreakMode}.
+ * {@link com.github.halfdeadgames.asciigdx.text.WrapLayout} turns a text and rules into lines
+ * once, and {@code TextDrawing.drawWrapped} draws them every frame. The break mode
+ * {@link com.github.halfdeadgames.asciigdx.text.BreakMode#HYPHENATE} splits long words with a
+ * hyphen.
+ *
+ * <p>Hyphenation: {@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
+ * where a word may be split, using the bundled English (US) patterns or patterns the game
+ * supplies.
  *
  * <p>Conventions:
  * <ul>
@@ -23,6 +34,12 @@
  * TextScroll scroll = TextScroll.backAndForth(6f, 1f);
  * TextDrawing.drawScrolling(grid, 2, 2, 12, title, scroll, secondsSinceStart,
  *         TextDrawing.DEFAULT_ELLIPSIS, fg, bg);
+ *
+ * // Wrap into columns 2 through 31, at most 4 lines, splitting long words with a hyphen.
+ * WrapRules rules = WrapRules.between(2, 31).withMaxLines(4).withBreakMode(BreakMode.HYPHENATE);
+ * WrapLayout layout = new WrapLayout();
+ * layout.layOut(message, rules);
+ * TextDrawing.drawWrapped(grid, 4, layout, fg, bg);
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.text;

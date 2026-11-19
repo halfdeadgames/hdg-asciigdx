@@ -44,7 +44,9 @@ public final class Hyphenator {
     /**
      * Returns the hyphenator for American English, built from the bundled TeX patterns and their
      * exception words. The patterns are read from the classpath on the first call and cached, so
-     * every call returns the same instance. It works without a libGDX application.
+     * every call returns the same instance. It may be called from any thread: when several
+     * threads make the first call at once, the patterns are still read only once. It works
+     * without a libGDX application.
      *
      * @return the shared American English hyphenator, never null
      * @throws IllegalStateException if the bundled pattern resource is missing or unreadable
