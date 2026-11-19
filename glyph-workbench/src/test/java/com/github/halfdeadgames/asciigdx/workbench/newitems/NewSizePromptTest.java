@@ -45,9 +45,9 @@ class NewSizePromptTest {
 
     @Test
     void labelsTheCellAsWidthByHeight() {
-        assertEquals("16X16", NewSizePrompt.label(SQUARE_16));
-        assertEquals("16X32", NewSizePrompt.label(new SizeOption(new CellSize(16, 32), false)));
-        assertEquals("16X32", NewSizePrompt.label(new CellSize(16, 32)));
+        assertEquals("16x16", NewSizePrompt.label(SQUARE_16));
+        assertEquals("16x32", NewSizePrompt.label(new SizeOption(new CellSize(16, 32), false)));
+        assertEquals("16x32", NewSizePrompt.label(new CellSize(16, 32)));
     }
 
     @Test
@@ -109,8 +109,8 @@ class NewSizePromptTest {
         var rows = prompt.list().rows();
         assertFalse(rows.get(0).selectable());
         assertTrue(rows.get(0).dimmed());
-        assertTrue(rows.get(0).text().startsWith("  8X8"));
-        assertEquals("16X16", rows.get(1).text());
+        assertTrue(rows.get(0).text().startsWith("  8x8"));
+        assertEquals("16x16", rows.get(1).text());
         assertTrue(rows.get(1).selectable());
         assertFalse(rows.get(1).dimmed());
     }
@@ -129,7 +129,7 @@ class NewSizePromptTest {
         var prompt = openWith(SQUARE_8, SQUARE_16);
         assertEquals(5, prompt.lines().size());
         assertEquals(prompt.list().listWidth(), prompt.lines().get(0).length());
-        assertEquals("  8X8  (EXISTS)".length(), prompt.list().listWidth());
+        assertEquals("  8x8  (EXISTS)".length(), prompt.list().listWidth());
     }
 
     @Test
@@ -155,7 +155,7 @@ class NewSizePromptTest {
     void aValidTypedSizeClosesAndIsHandedOn() {
         var prompt = openWith(SQUARE_8);
         prompt.chooseSelected();
-        typeText(prompt, "24X48");
+        typeText(prompt, "24x48");
         prompt.enter();
         assertEquals(List.of(new CellSize(24, 48)), chosen);
         assertFalse(prompt.isOpen());

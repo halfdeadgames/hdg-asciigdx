@@ -1711,7 +1711,7 @@ public final class PaintScreen implements WorkbenchScreen {
     private void drawBase(int codePoint, int columns, int rows) {
         TopBar.draw(painter, columns, CRUMB_ROW,
                 List.of("GLYPH WORKBENCH", folderName,
-                        "PAINT " + fontSize.toString().toUpperCase(java.util.Locale.ROOT)),
+                        "PAINT " + fontSize),
                 new TopBarStatus(uiScale.label(), editor.isModified() ? "● MODIFIED" : "",
                         UiPalette.ORANGE));
         boolean choosingSource = flow.isPicking() || flow.mode() == DeriveFlow.Mode.CONFIRM_REPLACE;

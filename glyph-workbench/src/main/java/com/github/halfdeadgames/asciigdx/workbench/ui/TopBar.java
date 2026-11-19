@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8X8, and an optional
+ * The top strip: a breadcrumb such as GLYPH WORKBENCH ► SAIKSISTT ► PAINT 8x8, and an optional
  * right-aligned status.
  */
 public final class TopBar {

@@ -72,7 +72,7 @@ final class UpscaleSourceList {
             return List.of();
         }
         return List.of("No smaller font divides",
-                target.cellWidth() + "X" + target.cellHeight() + " evenly");
+                target.cellWidth() + "x" + target.cellHeight() + " evenly");
     }
 
     /** The highlighted source, or null when none can be chosen. */
@@ -120,7 +120,7 @@ final class UpscaleSourceList {
     private String intoLine() {
         return DialogText.ellipsize(
                 "Into " + target.folderName().toUpperCase(Locale.ROOT) + " " + target.cellWidth()
-                        + "X" + target.cellHeight());
+                        + "x" + target.cellHeight());
     }
 
     // Option indexes per folder: the target's folder first, the others in first-appearance order,
@@ -158,7 +158,7 @@ final class UpscaleSourceList {
 
     private static SelectList.Row rowFor(UpscaleSources.Option option) {
         UpscaleSources.Font font = option.font();
-        String size = font.cellWidth() + "X" + font.cellHeight();
+        String size = font.cellWidth() + "x" + font.cellHeight();
         // SelectList indents only selectable rows, so an unusable row carries the indent in its
         // text.
         if (!option.usable()) {

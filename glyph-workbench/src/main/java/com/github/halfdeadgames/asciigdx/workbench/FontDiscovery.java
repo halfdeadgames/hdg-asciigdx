@@ -22,10 +22,9 @@ public final class FontDiscovery {
      */
     public record FontChoice(String folderName, CellSize size) {
 
-        /** Menu text such as {@code SAIKSISTT 8X8}. */
+        /** Menu text such as {@code SAIKSISTT 8x8}. */
         String label() {
-            return folderName.toUpperCase(Locale.ROOT) + " " + size.toString()
-                    .toUpperCase(Locale.ROOT);
+            return folderName.toUpperCase(Locale.ROOT) + " " + size;
         }
     }
 

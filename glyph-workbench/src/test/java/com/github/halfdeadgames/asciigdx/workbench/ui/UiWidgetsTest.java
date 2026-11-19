@@ -29,7 +29,7 @@ class UiWidgetsTest {
     @Test
     void breadcrumbMatchesTheMockupColumns() {
         List<TopBar.Segment> segments =
-                TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16X16"));
+                TopBar.layout(List.of("GLYPH WORKBENCH", "SAIKSISTT", "PAINT 16x16"));
         assertEquals(5, segments.size());
         assertEquals(1, segments.get(0).x());
         assertEquals(17, segments.get(1).x());

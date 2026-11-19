@@ -321,7 +321,7 @@ final class PaintUpscale {
     }
 
     private static String label(UpscaleSources.Font font) {
-        return font.folderName().toUpperCase(Locale.ROOT) + " " + font.cellWidth() + "X"
+        return font.folderName().toUpperCase(Locale.ROOT) + " " + font.cellWidth() + "x"
                 + font.cellHeight();
     }
 

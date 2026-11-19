@@ -123,13 +123,13 @@ public final class UpscaleSourceSheet {
         return NO_SLOT;
     }
 
-    /** The sheet frame title, such as {@code FROM 8X8}. */
+    /** The sheet frame title, such as {@code FROM 8x8}. */
     public String title() {
         return "FROM " + shortTitle();
     }
 
-    /** The cell size alone, such as {@code 8X8}, for a frame too narrow for {@link #title()}. */
+    /** The cell size alone, such as {@code 8x8}, for a frame too narrow for {@link #title()}. */
     public String shortTitle() {
-        return editor.cellWidth() + "X" + editor.cellHeight();
+        return editor.cellWidth() + "x" + editor.cellHeight();
     }
 }

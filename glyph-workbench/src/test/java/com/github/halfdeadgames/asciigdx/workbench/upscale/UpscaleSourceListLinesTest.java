@@ -27,7 +27,7 @@ class UpscaleSourceListLinesTest {
 
         List<String> lines = sourceList.lines();
 
-        assertEquals("Into A 16X16", lines.get(0));
+        assertEquals("Into A 16x16", lines.get(0));
         assertEquals("", lines.get(1));
         assertEquals(UpscaleSourceList.LINES_ABOVE_LIST
                         + sourceList.list().shownRows() * SelectList.PITCH - 1,
@@ -49,7 +49,7 @@ class UpscaleSourceListLinesTest {
     void withoutChoicesTheMessageReplacesTheListRoom() {
         sourceList.open(square("a", 8), List.of());
 
-        assertEquals(List.of("Into A 8X8", "", "No smaller font divides", "8X8 evenly"),
+        assertEquals(List.of("Into A 8x8", "", "No smaller font divides", "8x8 evenly"),
                 sourceList.lines());
     }
 

@@ -53,7 +53,7 @@ class UpscaleSourceListTest {
     @Test
     void unusableRowsAreDimmedIndentedAndUnchoosable() {
         sourceList.open(square("a", 24), List.of(square("a", 8), square("a", 16)));
-        assertEquals(new SelectList.Row("  16X16  NOT EVEN", false, true, 0), row(2));
+        assertEquals(new SelectList.Row("  16x16  NOT EVEN", false, true, 0), row(2));
         assertFalse(sourceList.list().isChoosable(2));
     }
 
@@ -79,20 +79,20 @@ class UpscaleSourceListTest {
         sourceList.open(new Font("a", 16, 24), List.of(square("a", 16)));
         assertFalse(sourceList.hasChoices());
         assertNull(sourceList.selected());
-        assertEquals(List.of("No smaller font divides", "16X24 evenly"),
+        assertEquals(List.of("No smaller font divides", "16x24 evenly"),
                 sourceList.noChoiceLines());
     }
 
     @Test
     void usableRowLabelShowsSizeAndFactor() {
         sourceList.open(new Font("a", 16, 32), List.of(new Font("a", 8, 16)));
-        assertEquals(new SelectList.Row("8X16  2X", true, false, 0), row(1));
+        assertEquals(new SelectList.Row("8x16  2X", true, false, 0), row(1));
     }
 
     @Test
     void usableRowLabelShowsFactorPerAxis() {
         sourceList.open(new Font("a", 16, 16), List.of(new Font("a", 8, 16)));
-        assertEquals(new SelectList.Row("8X16  2X/1X", true, false, 0), row(1));
+        assertEquals(new SelectList.Row("8x16  2X/1X", true, false, 0), row(1));
     }
 
     @Test

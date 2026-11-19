@@ -47,7 +47,7 @@ public final class FirstGlyphScreen implements WorkbenchScreen {
         this.onAdded = onAdded;
         this.page = new NewItemPage(List.of("GLYPH WORKBENCH",
                 fontFolder.getFileName().toString().toUpperCase(Locale.ROOT),
-                size.toString().toUpperCase(Locale.ROOT), "FIRST GLYPH"));
+                size.toString(), "FIRST GLYPH"));
     }
 
     @Override

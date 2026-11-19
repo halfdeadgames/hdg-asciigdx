@@ -107,8 +107,8 @@ class UpscaleSourceSheetTest {
 
     @Test
     void titleNamesTheSourceCellSize() {
-        assertEquals("FROM 8X8", sheet(FONT_TEXT).title());
-        assertEquals("8X8", sheet(FONT_TEXT).shortTitle());
+        assertEquals("FROM 8x8", sheet(FONT_TEXT).title());
+        assertEquals("8x8", sheet(FONT_TEXT).shortTitle());
     }
 
     @Test

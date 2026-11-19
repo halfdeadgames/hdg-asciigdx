@@ -61,9 +61,9 @@ class MenuModelTest {
         assertEquals(MenuModel.Kind.NEW_SIZE, model.item(2).kind());
         assertEquals("3 NEW SIZE", model.item(2).label());
         assertEquals("saiksistt", model.item(2).folderName());
-        assertEquals("1 PAINT 8X8", model.item(0).label());
+        assertEquals("1 PAINT 8x8", model.item(0).label());
         assertEquals(new CellSize(8, 8), model.item(0).size());
-        assertEquals("2 PAINT 16X16", model.item(1).label());
+        assertEquals("2 PAINT 16x16", model.item(1).label());
     }
 
     @Test
@@ -105,7 +105,7 @@ class MenuModelTest {
         model.select(7);
         model.select(-1);
         assertEquals(1, model.selectedIndex());
-        assertEquals("2 PAINT 16X16", model.selectedItem().label());
+        assertEquals("2 PAINT 16x16", model.selectedItem().label());
     }
 
     @Test

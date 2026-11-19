@@ -74,7 +74,7 @@ final class MenuModel {
             }
         }
         for (FontChoice font : sizes) {
-            model.addItem(Kind.PAINT, "PAINT " + font.size().toString().toUpperCase(Locale.ROOT),
+            model.addItem(Kind.PAINT, "PAINT " + font.size(),
                     folderName,
                     font.size(), 0);
         }

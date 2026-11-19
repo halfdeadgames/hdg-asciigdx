@@ -89,6 +89,6 @@ class FontDiscoveryTest {
 
     @Test
     void labelIsUppercaseFolderAndSize() {
-        assertEquals("SAIKSISTT 8X16", new FontChoice("saiksistt", new CellSize(8, 16)).label());
+        assertEquals("SAIKSISTT 8x16", new FontChoice("saiksistt", new CellSize(8, 16)).label());
     }
 }

@@ -80,14 +80,14 @@ public final class NewSizePrompt {
         typedPage.close();
     }
 
-    /** The cell as {@code WxH}, for example {@code 16X32}. */
+    /** The cell as {@code WxH}, for example {@code 16x32}. */
     static String label(SizeOption option) {
         return label(option.size());
     }
 
-    /** The cell as {@code WxH}, for example {@code 16X32}. */
+    /** The cell as {@code WxH}, for example {@code 16x32}. */
     public static String label(CellSize size) {
-        return size.width() + "X" + size.height();
+        return size.width() + "x" + size.height();
     }
 
     int selectedIndex() {
