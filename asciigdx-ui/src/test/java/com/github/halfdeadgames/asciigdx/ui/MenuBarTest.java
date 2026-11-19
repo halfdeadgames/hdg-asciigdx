@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -375,5 +376,94 @@ class MenuBarTest {
         ui.pointerDown(1, 6, 0, 0);
 
         assertThrows(IllegalStateException.class, () -> ui.pointerUp(1, 6, 0, 0));
+    }
+
+    private static final int RED = 0xFF0000FF;
+    private static final int UNDERSCORE = '_';
+    private static final int TITLE_TRIGGER_COLUMN = 2;
+    private static final int ITEM_TRIGGER_COLUMN = 2;
+
+    private MenuBar underlinedBar(ButtonStyle look, boolean underline, boolean colored) {
+        MenuBarStyle style = MenuBarStyle.of(look, look).withTriggerUnderline(underline);
+        MenuBar underlinedBar = MenuBar.of(ui, colored ? style.withTriggerRgba(RED) : style);
+        Menu fileMenu = underlinedBar.addMenu("File", 'i');
+        fileMenu.addItem("Open", 'p', () -> { });
+        underlinedBar.setSize(40, 0);
+        ui.getRoot().removeChild(bar);
+        ui.getRoot().addChild(underlinedBar);
+        return underlinedBar;
+    }
+
+    @Test
+    void squareTitleTriggerIsUnderlinedInTheTriggerColorOnTheSameRow() {
+        underlinedBar(SQUARE, true, true).draw(surface);
+
+        TerminalGrid overlay = surface.getOverlayGrid();
+        assertEquals(UNDERSCORE, overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 0));
+        assertEquals(RED, overlay.getForeground(TITLE_TRIGGER_COLUMN, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(3, 0));
+    }
+
+    @Test
+    void tallTitleTriggerIsUnderlinedOnTheLowerRowOfItsCell() {
+        MenuBar tallBar = underlinedBar(TALL, true, false);
+        tallBar.setPosition(0, 4);
+
+        tallBar.draw(surface);
+
+        TerminalGrid overlay = surface.getOverlayGrid();
+        assertEquals(UNDERSCORE, overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 5));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 4));
+    }
+
+    @Test
+    void underlineUsesTheLookForegroundWithoutATriggerColor() {
+        underlinedBar(SQUARE, true, false).draw(surface);
+
+        assertEquals(WHITE, surface.getOverlayGrid().getForeground(TITLE_TRIGGER_COLUMN, 0));
+        assertEquals(UNDERSCORE, surface.getOverlayGrid().getCodePoint(TITLE_TRIGGER_COLUMN, 0));
+    }
+
+    @Test
+    void noUnderlineIsWrittenWhenTheStyleHasItOff() {
+        MenuBar plainBar = underlinedBar(SQUARE, false, true);
+        plainBar.draw(surface);
+        click(1, 0);
+        dropDown().draw(surface);
+
+        for (int row = 0; row < surface.getRows(); row++) {
+            for (int column = 0; column < surface.getColumns(); column++) {
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                        surface.getOverlayGrid().getCodePoint(column, row));
+            }
+        }
+    }
+
+    @Test
+    void itemTriggerIsUnderlinedInSquareAndTallDropDowns() {
+        underlinedBar(SQUARE, true, true);
+        click(1, 0);
+        MenuDropDown squareDropDown = (MenuDropDown) dropDown();
+        squareDropDown.draw(surface);
+
+        TerminalGrid overlay = surface.getOverlayGrid();
+        int squareRow = squareDropDown.getY();
+        assertEquals(UNDERSCORE, overlay.getCodePoint(ITEM_TRIGGER_COLUMN, squareRow));
+        assertEquals(RED, overlay.getForeground(ITEM_TRIGGER_COLUMN, squareRow));
+    }
+
+    @Test
+    void tallItemTriggerIsUnderlinedOnTheLowerRowOfItsCell() {
+        underlinedBar(TALL, true, false);
+        click(1, 0);
+        Widget tallDropDown = dropDown();
+        tallDropDown.draw(surface);
+
+        int lowerRow = tallDropDown.getY() + 1;
+        TerminalGrid overlay = surface.getOverlayGrid();
+        assertEquals(UNDERSCORE, overlay.getCodePoint(ITEM_TRIGGER_COLUMN, lowerRow));
+        assertEquals(WHITE, overlay.getForeground(ITEM_TRIGGER_COLUMN, lowerRow));
     }
 }

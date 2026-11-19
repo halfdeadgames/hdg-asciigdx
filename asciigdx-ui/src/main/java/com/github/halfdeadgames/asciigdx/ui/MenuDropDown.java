@@ -71,16 +71,13 @@ final class MenuDropDown extends Widget {
         MenuBarStyle barStyle = bar.getBarStyle();
         ButtonStyle itemStyle = barStyle.getItems();
         int rowHeight = barStyle.getRowHeight();
-        int triggerRgba = barStyle.hasTriggerRgba() ? barStyle.getTriggerRgba() : 0;
         for (int i = 0; i < menu.getItemCount(); i++) {
             int rowTop = top + i * rowHeight;
             if (rowTop >= target.getRows()) {
                 return;
             }
-            int triggerCell = barStyle.hasTriggerRgba() ? menu.getItemTriggerCell(i)
-                    : MenuTrigger.NO_CELL;
-            MenuRowPainter.paint(target, lookOf(itemStyle, i), menu.getItemText(i),
-                    itemStyle.getHorizontalPadding(), triggerCell, triggerRgba, left, rowTop,
+            MenuRowPainter.paint(target, barStyle, lookOf(itemStyle, i), menu.getItemText(i),
+                    itemStyle.getHorizontalPadding(), menu.getItemTriggerCell(i), left, rowTop,
                     getWidth(), rowHeight);
         }
     }

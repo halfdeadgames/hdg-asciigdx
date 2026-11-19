@@ -13,6 +13,9 @@ import java.util.Objects;
  * <p>A style may also have a trigger color, set with {@link #withTriggerRgba(int)}. The trigger
  * letter of a title or item is then drawn in that foreground color in every look. Without it the
  * trigger letter looks like the other letters.
+ *
+ * <p>A style may also underline trigger letters, set with {@link #withTriggerUnderline(boolean)}.
+ * The underline is drawn in the surface's overlay grid and is off by default.
  */
 public final class MenuBarStyle {
 
@@ -21,12 +24,15 @@ public final class MenuBarStyle {
     private final boolean hasTriggerRgba;
     private final int triggerRgba;
 
+    private final boolean triggerUnderline;
+
     private MenuBarStyle(ButtonStyle titles, ButtonStyle items, boolean hasTriggerRgba,
-            int triggerRgba) {
+            int triggerRgba, boolean triggerUnderline) {
         this.titles = titles;
         this.items = items;
         this.hasTriggerRgba = hasTriggerRgba;
         this.triggerRgba = triggerRgba;
+        this.triggerUnderline = triggerUnderline;
     }
 
     /**
@@ -45,7 +51,7 @@ public final class MenuBarStyle {
             throw new IllegalArgumentException("Titles and items must use the same font, were "
                     + titles.getFont() + " and " + items.getFont());
         }
-        return new MenuBarStyle(titles, items, false, 0);
+        return new MenuBarStyle(titles, items, false, 0, false);
     }
 
     /**
@@ -57,7 +63,22 @@ public final class MenuBarStyle {
      * @return a style with the same looks and that trigger color
      */
     public MenuBarStyle withTriggerRgba(int rgba) {
-        return new MenuBarStyle(titles, items, true, rgba);
+        return new MenuBarStyle(titles, items, true, rgba, triggerUnderline);
+    }
+
+    /**
+     * Returns a new style that does or does not underline trigger letters, replacing any earlier
+     * setting. The underline is an underscore glyph drawn in the surface's overlay, in the trigger
+     * color if the style has one and otherwise in the foreground of the look being drawn. This
+     * style is not changed. The underline is U+005F from the square font, so that font must hold
+     * it. It shows only on a surface that was added to a layer stack with
+     * {@link UiSurface#addTo}.
+     *
+     * @param underline {@code true} to underline trigger letters
+     * @return a style with the same looks and trigger color and that underline setting
+     */
+    public MenuBarStyle withTriggerUnderline(boolean underline) {
+        return new MenuBarStyle(titles, items, hasTriggerRgba, triggerRgba, underline);
     }
 
     /**
@@ -110,6 +131,15 @@ public final class MenuBarStyle {
         return triggerRgba;
     }
 
+    /**
+     * Returns whether trigger letters are underlined.
+     *
+     * @return {@code true} after {@code withTriggerUnderline(true)}; {@code false} for a new style
+     */
+    public boolean isTriggerUnderline() {
+        return triggerUnderline;
+    }
+
     int getRowHeight() {
         return getFont() == UiFont.TALL ? 2 : 1;
     }
@@ -124,20 +154,21 @@ public final class MenuBarStyle {
         }
         MenuBarStyle that = (MenuBarStyle) other;
         return titles.equals(that.titles) && items.equals(that.items)
+                && triggerUnderline == that.triggerUnderline
                 && hasTriggerRgba == that.hasTriggerRgba
                 && (!hasTriggerRgba || triggerRgba == that.triggerRgba);
     }
 
     @Override
     public int hashCode() {
-        return hasTriggerRgba ? Objects.hash(titles, items, triggerRgba)
-                : Objects.hash(titles, items);
+        return hasTriggerRgba ? Objects.hash(titles, items, triggerUnderline, triggerRgba)
+                : Objects.hash(titles, items, triggerUnderline);
     }
 
     @Override
     public String toString() {
         String trigger = hasTriggerRgba ? Integer.toHexString(triggerRgba) : "none";
-        return "MenuBarStyle[titles=" + titles + ", items=" + items + ", triggerRgba=" + trigger
-                + "]";
+        return "MenuBarStyle[titles=" + titles + ", items=" + items
+                + ", triggerUnderline=" + triggerUnderline + ", triggerRgba=" + trigger + "]";
     }
 }

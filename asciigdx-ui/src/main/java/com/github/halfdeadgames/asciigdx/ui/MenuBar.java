@@ -300,9 +300,8 @@ public final class MenuBar extends Widget {
     @Override
     protected void drawContent(UiSurface target, int left, int top) {
         ButtonStyle titleStyle = style.getTitles();
-        MenuRowPainter.paint(target, titleStyle.getNormal(), "", 0, MenuTrigger.NO_CELL, 0, left,
-                top, getWidth(), getHeight());
-        int triggerRgba = style.hasTriggerRgba() ? style.getTriggerRgba() : 0;
+        MenuRowPainter.paint(target, style, titleStyle.getNormal(), "", 0, MenuTrigger.NO_CELL,
+                left, top, getWidth(), getHeight());
         int offset = 0;
         for (int i = 0; i < menus.size(); i++) {
             Menu menu = menus.get(i);
@@ -310,10 +309,8 @@ public final class MenuBar extends Widget {
             if (visibleWidth <= 0) {
                 return;
             }
-            int triggerCell = style.hasTriggerRgba() ? menu.getTriggerCell()
-                    : MenuTrigger.NO_CELL;
-            MenuRowPainter.paint(target, titleLook(titleStyle, i), menu.getTitle(),
-                    titleStyle.getHorizontalPadding(), triggerCell, triggerRgba, left + offset,
+            MenuRowPainter.paint(target, style, titleLook(titleStyle, i), menu.getTitle(),
+                    titleStyle.getHorizontalPadding(), menu.getTriggerCell(), left + offset,
                     top, visibleWidth, getHeight());
             offset += titleWidth(menu);
         }

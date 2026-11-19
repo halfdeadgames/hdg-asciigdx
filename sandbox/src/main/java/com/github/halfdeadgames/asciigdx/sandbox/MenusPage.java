@@ -89,7 +89,8 @@ class MenusPage implements UiPage {
 
     private MenuBar createBar(Label lastAction) {
         MenuBar bar = MenuBar.of(uiRoot,
-                MenuBarStyle.of(LOOK, LOOK).withTriggerRgba(TRIGGER_PINK));
+                MenuBarStyle.of(LOOK, LOOK).withTriggerRgba(TRIGGER_PINK)
+                        .withTriggerUnderline(true));
         bar.setSize(BAR_WIDTH, 0);
         bar.setPosition(BAR_X, BAR_Y);
         addMenu(bar, "File", lastAction, "New", "Open file", "Save", "Quit");

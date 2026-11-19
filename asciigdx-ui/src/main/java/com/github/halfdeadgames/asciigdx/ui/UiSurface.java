@@ -13,15 +13,24 @@ import java.util.Objects;
  * high. A tall glyph covers 1 column and 2 rows. Coordinates grow to the right and downward
  * (y-down), with the origin at the top-left corner.
  *
- * <p>The surface owns two grids. The square grid is columns x rows and holds every background and
+ * <p>The surface owns three grids. The square grid is columns x rows and holds every background and
  * all square glyphs. The tall grid is columns x ceil(rows / 2) and holds tall glyphs only; its
- * backgrounds are always {@link TerminalGrid#TRANSPARENT_RGBA}. {@link #addTo} puts the square
- * grid in a layer first and the tall grid above it, so tall glyphs draw over square glyphs.
+ * backgrounds are always {@link TerminalGrid#TRANSPARENT_RGBA}. The overlay grid is columns x rows
+ * like the square grid, holds square-font glyphs only (such as underlines), and its backgrounds
+ * are always {@link TerminalGrid#TRANSPARENT_RGBA}. {@link #addTo} puts the square grid in a layer
+ * first, the tall grid above it, and the overlay grid on top, so tall glyphs draw over square
+ * glyphs and overlay glyphs draw over both.
  *
  * <p>A tall glyph at UI row r is stored in tall grid row {@code floorDiv(r, 2)}, so tall text on an
  * odd row snaps up to the even row above it. Writing a square glyph into a cell erases the tall
  * glyph that covers the cell, which clears both of that tall glyph's rows. Writing a tall glyph
  * erases the square glyphs in both of its rows.
+ *
+ * <p>The overlay is for marks drawn over text: underlines now, and later cursors and focus marks.
+ * The erase rule is a guaranteed contract: {@link #writeGlyph} and {@link #eraseGlyphs} clear
+ * overlay marks in the cells they cover, so a widget drawn later over a cell hides a mark written
+ * there earlier. {@link #fillBackground} leaves the overlay alone, and {@link #copyFrom} copies
+ * it. {@link #writeOverlayGlyph} adds overlay marks.
  *
  * <p>Not thread-safe. Use it from the render thread. No method allocates.
  *
@@ -38,12 +47,14 @@ public final class UiSurface {
     private final int rows;
     private final TerminalGrid squareGrid;
     private final TerminalGrid tallGrid;
+    private final TerminalGrid overlayGrid;
 
     private UiSurface(int columns, int rows) {
         this.columns = columns;
         this.rows = rows;
         this.squareGrid = new TerminalGrid(columns, rows);
         this.tallGrid = new TerminalGrid(columns, (rows + 1) / 2);
+        this.overlayGrid = new TerminalGrid(columns, rows);
     }
 
     /**
@@ -82,7 +93,8 @@ public final class UiSurface {
 
     /**
      * Returns the grid that holds all backgrounds and the square glyphs. It is columns x rows. The
-     * surface owns it; write to it through the surface so tall glyphs stay consistent.
+     * surface owns it. It is returned for reading and layer setup; write through the surface
+     * methods, because direct writes skip the erase rule.
      *
      * @return the square grid, never {@code null}
      */
@@ -92,7 +104,9 @@ public final class UiSurface {
 
     /**
      * Returns the grid that holds the tall glyphs. It is columns x ceil(rows / 2), and every
-     * background is {@link TerminalGrid#TRANSPARENT_RGBA}. The surface owns it.
+     * background is {@link TerminalGrid#TRANSPARENT_RGBA}. The surface owns it. It is returned for
+     * reading and layer setup; write through {@link #writeGlyph}, because direct writes skip the
+     * erase rule.
      *
      * @return the tall grid, never {@code null}
      */
@@ -101,11 +115,25 @@ public final class UiSurface {
     }
 
     /**
-     * Adds both grids to a layer stack: the square grid first, then the tall grid on top of it.
-     * Nothing is added when validation fails. Call it on the GL thread. The glyph sources are not
-     * owned.
+     * Returns the grid that holds the overlay glyphs, drawn above the tall grid with the square
+     * font. It is columns x rows, and every background is {@link TerminalGrid#TRANSPARENT_RGBA}.
+     * The surface owns it. It is returned for reading and layer setup; write through
+     * {@link #writeOverlayGlyph}, because direct writes skip the erase rule.
      *
-     * @param layers stack to add two layers to; must not be {@code null}
+     * @return the overlay grid, never {@code null}
+     */
+    public TerminalGrid getOverlayGrid() {
+        return overlayGrid;
+    }
+
+    /**
+     * Adds the surface's grids to a layer stack, bottom to top: the square grid, the tall grid,
+     * and the overlay grid. The square glyph source backs two layers, the square grid and the
+     * overlay grid. Later versions may add more layers, so callers must not find the layers by
+     * position or count. Nothing is added when validation fails. Call it on the GL thread. The
+     * glyph sources are not owned.
+     *
+     * @param layers stack to add the layers to; must not be {@code null}
      * @param tallGlyphs tall font; must not be {@code null}; cells must be as wide as the square
      *         cells and twice as high
      * @param squareGlyphs square font; must not be {@code null}; cell width must equal cell height
@@ -117,6 +145,7 @@ public final class UiSurface {
         requireFontPair(tallGlyphs, squareGlyphs);
         layers.add(squareGrid, squareGlyphs);
         layers.add(tallGrid, tallGlyphs);
+        layers.add(overlayGrid, squareGlyphs);
     }
 
     static void requireFontPair(GlyphSource tallGlyphs, GlyphSource squareGlyphs) {
@@ -141,7 +170,8 @@ public final class UiSurface {
      * glyph keeps the cell's background and erases the tall glyph covering the cell, which removes
      * both rows of that tall glyph. A tall glyph is stored in tall grid row
      * {@code floorDiv(row, 2)}, so on an odd row it snaps up to the even row above, and it erases
-     * the square glyphs in its two rows.
+     * the square glyphs in its two rows. Either way it erases the overlay glyphs in the square cells
+     * it covers: one cell for a square glyph, two for a tall glyph.
      *
      * @param font font to use; must not be {@code null}
      * @param column column in UI cells
@@ -160,17 +190,40 @@ public final class UiSurface {
             squareGrid.setCodePoint(column, row, codePoint);
             squareGrid.setForeground(column, row, foregroundRgba);
             tallGrid.setCodePoint(column, tallRow, TerminalGrid.EMPTY_CODE_POINT);
+            overlayGrid.setCodePoint(column, row, TerminalGrid.EMPTY_CODE_POINT);
             return;
         }
         tallGrid.setCodePoint(column, tallRow, codePoint);
         tallGrid.setForeground(column, tallRow, foregroundRgba);
         squareGrid.setCodePoint(column, 2 * tallRow, TerminalGrid.EMPTY_CODE_POINT);
         squareGrid.setCodePoint(column, 2 * tallRow + 1, TerminalGrid.EMPTY_CODE_POINT);
+        overlayGrid.setCodePoint(column, 2 * tallRow, TerminalGrid.EMPTY_CODE_POINT);
+        overlayGrid.setCodePoint(column, 2 * tallRow + 1, TerminalGrid.EMPTY_CODE_POINT);
     }
 
     /**
-     * Sets the background color of every square grid cell in a rectangle. Glyphs and the tall grid
-     * are not touched. The rectangle is clipped to the surface.
+     * Writes one glyph with its color into the overlay grid, which draws above the tall grid. The
+     * overlay always uses the square font, one cell per glyph. Writing to it never erases square
+     * or tall glyphs, and the cell's background is not touched. Cells outside the surface are
+     * skipped silently. A later {@link #writeGlyph} or
+     * {@link #eraseGlyphs} that covers the cell removes the glyph again.
+     *
+     * @param column column in UI cells
+     * @param row row in UI cells
+     * @param codePoint Unicode code point of the glyph, in the square font
+     * @param foregroundRgba glyph color as RGBA8888
+     */
+    public void writeOverlayGlyph(int column, int row, int codePoint, int foregroundRgba) {
+        if (column < 0 || column >= columns || row < 0 || row >= rows) {
+            return;
+        }
+        overlayGrid.setCodePoint(column, row, codePoint);
+        overlayGrid.setForeground(column, row, foregroundRgba);
+    }
+
+    /**
+     * Sets the background color of every square grid cell in a rectangle. Glyphs, the tall grid,
+     * and the overlay grid are not touched. The rectangle is clipped to the surface.
      *
      * @param column left edge in UI cells; may be negative
      * @param row top edge in UI cells; may be negative
@@ -191,9 +244,10 @@ public final class UiSurface {
     }
 
     /**
-     * Removes the glyphs in a rectangle. Square grid cells in the rectangle are emptied, and so is
-     * every tall grid cell that overlaps the rectangle's rows, even when it also covers rows
-     * outside the rectangle. Backgrounds are kept. The rectangle is clipped to the surface.
+     * Removes the glyphs in a rectangle. Square grid cells and overlay grid cells are emptied
+     * exactly in the rectangle. Tall grid cells are emptied for every tall row the rectangle
+     * touches, even when such a cell also covers rows outside the rectangle. Backgrounds are
+     * kept. The rectangle is clipped to the surface.
      *
      * @param column left edge in UI cells; may be negative
      * @param row top edge in UI cells; may be negative
@@ -212,6 +266,7 @@ public final class UiSurface {
         for (int y = Math.max(row, 0); y < endRow; y++) {
             for (int x = startColumn; x < endColumn; x++) {
                 squareGrid.setCodePoint(x, y, TerminalGrid.EMPTY_CODE_POINT);
+                overlayGrid.setCodePoint(x, y, TerminalGrid.EMPTY_CODE_POINT);
             }
         }
         int firstTallRow = Math.max(Math.floorDiv(row, 2), 0);
@@ -225,7 +280,7 @@ public final class UiSurface {
 
     /**
      * Copies every cell of another surface into this one: code points, foreground colors, and
-     * background colors, in both grids. The copy goes through {@link TerminalGrid#set}, so a cell
+     * background colors, in all three grids. The copy goes through {@link TerminalGrid#set}, so a cell
      * whose values already match stays clean for dirty tracking. Does not allocate.
      *
      * @param source surface to read from; must not be {@code null}; not changed
@@ -241,6 +296,7 @@ public final class UiSurface {
         }
         copyGrid(source.squareGrid, squareGrid);
         copyGrid(source.tallGrid, tallGrid);
+        copyGrid(source.overlayGrid, overlayGrid);
     }
 
     private static void copyGrid(TerminalGrid from, TerminalGrid to) {

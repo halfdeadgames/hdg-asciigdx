@@ -91,4 +91,33 @@ class MenuBarStyleTest {
         assertNotEquals(red, plain.withTriggerRgba(0x00FF00FF));
         assertTrue(red.toString().endsWith(", triggerRgba=ff0000ff]"));
     }
+
+    @Test
+    void newStyleHasNoTriggerUnderline() {
+        assertFalse(MenuBarStyle.of(TALL, OTHER_TALL).isTriggerUnderline());
+    }
+
+    @Test
+    void withTriggerUnderlineReturnsACopyAndLeavesTheInputUntouched() {
+        MenuBarStyle plain = MenuBarStyle.of(TALL, OTHER_TALL).withTriggerRgba(0xFF0000FF);
+
+        MenuBarStyle underlined = plain.withTriggerUnderline(true);
+
+        assertTrue(underlined.isTriggerUnderline());
+        assertFalse(plain.isTriggerUnderline());
+        assertEquals(0xFF0000FF, underlined.getTriggerRgba());
+        assertSame(TALL, underlined.getTitles());
+        assertFalse(underlined.withTriggerUnderline(false).isTriggerUnderline());
+    }
+
+    @Test
+    void triggerUnderlineTakesPartInEqualsHashCodeAndToString() {
+        MenuBarStyle plain = MenuBarStyle.of(TALL, OTHER_TALL);
+        MenuBarStyle underlined = plain.withTriggerUnderline(true);
+
+        assertEquals(underlined, plain.withTriggerUnderline(true));
+        assertEquals(underlined.hashCode(), plain.withTriggerUnderline(true).hashCode());
+        assertNotEquals(underlined, plain);
+        assertTrue(underlined.toString().contains(", triggerUnderline=true, "));
+    }
 }
