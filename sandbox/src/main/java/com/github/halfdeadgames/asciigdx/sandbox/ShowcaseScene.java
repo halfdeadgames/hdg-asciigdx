@@ -16,7 +16,6 @@ import com.github.halfdeadgames.asciigdx.layer.Panel;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.CameraPan;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DepthCamera;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.DropletSpray;
-import com.github.halfdeadgames.asciigdx.sandbox.showcase.EighthBar;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.FallSpin;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.GhostPath;
 import com.github.halfdeadgames.asciigdx.sandbox.showcase.LightningFlash;
@@ -455,10 +454,8 @@ class ShowcaseScene extends GridScene {
 
     /** Writes the 8 bar cells for the given share of full health, 0 to 1. */
     void drawHpBar(float fraction) {
-        for (int cell = 0; cell < HP_BAR_CELLS; cell++) {
-            int codePoint = EighthBar.codePointAt(cell, HP_BAR_CELLS, fraction);
-            grid.set(HP_BAR_COLUMN + cell, HP_BAR_ROW, codePoint, HP_COLOR, BLACK);
-        }
+        GridDrawing.drawHorizontalBar(grid, HP_BAR_COLUMN, HP_BAR_ROW, HP_BAR_CELLS, fraction,
+                HP_COLOR, BLACK);
     }
 
     /**

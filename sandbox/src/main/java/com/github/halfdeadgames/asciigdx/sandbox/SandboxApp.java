@@ -153,6 +153,7 @@ public class SandboxApp extends ApplicationAdapter {
     /** Add one line per scene; the menu and the capture script pick them up. */
     private void registerScenes() {
         scenes.add(new RendererBasicsScene(glyphs));
+        scenes.add(new BoxesAndBarsScene(glyphs));
         scenes.add(new FullRewriteStressScene(glyphs));
         scenes.add(new SparseUpdateScene(smallGlyphs));
         scenes.add(new MapScrollScene(smallGlyphs));
