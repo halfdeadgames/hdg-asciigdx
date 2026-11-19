@@ -50,11 +50,14 @@
  *
  * <p>Thread and disposal rule: loading uploads a texture, so call the loading methods and
  * {@code dispose()} on the render thread. The caller owns every source and must dispose it once.
- * Disposing a source invalidates the regions it handed out. The layout and order classes are
+ * Disposing a source invalidates the regions it handed out. A source keeps the uploaded image
+ * in memory (about width x height x 4 bytes for RGBA8888) so the texture can be rebuilt after a
+ * GPU context loss, and frees it in {@code dispose()}. The layout and order classes are
  * immutable and safe to share. A
  * {@link com.github.halfdeadgames.asciigdx.glyph.FreeTypeGlyphBaker.BakedSheet} holds a pixmap
  * that its owner must dispose unless it is passed to {@code TextureGlyphSource.fromPixmap}, which
- * disposes it.
+ * takes ownership of it: do not dispose, modify, or read the pixmap afterwards, because the source
+ * disposes it in {@code dispose()}.
  *
  * <p>Example:
  * <pre>{@code

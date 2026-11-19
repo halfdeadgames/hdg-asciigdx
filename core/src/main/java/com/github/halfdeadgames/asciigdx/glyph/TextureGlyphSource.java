@@ -5,6 +5,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import java.util.Objects;
 import java.util.function.IntPredicate;
 import java.util.function.UnaryOperator;
@@ -26,6 +27,15 @@ import java.util.function.UnaryOperator;
  * <p>Lookups ({@link #getGlyphRegion(int)}, {@link #hasGlyph(int)}) allocate nothing. Glyphs
  * missing from the order draw the fallback glyph chosen at load time.
  *
+ * <p>Context loss: glyph regions stay usable after a GPU context loss (for example when an
+ * Android app returns to the foreground or the surface is recreated), with nothing to do on the
+ * game's side.
+ *
+ * <p>Memory: to make that possible, the source keeps the uploaded image in memory on all
+ * platforms, desktop included, until {@link #dispose()}. The cost is about width x height x 4
+ * bytes per source for an RGBA8888 image; other pixmap formats use their own size per pixel. A
+ * {@link GlyphFilter#LINEAR} source keeps the slightly larger padded image.
+ *
  * <p>Must be created and disposed on the render thread, because it uploads a texture. The
  * caller owns every source a factory returns and must call {@link #dispose()} once it is no
  * longer drawn. Disposing invalidates every region obtained from it. Not thread-safe.
@@ -39,6 +49,7 @@ public final class TextureGlyphSource implements GlyphSource {
     public static final int DEFAULT_FALLBACK_CODE_POINT = '?';
 
     private final Texture texture;
+    private final Pixmap uploadedImage;
     private final GlyphOrder order;
     private final TextureRegion[] regionsBySlot;
     private final TextureRegion fallbackRegion;
@@ -48,9 +59,10 @@ public final class TextureGlyphSource implements GlyphSource {
     private boolean disposed;
 
     private TextureGlyphSource(
-            Texture texture, GlyphSheetLayout layout, GlyphOrder order, int fallbackSlot,
-            IntPredicate presentInSheet) {
+            Texture texture, Pixmap uploadedImage, GlyphSheetLayout layout, GlyphOrder order,
+            int fallbackSlot, IntPredicate presentInSheet) {
         this.texture = texture;
+        this.uploadedImage = uploadedImage;
         this.order = order;
         this.presentInSheet = presentInSheet;
         cellWidth = layout.getCellWidth();
@@ -76,7 +88,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * {@code '?'} as the fallback.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
-     * source and must dispose it. The decoded image is released before this method returns.
+     * source and must dispose it. The source keeps the decoded image in memory so the texture
+     * can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}.
      *
      * @param file the image file; must not be null
      * @param layout where the glyph cells are in the image; must not be null
@@ -105,7 +118,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * downward, and slots are numbered left to right, then top to bottom.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
-     * source and must dispose it. The decoded image is released before this method returns.
+     * source and must dispose it. The source keeps the decoded image in memory so the texture
+     * can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}.
      *
      * @param file the image file; must not be null
      * @param layout where the glyph cells are in the image; must not be null
@@ -139,7 +153,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * downward, and slots are numbered left to right, then top to bottom.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
-     * source and must dispose it. The decoded image is released before this method returns.
+     * source and must dispose it. The source keeps the decoded image in memory so the texture
+     * can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}.
      *
      * @param file the image file; must not be null
      * @param layout where the glyph cells are in the image; must not be null
@@ -199,7 +214,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * is the transparency key. The texture uses nearest filtering.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
-     * source and must dispose it. The decoded image is released before this method returns.
+     * source and must dispose it. The source keeps the decoded image in memory so the texture
+     * can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}.
      *
      * @param image the sheet image; must not be null
      * @param characterList the character list, read as UTF-8; must not be null
@@ -228,7 +244,8 @@ public final class TextureGlyphSource implements GlyphSource {
      * list format.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
-     * source and must dispose it. The decoded image is released before this method returns.
+     * source and must dispose it. The source keeps the decoded image in memory so the texture
+     * can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}.
      *
      * @param image the sheet image; must not be null
      * @param characterList the character list, read as UTF-8; must not be null
@@ -271,7 +288,8 @@ public final class TextureGlyphSource implements GlyphSource {
                 filter);
     }
 
-    // Takes ownership of the pixmap and disposes it, also when this method throws.
+    // Takes ownership of the pixmap: the returned source keeps the uploaded image, and every
+    // other pixmap is disposed, also when this method throws.
     // The transparency step follows the GlyphSheetLoader.applyTransparencyMode ownership rules.
     private static TextureGlyphSource convertAndUpload(
             Pixmap pixmap,
@@ -282,12 +300,16 @@ public final class TextureGlyphSource implements GlyphSource {
             int fallbackSlot,
             GlyphFilter filter) {
         Pixmap ready = pixmap;
+        TextureGlyphSource source = null;
         try {
             GlyphSheetLoader.requireImageFits(pixmap, "Image " + path, layout);
             ready = transparencyStep.apply(pixmap);
-            return upload(ready, layout, order, fallbackSlot, codePoint -> true, filter);
+            source = upload(ready, layout, order, fallbackSlot, codePoint -> true, filter);
+            return source;
         } finally {
-            ready.dispose();
+            if (source == null) {
+                ready.dispose();
+            }
         }
     }
 
@@ -295,8 +317,11 @@ public final class TextureGlyphSource implements GlyphSource {
      * Uploads a sheet that is already in memory, such as one baked from a TTF, and cuts it into
      * glyph regions. No color conversion is done: glyphs should already be white with alpha.
      *
-     * <p>Takes ownership of {@code sheet} and disposes it, also when this method throws. Do not
-     * use the pixmap afterwards. The texture uses nearest filtering.
+     * <p>Takes ownership of {@code sheet}. The source keeps the uploaded image in memory so the
+     * texture can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}. If
+     * this method throws, {@code sheet} is disposed before the exception propagates. Do not
+     * dispose, modify, or read the pixmap afterwards; the source disposes it in
+     * {@link #dispose()}. The texture uses nearest filtering.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
      * source and must dispose it.
@@ -329,9 +354,12 @@ public final class TextureGlyphSource implements GlyphSource {
      * glyph regions, and chooses the texture filter. No color conversion is done: glyphs should
      * already be white with alpha.
      *
-     * <p>Takes ownership of {@code sheet} and disposes it, also when this method throws and also
-     * with {@link GlyphFilter#LINEAR}, which uploads a repacked, slightly larger copy. Do not use
-     * the pixmap afterwards.
+     * <p>Takes ownership of {@code sheet}. The source keeps the uploaded image in memory so the
+     * texture can be rebuilt after a GPU context loss, and frees it in {@link #dispose()}. With
+     * {@link GlyphFilter#LINEAR} it keeps a repacked, slightly larger copy and disposes
+     * {@code sheet} before returning. If this method throws, {@code sheet} is disposed before the
+     * exception propagates. Do not dispose, modify, or read the pixmap afterwards; the source
+     * disposes it in {@link #dispose()}.
      *
      * <p>Call on the render thread, because it uploads a texture. The caller owns the returned
      * source and must dispose it.
@@ -360,6 +388,7 @@ public final class TextureGlyphSource implements GlyphSource {
             IntPredicate presentInSheet,
             int fallbackCodePoint,
             GlyphFilter filter) {
+        TextureGlyphSource source = null;
         try {
             Objects.requireNonNull(filter, "filter");
             Objects.requireNonNull(sheet, "sheet");
@@ -373,15 +402,18 @@ public final class TextureGlyphSource implements GlyphSource {
                         "Sheet has no glyph for fallback code point " + fallbackCodePoint);
             }
             GlyphSheetLoader.requireImageFits(sheet, "Sheet", layout);
-            return upload(sheet, layout, order, fallbackSlot, presentInSheet, filter);
+            source = upload(sheet, layout, order, fallbackSlot, presentInSheet, filter);
+            return source;
         } finally {
-            if (sheet != null) {
+            if (source == null && sheet != null) {
                 sheet.dispose();
             }
         }
     }
 
-    // Does not dispose the given pixmap; the caller keeps ownership.
+    // On success the source keeps the uploaded image (the given pixmap, or the padded copy, in
+    // which case the given pixmap is disposed). If it throws, the given pixmap is left to the
+    // caller.
     private static TextureGlyphSource upload(
             Pixmap pixmap,
             GlyphSheetLayout layout,
@@ -401,12 +433,23 @@ public final class TextureGlyphSource implements GlyphSource {
             IntPredicate presentInSheet) {
         GlyphSheetLayout paddedLayout = PaddedSheet.layoutFor(layout);
         Pixmap padded = PaddedSheet.copy(pixmap, layout, paddedLayout, order.getGlyphCount());
+        TextureGlyphSource source = null;
         try {
-            return uploadTexture(padded, paddedLayout, order, fallbackSlot, presentInSheet,
+            source = uploadTexture(padded, paddedLayout, order, fallbackSlot, presentInSheet,
                     Texture.TextureFilter.Linear);
         } finally {
-            padded.dispose();
+            if (source == null) {
+                padded.dispose();
+            }
         }
+        pixmap.dispose();
+        return source;
+    }
+
+    // Managed, so libGDX re-uploads from the pixmap after a GPU context loss. The texture must not
+    // dispose the pixmap: the glyph source keeps it for those reloads.
+    static PixmapTextureData createManagedTextureData(Pixmap pixmap) {
+        return new PixmapTextureData(pixmap, null, false, false, true);
     }
 
     private static TextureGlyphSource uploadTexture(
@@ -416,11 +459,12 @@ public final class TextureGlyphSource implements GlyphSource {
             int fallbackSlot,
             IntPredicate presentInSheet,
             Texture.TextureFilter textureFilter) {
-        Texture texture = new Texture(pixmap, false);
+        Texture texture = new Texture(createManagedTextureData(pixmap));
         try {
             texture.setFilter(textureFilter, textureFilter);
             texture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
-            return new TextureGlyphSource(texture, layout, order, fallbackSlot, presentInSheet);
+            return new TextureGlyphSource(
+                    texture, pixmap, layout, order, fallbackSlot, presentInSheet);
         } catch (RuntimeException e) {
             texture.dispose();
             throw e;
@@ -516,8 +560,9 @@ public final class TextureGlyphSource implements GlyphSource {
     }
 
     /**
-     * Releases the texture. Safe to call more than once; later calls do nothing. Call on the
-     * render thread. Every region obtained from this source is invalid afterwards, and
+     * Releases the texture and the image kept for rebuilding it. Safe to call more than once;
+     * later calls do nothing. Call on the render thread. Every region obtained from this source
+     * is invalid afterwards, and
      * {@link #getGlyphRegion(int)} throws {@link IllegalStateException}.
      */
     @Override
@@ -527,5 +572,6 @@ public final class TextureGlyphSource implements GlyphSource {
         }
         disposed = true;
         texture.dispose();
+        uploadedImage.dispose();
     }
 }

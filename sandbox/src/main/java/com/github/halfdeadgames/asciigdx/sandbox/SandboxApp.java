@@ -36,6 +36,7 @@ public class SandboxApp extends ApplicationAdapter {
 
     private ScreenCapture screenCapture;
     private CaptureScript captureScript;
+    private TextureReloadHook textureReloadHook;
 
     /**
      * @param settings key to value lookup returning null when missing; see {@link CaptureConfig}
@@ -75,6 +76,8 @@ public class SandboxApp extends ApplicationAdapter {
         tallGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_16X32);
         narrowTallGlyphs = TextureGlyphSource.loadSaiksistt(SaiksisttSize.TALL_8X16);
         registerScenes();
+        textureReloadHook = TextureReloadHook.fromSetting(
+                settings.apply(TextureReloadHook.KEY_RELOAD_TEXTURES));
         menu = new MenuScene(glyphs, scenes);
         menu.show();
         perfOverlay = new PerfOverlay(glyphs);
@@ -325,6 +328,9 @@ public class SandboxApp extends ApplicationAdapter {
     @Override
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
+        if (textureReloadHook != null) {
+            textureReloadHook.update(delta);
+        }
         ScreenUtils.clear(0f, 0f, 0f, 1f);
         long renderNanos = 0L;
         long gpuWaitNanos = 0L;

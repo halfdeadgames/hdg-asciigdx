@@ -88,6 +88,11 @@ run {
       systemProperty 'asciigdx.zonesTime', project.property('zonesTime')
     }
   }
+  if (project.hasProperty('reloadTextures')) {
+    doFirst {
+      systemProperty 'asciigdx.reloadTextures', project.property('reloadTextures')
+    }
+  }
   if (project.hasProperty('zonesStart')) {
     doFirst {
       systemProperty 'asciigdx.zonesStart', project.property('zonesStart')
