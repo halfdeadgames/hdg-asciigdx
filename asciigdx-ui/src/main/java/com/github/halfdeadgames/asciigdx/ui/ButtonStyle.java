@@ -3,9 +3,10 @@ package com.github.halfdeadgames.asciigdx.ui;
 import java.util.Objects;
 
 /**
- * Looks of a {@link TextButton} in its four states, and the space left and right of its text.
- * Immutable, so one instance can be shared by any number of buttons. All four looks use the same
- * font, so a button never changes height when its state changes.
+ * Looks of a {@link TextButton} in its five states (normal, pointer over, pressed, disabled, and
+ * focused), and the space left and right of its text. Immutable, so one instance can be shared by
+ * any number of buttons. All looks use the same font, so a button never changes height when its
+ * state changes.
  */
 public final class ButtonStyle {
 
@@ -16,20 +17,23 @@ public final class ButtonStyle {
     private final LabelStyle pointerOver;
     private final LabelStyle pressed;
     private final LabelStyle disabled;
+    private final LabelStyle focused;
     private final int horizontalPadding;
 
     private ButtonStyle(LabelStyle normal, LabelStyle pointerOver, LabelStyle pressed,
-            LabelStyle disabled, int horizontalPadding) {
+            LabelStyle disabled, LabelStyle focused, int horizontalPadding) {
         this.normal = normal;
         this.pointerOver = pointerOver;
         this.pressed = pressed;
         this.disabled = disabled;
+        this.focused = focused;
         this.horizontalPadding = horizontalPadding;
     }
 
     /**
-     * Creates a style with a look for each state and a horizontal padding of
-     * {@link #DEFAULT_HORIZONTAL_PADDING}.
+     * Creates a style with a look for each of four states and a horizontal padding of
+     * {@link #DEFAULT_HORIZONTAL_PADDING}. The fifth look, for keyboard focus, starts as a copy of
+     * the pointer-over look; change it with {@link #withFocused(LabelStyle)}.
      *
      * @param normal look when nothing special happens; must not be {@code null}
      * @param pointerOver look while the pointer is over the button; must not be {@code null}
@@ -37,7 +41,7 @@ public final class ButtonStyle {
      * @param disabled look while the button is disabled; must not be {@code null}
      * @return a new style
      * @throws NullPointerException if an argument is {@code null}
-     * @throws IllegalArgumentException if the four looks do not all use the same font
+     * @throws IllegalArgumentException if the looks do not all use the same font
      */
     public static ButtonStyle of(LabelStyle normal, LabelStyle pointerOver, LabelStyle pressed,
             LabelStyle disabled) {
@@ -52,13 +56,13 @@ public final class ButtonStyle {
                     + ", " + pointerOver.getFont() + ", " + pressed.getFont() + ", and "
                     + disabled.getFont());
         }
-        return new ButtonStyle(normal, pointerOver, pressed, disabled,
+        return new ButtonStyle(normal, pointerOver, pressed, disabled, pointerOver,
                 DEFAULT_HORIZONTAL_PADDING);
     }
 
     /**
-     * Creates a style that looks the same in all four states, with a horizontal padding of
-     * {@link #DEFAULT_HORIZONTAL_PADDING}.
+     * Creates a style that looks the same in all five states (normal, pointer over, pressed,
+     * disabled, and focused), with a horizontal padding of {@link #DEFAULT_HORIZONTAL_PADDING}.
      *
      * @param all look for every state; must not be {@code null}
      * @return a new style
@@ -79,7 +83,26 @@ public final class ButtonStyle {
         if (cells < 0) {
             throw new IllegalArgumentException("Padding must not be negative, was " + cells);
         }
-        return new ButtonStyle(normal, pointerOver, pressed, disabled, cells);
+        return new ButtonStyle(normal, pointerOver, pressed, disabled, focused, cells);
+    }
+
+    /**
+     * Returns a copy with another look for a button that has visible keyboard focus. A style made
+     * by {@code of} uses its pointer-over look as the focused look until this is called.
+     *
+     * @param focused look while the button has visible keyboard focus; must not be {@code null}
+     * @return a style with the same other looks and padding, and that focused look
+     * @throws NullPointerException if {@code focused} is {@code null}
+     * @throws IllegalArgumentException if {@code focused} does not use the font of the other looks
+     */
+    public ButtonStyle withFocused(LabelStyle focused) {
+        Objects.requireNonNull(focused, "focused");
+        if (focused.getFont() != normal.getFont()) {
+            throw new IllegalArgumentException("All looks must use the same font, were "
+                    + normal.getFont() + " and " + focused.getFont());
+        }
+        return new ButtonStyle(normal, pointerOver, pressed, disabled, focused,
+                horizontalPadding);
     }
 
     /**
@@ -119,6 +142,16 @@ public final class ButtonStyle {
     }
 
     /**
+     * Returns the look while the button has keyboard focus and focus is visible. It starts as the
+     * pointer-over look and changes only through {@link #withFocused(LabelStyle)}.
+     *
+     * @return the look, never {@code null}
+     */
+    public LabelStyle getFocused() {
+        return focused;
+    }
+
+    /**
      * Returns the space on each side of the text.
      *
      * @return the padding in UI cells, zero or greater
@@ -128,7 +161,7 @@ public final class ButtonStyle {
     }
 
     /**
-     * Returns the font shared by all four looks.
+     * Returns the font shared by all five looks.
      *
      * @return the font, never {@code null}
      */
@@ -147,18 +180,18 @@ public final class ButtonStyle {
         ButtonStyle that = (ButtonStyle) other;
         return horizontalPadding == that.horizontalPadding && normal.equals(that.normal)
                 && pointerOver.equals(that.pointerOver) && pressed.equals(that.pressed)
-                && disabled.equals(that.disabled);
+                && disabled.equals(that.disabled) && focused.equals(that.focused);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(normal, pointerOver, pressed, disabled, horizontalPadding);
+        return Objects.hash(normal, pointerOver, pressed, disabled, focused, horizontalPadding);
     }
 
     @Override
     public String toString() {
         return "ButtonStyle[normal=" + normal + ", pointerOver=" + pointerOver + ", pressed="
-                + pressed + ", disabled=" + disabled + ", horizontalPadding=" + horizontalPadding
-                + "]";
+                + pressed + ", disabled=" + disabled + ", focused=" + focused
+                + ", horizontalPadding=" + horizontalPadding + "]";
     }
 }

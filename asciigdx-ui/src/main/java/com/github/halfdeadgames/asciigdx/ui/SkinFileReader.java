@@ -22,7 +22,7 @@ final class SkinFileReader {
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS);
     private static final List<String> LABEL_KEYS = List.of("font", "foreground", "background");
     private static final List<String> BUTTON_KEYS = List.of("normal", "pointerOver", "pressed",
-            "disabled", "horizontalPadding");
+            "disabled", "focused", "horizontalPadding");
     private static final List<String> MENU_BAR_KEYS = List.of("titles", "items", "triggerColor",
             "triggerUnderline");
     private static final List<String> FONT_NAMES = List.of("tall", "square");
@@ -121,7 +121,21 @@ final class SkinFileReader {
         LabelStyle pressed = readOptionalLook(entry, "pressed", normal, path);
         LabelStyle disabled = readOptionalLook(entry, "disabled", normal, path);
         ButtonStyle style = createButtonStyle(normal, pointerOver, pressed, disabled, path);
+        style = applyFocusedLook(style, entry, path);
         return applyHorizontalPadding(style, entry, path);
+    }
+
+    private ButtonStyle applyFocusedLook(ButtonStyle style, JsonValue button, String path) {
+        JsonValue focused = button.get("focused");
+        if (focused == null) {
+            return style;
+        }
+        LabelStyle look = readLook(focused, path + ".focused");
+        try {
+            return style.withFocused(look);
+        } catch (IllegalArgumentException mixedFonts) {
+            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
+        }
     }
 
     private static ButtonStyle createButtonStyle(LabelStyle normal, LabelStyle pointerOver,

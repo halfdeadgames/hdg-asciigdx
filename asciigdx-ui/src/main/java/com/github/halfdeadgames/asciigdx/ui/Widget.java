@@ -26,6 +26,8 @@ public abstract class Widget {
     private boolean layoutNeeded = true;
     private boolean redrawNeeded = true;
     private boolean inLayout;
+    private boolean focusShown;
+    private boolean visible = true;
 
     /** Creates a widget at position (0, 0), with size 0 x 0 and no parent. */
     protected Widget() {
@@ -271,11 +273,19 @@ public abstract class Widget {
      * allocate. Call it from the render thread, each frame or whenever the widget must be
      * redrawn.
      *
+     * <p>Drawing starts at a shown widget: a hidden widget (see {@link #setVisible(boolean)})
+     * draws nothing for itself or its children. This method does not check the ancestors, so
+     * drawing a widget under a hidden ancestor directly still draws it; {@link UiRoot} and
+     * {@link WidgetGroup} skip hidden children, so a tree drawn from its top is never affected.
+     *
      * @param target surface to draw into; must not be {@code null}
      * @throws NullPointerException if {@code target} is {@code null}
      */
     public final void draw(UiSurface target) {
         Objects.requireNonNull(target, "target");
+        if (!visible) {
+            return;
+        }
         int left = 0;
         int top = 0;
         for (Widget current = this; current != null; current = current.parent) {
@@ -301,17 +311,20 @@ public abstract class Widget {
     /**
      * Returns the deepest widget at a point. A plain widget answers itself when the point lies in
      * its bounds and {@code null} otherwise; {@link WidgetGroup} also checks its children.
-     * Visibility and {@link #isFocusable()} play no part.
+     * {@link #isFocusable()} plays no part. A hidden widget (see {@link #setVisible(boolean)}) is
+     * never hit, nor are its descendants. A parent {@link WidgetGroup} and {@link UiRoot} skip a
+     * hidden child without calling this method, so an override cannot make a hidden widget
+     * hittable.
      *
      * @param column column in this widget's local coordinates, where 0 is its left edge, in UI
      *         cells; any value
      * @param row row in this widget's local coordinates, where 0 is its top edge, in UI cells; any
      *         value
-     * @return this widget when {@code 0 <= column < getWidth()} and {@code 0 <= row <
-     *         getHeight()}, otherwise {@code null}
+     * @return this widget when it is visible and {@code 0 <= column < getWidth()} and
+     *         {@code 0 <= row < getHeight()}, otherwise {@code null}
      */
     public Widget hit(int column, int row) {
-        return isInsideBounds(column, row) ? this : null;
+        return visible && isInsideBounds(column, row) ? this : null;
     }
 
     /**
@@ -323,6 +336,52 @@ public abstract class Widget {
      */
     public boolean isFocusable() {
         return false;
+    }
+
+    /**
+     * Shows or hides this widget and everything inside it. A hidden widget keeps its position,
+     * size, and layout space, so a layout and the preferred sizes of its ancestors do not change.
+     * It is not drawn, cannot be hit by a pointer, and is skipped by keyboard navigation, and so
+     * are its descendants. For keyboard focus, hover, and pointer capture, hiding a widget or any
+     * ancestor acts like removing it from its {@link UiRoot}: keyboard focus on it is cleared, a
+     * pointer captured by it is canceled, and hover moves off it. The root notices this when it
+     * next reads focus, handles pointer input, or runs {@code update} or {@code draw}. Showing the
+     * widget again restores none of these: it has no focus, no capture, and no hover until new
+     * input gives them. A change marks this widget and its ancestors for a redraw; setting the
+     * same value changes nothing.
+     *
+     * @param visible {@code true} to show the widget, {@code false} to hide it
+     */
+    public void setVisible(boolean visible) {
+        if (this.visible == visible) {
+            return;
+        }
+        this.visible = visible;
+        requestRedraw();
+    }
+
+    /**
+     * Returns this widget's own visibility flag. A widget under a hidden ancestor still returns
+     * {@code true} here but is not shown, because the ancestor hides everything inside it.
+     *
+     * @return {@code false} after {@code setVisible(false)}; {@code true} for a new widget
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    // Reachable by a press but skipped by Tab and the arrow keys when this returns false.
+    boolean isInFocusOrder() {
+        return isFocusable();
+    }
+
+    boolean isShown() {
+        for (Widget current = this; current != null; current = current.parent) {
+            if (!current.visible) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -384,6 +443,20 @@ public abstract class Widget {
     }
 
     void validateChildren() {
+    }
+
+    // Set by UiRoot on the focused widget while keyboard focus is shown, so a widget can pick its
+    // focused look without a reference to the root.
+    boolean isFocusShown() {
+        return focusShown;
+    }
+
+    void setFocusShown(boolean focusShown) {
+        if (this.focusShown == focusShown) {
+            return;
+        }
+        this.focusShown = focusShown;
+        requestRedraw();
     }
 
     void clearRedrawNeeded() {

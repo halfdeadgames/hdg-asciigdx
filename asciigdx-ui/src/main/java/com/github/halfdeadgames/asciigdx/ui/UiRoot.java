@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
+import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.Arrays;
 import java.util.Objects;
@@ -46,6 +47,20 @@ import java.util.Objects;
  *       (the target included) whose {@link Widget#isFocusable()} is {@code true}, or clears
  *       focus. Key events go to the focused widget and bubble; with no focus they are not
  *       handled.
+ *   <li>Keyboard navigation: a key-down that no widget in the focused chain and no unhandled-key
+ *       listener handled moves focus. Tab moves to the next focusable widget in tree order,
+ *       Shift+Tab to the previous one, and the arrow keys to the nearest one in that direction
+ *       (see {@link FocusDirection}). Only the main tree is searched, and nothing moves while a
+ *       menu is open. Hidden widgets (see {@link Widget#setVisible(boolean)}) and menu bars are
+ *       skipped. A widget that handles an arrow key itself keeps it. Games can call
+ *       {@link #moveFocus(FocusDirection)} for the same effect, for example from a gamepad.
+ *   <li>Focus look: focus is shown (see {@link #isFocusVisible()}) while the last input was
+ *       keyboard navigation or a key that the focused chain handled, and hidden after an
+ *       accepted pointer press and before any input. Hiding a widget acts like removing it for
+ *       focus, hover, and press capture: focus is cleared and does not return when the widget is
+ *       shown or added again, a capture is canceled, and hover moves to what is under the
+ *       pointer. The root notices this when it reads focus, and in {@link #update(float)} and
+ *       {@link #draw()}.
  * </ul>
  * Every input method returns whether the input was handled. Pointer positions outside the surface
  * hit nothing.
@@ -103,6 +118,13 @@ public final class UiRoot {
     private boolean delivering;
     private Widget hoveredWidget;
     private Widget keyboardFocus;
+    private Widget focusShownWidget;
+    private boolean lastInputWasKeyboard;
+    private Widget sweptHover;
+    private int hoverColumn;
+    private int hoverRow;
+    private boolean leftShiftDown;
+    private boolean rightShiftDown;
 
     private UiRoot(UiSurface shownSurface) {
         this.shownSurface = shownSurface;
@@ -192,6 +214,7 @@ public final class UiRoot {
             throw new IllegalArgumentException(
                     "deltaSeconds must be finite and not negative, was " + deltaSeconds);
         }
+        sweepGoneWidgets();
         UiUpdateListener[] snapshot = updateListeners;
         for (int i = 0; i < snapshot.length; i++) {
             snapshot[i].update(deltaSeconds);
@@ -206,6 +229,8 @@ public final class UiRoot {
      * before rendering the layers, on the render thread. Does not allocate.
      */
     public void draw() {
+        sweepGoneWidgets();
+        refreshFocusShown();
         root.validate();
         popupLayer.validate();
         if (!root.isRedrawNeeded() && !popupLayer.isRedrawNeeded()) {
@@ -227,7 +252,7 @@ public final class UiRoot {
      * Returns the deepest widget under pointer 0 at its last known position.
      *
      * @return the hovered widget, or {@code null} when the pointer is over nothing or the widget
-     *         is no longer in the main tree or the popup layer
+     *         is hidden or no longer in the main tree or the popup layer
      */
     public Widget getHoveredWidget() {
         return isInTrees(hoveredWidget) ? hoveredWidget : null;
@@ -235,23 +260,63 @@ public final class UiRoot {
 
     /**
      * Gives keyboard focus to a widget, or clears it. The widget does not need to be focusable;
-     * the focusable check applies only to presses. No events are sent for a focus change. Unlike
-     * the input methods, this is allowed while an event is being delivered.
+     * the focusable check applies only to presses, and menu bars are accepted. A widget that is
+     * hidden or not in the main tree or popup layer is accepted too, but {@link #getKeyboardFocus}
+     * then treats it as no focus and clears it, so it does not get focus back by being shown or
+     * added later. No events are sent for a focus change. Unlike the input methods, this is
+     * allowed while an event is being delivered.
+     *
+     * <p>Setting focus does not change whether the focused look shows; see
+     * {@link #isFocusVisible()}.
      *
      * @param widgetOrNull the new focus owner, or {@code null} for no focus
      */
     public void setKeyboardFocus(Widget widgetOrNull) {
         keyboardFocus = widgetOrNull;
+        refreshFocusShown();
     }
 
     /**
-     * Returns the widget that receives key events.
+     * Returns the widget that receives key events. If the stored focus owner is hidden (see
+     * {@link Widget#setVisible(boolean)}) or no longer in the main tree or the popup layer, this
+     * clears the focus first and returns {@code null}; the widget does not get focus back when it
+     * is shown or added again.
      *
-     * @return the focused widget, or {@code null} for no focus, including when the focused widget
-     *         is no longer in the main tree or the popup layer
+     * @return the focused widget, or {@code null} for no focus
      */
     public Widget getKeyboardFocus() {
-        return isInTrees(keyboardFocus) ? keyboardFocus : null;
+        clearFocusIfOwnerGone();
+        return keyboardFocus;
+    }
+
+    private void clearFocusIfOwnerGone() {
+        if (keyboardFocus != null && !isInTrees(keyboardFocus)) {
+            keyboardFocus = null;
+        }
+    }
+
+    // Widgets cannot tell the root that they were hidden or removed, so the root notices here.
+    // Captures are canceled as for a removed widget, and hover moves to what is under the pointer.
+    private void sweepGoneWidgets() {
+        if (delivering) {
+            return;
+        }
+        clearFocusIfOwnerGone();
+        for (int pointer = 0; pointer < MAX_POINTERS; pointer++) {
+            cancelCaptureIfWidgetRemoved(pointer);
+        }
+        if (hoveredWidget != null && !isInTrees(hoveredWidget)) {
+            Widget gone = hoveredWidget;
+            updateHover(hitAt(hoverColumn, hoverRow), hoverColumn, hoverRow);
+            sweptHover = gone;
+        } else if (sweptHover != null && isInTrees(sweptHover)) {
+            // A widget that returns under a pointer that never moved is hovered again.
+            Widget back = sweptHover;
+            if (hitAt(hoverColumn, hoverRow) == back) {
+                updateHover(back, hoverColumn, hoverRow);
+            }
+            sweptHover = null;
+        }
     }
 
     /**
@@ -314,6 +379,8 @@ public final class UiRoot {
         notifyPressObservers(pointer);
         focusBeforePress = getKeyboardFocus();
         keyboardFocus = findFocusable(target);
+        lastInputWasKeyboard = false;
+        refreshFocusShown();
         if (target == null) {
             return false;
         }
@@ -408,7 +475,12 @@ public final class UiRoot {
      * @return {@code true} if a listener handled it; {@code false} also when nothing has focus
      */
     public boolean keyDown(int keycode) {
-        return dispatchKey(UiEventType.KEY_DOWN, keycode, '\0');
+        return keyDown(keycode, leftShiftDown || rightShiftDown);
+    }
+
+    // For UiInput, which knows the real Shift state; keyDown(int) uses the tracked state.
+    boolean keyDown(int keycode, boolean shiftHeld) {
+        return dispatchKey(UiEventType.KEY_DOWN, keycode, '\0', shiftHeld);
     }
 
     /**
@@ -418,7 +490,7 @@ public final class UiRoot {
      * @return {@code true} if a listener handled it; {@code false} also when nothing has focus
      */
     public boolean keyUp(int keycode) {
-        return dispatchKey(UiEventType.KEY_UP, keycode, '\0');
+        return dispatchKey(UiEventType.KEY_UP, keycode, '\0', false);
     }
 
     /**
@@ -428,21 +500,145 @@ public final class UiRoot {
      * @return {@code true} if a listener handled it; {@code false} also when nothing has focus
      */
     public boolean keyTyped(char character) {
-        return dispatchKey(UiEventType.KEY_TYPED, UiEvent.NOT_APPLICABLE, character);
+        return dispatchKey(UiEventType.KEY_TYPED, UiEvent.NOT_APPLICABLE, character, false);
     }
 
-    private boolean dispatchKey(UiEventType type, int keycode, char character) {
+    /**
+     * Moves keyboard focus the way the navigation keys do, for example to map a gamepad. The
+     * rules are those of the keys: only the main tree ({@link #getRoot()}) is searched, the
+     * candidates are its visible, focusable widgets (menu bars are skipped), and nothing happens
+     * while a menu is open. A move that finds a target counts as keyboard input, so focus becomes
+     * visible (see {@link #isFocusVisible()}).
+     *
+     * <p>{@link FocusDirection#NEXT} and {@link FocusDirection#PREVIOUS} wrap around in tree order.
+     * They pick the first or last candidate when nothing has focus or the focus owner is outside
+     * the main tree, and continue from the owner's tree position when it is in the main tree but
+     * not a candidate. The four spatial directions pick the nearest candidate on the surface in
+     * that direction and never wrap. They pick the first candidate when nothing has focus, and do
+     * nothing when the focus owner is outside the main tree. No event is sent for a focus change.
+     *
+     * <p>Like an input handler, this returns a result while it changes state, so a game can tell
+     * whether the input was used. To find out whether the focus owner changed, compare
+     * {@link #getKeyboardFocus()} before and after the call.
+     *
+     * @param direction where to move focus; must not be {@code null}
+     * @return whether a target was found: {@code true} if a target now has focus, which includes a
+     *         target that already had focus; {@code false} when a menu is open or when no widget
+     *         qualifies
+     * @throws NullPointerException if {@code direction} is {@code null}
+     * @throws IllegalStateException if called while an event is being delivered
+     */
+    public boolean moveFocus(FocusDirection direction) {
+        Objects.requireNonNull(direction, "direction");
         requireNotDelivering();
+        return navigateFocus(direction);
+    }
+
+    /**
+     * Returns whether keyboard focus is shown, so that widgets draw their focused look. Focus
+     * follows the last input. Navigation that finds a target (Tab, Shift+Tab, the arrow keys, and
+     * {@link #moveFocus(FocusDirection)}) and a key-down that a widget in the focused chain
+     * handled, such as Enter on a button, make it visible. Any accepted pointer press hides it.
+     * Key-ups, modifier keys, typed characters, and keys that no widget in the focused chain
+     * handled do not change it. Before any input it is hidden. Setting the focus with
+     * {@link #setKeyboardFocus} does not change this, so game-set focus shows when the last
+     * input was one of the keyboard inputs above.
+     *
+     * @return {@code true} if some widget has keyboard focus and the last input was keyboard input
+     */
+    public boolean isFocusVisible() {
+        return lastInputWasKeyboard && getKeyboardFocus() != null;
+    }
+
+    private boolean navigateFocus(FocusDirection direction) {
+        if (openMenuBar != null) {
+            return false;
+        }
+        Widget previous = getKeyboardFocus();
+        Widget target = FocusNavigator.findTarget(root, previous, direction);
+        if (target == null) {
+            return false;
+        }
+        keyboardFocus = target;
+        lastInputWasKeyboard = true;
+        refreshFocusShown();
+        return true;
+    }
+
+    private void refreshFocusShown() {
+        Widget wanted = isFocusVisible() ? getKeyboardFocus() : null;
+        if (wanted == focusShownWidget) {
+            return;
+        }
+        if (focusShownWidget != null) {
+            focusShownWidget.setFocusShown(false);
+        }
+        focusShownWidget = wanted;
+        if (wanted != null) {
+            wanted.setFocusShown(true);
+        }
+    }
+
+    private void trackShift(UiEventType type, int keycode) {
+        boolean down = type == UiEventType.KEY_DOWN;
+        if (keycode == Input.Keys.SHIFT_LEFT) {
+            leftShiftDown = down;
+        } else if (keycode == Input.Keys.SHIFT_RIGHT) {
+            rightShiftDown = down;
+        }
+    }
+
+    private static FocusDirection directionForKey(int keycode, boolean shiftHeld) {
+        return switch (keycode) {
+            case Input.Keys.TAB -> shiftHeld ? FocusDirection.PREVIOUS : FocusDirection.NEXT;
+            case Input.Keys.UP -> FocusDirection.UP;
+            case Input.Keys.DOWN -> FocusDirection.DOWN;
+            case Input.Keys.LEFT -> FocusDirection.LEFT;
+            case Input.Keys.RIGHT -> FocusDirection.RIGHT;
+            default -> null;
+        };
+    }
+
+    private boolean navigateByKey(UiEventType type, int keycode, boolean shiftHeld) {
+        if (type != UiEventType.KEY_DOWN) {
+            return false;
+        }
+        FocusDirection direction = directionForKey(keycode, shiftHeld);
+        return direction != null && navigateFocus(direction);
+    }
+
+    private boolean dispatchKey(UiEventType type, int keycode, char character,
+            boolean shiftHeld) {
+        requireNotDelivering();
+        trackShift(type, keycode);
         Widget focused = getKeyboardFocus();
         deliverToKeyListeners(keyObservers, focused != null ? focused : root, type, keycode,
                 character);
         if (focused != null) {
             event.setKey(type, focused, keycode, character);
             if (bubble(focused)) {
+                showFocusAfterHandledKey(type, keycode);
                 return true;
             }
         }
-        return deliverToKeyListeners(unhandledKeyListeners, root, type, keycode, character);
+        if (deliverToKeyListeners(unhandledKeyListeners, root, type, keycode, character)) {
+            return true;
+        }
+        return navigateByKey(type, keycode, shiftHeld);
+    }
+
+    private void showFocusAfterHandledKey(UiEventType type, int keycode) {
+        if (type != UiEventType.KEY_DOWN || isModifierKey(keycode)) {
+            return;
+        }
+        lastInputWasKeyboard = true;
+        refreshFocusShown();
+    }
+
+    private static boolean isModifierKey(int keycode) {
+        return keycode == Input.Keys.SHIFT_LEFT || keycode == Input.Keys.SHIFT_RIGHT
+                || keycode == Input.Keys.CONTROL_LEFT || keycode == Input.Keys.CONTROL_RIGHT
+                || keycode == Input.Keys.ALT_LEFT || keycode == Input.Keys.ALT_RIGHT;
     }
 
     private boolean deliverToKeyListeners(UiListener[] snapshot, Widget target,
@@ -575,12 +771,13 @@ public final class UiRoot {
                 || row >= hiddenSurface.getRows()) {
             return null;
         }
-        Widget popupHit = popupLayer.hitChildren(column - popupLayer.getX(),
-                row - popupLayer.getY());
+        Widget popupHit = popupLayer.isVisible()
+                ? popupLayer.hitChildren(column - popupLayer.getX(), row - popupLayer.getY())
+                : null;
         if (popupHit != null) {
             return popupHit;
         }
-        return root.hit(column - root.getX(), row - root.getY());
+        return root.isVisible() ? root.hit(column - root.getX(), row - root.getY()) : null;
     }
 
     private boolean isInTrees(Widget widget) {
@@ -591,7 +788,7 @@ public final class UiRoot {
         while (top.getParent() != null) {
             top = top.getParent();
         }
-        return top == root || top == popupLayer;
+        return (top == root || top == popupLayer) && widget.isShown();
     }
 
     private static Widget findFocusable(Widget target) {
@@ -647,6 +844,9 @@ public final class UiRoot {
     }
 
     private void updateHover(Widget newHover, int column, int row) {
+        hoverColumn = column;
+        hoverRow = row;
+        sweptHover = null;
         Widget oldHover = hoveredWidget;
         if (newHover == oldHover) {
             return;

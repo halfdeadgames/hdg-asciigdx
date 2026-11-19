@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.GridPoint2;
 import java.util.Objects;
@@ -65,7 +67,16 @@ public final class UiInput implements InputProcessor {
 
     @Override
     public boolean keyDown(int keycode) {
+        if (keycode == Input.Keys.TAB && Gdx.input != null) {
+            // The real Shift state fixes a missed Shift key-up, which tracked state cannot.
+            return root.keyDown(keycode, isShiftPressed());
+        }
         return root.keyDown(keycode);
+    }
+
+    private static boolean isShiftPressed() {
+        return Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
     }
 
     @Override

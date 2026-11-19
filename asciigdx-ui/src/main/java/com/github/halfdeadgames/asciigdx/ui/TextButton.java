@@ -9,8 +9,9 @@ import java.util.Objects;
  * state and writes the text on its top row, starting after the style's horizontal padding. The
  * text takes one UI column per code point and is cut off at the button's width.
  *
- * <p>State look, in priority order: disabled, pressed, pointer over, normal. Every state change
- * requests a redraw.
+ * <p>State look, in priority order: disabled, pressed, pointer over, focused, normal. The focused
+ * look shows only while the button has keyboard focus and the {@link UiRoot} shows focus (see
+ * {@link UiRoot#isFocusVisible()}). Every state change requests a redraw.
  *
  * <p>Clicks, which need a {@link UiRoot} to deliver input:
  * <ul>
@@ -266,7 +267,10 @@ public class TextButton extends Widget {
         if (pressed) {
             return style.getPressed();
         }
-        return pointerOver ? style.getPointerOver() : style.getNormal();
+        if (pointerOver) {
+            return style.getPointerOver();
+        }
+        return isFocusShown() ? style.getFocused() : style.getNormal();
     }
 
     private void writeClippedText(UiSurface target, LabelStyle look, int left, int top,

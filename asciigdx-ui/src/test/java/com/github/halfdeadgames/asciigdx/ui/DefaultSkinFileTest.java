@@ -19,6 +19,7 @@ class DefaultSkinFileTest {
     private static final int GOLD = 0xFFD700FF;
     private static final int DEEP_BLUE = 0x203070FF;
     private static final int TEAL = 0x00A0A0FF;
+    private static final int CYAN = 0x00FFFFFF;
     private static final int HOT_PINK = 0xFF40C0FF;
     private static final int GRAY = 0x909090FF;
     private static final int DARK_GRAY = 0x404040FF;
@@ -49,12 +50,14 @@ class DefaultSkinFileTest {
         ButtonStyle tallButton = ButtonStyle.of(LabelStyle.of(UiFont.TALL, WHITE, DEEP_BLUE),
                 LabelStyle.of(UiFont.TALL, BLACK, TEAL),
                 LabelStyle.of(UiFont.TALL, BLACK, GOLD),
-                LabelStyle.of(UiFont.TALL, GRAY, DARK_GRAY));
+                LabelStyle.of(UiFont.TALL, GRAY, DARK_GRAY))
+                .withFocused(LabelStyle.of(UiFont.TALL, BLACK, CYAN));
         ButtonStyle squareButton = ButtonStyle.of(
                 LabelStyle.of(UiFont.SQUARE, WHITE, DEEP_BLUE),
                 LabelStyle.of(UiFont.SQUARE, BLACK, TEAL),
                 LabelStyle.of(UiFont.SQUARE, BLACK, GOLD),
-                LabelStyle.of(UiFont.SQUARE, GRAY, DARK_GRAY));
+                LabelStyle.of(UiFont.SQUARE, GRAY, DARK_GRAY))
+                .withFocused(LabelStyle.of(UiFont.SQUARE, BLACK, CYAN));
 
         assertEquals(tallButton, skin.getButtonStyle("tallButton"));
         assertEquals(squareButton, skin.getButtonStyle("button"));

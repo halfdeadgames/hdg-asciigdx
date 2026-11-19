@@ -29,13 +29,15 @@
       "normal": { "font": "square", "foreground": "white", "background": "deepBlue" },
       "pointerOver": { "font": "square", "foreground": "black", "background": "teal" },
       "pressed": { "font": "square", "foreground": "black", "background": "gold" },
-      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" }
+      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" },
+      "focused": { "font": "square", "foreground": "black", "background": "cyan" }
     },
     "tallButton": {
       "normal": { "font": "tall", "foreground": "white", "background": "deepBlue" },
       "pointerOver": { "font": "tall", "foreground": "black", "background": "teal" },
       "pressed": { "font": "tall", "foreground": "black", "background": "gold" },
-      "disabled": { "font": "tall", "foreground": "gray", "background": "darkGray" }
+      "disabled": { "font": "tall", "foreground": "gray", "background": "darkGray" },
+      "focused": { "font": "tall", "foreground": "black", "background": "cyan" }
     }
   },
   "menuBars": {

@@ -130,8 +130,14 @@ public class WidgetGroup extends Widget {
     }
 
     Widget hitChildren(int column, int row) {
+        if (!isVisible()) {
+            return null;
+        }
         for (int i = children.size() - 1; i >= 0; i--) {
             Widget child = children.get(i);
+            if (!child.isVisible()) {
+                continue;
+            }
             Widget childHit = child.hit(column - child.getX(), row - child.getY());
             if (childHit != null) {
                 return childHit;
@@ -144,7 +150,9 @@ public class WidgetGroup extends Widget {
     protected void drawContent(UiSurface target, int left, int top) {
         for (int i = 0; i < children.size(); i++) {
             Widget child = children.get(i);
-            child.drawContent(target, left + child.getX(), top + child.getY());
+            if (child.isVisible()) {
+                child.drawContent(target, left + child.getX(), top + child.getY());
+            }
         }
     }
 

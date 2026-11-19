@@ -17,6 +17,15 @@
  * first interactive widget. A {@link com.github.halfdeadgames.asciigdx.ui.Tooltip} shows a hint
  * widget in the popup layer when the pointer rests on another widget.
  *
+ * <p>Keyboard navigation: Tab and Shift+Tab move focus through the visible, focusable widgets in
+ * tree order, and the arrow keys move it to the nearest one in that direction, unless a widget
+ * handles the key. Menu bars and hidden widgets are skipped. Games can do the same with
+ * {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#moveFocus(
+ * com.github.halfdeadgames.asciigdx.ui.FocusDirection)}. A focused button shows its focused look
+ * while the last input was keyboard input, and not after a pointer press. A widget hidden with
+ * {@link com.github.halfdeadgames.asciigdx.ui.Widget#setVisible(boolean)} keeps its layout space
+ * but is not drawn, hit, or focused.
+ *
  * <p>{@link com.github.halfdeadgames.asciigdx.ui.MenuBar} is a row of titles whose
  * {@link com.github.halfdeadgames.asciigdx.ui.Menu} drop-downs open in the root's popup layer and
  * close on Escape or an outside press. Its look comes from a

@@ -1,10 +1,12 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
+import com.github.halfdeadgames.asciigdx.ui.FocusDirection;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
+import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
@@ -21,8 +23,11 @@ class ButtonsPage implements UiPage {
     private final ButtonStyle tallStyle;
     private final ButtonStyle squareStyle;
     private final LabelStyle caption;
+    private final UiRoot uiRoot;
+    private TextButton firstButton;
 
-    ButtonsPage(Skin skin) {
+    ButtonsPage(UiRoot uiRoot, Skin skin) {
+        this.uiRoot = uiRoot;
         tallStyle = skin.getButtonStyle("tallButton");
         squareStyle = skin.getButtonStyle("button");
         caption = skin.getLabelStyle("text");
@@ -40,6 +45,7 @@ class ButtonsPage implements UiPage {
 
     @Override
     public Widget createContent(int columns, int rows) {
+        firstButton = null;
         WidgetGroup content = new WidgetGroup();
         WidgetGroup root = new WidgetGroup();
         root.setPosition(ROOT_X, ROOT_Y);
@@ -55,16 +61,33 @@ class ButtonsPage implements UiPage {
         return content;
     }
 
-    private static void addRow(WidgetGroup root, ButtonStyle style, int y, Label lastClick) {
+    /** Gives the first button keyboard focus. It looks focused when the last input was a key. */
+    void focusFirstButton() {
+        uiRoot.setKeyboardFocus(firstButton);
+    }
+
+    /**
+     * Gives the first button keyboard focus through keyboard navigation, so the focused look shows
+     * even when the last input was not a key. Must not be called while an event is delivered.
+     */
+    void focusFirstButtonVisibly() {
+        uiRoot.setKeyboardFocus(null);
+        uiRoot.moveFocus(FocusDirection.NEXT);
+    }
+
+    private void addRow(WidgetGroup root, ButtonStyle style, int y, Label lastClick) {
         int x = 0;
         x = addButton(root, "Start", style, x, y, lastClick, false);
         x = addButton(root, "Options", style, x, y, lastClick, false);
         addButton(root, "Disabled", style, x, y, lastClick, true);
     }
 
-    private static int addButton(WidgetGroup root, String text, ButtonStyle style, int x, int y,
+    private int addButton(WidgetGroup root, String text, ButtonStyle style, int x, int y,
             Label lastClick, boolean disabled) {
         TextButton button = new TextButton(text, style);
+        if (firstButton == null) {
+            firstButton = button;
+        }
         button.setPosition(x, y);
         button.setDisabled(disabled);
         button.addClickListener(clicked -> {

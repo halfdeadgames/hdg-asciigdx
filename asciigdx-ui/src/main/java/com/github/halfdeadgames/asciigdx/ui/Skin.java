@@ -64,9 +64,10 @@ import java.util.Objects;
  *
  * <p>A {@code buttons} entry has the required key {@code normal}, the optional keys
  * {@code pointerOver}, {@code pressed}, and {@code disabled}, which copy {@code normal} when
- * missing, and the optional whole number {@code horizontalPadding}, zero or greater, which
+ * missing, the optional look {@code focused}, which copies {@code pointerOver} when missing, and
+ * the optional whole number {@code horizontalPadding}, zero or greater, which
  * defaults to {@link ButtonStyle#DEFAULT_HORIZONTAL_PADDING}. Each look is either the name of a
- * label style or an inline label object. All four looks must use the same font.
+ * label style or an inline label object. All five looks must use the same font.
  *
  * <p>A {@code menuBars} entry has the required keys {@code titles} and {@code items}, each either
  * the name of a button style or an inline button object, the optional color {@code triggerColor},

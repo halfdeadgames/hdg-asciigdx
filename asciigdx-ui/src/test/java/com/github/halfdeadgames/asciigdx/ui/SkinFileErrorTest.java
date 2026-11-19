@@ -102,7 +102,7 @@ class SkinFileErrorTest {
         assertSkinError(
                 withBase("\"buttons\": {\"b\": {\"normal\": \"tallPlain\", \"hover\": 1}}"),
                 "buttons.b", "unknown key \"hover\"",
-                "Known keys: normal, pointerOver, pressed, disabled, horizontalPadding");
+                "Known keys: normal, pointerOver, pressed, disabled, focused, horizontalPadding");
     }
 
     @Test

@@ -297,6 +297,12 @@ public final class MenuBar extends Widget {
         return true;
     }
 
+    // A bar draws no focus look and has its own keys, so Tab and the arrows skip it.
+    @Override
+    boolean isInFocusOrder() {
+        return false;
+    }
+
     @Override
     protected void drawContent(UiSurface target, int left, int top) {
         ButtonStyle titleStyle = style.getTitles();

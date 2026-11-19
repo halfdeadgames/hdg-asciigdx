@@ -43,6 +43,7 @@ class UiWidgetsScene implements SandboxScene {
     private final GridPoint2 pickedCell = new GridPoint2();
     private UiSurface surface;
     private UiRoot uiRoot;
+    private ButtonsPage buttonsPage;
     private HintsPage hintsPage;
     private MenusPage menusPage;
     private List<UiPage> pages;
@@ -71,7 +72,8 @@ class UiWidgetsScene implements SandboxScene {
         uiRoot = UiRoot.of(surface);
         hintsPage = new HintsPage(uiRoot, skin);
         menusPage = new MenusPage(uiRoot, skin);
-        pages = List.of(new LabelsPage(skin), new TablePage(skin), new ButtonsPage(skin),
+        buttonsPage = new ButtonsPage(uiRoot, skin);
+        pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage);
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
@@ -108,6 +110,9 @@ class UiWidgetsScene implements SandboxScene {
         content = pages.get(pageIndex).createContent(columns, rows - contentTop);
         content.setPosition(0, contentTop);
         uiRoot.getRoot().addChild(content);
+        if (pages.get(pageIndex) == buttonsPage) {
+            buttonsPage.focusFirstButton();
+        }
         uiRoot.draw();
     }
 
@@ -258,6 +263,10 @@ class UiWidgetsScene implements SandboxScene {
             showPage(index);
             if (pages.get(index) == hintsPage) {
                 showHintWithoutMouse();
+            }
+            if (pages.get(index) == buttonsPage) {
+                buttonsPage.focusFirstButtonVisibly();
+                uiRoot.draw();
             }
         }
     }
