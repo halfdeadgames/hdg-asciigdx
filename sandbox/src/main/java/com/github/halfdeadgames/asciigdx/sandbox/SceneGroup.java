@@ -5,6 +5,7 @@ enum SceneGroup {
     BENCHMARKS("Benchmarks"),
     GLYPHS("Glyphs"),
     GRIDS_LAYERS_AND_SPRITES("Grids, layers, and sprites"),
+    UI("UI"),
     DEMOS("Demos"),
     OTHER("Other");
 

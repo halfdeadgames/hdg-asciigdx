@@ -1,0 +1,25 @@
+/**
+ * Text widgets drawn into a {@link com.github.halfdeadgames.asciigdx.ui.UiSurface}, which mixes a
+ * square font and a tall font.
+ *
+ * <p>A {@link com.github.halfdeadgames.asciigdx.ui.Widget} has a position and a size in UI cells.
+ * One UI column is one square cell wide, and one UI row is one square cell high. A tall glyph
+ * covers 1 column and 2 rows. Columns grow to the right and rows grow downward (y-down). A widget's
+ * position is relative to the top-left corner of its parent
+ * {@link com.github.halfdeadgames.asciigdx.ui.WidgetGroup}; a widget with no parent is placed
+ * relative to the top-left corner of the target surface. Widgets draw only when {@code draw} is
+ * called, from the render thread, and do not allocate while drawing.
+ *
+ * <p>Example:
+ * <pre>{@code
+ * UiSurface surface = UiSurface.ofSize(40, 12);
+ * surface.addTo(layers, tallGlyphs, squareGlyphs);
+ * WidgetGroup root = new WidgetGroup();
+ * root.setPosition(2, 2);
+ * Label title = new Label("Hello", LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x000000FF));
+ * title.setPosition(1, 0);
+ * root.addChild(title);
+ * root.draw(surface);
+ * }</pre>
+ */
+package com.github.halfdeadgames.asciigdx.ui;
