@@ -82,172 +82,101 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$invariant = [Globalization.CultureInfo]::InvariantCulture
+Import-Module (Join-Path $PSScriptRoot 'Benchmark.psm1') -Force
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$runsOnWindows = $PSVersionTable.PSEdition -eq 'Desktop' -or $IsWindows
 
-function Split-Arguments([string]$text) {
-    return @($text -split '\s+' | Where-Object { $_ })
-}
-
-$captureArgumentList = @(Split-Arguments $CaptureArgs)
-$oldArgumentList = @(Split-Arguments $OldArgs)
-$newArgumentList = @(Split-Arguments $NewArgs)
-
-function Join-PathParts([string]$root, [string[]]$parts) {
-    return [IO.Path]::Combine([string[]](@($root) + $parts))
-}
-
-function Copy-LocalProperties([string]$worktreePath) {
-    $source = Join-PathParts $repositoryRoot @('local.properties')
-    $target = Join-PathParts $worktreePath @('local.properties')
+function Copy-LocalPropertiesFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$SourceTree,
+        [Parameter(Mandatory)] [string]$TargetTree
+    )
+    $source = Join-PathSegment $SourceTree @('local.properties')
+    $target = Join-PathSegment $TargetTree @('local.properties')
     if ((Test-Path $source) -and -not (Test-Path $target)) { Copy-Item $source $target }
 }
 
-function Invoke-NativeCommand([scriptblock]$command) {
-    $callerErrorAction = $ErrorActionPreference
-    # Git and Java print notes on stderr; Windows PowerShell treats redirected stderr as errors.
-    $ErrorActionPreference = 'Continue'
-    try {
-        & $command | Out-Host
-        return $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $callerErrorAction
-    }
-}
-
-function Initialize-OldWorktree([string]$ref) {
-    $worktreePath = Join-PathParts ([IO.Path]::GetTempPath()) @('hdg-asciigdx-perf-old')
+function Initialize-OldWorktree {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$RepositoryRoot,
+        [Parameter(Mandatory)] [string]$Ref
+    )
+    $worktreePath = Join-PathSegment ([IO.Path]::GetTempPath()) @('hdg-asciigdx-perf-old')
+    $gitArguments = @('-C', $RepositoryRoot, 'worktree', 'add', '--detach', $worktreePath, $Ref)
     if (Test-Path $worktreePath) {
-        $exitCode = Invoke-NativeCommand { git -C $worktreePath checkout --detach $ref }
-    } else {
-        $exitCode = Invoke-NativeCommand {
-            git -C $repositoryRoot worktree add --detach $worktreePath $ref
-        }
+        $gitArguments = @('-C', $worktreePath, 'checkout', '--detach', $Ref)
     }
-    if ($exitCode -ne 0) { throw "Could not prepare the old worktree at '$ref'." }
-    Copy-LocalProperties $worktreePath
+    Invoke-NativeCommand -FilePath 'git' -ArgumentList $gitArguments `
+            -FailureMessage "Could not prepare the old worktree at '$Ref'."
+    Copy-LocalPropertiesFile -SourceTree $RepositoryRoot -TargetTree $worktreePath
     return $worktreePath
 }
 
-function Get-GradleArgumentsForPlatform([string[]]$gradleArgs) {
-    if (-not $runsOnWindows) { return $gradleArgs }
-    # gradlew.bat splits unquoted arguments at commas, and at dots in some Gradle versions.
-    return @($gradleArgs | ForEach-Object { if ($_ -match '[,.]') { "`"$_`"" } else { $_ } })
+function Read-SideRun {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$ResultDirectory,
+        [Parameter(Mandatory)] [string]$Side,
+        [Parameter(Mandatory)] [int]$RoundCount
+    )
+    return , @(1..$RoundCount | ForEach-Object {
+        , @(Read-PerfLine (Join-Path $ResultDirectory "$Side-$_.txt"))
+    })
 }
 
-function Invoke-Capture([string]$treePath, [string[]]$sideArgs, [string]$resultFile) {
-    $perfFile = Join-PathParts $treePath @('build', 'captures', 'perf.txt')
-    if (Test-Path $perfFile) { Remove-Item $perfFile }
-    $gradleArgs = @(':sandbox-desktop:run', '-Pcapture', "-Pscenes=$Scene", '--console=plain',
-            '-q') + $captureArgumentList + $sideArgs
-    $wrapperName = if ($runsOnWindows) { 'gradlew.bat' } else { 'gradlew' }
-    $wrapper = Join-PathParts $treePath @($wrapperName)
-    $platformArgs = Get-GradleArgumentsForPlatform $gradleArgs
-    Push-Location $treePath
-    try {
-        $exitCode = Invoke-NativeCommand { & $wrapper @platformArgs }
-    } finally {
-        Pop-Location
-    }
-    if ($exitCode -ne 0) { throw "Capture failed in '$treePath'." }
-    if (-not (Test-Path $perfFile)) { throw "No perf.txt was written in '$treePath'." }
-    Copy-Item $perfFile $resultFile
-}
-
-function Read-PerfLines([string]$file) {
-    foreach ($line in Get-Content $file) {
-        if ($line -notmatch '^(?<label>[^:]+): medianMs=(?<total>[0-9.]+)') { continue }
-        $measures = [ordered]@{ totalMs = [double]::Parse($Matches['total'], $invariant) }
-        foreach ($name in 'cpuMs', 'gpuDrawMs') {
-            if ($line -match " $name=(?<value>[0-9.]+)") {
-                $measures[$name] = [double]::Parse($Matches['value'], $invariant)
+function Confirm-RunShape {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [object[]]$Run,
+        [Parameter(Mandatory)] [int]$LineCount,
+        [Parameter(Mandatory)] [string]$Side
+    )
+    foreach ($sideRun in $Run) {
+        if ($sideRun.Count -ne $LineCount) {
+            throw "The $Side runs wrote $($sideRun.Count) perf lines instead of $LineCount."
+        }
+        foreach ($perfLine in $sideRun) {
+            if (-not $perfLine.Measures.Contains('cpuMs')) {
+                throw "A $Side perf line has no cpuMs. Its tree predates the split timing."
             }
         }
-        [pscustomobject]@{ Label = ($line -split ':')[0]; Measures = $measures }
     }
 }
 
-function Get-Median([double[]]$values) {
-    $sorted = $values | Sort-Object
-    $middle = [math]::Floor($sorted.Count / 2)
-    if ($sorted.Count % 2 -eq 1) { return $sorted[$middle] }
-    return ($sorted[$middle - 1] + $sorted[$middle]) / 2
+if (-not $OldPath) {
+    $OldPath = Initialize-OldWorktree -RepositoryRoot $repositoryRoot -Ref $OldRef
 }
-
-function Get-SpreadPercent([double[]]$values, [double]$median) {
-    if ($median -le 0) { return 0 }
-    $measured = $values | Measure-Object -Minimum -Maximum
-    return ($measured.Maximum - $measured.Minimum) / $median * 100
-}
-
-function Format-Number([double]$value) {
-    return $value.ToString('0.00', $invariant)
-}
-
-if (-not $OldPath) { $OldPath = Initialize-OldWorktree $OldRef }
 $OldPath = (Resolve-Path $OldPath).Path
 $NewPath = (Resolve-Path $NewPath).Path
 
-$resultDirectory = Join-PathParts $repositoryRoot @('build', 'perf-ab',
+$captureArgumentList = @(ConvertTo-ArgumentList $CaptureArgs)
+$oldArguments = $captureArgumentList + @(ConvertTo-ArgumentList $OldArgs)
+$newArguments = $captureArgumentList + @(ConvertTo-ArgumentList $NewArgs)
+$resultDirectory = Join-PathSegment $repositoryRoot @('build', 'perf-ab',
         (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force $resultDirectory | Out-Null
 
 for ($round = 1; $round -le $Rounds; $round++) {
     Write-Host "Round $round of ${Rounds}: old"
-    Invoke-Capture $OldPath $oldArgumentList (Join-Path $resultDirectory "old-$round.txt")
+    Invoke-Capture -TreePath $OldPath -Scene $Scene -Argument $oldArguments `
+            -Destination (Join-Path $resultDirectory "old-$round.txt")
     Write-Host "Round $round of ${Rounds}: new"
-    Invoke-Capture $NewPath $newArgumentList (Join-Path $resultDirectory "new-$round.txt")
+    Invoke-Capture -TreePath $NewPath -Scene $Scene -Argument $newArguments `
+            -Destination (Join-Path $resultDirectory "new-$round.txt")
 }
 
-$oldRuns = @(1..$Rounds | ForEach-Object { , @(Read-PerfLines (Join-Path $resultDirectory "old-$_.txt")) })
-$newRuns = @(1..$Rounds | ForEach-Object { , @(Read-PerfLines (Join-Path $resultDirectory "new-$_.txt")) })
-
-function Assert-SameShape([object[]]$runs, [int]$lineCount, [string]$side) {
-    foreach ($run in $runs) {
-        if ($run.Count -ne $lineCount) {
-            throw "The $side runs wrote $($run.Count) perf lines instead of $lineCount."
-        }
-        foreach ($perfLine in $run) {
-            if (-not $perfLine.Measures.Contains('cpuMs')) {
-                throw "A $side perf line has no cpuMs. Its tree predates the split timing."
-            }
-        }
-    }
-}
-
+$oldRuns = Read-SideRun -ResultDirectory $resultDirectory -Side 'old' -RoundCount $Rounds
+$newRuns = Read-SideRun -ResultDirectory $resultDirectory -Side 'new' -RoundCount $Rounds
 $lineCount = $oldRuns[0].Count
-Assert-SameShape $oldRuns $lineCount 'old'
-Assert-SameShape $newRuns $lineCount 'new'
+Confirm-RunShape -Run $oldRuns -LineCount $lineCount -Side 'old'
+Confirm-RunShape -Run $newRuns -LineCount $lineCount -Side 'new'
 
 $summary = New-Object System.Collections.Generic.List[string]
 $summary.Add("Old: $OldPath $OldArgs")
 $summary.Add("New: $NewPath $NewArgs")
 $summary.Add("Rounds: $Rounds, capture arguments: $CaptureArgs")
-for ($lineIndex = 0; $lineIndex -lt $lineCount; $lineIndex++) {
-    $summary.Add(('{0} vs {1}:' -f $oldRuns[0][$lineIndex].Label, $newRuns[0][$lineIndex].Label))
-    foreach ($measure in 'cpuMs', 'gpuDrawMs', 'totalMs') {
-        $measuredOnBothSides = $oldRuns[0][$lineIndex].Measures.Contains($measure) -and
-                $newRuns[0][$lineIndex].Measures.Contains($measure)
-        if (-not $measuredOnBothSides) { continue }
-        $oldMedians = [double[]]@($oldRuns | ForEach-Object { $_[$lineIndex].Measures[$measure] })
-        $newMedians = [double[]]@($newRuns | ForEach-Object { $_[$lineIndex].Measures[$measure] })
-        $oldMedian = Get-Median $oldMedians
-        $newMedian = Get-Median $newMedians
-        $oldSpread = Get-SpreadPercent $oldMedians $oldMedian
-        $newSpread = Get-SpreadPercent $newMedians $newMedian
-        $differencePercent = 0
-        if ($oldMedian -gt 0) { $differencePercent = ($newMedian - $oldMedian) / $oldMedian * 100 }
-        $noisePercent = [math]::Max($oldSpread, $newSpread)
-        $verdict = 'within noise'
-        if ([math]::Abs($differencePercent) -gt $noisePercent) { $verdict = 'larger than noise' }
-        if ($measure -ne 'cpuMs') { $verdict = 'reference only' }
-        $summary.Add(('  {0}: old={1} (spread {2}%) new={3} (spread {4}%) difference={5}% ({6})' -f
-                $measure, (Format-Number $oldMedian), (Format-Number $oldSpread),
-                (Format-Number $newMedian), (Format-Number $newSpread),
-                (Format-Number $differencePercent), $verdict))
-    }
-}
+$summary.AddRange([string[]]@(ConvertTo-ComparisonSummary $oldRuns $newRuns))
 
 $summaryFile = Join-Path $resultDirectory 'summary.txt'
 $summary | Set-Content -Encoding ascii $summaryFile

@@ -71,148 +71,57 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$invariant = [Globalization.CultureInfo]::InvariantCulture
+Import-Module (Join-Path $PSScriptRoot 'Benchmark.psm1') -Force
 $TreePath = (Resolve-Path $TreePath).Path
-$runsOnWindows = $PSVersionTable.PSEdition -eq 'Desktop' -or $IsWindows
 
-function Split-Arguments([string]$text) {
-    return @($text -split '\s+' | Where-Object { $_ })
+function Invoke-JmhBenchmark {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$TreePath,
+        [Parameter(Mandatory)] [string]$Include,
+        [Parameter(Mandatory)] [int]$ForkCount,
+        [Parameter(Mandatory)] [int]$IterationCount,
+        [Parameter(Mandatory)] [string]$Destination
+    )
+    $jmhResults = Join-PathSegment $TreePath @('core', 'build', 'results', 'jmh', 'results.json')
+    if (Test-Path $jmhResults) { Remove-Item $jmhResults }
+    Invoke-Gradle -TreePath $TreePath -Argument @(':core:jmh', "-PjmhIncludes=$Include",
+            "-PjmhForks=$ForkCount", "-PjmhIterations=$IterationCount", '--console=plain', '-q')
+    if (-not (Test-Path $jmhResults)) { throw "No JMH results were written for '$Include'." }
+    Copy-Item $jmhResults $Destination
 }
 
-function Format-Number([double]$value) {
-    return $value.ToString('0.00', $invariant)
-}
-
-function Get-Median([double[]]$values) {
-    $sorted = $values | Sort-Object
-    $middle = [math]::Floor($sorted.Count / 2)
-    if ($sorted.Count % 2 -eq 1) { return $sorted[$middle] }
-    return ($sorted[$middle - 1] + $sorted[$middle]) / 2
-}
-
-function Get-SpreadPercent([double[]]$values, [double]$median) {
-    if ($median -le 0) { return 0 }
-    $measured = $values | Measure-Object -Minimum -Maximum
-    return ($measured.Maximum - $measured.Minimum) / $median * 100
-}
-
-function Join-TreePath([string[]]$parts) {
-    return [IO.Path]::Combine([string[]](@($TreePath) + $parts))
-}
-
-function Get-GradleArgumentsForPlatform([string[]]$gradleArgs) {
-    if (-not $runsOnWindows) { return $gradleArgs }
-    # gradlew.bat splits unquoted arguments at commas, and at dots in some Gradle versions.
-    return @($gradleArgs | ForEach-Object { if ($_ -match '[,.]') { "`"$_`"" } else { $_ } })
-}
-
-function Invoke-Gradle([string[]]$gradleArgs) {
-    $wrapperName = if ($runsOnWindows) { 'gradlew.bat' } else { 'gradlew' }
-    $wrapper = Join-TreePath @($wrapperName)
-    $platformArgs = Get-GradleArgumentsForPlatform $gradleArgs
-    $callerErrorAction = $ErrorActionPreference
-    # Java prints notes on stderr; Windows PowerShell treats redirected stderr as errors.
-    $ErrorActionPreference = 'Continue'
-    Push-Location $TreePath
-    try {
-        & $wrapper @platformArgs | Out-Host
-        $exitCode = $LASTEXITCODE
-    } finally {
-        Pop-Location
-        $ErrorActionPreference = $callerErrorAction
-    }
-    if ($exitCode -ne 0) { throw "Gradle failed: $($gradleArgs -join ' ')" }
-}
-
-function Invoke-Capture([string]$entry, [string]$resultFile) {
-    $entryParts = @(Split-Arguments $entry)
-    $perfFile = Join-TreePath @('build', 'captures', 'perf.txt')
-    if (Test-Path $perfFile) { Remove-Item $perfFile }
-    $sceneArgs = @($entryParts | Select-Object -Skip 1)
-    $gradleArgs = @(':sandbox-desktop:run', '-Pcapture', "-Pscenes=$($entryParts[0])",
-            '--console=plain', '-q') + @(Split-Arguments $CaptureArgs) + $sceneArgs
-    Invoke-Gradle $gradleArgs
-    if (-not (Test-Path $perfFile)) { throw "No perf.txt was written for '$entry'." }
-    Copy-Item $perfFile $resultFile
-}
-
-function Read-PerfLines([string]$file) {
-    foreach ($line in Get-Content $file) {
-        if ($line -notmatch '^(?<label>[^:]+): medianMs=(?<total>[0-9.]+)') { continue }
-        $measures = [ordered]@{ totalMs = [double]::Parse($Matches['total'], $invariant) }
-        foreach ($name in 'cpuMs', 'gpuDrawMs') {
-            if ($line -match " $name=(?<value>[0-9.]+)") {
-                $measures[$name] = [double]::Parse($Matches['value'], $invariant)
-            }
-        }
-        [pscustomobject]@{ Label = ($line -split ':')[0]; Measures = $measures }
-    }
-}
-
-function Add-CaptureSummary([string]$entry, [string[]]$runFiles, $summary) {
-    $runs = @($runFiles | ForEach-Object { , @(Read-PerfLines $_) })
-    $summary.Add("Capture: $entry")
-    for ($lineIndex = 0; $lineIndex -lt $runs[0].Count; $lineIndex++) {
-        $summary.Add("  $($runs[0][$lineIndex].Label):")
-        foreach ($measure in 'cpuMs', 'gpuDrawMs', 'totalMs') {
-            if (-not $runs[0][$lineIndex].Measures.Contains($measure)) { continue }
-            $values = [double[]]@($runs | ForEach-Object { $_[$lineIndex].Measures[$measure] })
-            $median = Get-Median $values
-            $spread = Get-SpreadPercent $values $median
-            $note = ''
-            if ($measure -ne 'cpuMs') { $note = ' (reference only)' }
-            $summary.Add(('    {0}: {1} (spread {2}%){3}' -f $measure, (Format-Number $median),
-                    (Format-Number $spread), $note))
-        }
-    }
-}
-
-function Add-JmhSummary([string]$include, [string]$resultsFile, $summary) {
-    $summary.Add("JMH: $include")
-    foreach ($result in (Get-Content $resultsFile -Raw | ConvertFrom-Json)) {
-        $name = $result.benchmark -replace '^.*\.([^.]+\.[^.]+)$', '$1'
-        $parameters = ''
-        if ($result.params) {
-            $parameters = ' ' + (($result.params.PSObject.Properties |
-                    ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ' ')
-        }
-        $metric = $result.primaryMetric
-        $summary.Add(('  {0}{1}: {2} +- {3} {4}' -f $name, $parameters,
-                (Format-Number $metric.score), (Format-Number $metric.scoreError),
-                $metric.scoreUnit))
-    }
-}
-
-$resultDirectory = Join-TreePath @('build', 'bench-all', (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$resultDirectory = Join-PathSegment $TreePath @('build', 'bench-all',
+        (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force $resultDirectory | Out-Null
 $summary = New-Object System.Collections.Generic.List[string]
 $summary.Add("Tree: $TreePath at $(git -C $TreePath rev-parse --short HEAD)")
 $summary.Add("Capture rounds: $Rounds, capture arguments: $CaptureArgs")
 $summary.Add("JMH forks: $JmhForks, iterations: $JmhIterations")
 
+$captureArgumentList = @(ConvertTo-ArgumentList $CaptureArgs)
 $entryNumber = 0
 foreach ($entry in $Scenes) {
     $entryNumber++
+    $entryParts = @(ConvertTo-ArgumentList $entry)
+    $entryArguments = $captureArgumentList + @($entryParts | Select-Object -Skip 1)
     $runFiles = @()
     for ($round = 1; $round -le $Rounds; $round++) {
         Write-Host "Capture '$entry', run $round of $Rounds"
         $runFile = Join-Path $resultDirectory "capture-$entryNumber-$round.txt"
-        Invoke-Capture $entry $runFile
+        Invoke-Capture -TreePath $TreePath -Scene $entryParts[0] -Argument $entryArguments `
+                -Destination $runFile
         $runFiles += $runFile
     }
-    Add-CaptureSummary $entry $runFiles $summary
+    $summary.AddRange([string[]]@(ConvertTo-CaptureSummary $entry $runFiles))
 }
 
-$jmhResults = Join-TreePath @('core', 'build', 'results', 'jmh', 'results.json')
 foreach ($include in $JmhIncludes) {
     Write-Host "JMH '$include'"
-    if (Test-Path $jmhResults) { Remove-Item $jmhResults }
-    Invoke-Gradle @(':core:jmh', "-PjmhIncludes=$include", "-PjmhForks=$JmhForks",
-            "-PjmhIterations=$JmhIterations", '--console=plain', '-q')
-    if (-not (Test-Path $jmhResults)) { throw "No JMH results were written for '$include'." }
     $keptResults = Join-Path $resultDirectory "jmh-$($include -replace '[^A-Za-z0-9]', '-').json"
-    Copy-Item $jmhResults $keptResults
-    Add-JmhSummary $include $keptResults $summary
+    Invoke-JmhBenchmark -TreePath $TreePath -Include $include -ForkCount $JmhForks `
+            -IterationCount $JmhIterations -Destination $keptResults
+    $summary.AddRange([string[]]@(ConvertTo-JmhSummary $include $keptResults))
 }
 
 $summaryFile = Join-Path $resultDirectory 'summary.txt'
