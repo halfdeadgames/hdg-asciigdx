@@ -7,6 +7,11 @@ import java.util.Objects;
  * A widget that holds other widgets and places them freely. Children keep the position they were
  * given, relative to this group's top-left corner, and draw in the order they were added, so later
  * children appear on top. Children are not clipped to the group's size.
+ *
+ * <p>This class does not override {@link Widget#layout()}: children keep the positions they are
+ * given. Changes to children reach the group through the layout and redraw marks (see
+ * {@link Widget#invalidate()}). Subclasses that arrange children override
+ * {@link Widget#layout()} and place them there.
  */
 public class WidgetGroup extends Widget {
 
@@ -17,7 +22,8 @@ public class WidgetGroup extends Widget {
     }
 
     /**
-     * Adds a child at the end of the draw order, on top of earlier children.
+     * Adds a child at the end of the draw order, on top of earlier children. Calls
+     * {@link #invalidate()} on this group.
      *
      * @param child widget to add; must not be {@code null}
      * @throws NullPointerException if {@code child} is {@code null}
@@ -34,10 +40,12 @@ public class WidgetGroup extends Widget {
         }
         children.add(child);
         child.attachTo(this);
+        invalidate();
     }
 
     /**
-     * Removes a child. The child's parent becomes {@code null}.
+     * Removes a child. The child's parent becomes {@code null}. Calls {@link #invalidate()} on
+     * this group.
      *
      * @param child widget to remove; must not be {@code null}
      * @throws NullPointerException if {@code child} is {@code null}
@@ -50,6 +58,7 @@ public class WidgetGroup extends Widget {
         }
         children.remove(child);
         child.attachTo(null);
+        invalidate();
     }
 
     /**
@@ -109,6 +118,21 @@ public class WidgetGroup extends Widget {
         for (int i = 0; i < children.size(); i++) {
             Widget child = children.get(i);
             child.drawContent(target, left + child.getX(), top + child.getY());
+        }
+    }
+
+    @Override
+    void validateChildren() {
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).validate();
+        }
+    }
+
+    @Override
+    void clearRedrawNeeded() {
+        super.clearRedrawNeeded();
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).clearRedrawNeeded();
         }
     }
 

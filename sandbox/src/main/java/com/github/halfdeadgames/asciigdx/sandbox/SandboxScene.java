@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import java.util.List;
 import java.util.Optional;
 
 /** One test scene in the sandbox menu. Scenes own their grids and renderers. */
@@ -101,6 +102,18 @@ interface SandboxScene {
      * Number of stacked layers (1 or more); only called when {@link #supportsLayerCount()} is true.
      */
     default void setLayerCount(int count) {
+    }
+
+    /**
+     * Ids of the views the capture script photographs separately, in order; empty when the scene
+     * has one view. Each id must be file-safe.
+     */
+    default List<String> captureVariants() {
+        return List.of();
+    }
+
+    /** Switches to one of the {@link #captureVariants()} before its capture. */
+    default void showCaptureVariant(String variant) {
     }
 
     /** Whether the capture script records a GIF named after {@link #id()} for this scene. */

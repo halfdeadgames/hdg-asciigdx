@@ -19,6 +19,9 @@ public abstract class Widget {
     private int width;
     private int height;
     private WidgetGroup parent;
+    private boolean layoutNeeded = true;
+    private boolean redrawNeeded = true;
+    private boolean inLayout;
 
     /** Creates a widget at position (0, 0), with size 0 x 0 and no parent. */
     protected Widget() {
@@ -65,16 +68,29 @@ public abstract class Widget {
      * target surface's top-left corner when there is no parent. Takes effect on the next
      * {@link #draw(UiSurface)}.
      *
+     * <p>When the position actually changes, this widget is marked for a redraw (not for layout),
+     * and every ancestor is marked for layout and a redraw, because a plain {@link WidgetGroup}
+     * sizes itself from the positions of its children. As in {@link #invalidate()}, layout marks
+     * stop below the nearest ancestor that is currently running its own {@link #layout()}, so a
+     * layout that places its children does not request itself again; redraw marks always reach
+     * every ancestor. Setting the same position changes no marks.
+     *
      * @param x column of the left edge, in UI cells; any value, including negative
      * @param y row of the top edge, in UI cells; any value, including negative
      */
     public void setPosition(int x, int y) {
+        if (this.x == x && this.y == y) {
+            return;
+        }
         this.x = x;
         this.y = y;
+        redrawNeeded = true;
+        markAncestors();
     }
 
     /**
-     * Resizes the widget. Takes effect on the next {@link #draw(UiSurface)}.
+     * Resizes the widget. Takes effect on the next {@link #draw(UiSurface)}. When the size
+     * actually changes, calls {@link #invalidate()}; setting the same size changes no marks.
      *
      * @param width width in UI cells; zero or greater
      * @param height height in UI cells; zero or greater
@@ -85,8 +101,133 @@ public abstract class Widget {
             throw new IllegalArgumentException(
                     "Size must not be negative, was " + width + "x" + height);
         }
+        if (this.width == width && this.height == height) {
+            return;
+        }
         this.width = width;
         this.height = height;
+        invalidate();
+    }
+
+    /**
+     * Marks this widget and its ancestors as needing layout and a redraw, because a change here
+     * can alter the space its ancestors give it. Call it after changing anything that affects
+     * the widget's preferred size.
+     *
+     * <p>Propagation rules:
+     * <ul>
+     *   <li>Redraw marks always reach this widget and every ancestor.
+     *   <li>Layout marks reach this widget and the ancestors up to, but not including, the
+     *       nearest ancestor that is currently running its own {@link #layout()} (inside
+     *       {@link #validate()}); that ancestor and those above it are left alone.
+     *   <li>If this widget is itself running its own {@code layout()}, it gets the redraw mark
+     *       but not the layout mark.
+     * </ul>
+     * Together these let a layout set the sizes of its children, or of itself, without
+     * requesting layout again every frame.
+     */
+    public void invalidate() {
+        redrawNeeded = true;
+        if (!inLayout) {
+            layoutNeeded = true;
+        }
+        markAncestors();
+    }
+
+    private void markAncestors() {
+        boolean layoutStopped = false;
+        for (Widget ancestor = parent; ancestor != null; ancestor = ancestor.parent) {
+            ancestor.redrawNeeded = true;
+            layoutStopped |= ancestor.inLayout;
+            if (!layoutStopped) {
+                ancestor.layoutNeeded = true;
+            }
+        }
+    }
+
+    /**
+     * Marks a visual-only change: this widget and every ancestor need a redraw. No layout mark is
+     * set. Call it when the look changes but the size does not.
+     */
+    public void requestRedraw() {
+        for (Widget current = this; current != null; current = current.parent) {
+            current.redrawNeeded = true;
+        }
+    }
+
+    /**
+     * Returns whether this widget must run {@link #layout()} on the next {@link #validate()}. A
+     * new widget starts with this set.
+     *
+     * @return {@code true} when layout is needed
+     */
+    public boolean isLayoutNeeded() {
+        return layoutNeeded;
+    }
+
+    /**
+     * Returns whether this widget, or a descendant, changed since the last redraw. A new widget
+     * starts with this set. The UI root (UiRoot, coming in this module) clears the mark after it
+     * redraws; {@link #draw(UiSurface)} does not clear it.
+     *
+     * @return {@code true} when a redraw is needed
+     */
+    public boolean isRedrawNeeded() {
+        return redrawNeeded;
+    }
+
+    /**
+     * Runs layout where it is needed: if this widget is marked for layout, clears the mark and
+     * calls {@link #layout()}, then validates the children (for a group) in draw order. So this
+     * widget's layout always runs before its children's. Call it once per frame before drawing;
+     * it is cheap and safe to call every frame when nothing is marked.
+     *
+     * <p>If {@code layout()} throws, the layout mark stays cleared and the exception propagates;
+     * the children are not validated.
+     */
+    public final void validate() {
+        if (layoutNeeded) {
+            layoutNeeded = false;
+            inLayout = true;
+            try {
+                layout();
+            } finally {
+                inLayout = false;
+            }
+        }
+        validateChildren();
+    }
+
+    /**
+     * Places this widget's children by setting their positions and sizes. Subclass contract:
+     * <ul>
+     *   <li>{@link #validate()} calls it only when layout is needed; place and size the children
+     *       here.
+     *   <li>Marks raised during this call, such as by {@code setSize} on a child, do not mark
+     *       this widget or its ancestors for layout again (see {@link #invalidate()}); redraw
+     *       marks still go up.
+     *   <li>The children are validated right after it returns.
+     *   <li>Do not call {@code validate()} or draw from it.
+     *   <li>There is no need to call {@code super.layout()}.
+     * </ul>
+     * Does nothing by default.
+     */
+    protected void layout() {
+    }
+
+    /**
+     * Returns the row multiple the widget's top edge should sit on, in surface rows. Tall glyphs
+     * span two square rows, so a widget that draws tall text needs 2 here.
+     *
+     * <p>This is a hint that the widget's owner, such as a table layout, honors when it
+     * positions the widget. Independently, {@link UiSurface} snaps tall text up to an even row
+     * when writing. The value may change when the widget invalidates itself, for example after a
+     * style change. Overrides must return 1 or greater.
+     *
+     * @return the row multiple, 1 or greater; 1 by default
+     */
+    public int getRowSnap() {
+        return 1;
     }
 
     /**
@@ -152,6 +293,13 @@ public abstract class Widget {
      *         past the surface
      */
     protected abstract void drawContent(UiSurface target, int left, int top);
+
+    void validateChildren() {
+    }
+
+    void clearRedrawNeeded() {
+        redrawNeeded = false;
+    }
 
     void attachTo(WidgetGroup newParent) {
         parent = newParent;

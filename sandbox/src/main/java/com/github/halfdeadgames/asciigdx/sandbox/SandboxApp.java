@@ -180,7 +180,7 @@ public class SandboxApp extends ApplicationAdapter {
                 PondScene.autoWalk(glyphs, smallGlyphs, settings.apply(PondScene.KEY_POND_TIME)));
         scenes.add(PondScene.keyWalk(glyphs, smallGlyphs));
         scenes.add(new FlexibleGridScene(glyphs));
-        scenes.add(new UiLabelsScene(glyphs, tallGlyphs));
+        scenes.add(new UiWidgetsScene(glyphs, tallGlyphs));
         scenes.add(
                 new ZonesScene(glyphs, narrowTallGlyphs, settings.apply(ZonesScene.KEY_ZONES_TIME),
                         settings.apply(ZonesScene.KEY_ZONES_START)));

@@ -19,6 +19,7 @@ class CaptureScript {
     private static final float WINDOW_SETTLE_TIMEOUT_SECONDS = 2f;
     private static final float NANOS_PER_MILLISECOND = 1_000_000f;
     private static final int NOT_SWEEPING = -1;
+    private static final int NO_VARIANT = -1;
     private static final String PERF_TAG = "CaptureScript";
     /** Passed as GPU draw time when the platform has no GPU timer. */
     static final long GPU_DRAW_UNMEASURED = -1L;
@@ -56,6 +57,8 @@ class CaptureScript {
     private int sweepIndex = NOT_SWEEPING;
     private List<Integer> sceneLayerCounts;
     private List<Integer> sceneDirtyPercents;
+    private List<String> sceneVariants = List.of();
+    private int variantIndex = NO_VARIANT;
 
     /** @throws IllegalArgumentException when the config names a scene id that is not registered */
     CaptureScript(SandboxApp app, ScreenCapture capture, CaptureConfig config) {
@@ -158,7 +161,9 @@ class CaptureScript {
                 }
             }
             case SAVING -> {
-                if (isSweeping() && sweepIndex + 1 < sweepStepCount()) {
+                if (hasVariants() && variantIndex + 1 < sceneVariants.size()) {
+                    startVariant(variantIndex + 1);
+                } else if (isSweeping() && sweepIndex + 1 < sweepStepCount()) {
                     startSweepStep(sweepIndex + 1);
                 } else {
                     openNextScene();
@@ -210,9 +215,12 @@ class CaptureScript {
             phase = Phase.SAVING;
             return;
         }
-        capture.requestScreenshot(scene.id() + ".png");
-        appendPerf(scene, scene.id());
-        if (scene.recordsAnimation()) {
+        String captureName = hasVariants()
+                ? scene.id() + "-" + sceneVariants.get(variantIndex)
+                : scene.id();
+        capture.requestScreenshot(captureName + ".png");
+        appendPerf(scene, captureName);
+        if (!hasVariants() && scene.recordsAnimation()) {
             capture.startRecording();
             phase = Phase.RECORDING;
         } else {
@@ -238,6 +246,14 @@ class CaptureScript {
         app.openScene(sceneIndex);
         sweepIndex = NOT_SWEEPING;
         SandboxScene scene = app.getScene(sceneIndex);
+        sceneVariants = scene.captureVariants();
+        variantIndex = NO_VARIANT;
+        if (hasVariants()) {
+            sceneLayerCounts = null;
+            sceneDirtyPercents = null;
+            startVariant(0);
+            return;
+        }
         sceneLayerCounts =
                 !layerCounts.isEmpty() && scene.supportsLayerCount() ? layerCounts : null;
         sceneDirtyPercents =
@@ -246,6 +262,17 @@ class CaptureScript {
             startSweepStep(0);
             return;
         }
+        waitForWindowThenWarmUp();
+    }
+
+    private boolean hasVariants() {
+        return !sceneVariants.isEmpty();
+    }
+
+    private void startVariant(int index) {
+        variantIndex = index;
+        app.getScene(sceneIndex).showCaptureVariant(sceneVariants.get(index));
+        app.refreshStatus();
         waitForWindowThenWarmUp();
     }
 

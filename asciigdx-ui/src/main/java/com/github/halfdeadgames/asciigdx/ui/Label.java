@@ -49,13 +49,21 @@ public class Label extends Widget {
     }
 
     /**
-     * Replaces the text. The size stays as it is; call {@link #pack()} to fit the new text.
+     * Replaces the text. The size stays as it is; call {@link #pack()} to fit the new text. When
+     * the text differs from the current one, calls {@link #invalidate()}; equal text changes no
+     * marks. Layout is marked even though the size is kept, because the preferred size changes
+     * and {@link #pack()} and parent layouts rely on that mark.
      *
      * @param text new text; must not be {@code null}; may be empty
      * @throws NullPointerException if {@code text} is {@code null}
      */
     public void setText(String text) {
-        this.text = Objects.requireNonNull(text, "text");
+        Objects.requireNonNull(text, "text");
+        if (text.equals(this.text)) {
+            return;
+        }
+        this.text = text;
+        invalidate();
     }
 
     /**
@@ -69,13 +77,39 @@ public class Label extends Widget {
 
     /**
      * Replaces the font and colors. The size stays as it is, so after switching between the
-     * square and the tall font, call {@link #pack()} to fit the new height.
+     * square and the tall font, call {@link #pack()} to fit the new height. When the style
+     * differs from the current one, the label is marked: if the font changed, by
+     * {@link #invalidate()}, because the preferred height and row snap depend on the font; if only
+     * the colors changed, by {@link #requestRedraw()}, because the size is unaffected. An equal
+     * style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
      */
     public void setStyle(LabelStyle style) {
-        this.style = Objects.requireNonNull(style, "style");
+        Objects.requireNonNull(style, "style");
+        if (style.equals(this.style)) {
+            return;
+        }
+        boolean fontChanged = style.getFont() != this.style.getFont();
+        this.style = style;
+        if (fontChanged) {
+            invalidate();
+        } else {
+            requestRedraw();
+        }
+    }
+
+    /**
+     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1. Tall glyphs span two
+     * square rows, and {@link UiSurface} snaps tall text to even rows, so a tall label's top must
+     * sit on an even row.
+     *
+     * @return the row multiple, 1 or 2
+     */
+    @Override
+    public int getRowSnap() {
+        return style.getFont() == UiFont.TALL ? 2 : 1;
     }
 
     /**

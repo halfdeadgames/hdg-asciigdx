@@ -1,28 +1,23 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.viewport.ScalingViewport;
-import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
-import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
-import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
+import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
-import java.util.Optional;
 
 /**
  * Static check of text labels in two fonts: styles, text cut off at a set width, nesting, setText
  * with and without pack, square text drawn over tall text, and tall text on an odd row.
  */
-class UiLabelsScene implements SandboxScene {
-    private static final int COLUMNS = 120;
-    private static final int ROWS = 67;
+class LabelsPage implements UiPage {
     private static final int ROOT_X = 4;
     private static final int ROOT_Y = 2;
+    private static final int PANEL_X = 3;
+    private static final int PANEL_WIDTH = 46;
+    private static final int PANEL_HEIGHT = 2;
     private static final int CUT_OFF_WIDTH = 8;
     private static final int CAPTION_X = 24;
     private static final int BLACK = 0x000000FF;
@@ -38,17 +33,29 @@ class UiLabelsScene implements SandboxScene {
     private static final LabelStyle ON_CYAN = LabelStyle.of(UiFont.SQUARE, BLACK, CYAN);
     private static final LabelStyle GOLD_TEXT = LabelStyle.of(UiFont.SQUARE, GOLD, CLEAR);
 
-    private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
-    private final LayerStack layers = new LayerStack();
-    private final ScalingViewport viewport;
+    @Override
+    public String id() {
+        return "labels";
+    }
 
-    UiLabelsScene(GlyphSource squareGlyphs, GlyphSource tallGlyphs) {
-        surface.addTo(layers, tallGlyphs, squareGlyphs);
-        viewport = new ScalingViewport(IntegerScaling.INSTANCE,
-                COLUMNS * squareGlyphs.getCellWidth(), ROWS * squareGlyphs.getCellHeight());
-        surface.fillBackground(0, 0, COLUMNS, ROWS, BLACK);
-        surface.fillBackground(3, ROOT_Y + 6, 46, 2, PANEL_BLUE);
-        buildRoot().draw(surface);
+    @Override
+    public String title() {
+        return "Labels";
+    }
+
+    @Override
+    public Widget createContent(int columns, int rows) {
+        WidgetGroup content = new WidgetGroup();
+        content.addChild(createPanel());
+        content.addChild(buildRoot());
+        return content;
+    }
+
+    private static Widget createPanel() {
+        Widget panel = new BlueBackground();
+        panel.setPosition(PANEL_X, ROOT_Y + 6);
+        panel.setSize(PANEL_WIDTH, PANEL_HEIGHT);
+        return panel;
     }
 
     private static WidgetGroup buildRoot() {
@@ -112,57 +119,21 @@ class UiLabelsScene implements SandboxScene {
         return label;
     }
 
-    @Override
-    public String id() {
-        return "ui-labels";
-    }
+    /** Fills its rectangle with a blue background, to show that clear labels keep it. */
+    private static final class BlueBackground extends Widget {
+        @Override
+        public int getPreferredWidth() {
+            return PANEL_WIDTH;
+        }
 
-    @Override
-    public String title() {
-        return "UI: labels";
-    }
+        @Override
+        public int getPreferredHeight() {
+            return PANEL_HEIGHT;
+        }
 
-    @Override
-    public SceneGroup group() {
-        return SceneGroup.UI;
-    }
-
-    @Override
-    public Optional<WindowSize> preferredWindowSize() {
-        return Optional.of(WindowSize.FULL_HD);
-    }
-
-    @Override
-    public void show() {
-        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        viewport.update(width, height, true);
-    }
-
-    @Override
-    public void render(SpriteBatch batch, float delta) {
-        SceneDrawing.clearViewportArea(viewport);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-        batch.begin();
-        layers.draw(batch, 0, viewport.getWorldHeight());
-        batch.end();
-    }
-
-    @Override
-    public void hide() {
-    }
-
-    @Override
-    public void dispose() {
-        layers.dispose();
-    }
-
-    @Override
-    public int cellCount() {
-        return COLUMNS * ROWS;
+        @Override
+        protected void drawContent(UiSurface target, int left, int top) {
+            target.fillBackground(left, top, getWidth(), getHeight(), PANEL_BLUE);
+        }
     }
 }
