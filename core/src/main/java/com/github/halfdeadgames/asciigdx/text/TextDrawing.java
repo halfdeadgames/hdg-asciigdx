@@ -4,30 +4,35 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.Objects;
 
 /**
- * Draws one line of text into a fixed width, either cut short with an ellipsis or scrolling.
+ * Draws text that may be longer than its area: one line cut short with an ellipsis or
+ * scrolling, or several lines laid out by a {@link WrapLayout}.
  *
  * <p>Common rules for every method:
  * <ul>
  *   <li>Text length is counted in cells, one cell per code point, as in
  *       {@code GridDrawing.drawText}. A lone (unpaired) surrogate char counts as one cell.</li>
  *   <li>The ellipsis is always exactly one code point and one cell.</li>
- *   <li>Every call writes every cell of {@code [column, column + widthCells)} on the row. Cells
- *       without text get a space with the given colors, so text from an earlier frame never
- *       stays behind.</li>
- *   <li>Cells outside the grid are skipped but still consume a cell, and a row outside the grid
- *       writes nothing. Positions never cause an exception or overflow, and only the cells
- *       inside the grid are visited.</li>
- *   <li>{@code '\n'} gets no special handling: it is written like any other character.</li>
+ *   <li>Every call writes every cell of its area. Cells without text get a space with the given
+ *       colors, so text from an earlier frame never stays behind.</li>
+ *   <li>Cells outside the grid are skipped but still consume a cell, and rows outside the grid
+ *       write nothing. Positions never cause an exception or overflow.</li>
  *   <li>Call on the render thread. Drawing does not allocate.</li>
  * </ul>
  *
- * <p>Area convention: the one-line methods in this class describe their area as a start column
- * plus a width in cells. Wrapped text uses an inclusive start and end column instead. For
- * example, column 4 with width 17 covers the same cells as columns 4 through 20.
+ * <p>One-line methods ({@code drawTruncated} and {@code drawScrolling}) write a single row and
+ * describe their area as a start column plus a width in cells. They visit only the cells inside
+ * the grid, and {@code '\n'} gets no special handling there: it is written like any other
+ * character. {@link #drawWrapped} writes one row per laid-out line, uses the inclusive start and
+ * end columns of {@link WrapRules}, and leaves rows beyond the last line untouched. For example,
+ * column 4 with width 17 covers the same cells as columns 4 through 20.
  *
  * <p>Example:
  * <pre>{@code
  * TextDrawing.drawTruncated(grid, 2, 1, 10, "A long title", foreground, background);
+ *
+ * WrapLayout layout = new WrapLayout();
+ * layout.layOut("A quest log entry that wraps", WrapRules.between(2, 20).withMaxLines(3));
+ * TextDrawing.drawWrapped(grid, 3, layout, foreground, background);
  * }</pre>
  */
 public final class TextDrawing {
@@ -225,6 +230,46 @@ public final class TextDrawing {
         }
     }
 
+    /**
+     * Draws text that was laid out by {@link WrapLayout#layOut}, one line per row: line {@code i}
+     * goes on row {@code topRow + i}. Each code point takes one cell, as in
+     * {@code GridDrawing.drawText}.
+     *
+     * <p>Every cell of each line's area, from its start column to its end column, is written: cells
+     * without text get a space with the given colors. When the layout is truncated, the ellipsis
+     * of its rules is written in the cell right after the content of the last line. Rows beyond
+     * the line count are not touched. Cells and rows outside the grid are skipped, and the method
+     * never throws for off-grid positions. It does not allocate.
+     *
+     * <p>The layout holds a reference to the text given to {@code layOut}. If a mutable
+     * {@code CharSequence} such as a {@code StringBuilder} changed since then, call
+     * {@code layOut} again before drawing, or the drawing is undefined. A layout that was never
+     * laid out has no lines, so nothing is drawn.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param topRow row of the first line, in cells; any value is accepted
+     * @param layout the laid-out lines and their text; must not be {@code null}
+     * @param foreground foreground color as RGBA8888
+     * @param background background color as RGBA8888
+     * @throws NullPointerException if {@code grid} or {@code layout} is {@code null}
+     */
+    public static void drawWrapped(TerminalGrid grid, int topRow, WrapLayout layout,
+            int foreground, int background) {
+        Objects.requireNonNull(grid, "grid");
+        Objects.requireNonNull(layout, "layout");
+        CharSequence text = layout.getText();
+        int lastLine = layout.getLineCount() - 1;
+        for (int line = 0; line <= lastLine; line++) {
+            long row = (long) topRow + line;
+            if (row < 0 || row >= grid.getRows()) {
+                continue;
+            }
+            boolean endsWithEllipsis = layout.isTruncated() && line == lastLine;
+            drawWrappedLine(grid, (int) row, text, layout, line, endsWithEllipsis, foreground,
+                    background);
+        }
+    }
+
     private static boolean hasTextBefore(TextScroll scroll, int offset, int textCells,
             long stripCells) {
         if (!scroll.isLooping()) {
@@ -256,5 +301,36 @@ public final class TextDrawing {
 
     private static boolean isRowOutside(TerminalGrid grid, int row) {
         return row < 0 || row >= grid.getRows();
+    }
+
+    private static void drawWrappedLine(TerminalGrid grid, int row, CharSequence text,
+            WrapLayout layout, int line, boolean endsWithEllipsis, int foreground,
+            int background) {
+        long column = layout.getLineStartColumn(line);
+        int index = layout.getLineStart(line);
+        int end = layout.getLineEnd(line);
+        while (index < end) {
+            int codePoint = Character.codePointAt(text, index);
+            writeCell(grid, column, row, codePoint, foreground, background);
+            index += Character.charCount(codePoint);
+            column++;
+        }
+        if (endsWithEllipsis) {
+            writeCell(grid, column, row, layout.getRules().getEllipsisCodePoint(), foreground,
+                    background);
+            column++;
+        }
+        long lastColumn = Math.min(layout.getLineEndColumn(line), grid.getColumns() - 1);
+        for (long fillColumn = Math.max(column, 0); fillColumn <= lastColumn; fillColumn++) {
+            grid.set((int) fillColumn, row, BLANK_CODE_POINT, foreground, background);
+        }
+    }
+
+    private static void writeCell(TerminalGrid grid, long column, int row, int codePoint,
+            int foreground, int background) {
+        if (column < 0 || column >= grid.getColumns()) {
+            return;
+        }
+        grid.set((int) column, row, codePoint, foreground, background);
     }
 }
