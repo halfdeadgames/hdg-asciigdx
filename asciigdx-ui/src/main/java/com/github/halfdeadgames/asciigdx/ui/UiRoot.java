@@ -83,6 +83,7 @@ public final class UiRoot {
                     + "to the next frame, for example with a UiUpdateListener";
     private static final UiUpdateListener[] NO_UPDATE_LISTENERS = new UiUpdateListener[0];
     private static final PressObserver[] NO_PRESS_OBSERVERS = new PressObserver[0];
+    private static final UiListener[] NO_KEY_LISTENERS = new UiListener[0];
     private static final int PRIMARY_POINTER = 0;
     private static final int NO_BUTTON = UiEvent.NOT_APPLICABLE;
 
@@ -95,6 +96,10 @@ public final class UiRoot {
     private final int[] capturingButtons = new int[MAX_POINTERS];
     private UiUpdateListener[] updateListeners = NO_UPDATE_LISTENERS;
     private PressObserver[] pressObservers = NO_PRESS_OBSERVERS;
+    private UiListener[] unhandledKeyListeners = NO_KEY_LISTENERS;
+    private UiListener[] keyObservers = NO_KEY_LISTENERS;
+    private MenuBar openMenuBar;
+    private Widget focusBeforePress;
     private boolean delivering;
     private Widget hoveredWidget;
     private Widget keyboardFocus;
@@ -307,6 +312,7 @@ public final class UiRoot {
         Widget target = hitAt(column, row);
         updateHoverForPointer(pointer, target, column, row);
         notifyPressObservers(pointer);
+        focusBeforePress = getKeyboardFocus();
         keyboardFocus = findFocusable(target);
         if (target == null) {
             return false;
@@ -428,11 +434,71 @@ public final class UiRoot {
     private boolean dispatchKey(UiEventType type, int keycode, char character) {
         requireNotDelivering();
         Widget focused = getKeyboardFocus();
-        if (focused == null) {
+        deliverToKeyListeners(keyObservers, focused != null ? focused : root, type, keycode,
+                character);
+        if (focused != null) {
+            event.setKey(type, focused, keycode, character);
+            if (bubble(focused)) {
+                return true;
+            }
+        }
+        return deliverToKeyListeners(unhandledKeyListeners, root, type, keycode, character);
+    }
+
+    private boolean deliverToKeyListeners(UiListener[] snapshot, Widget target,
+            UiEventType type, int keycode, char character) {
+        if (snapshot.length == 0) {
             return false;
         }
-        event.setKey(type, focused, keycode, character);
-        return bubble(focused);
+        event.setKey(type, target, keycode, character);
+        delivering = true;
+        try {
+            for (int i = 0; i < snapshot.length; i++) {
+                if (snapshot[i].handle(event)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            delivering = false;
+        }
+    }
+
+    // Both key hooks are for menu bars and live as long as the root; they never unregister.
+    // Observers see every key event first and cannot consume it; unhandled-key listeners see only
+    // the key events that the focused widget chain did not handle.
+    void addUnhandledKeyListener(UiListener listener) {
+        unhandledKeyListeners = appendListener(unhandledKeyListeners, listener);
+    }
+
+    void addKeyObserver(UiListener listener) {
+        keyObservers = appendListener(keyObservers, listener);
+    }
+
+    private static UiListener[] appendListener(UiListener[] listeners, UiListener listener) {
+        UiListener[] grown = Arrays.copyOf(listeners, listeners.length + 1);
+        grown[listeners.length] = listener;
+        return grown;
+    }
+
+    MenuBar getOpenMenuBar() {
+        return openMenuBar;
+    }
+
+    void setOpenMenuBar(MenuBar menuBarOrNull) {
+        openMenuBar = menuBarOrNull;
+    }
+
+    Widget getFocusBeforePress() {
+        return focusBeforePress;
+    }
+
+    int getSurfaceColumns() {
+        return hiddenSurface.getColumns();
+    }
+
+    int getSurfaceRows() {
+        return hiddenSurface.getRows();
     }
 
     /** Receives every accepted press, even one that a widget consumes before its listeners. */
@@ -456,14 +522,6 @@ public final class UiRoot {
         System.arraycopy(pressObservers, 0, shrunk, 0, index);
         System.arraycopy(pressObservers, index + 1, shrunk, index, shrunk.length - index);
         pressObservers = shrunk.length == 0 ? NO_PRESS_OBSERVERS : shrunk;
-    }
-
-    int getSurfaceColumns() {
-        return hiddenSurface.getColumns();
-    }
-
-    int getSurfaceRows() {
-        return hiddenSurface.getRows();
     }
 
     private void notifyPressObservers(int pointer) {

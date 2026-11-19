@@ -9,9 +9,12 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
-import com.github.halfdeadgames.asciigdx.ui.Label;
+import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.Tooltip;
+import com.github.halfdeadgames.asciigdx.ui.Menu;
+import com.github.halfdeadgames.asciigdx.ui.MenuBar;
+import com.github.halfdeadgames.asciigdx.ui.MenuBarStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
@@ -20,29 +23,43 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** Pages of UI widget checks, switched with the number keys 1 to 9, under a strip of page names. */
+/**
+ * Pages of UI widget checks, switched with the number keys 1 to 9 or with the "Pages" menu of the
+ * tall menu bar on the first row below the performance overlay.
+ */
 class UiWidgetsScene implements SandboxScene {
     private static final int COLUMNS = 120;
     private static final int ROWS = 67;
     private static final int RESERVED_ROWS = 2;
     private static final int MAX_KEY_PAGES = 9;
-    private static final int STRIP_GAP = 3;
     private static final int BLACK = 0x000000FF;
     private static final int WHITE = 0xFFFFFFFF;
     private static final int GOLD = 0xFFD700FF;
-    private static final LabelStyle STRIP_NORMAL = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
-    private static final LabelStyle STRIP_CURRENT = LabelStyle.of(UiFont.SQUARE, BLACK, GOLD);
+    private static final int BAR_BLUE = 0x203070FF;
+    private static final int OVER_TEAL = 0x00A0A0FF;
+    private static final int TRIGGER_PINK = 0xFF40C0FF;
+    private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
+    private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
+    private static final String MENUS_PAGE_ID = "menus";
+    private static final ButtonStyle BAR_LOOK = ButtonStyle.of(
+            LabelStyle.of(UiFont.TALL, WHITE, BAR_BLUE),
+            LabelStyle.of(UiFont.TALL, BLACK, OVER_TEAL),
+            LabelStyle.of(UiFont.TALL, BLACK, GOLD),
+            LabelStyle.of(UiFont.TALL, WHITE, BAR_BLUE));
 
     private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
     private final UiRoot uiRoot = UiRoot.of(surface);
     private final HintsPage hintsPage = new HintsPage(uiRoot);
+    private final MenusPage menusPage = new MenusPage(uiRoot);
     private final List<UiPage> pages = List.of(
             new LabelsPage(),
             new TablePage(),
             new ButtonsPage(),
-            hintsPage
+            hintsPage,
+            menusPage
     );
-    private final List<Label> stripEntries = new ArrayList<>();
+    private final MenuBar pageBar = MenuBar.of(uiRoot, MenuBarStyle.of(BAR_LOOK, BAR_LOOK)
+            .withTriggerRgba(TRIGGER_PINK));
     private final LayerStack layers = new LayerStack();
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
@@ -59,27 +76,26 @@ class UiWidgetsScene implements SandboxScene {
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
                 COLUMNS * squareGlyphs.getCellWidth(), ROWS * squareGlyphs.getCellHeight());
         uiRoot.getRoot().addChild(new Backdrop());
-        createStrip();
+        createPageBar();
         showPage(0);
     }
 
-    private void createStrip() {
-        int column = 0;
+    private void createPageBar() {
+        pageBar.setSize(COLUMNS, 0);
+        pageBar.setPosition(0, overlayRows);
+        Menu pagesMenu = pageBar.addMenu("Pages", 'P');
         for (int i = 0; i < pages.size(); i++) {
-            String text = (i + 1) + " " + pages.get(i).title();
-            Label entry = new Label(text, STRIP_NORMAL);
-            entry.setPosition(column, overlayRows);
-            uiRoot.getRoot().addChild(entry);
-            stripEntries.add(entry);
-            column += entry.getWidth() + STRIP_GAP;
+            int pageToShow = i;
+            String title = pages.get(i).title();
+            pagesMenu.addItem((i + 1) + " " + title, title.charAt(0),
+                    () -> showPage(pageToShow));
         }
+        uiRoot.getRoot().addChild(pageBar);
     }
 
     private void showPage(int index) {
         pageIndex = index;
-        for (int i = 0; i < stripEntries.size(); i++) {
-            stripEntries.get(i).setStyle(i == pageIndex ? STRIP_CURRENT : STRIP_NORMAL);
-        }
+        closeOpenMenu();
         if (content != null) {
             uiRoot.getRoot().removeChild(content);
         }
@@ -90,13 +106,40 @@ class UiWidgetsScene implements SandboxScene {
         uiRoot.draw();
     }
 
-    private void moveBelowOverlay() {
-        for (int i = 0; i < stripEntries.size(); i++) {
-            Label entry = stripEntries.get(i);
-            entry.setPosition(entry.getX(), overlayRows);
+    // Escape reaches the open menu through the keyboard focus. An item action runs after its menu
+    // has closed, and input methods must not be called then, so only press Escape if one is open.
+    private void closeOpenMenu() {
+        if (isAnyMenuOpen()) {
+            uiRoot.keyDown(Input.Keys.ESCAPE);
         }
+    }
+
+    private boolean isAnyMenuOpen() {
+        return pageBar.isOpen() || menusPage.isMenuOpen();
+    }
+
+    private void moveBelowOverlay() {
+        pageBar.setPosition(0, overlayRows);
         content.setPosition(0, overlayRows + RESERVED_ROWS);
         uiRoot.draw();
+    }
+
+    private int contentTop() {
+        return overlayRows + RESERVED_ROWS;
+    }
+
+    private int pageIndexOf(String pageId) {
+        for (int i = 0; i < pages.size(); i++) {
+            if (pages.get(i).id().equals(pageId)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void clickCell(int column, int row) {
+        uiRoot.pointerDown(column, row, 0, 0);
+        uiRoot.pointerUp(column, row, 0, 0);
     }
 
     private void pickCell(int screenX, int screenY, GridPoint2 cellOut) {
@@ -164,6 +207,9 @@ class UiWidgetsScene implements SandboxScene {
         if (uiRoot.keyDown(keycode)) {
             return true;
         }
+        if (isAnyMenuOpen()) {
+            return false;
+        }
         int index = keycode - Input.Keys.NUM_1;
         if (index < 0 || index >= MAX_KEY_PAGES || index >= pages.size()) {
             return false;
@@ -174,22 +220,32 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public List<String> captureVariants() {
-        List<String> ids = new ArrayList<>(pages.size());
+        List<String> ids = new ArrayList<>(pages.size() + 2);
         for (int i = 0; i < pages.size(); i++) {
             ids.add(pages.get(i).id());
         }
+        ids.add(OPEN_PAGES_MENU_VARIANT);
+        ids.add(OPEN_SHORT_MENU_VARIANT);
         return ids;
     }
 
     @Override
     public void showCaptureVariant(String variant) {
-        for (int i = 0; i < pages.size(); i++) {
-            if (pages.get(i).id().equals(variant)) {
-                showPage(i);
-                if (pages.get(i) == hintsPage) {
-                    showHintWithoutMouse();
-                }
-                return;
+        if (variant.equals(OPEN_PAGES_MENU_VARIANT)) {
+            showPage(0);
+            clickCell(1, overlayRows);
+            return;
+        }
+        if (variant.equals(OPEN_SHORT_MENU_VARIANT)) {
+            showPage(pageIndexOf(MENUS_PAGE_ID));
+            clickCell(MenusPage.BAR_X + 1, contentTop() + MenusPage.BAR_Y);
+            return;
+        }
+        int index = pageIndexOf(variant);
+        if (index >= 0) {
+            showPage(index);
+            if (pages.get(index) == hintsPage) {
+                showHintWithoutMouse();
             }
         }
     }

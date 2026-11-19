@@ -17,6 +17,11 @@
  * first interactive widget. A {@link com.github.halfdeadgames.asciigdx.ui.Tooltip} shows a hint
  * widget in the popup layer when the pointer rests on another widget.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.MenuBar} is a row of titles whose
+ * {@link com.github.halfdeadgames.asciigdx.ui.Menu} drop-downs open in the root's popup layer and
+ * close on Escape or an outside press. Its look comes from a
+ * {@link com.github.halfdeadgames.asciigdx.ui.MenuBarStyle}.
+ *
  * <p>Example with a button:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);
