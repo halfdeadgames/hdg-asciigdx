@@ -157,6 +157,7 @@ public class SandboxApp extends ApplicationAdapter {
         scenes.add(new SparseUpdateScene(smallGlyphs));
         scenes.add(new MapScrollScene(smallGlyphs));
         scenes.add(new AnimatedCellsScene(smallGlyphs));
+        scenes.add(new ManySpritesStressScene(smallGlyphs));
         if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
             scenes.add(new LayeredBlendStressScene(smallGlyphs));
         }
