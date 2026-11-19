@@ -102,10 +102,14 @@ function Initialize-OldWorktree {
         [Parameter(Mandatory)] [string]$RepositoryRoot,
         [Parameter(Mandatory)] [string]$Ref
     )
+    $commit = git -C $RepositoryRoot rev-parse --verify --quiet "$Ref^{commit}"
+    if ($LASTEXITCODE -ne 0 -or -not $commit) {
+        throw "Could not find the commit '$Ref' in '$RepositoryRoot'."
+    }
     $worktreePath = Join-PathSegment ([IO.Path]::GetTempPath()) @('hdg-asciigdx-perf-old')
-    $gitArguments = @('-C', $RepositoryRoot, 'worktree', 'add', '--detach', $worktreePath, $Ref)
+    $gitArguments = @('-C', $RepositoryRoot, 'worktree', 'add', '--detach', $worktreePath, $commit)
     if (Test-Path $worktreePath) {
-        $gitArguments = @('-C', $worktreePath, 'checkout', '--detach', $Ref)
+        $gitArguments = @('-C', $worktreePath, 'checkout', '--detach', $commit)
     }
     Invoke-NativeCommand -FilePath 'git' -ArgumentList $gitArguments `
             -FailureMessage "Could not prepare the old worktree at '$Ref'."
