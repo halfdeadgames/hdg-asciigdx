@@ -6,8 +6,8 @@ import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.MenuBarStyle;
+import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
@@ -25,25 +25,19 @@ class MenusPage implements UiPage {
     private static final int BUTTON_Y = 5;
     private static final int CAPTION_Y = 10;
     private static final int LAST_ACTION_Y = 14;
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int BLACK = 0x000000FF;
-    private static final int NORMAL_BLUE = 0x203070FF;
-    private static final int OVER_TEAL = 0x00A0A0FF;
-    private static final int PRESSED_GOLD = 0xFFD700FF;
-    private static final int TRIGGER_PINK = 0xFF40C0FF;
-    private static final ButtonStyle LOOK = ButtonStyle.of(
-            LabelStyle.of(UiFont.SQUARE, WHITE, NORMAL_BLUE),
-            LabelStyle.of(UiFont.SQUARE, BLACK, OVER_TEAL),
-            LabelStyle.of(UiFont.SQUARE, BLACK, PRESSED_GOLD),
-            LabelStyle.of(UiFont.SQUARE, WHITE, NORMAL_BLUE));
-    private static final LabelStyle CAPTION = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
 
     private final UiRoot uiRoot;
+    private final MenuBarStyle barStyle;
+    private final ButtonStyle buttonStyle;
+    private final LabelStyle caption;
     private WidgetGroup content;
     private MenuBar bar;
 
-    MenusPage(UiRoot uiRoot) {
+    MenusPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
+        barStyle = skin.getMenuBarStyle("menuBar");
+        buttonStyle = skin.getButtonStyle("button");
+        caption = skin.getLabelStyle("text");
     }
 
     boolean isMenuOpen() {
@@ -72,7 +66,7 @@ class MenusPage implements UiPage {
 
     private WidgetGroup buildContent(boolean wide) {
         WidgetGroup group = new WidgetGroup();
-        Label lastAction = new Label("Last action: none", CAPTION);
+        Label lastAction = new Label("Last action: none", caption);
         lastAction.setPosition(BAR_X, LAST_ACTION_Y);
         group.addChild(lastAction);
         bar = createBar(lastAction);
@@ -86,7 +80,7 @@ class MenusPage implements UiPage {
         return group;
     }
 
-    private static void addMenuKeysCaption(WidgetGroup group, boolean wide) {
+    private void addMenuKeysCaption(WidgetGroup group, boolean wide) {
         if (wide) {
             group.addChild(createCaption(
                     "In a menu: letters, arrows, and Enter work; Z cycles the zoom items",
@@ -98,16 +92,14 @@ class MenusPage implements UiPage {
     }
 
     private MenuBar createBar(Label lastAction) {
-        MenuBar bar = MenuBar.of(uiRoot,
-                MenuBarStyle.of(LOOK, LOOK).withTriggerRgba(TRIGGER_PINK)
-                        .withTriggerUnderline(true));
-        bar.setSize(BAR_WIDTH, 0);
-        bar.setPosition(BAR_X, BAR_Y);
-        addMenu(bar, "File", lastAction, "New", "Open file", "Save", "Quit");
-        addMenu(bar, "Edit", lastAction, "Undo", "Redo");
-        addMenu(bar, "View", lastAction, "Zoom in", "Zoom out", "Full screen mode");
-        addMenu(bar, "Format", lastAction, "Bold", "Italic");
-        return bar;
+        MenuBar menuBar = MenuBar.of(uiRoot, barStyle);
+        menuBar.setSize(BAR_WIDTH, 0);
+        menuBar.setPosition(BAR_X, BAR_Y);
+        addMenu(menuBar, "File", lastAction, "New", "Open file", "Save", "Quit");
+        addMenu(menuBar, "Edit", lastAction, "Undo", "Redo");
+        addMenu(menuBar, "View", lastAction, "Zoom in", "Zoom out", "Full screen mode");
+        addMenu(menuBar, "Format", lastAction, "Bold", "Italic");
+        return menuBar;
     }
 
     // The first letter of every title and item is its trigger, so "File" and "Format" share F,
@@ -125,17 +117,17 @@ class MenusPage implements UiPage {
         lastAction.pack();
     }
 
-    private static Label createCaption(String text, int y) {
-        Label caption = new Label(text, CAPTION);
-        caption.setPosition(BAR_X, y);
-        return caption;
+    private Label createCaption(String text, int y) {
+        Label captionLabel = new Label(text, caption);
+        captionLabel.setPosition(BAR_X, y);
+        return captionLabel;
     }
 
-    private static TextButton createUnderneathButton(Label lastAction, boolean wide) {
+    private TextButton createUnderneathButton(Label lastAction, boolean wide) {
         String text = wide
                 ? "Separate button: a press that only closes a menu must not click it"
                 : "Separate button: a closing press must not click it";
-        TextButton button = new TextButton(text, LOOK);
+        TextButton button = new TextButton(text, buttonStyle);
         button.setPosition(BAR_X, BUTTON_Y);
         button.addClickListener(clicked -> showAction(lastAction, "button underneath"));
         return button;

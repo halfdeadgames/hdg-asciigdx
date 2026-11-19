@@ -3,9 +3,9 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
+import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
 import com.github.halfdeadgames.asciigdx.ui.Tooltip;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
@@ -20,22 +20,13 @@ class HintsPage implements UiPage {
     private static final int LEFT_X = 4;
     private static final int TOP_Y = 2;
     private static final int RIGHT_EDGE_MARGIN = 12;
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int BLACK = 0x000000FF;
-    private static final int NORMAL_BLUE = 0x203070FF;
-    private static final int OVER_TEAL = 0x00A0A0FF;
-    private static final int PRESSED_GOLD = 0xFFD700FF;
-    private static final int HINT_BACKGROUND = 0x303030FF;
-    private static final int HINT_GOLD = 0xFFD700FF;
-    private static final LabelStyle CAPTION = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
-    private static final LabelStyle TALL_HINT =
-            LabelStyle.of(UiFont.TALL, HINT_GOLD, HINT_BACKGROUND);
-    private static final LabelStyle SQUARE_HINT =
-            LabelStyle.of(UiFont.SQUARE, WHITE, HINT_BACKGROUND);
-    private static final ButtonStyle TALL_BUTTON = createButtonStyle(UiFont.TALL);
-    private static final ButtonStyle SQUARE_BUTTON = createButtonStyle(UiFont.SQUARE);
 
     private final UiRoot uiRoot;
+    private final LabelStyle caption;
+    private final LabelStyle tallTooltipStyle;
+    private final LabelStyle tooltipStyle;
+    private final ButtonStyle tallButton;
+    private final ButtonStyle squareButton;
     private WidgetGroup content;
     private TextButton rightEdgeButton;
 
@@ -43,9 +34,15 @@ class HintsPage implements UiPage {
      * Creates the page.
      *
      * @param uiRoot root whose popup layer shows the hints
+     * @param skin source of the label and button styles
      */
-    HintsPage(UiRoot uiRoot) {
+    HintsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
+        caption = skin.getLabelStyle("text");
+        tallTooltipStyle = skin.getLabelStyle("tallTooltip");
+        tooltipStyle = skin.getLabelStyle("tooltip");
+        tallButton = skin.getButtonStyle("tallButton");
+        squareButton = skin.getButtonStyle("button");
     }
 
     @Override
@@ -79,18 +76,18 @@ class HintsPage implements UiPage {
     private WidgetGroup buildContent(int columns, int rows) {
         WidgetGroup group = new WidgetGroup();
         addCaption(group, "Rest the pointer on a widget; press to hide its hint", TOP_Y);
-        addButton(group, "Tall hint", TALL_BUTTON, LEFT_X, TOP_Y + 2,
-                "Tall font hint, on an even row", TALL_HINT);
-        addButton(group, "Square hint", SQUARE_BUTTON, LEFT_X, TOP_Y + 6,
-                "Square font hint", SQUARE_HINT);
-        Label labelTarget = new Label("Hover this label", CAPTION);
+        addButton(group, "Tall hint", tallButton, LEFT_X, TOP_Y + 2,
+                "Tall font hint, on an even row", tallTooltipStyle);
+        addButton(group, "Square hint", squareButton, LEFT_X, TOP_Y + 6,
+                "Square font hint", tooltipStyle);
+        Label labelTarget = new Label("Hover this label", caption);
         labelTarget.setPosition(LEFT_X, TOP_Y + 9);
         group.addChild(labelTarget);
-        Tooltip.attachText(uiRoot, labelTarget, "Labels can have hints too", SQUARE_HINT);
-        rightEdgeButton = addButton(group, "Right edge", TALL_BUTTON, columns - RIGHT_EDGE_MARGIN,
-                TOP_Y + 2, "Flips to the left of the pointer", SQUARE_HINT);
-        addButton(group, "Last row", SQUARE_BUTTON, LEFT_X, rows - 1,
-                "Flips above the pointer", SQUARE_HINT);
+        Tooltip.attachText(uiRoot, labelTarget, "Labels can have hints too", tooltipStyle);
+        rightEdgeButton = addButton(group, "Right edge", tallButton, columns - RIGHT_EDGE_MARGIN,
+                TOP_Y + 2, "Flips to the left of the pointer", tooltipStyle);
+        addButton(group, "Last row", squareButton, LEFT_X, rows - 1,
+                "Flips above the pointer", tooltipStyle);
         return group;
     }
 
@@ -103,15 +100,9 @@ class HintsPage implements UiPage {
         return button;
     }
 
-    private static void addCaption(WidgetGroup group, String text, int y) {
-        Label caption = new Label(text, CAPTION);
-        caption.setPosition(LEFT_X, y);
-        group.addChild(caption);
-    }
-
-    private static ButtonStyle createButtonStyle(UiFont font) {
-        return ButtonStyle.of(LabelStyle.of(font, WHITE, NORMAL_BLUE),
-                LabelStyle.of(font, BLACK, OVER_TEAL), LabelStyle.of(font, BLACK, PRESSED_GOLD),
-                LabelStyle.of(font, WHITE, NORMAL_BLUE));
+    private void addCaption(WidgetGroup group, String text, int y) {
+        Label captionLabel = new Label(text, caption);
+        captionLabel.setPosition(LEFT_X, y);
+        group.addChild(captionLabel);
     }
 }

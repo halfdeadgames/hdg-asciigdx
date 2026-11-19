@@ -3,8 +3,8 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
+import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.Table;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.VerticalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
@@ -15,19 +15,26 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
  * cell padding.
  */
 class TablePage implements UiPage {
-    private static final int BLACK = 0x000000FF;
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int GOLD = 0xFFD700FF;
-    private static final int CYAN = 0x00FFFFFF;
-    private static final int PANEL_BLUE = 0x203070FF;
-    private static final int PANEL_GREEN = 0x1F5030FF;
     private static final int TABLE_PADDING = 1;
     private static final int LABEL_GAP = 2;
-    private static final LabelStyle TITLE = LabelStyle.of(UiFont.TALL, GOLD, BLACK);
-    private static final LabelStyle TALL_PLAIN = LabelStyle.of(UiFont.TALL, WHITE, BLACK);
-    private static final LabelStyle PLAIN = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
-    private static final LabelStyle ON_CYAN = LabelStyle.of(UiFont.SQUARE, BLACK, CYAN);
-    private static final LabelStyle ON_GOLD = LabelStyle.of(UiFont.SQUARE, BLACK, GOLD);
+
+    private final int panelBlueRgba;
+    private final int panelGreenRgba;
+    private final LabelStyle titleStyle;
+    private final LabelStyle tallPlain;
+    private final LabelStyle plain;
+    private final LabelStyle highlightStyle;
+    private final LabelStyle accentStyle;
+
+    TablePage(Skin skin) {
+        panelBlueRgba = skin.getRgba("deepBlue");
+        panelGreenRgba = skin.getRgba("darkGreen");
+        titleStyle = skin.getLabelStyle("title");
+        tallPlain = skin.getLabelStyle("tallText");
+        plain = skin.getLabelStyle("text");
+        highlightStyle = skin.getLabelStyle("highlight");
+        accentStyle = skin.getLabelStyle("accent");
+    }
 
     @Override
     public String id() {
@@ -52,29 +59,30 @@ class TablePage implements UiPage {
         return root;
     }
 
-    private static void addTitle(Table root) {
-        root.add(new Label("Table layout", TITLE)).colspan(2).alignX(HorizontalAlignment.CENTER);
+    private void addTitle(Table root) {
+        root.add(new Label("Table layout", titleStyle)).colspan(2)
+                .alignX(HorizontalAlignment.CENTER);
         root.row();
     }
 
-    private static void addForm(Table root) {
+    private void addForm(Table root) {
         addFormRow(root, "Name", "Values fill the column (expandX + fillX)");
         addFormRow(root, "Role", "Names are right-aligned in column 1");
         addFormRow(root, "Notes", "Cyan shows the filled width");
     }
 
-    private static void addFormRow(Table root, String name, String value) {
-        root.add(new Label(name, PLAIN)).alignX(HorizontalAlignment.RIGHT).padRight(LABEL_GAP);
-        root.add(new Label(value, ON_CYAN)).expandX().fillX();
+    private void addFormRow(Table root, String name, String value) {
+        root.add(new Label(name, plain)).alignX(HorizontalAlignment.RIGHT).padRight(LABEL_GAP);
+        root.add(new Label(value, highlightStyle)).expandX().fillX();
         root.row();
     }
 
-    private static void addAlignmentGrid(Table root) {
+    private void addAlignmentGrid(Table root) {
         Table grid = new Table();
         int index = 0;
         for (VerticalAlignment vertical : VerticalAlignment.values()) {
             for (HorizontalAlignment horizontal : HorizontalAlignment.values()) {
-                int background = index % 2 == 0 ? PANEL_BLUE : PANEL_GREEN;
+                int background = index % 2 == 0 ? panelBlueRgba : panelGreenRgba;
                 grid.add(createAlignedCell(background, horizontal, vertical))
                         .expand().fill().pad(0, 0, 1, 1);
                 index++;
@@ -85,25 +93,25 @@ class TablePage implements UiPage {
         root.row();
     }
 
-    private static Widget createAlignedCell(int background, HorizontalAlignment horizontal,
+    private Widget createAlignedCell(int background, HorizontalAlignment horizontal,
             VerticalAlignment vertical) {
         Framed cell = new Framed(background);
-        Label label = new Label(vertical + " " + horizontal, ON_GOLD);
+        Label label = new Label(vertical + " " + horizontal, accentStyle);
         cell.add(label).expand().align(horizontal, vertical);
         return cell;
     }
 
-    private static void addMixedHeights(Table root) {
+    private void addMixedHeights(Table root) {
         Table mixed = new Table();
-        mixed.add(new Label("Tall", TALL_PLAIN)).padRight(LABEL_GAP);
-        mixed.add(new Label("Square top", ON_CYAN)).padRight(LABEL_GAP);
-        mixed.add(new Label("Tall", TALL_PLAIN)).padRight(LABEL_GAP);
-        mixed.add(new Label("Square bottom", ON_CYAN)).alignY(VerticalAlignment.BOTTOM);
+        mixed.add(new Label("Tall", tallPlain)).padRight(LABEL_GAP);
+        mixed.add(new Label("Square top", highlightStyle)).padRight(LABEL_GAP);
+        mixed.add(new Label("Tall", tallPlain)).padRight(LABEL_GAP);
+        mixed.add(new Label("Square bottom", highlightStyle)).alignY(VerticalAlignment.BOTTOM);
         root.add(mixed).colspan(2).padTop(1);
         root.row();
     }
 
-    private static void addPaddingExamples(Table root) {
+    private void addPaddingExamples(Table root) {
         Table examples = new Table();
         examples.add(createPadded("pad(1)", 1, 1, 1, 1)).padRight(LABEL_GAP);
         examples.add(createPadded("padLeft(4)", 0, 4, 0, 0)).padRight(LABEL_GAP);
@@ -111,9 +119,9 @@ class TablePage implements UiPage {
         root.add(examples).colspan(2).padTop(1);
     }
 
-    private static Widget createPadded(String text, int top, int left, int bottom, int right) {
-        Framed frame = new Framed(PANEL_BLUE);
-        frame.add(new Label(text, ON_CYAN)).pad(top, left, bottom, right);
+    private Widget createPadded(String text, int top, int left, int bottom, int right) {
+        Framed frame = new Framed(panelBlueRgba);
+        frame.add(new Label(text, highlightStyle)).pad(top, left, bottom, right);
         return frame;
     }
 

@@ -1,0 +1,51 @@
+{
+  "colors": {
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "gold": "#FFD700",
+    "cyan": "#00FFFF",
+    "deepBlue": "#203070",
+    "darkGreen": "#1F5030",
+    "teal": "#00A0A0",
+    "hotPink": "#FF40C0",
+    "darkGray": "#404040",
+    "gray": "#909090",
+    "charcoal": "#303030",
+    "transparent": "#00000000"
+  },
+  "labels": {
+    "text": { "font": "square", "foreground": "white", "background": "black" },
+    "tallText": { "font": "tall", "foreground": "white", "background": "black" },
+    "title": { "font": "tall", "foreground": "gold", "background": "black" },
+    "highlight": { "font": "square", "foreground": "black", "background": "cyan" },
+    "accent": { "font": "square", "foreground": "black", "background": "gold" },
+    "overlayText": { "font": "square", "foreground": "gold", "background": "transparent" },
+    "tallOverlayText": { "font": "tall", "foreground": "gold", "background": "transparent" },
+    "tooltip": { "font": "square", "foreground": "white", "background": "charcoal" },
+    "tallTooltip": { "font": "tall", "foreground": "gold", "background": "charcoal" }
+  },
+  "buttons": {
+    "button": {
+      "normal": { "font": "square", "foreground": "white", "background": "deepBlue" },
+      "pointerOver": { "font": "square", "foreground": "black", "background": "teal" },
+      "pressed": { "font": "square", "foreground": "black", "background": "gold" },
+      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" }
+    },
+    "tallButton": {
+      "normal": { "font": "tall", "foreground": "white", "background": "deepBlue" },
+      "pointerOver": { "font": "tall", "foreground": "black", "background": "teal" },
+      "pressed": { "font": "tall", "foreground": "black", "background": "gold" },
+      "disabled": { "font": "tall", "foreground": "gray", "background": "darkGray" }
+    }
+  },
+  "menuBars": {
+    "menuBar": {
+      "titles": "button", "items": "button",
+      "triggerColor": "hotPink", "triggerUnderline": true
+    },
+    "tallMenuBar": {
+      "titles": "tallButton", "items": "tallButton",
+      "triggerColor": "hotPink", "triggerUnderline": true
+    }
+  }
+}

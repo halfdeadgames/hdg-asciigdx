@@ -3,8 +3,8 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
+import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
@@ -17,16 +17,16 @@ class ButtonsPage implements UiPage {
     private static final int ROOT_X = 4;
     private static final int ROOT_Y = 2;
     private static final int BUTTON_GAP = 2;
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int BLACK = 0x000000FF;
-    private static final int NORMAL_BLUE = 0x203070FF;
-    private static final int OVER_TEAL = 0x00A0A0FF;
-    private static final int PRESSED_GOLD = 0xFFD700FF;
-    private static final int DISABLED_GRAY = 0x404040FF;
-    private static final int DISABLED_TEXT = 0x909090FF;
-    private static final ButtonStyle TALL_STYLE = createStyle(UiFont.TALL);
-    private static final ButtonStyle SQUARE_STYLE = createStyle(UiFont.SQUARE);
-    private static final LabelStyle CAPTION = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
+
+    private final ButtonStyle tallStyle;
+    private final ButtonStyle squareStyle;
+    private final LabelStyle caption;
+
+    ButtonsPage(Skin skin) {
+        tallStyle = skin.getButtonStyle("tallButton");
+        squareStyle = skin.getButtonStyle("button");
+        caption = skin.getLabelStyle("text");
+    }
 
     @Override
     public String id() {
@@ -43,13 +43,13 @@ class ButtonsPage implements UiPage {
         WidgetGroup content = new WidgetGroup();
         WidgetGroup root = new WidgetGroup();
         root.setPosition(ROOT_X, ROOT_Y);
-        Label lastClick = new Label("Last click: none", CAPTION);
+        Label lastClick = new Label("Last click: none", caption);
         lastClick.setPosition(0, 14);
         root.addChild(lastClick);
         addCaption(root, "Tall buttons: normal, pointer over, pressed, disabled", 0);
-        addRow(root, TALL_STYLE, 2, lastClick);
+        addRow(root, tallStyle, 2, lastClick);
         addCaption(root, "Square buttons", 8);
-        addRow(root, SQUARE_STYLE, 10, lastClick);
+        addRow(root, squareStyle, 10, lastClick);
         addCaption(root, "Press, drag out and back in, release inside to click", 12);
         content.addChild(root);
         return content;
@@ -75,15 +75,9 @@ class ButtonsPage implements UiPage {
         return x + button.getWidth() + BUTTON_GAP;
     }
 
-    private static void addCaption(WidgetGroup root, String text, int y) {
-        Label caption = new Label(text, CAPTION);
-        caption.setPosition(0, y);
-        root.addChild(caption);
-    }
-
-    private static ButtonStyle createStyle(UiFont font) {
-        return ButtonStyle.of(LabelStyle.of(font, WHITE, NORMAL_BLUE),
-                LabelStyle.of(font, BLACK, OVER_TEAL), LabelStyle.of(font, BLACK, PRESSED_GOLD),
-                LabelStyle.of(font, DISABLED_TEXT, DISABLED_GRAY));
+    private void addCaption(WidgetGroup root, String text, int y) {
+        Label captionLabel = new Label(text, caption);
+        captionLabel.setPosition(0, y);
+        root.addChild(captionLabel);
     }
 }

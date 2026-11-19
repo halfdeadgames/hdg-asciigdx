@@ -9,13 +9,10 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
-import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
-import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
-import com.github.halfdeadgames.asciigdx.ui.Tooltip;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
-import com.github.halfdeadgames.asciigdx.ui.MenuBarStyle;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
+import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.Tooltip;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
@@ -33,21 +30,12 @@ class UiWidgetsScene implements SandboxScene {
     private static final int MIN_ROWS_PER_SHORT_SIDE = 67;
     private static final int RESERVED_ROWS = 2;
     private static final int MAX_KEY_PAGES = 9;
-    private static final int BLACK = 0x000000FF;
-    private static final int WHITE = 0xFFFFFFFF;
-    private static final int GOLD = 0xFFD700FF;
-    private static final int BAR_BLUE = 0x203070FF;
-    private static final int OVER_TEAL = 0x00A0A0FF;
-    private static final int TRIGGER_PINK = 0xFF40C0FF;
+    private static final String SKIN_FILE = "default-skin.json";
     private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
     private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
     private static final String MENUS_PAGE_ID = "menus";
-    private static final ButtonStyle BAR_LOOK = ButtonStyle.of(
-            LabelStyle.of(UiFont.TALL, WHITE, BAR_BLUE),
-            LabelStyle.of(UiFont.TALL, BLACK, OVER_TEAL),
-            LabelStyle.of(UiFont.TALL, BLACK, GOLD),
-            LabelStyle.of(UiFont.TALL, WHITE, BAR_BLUE));
 
+    private final Skin skin = Skin.fromFile(Gdx.files.internal(SKIN_FILE));
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
     private final GlyphSource tallGlyphs;
@@ -81,15 +69,15 @@ class UiWidgetsScene implements SandboxScene {
         LayerStack oldLayers = layers;
         surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
-        hintsPage = new HintsPage(uiRoot);
-        menusPage = new MenusPage(uiRoot);
-        pages = List.of(new LabelsPage(), new TablePage(), new ButtonsPage(), hintsPage, menusPage);
-        pageBar = MenuBar.of(uiRoot, MenuBarStyle.of(BAR_LOOK, BAR_LOOK)
-                .withTriggerRgba(TRIGGER_PINK));
+        hintsPage = new HintsPage(uiRoot, skin);
+        menusPage = new MenusPage(uiRoot, skin);
+        pages = List.of(new LabelsPage(skin), new TablePage(skin), new ButtonsPage(skin),
+                hintsPage, menusPage);
+        pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
         surface.addTo(layers, tallGlyphs, squareGlyphs);
-        uiRoot.getRoot().addChild(new Backdrop(columns, rows));
+        uiRoot.getRoot().addChild(new Backdrop(columns, rows, skin.getRgba("black")));
         createPageBar();
         showPage(pageIndex);
         if (oldLayers != null) {
@@ -171,10 +159,12 @@ class UiWidgetsScene implements SandboxScene {
     private static final class Backdrop extends Widget {
         private final int columns;
         private final int rows;
+        private final int fillRgba;
 
-        Backdrop(int columns, int rows) {
+        Backdrop(int columns, int rows, int fillRgba) {
             this.columns = columns;
             this.rows = rows;
+            this.fillRgba = fillRgba;
             setSize(columns, rows);
         }
 
@@ -195,7 +185,7 @@ class UiWidgetsScene implements SandboxScene {
 
         @Override
         protected void drawContent(UiSurface target, int left, int top) {
-            target.fillBackground(left, top, columns, rows, BLACK);
+            target.fillBackground(left, top, columns, rows, fillRgba);
         }
     }
 
