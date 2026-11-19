@@ -20,6 +20,7 @@ import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 class MenusPage implements UiPage {
     static final int BAR_X = 4;
     static final int BAR_Y = 2;
+    private static final int WIDE_LAYOUT_MIN_COLUMNS = 80;
     private static final int BAR_WIDTH = 40;
     private static final int BUTTON_Y = 5;
     private static final int CAPTION_Y = 10;
@@ -64,12 +65,12 @@ class MenusPage implements UiPage {
     @Override
     public Widget createContent(int columns, int rows) {
         if (content == null) {
-            content = buildContent();
+            content = buildContent(columns >= WIDE_LAYOUT_MIN_COLUMNS);
         }
         return content;
     }
 
-    private WidgetGroup buildContent() {
+    private WidgetGroup buildContent(boolean wide) {
         WidgetGroup group = new WidgetGroup();
         Label lastAction = new Label("Last action: none", CAPTION);
         lastAction.setPosition(BAR_X, LAST_ACTION_Y);
@@ -80,11 +81,20 @@ class MenusPage implements UiPage {
                 CAPTION_Y));
         group.addChild(createCaption("Alt+letter opens a menu; Alt+F cycles File and Format",
                 CAPTION_Y + 1));
-        group.addChild(createCaption(
-                "In a menu: letters, arrows, and Enter work; Z cycles the zoom items",
-                CAPTION_Y + 2));
-        group.addChild(createUnderneathButton(lastAction));
+        addMenuKeysCaption(group, wide);
+        group.addChild(createUnderneathButton(lastAction, wide));
         return group;
+    }
+
+    private static void addMenuKeysCaption(WidgetGroup group, boolean wide) {
+        if (wide) {
+            group.addChild(createCaption(
+                    "In a menu: letters, arrows, and Enter work; Z cycles the zoom items",
+                    CAPTION_Y + 2));
+            return;
+        }
+        group.addChild(createCaption("In a menu: letters, arrows, and Enter work;", CAPTION_Y + 2));
+        group.addChild(createCaption("Z cycles the zoom items", CAPTION_Y + 3));
     }
 
     private MenuBar createBar(Label lastAction) {
@@ -121,9 +131,11 @@ class MenusPage implements UiPage {
         return caption;
     }
 
-    private static TextButton createUnderneathButton(Label lastAction) {
-        TextButton button = new TextButton(
-                "Separate button: a press that only closes a menu must not click it", LOOK);
+    private static TextButton createUnderneathButton(Label lastAction, boolean wide) {
+        String text = wide
+                ? "Separate button: a press that only closes a menu must not click it"
+                : "Separate button: a closing press must not click it";
+        TextButton button = new TextButton(text, LOOK);
         button.setPosition(BAR_X, BUTTON_Y);
         button.addClickListener(clicked -> showAction(lastAction, "button underneath"));
         return button;

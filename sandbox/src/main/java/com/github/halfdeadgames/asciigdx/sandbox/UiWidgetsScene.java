@@ -28,8 +28,9 @@ import java.util.Optional;
  * tall menu bar on the first row below the performance overlay.
  */
 class UiWidgetsScene implements SandboxScene {
-    private static final int COLUMNS = 120;
-    private static final int ROWS = 67;
+    private static final int INITIAL_COLUMNS = 120;
+    private static final int INITIAL_ROWS = 67;
+    private static final int MIN_ROWS_PER_SHORT_SIDE = 67;
     private static final int RESERVED_ROWS = 2;
     private static final int MAX_KEY_PAGES = 9;
     private static final int BLACK = 0x000000FF;
@@ -47,41 +48,57 @@ class UiWidgetsScene implements SandboxScene {
             LabelStyle.of(UiFont.TALL, BLACK, GOLD),
             LabelStyle.of(UiFont.TALL, WHITE, BAR_BLUE));
 
-    private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
-    private final UiRoot uiRoot = UiRoot.of(surface);
-    private final HintsPage hintsPage = new HintsPage(uiRoot);
-    private final MenusPage menusPage = new MenusPage(uiRoot);
-    private final List<UiPage> pages = List.of(
-            new LabelsPage(),
-            new TablePage(),
-            new ButtonsPage(),
-            hintsPage,
-            menusPage
-    );
-    private final MenuBar pageBar = MenuBar.of(uiRoot, MenuBarStyle.of(BAR_LOOK, BAR_LOOK)
-            .withTriggerRgba(TRIGGER_PINK));
-    private final LayerStack layers = new LayerStack();
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
+    private final GlyphSource tallGlyphs;
     private final Vector2 worldPoint = new Vector2();
     private final GridPoint2 pickedCell = new GridPoint2();
+    private UiSurface surface;
+    private UiRoot uiRoot;
+    private HintsPage hintsPage;
+    private MenusPage menusPage;
+    private List<UiPage> pages;
+    private MenuBar pageBar;
+    private LayerStack layers;
     private boolean mouseSeen;
     private Widget content;
+    private int columns = INITIAL_COLUMNS;
+    private int rows = INITIAL_ROWS;
     private int pageIndex;
     private int overlayRows = RESERVED_ROWS;
 
     UiWidgetsScene(GlyphSource squareGlyphs, GlyphSource tallGlyphs) {
         this.squareGlyphs = squareGlyphs;
-        surface.addTo(layers, tallGlyphs, squareGlyphs);
+        this.tallGlyphs = tallGlyphs;
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
-                COLUMNS * squareGlyphs.getCellWidth(), ROWS * squareGlyphs.getCellHeight());
-        uiRoot.getRoot().addChild(new Backdrop());
+                columns * squareGlyphs.getCellWidth(), rows * squareGlyphs.getCellHeight());
+        buildUi();
+    }
+
+    // A UiSurface never resizes, so a new cell count means a whole new surface, root, and widgets.
+    // The glyph sources are shared and owned by the caller; LayerStack.dispose leaves them alone.
+    private void buildUi() {
+        LayerStack oldLayers = layers;
+        surface = UiSurface.ofSize(columns, rows);
+        uiRoot = UiRoot.of(surface);
+        hintsPage = new HintsPage(uiRoot);
+        menusPage = new MenusPage(uiRoot);
+        pages = List.of(new LabelsPage(), new TablePage(), new ButtonsPage(), hintsPage, menusPage);
+        pageBar = MenuBar.of(uiRoot, MenuBarStyle.of(BAR_LOOK, BAR_LOOK)
+                .withTriggerRgba(TRIGGER_PINK));
+        layers = new LayerStack();
+        content = null;
+        surface.addTo(layers, tallGlyphs, squareGlyphs);
+        uiRoot.getRoot().addChild(new Backdrop(columns, rows));
         createPageBar();
-        showPage(0);
+        showPage(pageIndex);
+        if (oldLayers != null) {
+            oldLayers.dispose();
+        }
     }
 
     private void createPageBar() {
-        pageBar.setSize(COLUMNS, 0);
+        pageBar.setSize(columns, 0);
         pageBar.setPosition(0, overlayRows);
         Menu pagesMenu = pageBar.addMenu("Pages", 'P');
         for (int i = 0; i < pages.size(); i++) {
@@ -100,7 +117,7 @@ class UiWidgetsScene implements SandboxScene {
             uiRoot.getRoot().removeChild(content);
         }
         int contentTop = overlayRows + RESERVED_ROWS;
-        content = pages.get(pageIndex).createContent(COLUMNS, ROWS - contentTop);
+        content = pages.get(pageIndex).createContent(columns, rows - contentTop);
         content.setPosition(0, contentTop);
         uiRoot.getRoot().addChild(content);
         uiRoot.draw();
@@ -152,8 +169,13 @@ class UiWidgetsScene implements SandboxScene {
 
     /** Black fill under everything; lets no pointer hit through it. */
     private static final class Backdrop extends Widget {
-        Backdrop() {
-            setSize(COLUMNS, ROWS);
+        private final int columns;
+        private final int rows;
+
+        Backdrop(int columns, int rows) {
+            this.columns = columns;
+            this.rows = rows;
+            setSize(columns, rows);
         }
 
         @Override
@@ -163,17 +185,17 @@ class UiWidgetsScene implements SandboxScene {
 
         @Override
         public int getPreferredWidth() {
-            return COLUMNS;
+            return columns;
         }
 
         @Override
         public int getPreferredHeight() {
-            return ROWS;
+            return rows;
         }
 
         @Override
         protected void drawContent(UiSurface target, int left, int top) {
-            target.fillBackground(left, top, COLUMNS, ROWS, BLACK);
+            target.fillBackground(left, top, columns, rows, BLACK);
         }
     }
 
@@ -264,18 +286,40 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        int rowsCovered = rowsCoveredByPerfOverlay();
-        if (rowsCovered == overlayRows) {
+        boolean minimized = width <= 0 || height <= 0;
+        if (minimized) {
             return;
         }
-        overlayRows = rowsCovered;
-        moveBelowOverlay();
+        int integerScale = integerScaleFor(width, height);
+        int cellWidthInPixels = squareGlyphs.getCellWidth() * integerScale;
+        int cellHeightInPixels = squareGlyphs.getCellHeight() * integerScale;
+        int newColumns = Math.max(1, width / cellWidthInPixels);
+        int newRows = Math.max(1, height / cellHeightInPixels);
+        int newOverlayRows = rowsCoveredByPerfOverlay(integerScale);
+        boolean overlayMoved = newOverlayRows != overlayRows;
+        overlayRows = newOverlayRows;
+        viewport.setWorldSize(newColumns * squareGlyphs.getCellWidth(),
+                newRows * squareGlyphs.getCellHeight());
+        viewport.update(width, height, true);
+        if (newColumns != columns || newRows != rows) {
+            columns = newColumns;
+            rows = newRows;
+            buildUi();
+            return;
+        }
+        if (overlayMoved) {
+            moveBelowOverlay();
+        }
     }
 
-    private int rowsCoveredByPerfOverlay() {
-        int integerScale =
-                Math.max(1, Math.round(viewport.getScreenHeight() / viewport.getWorldHeight()));
+    // Grows the cells once the short side holds several 67-row screens, so 1080p stays at 1x.
+    private int integerScaleFor(int width, int height) {
+        int shortSide = Math.min(width, height);
+        return Math.max(1,
+                shortSide / (MIN_ROWS_PER_SHORT_SIDE * squareGlyphs.getCellHeight()));
+    }
+
+    private int rowsCoveredByPerfOverlay(int integerScale) {
         int cellHeightInPixels = squareGlyphs.getCellHeight() * integerScale;
         int overlayHeightInPixels = PerfOverlay.heightInScreenPixels(squareGlyphs);
         int rowsCovered = (overlayHeightInPixels + cellHeightInPixels - 1) / cellHeightInPixels;
@@ -335,6 +379,6 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public int cellCount() {
-        return COLUMNS * ROWS;
+        return columns * rows;
     }
 }
