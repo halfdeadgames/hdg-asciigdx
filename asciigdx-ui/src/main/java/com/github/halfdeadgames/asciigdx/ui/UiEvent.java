@@ -1,0 +1,190 @@
+package com.github.halfdeadgames.asciigdx.ui;
+
+/**
+ * One input event, as seen by a {@link UiListener}. A {@link UiRoot} owns a single instance and
+ * refills it for every event, so listeners must read what they need during
+ * {@link UiListener#handle} and must not keep the reference afterward. The same instance is
+ * also used for {@link UiEventType#POINTER_ENTERED} and {@link UiEventType#POINTER_EXITED}.
+ *
+ * <p>While an event is delivered, calling an input method of the {@link UiRoot} throws
+ * {@link IllegalStateException}; defer such work to the next frame with a
+ * {@link UiUpdateListener}.
+ *
+ * <p>Fields that do not apply to the event's type hold neutral values: {@code -1} for the
+ * pointer (key events only), button, and keycode, {@code 0} for the character and for all four coordinates. Coordinates are
+ * UI cells, columns growing right and rows growing down. Key events and
+ * {@link UiEventType#POINTER_CANCELLED} carry no position.
+ */
+public final class UiEvent {
+
+    static final int NOT_APPLICABLE = -1;
+
+    private UiEventType type = UiEventType.POINTER_MOVED;
+    private Widget target;
+    private Widget currentWidget;
+    private int surfaceColumn;
+    private int surfaceRow;
+    private int relativeColumn;
+    private int relativeRow;
+    private int pointer = NOT_APPLICABLE;
+    private int button = NOT_APPLICABLE;
+    private int keycode = NOT_APPLICABLE;
+    private char character;
+
+    UiEvent() {
+    }
+
+    /**
+     * Returns the kind of event.
+     *
+     * @return the type, never {@code null}
+     */
+    public UiEventType getType() {
+        return type;
+    }
+
+    /**
+     * Returns the widget the event was aimed at: the deepest widget under the pointer, the widget
+     * that captured the pointer on press, or the keyboard-focused widget. For
+     * {@link UiEventType#POINTER_EXITED} it is the widget the pointer left, and for
+     * {@link UiEventType#POINTER_ENTERED} the deepest widget the pointer came onto.
+     *
+     * @return the target, never {@code null} while a listener runs
+     */
+    public Widget getTarget() {
+        return target;
+    }
+
+    /**
+     * Returns the widget whose listener is running: the target first, then its ancestors while the
+     * event bubbles.
+     *
+     * @return the current widget, never {@code null} while a listener runs
+     */
+    public Widget getCurrentWidget() {
+        return currentWidget;
+    }
+
+    /**
+     * Returns the pointer column relative to {@link #getCurrentWidget()}'s left edge. The value
+     * changes while the event bubbles, because the current widget changes. Negative or past the
+     * widget's width when the pointer is outside it, for example during a drag.
+     *
+     * @return the column in UI cells; 0 for key events and cancellations
+     */
+    public int getColumn() {
+        return relativeColumn;
+    }
+
+    /**
+     * Returns the pointer row relative to {@link #getCurrentWidget()}'s top edge. The value
+     * changes while the event bubbles, because the current widget changes.
+     *
+     * @return the row in UI cells; 0 for key events and cancellations
+     */
+    public int getRow() {
+        return relativeRow;
+    }
+
+    /**
+     * Returns the pointer column on the surface. May lie outside the surface.
+     *
+     * @return the column in UI cells; 0 for key events and cancellations
+     */
+    public int getSurfaceColumn() {
+        return surfaceColumn;
+    }
+
+    /**
+     * Returns the pointer row on the surface. May lie outside the surface.
+     *
+     * @return the row in UI cells; 0 for key events and cancellations
+     */
+    public int getSurfaceRow() {
+        return surfaceRow;
+    }
+
+    /**
+     * Returns the pointer index, 0 for the mouse or the first finger.
+     *
+     * @return the pointer; 0 for {@link UiEventType#POINTER_MOVED}, since hover is driven by
+     *         pointer 0; -1 for key events
+     */
+    public int getPointer() {
+        return pointer;
+    }
+
+    /**
+     * Returns the pointer button, 0 for the primary button.
+     *
+     * @return the button for {@link UiEventType#POINTER_DOWN} and {@link UiEventType#POINTER_UP};
+     *         -1 for every other type
+     */
+    public int getButton() {
+        return button;
+    }
+
+    /**
+     * Returns the key code, as in {@code com.badlogic.gdx.Input.Keys}.
+     *
+     * @return the key code for {@link UiEventType#KEY_DOWN} and {@link UiEventType#KEY_UP}; -1 for
+     *         every other type
+     */
+    public int getKeycode() {
+        return keycode;
+    }
+
+    /**
+     * Returns the typed character.
+     *
+     * @return the character for {@link UiEventType#KEY_TYPED}; {@code '\0'} for every other type
+     */
+    public char getCharacter() {
+        return character;
+    }
+
+    void setPointer(UiEventType type, Widget target, int surfaceColumn, int surfaceRow,
+            int pointer, int button) {
+        reset(type, target);
+        this.surfaceColumn = surfaceColumn;
+        this.surfaceRow = surfaceRow;
+        this.pointer = pointer;
+        this.button = button;
+    }
+
+    void setCancelled(Widget target, int pointer) {
+        reset(UiEventType.POINTER_CANCELLED, target);
+        this.pointer = pointer;
+    }
+
+    void setKey(UiEventType type, Widget target, int keycode, char character) {
+        reset(type, target);
+        this.keycode = keycode;
+        this.character = character;
+    }
+
+    void setCurrent(Widget currentWidget, int relativeColumn, int relativeRow) {
+        this.currentWidget = currentWidget;
+        this.relativeColumn = relativeColumn;
+        this.relativeRow = relativeRow;
+    }
+
+    boolean hasPosition() {
+        return type != UiEventType.POINTER_CANCELLED && type != UiEventType.KEY_DOWN
+                && type != UiEventType.KEY_UP && type != UiEventType.KEY_TYPED;
+    }
+
+    private void reset(UiEventType type, Widget target) {
+        this.type = type;
+        this.target = target;
+        this.currentWidget = target;
+        surfaceColumn = 0;
+        surfaceRow = 0;
+        relativeColumn = 0;
+        relativeRow = 0;
+        pointer = NOT_APPLICABLE;
+        button = NOT_APPLICABLE;
+        keycode = NOT_APPLICABLE;
+        character = 0;
+    }
+}

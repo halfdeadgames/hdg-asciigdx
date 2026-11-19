@@ -10,7 +10,31 @@
  * relative to the top-left corner of the target surface. Widgets draw only when {@code draw} is
  * called, from the render thread, and do not allocate while drawing.
  *
- * <p>Example:
+ * <p>Input: a {@link com.github.halfdeadgames.asciigdx.ui.UiRoot} owns the widget tree of a
+ * surface, redraws it when something changed, and routes pointer and key events to widgets, with
+ * hover, press capture, and keyboard focus. {@link com.github.halfdeadgames.asciigdx.ui.UiInput}
+ * feeds it from libGDX input, and {@link com.github.halfdeadgames.asciigdx.ui.TextButton} is the
+ * first interactive widget.
+ *
+ * <p>Example with a button:
+ * <pre>{@code
+ * UiSurface surface = UiSurface.ofSize(40, 12);
+ * surface.addTo(layers, tallGlyphs, squareGlyphs);
+ * UiRoot ui = UiRoot.of(surface);
+ * LabelStyle look = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x303030FF);
+ * TextButton start = new TextButton("Start", ButtonStyle.of(look));
+ * start.setPosition(2, 2);
+ * start.addClickListener(button -> startGame());
+ * ui.getRoot().addChild(start);
+ * // a CellPicker turns screen pixels into cells; the UI goes first in the multiplexer
+ * Gdx.input.setInputProcessor(
+ *         new InputMultiplexer(UiInput.forRoot(ui, picker), gameInput));
+ * // every frame, before drawing the layers:
+ * ui.update(deltaSeconds);
+ * ui.draw();
+ * }</pre>
+ *
+ * <p>Example without input:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);
  * surface.addTo(layers, tallGlyphs, squareGlyphs);

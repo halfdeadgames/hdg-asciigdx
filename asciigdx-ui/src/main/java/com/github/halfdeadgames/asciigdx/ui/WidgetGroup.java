@@ -113,6 +113,33 @@ public class WidgetGroup extends Widget {
         return tallest;
     }
 
+    /**
+     * Returns the deepest widget at a point. Children are checked topmost first (the last added,
+     * which draws last), each one even if the point lies outside this group's bounds, since
+     * children are not clipped. If no child is hit, the group itself is returned when the point
+     * lies in its bounds.
+     *
+     * @param column column in this group's local coordinates, in UI cells; any value
+     * @param row row in this group's local coordinates, in UI cells; any value
+     * @return the deepest widget hit, or {@code null} when nothing is
+     */
+    @Override
+    public Widget hit(int column, int row) {
+        Widget childHit = hitChildren(column, row);
+        return childHit != null ? childHit : super.hit(column, row);
+    }
+
+    Widget hitChildren(int column, int row) {
+        for (int i = children.size() - 1; i >= 0; i--) {
+            Widget child = children.get(i);
+            Widget childHit = child.hit(column - child.getX(), row - child.getY());
+            if (childHit != null) {
+                return childHit;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected void drawContent(UiSurface target, int left, int top) {
         for (int i = 0; i < children.size(); i++) {

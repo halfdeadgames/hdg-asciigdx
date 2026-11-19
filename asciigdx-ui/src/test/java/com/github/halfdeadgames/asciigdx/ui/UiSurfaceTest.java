@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -243,5 +244,41 @@ class UiSurfaceTest {
                 () -> surface.addTo(null, new SizedSource(16, 32), square16));
         // A null stack is rejected first; a real stack needs GL, so size validation is covered
         // through requireFontPair, which addTo calls before it adds a layer.
+    }
+
+    @Test
+    void copyFromCopiesBothGridsCellForCell() {
+        UiSurface source = UiSurface.ofSize(6, 8);
+        source.fillBackground(0, 0, 6, 8, BLUE);
+        source.writeGlyph(UiFont.SQUARE, 1, 1, 'a', WHITE);
+        source.writeGlyph(UiFont.TALL, 2, 2, 'T', WHITE);
+
+        surface.copyFrom(source);
+
+        assertEquals(BLUE, square.getBackground(5, 7));
+        assertEquals('a', square.getCodePoint(1, 1));
+        assertEquals(WHITE, square.getForeground(1, 1));
+        assertEquals('T', tall.getCodePoint(2, 1));
+    }
+
+    @Test
+    void copyFromLeavesEqualCellsClean() {
+        UiSurface source = UiSurface.ofSize(6, 8);
+        surface.copyFrom(source);
+        var tracker = square.createDirtyTracker();
+        tracker.markAllClean();
+
+        surface.copyFrom(source);
+
+        assertFalse(tracker.hasDirtyCells());
+    }
+
+    @Test
+    void copyFromRejectsOtherSizesAndNull() {
+        assertThrows(IllegalArgumentException.class,
+                () -> surface.copyFrom(UiSurface.ofSize(6, 7)));
+        assertThrows(IllegalArgumentException.class,
+                () -> surface.copyFrom(UiSurface.ofSize(5, 8)));
+        assertThrows(NullPointerException.class, () -> surface.copyFrom(null));
     }
 }

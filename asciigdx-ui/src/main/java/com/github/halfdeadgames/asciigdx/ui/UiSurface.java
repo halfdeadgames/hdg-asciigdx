@@ -223,6 +223,35 @@ public final class UiSurface {
         }
     }
 
+    /**
+     * Copies every cell of another surface into this one: code points, foreground colors, and
+     * background colors, in both grids. The copy goes through {@link TerminalGrid#set}, so a cell
+     * whose values already match stays clean for dirty tracking. Does not allocate.
+     *
+     * @param source surface to read from; must not be {@code null}; not changed
+     * @throws NullPointerException if {@code source} is {@code null}
+     * @throws IllegalArgumentException if {@code source} has other columns or rows than this
+     *         surface
+     */
+    public void copyFrom(UiSurface source) {
+        Objects.requireNonNull(source, "source");
+        if (source.columns != columns || source.rows != rows) {
+            throw new IllegalArgumentException("Source size must be " + columns + "x" + rows
+                    + ", was " + source.columns + "x" + source.rows);
+        }
+        copyGrid(source.squareGrid, squareGrid);
+        copyGrid(source.tallGrid, tallGrid);
+    }
+
+    private static void copyGrid(TerminalGrid from, TerminalGrid to) {
+        for (int y = 0; y < from.getRows(); y++) {
+            for (int x = 0; x < from.getColumns(); x++) {
+                to.set(x, y, from.getCodePoint(x, y), from.getForeground(x, y),
+                        from.getBackground(x, y));
+            }
+        }
+    }
+
     private static void requireNonNegativeSize(int width, int height) {
         if (width < 0 || height < 0) {
             throw new IllegalArgumentException(

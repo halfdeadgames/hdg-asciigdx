@@ -3,6 +3,8 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
@@ -10,6 +12,7 @@ import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiFont;
+import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.ArrayList;
@@ -31,12 +34,19 @@ class UiWidgetsScene implements SandboxScene {
 
     private final List<UiPage> pages = List.of(
             new LabelsPage(),
-            new TablePage()
+            new TablePage(),
+            new ButtonsPage()
     );
     private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
+    private final UiRoot uiRoot = UiRoot.of(surface);
+    private final List<Label> stripEntries = new ArrayList<>();
     private final LayerStack layers = new LayerStack();
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
+    private final Vector2 worldPoint = new Vector2();
+    private final GridPoint2 pickedCell = new GridPoint2();
+    private boolean mouseSeen;
+    private Widget content;
     private int pageIndex;
     private int overlayRows = RESERVED_ROWS;
 
@@ -45,34 +55,80 @@ class UiWidgetsScene implements SandboxScene {
         surface.addTo(layers, tallGlyphs, squareGlyphs);
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
                 COLUMNS * squareGlyphs.getCellWidth(), ROWS * squareGlyphs.getCellHeight());
-        redrawSurface();
+        uiRoot.getRoot().addChild(new Backdrop());
+        createStrip();
+        showPage(0);
     }
 
-    private void redrawSurface() {
-        surface.eraseGlyphs(0, 0, COLUMNS, ROWS);
-        surface.fillBackground(0, 0, COLUMNS, ROWS, BLACK);
-        drawStrip();
-        int contentTop = overlayRows + RESERVED_ROWS;
-        Widget content = pages.get(pageIndex).createContent(COLUMNS, ROWS - contentTop);
-        content.setPosition(0, contentTop);
-        content.validate();
-        content.draw(surface);
-    }
-
-    private void drawStrip() {
+    private void createStrip() {
         int column = 0;
         for (int i = 0; i < pages.size(); i++) {
             String text = (i + 1) + " " + pages.get(i).title();
-            Label entry = new Label(text, i == pageIndex ? STRIP_CURRENT : STRIP_NORMAL);
+            Label entry = new Label(text, STRIP_NORMAL);
             entry.setPosition(column, overlayRows);
-            entry.draw(surface);
+            uiRoot.getRoot().addChild(entry);
+            stripEntries.add(entry);
             column += entry.getWidth() + STRIP_GAP;
         }
     }
 
     private void showPage(int index) {
         pageIndex = index;
-        redrawSurface();
+        for (int i = 0; i < stripEntries.size(); i++) {
+            stripEntries.get(i).setStyle(i == pageIndex ? STRIP_CURRENT : STRIP_NORMAL);
+        }
+        if (content != null) {
+            uiRoot.getRoot().removeChild(content);
+        }
+        int contentTop = overlayRows + RESERVED_ROWS;
+        content = pages.get(pageIndex).createContent(COLUMNS, ROWS - contentTop);
+        content.setPosition(0, contentTop);
+        uiRoot.getRoot().addChild(content);
+        uiRoot.draw();
+    }
+
+    private void moveBelowOverlay() {
+        for (int i = 0; i < stripEntries.size(); i++) {
+            Label entry = stripEntries.get(i);
+            entry.setPosition(entry.getX(), overlayRows);
+        }
+        content.setPosition(0, overlayRows + RESERVED_ROWS);
+        uiRoot.draw();
+    }
+
+    private void pickCell(int screenX, int screenY, GridPoint2 cellOut) {
+        worldPoint.set(screenX, screenY);
+        viewport.unproject(worldPoint);
+        cellOut.x = (int) Math.floor(worldPoint.x / squareGlyphs.getCellWidth());
+        cellOut.y = (int) Math.floor(
+                (viewport.getWorldHeight() - worldPoint.y) / squareGlyphs.getCellHeight());
+    }
+
+    /** Black fill under everything; lets no pointer hit through it. */
+    private static final class Backdrop extends Widget {
+        Backdrop() {
+            setSize(COLUMNS, ROWS);
+        }
+
+        @Override
+        public Widget hit(int column, int row) {
+            return null;
+        }
+
+        @Override
+        public int getPreferredWidth() {
+            return COLUMNS;
+        }
+
+        @Override
+        public int getPreferredHeight() {
+            return ROWS;
+        }
+
+        @Override
+        protected void drawContent(UiSurface target, int left, int top) {
+            target.fillBackground(left, top, COLUMNS, ROWS, BLACK);
+        }
     }
 
     @Override
@@ -102,6 +158,9 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public boolean keyDown(int keycode) {
+        if (uiRoot.keyDown(keycode)) {
+            return true;
+        }
         int index = keycode - Input.Keys.NUM_1;
         if (index < 0 || index >= MAX_KEY_PAGES || index >= pages.size()) {
             return false;
@@ -142,7 +201,7 @@ class UiWidgetsScene implements SandboxScene {
             return;
         }
         overlayRows = rowsCovered;
-        redrawSurface();
+        moveBelowOverlay();
     }
 
     private int rowsCoveredByPerfOverlay() {
@@ -155,7 +214,39 @@ class UiWidgetsScene implements SandboxScene {
     }
 
     @Override
+    public boolean touchDown(int screenX, int screenY) {
+        pickCell(screenX, screenY, pickedCell);
+        return uiRoot.pointerDown(pickedCell.x, pickedCell.y, 0, 0);
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY) {
+        pickCell(screenX, screenY, pickedCell);
+        return uiRoot.pointerDragged(pickedCell.x, pickedCell.y, 0);
+    }
+
+    @Override
+    public boolean mouseMoved(int screenX, int screenY) {
+        mouseSeen = true;
+        pickCell(screenX, screenY, pickedCell);
+        return uiRoot.pointerMoved(pickedCell.x, pickedCell.y);
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY) {
+        pickCell(screenX, screenY, pickedCell);
+        boolean handled = uiRoot.pointerUp(pickedCell.x, pickedCell.y, 0, 0);
+        if (!mouseSeen) {
+            // Touch-only so far: end the hover once the finger lifts.
+            uiRoot.pointerMoved(-1, -1);
+        }
+        return handled;
+    }
+
+    @Override
     public void render(SpriteBatch batch, float delta) {
+        uiRoot.update(delta);
+        uiRoot.draw();
         SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);

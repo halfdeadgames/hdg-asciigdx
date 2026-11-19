@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -14,6 +15,9 @@ import java.util.Objects;
  */
 public abstract class Widget {
 
+    private static final UiListener[] NO_LISTENERS = new UiListener[0];
+
+    private UiListener[] listeners = NO_LISTENERS;
     private int x;
     private int y;
     private int width;
@@ -167,7 +171,7 @@ public abstract class Widget {
 
     /**
      * Returns whether this widget, or a descendant, changed since the last redraw. A new widget
-     * starts with this set. The UI root (UiRoot, coming in this module) clears the mark after it
+     * starts with this set. {@link UiRoot} clears the mark after it
      * redraws; {@link #draw(UiSurface)} does not clear it.
      *
      * @return {@code true} when a redraw is needed
@@ -293,6 +297,91 @@ public abstract class Widget {
      *         past the surface
      */
     protected abstract void drawContent(UiSurface target, int left, int top);
+
+    /**
+     * Returns the deepest widget at a point. A plain widget answers itself when the point lies in
+     * its bounds and {@code null} otherwise; {@link WidgetGroup} also checks its children.
+     * Visibility and {@link #isFocusable()} play no part.
+     *
+     * @param column column in this widget's local coordinates, where 0 is its left edge, in UI
+     *         cells; any value
+     * @param row row in this widget's local coordinates, where 0 is its top edge, in UI cells; any
+     *         value
+     * @return this widget when {@code 0 <= column < getWidth()} and {@code 0 <= row <
+     *         getHeight()}, otherwise {@code null}
+     */
+    public Widget hit(int column, int row) {
+        return isInsideBounds(column, row) ? this : null;
+    }
+
+    /**
+     * Returns whether the widget can receive keyboard focus. {@link UiRoot} gives focus on a
+     * pointer press to the deepest widget under the pointer, or its nearest ancestor, for which
+     * this returns {@code true}. The value may change at any time.
+     *
+     * @return {@code true} if the widget accepts keyboard focus; {@code false} by default
+     */
+    public boolean isFocusable() {
+        return false;
+    }
+
+    /**
+     * Adds a listener for the input events that reach this widget, either aimed at it or bubbling
+     * up from a descendant (see {@link UiListener}). Listeners run in the order they were added.
+     * Adding the same listener twice makes it run twice. Safe to call from inside a listener,
+     * including one of this widget: a dispatch that is already running uses the listeners that
+     * existed when it reached this widget, and the change applies from the next dispatch on.
+     *
+     * @param listener listener to add; must not be {@code null}
+     * @throws NullPointerException if {@code listener} is {@code null}
+     */
+    public void addListener(UiListener listener) {
+        Objects.requireNonNull(listener, "listener");
+        UiListener[] grown = Arrays.copyOf(listeners, listeners.length + 1);
+        grown[listeners.length] = listener;
+        listeners = grown;
+    }
+
+    /**
+     * Removes the first occurrence of a listener. Does nothing if it was not added. The same
+     * dispatch rules as in {@link #addListener(UiListener)} apply.
+     *
+     * @param listener listener to remove; must not be {@code null}
+     * @throws NullPointerException if {@code listener} is {@code null}
+     */
+    public void removeListener(UiListener listener) {
+        Objects.requireNonNull(listener, "listener");
+        int index = Arrays.asList(listeners).indexOf(listener);
+        if (index < 0) {
+            return;
+        }
+        UiListener[] shrunk = new UiListener[listeners.length - 1];
+        System.arraycopy(listeners, 0, shrunk, 0, index);
+        System.arraycopy(listeners, index + 1, shrunk, index, shrunk.length - index);
+        listeners = shrunk.length == 0 ? NO_LISTENERS : shrunk;
+    }
+
+    boolean isInsideBounds(int column, int row) {
+        return column >= 0 && column < width && row >= 0 && row < height;
+    }
+
+    /** Hook for a widget's own reaction to an event, run before its listeners. */
+    boolean handleEvent(UiEvent event) {
+        return false;
+    }
+
+    final boolean dispatch(UiEvent event) {
+        if (handleEvent(event)) {
+            return true;
+        }
+        UiListener[] snapshot = listeners;
+        for (int i = 0; i < snapshot.length; i++) {
+            if (snapshot[i].handle(event)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     void validateChildren() {
     }
