@@ -117,20 +117,23 @@ function ConvertTo-ComparisonSummary {
                     ForEach-Object { $_[$lineIndex].Measures[$measure] }))
             $new = Measure-RunStatistic ([double[]]@($NewRun |
                     ForEach-Object { $_[$lineIndex].Measures[$measure] }))
-            $differencePercent = 0
             if ($old.Median -gt 0) {
                 $differencePercent = ($new.Median - $old.Median) / $old.Median * 100
-            }
-            $noisePercent = [math]::Max($old.SpreadPercent, $new.SpreadPercent)
-            $verdict = 'within noise'
-            if ([math]::Abs($differencePercent) -gt $noisePercent) {
-                $verdict = 'larger than noise'
+                $differenceText = '{0}%' -f (Format-Number $differencePercent)
+                $noisePercent = [math]::Max($old.SpreadPercent, $new.SpreadPercent)
+                $verdict = 'within noise'
+                if ([math]::Abs($differencePercent) -gt $noisePercent) {
+                    $verdict = 'larger than noise'
+                }
+            } else {
+                $differenceText = 'n/a'
+                $verdict = 'old median is 0, compare the values directly'
             }
             if ($measure -ne 'cpuMs') { $verdict = 'reference only' }
-            '  {0}: old={1} (spread {2}%) new={3} (spread {4}%) difference={5}% ({6})' -f
+            '  {0}: old={1} (spread {2}%) new={3} (spread {4}%) difference={5} ({6})' -f
                     $measure, (Format-Number $old.Median), (Format-Number $old.SpreadPercent),
                     (Format-Number $new.Median), (Format-Number $new.SpreadPercent),
-                    (Format-Number $differencePercent), $verdict
+                    $differenceText, $verdict
         }
     }
 }
