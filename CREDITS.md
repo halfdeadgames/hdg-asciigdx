@@ -28,6 +28,8 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 | Data | Author | License | Used for |
 |---|---|---|---|
 | [Unicode Character Database](https://www.unicode.org/ucd/) | Unicode, Inc. | [Unicode License v3](https://www.unicode.org/license.txt) | Character names newer than the JDK's data, in the glyph workbench (`glyph-workbench/src/main/resources/unicode-names.txt`; the license text is kept in that file) |
+| [Hyphenation patterns for American English](https://github.com/hyphenation/tex-hyphen) (`hyph-en-us.tex`) | Gerard D.C. Kuiken (copyright 1990, 2004, 2005) | "Copying and distribution of this file, with or without modification, are permitted in any medium without royalty provided the copyright notice and this notice are preserved." | Word hyphenation in `Hyphenator`. Shipped unchanged in the core jar (`core/src/main/resources/com/github/halfdeadgames/asciigdx/text/hyph-en-us.tex`) |
+| [Moby Hyphenation List](https://www.gutenberg.org/ebooks/3204) | Grady Ward | Public domain, via Project Gutenberg | Test data only, never in the release jar. Measures where `Hyphenator` breaks words differently from a dictionary. A sample lives in `core/src/test/resources/com/github/halfdeadgames/asciigdx/text/moby-hyphenation-sample.txt` |
 
 ## Algorithms
 
