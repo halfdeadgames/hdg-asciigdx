@@ -49,5 +49,13 @@
       "titles": "tallButton", "items": "tallButton",
       "triggerColor": "hotPink", "triggerUnderline": true
     }
+  },
+  "checkBoxes": {
+    "checkBox": { "button": "button", "unchecked": "[ ]", "checked": "[x]" },
+    "tallCheckBox": { "button": "tallButton", "unchecked": "[ ]", "checked": "[x]" }
+  },
+  "radioButtons": {
+    "radioButton": { "button": "button", "unchecked": "( )", "checked": "(*)" },
+    "tallRadioButton": { "button": "tallButton", "unchecked": "( )", "checked": "(*)" }
   }
 }

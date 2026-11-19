@@ -64,6 +64,18 @@ class DefaultSkinFileTest {
     }
 
     @Test
+    void toggleStylesReferenceTheButtonStyles() {
+        assertEquals(ToggleStyle.of(skin.getButtonStyle("button"), "[ ]", "[x]"),
+                skin.getCheckBoxStyle("checkBox"));
+        assertEquals(ToggleStyle.of(skin.getButtonStyle("tallButton"), "[ ]", "[x]"),
+                skin.getCheckBoxStyle("tallCheckBox"));
+        assertEquals(ToggleStyle.of(skin.getButtonStyle("button"), "( )", "(*)"),
+                skin.getRadioButtonStyle("radioButton"));
+        assertEquals(ToggleStyle.of(skin.getButtonStyle("tallButton"), "( )", "(*)"),
+                skin.getRadioButtonStyle("tallRadioButton"));
+    }
+
+    @Test
     void menuBarStylesMatchTheSandboxValues() {
         MenuBarStyle tallMenuBar = MenuBarStyle.of(skin.getButtonStyle("tallButton"),
                 skin.getButtonStyle("tallButton")).withTriggerRgba(HOT_PINK)

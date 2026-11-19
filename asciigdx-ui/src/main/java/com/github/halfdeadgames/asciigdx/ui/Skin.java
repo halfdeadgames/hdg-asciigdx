@@ -18,10 +18,11 @@ import java.util.Objects;
  * }</pre>
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
- * {@code labels}, {@code buttons}, and {@code menuBars}; all are optional, and any other
- * top-level key is an error. The sections are read in that order, and a section can only refer
- * to names defined in an earlier one, so references never form a cycle. Inside a section every
- * name is unique. Each section is an object that maps a style name to its value.
+ * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, and
+ * {@code radioButtons}; all are optional, and any other top-level key is an error. The sections
+ * are read in that order, and a section can only refer to names defined in an earlier one, so
+ * references never form a cycle. Inside a section every name is unique. Each section is an object
+ * that maps a style name to its value.
  *
  * <pre>{@code
  * {
@@ -47,6 +48,12 @@ import java.util.Objects;
  *       "triggerColor": "#FF40C0",
  *       "triggerUnderline": true
  *     }
+ *   },
+ *   "checkBoxes": {
+ *     "option": { "button": "action", "unchecked": "[ ]", "checked": "[x]", "gap": 1 }
+ *   },
+ *   "radioButtons": {
+ *     "choice": { "button": "action", "unchecked": "( )", "checked": "(*)" }
  *   }
  * }
  * }</pre>
@@ -74,6 +81,20 @@ import java.util.Objects;
  * and the optional boolean {@code triggerUnderline}, which defaults to {@code false}. Titles and
  * items must use the same font.
  *
+ * <p>A {@code checkBoxes} entry and a {@code radioButtons} entry have the same keys and both
+ * become a {@link ToggleStyle}, so the two kinds of style are interchangeable. The keys:
+ * <ul>
+ *   <li>{@code button}, required: the name of a button style or an inline button object. It gives
+ *       the text looks per state and the horizontal padding.
+ *   <li>{@code unchecked}, required: the mark shown while unchecked, text of at least one code
+ *       point.
+ *   <li>{@code checked}, required: the mark shown while checked, with the same number of code
+ *       points as {@code unchecked}.
+ *   <li>{@code gap}, optional: a whole number of cells, zero or greater, between the mark and the
+ *       text; defaults to {@link ToggleStyle#DEFAULT_GAP}.
+ * </ul>
+ * Example entry: {@code "option": { "button": "action", "unchecked": "[ ]", "checked": "[x]" }}.
+ *
  * <p>A missing {@code triggerColor} means the menu bar style has no trigger color, so
  * {@link MenuBarStyle#hasTriggerRgba()} returns {@code false}.
  *
@@ -94,13 +115,18 @@ public final class Skin {
     private final Map<String, LabelStyle> labelStyles;
     private final Map<String, ButtonStyle> buttonStyles;
     private final Map<String, MenuBarStyle> menuBarStyles;
+    private final Map<String, ToggleStyle> checkBoxStyles;
+    private final Map<String, ToggleStyle> radioButtonStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
-            Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles) {
+            Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
+            Map<String, ToggleStyle> checkBoxStyles, Map<String, ToggleStyle> radioButtonStyles) {
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
         this.menuBarStyles = copyOf(menuBarStyles);
+        this.checkBoxStyles = copyOf(checkBoxStyles);
+        this.radioButtonStyles = copyOf(radioButtonStyles);
     }
 
     /**
@@ -182,6 +208,32 @@ public final class Skin {
     }
 
     /**
+     * Returns the check box style with a name.
+     *
+     * @param name name in the {@code checkBoxes} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasCheckBoxStyle(String)} first.
+     */
+    public ToggleStyle getCheckBoxStyle(String name) {
+        return lookUp(checkBoxStyles, name, "check box style");
+    }
+
+    /**
+     * Returns the radio button style with a name.
+     *
+     * @param name name in the {@code radioButtons} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasRadioButtonStyle(String)} first.
+     */
+    public ToggleStyle getRadioButtonStyle(String name) {
+        return lookUp(radioButtonStyles, name, "radio button style");
+    }
+
+    /**
      * Returns the color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -229,6 +281,28 @@ public final class Skin {
     }
 
     /**
+     * Returns whether the skin defines a check box style with a name.
+     *
+     * @param name name in the {@code checkBoxes} section; must not be {@code null}
+     * @return {@code true} if {@link #getCheckBoxStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasCheckBoxStyle(String name) {
+        return contains(checkBoxStyles, name);
+    }
+
+    /**
+     * Returns whether the skin defines a radio button style with a name.
+     *
+     * @param name name in the {@code radioButtons} section; must not be {@code null}
+     * @return {@code true} if {@link #getRadioButtonStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasRadioButtonStyle(String name) {
+        return contains(radioButtonStyles, name);
+    }
+
+    /**
      * Returns whether the skin defines a color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -255,7 +329,8 @@ public final class Skin {
     public String toString() {
         return "Skin[colors=" + colors.size() + ", labelStyles=" + labelStyles.size()
                 + ", buttonStyles=" + buttonStyles.size() + ", menuBarStyles="
-                + menuBarStyles.size() + "]";
+                + menuBarStyles.size() + ", checkBoxStyles=" + checkBoxStyles.size()
+                + ", radioButtonStyles=" + radioButtonStyles.size() + "]";
     }
 
     static String describeNames(Map<String, ?> namedValues) {

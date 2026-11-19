@@ -19,7 +19,12 @@ final class SkinFileReader {
     private static final String LABELS = "labels";
     private static final String BUTTONS = "buttons";
     private static final String MENU_BARS = "menuBars";
-    private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS);
+    private static final String CHECK_BOXES = "checkBoxes";
+    private static final String RADIO_BUTTONS = "radioButtons";
+    private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
+            CHECK_BOXES, RADIO_BUTTONS);
+    private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
+            "gap");
     private static final List<String> LABEL_KEYS = List.of("font", "foreground", "background");
     private static final List<String> BUTTON_KEYS = List.of("normal", "pointerOver", "pressed",
             "disabled", "focused", "horizontalPadding");
@@ -36,6 +41,8 @@ final class SkinFileReader {
     private final Map<String, LabelStyle> labelStyles = new LinkedHashMap<>();
     private final Map<String, ButtonStyle> buttonStyles = new LinkedHashMap<>();
     private final Map<String, MenuBarStyle> menuBarStyles = new LinkedHashMap<>();
+    private final Map<String, ToggleStyle> checkBoxStyles = new LinkedHashMap<>();
+    private final Map<String, ToggleStyle> radioButtonStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
     }
@@ -48,8 +55,11 @@ final class SkinFileReader {
         reader.readSection(root, LABELS, reader.labelStyles, reader::readLabelStyle);
         reader.readSection(root, BUTTONS, reader.buttonStyles, reader::readButtonStyle);
         reader.readSection(root, MENU_BARS, reader.menuBarStyles, reader::readMenuBarStyle);
+        reader.readSection(root, CHECK_BOXES, reader.checkBoxStyles, reader::readToggleStyle);
+        reader.readSection(root, RADIO_BUTTONS, reader.radioButtonStyles,
+                reader::readToggleStyle);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
-                reader.menuBarStyles);
+                reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles);
     }
 
     private static JsonValue readRoot(String json) {
@@ -203,6 +213,49 @@ final class SkinFileReader {
             throw new SkinFileException(path + ".triggerUnderline: must be true or false");
         }
         return style.withTriggerUnderline(underline.asBoolean());
+    }
+
+    private ToggleStyle readToggleStyle(JsonValue entry, String path) {
+        requireObject(entry, path,
+                "a toggle object with the keys " + String.join(", ", TOGGLE_KEYS));
+        checkKnownKeys(entry, TOGGLE_KEYS, "key", path);
+        ButtonStyle button = readButtonReference(requireKey(entry, "button", path),
+                path + ".button");
+        String unchecked = readMark(requireKey(entry, "unchecked", path), path + ".unchecked");
+        String checked = readMark(requireKey(entry, "checked", path), path + ".checked");
+        ToggleStyle style = createToggleStyle(button, unchecked, checked, path);
+        return applyGap(style, entry, path);
+    }
+
+    private static String readMark(JsonValue value, String path) {
+        if (!value.isString() || value.asString().isEmpty()) {
+            throw new SkinFileException(path + ": must be text of at least one character");
+        }
+        return value.asString();
+    }
+
+    private static ToggleStyle createToggleStyle(ButtonStyle button, String unchecked,
+            String checked, String path) {
+        try {
+            return ToggleStyle.of(button, unchecked, checked);
+        } catch (IllegalArgumentException unequalMarks) {
+            throw new SkinFileException(path + ".checked: " + unequalMarks.getMessage());
+        }
+    }
+
+    private static ToggleStyle applyGap(ToggleStyle style, JsonValue toggle, String path) {
+        JsonValue gap = toggle.get("gap");
+        if (gap == null) {
+            return style;
+        }
+        String gapPath = path + ".gap";
+        if (!gap.isLong() || gap.asLong() > Integer.MAX_VALUE) {
+            throw new SkinFileException(gapPath + ": must be a whole number of cells");
+        }
+        if (gap.asLong() < 0) {
+            throw new SkinFileException(gapPath + ": must not be negative, was " + gap.asLong());
+        }
+        return style.withGap((int) gap.asLong());
     }
 
     private LabelStyle readOptionalLook(JsonValue button, String key, LabelStyle fallback,

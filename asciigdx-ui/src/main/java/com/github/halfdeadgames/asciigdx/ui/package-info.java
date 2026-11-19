@@ -31,6 +31,12 @@
  * close on Escape or an outside press. Its look comes from a
  * {@link com.github.halfdeadgames.asciigdx.ui.MenuBarStyle}.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.CheckBox} and
+ * {@link com.github.halfdeadgames.asciigdx.ui.RadioButton} are widgets with a checked state that
+ * report changes made by the user to a {@link com.github.halfdeadgames.asciigdx.ui.ChangeListener}.
+ * A {@link com.github.halfdeadgames.asciigdx.ui.ButtonGroup} keeps at most one of its radio
+ * buttons checked. Their look comes from a {@link com.github.halfdeadgames.asciigdx.ui.ToggleStyle}.
+ *
  * <p>Example with a button:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);
