@@ -320,6 +320,7 @@ final class PaintDerive {
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             messages.nextAction();
             flow.cancel();
+            messages.ok("Replace canceled: pick another source");
         }
     }
 
