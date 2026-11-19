@@ -30,7 +30,8 @@ class UiWidgetsScene implements SandboxScene {
     private static final LabelStyle STRIP_CURRENT = LabelStyle.of(UiFont.SQUARE, BLACK, GOLD);
 
     private final List<UiPage> pages = List.of(
-            new LabelsPage()
+            new LabelsPage(),
+            new TablePage()
     );
     private final UiSurface surface = UiSurface.ofSize(COLUMNS, ROWS);
     private final LayerStack layers = new LayerStack();
