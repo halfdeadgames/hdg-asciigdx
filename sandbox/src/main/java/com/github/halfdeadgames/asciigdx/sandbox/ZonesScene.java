@@ -46,6 +46,11 @@ class ZonesScene extends GridScene {
     private static final float CAPPED_DELTA = 0.1f;
     private static final float BUTTON_STRIP_START = 0.75f;
     private static final int FULL_SCREEN_SEED = 7;
+    private static final int SPINNER_COLUMN = 17;
+    private static final int SPINNER_ROW = 20;
+    private static final int SPINNER_COLUMNS = 6;
+    private static final int SPINNER_ROWS = 2;
+    private static final float SPINNER_PERIOD_SECONDS = 0.8f;
 
     private final GlyphSource squareGlyphs;
     private final GlyphSource tallGlyphs;
@@ -56,6 +61,7 @@ class ZonesScene extends GridScene {
     private final EffectZone spellZone;
     private final EffectZone captionZone;
     private final EffectZone fullScreenZone;
+    private final EffectZone spinnerZone;
     private final StringBuilder status = new StringBuilder();
     private final Vector2 touchPoint = new Vector2();
     private CircleShape spellShape;
@@ -88,6 +94,11 @@ class ZonesScene extends GridScene {
         fullScreenZone = new EffectZone(
                 RectangleShape.forSquareCells(0, 0, COLUMNS, ROWS, ShapeFill.FILLED),
                 CellEffects.wave(0.2f, 1f, Phase.scattered(FULL_SCREEN_SEED)));
+        spinnerZone = new EffectZone(
+                RectangleShape.forSquareCells(SPINNER_COLUMN, SPINNER_ROW, SPINNER_COLUMNS,
+                        SPINNER_ROWS, ShapeFill.FILLED),
+                CellEffects.glyphCycle(SPINNER_PERIOD_SECONDS, Phase.alongColumns(SPINNER_COLUMNS),
+                        '|', '/', '-', '\\'));
         redrawBackdrop();
         pinClockIfRequested(zonesTimeSetting);
         applyStartOptions(zonesStartSetting);
@@ -187,6 +198,7 @@ class ZonesScene extends GridScene {
         }
         spellZone.apply(layer, time);
         captionZone.apply(layer, time);
+        spinnerZone.apply(layer, time);
     }
 
     private void moveSpellFromArrowKeys(float delta) {

@@ -20,6 +20,15 @@ final class CycleMath {
         return (float) cycles - phase.getCyclesAt(where);
     }
 
+    /**
+     * Index of the step a cycle position falls in when one cycle is split into {@code stepCount}
+     * equal steps. Positions outside 0..1, such as negative ones from a phase, wrap around.
+     */
+    static int stepIndex(float cyclePosition, int stepCount) {
+        long step = (long) Math.floor((double) cyclePosition * stepCount);
+        return Math.floorMod(step, stepCount);
+    }
+
     /** Sine of a full turn per cycle, from -1 to 1. */
     static float sine(float cyclePosition) {
         return (float) Math.sin(TWO_PI * cyclePosition);

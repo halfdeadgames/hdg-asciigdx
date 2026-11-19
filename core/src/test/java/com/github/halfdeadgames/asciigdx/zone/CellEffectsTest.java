@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.zone;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -287,6 +288,109 @@ class CellEffectsTest {
     }
 
     @Test
+    void glyphCycleShowsEachGlyphForAnEqualShareOfThePeriod() {
+        CellEffect cycle = CellEffects.glyphCycle(4f, Phase.sync(), 'a', 'b', 'c', 'd');
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, where, 0f);
+        assertEquals('a', handle.getCodePoint());
+        cycle.apply(handle, where, 1.5f);
+        assertEquals('b', handle.getCodePoint());
+        cycle.apply(handle, where, 2.5f);
+        assertEquals('c', handle.getCodePoint());
+        cycle.apply(handle, where, 3.5f);
+        assertEquals('d', handle.getCodePoint());
+        cycle.apply(handle, where, 4.5f);
+        assertEquals('a', handle.getCodePoint());
+    }
+
+    @Test
+    void glyphCycleSwitchesExactlyAtKOverNOfThePeriod() {
+        CellEffect cycle = CellEffects.glyphCycle(2f, Phase.sync(), 'a', 'b');
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, where, 1f);
+
+        assertEquals('b', handle.getCodePoint());
+    }
+
+    @Test
+    void glyphCycleWrapsWhenThePhasePushesThePositionNegative() {
+        CellEffect cycle = CellEffects.glyphCycle(4f, Phase.alongColumns(4f), 'a', 'b', 'c', 'd');
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, tallCellAt(0, 0, 1, 0f), 0f);
+
+        assertEquals('d', handle.getCodePoint());
+    }
+
+    @Test
+    void glyphCycleSwitchesAtBoundariesThatFloatsCannotRepresentExactly() {
+        CellHandle thirds = freshHandle(0, 0);
+        CellHandle quarters = freshHandle(1, 0);
+
+        CellEffects.glyphCycle(3f, Phase.sync(), 'a', 'b', 'c').apply(thirds, where, 1f);
+        CellEffects.glyphCycle(0.8f, Phase.sync(), 'a', 'b', 'c', 'd')
+                .apply(quarters, where, 0.2f);
+
+        assertEquals('b', thirds.getCodePoint());
+        assertEquals('b', quarters.getCodePoint());
+    }
+
+    @Test
+    void glyphCycleWrapsToTheFirstGlyphJustBelowThePeriod() {
+        CellEffect cycle = CellEffects.glyphCycle(1f, Phase.sync(), 'a', 'b', 'c', 'd');
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, where, 0.9999999f);
+        assertEquals('d', handle.getCodePoint());
+        cycle.apply(handle, where, 1f);
+        assertEquals('a', handle.getCodePoint());
+    }
+
+    @Test
+    void glyphCycleLeavesTheCellUntouchedForNonFiniteTime() {
+        CellEffect cycle = CellEffects.glyphCycle(1f, Phase.sync(), 'a', 'b');
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, where, Float.NaN);
+        cycle.apply(handle, where, Float.POSITIVE_INFINITY);
+
+        assertFalse(handle.hasCodePoint());
+    }
+
+    @Test
+    void stepIndexStaysInRangeForHugePositions() {
+        assertEquals(0, CycleMath.stepIndex(-1e12f, 4));
+        assertEquals(0, CycleMath.stepIndex(1e10f, 3));
+        for (float position : new float[] {1e30f, -1e30f, Float.MAX_VALUE, -Float.MAX_VALUE}) {
+            int index = CycleMath.stepIndex(position, 5);
+            assertTrue(index >= 0 && index < 5, "index out of range for " + position);
+        }
+    }
+
+    @Test
+    void glyphCycleDoesNotLiftTheCell() {
+        CellHandle handle = freshHandle(0, 0);
+
+        CellEffects.glyphCycle(1f, Phase.sync(), 'a', 'b').apply(handle, where, 0.7f);
+
+        assertFalse(handle.isLifted());
+    }
+
+    @Test
+    void glyphCycleCopiesTheArrayAtCreation() {
+        int[] glyphs = {'a', 'b'};
+        CellEffect cycle = CellEffects.glyphCycle(2f, Phase.sync(), glyphs);
+        glyphs[0] = 'z';
+        CellHandle handle = freshHandle(0, 0);
+
+        cycle.apply(handle, where, 0f);
+
+        assertEquals('a', handle.getCodePoint());
+    }
+
+    @Test
     void combineRunsEveryEffectInOrderAndLastColorWins() {
         CellEffect combined = CellEffects.combine(
                 CellEffects.wave(1f, 4f, Phase.sync()),
@@ -369,6 +473,15 @@ class CellEffectsTest {
         assertThrows(IllegalArgumentException.class, () -> CellEffects.flash(0, 1f, 0f, sync));
         assertThrows(IllegalArgumentException.class, () -> CellEffects.rainbow(-1f, 1f, sync));
         assertThrows(IllegalArgumentException.class, () -> CellEffects.rainbow(1f, 0f, sync));
+        assertThrows(IllegalArgumentException.class, () -> CellEffects.glyphCycle(0f, sync, 'a'));
+        assertThrows(IllegalArgumentException.class, () -> CellEffects.glyphCycle(nan, sync, 'a'));
+        assertThrows(IllegalArgumentException.class,
+                () -> CellEffects.glyphCycle(infinity, sync, 'a'));
+        assertThrows(IllegalArgumentException.class, () -> CellEffects.glyphCycle(1f, sync));
+        assertThrows(IllegalArgumentException.class,
+                () -> CellEffects.glyphCycle(1f, sync, 'a', -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> CellEffects.glyphCycle(1f, sync, 0x110000));
     }
 
     @Test
@@ -379,6 +492,9 @@ class CellEffectsTest {
         assertThrows(NullPointerException.class, () -> CellEffects.spin(1f, null));
         assertThrows(NullPointerException.class, () -> CellEffects.flash(0, 1f, 1f, null));
         assertThrows(NullPointerException.class, () -> CellEffects.rainbow(1f, 1f, null));
+        assertThrows(NullPointerException.class, () -> CellEffects.glyphCycle(1f, null, 'a'));
+        assertThrows(NullPointerException.class,
+                () -> CellEffects.glyphCycle(1f, Phase.sync(), (int[]) null));
         assertThrows(NullPointerException.class, () -> CellEffects.combine((CellEffect[]) null));
         assertThrows(NullPointerException.class,
                 () -> CellEffects.combine(CellEffects.spin(1f, Phase.sync()), null));

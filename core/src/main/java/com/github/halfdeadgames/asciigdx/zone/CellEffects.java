@@ -180,6 +180,52 @@ public final class CellEffects {
     }
 
     /**
+     * Returns an effect that steps each cell through a list of glyphs, one after another, and
+     * starts over after the last. {@code periodSeconds} is the time for the whole loop through all
+     * the glyphs, so each glyph shows for {@code periodSeconds / codePoints.length} seconds. With
+     * {@link Phase#sync()} every cell shows the first glyph at time 0; a bigger phase delays a
+     * cell, so it shows an earlier glyph of the loop. It sets the temporary glyph of the cell's
+     * handle, so the zone applied last decides the glyph. It does not lift the cell, and the
+     * grid's own glyph returns once the effect stops. A code point the font lacks shows the glyph
+     * source's fallback glyph. If the time is NaN or infinite, the cell is left unchanged. The
+     * array is copied, so later changes to it have no effect.
+     *
+     * @param periodSeconds seconds for one full loop through all glyphs; finite and greater than 0
+     * @param phase offset between cells; not null
+     * @param codePoints glyphs to show in order, as Unicode code points; not null, and at least one
+     *     entry, because an empty list throws when the effect is created (setup time, not per
+     *     frame). Each must be a valid code point (0 to 0x10FFFF). Surrogate values (U+D800 to
+     *     U+DFFF) are accepted, but no font has a glyph for them, so they draw the glyph source's
+     *     fallback glyph.
+     * @return a new effect that allocates nothing when applied
+     * @throws IllegalArgumentException if {@code periodSeconds} is not finite and greater than 0,
+     *     if {@code codePoints} is empty, or if any code point is not valid
+     * @throws NullPointerException if {@code phase} or {@code codePoints} is null
+     */
+    public static CellEffect glyphCycle(float periodSeconds, Phase phase, int... codePoints) {
+        EffectArguments.requirePositive("periodSeconds", periodSeconds);
+        Objects.requireNonNull(phase, "phase");
+        Objects.requireNonNull(codePoints, "codePoints");
+        if (codePoints.length == 0) {
+            throw new IllegalArgumentException("codePoints must not be empty");
+        }
+        int[] glyphs = codePoints.clone();
+        for (int i = 0; i < glyphs.length; i++) {
+            if (!Character.isValidCodePoint(glyphs[i])) {
+                throw new IllegalArgumentException(
+                        "codePoints[" + i + "] is not a valid code point: " + glyphs[i]);
+            }
+        }
+        return (cell, where, time) -> {
+            float position = CycleMath.position(time, periodSeconds, phase, where);
+            if (Float.isNaN(position) || Float.isInfinite(position)) {
+                return;
+            }
+            cell.setCodePoint(glyphs[CycleMath.stepIndex(position, glyphs.length)]);
+        };
+    }
+
+    /**
      * Returns an effect that runs several effects on each cell, in the order given. The array is
      * copied, so later changes to it have no effect. An empty array gives an effect that does
      * nothing.
