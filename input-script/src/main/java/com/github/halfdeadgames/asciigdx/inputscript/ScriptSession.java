@@ -1,10 +1,9 @@
-package com.github.halfdeadgames.asciigdx.workbench.inputscript;
+package com.github.halfdeadgames.asciigdx.inputscript;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.github.halfdeadgames.asciigdx.workbench.ScreenshotFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,11 +12,7 @@ import java.nio.file.Path;
 /** Plays an input script into the running app and saves the captures it asks for. */
 public final class ScriptSession implements ScriptListener {
 
-    public static final String SCRIPT_PROPERTY = "workbench.script";
-    public static final String REPO_ROOT_PROPERTY = "workbench.repoRoot";
-
-    private static final String TAG = "Workbench";
-    private static final String CAPTURE_DIRECTORY = "build/captures/script";
+    private static final String TAG = "InputScript";
 
     private final Input realInput;
     private final ScriptedInput scriptedInput;
@@ -30,18 +25,14 @@ public final class ScriptSession implements ScriptListener {
     private boolean quitPending;
     private boolean realInputRestored;
 
-    public ScriptSession(String scriptPath) {
-        String repoRoot = System.getProperty(REPO_ROOT_PROPERTY);
-        if (repoRoot == null) {
-            throw new GdxRuntimeException(REPO_ROOT_PROPERTY + " is not set");
-        }
-        captureDirectory = Path.of(repoRoot, CAPTURE_DIRECTORY);
+    public ScriptSession(Path scriptFile, Path captureDirectory) {
+        this.captureDirectory = captureDirectory;
         realInput = Gdx.input;
         ScriptedInputState state = new ScriptedInputState();
         scriptedInput = new ScriptedInput(realInput, state);
         player =
                 new InputScriptPlayer(
-                        InputScriptParser.parse(readScript(scriptPath)),
+                        InputScriptParser.parse(readScript(scriptFile)),
                         state,
                         this,
                         scriptedInput::getInputProcessor);
@@ -80,12 +71,12 @@ public final class ScriptSession implements ScriptListener {
         quitPending = true;
     }
 
-    private static String readScript(String scriptPath) {
+    private static String readScript(Path scriptFile) {
         try {
-            return Files.readString(Path.of(scriptPath), StandardCharsets.UTF_8);
+            return Files.readString(scriptFile, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new GdxRuntimeException(
-                    "Cannot read script " + scriptPath + ": " + e.getMessage(), e);
+                    "Cannot read script " + scriptFile + ": " + e.getMessage(), e);
         }
     }
 

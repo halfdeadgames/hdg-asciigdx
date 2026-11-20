@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.workbench;
 
 import com.badlogic.gdx.Gdx;
+import com.github.halfdeadgames.asciigdx.inputscript.ScreenshotFile;
 import com.github.halfdeadgames.asciigdx.workbench.preview.PreviewTabs;
 
 /**

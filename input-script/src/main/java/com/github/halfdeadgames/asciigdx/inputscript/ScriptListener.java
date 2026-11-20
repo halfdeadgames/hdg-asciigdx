@@ -1,4 +1,4 @@
-package com.github.halfdeadgames.asciigdx.workbench.inputscript;
+package com.github.halfdeadgames.asciigdx.inputscript;
 
 interface ScriptListener {
 

@@ -6,7 +6,7 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.github.halfdeadgames.asciigdx.workbench.FontDiscovery.FontChoice;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.CellSize;
 import com.github.halfdeadgames.asciigdx.workbench.fontdata.FontDataException;
-import com.github.halfdeadgames.asciigdx.workbench.inputscript.ScriptSession;
+import com.github.halfdeadgames.asciigdx.inputscript.ScriptSession;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.FirstGlyphPlan;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.FirstGlyphScreen;
 import com.github.halfdeadgames.asciigdx.workbench.newitems.NewFontScreen;
@@ -46,9 +46,9 @@ final class WorkbenchApp extends ApplicationAdapter {
 
     @Override
     public void create() {
-        String scriptPath = System.getProperty(ScriptSession.SCRIPT_PROPERTY);
+        String scriptPath = System.getProperty(ScriptProperties.SCRIPT);
         if (scriptPath != null) {
-            scriptSession = new ScriptSession(scriptPath);
+            scriptSession = new ScriptSession(Path.of(scriptPath), scriptCaptureDirectory());
         }
         if ("paint".equals(mode)) {
             switchTo(paintScreen(Gdx.app::exit, System.getProperty("workbench.fontDir"),
@@ -60,6 +60,14 @@ final class WorkbenchApp extends ApplicationAdapter {
         } else {
             switchTo(fontListScreen(""));
         }
+    }
+
+    private static Path scriptCaptureDirectory() {
+        String repoRoot = System.getProperty(ScriptProperties.REPO_ROOT);
+        if (repoRoot == null) {
+            throw new GdxRuntimeException(ScriptProperties.REPO_ROOT + " is not set");
+        }
+        return Path.of(repoRoot, "build/captures/script");
     }
 
     // The property is always width x height, like 16x16.

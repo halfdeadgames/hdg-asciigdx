@@ -33,6 +33,7 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
   implementation project(':sandbox')
+  implementation project(':input-script')
   testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
   testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
@@ -71,6 +72,16 @@ run {
   if (project.hasProperty('hover')) {
     doFirst {
       systemProperty 'asciigdx.hover', project.property('hover')
+    }
+  }
+  // Read from the command line: project.property('script') clashes with Project.script().
+  def scriptPath = gradle.startParameter.projectProperties['script']
+  if (scriptPath != null) {
+    def scriptCaptureDirectory = rootProject.layout.buildDirectory.dir('captures/script').get().asFile
+    doFirst {
+      scriptCaptureDirectory.mkdirs()
+      systemProperty 'asciigdx.script', rootProject.file(scriptPath).absolutePath
+      systemProperty 'asciigdx.scriptCaptures', scriptCaptureDirectory.absolutePath
     }
   }
   if (project.hasProperty('showcaseTime')) {

@@ -1,9 +1,12 @@
 package com.github.halfdeadgames.asciigdx.sandbox.desktop;
 
+import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.github.halfdeadgames.asciigdx.inputscript.ScriptedApplication;
 import com.github.halfdeadgames.asciigdx.sandbox.CaptureConfig;
 import com.github.halfdeadgames.asciigdx.sandbox.SandboxApp;
+import java.nio.file.Path;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -44,8 +47,24 @@ public class Lwjgl3Launcher {
     private static Lwjgl3Application createApplication() {
         SandboxApp app = new SandboxApp(Lwjgl3Launcher::systemSetting);
         app.setGpuTimer(new OpenGlGpuTimer());
-        app.setWindowResizer(new Lwjgl3WindowResizer());
-        return new Lwjgl3Application(app, getDefaultConfiguration());
+        // A script keeps the -Pwindow size: its coordinates are window pixels, and a desktop
+        // resize renders a frame inside the resize call, which would advance the script mid-step.
+        if (systemSetting("script") == null) {
+            app.setWindowResizer(new Lwjgl3WindowResizer());
+        }
+        return new Lwjgl3Application(withOptionalScript(app), getDefaultConfiguration());
+    }
+
+    private static ApplicationListener withOptionalScript(ApplicationListener app) {
+        String scriptPath = systemSetting("script");
+        if (scriptPath == null) {
+            return app;
+        }
+        String captureFolder = systemSetting("scriptCaptures");
+        if (captureFolder == null) {
+            throw new IllegalArgumentException("asciigdx.scriptCaptures is not set");
+        }
+        return new ScriptedApplication(app, Path.of(scriptPath), Path.of(captureFolder));
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

@@ -1,0 +1,13 @@
+// Dev-only input script player shared by the glyph workbench and the desktop sandbox.
+// Never a release artifact.
+eclipse.project.name = appName + '-input-script'
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+  useJUnitPlatform()
+}
