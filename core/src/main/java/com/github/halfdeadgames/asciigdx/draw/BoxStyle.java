@@ -42,27 +42,63 @@ public enum BoxStyle {
         this.bottomRightGlyph = bottomRightGlyph;
     }
 
-    int horizontalGlyph() {
+    /**
+     * Returns the Unicode code point of the horizontal edge glyph (for example {@code ─}).
+     *
+     * @return the Unicode box-drawing code point of the glyph drawn along top and bottom edges;
+     *         the font must contain it
+     */
+    public int getHorizontalGlyph() {
         return horizontalGlyph;
     }
 
-    int verticalGlyph() {
+    /**
+     * Returns the Unicode code point of the vertical edge glyph (for example {@code │}).
+     *
+     * @return the Unicode box-drawing code point of the glyph drawn along left and right edges;
+     *         the font must contain it
+     */
+    public int getVerticalGlyph() {
         return verticalGlyph;
     }
 
-    int topLeftGlyph() {
+    /**
+     * Returns the Unicode code point of the top-left corner glyph (for example {@code ┌}).
+     *
+     * @return the Unicode box-drawing code point of the top-left corner glyph; the font must
+     *         contain it
+     */
+    public int getTopLeftGlyph() {
         return topLeftGlyph;
     }
 
-    int topRightGlyph() {
+    /**
+     * Returns the Unicode code point of the top-right corner glyph (for example {@code ┐}).
+     *
+     * @return the Unicode box-drawing code point of the top-right corner glyph; the font must
+     *         contain it
+     */
+    public int getTopRightGlyph() {
         return topRightGlyph;
     }
 
-    int bottomLeftGlyph() {
+    /**
+     * Returns the Unicode code point of the bottom-left corner glyph (for example {@code └}).
+     *
+     * @return the Unicode box-drawing code point of the bottom-left corner glyph; the font must
+     *         contain it
+     */
+    public int getBottomLeftGlyph() {
         return bottomLeftGlyph;
     }
 
-    int bottomRightGlyph() {
+    /**
+     * Returns the Unicode code point of the bottom-right corner glyph (for example {@code ┘}).
+     *
+     * @return the Unicode box-drawing code point of the bottom-right corner glyph; the font must
+     *         contain it
+     */
+    public int getBottomRightGlyph() {
         return bottomRightGlyph;
     }
 }

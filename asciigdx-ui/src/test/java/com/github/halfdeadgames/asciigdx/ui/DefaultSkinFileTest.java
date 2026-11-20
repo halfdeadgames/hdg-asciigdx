@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -118,6 +119,20 @@ class DefaultSkinFileTest {
                 .withThumbPointerOver(WHITE).withThumbPressed(GOLD);
 
         assertEquals(expected, skin.getScrollPaneStyle("scrollPane"));
+    }
+
+    @Test
+    void defaultWindowStyleMatchesTheSandboxValues() {
+        int charcoal = 0x303030FF;
+        WindowStyle expected = WindowStyle.of(BoxStyle.ROUNDED,
+                LabelStyle.of(UiFont.SQUARE, GRAY, charcoal),
+                LabelStyle.of(UiFont.SQUARE, GOLD, charcoal), charcoal)
+                .withFocusedBorder(LabelStyle.of(UiFont.SQUARE, CYAN, charcoal))
+                .withCloseButton(skin.getButtonStyle("button"))
+                .withCloseText("x");
+
+        assertEquals(expected, skin.getWindowStyle("window"));
+        assertTrue(skin.hasWindowStyle("window"));
     }
 
     @Test

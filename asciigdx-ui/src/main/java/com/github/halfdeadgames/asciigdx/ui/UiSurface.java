@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
+import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
@@ -369,6 +370,57 @@ public final class UiSurface {
 
     private boolean isClipped(int column, int row) {
         return column < clipLeft || column >= clipRight || row < clipTop || row >= clipBottom;
+    }
+
+    /**
+     * Draws the border of a rectangle in the square font, or nothing when the width or height is
+     * below 2: the edges and the four corners, with the foreground and background of
+     * {@code look}. The inside is not touched. Every cell goes through
+     * {@link #writeGlyph} and {@link #fillBackground}, so the erase rule holds and cells outside
+     * the surface are skipped silently. A rectangle narrower or lower than 2 cells has no distinct
+     * edges and nothing is drawn, as in {@code GridDrawing.drawBox}; this includes zero and
+     * negative sizes.
+     *
+     * @param column left edge in UI cells; may be negative
+     * @param row top edge in UI cells; may be negative
+     * @param width width in UI cells, including both border columns
+     * @param height height in UI cells, including both border rows
+     * @param box line style that supplies the six glyphs; must not be {@code null}
+     * @param look foreground and background of the border cells; must not be {@code null}, and
+     *         must use {@link UiFont#SQUARE}
+     * @throws NullPointerException if {@code box} or {@code look} is {@code null}
+     * @throws IllegalArgumentException if {@code look} uses the tall font
+     */
+    public void drawBox(int column, int row, int width, int height, BoxStyle box,
+            LabelStyle look) {
+        Objects.requireNonNull(box, "box");
+        Objects.requireNonNull(look, "look");
+        if (look.getFont() != UiFont.SQUARE) {
+            throw new IllegalArgumentException("A box needs a square-font look, was "
+                    + look.getFont());
+        }
+        if (width < 2 || height < 2) {
+            return;
+        }
+        int right = column + width - 1;
+        int bottom = row + height - 1;
+        for (int x = column + 1; x < right; x++) {
+            writeBoxCell(x, row, box.getHorizontalGlyph(), look);
+            writeBoxCell(x, bottom, box.getHorizontalGlyph(), look);
+        }
+        for (int y = row + 1; y < bottom; y++) {
+            writeBoxCell(column, y, box.getVerticalGlyph(), look);
+            writeBoxCell(right, y, box.getVerticalGlyph(), look);
+        }
+        writeBoxCell(column, row, box.getTopLeftGlyph(), look);
+        writeBoxCell(right, row, box.getTopRightGlyph(), look);
+        writeBoxCell(column, bottom, box.getBottomLeftGlyph(), look);
+        writeBoxCell(right, bottom, box.getBottomRightGlyph(), look);
+    }
+
+    private void writeBoxCell(int column, int row, int glyph, LabelStyle look) {
+        writeGlyph(UiFont.SQUARE, column, row, glyph, look.getForegroundRgba());
+        fillBackground(column, row, 1, 1, look.getBackgroundRgba());
     }
 
     /**

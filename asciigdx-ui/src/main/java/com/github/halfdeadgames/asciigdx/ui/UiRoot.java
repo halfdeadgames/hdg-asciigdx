@@ -10,9 +10,10 @@ import java.util.Objects;
  * and tracks hover, press capture, and keyboard focus. It works purely in surface cells and never
  * touches libGDX statics, so it can run headless; {@link UiInput} connects it to libGDX input.
  *
- * <p>Two widget trees exist. {@link #getRoot()} holds the main widgets. {@link #getPopupLayer()}
- * is drawn above it and its children are hit-tested first, for menus and tooltips. Both trees
- * start at the surface's top-left corner.
+ * <p>Three widget trees exist. {@link #getRoot()} holds the main widgets. {@link #getWindowLayer()}
+ * is drawn above it, for {@link Window}s. {@link #getPopupLayer()} is drawn above both, for menus
+ * and tooltips. Hit-testing goes the other way: popup layer first, then window layer (last child
+ * first), then the main tree. All trees start at the surface's top-left corner.
  *
  * <p>Drawing: the root draws into a hidden surface of the same size, then copies it into the shown
  * surface. Equal cells stay clean for the grids' dirty tracking, so only changed cells are
@@ -59,8 +60,10 @@ import java.util.Objects;
  *   <li>Keyboard navigation: a key-down that no widget in the focused chain and no unhandled-key
  *       listener handled moves focus. Tab moves to the next focusable widget in tree order,
  *       Shift+Tab to the previous one, and the arrow keys to the nearest one in that direction
- *       (see {@link FocusDirection}). Only the main tree is searched, and nothing moves while a
- *       menu is open. Hidden widgets (see {@link Widget#setVisible(boolean)}) and menu bars are
+ *       (see {@link FocusDirection}). Only one top-level tree is searched: the window (a direct
+ *       child of the window layer) that holds keyboard focus, or the main tree when focus is
+ *       elsewhere or nowhere. The popup layer is never searched. Nothing moves while a menu is
+ *       open. Hidden widgets (see {@link Widget#setVisible(boolean)}) and menu bars are
  *       skipped. A widget that handles an arrow key itself keeps it. Games can call
  *       {@link #moveFocus(FocusDirection)} for the same effect, for example from a gamepad.
  *   <li>Key repeat: libGDX does not repeat key-downs on desktop, so the root repeats a held
@@ -133,6 +136,7 @@ public final class UiRoot {
     private final UiSurface shownSurface;
     private final UiSurface hiddenSurface;
     private final WidgetGroup root = new WidgetGroup();
+    private final WidgetGroup windowLayer = new WidgetGroup();
     private final WidgetGroup popupLayer = new WidgetGroup();
     private final UiEvent event = new UiEvent();
     private final Widget[] capturedWidgets = new Widget[MAX_POINTERS];
@@ -204,6 +208,20 @@ public final class UiRoot {
      */
     public WidgetGroup getPopupLayer() {
         return popupLayer;
+    }
+
+    /**
+     * Returns the group drawn above {@link #getRoot()} and below {@link #getPopupLayer()}. Its
+     * children are hit-tested after the popup layer's and before the main tree's, the last child
+     * first, and the group itself is never a hit target. Use it for {@link Window}s: the last
+     * child is the front-most window, and a press on a window moves it to the end (see
+     * {@link Window#toFront()}). Keyboard navigation inside a window stays inside it (see the
+     * class description).
+     *
+     * @return the window layer group, never {@code null}
+     */
+    public WidgetGroup getWindowLayer() {
+        return windowLayer;
     }
 
     /**
@@ -468,8 +486,10 @@ public final class UiRoot {
         sweepGoneWidgets();
         refreshFocusShown();
         root.validate();
+        windowLayer.validate();
         popupLayer.validate();
-        if (!root.isRedrawNeeded() && !popupLayer.isRedrawNeeded()) {
+        if (!root.isRedrawNeeded() && !windowLayer.isRedrawNeeded()
+                && !popupLayer.isRedrawNeeded()) {
             return;
         }
         int columns = hiddenSurface.getColumns();
@@ -479,9 +499,11 @@ public final class UiRoot {
         hiddenSurface.fillBackground(0, 0, columns, rows,
                 TerminalGrid.TRANSPARENT_RGBA);
         root.draw(hiddenSurface);
+        windowLayer.draw(hiddenSurface);
         popupLayer.draw(hiddenSurface);
         shownSurface.copyFrom(hiddenSurface);
         root.clearRedrawNeeded();
+        windowLayer.clearRedrawNeeded();
         popupLayer.clearRedrawNeeded();
     }
 
@@ -624,9 +646,10 @@ public final class UiRoot {
         Widget target = hitAt(column, row);
         updateHoverForPointer(pointer, target, column, row);
         notifyPressObservers(pointer);
+        notifyWindowsPressed(target);
         focusBeforePress = getKeyboardFocus();
         // A press does not scroll the view, which would move the pressed widget under the pointer.
-        changeKeyboardFocus(findFocusable(target));
+        changeKeyboardFocus(resolvePressFocus(target));
         if (keyboardFocus == focusBeforePress && keyboardFocus instanceof TextField) {
             requestTextInputAgain();
         }
@@ -865,8 +888,8 @@ public final class UiRoot {
 
     /**
      * Moves keyboard focus the way the navigation keys do, for example to map a gamepad. The
-     * rules are those of the keys: only the main tree ({@link #getRoot()}) is searched, the
-     * candidates are its visible, focusable widgets (menu bars are skipped), and nothing happens
+     * rules are those of the keys: only the window that holds focus, or else the main tree
+     * ({@link #getRoot()}), is searched, the candidates are its visible, focusable widgets (menu bars are skipped), and nothing happens
      * while a menu is open. A move that finds a target counts as keyboard input, so focus becomes
      * visible (see {@link #isFocusVisible()}).
      *
@@ -915,7 +938,7 @@ public final class UiRoot {
             return false;
         }
         Widget previous = getKeyboardFocus();
-        Widget target = FocusNavigator.findTarget(root, previous, direction);
+        Widget target = FocusNavigator.findTarget(focusScopeOf(previous), previous, direction);
         if (target == null) {
             return false;
         }
@@ -923,6 +946,25 @@ public final class UiRoot {
         lastInputWasKeyboard = true;
         refreshFocusShown();
         return true;
+    }
+
+    // Navigation stays in one top-level tree: the window that holds focus, or else the main tree.
+    private Widget focusScopeOf(Widget focused) {
+        for (Widget current = focused; current != null; current = current.getParent()) {
+            if (current.getParent() == windowLayer) {
+                return current;
+            }
+        }
+        return root;
+    }
+
+    // A press on anything inside a window raises that window; windows may also sit in other trees.
+    private void notifyWindowsPressed(Widget target) {
+        for (Widget current = target; current != null; current = current.getParent()) {
+            if (current instanceof Window window) {
+                window.pressed(getSurfaceColumns(), getSurfaceRows());
+            }
+        }
     }
 
     private void refreshFocusShown() {
@@ -1137,6 +1179,12 @@ public final class UiRoot {
         if (popupHit != null) {
             return popupHit;
         }
+        Widget windowHit = windowLayer.isVisible()
+                ? windowLayer.hitChildren(column - windowLayer.getX(), row - windowLayer.getY())
+                : null;
+        if (windowHit != null) {
+            return windowHit;
+        }
         return root.isVisible() ? root.hit(column - root.getX(), row - root.getY()) : null;
     }
 
@@ -1148,7 +1196,33 @@ public final class UiRoot {
         while (top.getParent() != null) {
             top = top.getParent();
         }
-        return (top == root || top == popupLayer) && widget.isShown();
+        return (top == root || top == windowLayer || top == popupLayer) && widget.isShown();
+    }
+
+    // A press on a window's own area (nothing focusable under it) keeps focus that is already
+    // inside the window, or else focuses the window's first widget in focus order.
+    private Widget resolvePressFocus(Widget target) {
+        Widget focusable = findFocusable(target);
+        if (focusable != null) {
+            return focusable;
+        }
+        Window window = findWindowAbove(target);
+        if (window == null) {
+            return null;
+        }
+        if (isSelfOrAncestor(window, focusBeforePress)) {
+            return focusBeforePress;
+        }
+        return FocusNavigator.findTarget(window, null, FocusDirection.NEXT);
+    }
+
+    private static Window findWindowAbove(Widget target) {
+        for (Widget current = target; current != null; current = current.getParent()) {
+            if (current instanceof Window window) {
+                return window;
+            }
+        }
+        return null;
     }
 
     private static Widget findFocusable(Widget target) {

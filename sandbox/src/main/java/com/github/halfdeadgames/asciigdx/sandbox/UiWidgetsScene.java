@@ -23,15 +23,15 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Pages of UI widget checks, switched with the number keys 1 to 9 or with the "Pages" menu of the
- * tall menu bar on the first row below the performance overlay.
+ * Pages of UI widget checks, switched with the number keys 1 to 9 and 0 (page 10) or with the
+ * "Pages" menu of the tall menu bar on the first row below the performance overlay.
  */
 class UiWidgetsScene implements SandboxScene {
     private static final int INITIAL_COLUMNS = 120;
     private static final int INITIAL_ROWS = 67;
     private static final int MIN_ROWS_PER_SHORT_SIDE = 67;
     private static final int RESERVED_ROWS = 2;
-    private static final int MAX_KEY_PAGES = 9;
+    private static final int MAX_KEY_PAGES = 10;
     private static final String SKIN_FILE = "default-skin.json";
     private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
     private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
@@ -81,7 +81,8 @@ class UiWidgetsScene implements SandboxScene {
         barsPage = new BarsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
-                new RatingsPage(skin), new ScrollingPage(skin));
+                new RatingsPage(skin), new WindowsPage(uiRoot, skin),
+                new ScrollingPage(skin));
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
@@ -108,9 +109,11 @@ class UiWidgetsScene implements SandboxScene {
     }
 
     private void showPage(int index) {
+        int previousIndex = pageIndex;
         pageIndex = index;
         closeOpenMenu();
         if (content != null) {
+            pages.get(previousIndex).pageHidden();
             uiRoot.getRoot().removeChild(content);
         }
         int contentTop = overlayRows + RESERVED_ROWS;
@@ -237,12 +240,20 @@ class UiWidgetsScene implements SandboxScene {
         if (isAnyMenuOpen() || uiRoot.getKeyboardFocus() instanceof TextField) {
             return false;
         }
-        int index = keycode - Input.Keys.NUM_1;
+        int index = pageIndexForKey(keycode);
         if (index < 0 || index >= MAX_KEY_PAGES || index >= pages.size()) {
             return false;
         }
         showPage(index);
         return true;
+    }
+
+    // Keys 1 to 9 open pages 1 to 9, and key 0 opens page 10.
+    private static int pageIndexForKey(int keycode) {
+        if (keycode == Input.Keys.NUM_0) {
+            return MAX_KEY_PAGES - 1;
+        }
+        return keycode - Input.Keys.NUM_1;
     }
 
     @Override

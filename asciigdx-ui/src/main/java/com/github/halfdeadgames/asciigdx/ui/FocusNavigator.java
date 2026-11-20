@@ -47,9 +47,9 @@ final class FocusNavigator {
      *         candidate, no candidate lies in a spatial direction, or a spatial direction starts
      *         from a focused widget outside the tree
      */
-    static Widget findTarget(WidgetGroup root, Widget focused, FocusDirection direction) {
+    static Widget findTarget(Widget root, Widget focused, FocusDirection direction) {
         Scan scan = new Scan(focused);
-        collect(root, 0, 0, scan);
+        collect(root, offsetLeftOfParent(root), offsetTopOfParent(root), scan);
         if (scan.candidates.isEmpty()) {
             return null;
         }
@@ -71,7 +71,7 @@ final class FocusNavigator {
         return chooseSequential(count, currentIndex, forward);
     }
 
-    private static int chooseSpatialFor(WidgetGroup root, Scan scan, int currentIndex,
+    private static int chooseSpatialFor(Widget root, Scan scan, int currentIndex,
             FocusDirection direction) {
         if (currentIndex != NO_INDEX) {
             return chooseSpatial(scan.bounds, scan.bounds.get(currentIndex), currentIndex,
@@ -205,11 +205,29 @@ final class FocusNavigator {
         return new Bounds(left, top, left + widget.getWidth(), top + widget.getHeight());
     }
 
-    private static boolean isInTree(WidgetGroup root, Widget widget) {
-        Widget top = widget;
-        while (top.getParent() != null) {
-            top = top.getParent();
+    private static boolean isInTree(Widget root, Widget widget) {
+        for (Widget current = widget; current != null; current = current.getParent()) {
+            if (current == root) {
+                return true;
+            }
         }
-        return top == root;
+        return false;
+    }
+
+    // A scope below the top of a tree, such as a window, sits at its parents' offsets.
+    private static int offsetLeftOfParent(Widget scope) {
+        int left = 0;
+        for (Widget current = scope.getParent(); current != null; current = current.getParent()) {
+            left += current.getX();
+        }
+        return left;
+    }
+
+    private static int offsetTopOfParent(Widget scope) {
+        int top = 0;
+        for (Widget current = scope.getParent(); current != null; current = current.getParent()) {
+            top += current.getY();
+        }
+        return top;
     }
 }

@@ -19,11 +19,10 @@ import java.util.Objects;
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
  * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, {@code radioButtons},
- * {@code textFields}, {@code progressBars}, {@code sliders}, and {@code scrollPanes}; all are
- * optional, and any other
- * top-level key is an error. The sections are read in that order, and a section can only refer to
- * names defined in an earlier one, so references never form a cycle. Inside a section every name
- * is unique. Each section is an object that maps a style name to its value.
+ * {@code textFields}, {@code progressBars}, {@code sliders}, {@code scrollPanes}, and
+ * {@code windows}; all are optional, and any other top-level key is an error. The sections are
+ * read in that order, and a section can only refer to names defined in an earlier one, so
+ * references never form a cycle. Inside a section every name is unique. Each section is an object that maps a style name to its value.
  *
  * <pre>{@code
  * {
@@ -158,6 +157,23 @@ import java.util.Objects;
  * {@code thumbPressed}, which copy {@code thumb} when missing. Example:
  * {@code "scrollPane": { "track": "darkGray", "thumb": "gray", "thumbPressed": "gold" }}.
  *
+ * <p>A {@code windows} entry becomes a {@link WindowStyle}. The keys:
+ * <ul>
+ *   <li>{@code box}, required: the line style of the border, one of {@code "single"},
+ *       {@code "double"}, {@code "heavy"}, and {@code "rounded"}.
+ *   <li>{@code border}, required: the look of the border, a label style name or an inline label
+ *       object, in the square font.
+ *   <li>{@code focusedBorder}, optional: a look of the same kind, used while focus is inside the
+ *       window; copies {@code border} when missing.
+ *   <li>{@code title}, required: the look of the title text, in the square font.
+ *   <li>{@code background}, required: a color for the area inside the border.
+ *   <li>{@code closeButton}, optional: the name of an entry in the {@code buttons} section (it
+ *       must name one; an inline button object is an error), in the square font; without it the
+ *       window has no close button.
+ *   <li>{@code closeText}, optional: the text on the close button, at least one character;
+ *       defaults to {@code "x"}.
+ * </ul>
+ *
  * <p>Custom sections: to read sections for your own widgets, register a
  * {@link SkinSectionReader} on a {@link SkinLoader} and load through it. Skins made by
  * {@link #fromJson} and {@link #fromFile} have none.
@@ -195,6 +211,7 @@ public final class Skin {
     private final Map<String, ProgressBarStyle> progressBarStyles;
     private final Map<String, SliderStyle> sliderStyles;
     private final Map<String, ScrollPaneStyle> scrollPaneStyles;
+    private final Map<String, WindowStyle> windowStyles;
     private final Map<String, Map<String, Object>> customStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
@@ -204,6 +221,7 @@ public final class Skin {
             Map<String, ProgressBarStyle> progressBarStyles,
             Map<String, SliderStyle> sliderStyles,
             Map<String, ScrollPaneStyle> scrollPaneStyles,
+            Map<String, WindowStyle> windowStyles,
             Map<String, Map<String, Object>> customStyles) {
         Map<String, Map<String, Object>> customCopy = new LinkedHashMap<>();
         customStyles.forEach((section, styles) -> customCopy.put(section, copyOf(styles)));
@@ -212,6 +230,7 @@ public final class Skin {
         this.progressBarStyles = copyOf(progressBarStyles);
         this.sliderStyles = copyOf(sliderStyles);
         this.scrollPaneStyles = copyOf(scrollPaneStyles);
+        this.windowStyles = copyOf(windowStyles);
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
@@ -392,6 +411,19 @@ public final class Skin {
     }
 
     /**
+     * Returns the window style with a name.
+     *
+     * @param name name in the {@code windows} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasWindowStyle(String)} first.
+     */
+    public WindowStyle getWindowStyle(String name) {
+        return lookUp(windowStyles, name, "window style");
+    }
+
+    /**
      * Returns the color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -483,6 +515,17 @@ public final class Skin {
     }
 
     /**
+     * Returns whether the skin defines a window style with a name.
+     *
+     * @param name name in the {@code windows} section; must not be {@code null}
+     * @return {@code true} if {@link #getWindowStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasWindowStyle(String name) {
+        return contains(windowStyles, name);
+    }
+
+    /**
      * Returns whether the skin defines a color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -560,7 +603,8 @@ public final class Skin {
                 + ", radioButtonStyles=" + radioButtonStyles.size() + ", textFieldStyles="
                 + textFieldStyles.size() + ", progressBarStyles=" + progressBarStyles.size()
                 + ", sliderStyles=" + sliderStyles.size() + ", scrollPaneStyles="
-                + scrollPaneStyles.size() + ", customSections="
+                + scrollPaneStyles.size() + ", windowStyles=" + windowStyles.size()
+                + ", customSections="
                 + customStyles.keySet() + "]";
     }
 

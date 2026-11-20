@@ -59,11 +59,18 @@
  * {@link com.github.halfdeadgames.asciigdx.ui.ScrollPaneStyle}; the clip comes from
  * {@link com.github.halfdeadgames.asciigdx.ui.UiSurface#pushClip}.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.Window} is a framed panel with a title in its top
+ * border, one content widget, an optional close button, and dragging by the title bar. Windows live
+ * in {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#getWindowLayer()}, which draws above the main
+ * tree and below popups; Tab and the arrow keys stay inside the window that holds focus. Its look
+ * comes from a {@link com.github.halfdeadgames.asciigdx.ui.WindowStyle}.
+ *
  * <p>Creating widgets: a widget with one form is created with a public constructor, as with
  * {@link com.github.halfdeadgames.asciigdx.ui.TextButton},
  * {@link com.github.halfdeadgames.asciigdx.ui.CheckBox},
- * {@link com.github.halfdeadgames.asciigdx.ui.RadioButton}, and
- * {@link com.github.halfdeadgames.asciigdx.ui.TextField}. Static factories are used only where one
+ * {@link com.github.halfdeadgames.asciigdx.ui.RadioButton},
+ * {@link com.github.halfdeadgames.asciigdx.ui.TextField}, and
+ * {@link com.github.halfdeadgames.asciigdx.ui.Window}. Static factories are used only where one
  * class has several distinct forms, such as a bar that is either horizontal or vertical, which is
  * created by a factory named for each form.
  *

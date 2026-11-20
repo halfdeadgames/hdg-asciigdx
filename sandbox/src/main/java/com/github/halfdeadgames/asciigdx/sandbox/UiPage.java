@@ -16,4 +16,11 @@ interface UiPage {
      * @param rows height of the area in square cells
      */
     Widget createContent(int columns, int rows);
+
+    /**
+     * Called when the page is replaced by another one, so a page that put widgets outside its
+     * content (such as in a layer of the root) can take them away. Does nothing by default.
+     */
+    default void pageHidden() {
+    }
 }

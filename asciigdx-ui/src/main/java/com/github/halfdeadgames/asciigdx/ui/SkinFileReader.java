@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.SerializationException;
+import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -26,10 +27,14 @@ final class SkinFileReader {
     private static final String PROGRESS_BARS = "progressBars";
     private static final String SLIDERS = "sliders";
     private static final String SCROLL_PANES = "scrollPanes";
+    private static final String WINDOWS = "windows";
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES);
+            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES, WINDOWS);
     private static final List<String> SCROLL_PANE_KEYS = List.of("track", "thumb",
             "thumbPointerOver", "thumbPressed");
+    private static final List<String> WINDOW_KEYS = List.of("box", "border", "focusedBorder",
+            "title", "background", "closeButton", "closeText");
+    private static final List<String> BOX_NAMES = List.of("single", "double", "heavy", "rounded");
     private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
             "placeholder", "caret");
     private static final List<String> CARET_KEYS = List.of("foreground", "background", "glyph",
@@ -65,6 +70,7 @@ final class SkinFileReader {
     private final Map<String, ProgressBarStyle> progressBarStyles = new LinkedHashMap<>();
     private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
     private final Map<String, ScrollPaneStyle> scrollPaneStyles = new LinkedHashMap<>();
+    private final Map<String, WindowStyle> windowStyles = new LinkedHashMap<>();
     private final Map<String, Map<String, Object>> customStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
@@ -98,11 +104,12 @@ final class SkinFileReader {
         reader.readSection(root, SLIDERS, reader.sliderStyles, reader::readSliderStyle);
         reader.readSection(root, SCROLL_PANES, reader.scrollPaneStyles,
                 reader::readScrollPaneStyle);
+        reader.readSection(root, WINDOWS, reader.windowStyles, reader::readWindowStyle);
         reader.readCustomSections(root, customReaders);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
                 reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles,
-                reader.scrollPaneStyles, reader.customStyles);
+                reader.scrollPaneStyles, reader.windowStyles, reader.customStyles);
     }
 
     private ScrollPaneStyle readScrollPaneStyle(JsonValue entry, String path) {
@@ -122,6 +129,65 @@ final class SkinFileReader {
             style = style.withThumbPressed(readColor(pressed, path + ".thumbPressed"));
         }
         return style;
+    }
+
+    private WindowStyle readWindowStyle(JsonValue entry, String path) {
+        requireObject(entry, path,
+                "a window object with the keys " + String.join(", ", WINDOW_KEYS));
+        checkKnownKeys(entry, WINDOW_KEYS, "key", path);
+        BoxStyle box = readBox(requireKey(entry, "box", path), path + ".box");
+        LabelStyle border = readSquareLook(requireKey(entry, "border", path), path + ".border");
+        LabelStyle title = readSquareLook(requireKey(entry, "title", path), path + ".title");
+        int background = readColor(requireKey(entry, "background", path), path + ".background");
+        WindowStyle style = WindowStyle.of(box, border, title, background);
+        JsonValue focusedBorder = entry.get("focusedBorder");
+        if (focusedBorder != null) {
+            style = style.withFocusedBorder(
+                    readSquareLook(focusedBorder, path + ".focusedBorder"));
+        }
+        JsonValue closeButton = entry.get("closeButton");
+        if (closeButton != null) {
+            style = style.withCloseButton(
+                    readCloseButton(closeButton, path + ".closeButton"));
+        }
+        JsonValue closeText = entry.get("closeText");
+        if (closeText != null) {
+            style = style.withCloseText(readMark(closeText, path + ".closeText"));
+        }
+        return style;
+    }
+
+    private static BoxStyle readBox(JsonValue value, String path) {
+        String name = value.isString() ? value.asString() : "";
+        return switch (name) {
+            case "single" -> BoxStyle.SINGLE;
+            case "double" -> BoxStyle.DOUBLE;
+            case "heavy" -> BoxStyle.HEAVY;
+            case "rounded" -> BoxStyle.ROUNDED;
+            default -> throw new SkinFileException(path + ": must be text, one of "
+                    + String.join(", ", BOX_NAMES));
+        };
+    }
+
+    private LabelStyle readSquareLook(JsonValue value, String path) {
+        LabelStyle look = readLook(value, path);
+        if (look.getFont() != UiFont.SQUARE) {
+            throw new SkinFileException(path + ": must use the square font, because a window "
+                    + "border is one cell thick");
+        }
+        return look;
+    }
+
+    private ButtonStyle readCloseButton(JsonValue value, String path) {
+        if (!value.isString()) {
+            throw new SkinFileException(path + ": must be the name of a button style");
+        }
+        ButtonStyle button = lookUpReference(buttonStyles, value.asString(), "button style", path);
+        if (button.getFont() != UiFont.SQUARE) {
+            throw new SkinFileException(path + ": must use the square font, because the close "
+                    + "button sits in the one-cell border row");
+        }
+        return button;
     }
 
     private void readCustomSections(JsonValue root,

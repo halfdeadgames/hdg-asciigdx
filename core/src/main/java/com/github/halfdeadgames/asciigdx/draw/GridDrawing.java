@@ -209,16 +209,16 @@ public final class GridDrawing {
         }
         long right = (long) left + width - 1;
         long bottom = (long) top + height - 1;
-        int horizontal = style.horizontalGlyph();
-        int vertical = style.verticalGlyph();
+        int horizontal = style.getHorizontalGlyph();
+        int vertical = style.getVerticalGlyph();
         drawHorizontalEdge(grid, left + 1L, right, top, horizontal, foreground, background);
         drawHorizontalEdge(grid, left + 1L, right, bottom, horizontal, foreground, background);
         drawVerticalEdge(grid, left, top + 1L, bottom, vertical, foreground, background);
         drawVerticalEdge(grid, right, top + 1L, bottom, vertical, foreground, background);
-        setIfInside(grid, left, top, style.topLeftGlyph(), foreground, background);
-        setIfInside(grid, right, top, style.topRightGlyph(), foreground, background);
-        setIfInside(grid, left, bottom, style.bottomLeftGlyph(), foreground, background);
-        setIfInside(grid, right, bottom, style.bottomRightGlyph(), foreground, background);
+        setIfInside(grid, left, top, style.getTopLeftGlyph(), foreground, background);
+        setIfInside(grid, right, top, style.getTopRightGlyph(), foreground, background);
+        setIfInside(grid, left, bottom, style.getBottomLeftGlyph(), foreground, background);
+        setIfInside(grid, right, bottom, style.getBottomRightGlyph(), foreground, background);
     }
 
     /**

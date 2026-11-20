@@ -110,5 +110,16 @@
       "thumbPointerOver": "white",
       "thumbPressed": "gold"
     }
+  },
+  "windows": {
+    "window": {
+      "box": "rounded",
+      "border": { "font": "square", "foreground": "gray", "background": "charcoal" },
+      "focusedBorder": { "font": "square", "foreground": "cyan", "background": "charcoal" },
+      "title": { "font": "square", "foreground": "gold", "background": "charcoal" },
+      "background": "charcoal",
+      "closeButton": "button",
+      "closeText": "x"
+    }
   }
 }
