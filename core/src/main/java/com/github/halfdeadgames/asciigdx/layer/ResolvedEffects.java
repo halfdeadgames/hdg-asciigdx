@@ -3,9 +3,9 @@ package com.github.halfdeadgames.asciigdx.layer;
 import com.badlogic.gdx.utils.Array;
 
 /**
- * The color effects the cell shader applies to one layer this frame: a layer's own effects with the
- * effects of its groups folded on top. One instance is reused for every layer drawn, so resolving
- * allocates nothing.
+ * The color effects the cell shader applies to one layer this frame: a layer's own effects, with
+ * the effects of its groups folded on top, then the effects of its stack. One instance is reused
+ * for every layer drawn, so resolving allocates nothing.
  */
 final class ResolvedEffects {
 
@@ -82,14 +82,26 @@ final class ResolvedEffects {
         }
     }
 
-    private void applyGroup(LayerGroup group) {
-        group.markAppliedIn(resolveId);
-        foldGroup(group.getColorEffects());
+    /**
+     * Folds the stack's own effects after the layer's own and group effects, so they run last and
+     * their alpha multiplies in. Call it once per layer, right after {@link #resolve}. Neutral
+     * stack effects are skipped, so a stack that never uses them resolves exactly as before.
+     */
+    void foldStack(ColorEffects stackEffects) {
+        if (stackEffects.isNeutral()) {
+            return;
+        }
+        foldEffects(stackEffects);
     }
 
-    private void foldGroup(ColorEffects groupEffects) {
-        groupEffects.writeColorMatrix(groupMatrix);
+    private void applyGroup(LayerGroup group) {
+        group.markAppliedIn(resolveId);
+        foldEffects(group.getColorEffects());
+    }
+
+    private void foldEffects(ColorEffects effects) {
+        effects.writeColorMatrix(groupMatrix);
         matrix.then(groupMatrix);
-        alpha *= groupEffects.getTintAlpha();
+        alpha *= effects.getTintAlpha();
     }
 }

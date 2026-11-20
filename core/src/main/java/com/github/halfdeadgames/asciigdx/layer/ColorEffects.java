@@ -4,10 +4,11 @@ import com.badlogic.gdx.graphics.Color;
 import java.util.Objects;
 
 /**
- * The color effects the GPU applies to everything a {@link Layer} or a {@link LayerGroup} draws:
- * saturation, then tint, then mix, then invert, with the alpha taken from the tint. Each layer and
- * each group owns exactly one instance and reuses it every frame; there is no public constructor.
- * Get it from {@link Layer#getColorEffects()} or {@link LayerGroup#getColorEffects()}.
+ * The color effects the GPU applies to everything a {@link Layer}, a {@link LayerGroup}, or a
+ * {@link LayerStack} draws: saturation, then tint, then mix, then invert, with the alpha taken from
+ * the tint. Each layer, each group, and each stack owns exactly one instance and reuses it every
+ * frame; there is no public constructor. Get it from {@link Layer#getColorEffects()},
+ * {@link LayerGroup#getColorEffects()}, or {@link LayerStack#getColorEffects()}.
  *
  * <p>Every change takes effect on the GPU in the next frame. Changing an effect rewrites and
  * uploads nothing, so it is cheap to change every frame, for example to fade a layer or flash it
@@ -17,11 +18,11 @@ import java.util.Objects;
  *
  * <p>A layer's effects apply to that layer's cells and sprites. A group's effects apply to every
  * member layer after the member's own effects: the color transforms run in sequence and the alphas
- * multiply.
+ * multiply. A stack's effects apply last, after the group effects, to every layer in the stack.
  *
  * <p>Call the setters from the game thread, normally once per frame. They do not touch the GPU
- * directly, so no GL context is needed. Once the owning layer or group is removed from its stack,
- * the getters keep working but every setter throws {@link IllegalStateException}.
+ * directly, so no GL context is needed. Once the owning layer, group, or stack is removed or
+ * disposed, the getters keep working but every setter throws {@link IllegalStateException}.
  *
  * <p>Example, a white hit flash that fades out over time:
  * <pre>{@code
@@ -45,6 +46,11 @@ public final class ColorEffects {
     private boolean detached;
 
     ColorEffects() {
+    }
+
+    boolean isNeutral() {
+        return tintRed == 1f && tintGreen == 1f && tintBlue == 1f && tintAlpha == 1f
+                && mixAmount == 0f && saturation == 1f && invert == 0f;
     }
 
     /**
@@ -166,7 +172,7 @@ public final class ColorEffects {
      * @param blue the blue multiplier, 1 for unchanged
      * @param alpha the opacity multiplier, 1 for opaque and 0 for invisible
      * @throws IllegalArgumentException if a value is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      */
     public void setTint(float red, float green, float blue, float alpha) {
         requireAttached();
@@ -184,7 +190,7 @@ public final class ColorEffects {
      * @param color the tint, including its alpha; must not be null
      * @throws NullPointerException if the color is null
      * @throws IllegalArgumentException if a component is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      * @see #setTint(float, float, float, float)
      */
     public void setTint(Color color) {
@@ -197,7 +203,7 @@ public final class ColorEffects {
      *
      * @param alpha the opacity multiplier, 1 for opaque and 0 for invisible; not clamped
      * @throws IllegalArgumentException if alpha is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      * @see #setTint(float, float, float, float)
      */
     public void setAlpha(float alpha) {
@@ -220,7 +226,7 @@ public final class ColorEffects {
      * @param blue the mix color's blue component, 1 is full intensity
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully
      * @throws IllegalArgumentException if a value is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      * @see CellHandle#setMix(int, float) the cell-level mix, which takes an RGBA8888 int and
      *     changes one cell's own colors before these effects run
      */
@@ -241,7 +247,7 @@ public final class ColorEffects {
      * @param amount how far to mix toward the color, 0 for not at all and 1 for fully
      * @throws NullPointerException if the color is null
      * @throws IllegalArgumentException if a red, green, or blue component or the amount is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      * @see #setMix(float, float, float, float)
      */
     public void setMix(Color color, float amount) {
@@ -258,7 +264,7 @@ public final class ColorEffects {
      *
      * @param saturation the saturation, 1 for unchanged
      * @throws IllegalArgumentException if the saturation is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      */
     public void setSaturation(float saturation) {
         requireAttached();
@@ -276,7 +282,7 @@ public final class ColorEffects {
      *
      * @param invert the invert amount, 0 for unchanged and 1 for a full negative
      * @throws IllegalArgumentException if the amount is NaN or infinite
-     * @throws IllegalStateException if the owning layer or group was removed
+     * @throws IllegalStateException if the owning layer, group, or stack was removed or disposed
      */
     public void setInvert(float invert) {
         requireAttached();
@@ -308,7 +314,7 @@ public final class ColorEffects {
         invert = 0f;
     }
 
-    /** Makes every public setter throw from now on; called when the owner is removed. */
+    /** Makes every public setter throw from now on; called when the owner goes away. */
     void markDetached() {
         detached = true;
     }
@@ -316,7 +322,7 @@ public final class ColorEffects {
     private void requireAttached() {
         if (detached) {
             throw new IllegalStateException(
-                    "The layer or group that owns these color effects was removed from its stack");
+                    "The layer, group, or stack that owns these effects was removed or disposed");
         }
     }
 

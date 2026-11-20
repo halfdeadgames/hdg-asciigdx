@@ -221,7 +221,6 @@ class ShowcaseScene extends GridScene {
     private final Layer playerLayer;
     private final Layer bridgeLayer;
     private int drawnWaterStep = Integer.MIN_VALUE;
-    private final Layer overlayLayer;
     private final int[] rowLine = new int[LOG_ROWS];
     private final int[] rowVisible = new int[LOG_ROWS];
     private final boolean[] rowNewest = new boolean[LOG_ROWS];
@@ -326,7 +325,6 @@ class ShowcaseScene extends GridScene {
         underwaterSwap = createUnderwaterSwap();
         addTitleLetters(addTitleLayer());
         addLogLayer(glyphs, tallGlyphs);
-        overlayLayer = addOverlay(glyphs);
         bindTimeline();
         pinAllLayersToScreen();
         pinClockIfRequested(showcaseTimeSetting);
@@ -355,17 +353,23 @@ class ShowcaseScene extends GridScene {
     }
 
     private void bindTimeline() {
-        bindOverlayFade();
+        bindStackFadeToBlack();
         bindHpBar();
         bindTitleLetters();
         bindSplashColors();
         bindSpriteVisibility();
     }
 
-    private void bindOverlayFade() {
+    private void bindStackFadeToBlack() {
         timeline.bind(
                 LoopFade.track(FADE_IN_SECONDS, FADE_OUT_START_SECONDS, FADE_OUT_SECONDS),
-                overlayLayer.getColorEffects()::setAlpha);
+                this::fadeStackToBlack);
+    }
+
+    /** Darkens the whole stack toward black: cover 0 is no change, cover 1 is solid black. */
+    private void fadeStackToBlack(float cover) {
+        float brightness = 1f - cover;
+        layers.getColorEffects().setTint(brightness, brightness, brightness, 1f);
     }
 
     private void bindHpBar() {
@@ -927,12 +931,6 @@ class ShowcaseScene extends GridScene {
                 LOG_TEXT_WIDTH * tallGlyphs.getCellWidth(),
                 LOG_ROWS * tallGlyphs.getCellHeight());
         layers.add(logGrid, tallGlyphs).setPanel(logPanel);
-    }
-
-    private Layer addOverlay(GlyphSource glyphs) {
-        TerminalGrid overlayGrid = new TerminalGrid(COLUMNS, ROWS);
-        GridDrawing.fillRectangle(overlayGrid, 0, 0, COLUMNS, ROWS, ' ', WHITE, BLACK);
-        return layers.add(overlayGrid, glyphs);
     }
 
     private void pinClockIfRequested(String showcaseTimeSetting) {

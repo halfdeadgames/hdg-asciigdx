@@ -27,8 +27,10 @@ import java.util.Objects;
  * then measured from the panel's top-left corner, and it is clipped to the panel's rectangle.
  *
  * <p>Layers can also be put in a {@link LayerGroup} made by {@link #addGroup} to share color
- * effects. Nothing in the stack reads a clock: durations and deltas are in seconds, passed in by
- * the game. Use the stack on the GL thread only; it is not thread-safe.
+ * effects, and {@link #getColorEffects} applies color effects to every layer at once, for
+ * example to fade the whole scene to black. Nothing in the stack reads a clock: durations and
+ * deltas are in seconds, passed in by the game. Use the stack on the GL thread only; it is not
+ * thread-safe.
  *
  * <p>Example:
  * <pre>{@code
@@ -49,6 +51,7 @@ public final class LayerStack implements Disposable {
     private final LayerClipper clipper;
     private final OffscreenBackend offscreenBackend;
     private final ResolvedEffects resolvedEffects = new ResolvedEffects();
+    private final ColorEffects colorEffects = new ColorEffects();
     private final Array<Layer> layers = new Array<>();
     private final Array<Panel> panels = new Array<>();
     private final Array<LayerGroup> groups = new Array<>();
@@ -337,6 +340,26 @@ public final class LayerStack implements Disposable {
     }
 
     /**
+     * Returns the stack's own color effects: tint, alpha, mix, saturation, and invert. They apply
+     * to every layer in the stack, last, after the layer's own effects and those of its groups.
+     * The object is live and owned by the stack; every call returns the same instance and
+     * allocates nothing.
+     *
+     * <p>The object stays readable after the stack is disposed, but its setters then throw
+     * {@link IllegalStateException}.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * stack.getColorEffects().setTint(0.5f, 0.5f, 0.5f, 1f);
+     * }</pre>
+     *
+     * @return the live color effects of this stack; never null
+     */
+    public ColorEffects getColorEffects() {
+        return colorEffects;
+    }
+
+    /**
      * Returns the position of a layer.
      *
      * @param layer the layer to look for; may be null
@@ -444,11 +467,17 @@ public final class LayerStack implements Disposable {
      * outward to whole backbuffer pixels, then to whole logical pixels on HDPI
      * displays.
      *
-     * <p>A layer's effective alpha is its tint alpha times the alpha of every {@link LayerGroup}
-     * it belongs to, and of every ancestor group of those (the parents, grandparents, and so on); a
-     * group reached more than once counts once. A group with alpha 0 anywhere in a layer's chain
-     * makes the effective alpha 0. A hidden layer, or a layer whose effective alpha is 0, is
-     * skipped entirely: no draw, no clip work, and no offscreen pass.
+     * <p>Color effects fold in this order: the layer's own, then each {@link LayerGroup} it
+     * reaches, then the stack's own {@link #getColorEffects()}, which runs last. A layer's
+     * effective alpha is its tint alpha times the alpha of every {@link LayerGroup} it belongs to,
+     * of every ancestor group of those (the parents, grandparents, and so on), and of the stack's
+     * tint alpha; a group reached more than once counts once. A group or stack with alpha 0
+     * anywhere in a layer's chain makes the effective alpha 0. A hidden layer, or a layer whose
+     * effective alpha is 0, is skipped entirely: no draw, no clip work, and no offscreen pass.
+     *
+     * <p>An alpha below 1 on the stack still fades each layer separately, so overlapping layers
+     * show through each other. To darken the whole stack without that, fade to black with a tint
+     * of {@code (k, k, k, 1)} instead; it multiplies colors and leaves the layers opaque.
      *
      * <p>Offscreen fade: a layer whose effective alpha is below 1 and that has at least one drawn
      * free sprite (visible, color alpha above 0) or lifted cell is drawn at full alpha into a
@@ -471,6 +500,7 @@ public final class LayerStack implements Disposable {
                 continue;
             }
             resolvedEffects.resolve(layer.getColorEffects(), layer.getGroups());
+            resolvedEffects.foldStack(colorEffects);
             if (resolvedEffects.getAlpha() <= 0f) {
                 continue;
             }
@@ -720,8 +750,9 @@ public final class LayerStack implements Disposable {
 
     /**
      * Disposes every layer's renderer and empties the stack. Removed layers can no
-     * longer be used. Panels and groups are detached the same way: getters keep working and
-     * changes throw {@link IllegalStateException}. Frees the shared shader and offscreen target.
+     * longer be used. Panels, groups, and the stack's own color effects are detached the same way:
+     * getters keep working and changes throw {@link IllegalStateException}. Frees the shared shader
+     * and offscreen target.
      * Grids and glyph sources are not disposed. Call it once on the GL thread when the stack is no
      * longer needed. Calling it again does nothing.
      */
@@ -745,6 +776,7 @@ public final class LayerStack implements Disposable {
             groups.get(i).detach();
         }
         groups.clear();
+        colorEffects.markDetached();
         offscreenBackend.dispose();
         if (sharedResources != null) {
             sharedResources.dispose();
