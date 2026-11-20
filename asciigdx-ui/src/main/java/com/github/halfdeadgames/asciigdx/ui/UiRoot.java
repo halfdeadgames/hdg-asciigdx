@@ -155,6 +155,8 @@ public final class UiRoot {
     private boolean rightShiftDown;
     private final TextFieldAutoFocus autoFocusFinder = new TextFieldAutoFocus();
     private boolean keyboardFocusWasFocusable;
+    private float scrollRemainderX;
+    private float scrollRemainderY;
     private int repeatingKeycode = NO_KEY;
     private int heldArrowKeycode = NO_KEY;
     private boolean repeatingWithShift;
@@ -307,8 +309,26 @@ public final class UiRoot {
         }
     }
 
-    // Single place where the focus owner changes, so the owners and the on-screen keyboard follow.
+    // Focus set by code or keyboard also scrolls the new owner into view in enclosing scroll panes.
     private void assignKeyboardFocus(Widget next) {
+        changeKeyboardFocus(next);
+        revealInScrollPanes(next);
+    }
+
+    private static void revealInScrollPanes(Widget widget) {
+        if (widget == null) {
+            return;
+        }
+        for (Widget ancestor = widget.getParent(); ancestor != null;
+                ancestor = ancestor.getParent()) {
+            if (ancestor instanceof ScrollPane) {
+                ((ScrollPane) ancestor).scrollIntoView(widget);
+            }
+        }
+    }
+
+    // Single place where the focus owner changes, so the owners and the on-screen keyboard follow.
+    private void changeKeyboardFocus(Widget next) {
         Widget previous = keyboardFocus;
         if (previous == next) {
             return;
@@ -454,6 +474,7 @@ public final class UiRoot {
         }
         int columns = hiddenSurface.getColumns();
         int rows = hiddenSurface.getRows();
+        hiddenSurface.clearClips();
         hiddenSurface.eraseGlyphs(0, 0, columns, rows);
         hiddenSurface.fillBackground(0, 0, columns, rows,
                 TerminalGrid.TRANSPARENT_RGBA);
@@ -604,7 +625,8 @@ public final class UiRoot {
         updateHoverForPointer(pointer, target, column, row);
         notifyPressObservers(pointer);
         focusBeforePress = getKeyboardFocus();
-        assignKeyboardFocus(findFocusable(target));
+        // A press does not scroll the view, which would move the pressed widget under the pointer.
+        changeKeyboardFocus(findFocusable(target));
         if (keyboardFocus == focusBeforePress && keyboardFocus instanceof TextField) {
             requestTextInputAgain();
         }
@@ -695,6 +717,49 @@ public final class UiRoot {
         capturedWidgets[pointer] = null;
         event.setCancelled(captured, pointer);
         return bubble(captured);
+    }
+
+    /**
+     * Handles the wheel or a trackpad scrolling. The amounts are added to a remainder kept for
+     * each axis, and only whole steps are delivered, because trackpads send fractions. For each
+     * axis the whole part of the sum is delivered and the fraction stays for the next call; an
+     * amount with the opposite sign of the kept remainder drops that remainder first. When at
+     * least one axis has a whole step, {@link UiEventType#SCROLLED} goes to the widget under
+     * pointer 0 at its last known position (see {@link #getHoveredWidget()}) and bubbles up
+     * through its parents until a {@link UiListener} returns {@code true}. Steps are lost when
+     * nothing is hovered. Non-finite amounts are ignored.
+     *
+     * @param amountX horizontal amount, positive to the right (libGDX units, usually whole steps
+     *         for a wheel); any finite value
+     * @param amountY vertical amount, positive to scroll down (libGDX convention); any finite
+     *         value
+     * @return {@code true} if a listener handled the event; {@code false} also when there was no
+     *         whole step or nothing is hovered
+     * @throws IllegalStateException if called while an event is being delivered
+     */
+    public boolean scrolled(float amountX, float amountY) {
+        requireNotDelivering();
+        if (!Float.isFinite(amountX) || !Float.isFinite(amountY)) {
+            return false;
+        }
+        float sumX = addToRemainder(scrollRemainderX, amountX);
+        float sumY = addToRemainder(scrollRemainderY, amountY);
+        int stepsX = (int) sumX;
+        int stepsY = (int) sumY;
+        scrollRemainderX = sumX - stepsX;
+        scrollRemainderY = sumY - stepsY;
+        Widget target = getHoveredWidget();
+        if ((stepsX == 0 && stepsY == 0) || target == null) {
+            return false;
+        }
+        event.setScroll(target, stepsX, stepsY);
+        return bubble(target);
+    }
+
+    private static float addToRemainder(float remainder, float amount) {
+        boolean oppositeSign =
+                remainder != 0f && amount != 0f && (remainder < 0f) != (amount < 0f);
+        return (oppositeSign ? 0f : remainder) + amount;
     }
 
     /**

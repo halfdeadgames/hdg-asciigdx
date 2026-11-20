@@ -101,10 +101,15 @@ class UiInputTest {
     }
 
     @Test
-    void scrolledIsNeverHandledAndUnhitInputIsNotConsumed() {
+    void scrolledForwardsToTheHoveredWidgetAndUnhitInputIsNotConsumed() {
         addLoggingBox();
 
         assertFalse(input.scrolled(0f, 1f));
+        input.mouseMoved(15, 15);
+        log.clear();
+        assertTrue(input.scrolled(0f, 1f));
+        assertEquals(List.of("SCROLLED 0,0 p-1 b-1"), log);
+        assertTrue(input.scrolled(0f, 1f));
         assertFalse(input.touchDown(190, 90, 0, 0));
         assertFalse(input.keyDown(66));
     }

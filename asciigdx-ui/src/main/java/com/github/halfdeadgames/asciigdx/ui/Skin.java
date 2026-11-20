@@ -19,7 +19,8 @@ import java.util.Objects;
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
  * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, {@code radioButtons},
- * {@code textFields}, {@code progressBars}, and {@code sliders}; all are optional, and any other
+ * {@code textFields}, {@code progressBars}, {@code sliders}, and {@code scrollPanes}; all are
+ * optional, and any other
  * top-level key is an error. The sections are read in that order, and a section can only refer to
  * names defined in an earlier one, so references never form a cycle. Inside a section every name
  * is unique. Each section is an object that maps a style name to its value.
@@ -152,6 +153,11 @@ import java.util.Objects;
  * </ul>
  * Example: {@code "volume": { "track": { "normal": "text" }, "knob": { "normal": "accent" } }}.
  *
+ * <p>A {@code scrollPanes} entry becomes a {@link ScrollPaneStyle}. The keys are colors:
+ * {@code track} and {@code thumb}, required, and the optional {@code thumbPointerOver} and
+ * {@code thumbPressed}, which copy {@code thumb} when missing. Example:
+ * {@code "scrollPane": { "track": "darkGray", "thumb": "gray", "thumbPressed": "gold" }}.
+ *
  * <p>Custom sections: to read sections for your own widgets, register a
  * {@link SkinSectionReader} on a {@link SkinLoader} and load through it. Skins made by
  * {@link #fromJson} and {@link #fromFile} have none.
@@ -188,6 +194,7 @@ public final class Skin {
     private final Map<String, TextFieldStyle> textFieldStyles;
     private final Map<String, ProgressBarStyle> progressBarStyles;
     private final Map<String, SliderStyle> sliderStyles;
+    private final Map<String, ScrollPaneStyle> scrollPaneStyles;
     private final Map<String, Map<String, Object>> customStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
@@ -196,6 +203,7 @@ public final class Skin {
             Map<String, TextFieldStyle> textFieldStyles,
             Map<String, ProgressBarStyle> progressBarStyles,
             Map<String, SliderStyle> sliderStyles,
+            Map<String, ScrollPaneStyle> scrollPaneStyles,
             Map<String, Map<String, Object>> customStyles) {
         Map<String, Map<String, Object>> customCopy = new LinkedHashMap<>();
         customStyles.forEach((section, styles) -> customCopy.put(section, copyOf(styles)));
@@ -203,6 +211,7 @@ public final class Skin {
         this.textFieldStyles = copyOf(textFieldStyles);
         this.progressBarStyles = copyOf(progressBarStyles);
         this.sliderStyles = copyOf(sliderStyles);
+        this.scrollPaneStyles = copyOf(scrollPaneStyles);
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
@@ -356,6 +365,30 @@ public final class Skin {
      */
     public SliderStyle getSliderStyle(String name) {
         return lookUp(sliderStyles, name, "slider style");
+    }
+
+    /**
+     * Returns the scroll pane style with a name.
+     *
+     * @param name name in the {@code scrollPanes} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasScrollPaneStyle(String)} first.
+     */
+    public ScrollPaneStyle getScrollPaneStyle(String name) {
+        return lookUp(scrollPaneStyles, name, "scroll pane style");
+    }
+
+    /**
+     * Returns whether the skin defines a scroll pane style with a name.
+     *
+     * @param name name in the {@code scrollPanes} section; must not be {@code null}
+     * @return {@code true} if {@link #getScrollPaneStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasScrollPaneStyle(String name) {
+        return contains(scrollPaneStyles, name);
     }
 
     /**
@@ -526,7 +559,8 @@ public final class Skin {
                 + menuBarStyles.size() + ", checkBoxStyles=" + checkBoxStyles.size()
                 + ", radioButtonStyles=" + radioButtonStyles.size() + ", textFieldStyles="
                 + textFieldStyles.size() + ", progressBarStyles=" + progressBarStyles.size()
-                + ", sliderStyles=" + sliderStyles.size() + ", customSections="
+                + ", sliderStyles=" + sliderStyles.size() + ", scrollPaneStyles="
+                + scrollPaneStyles.size() + ", customSections="
                 + customStyles.keySet() + "]";
     }
 

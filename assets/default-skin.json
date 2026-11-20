@@ -102,5 +102,13 @@
         "disabled": { "font": "tall", "foreground": "darkGray", "background": "black" }
       }
     }
+  },
+  "scrollPanes": {
+    "scrollPane": {
+      "track": "darkGray",
+      "thumb": "gray",
+      "thumbPointerOver": "white",
+      "thumbPressed": "gold"
+    }
   }
 }

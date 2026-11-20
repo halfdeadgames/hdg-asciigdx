@@ -21,5 +21,12 @@ public enum UiEventType {
     /** A key went up. Goes to the keyboard-focused widget. Bubbles. */
     KEY_UP,
     /** A character was typed. Goes to the keyboard-focused widget. Bubbles. */
-    KEY_TYPED
+    KEY_TYPED,
+    /**
+     * The wheel or a trackpad scrolled over the hovered widget, by whole steps (see
+     * {@link UiRoot#scrolled}). Goes to the widget under pointer 0 and bubbles. Carries no
+     * position; read the steps with {@link UiEvent#getScrollStepsX()} and
+     * {@link UiEvent#getScrollStepsY()}.
+     */
+    SCROLLED
 }

@@ -32,8 +32,6 @@ class UiWidgetsScene implements SandboxScene {
     private static final int MIN_ROWS_PER_SHORT_SIDE = 67;
     private static final int RESERVED_ROWS = 2;
     private static final int MAX_KEY_PAGES = 9;
-    private static final int PRIMARY_POINTER = 0;
-    private static final int PRIMARY_BUTTON = 0;
     private static final String SKIN_FILE = "default-skin.json";
     private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
     private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
@@ -83,7 +81,7 @@ class UiWidgetsScene implements SandboxScene {
         barsPage = new BarsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
-                new RatingsPage(skin));
+                new RatingsPage(skin), new ScrollingPage(skin));
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
@@ -356,13 +354,23 @@ class UiWidgetsScene implements SandboxScene {
     }
 
     @Override
-    public boolean touchDown(int screenX, int screenY) {
-        return uiInput.touchDown(screenX, screenY, PRIMARY_POINTER, PRIMARY_BUTTON);
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return uiInput.touchDown(screenX, screenY, pointer, button);
     }
 
     @Override
-    public boolean touchDragged(int screenX, int screenY) {
-        return uiInput.touchDragged(screenX, screenY, PRIMARY_POINTER);
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        return uiInput.touchDragged(screenX, screenY, pointer);
+    }
+
+    @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return uiInput.touchCancelled(screenX, screenY, pointer, button);
+    }
+
+    @Override
+    public boolean scrolled(float amountX, float amountY) {
+        return uiInput.scrolled(amountX, amountY);
     }
 
     @Override
@@ -372,8 +380,8 @@ class UiWidgetsScene implements SandboxScene {
 
     // UiInput also ends the hover after a lift while no mouse has been seen (touch-only devices).
     @Override
-    public boolean touchUp(int screenX, int screenY) {
-        return uiInput.touchUp(screenX, screenY, PRIMARY_POINTER, PRIMARY_BUTTON);
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return uiInput.touchUp(screenX, screenY, pointer, button);
     }
 
     @Override
@@ -388,8 +396,11 @@ class UiWidgetsScene implements SandboxScene {
         batch.end();
     }
 
+    // A key-up that arrives after the scene is hidden never reaches the root, so a held arrow
+    // would keep its repeat armed.
     @Override
     public void hide() {
+        uiRoot.releaseHeldKeys();
     }
 
     @Override

@@ -53,6 +53,12 @@
  * {@link com.github.halfdeadgames.asciigdx.ui.ProgressBarStyle} and a
  * {@link com.github.halfdeadgames.asciigdx.ui.SliderStyle}.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.ScrollPane} shows a window of whole cells onto one
+ * larger content widget, with scrollbars that appear when needed, wheel, thumb, track, key, and
+ * content-drag scrolling, and a view that follows keyboard focus. Its looks come from a
+ * {@link com.github.halfdeadgames.asciigdx.ui.ScrollPaneStyle}; the clip comes from
+ * {@link com.github.halfdeadgames.asciigdx.ui.UiSurface#pushClip}.
+ *
  * <p>Creating widgets: a widget with one form is created with a public constructor, as with
  * {@link com.github.halfdeadgames.asciigdx.ui.TextButton},
  * {@link com.github.halfdeadgames.asciigdx.ui.CheckBox},

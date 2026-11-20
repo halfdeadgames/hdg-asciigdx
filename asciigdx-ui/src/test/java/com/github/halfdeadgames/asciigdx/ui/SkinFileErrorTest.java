@@ -85,7 +85,7 @@ class SkinFileErrorTest {
     void unknownTopLevelKeyListsSections() {
         assertSkinError("{\"fonts\": {}}", "fonts",
                 "Known sections: colors, labels, buttons, menuBars, checkBoxes, radioButtons, "
-                        + "textFields, progressBars, sliders");
+                        + "textFields, progressBars, sliders, scrollPanes");
     }
 
     @Test

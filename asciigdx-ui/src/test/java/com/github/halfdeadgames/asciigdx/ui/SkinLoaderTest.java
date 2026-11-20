@@ -124,7 +124,8 @@ class SkinLoaderTest {
     @Test
     void builtInAndDuplicateSectionNamesAreRejected() {
         for (String builtIn : List.of("colors", "labels", "buttons", "menuBars", "checkBoxes",
-                "radioButtons", "textFields", "progressBars", "sliders")) {
+                "radioButtons", "textFields", "progressBars", "sliders",
+                "scrollPanes")) {
             assertThrows(IllegalArgumentException.class,
                     () -> SkinLoader.create().withSection(builtIn, STAR_READER));
         }

@@ -13,7 +13,8 @@ package com.github.halfdeadgames.asciigdx.ui;
  * <p>Fields that do not apply to the event's type hold neutral values: {@code -1} for the
  * pointer (key events only), button, and keycode, {@code 0} for the character and for all four coordinates. Coordinates are
  * UI cells, columns growing right and rows growing down. Key events and
- * {@link UiEventType#POINTER_CANCELLED} carry no position.
+ * {@link UiEventType#POINTER_CANCELLED} and {@link UiEventType#SCROLLED} carry no position.
+ * The scroll steps are 0 for all other types.
  */
 public final class UiEvent {
 
@@ -30,6 +31,8 @@ public final class UiEvent {
     private int button = NOT_APPLICABLE;
     private int keycode = NOT_APPLICABLE;
     private char character;
+    private int scrollColumns;
+    private int scrollRows;
 
     UiEvent() {
     }
@@ -143,6 +146,33 @@ public final class UiEvent {
         return character;
     }
 
+    /**
+     * Returns the horizontal wheel steps. They are wheel steps, not cells; a widget decides how
+     * far a step moves it.
+     *
+     * @return for {@link UiEventType#SCROLLED}, the signed whole steps, positive to the right, as
+     *         in the libGDX {@code amountX}; 0 for every other type
+     */
+    public int getScrollStepsX() {
+        return scrollColumns;
+    }
+
+    /**
+     * Returns the vertical wheel steps. They are wheel steps, not cells.
+     *
+     * @return for {@link UiEventType#SCROLLED}, the signed whole steps, positive down, as in the
+     *         libGDX {@code amountY}; 0 for every other type
+     */
+    public int getScrollStepsY() {
+        return scrollRows;
+    }
+
+    void setScroll(Widget target, int scrollColumns, int scrollRows) {
+        reset(UiEventType.SCROLLED, target);
+        this.scrollColumns = scrollColumns;
+        this.scrollRows = scrollRows;
+    }
+
     void setPointer(UiEventType type, Widget target, int surfaceColumn, int surfaceRow,
             int pointer, int button) {
         reset(type, target);
@@ -171,7 +201,8 @@ public final class UiEvent {
 
     boolean hasPosition() {
         return type != UiEventType.POINTER_CANCELLED && type != UiEventType.KEY_DOWN
-                && type != UiEventType.KEY_UP && type != UiEventType.KEY_TYPED;
+                && type != UiEventType.KEY_UP && type != UiEventType.KEY_TYPED
+                && type != UiEventType.SCROLLED;
     }
 
     private void reset(UiEventType type, Widget target) {
@@ -186,5 +217,7 @@ public final class UiEvent {
         button = NOT_APPLICABLE;
         keycode = NOT_APPLICABLE;
         character = 0;
+        scrollColumns = 0;
+        scrollRows = 0;
     }
 }

@@ -91,6 +91,37 @@ interface SandboxScene {
         return false;
     }
 
+    /**
+     * Touch with its pointer and button; the app calls this one. By default it ignores them and
+     * calls {@link #touchDown(int, int)}.
+     */
+    default boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        return touchDown(screenX, screenY);
+    }
+
+    /** Drag with its pointer; the app calls this one. Defaults to the two-argument version. */
+    default boolean touchDragged(int screenX, int screenY, int pointer) {
+        return touchDragged(screenX, screenY);
+    }
+
+    /** Release with its pointer and button; the app calls this one. Defaults likewise. */
+    default boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        return touchUp(screenX, screenY);
+    }
+
+    /** The system canceled a pointer; the app calls this one. Ignored by default. */
+    default boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return false;
+    }
+
+    /**
+     * Wheel or trackpad turned on both axes; positive is right and down. The app calls this one.
+     * Defaults to {@link #scrolled(float)} with the vertical amount.
+     */
+    default boolean scrolled(float amountX, float amountY) {
+        return scrolled(amountY);
+    }
+
     /** Whether {@link #setDirtyPercent(int)} does anything, so the capture script can sweep it. */
     default boolean supportsDirtyPercent() {
         return false;

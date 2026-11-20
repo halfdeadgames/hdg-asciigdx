@@ -1,0 +1,102 @@
+package com.github.halfdeadgames.asciigdx.ui;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+class ScrollPaneSkinTest {
+
+    private static final String COLORS = """
+            "colors": { "dark": "#404040", "light": "#909090", "white": "#FFFFFF" }""";
+
+    private static String withSection(String body) {
+        return "{" + COLORS + ", \"scrollPanes\": {\"p\": {" + body + "}}}";
+    }
+
+    private static void assertSkinError(String json, String... expectedFragments) {
+        var thrown = assertThrows(SkinFileException.class, () -> Skin.fromJson(json));
+        for (String fragment : expectedFragments) {
+            assertTrue(thrown.getMessage().contains(fragment),
+                    "Expected \"" + fragment + "\" in: " + thrown.getMessage());
+        }
+    }
+
+    @Test
+    void requiredKeysAloneCopyThumbIntoTheOtherLooks() {
+        Skin skin = Skin.fromJson(withSection("\"track\": \"dark\", \"thumb\": \"light\""));
+
+        assertEquals(ScrollPaneStyle.of(0x404040FF, 0x909090FF), skin.getScrollPaneStyle("p"));
+        assertEquals(0x909090FF, skin.getScrollPaneStyle("p").getThumbPointerOverRgba());
+        assertEquals(0x909090FF, skin.getScrollPaneStyle("p").getThumbPressedRgba());
+        assertTrue(skin.hasScrollPaneStyle("p"));
+        assertFalse(skin.hasScrollPaneStyle("other"));
+    }
+
+    @Test
+    void optionalKeysAndHexColorsAreRead() {
+        Skin skin = Skin.fromJson(withSection("""
+                "track": "#10203040", "thumb": "light",
+                "thumbPointerOver": "white", "thumbPressed": "#FF000080" """));
+
+        ScrollPaneStyle expected = ScrollPaneStyle.of(0x10203040, 0x909090FF)
+                .withThumbPointerOver(0xFFFFFFFF).withThumbPressed(0xFF000080);
+        assertEquals(expected, skin.getScrollPaneStyle("p"));
+    }
+
+    @Test
+    void missingRequiredKeysAreReported() {
+        assertSkinError(withSection("\"thumb\": \"light\""), "scrollPanes.p", "track");
+        assertSkinError(withSection("\"track\": \"dark\""), "scrollPanes.p", "thumb");
+    }
+
+    @Test
+    void unknownKeysAreRejectedWithTheKnownOnes() {
+        assertSkinError(withSection("\"track\": \"dark\", \"thumb\": \"light\", \"size\": 1"),
+                "scrollPanes.p", "unknown key \"size\"",
+                "Known keys: track, thumb, thumbPointerOver, thumbPressed");
+    }
+
+    @Test
+    void badColorsNameThePath() {
+        assertSkinError(withSection("\"track\": \"nope\", \"thumb\": \"light\""),
+                "scrollPanes.p.track", "unknown color \"nope\"");
+        assertSkinError(withSection(
+                "\"track\": \"dark\", \"thumb\": \"light\", \"thumbPressed\": 5"),
+                "scrollPanes.p.thumbPressed");
+    }
+
+    @Test
+    void unknownStyleNameListsKnownNames() {
+        Skin skin = Skin.fromJson(withSection("\"track\": \"dark\", \"thumb\": \"light\""));
+
+        var thrown = assertThrows(IllegalArgumentException.class,
+                () -> skin.getScrollPaneStyle("zzz"));
+
+        assertTrue(thrown.getMessage().contains("scroll pane style \"zzz\""));
+        assertTrue(thrown.getMessage().contains("p"));
+    }
+
+    @Test
+    void sectionIsOptionalAndToStringCountsStyles() {
+        assertFalse(Skin.fromJson("{}").hasScrollPaneStyle("p"));
+        assertTrue(Skin.fromJson(withSection("\"track\": \"dark\", \"thumb\": \"light\""))
+                .toString().contains("scrollPaneStyles=1"));
+    }
+
+    @Test
+    void styleHasValueEquality() {
+        ScrollPaneStyle base = ScrollPaneStyle.of(1, 2);
+
+        assertEquals(base, ScrollPaneStyle.of(1, 2));
+        assertEquals(base.hashCode(), ScrollPaneStyle.of(1, 2).hashCode());
+        assertEquals(base, base.withThumbPointerOver(2));
+        assertNotEquals(base, base.withThumbPointerOver(3));
+        assertNotEquals(base, base.withThumbPressed(3));
+        assertNotEquals(base, ScrollPaneStyle.of(1, 3));
+        assertTrue(base.toString().startsWith("ScrollPaneStyle["));
+    }
+}

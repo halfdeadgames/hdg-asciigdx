@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -32,7 +33,10 @@ import java.util.Objects;
  * there earlier. {@link #fillBackground} leaves the overlay alone, and {@link #copyFrom} copies
  * it. {@link #writeOverlayGlyph} adds overlay marks.
  *
- * <p>Not thread-safe. Use it from the render thread. No method allocates.
+ * <p>A clip stack ({@link #pushClip}, {@link #popClip}) limits writes to a rectangle of cells.
+ *
+ * <p>Not thread-safe. Use it from the render thread. No method allocates, except that a deep clip
+ * stack grows rarely.
  *
  * <p>Example:
  * <pre>{@code
@@ -43,15 +47,26 @@ import java.util.Objects;
  */
 public final class UiSurface {
 
+    private static final int CLIP_FIELDS = 4;
+    private static final int INITIAL_CLIP_DEPTH = 8;
+
     private final int columns;
     private final int rows;
     private final TerminalGrid squareGrid;
     private final TerminalGrid tallGrid;
     private final TerminalGrid overlayGrid;
+    private int clipLeft;
+    private int clipTop;
+    private int clipRight;
+    private int clipBottom;
+    private int[] savedClips = new int[CLIP_FIELDS * INITIAL_CLIP_DEPTH];
+    private int clipDepth;
 
     private UiSurface(int columns, int rows) {
         this.columns = columns;
         this.rows = rows;
+        this.clipRight = columns;
+        this.clipBottom = rows;
         this.squareGrid = new TerminalGrid(columns, rows);
         this.tallGrid = new TerminalGrid(columns, (rows + 1) / 2);
         this.overlayGrid = new TerminalGrid(columns, rows);
@@ -182,7 +197,7 @@ public final class UiSurface {
      */
     public void writeGlyph(UiFont font, int column, int row, int codePoint, int foregroundRgba) {
         Objects.requireNonNull(font, "font");
-        if (column < 0 || column >= columns || row < 0 || row >= rows) {
+        if (isClipped(column, row)) {
             return;
         }
         int tallRow = Math.floorDiv(row, 2);
@@ -214,7 +229,7 @@ public final class UiSurface {
      * @param foregroundRgba glyph color as RGBA8888
      */
     public void writeOverlayGlyph(int column, int row, int codePoint, int foregroundRgba) {
-        if (column < 0 || column >= columns || row < 0 || row >= rows) {
+        if (isClipped(column, row)) {
             return;
         }
         overlayGrid.setCodePoint(column, row, codePoint);
@@ -234,10 +249,10 @@ public final class UiSurface {
      */
     public void fillBackground(int column, int row, int width, int height, int backgroundRgba) {
         requireNonNegativeSize(width, height);
-        int endColumn = (int) Math.min((long) column + width, columns);
-        int endRow = (int) Math.min((long) row + height, rows);
-        for (int y = Math.max(row, 0); y < endRow; y++) {
-            for (int x = Math.max(column, 0); x < endColumn; x++) {
+        int endColumn = (int) Math.min((long) column + width, clipRight);
+        int endRow = (int) Math.min((long) row + height, clipBottom);
+        for (int y = Math.max(row, clipTop); y < endRow; y++) {
+            for (int x = Math.max(column, clipLeft); x < endColumn; x++) {
                 squareGrid.setBackground(x, y, backgroundRgba);
             }
         }
@@ -260,22 +275,100 @@ public final class UiSurface {
         if (width == 0 || height == 0) {
             return;
         }
-        int startColumn = Math.max(column, 0);
-        int endColumn = (int) Math.min((long) column + width, columns);
-        int endRow = (int) Math.min((long) row + height, rows);
-        for (int y = Math.max(row, 0); y < endRow; y++) {
+        int startColumn = Math.max(column, clipLeft);
+        int startRow = Math.max(row, clipTop);
+        int endColumn = (int) Math.min((long) column + width, clipRight);
+        int endRow = (int) Math.min((long) row + height, clipBottom);
+        if (startColumn >= endColumn || startRow >= endRow) {
+            return;
+        }
+        for (int y = startRow; y < endRow; y++) {
             for (int x = startColumn; x < endColumn; x++) {
                 squareGrid.setCodePoint(x, y, TerminalGrid.EMPTY_CODE_POINT);
                 overlayGrid.setCodePoint(x, y, TerminalGrid.EMPTY_CODE_POINT);
             }
         }
-        int firstTallRow = Math.max(Math.floorDiv(row, 2), 0);
+        // A tall glyph whose first row is above the clip is not erased, as writeGlyph keeps or
+        // skips a tall glyph by its first row.
+        int firstTallRow = Math.max(Math.floorDiv(startRow, 2), (clipTop + 1) / 2);
         int lastTallRow = Math.min(Math.floorDiv(endRow - 1, 2), tallGrid.getRows() - 1);
         for (int y = firstTallRow; y <= lastTallRow; y++) {
             for (int x = startColumn; x < endColumn; x++) {
                 tallGrid.setCodePoint(x, y, TerminalGrid.EMPTY_CODE_POINT);
             }
         }
+    }
+
+    /**
+     * Restricts all writes to a rectangle of cells until the matching {@link #popClip()}. The new
+     * clip is the intersection of the rectangle and the current clip, so clips nest. An empty
+     * intersection clips everything. While a clip is active, {@link #writeGlyph},
+     * {@link #writeOverlayGlyph}, {@link #fillBackground}, and {@link #eraseGlyphs} skip cells
+     * outside it, the same way they skip cells outside the surface. {@link #copyFrom} ignores the
+     * clip. A tall glyph is kept or skipped by the row it is written at, not by the row it snaps
+     * to; {@link #eraseGlyphs} leaves a tall glyph alone when that glyph's first row lies above
+     * the clip. Does not allocate, except that the internal stack grows when more than 8 clips
+     * are pushed at once.
+     *
+     * <p>The rectangle is in surface cells, not widget-local cells. Every {@code pushClip} needs
+     * its {@link #popClip()}, in a {@code finally} block. {@link UiRoot#draw()} clears any clips
+     * that are left over at the start of each draw.
+     *
+     * @param column left edge in surface cells; may be negative
+     * @param row top edge in surface cells; may be negative
+     * @param width width in UI cells; zero or greater
+     * @param height height in UI cells; zero or greater
+     * @throws IllegalArgumentException if {@code width} or {@code height} is negative; this is
+     *         intentional, so a wrong size is found instead of silently clipping everything
+     */
+    public void pushClip(int column, int row, int width, int height) {
+        requireNonNegativeSize(width, height);
+        if (CLIP_FIELDS * (clipDepth + 1) > savedClips.length) {
+            savedClips = Arrays.copyOf(savedClips, savedClips.length * 2);
+        }
+        int base = CLIP_FIELDS * clipDepth;
+        savedClips[base] = clipLeft;
+        savedClips[base + 1] = clipTop;
+        savedClips[base + 2] = clipRight;
+        savedClips[base + 3] = clipBottom;
+        clipDepth++;
+        int newRight = (int) Math.min((long) column + width, clipRight);
+        int newBottom = (int) Math.min((long) row + height, clipBottom);
+        clipLeft = Math.max(column, clipLeft);
+        clipTop = Math.max(row, clipTop);
+        clipRight = Math.max(newRight, clipLeft);
+        clipBottom = Math.max(newBottom, clipTop);
+    }
+
+    /**
+     * Ends the most recent {@link #pushClip} and restores the clip that was active before it.
+     *
+     * @throws IllegalStateException if no clip is pushed
+     */
+    public void popClip() {
+        if (clipDepth == 0) {
+            throw new IllegalStateException("No clip to pop");
+        }
+        clipDepth--;
+        int base = CLIP_FIELDS * clipDepth;
+        clipLeft = savedClips[base];
+        clipTop = savedClips[base + 1];
+        clipRight = savedClips[base + 2];
+        clipBottom = savedClips[base + 3];
+    }
+
+    // Called by UiRoot at the start of every draw, so a clip leaked by a widget cannot hide the
+    // next frame.
+    void clearClips() {
+        clipDepth = 0;
+        clipLeft = 0;
+        clipTop = 0;
+        clipRight = columns;
+        clipBottom = rows;
+    }
+
+    private boolean isClipped(int column, int row) {
+        return column < clipLeft || column >= clipRight || row < clipTop || row >= clipBottom;
     }
 
     /**

@@ -104,7 +104,7 @@ public class SandboxApp extends ApplicationAdapter {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 if (activeScene != null) {
-                    boolean handled = activeScene.touchDown(screenX, screenY);
+                    boolean handled = activeScene.touchDown(screenX, screenY, pointer, button);
                     perfOverlay.setStatus(activeScene.statusText());
                     return handled;
                 }
@@ -119,7 +119,8 @@ public class SandboxApp extends ApplicationAdapter {
 
             @Override
             public boolean touchDragged(int screenX, int screenY, int pointer) {
-                return activeScene != null && activeScene.touchDragged(screenX, screenY);
+                return activeScene != null
+                        && activeScene.touchDragged(screenX, screenY, pointer);
             }
 
             @Override
@@ -132,14 +133,20 @@ public class SandboxApp extends ApplicationAdapter {
                 if (activeScene == null) {
                     return false;
                 }
-                boolean handled = activeScene.touchUp(screenX, screenY);
+                boolean handled = activeScene.touchUp(screenX, screenY, pointer, button);
                 perfOverlay.setStatus(activeScene.statusText());
                 return handled;
             }
 
             @Override
+            public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+                return activeScene != null
+                        && activeScene.touchCancelled(screenX, screenY, pointer, button);
+            }
+
+            @Override
             public boolean scrolled(float amountX, float amountY) {
-                return activeScene != null && activeScene.scrolled(amountY);
+                return activeScene != null && activeScene.scrolled(amountX, amountY);
             }
         });
         openReviewSceneIfRequested();

@@ -25,8 +25,11 @@ final class SkinFileReader {
     private static final String TEXT_FIELDS = "textFields";
     private static final String PROGRESS_BARS = "progressBars";
     private static final String SLIDERS = "sliders";
+    private static final String SCROLL_PANES = "scrollPanes";
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS);
+            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES);
+    private static final List<String> SCROLL_PANE_KEYS = List.of("track", "thumb",
+            "thumbPointerOver", "thumbPressed");
     private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
             "placeholder", "caret");
     private static final List<String> CARET_KEYS = List.of("foreground", "background", "glyph",
@@ -61,6 +64,7 @@ final class SkinFileReader {
     private final Map<String, TextFieldStyle> textFieldStyles = new LinkedHashMap<>();
     private final Map<String, ProgressBarStyle> progressBarStyles = new LinkedHashMap<>();
     private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
+    private final Map<String, ScrollPaneStyle> scrollPaneStyles = new LinkedHashMap<>();
     private final Map<String, Map<String, Object>> customStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
@@ -92,11 +96,32 @@ final class SkinFileReader {
         reader.readSection(root, PROGRESS_BARS, reader.progressBarStyles,
                 reader::readProgressBarStyle);
         reader.readSection(root, SLIDERS, reader.sliderStyles, reader::readSliderStyle);
+        reader.readSection(root, SCROLL_PANES, reader.scrollPaneStyles,
+                reader::readScrollPaneStyle);
         reader.readCustomSections(root, customReaders);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
                 reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles,
-                reader.customStyles);
+                reader.scrollPaneStyles, reader.customStyles);
+    }
+
+    private ScrollPaneStyle readScrollPaneStyle(JsonValue entry, String path) {
+        requireObject(entry, path, "a scroll pane object with the keys "
+                + String.join(", ", SCROLL_PANE_KEYS));
+        checkKnownKeys(entry, SCROLL_PANE_KEYS, "key", path);
+        int track = readColor(requireKey(entry, "track", path), path + ".track");
+        int thumb = readColor(requireKey(entry, "thumb", path), path + ".thumb");
+        ScrollPaneStyle style = ScrollPaneStyle.of(track, thumb);
+        JsonValue pointerOver = entry.get("thumbPointerOver");
+        if (pointerOver != null) {
+            style = style.withThumbPointerOver(
+                    readColor(pointerOver, path + ".thumbPointerOver"));
+        }
+        JsonValue pressed = entry.get("thumbPressed");
+        if (pressed != null) {
+            style = style.withThumbPressed(readColor(pressed, path + ".thumbPressed"));
+        }
+        return style;
     }
 
     private void readCustomSections(JsonValue root,

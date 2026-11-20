@@ -36,7 +36,58 @@ final class EighthBlocks {
                 : lowerEighthGlyph((int) eighthsInCell);
     }
 
-    private static int leftEighthGlyph(int eighths) {
+    /**
+     * Returns the glyph of cell {@code index} of a scrollbar track that holds a thumb. The thumb
+     * covers the eighths from {@code thumbStart} (inclusive) to {@code thumbEnd} (exclusive),
+     * counted from the start of the track, 8 per cell. A cell without thumb is a space, a cell
+     * fully inside the thumb is the full block, and a cell that holds one end of the thumb is an
+     * eighth block that is drawn with {@link #isTrackForeground}. The thumb must be at least one
+     * cell long, so a cell never holds both ends.
+     */
+    static int thumbGlyphForCell(BarOrientation orientation, int thumbStart, int thumbEnd,
+            int index) {
+        int cellStart = index * EIGHTHS_PER_CELL;
+        int coveredFrom = Math.max(thumbStart, cellStart) - cellStart;
+        int coveredTo = Math.min(thumbEnd, cellStart + EIGHTHS_PER_CELL) - cellStart;
+        if (coveredFrom >= coveredTo) {
+            return EMPTY_GLYPH;
+        }
+        if (coveredFrom == 0 && coveredTo == EIGHTHS_PER_CELL) {
+            return FULL_GLYPH;
+        }
+        if (orientation == BarOrientation.VERTICAL) {
+            // A lower block fills the bottom of the cell: the thumb part for the thumb's top end,
+            // the track part below it for the thumb's bottom end.
+            return lowerEighthGlyph(coveredTo == EIGHTHS_PER_CELL
+                    ? coveredTo - coveredFrom
+                    : EIGHTHS_PER_CELL - coveredTo);
+        }
+        // A left block fills the left of the cell: the thumb part for the thumb's right end, the
+        // track part before it for the thumb's left end.
+        return leftEighthGlyph(coveredFrom == 0 ? coveredTo : coveredFrom);
+    }
+
+    /**
+     * Returns whether the eighth block from {@link #thumbGlyphForCell} must be drawn with the
+     * track color as the glyph color and the thumb color as the background. That is the case for
+     * a cell that holds the thumb's bottom end (vertical) or left end (horizontal), where the
+     * block can only paint the track part. A cell without a thumb end returns {@code false}.
+     */
+    static boolean isTrackForeground(BarOrientation orientation, int thumbStart, int thumbEnd,
+            int index) {
+        int glyph = thumbGlyphForCell(orientation, thumbStart, thumbEnd, index);
+        if (glyph == EMPTY_GLYPH || glyph == FULL_GLYPH) {
+            return false;
+        }
+        int cellStart = index * EIGHTHS_PER_CELL;
+        int coveredFrom = Math.max(thumbStart, cellStart) - cellStart;
+        int coveredTo = Math.min(thumbEnd, cellStart + EIGHTHS_PER_CELL) - cellStart;
+        return orientation == BarOrientation.VERTICAL
+                ? coveredTo != EIGHTHS_PER_CELL
+                : coveredFrom != 0;
+    }
+
+    static int leftEighthGlyph(int eighths) {
         return switch (eighths) {
             case 1 -> 0x258F;
             case 2 -> 0x258E;
@@ -48,7 +99,7 @@ final class EighthBlocks {
         };
     }
 
-    private static int lowerEighthGlyph(int eighths) {
+    static int lowerEighthGlyph(int eighths) {
         return 0x2580 + eighths;
     }
 }

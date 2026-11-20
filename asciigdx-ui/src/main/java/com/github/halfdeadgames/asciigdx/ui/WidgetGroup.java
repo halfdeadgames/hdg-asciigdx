@@ -6,7 +6,8 @@ import java.util.Objects;
 /**
  * A widget that holds other widgets and places them freely. Children keep the position they were
  * given, relative to this group's top-left corner, and draw in the order they were added, so later
- * children appear on top. Children are not clipped to the group's size.
+ * children appear on top. Children are not clipped to the group's size, except in a subclass that
+ * clips, such as {@link ScrollPane}.
  *
  * <p>This class does not override {@link Widget#layout()}: children keep the positions they are
  * given. Changes to children reach the group through the layout and redraw marks (see

@@ -12,7 +12,8 @@ import java.util.Objects;
  * {@code true} tells libGDX that the UI consumed the input.
  *
  * <p>Put it first in an {@code InputMultiplexer}, so the UI sees input before the game, and the game
- * receives only what the UI did not handle. Scrolling is never handled.
+ * receives only what the UI did not handle. Scrolling goes to the hovered widget and counts as
+ * handled when a listener consumes it (see {@link UiRoot#scrolled}).
  *
  * <p>Build a {@link CellPicker} with {@code LayerStack.toCell} (after unprojecting with the
  * viewport) or with simple math; see {@link CellPicker}.
@@ -179,7 +180,7 @@ public final class UiInput implements InputProcessor {
 
     @Override
     public boolean scrolled(float amountX, float amountY) {
-        return false;
+        return root.scrolled(amountX, amountY);
     }
 
     private static final int PRIMARY_POINTER = 0;

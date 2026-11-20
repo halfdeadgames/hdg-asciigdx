@@ -113,6 +113,14 @@ class DefaultSkinFileTest {
     }
 
     @Test
+    void scrollPaneStyleUsesTheGrayTrackAndAGoldPressedThumb() {
+        ScrollPaneStyle expected = ScrollPaneStyle.of(DARK_GRAY, GRAY)
+                .withThumbPointerOver(WHITE).withThumbPressed(GOLD);
+
+        assertEquals(expected, skin.getScrollPaneStyle("scrollPane"));
+    }
+
+    @Test
     void sliderStylesUseTheDefaultGlyphsForEachOrientation() {
         SliderStyle slider = skin.getSliderStyle("slider");
         SliderStyle tallSlider = skin.getSliderStyle("tallSlider");
