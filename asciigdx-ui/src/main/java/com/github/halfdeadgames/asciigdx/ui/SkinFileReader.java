@@ -22,12 +22,18 @@ final class SkinFileReader {
     private static final String CHECK_BOXES = "checkBoxes";
     private static final String RADIO_BUTTONS = "radioButtons";
     private static final String TEXT_FIELDS = "textFields";
+    private static final String PROGRESS_BARS = "progressBars";
+    private static final String SLIDERS = "sliders";
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS);
+            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS);
     private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
             "placeholder", "caret");
     private static final List<String> CARET_KEYS = List.of("foreground", "background", "glyph",
             "blinkSeconds");
+    private static final List<String> PROGRESS_BAR_KEYS = List.of("fill", "empty");
+    private static final List<String> SLIDER_KEYS = List.of("trackGlyph", "knobGlyph", "track",
+            "knob");
+    private static final List<String> SLIDER_LOOK_KEYS = List.of("normal", "focused", "disabled");
     private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
             "gap");
     private static final List<String> LABEL_KEYS = List.of("font", "foreground", "background");
@@ -36,6 +42,9 @@ final class SkinFileReader {
     private static final List<String> MENU_BAR_KEYS = List.of("titles", "items", "triggerColor",
             "triggerUnderline");
     private static final List<String> FONT_NAMES = List.of("tall", "square");
+    private static final int NORMAL = 0;
+    private static final int FOCUSED = 1;
+    private static final int DISABLED = 2;
     private static final int OPAQUE_ALPHA = 0xFF;
     private static final int HEX_RADIX = 16;
     private static final int RGB_DIGIT_COUNT = 6;
@@ -49,6 +58,8 @@ final class SkinFileReader {
     private final Map<String, ToggleStyle> checkBoxStyles = new LinkedHashMap<>();
     private final Map<String, ToggleStyle> radioButtonStyles = new LinkedHashMap<>();
     private final Map<String, TextFieldStyle> textFieldStyles = new LinkedHashMap<>();
+    private final Map<String, ProgressBarStyle> progressBarStyles = new LinkedHashMap<>();
+    private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
     }
@@ -66,9 +77,12 @@ final class SkinFileReader {
                 reader::readToggleStyle);
         reader.readSection(root, TEXT_FIELDS, reader.textFieldStyles,
                 reader::readTextFieldStyle);
+        reader.readSection(root, PROGRESS_BARS, reader.progressBarStyles,
+                reader::readProgressBarStyle);
+        reader.readSection(root, SLIDERS, reader.sliderStyles, reader::readSliderStyle);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
-                reader.textFieldStyles);
+                reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles);
     }
 
     private TextFieldStyle readTextFieldStyle(JsonValue entry, String path) {
@@ -119,14 +133,6 @@ final class SkinFileReader {
         return style;
     }
 
-    private static int readGlyph(JsonValue value, String path) {
-        if (!value.isString() || value.asString().isEmpty()
-                || value.asString().codePointCount(0, value.asString().length()) != 1) {
-            throw new SkinFileException(path + ": must be text of exactly one character");
-        }
-        return value.asString().codePointAt(0);
-    }
-
     private static float readBlinkSeconds(JsonValue value, String path) {
         if (!value.isNumber()) {
             throw new SkinFileException(path + ": must be a number of seconds");
@@ -137,6 +143,70 @@ final class SkinFileReader {
                     path + ": must be zero or greater and finite, was " + value.asString());
         }
         return (float) seconds;
+    }
+
+    private ProgressBarStyle readProgressBarStyle(JsonValue entry, String path) {
+        requireObject(entry, path,
+                "a progress bar object with the keys " + String.join(", ", PROGRESS_BAR_KEYS));
+        checkKnownKeys(entry, PROGRESS_BAR_KEYS, "key", path);
+        LabelStyle fill = readLook(requireKey(entry, "fill", path), path + ".fill");
+        LabelStyle empty = readLook(requireKey(entry, "empty", path), path + ".empty");
+        try {
+            return ProgressBarStyle.of(fill, empty);
+        } catch (IllegalArgumentException mixedFonts) {
+            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
+        }
+    }
+
+    private SliderStyle readSliderStyle(JsonValue entry, String path) {
+        requireObject(entry, path, "a slider object with the keys "
+                + String.join(", ", SLIDER_KEYS));
+        checkKnownKeys(entry, SLIDER_KEYS, "key", path);
+        LabelStyle[] track = readSliderLooks(requireKey(entry, "track", path), path + ".track");
+        LabelStyle[] knob = readSliderLooks(requireKey(entry, "knob", path), path + ".knob");
+        try {
+            SliderStyle style = SliderStyle.of(track[NORMAL], knob[NORMAL])
+                    .withFocused(track[FOCUSED], knob[FOCUSED])
+                    .withDisabled(track[DISABLED], knob[DISABLED]);
+            return applyGlyphs(style, entry, path);
+        } catch (IllegalArgumentException mixedFonts) {
+            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
+        }
+    }
+
+    // Returns the normal, focused, and disabled looks in that order.
+    private LabelStyle[] readSliderLooks(JsonValue group, String path) {
+        requireObject(group, path,
+                "an object with the keys " + String.join(", ", SLIDER_LOOK_KEYS));
+        checkKnownKeys(group, SLIDER_LOOK_KEYS, "key", path);
+        LabelStyle normal = readLook(requireKey(group, "normal", path), path + ".normal");
+        LabelStyle focused = readOptionalLook(group, "focused", normal, path);
+        LabelStyle disabled = readOptionalLook(group, "disabled", normal, path);
+        return new LabelStyle[] {normal, focused, disabled};
+    }
+
+    private static SliderStyle applyGlyphs(SliderStyle style, JsonValue slider, String path) {
+        JsonValue trackGlyph = slider.get("trackGlyph");
+        JsonValue knobGlyph = slider.get("knobGlyph");
+        if (trackGlyph == null && knobGlyph == null) {
+            return style;
+        }
+        if (trackGlyph == null || knobGlyph == null) {
+            throw new SkinFileException(
+                    path + ": \"trackGlyph\" and \"knobGlyph\" must be given together");
+        }
+        return style.withGlyphs(readGlyph(trackGlyph, path + ".trackGlyph"),
+                readGlyph(knobGlyph, path + ".knobGlyph"));
+    }
+
+    private static int readGlyph(JsonValue value, String path) {
+        boolean isSingleCodePoint = value.isString() && value.asString().codePointCount(0,
+                value.asString().length()) == 1;
+        if (!isSingleCodePoint) {
+            throw new SkinFileException(
+                    path + ": must be exactly one character, as text of exactly one code point");
+        }
+        return value.asString().codePointAt(0);
     }
 
     private static JsonValue readRoot(String json) {

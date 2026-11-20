@@ -45,6 +45,7 @@ class UiWidgetsScene implements SandboxScene {
     private UiSurface surface;
     private UiRoot uiRoot;
     private ButtonsPage buttonsPage;
+    private BarsPage barsPage;
     private HintsPage hintsPage;
     private MenusPage menusPage;
     private TextFieldsPage textFieldsPage;
@@ -76,8 +77,9 @@ class UiWidgetsScene implements SandboxScene {
         menusPage = new MenusPage(uiRoot, skin);
         buttonsPage = new ButtonsPage(uiRoot, skin);
         textFieldsPage = new TextFieldsPage(uiRoot, skin);
+        barsPage = new BarsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
-                hintsPage, menusPage, new TogglesPage(skin), textFieldsPage);
+                hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage);
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
@@ -276,6 +278,10 @@ class UiWidgetsScene implements SandboxScene {
             }
             if (pages.get(index) == textFieldsPage) {
                 textFieldsPage.focusFirstFieldVisibly();
+                uiRoot.draw();
+            }
+            if (pages.get(index) == barsPage) {
+                barsPage.focusFirstSliderVisibly();
                 uiRoot.draw();
             }
         }

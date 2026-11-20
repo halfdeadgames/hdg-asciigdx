@@ -19,10 +19,10 @@ import java.util.Objects;
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
  * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, {@code radioButtons},
- * and {@code textFields}; all are optional, and any other top-level key is an error. The sections
- * are read in that order, and a section can only refer to names defined in an earlier one, so
- * references never form a cycle. Inside a section every name is unique. Each section is an object
- * that maps a style name to its value.
+ * {@code textFields}, {@code progressBars}, and {@code sliders}; all are optional, and any other
+ * top-level key is an error. The sections are read in that order, and a section can only refer to
+ * names defined in an earlier one, so references never form a cycle. Inside a section every name
+ * is unique. Each section is an object that maps a style name to its value.
  *
  * <pre>{@code
  * {
@@ -59,6 +59,16 @@ import java.util.Objects;
  *     "input": {
  *       "normal": "title",
  *       "caret": { "foreground": "deepBlue", "background": "white" }
+ *     }
+ *   },
+ *   "progressBars": {
+ *     "loading": { "fill": "title", "empty": "title" }
+ *   },
+ *   "sliders": {
+ *     "volume": {
+ *       "track": { "normal": "title" },
+ *       "knob": { "normal": "title", "focused": "title" },
+ *       "trackGlyph": "-", "knobGlyph": "#"
  *     }
  *   }
  * }
@@ -121,6 +131,27 @@ import java.util.Objects;
  * today; a section of named carets may be added in a later version, and files written with inline
  * caret objects will keep loading.
  *
+ * <p>A {@code progressBars} entry has the required keys {@code fill} and {@code empty}. Each is
+ * either the name of a label style or an inline label object, and both must use the same font.
+ * The foreground of {@code fill} colors the filled part, and the background of {@code empty}
+ * colors the empty part; the other two colors are unused. Example:
+ * {@code "loading": { "fill": "accent", "empty": "text" }}.
+ *
+ * <p>A {@code sliders} entry has the keys below. Each look is either the name of a label style or
+ * an inline label object, and all looks must use the same font.
+ * <ul>
+ *   <li>{@code track}, required: an object with the required look {@code normal} and the optional
+ *       looks {@code focused} and {@code disabled} of the track cells; a missing look copies
+ *       {@code normal}.
+ *   <li>{@code knob}, required: an object with the same keys for the knob cell.
+ *   <li>{@code trackGlyph} and {@code knobGlyph}, optional but only together: text of exactly one
+ *       code point each, drawn in every track cell and in the knob cell. Without them the style
+ *       has no glyphs of its own, and a slider uses the defaults of {@link SliderStyle}: a line
+ *       for the track (horizontal or vertical, by the slider's orientation) and a full block for
+ *       the knob.
+ * </ul>
+ * Example: {@code "volume": { "track": { "normal": "text" }, "knob": { "normal": "accent" } }}.
+ *
  * <p>A missing {@code triggerColor} means the menu bar style has no trigger color, so
  * {@link MenuBarStyle#hasTriggerRgba()} returns {@code false}.
  *
@@ -144,12 +175,18 @@ public final class Skin {
     private final Map<String, ToggleStyle> checkBoxStyles;
     private final Map<String, ToggleStyle> radioButtonStyles;
     private final Map<String, TextFieldStyle> textFieldStyles;
+    private final Map<String, ProgressBarStyle> progressBarStyles;
+    private final Map<String, SliderStyle> sliderStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
             Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
             Map<String, ToggleStyle> checkBoxStyles, Map<String, ToggleStyle> radioButtonStyles,
-            Map<String, TextFieldStyle> textFieldStyles) {
+            Map<String, TextFieldStyle> textFieldStyles,
+            Map<String, ProgressBarStyle> progressBarStyles,
+            Map<String, SliderStyle> sliderStyles) {
         this.textFieldStyles = copyOf(textFieldStyles);
+        this.progressBarStyles = copyOf(progressBarStyles);
+        this.sliderStyles = copyOf(sliderStyles);
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
@@ -287,6 +324,32 @@ public final class Skin {
     }
 
     /**
+     * Returns the progress bar style with a name.
+     *
+     * @param name name in the {@code progressBars} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasProgressBarStyle(String)} first.
+     */
+    public ProgressBarStyle getProgressBarStyle(String name) {
+        return lookUp(progressBarStyles, name, "progress bar style");
+    }
+
+    /**
+     * Returns the slider style with a name.
+     *
+     * @param name name in the {@code sliders} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasSliderStyle(String)} first.
+     */
+    public SliderStyle getSliderStyle(String name) {
+        return lookUp(sliderStyles, name, "slider style");
+    }
+
+    /**
      * Returns the color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -356,6 +419,28 @@ public final class Skin {
     }
 
     /**
+     * Returns whether the skin defines a progress bar style with a name.
+     *
+     * @param name name in the {@code progressBars} section; must not be {@code null}
+     * @return {@code true} if {@link #getProgressBarStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasProgressBarStyle(String name) {
+        return contains(progressBarStyles, name);
+    }
+
+    /**
+     * Returns whether the skin defines a slider style with a name.
+     *
+     * @param name name in the {@code sliders} section; must not be {@code null}
+     * @return {@code true} if {@link #getSliderStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasSliderStyle(String name) {
+        return contains(sliderStyles, name);
+    }
+
+    /**
      * Returns whether the skin defines a color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -384,7 +469,8 @@ public final class Skin {
                 + ", buttonStyles=" + buttonStyles.size() + ", menuBarStyles="
                 + menuBarStyles.size() + ", checkBoxStyles=" + checkBoxStyles.size()
                 + ", radioButtonStyles=" + radioButtonStyles.size() + ", textFieldStyles="
-                + textFieldStyles.size() + "]";
+                + textFieldStyles.size() + ", progressBarStyles=" + progressBarStyles.size()
+                + ", sliderStyles=" + sliderStyles.size() + "]";
     }
 
     static String describeNames(Map<String, ?> namedValues) {

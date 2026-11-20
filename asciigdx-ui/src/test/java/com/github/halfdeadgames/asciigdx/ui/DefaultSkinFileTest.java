@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -100,5 +101,29 @@ class DefaultSkinFileTest {
         assertEquals(WHITE, caret.getBackgroundRgba());
         assertTrue(caret.hasForeground() && caret.hasBackground());
         assertTrue(!caret.hasGlyph());
+    }
+
+    @Test
+    void progressBarStylesMatchTheSandboxValues() {
+        LabelStyle square = LabelStyle.of(UiFont.SQUARE, GOLD, DARK_GRAY);
+        LabelStyle tall = LabelStyle.of(UiFont.TALL, GOLD, DARK_GRAY);
+
+        assertEquals(ProgressBarStyle.of(square, square), skin.getProgressBarStyle("progressBar"));
+        assertEquals(ProgressBarStyle.of(tall, tall), skin.getProgressBarStyle("tallProgressBar"));
+    }
+
+    @Test
+    void sliderStylesUseTheDefaultGlyphsForEachOrientation() {
+        SliderStyle slider = skin.getSliderStyle("slider");
+        SliderStyle tallSlider = skin.getSliderStyle("tallSlider");
+
+        assertFalse(slider.hasGlyphs());
+        assertEquals(0x2500, slider.resolveTrackGlyph(BarOrientation.HORIZONTAL));
+        assertEquals(0x2502, slider.resolveTrackGlyph(BarOrientation.VERTICAL));
+        assertEquals(0x2588, slider.resolveKnobGlyph());
+        assertEquals(UiFont.SQUARE, slider.getFont());
+        assertEquals(UiFont.TALL, tallSlider.getFont());
+        assertEquals(LabelStyle.of(UiFont.SQUARE, CYAN, BLACK), slider.getKnobFocused());
+        assertEquals(LabelStyle.of(UiFont.SQUARE, DARK_GRAY, BLACK), slider.getTrackDisabled());
     }
 }

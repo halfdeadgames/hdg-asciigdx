@@ -66,5 +66,41 @@
       "placeholder": { "font": "square", "foreground": "gray", "background": "deepBlue" },
       "caret": { "foreground": "deepBlue", "background": "white", "blinkSeconds": 0.5 }
     }
+  },
+  "progressBars": {
+    "progressBar": {
+      "fill": { "font": "square", "foreground": "gold", "background": "darkGray" },
+      "empty": { "font": "square", "foreground": "gold", "background": "darkGray" }
+    },
+    "tallProgressBar": {
+      "fill": { "font": "tall", "foreground": "gold", "background": "darkGray" },
+      "empty": { "font": "tall", "foreground": "gold", "background": "darkGray" }
+    }
+  },
+  "sliders": {
+    "slider": {
+      "track": {
+        "normal": { "font": "square", "foreground": "gray", "background": "black" },
+        "focused": { "font": "square", "foreground": "cyan", "background": "black" },
+        "disabled": { "font": "square", "foreground": "darkGray", "background": "black" }
+      },
+      "knob": {
+        "normal": { "font": "square", "foreground": "white", "background": "black" },
+        "focused": { "font": "square", "foreground": "cyan", "background": "black" },
+        "disabled": { "font": "square", "foreground": "darkGray", "background": "black" }
+      }
+    },
+    "tallSlider": {
+      "track": {
+        "normal": { "font": "tall", "foreground": "gray", "background": "black" },
+        "focused": { "font": "tall", "foreground": "cyan", "background": "black" },
+        "disabled": { "font": "tall", "foreground": "darkGray", "background": "black" }
+      },
+      "knob": {
+        "normal": { "font": "tall", "foreground": "white", "background": "black" },
+        "focused": { "font": "tall", "foreground": "cyan", "background": "black" },
+        "disabled": { "font": "tall", "foreground": "darkGray", "background": "black" }
+      }
+    }
   }
 }

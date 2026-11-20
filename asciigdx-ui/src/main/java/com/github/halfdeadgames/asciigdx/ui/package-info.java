@@ -45,6 +45,14 @@
  * {@link com.github.halfdeadgames.asciigdx.ui.UiInput} shows the on-screen keyboard while a text
  * field has focus.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.ProgressBar} is a display-only bar drawn with
+ * eighth blocks, and {@link com.github.halfdeadgames.asciigdx.ui.Slider} lets the user pick a value
+ * with the arrow keys, Home, End, or the pointer. Both run horizontally or vertically (see
+ * {@link com.github.halfdeadgames.asciigdx.ui.BarOrientation}) over a
+ * {@link com.github.halfdeadgames.asciigdx.ui.ValueRange}; their looks come from a
+ * {@link com.github.halfdeadgames.asciigdx.ui.ProgressBarStyle} and a
+ * {@link com.github.halfdeadgames.asciigdx.ui.SliderStyle}.
+ *
  * <p>Creating widgets: a widget with one form is created with a public constructor, as with
  * {@link com.github.halfdeadgames.asciigdx.ui.TextButton},
  * {@link com.github.halfdeadgames.asciigdx.ui.CheckBox},
