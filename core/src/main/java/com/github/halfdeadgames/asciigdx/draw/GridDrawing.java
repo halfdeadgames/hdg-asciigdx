@@ -55,6 +55,9 @@ public final class GridDrawing {
      * grid are skipped but still consume a cell, so the visible characters keep their position. A
      * row outside the grid writes nothing.
      *
+     * <p>For a gradient, a kept background, or a typewriter effect, use
+     * {@code TextDrawing.drawText} with a {@code TextPaint}, which places text the same way.
+     *
      * @param grid grid to write to; must not be {@code null}
      * @param column column of the first character, in cells; any value is accepted, negative or
      *         past the grid

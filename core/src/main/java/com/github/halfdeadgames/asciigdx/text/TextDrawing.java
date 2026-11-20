@@ -280,7 +280,112 @@ public final class TextDrawing {
         }
     }
 
-    private static boolean hasTextBefore(TextScroll scroll, int offset, int textCells,
+    /**
+     * Writes text on a single row with a paint, left to right, one cell per code point. Placement
+     * is the same as {@code GridDrawing.drawText}: the text does not wrap, characters that land
+     * outside the grid are skipped but still consume a cell, and a row outside the grid writes
+     * nothing. Colors and effects come from the paint, see {@link TextPaint}. The paint is read
+     * during the call only and is not kept. {@code TextPaint} is not thread-safe: use it from the
+     * thread that draws.
+     *
+     * <p>The color-pair counterpart is
+     * {@link com.github.halfdeadgames.asciigdx.draw.GridDrawing#drawText(TerminalGrid, int, int,
+     * CharSequence, int, int)}.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first character, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param text text to write; must not be {@code null}; may be empty
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, or {@code paint} is {@code null}
+     * @see TextPaint
+     */
+    public static void drawText(TerminalGrid grid, int column, int row, CharSequence text,
+            TextPaint paint) {
+        PaintedText.drawText(grid, column, row, text, paint);
+    }
+
+    /**
+     * Same as {@link #drawTruncated(TerminalGrid, int, int, int, CharSequence, int, int, int)}
+     * but with colors and effects from a paint. While the ellipsis cell is not yet reachable
+     * because a letter before it is hidden, it is written as a blank. The paint is read during the
+     * call only and is not kept; {@code TextPaint} is not thread-safe, so use it from the thread
+     * that draws.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first cell, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param widthCells width of the area in cells; at least 0
+     * @param text text to write; must not be {@code null}; may be empty
+     * @param ellipsisCodePoint single valid Unicode code point drawn as the ellipsis
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, or {@code paint} is {@code null}
+     * @throws IllegalArgumentException if {@code widthCells} is negative or
+     *         {@code ellipsisCodePoint} is not a valid code point
+     * @see TextPaint
+     */
+    public static void drawTruncated(TerminalGrid grid, int column, int row, int widthCells,
+            CharSequence text, int ellipsisCodePoint, TextPaint paint) {
+        PaintedText.drawTruncated(grid, column, row, widthCells, text, ellipsisCodePoint, paint);
+    }
+
+    /**
+     * Same as
+     * {@link #drawScrolling(TerminalGrid, int, int, int, CharSequence, TextScroll, float, int,
+     * int, int)} but with colors and effects from a paint. Visible letters and gradient positions
+     * are by the letter's index in the text, not by its screen cell, so the effects move with the
+     * text. An ellipsis is written as a blank while a text letter before it is hidden. The paint
+     * is read during the call only and is not kept; {@code TextPaint} is not thread-safe, so use
+     * it from the thread that draws.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first cell, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param widthCells width of the area in cells; at least 0
+     * @param text text to write; must not be {@code null}; may be empty
+     * @param scroll motion of the text; must not be {@code null}
+     * @param secondsSinceStart seconds since this text was first shown in this area; the caller
+     *         owns that clock and resets it to 0 when the text or width changes. NaN, infinite,
+     *         and negative values show the start position
+     * @param ellipsisCodePoint single valid Unicode code point drawn as the ellipsis
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, {@code scroll}, or
+     *         {@code paint} is {@code null}
+     * @throws IllegalArgumentException if {@code widthCells} is negative or
+     *         {@code ellipsisCodePoint} is not a valid code point
+     * @see TextPaint
+     */
+    public static void drawScrolling(TerminalGrid grid, int column, int row, int widthCells,
+            CharSequence text, TextScroll scroll, float secondsSinceStart, int ellipsisCodePoint,
+            TextPaint paint) {
+        PaintedText.drawScrolling(grid, column, row, widthCells, text, scroll, secondsSinceStart,
+                ellipsisCodePoint, paint);
+    }
+
+    /**
+     * Same as {@link #drawWrapped(TerminalGrid, int, WrapLayout, int, int)} but with colors and
+     * effects from a paint. Letters are counted in reading order from the start of the first line,
+     * including the characters skipped between lines. The visible letter count and a
+     * {@link GradientSpan#WHOLE_TEXT} gradient run across all lines; a
+     * {@link GradientSpan#EACH_LINE} gradient restarts on every line. A hyphen or ellipsis is
+     * written as a blank while a letter before it is hidden, and takes the color of the last
+     * letter of its line. The paint is read during the call only and is not kept;
+     * {@code TextPaint} is not thread-safe, so use it from the thread that draws.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param topRow row of the first line, in cells; any value is accepted
+     * @param layout the laid-out lines and their text; must not be {@code null}
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code layout}, or {@code paint} is
+     *         {@code null}
+     * @see TextPaint
+     */
+    public static void drawWrapped(TerminalGrid grid, int topRow, WrapLayout layout,
+            TextPaint paint) {
+        PaintedText.drawWrapped(grid, topRow, layout, paint);
+    }
+
+    static boolean hasTextBefore(TextScroll scroll, int offset, int textCells,
             long stripCells) {
         if (!scroll.isLooping()) {
             return offset > 0;
@@ -288,7 +393,7 @@ public final class TextDrawing {
         return (offset - 1L + stripCells) % stripCells < textCells;
     }
 
-    private static boolean hasTextAfter(TextScroll scroll, int offset, int widthCells,
+    static boolean hasTextAfter(TextScroll scroll, int offset, int widthCells,
             int textCells, long stripCells) {
         if (!scroll.isLooping()) {
             return (long) offset + widthCells < textCells;
@@ -296,13 +401,13 @@ public final class TextDrawing {
         return ((long) offset + widthCells) % stripCells < textCells;
     }
 
-    private static void requireNonNegativeWidth(int widthCells) {
+    static void requireNonNegativeWidth(int widthCells) {
         if (widthCells < 0) {
             throw new IllegalArgumentException("widthCells must be at least 0: " + widthCells);
         }
     }
 
-    private static void requireValidEllipsis(int ellipsisCodePoint) {
+    static void requireValidEllipsis(int ellipsisCodePoint) {
         if (!Character.isValidCodePoint(ellipsisCodePoint)) {
             throw new IllegalArgumentException(
                     "ellipsisCodePoint is not a valid code point: " + ellipsisCodePoint);

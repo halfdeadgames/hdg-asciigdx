@@ -3,8 +3,10 @@ package com.github.halfdeadgames.asciigdx.sandbox;
 import com.github.halfdeadgames.asciigdx.draw.GridDrawing;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.text.BreakMode;
+import com.github.halfdeadgames.asciigdx.text.GradientSpan;
 import com.github.halfdeadgames.asciigdx.text.Hyphenator;
 import com.github.halfdeadgames.asciigdx.text.TextDrawing;
+import com.github.halfdeadgames.asciigdx.text.TextPaint;
 import com.github.halfdeadgames.asciigdx.text.TextScroll;
 import com.github.halfdeadgames.asciigdx.text.WrapLayout;
 import com.github.halfdeadgames.asciigdx.text.WrapRules;
@@ -52,6 +54,20 @@ class TextOverflowScene extends GridScene {
     private static final int HYPHENATE_PANEL_LABEL_ROW =
             MODES_PANEL_LABEL_ROW + MODES_PANEL_HEIGHT + 2;
 
+    private static final int PAINT_LABEL_ROW = SCROLL_LABEL_ROW + 4;
+    private static final int KEEP_BACKGROUND_ROW = PAINT_LABEL_ROW + 1;
+    private static final int TYPEWRITER_ROW = KEEP_BACKGROUND_ROW + 1;
+    private static final int WHOLE_GRADIENT_LABEL_ROW = TYPEWRITER_ROW + 1;
+    private static final int EACH_LINE_GRADIENT_LABEL_ROW = WHOLE_GRADIENT_LABEL_ROW + 6;
+
+    private static final int STRIPE_BACKGROUND = 0x7A2E4AFF;
+    private static final int GRADIENT_START = 0xFFD34FFF;
+    private static final int GRADIENT_END = 0x4FD3FFFF;
+    private static final float TYPEWRITER_LETTERS_PER_SECOND = 8f;
+    private static final float TYPEWRITER_PAUSE_SECONDS = 1.5f;
+    private static final String TYPEWRITER_TEXT = "The door creaks open";
+    private static final String KEEP_BACKGROUND_TEXT = "Kept background";
+
     private static final int LINE_LIMIT = 3;
     private static final int CUSTOM_ELLIPSIS = '>';
     private static final int CUSTOM_ELLIPSIS_WIDTH = 10;
@@ -83,12 +99,20 @@ class TextOverflowScene extends GridScene {
     private final WrapLayout narrowCharacterLayout = new WrapLayout();
     private final WrapLayout hyphenatedLayout = new WrapLayout();
     private final WrapLayout unhyphenatedLayout = new WrapLayout();
+    private final WrapLayout paragraphLayout = new WrapLayout();
+    private final TextPaint keepBackgroundPaint = TextPaint.of(WHITE, STRIPE_BACKGROUND);
+    private final TextPaint typewriterPaint = TextPaint.of(WHITE, ZONE_BACKGROUND);
+    private final TextPaint wholeGradientPaint = TextPaint.of(GRADIENT_START, ZONE_BACKGROUND);
+    private final TextPaint eachLineGradientPaint = TextPaint.of(GRADIENT_START, ZONE_BACKGROUND);
     private float elapsedSeconds;
 
     TextOverflowScene(GlyphSource glyphs) {
         super(glyphs, COLUMNS, ROWS);
         drawTruncationPanel();
         drawScrollLabels();
+        configurePaints();
+        drawPaintPanel();
+        drawTypewriter();
         Hyphenator.englishUs();
         layOutWrapPanels();
         layOutHyphenatePanel();
@@ -121,7 +145,42 @@ class TextOverflowScene extends GridScene {
     protected void update(float delta) {
         elapsedSeconds += delta;
         drawScrollingPanel();
+        drawTypewriter();
         drawWrapPanels();
+    }
+
+    private void configurePaints() {
+        keepBackgroundPaint.setKeepBackground(true);
+        wholeGradientPaint.setGradient(GRADIENT_END, GradientSpan.WHOLE_TEXT);
+        eachLineGradientPaint.setGradient(GRADIENT_END, GradientSpan.EACH_LINE);
+        paragraphLayout.layOut(WRAP_SAMPLE,
+                WrapRules.between(LEFT_ZONE_COLUMN, LEFT_ZONE_COLUMN + LEFT_ZONE_WIDTH - 1));
+    }
+
+    private void drawPaintPanel() {
+        drawLabel(LEFT_MARKER_COLUMN, PAINT_LABEL_ROW, "Text paint");
+        GridDrawing.fillRectangle(grid, LEFT_ZONE_COLUMN, KEEP_BACKGROUND_ROW, LEFT_ZONE_WIDTH, 1,
+                ' ', WHITE, STRIPE_BACKGROUND);
+        TextDrawing.drawTruncated(grid, LEFT_ZONE_COLUMN, KEEP_BACKGROUND_ROW, LEFT_ZONE_WIDTH,
+                KEEP_BACKGROUND_TEXT, TextDrawing.DEFAULT_ELLIPSIS, keepBackgroundPaint);
+        drawLabel(LEFT_NOTE_COLUMN, KEEP_BACKGROUND_ROW, "keep");
+        drawLabel(LEFT_NOTE_COLUMN, TYPEWRITER_ROW, "typing");
+        drawLabel(LEFT_MARKER_COLUMN, WHOLE_GRADIENT_LABEL_ROW, "Gradient: whole text");
+        TextDrawing.drawWrapped(grid, WHOLE_GRADIENT_LABEL_ROW + 1, paragraphLayout,
+                wholeGradientPaint);
+        drawLabel(LEFT_MARKER_COLUMN, EACH_LINE_GRADIENT_LABEL_ROW, "Gradient: each line");
+        TextDrawing.drawWrapped(grid, EACH_LINE_GRADIENT_LABEL_ROW + 1, paragraphLayout,
+                eachLineGradientPaint);
+    }
+
+    private void drawTypewriter() {
+        float cycleSeconds = TYPEWRITER_TEXT.length() / TYPEWRITER_LETTERS_PER_SECOND
+                + TYPEWRITER_PAUSE_SECONDS;
+        float secondsInCycle = elapsedSeconds % cycleSeconds;
+        typewriterPaint.setVisibleLetterCount(
+                (int) (secondsInCycle * TYPEWRITER_LETTERS_PER_SECOND));
+        TextDrawing.drawTruncated(grid, LEFT_ZONE_COLUMN, TYPEWRITER_ROW, LEFT_ZONE_WIDTH,
+                TYPEWRITER_TEXT, TextDrawing.DEFAULT_ELLIPSIS, typewriterPaint);
     }
 
     private void drawTruncationPanel() {

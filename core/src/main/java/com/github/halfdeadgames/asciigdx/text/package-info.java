@@ -12,6 +12,11 @@
  * {@link com.github.halfdeadgames.asciigdx.text.BreakMode#HYPHENATE} splits long words with a
  * hyphen.
  *
+ * <p>Paint: {@link com.github.halfdeadgames.asciigdx.text.TextPaint} bundles the colors with a
+ * kept background, a foreground gradient, and a visible letter count for a typewriter effect.
+ * The game owns one paint per text and passes it to the {@code TextDrawing} methods that take a
+ * paint. {@link com.github.halfdeadgames.asciigdx.text.GradientSpan} picks the gradient range.
+ *
  * <p>Hyphenation: {@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
  * where a word may be split, using the bundled English (US) patterns or patterns the game
  * supplies.
@@ -40,6 +45,13 @@
  * WrapLayout layout = new WrapLayout();
  * layout.layOut(message, rules);
  * TextDrawing.drawWrapped(grid, 4, layout, fg, bg);
+ *
+ * // A fading gradient with a typewriter effect, keeping the background under the text.
+ * TextPaint paint = TextPaint.of(fg, bg);
+ * paint.setKeepBackground(true);
+ * paint.setGradient(fadeColor, GradientSpan.WHOLE_TEXT);
+ * paint.setVisibleLetterCount((int) (secondsSinceStart * 20f));
+ * TextDrawing.drawText(grid, 2, 8, message, paint);
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.text;
