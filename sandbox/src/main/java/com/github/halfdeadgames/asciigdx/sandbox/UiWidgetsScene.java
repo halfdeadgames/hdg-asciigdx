@@ -14,6 +14,7 @@ import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextField;
 import com.github.halfdeadgames.asciigdx.ui.Tooltip;
+import com.github.halfdeadgames.asciigdx.ui.UiInput;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
@@ -31,6 +32,8 @@ class UiWidgetsScene implements SandboxScene {
     private static final int MIN_ROWS_PER_SHORT_SIDE = 67;
     private static final int RESERVED_ROWS = 2;
     private static final int MAX_KEY_PAGES = 9;
+    private static final int PRIMARY_POINTER = 0;
+    private static final int PRIMARY_BUTTON = 0;
     private static final String SKIN_FILE = "default-skin.json";
     private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
     private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
@@ -41,9 +44,9 @@ class UiWidgetsScene implements SandboxScene {
     private final GlyphSource squareGlyphs;
     private final GlyphSource tallGlyphs;
     private final Vector2 worldPoint = new Vector2();
-    private final GridPoint2 pickedCell = new GridPoint2();
     private UiSurface surface;
     private UiRoot uiRoot;
+    private UiInput uiInput;
     private ButtonsPage buttonsPage;
     private BarsPage barsPage;
     private HintsPage hintsPage;
@@ -52,7 +55,6 @@ class UiWidgetsScene implements SandboxScene {
     private List<UiPage> pages;
     private MenuBar pageBar;
     private LayerStack layers;
-    private boolean mouseSeen;
     private Widget content;
     private int columns = INITIAL_COLUMNS;
     private int rows = INITIAL_ROWS;
@@ -73,6 +75,7 @@ class UiWidgetsScene implements SandboxScene {
         LayerStack oldLayers = layers;
         surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
+        uiInput = UiInput.forRoot(uiRoot, this::pickCell);
         hintsPage = new HintsPage(uiRoot, skin);
         menusPage = new MenusPage(uiRoot, skin);
         buttonsPage = new ButtonsPage(uiRoot, skin);
@@ -229,7 +232,7 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public boolean keyDown(int keycode) {
-        if (uiRoot.keyDown(keycode)) {
+        if (uiInput.keyDown(keycode)) {
             return true;
         }
         if (isAnyMenuOpen() || uiRoot.getKeyboardFocus() instanceof TextField) {
@@ -241,6 +244,16 @@ class UiWidgetsScene implements SandboxScene {
         }
         showPage(index);
         return true;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return uiInput.keyUp(keycode);
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        return uiInput.keyTyped(character);
     }
 
     @Override
@@ -343,32 +356,23 @@ class UiWidgetsScene implements SandboxScene {
 
     @Override
     public boolean touchDown(int screenX, int screenY) {
-        pickCell(screenX, screenY, pickedCell);
-        return uiRoot.pointerDown(pickedCell.x, pickedCell.y, 0, 0);
+        return uiInput.touchDown(screenX, screenY, PRIMARY_POINTER, PRIMARY_BUTTON);
     }
 
     @Override
     public boolean touchDragged(int screenX, int screenY) {
-        pickCell(screenX, screenY, pickedCell);
-        return uiRoot.pointerDragged(pickedCell.x, pickedCell.y, 0);
+        return uiInput.touchDragged(screenX, screenY, PRIMARY_POINTER);
     }
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        mouseSeen = true;
-        pickCell(screenX, screenY, pickedCell);
-        return uiRoot.pointerMoved(pickedCell.x, pickedCell.y);
+        return uiInput.mouseMoved(screenX, screenY);
     }
 
+    // UiInput also ends the hover after a lift while no mouse has been seen (touch-only devices).
     @Override
     public boolean touchUp(int screenX, int screenY) {
-        pickCell(screenX, screenY, pickedCell);
-        boolean handled = uiRoot.pointerUp(pickedCell.x, pickedCell.y, 0, 0);
-        if (!mouseSeen) {
-            // Touch-only so far: end the hover once the finger lifts.
-            uiRoot.pointerMoved(-1, -1);
-        }
-        return handled;
+        return uiInput.touchUp(screenX, screenY, PRIMARY_POINTER, PRIMARY_BUTTON);
     }
 
     @Override

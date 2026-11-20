@@ -18,6 +18,13 @@ import java.util.Objects;
  * surface. Equal cells stay clean for the grids' dirty tracking, so only changed cells are
  * uploaded to the GPU. Nothing is drawn on frames where no widget changed.
  *
+ * <p>Connecting input: connect libGDX input with {@link UiInput#forRoot}. A game
+ * that routes input to this root by hand must forward every event, including {@code keyUp}
+ * and {@code keyTyped}. Without {@code keyTyped}, text fields get no typed characters
+ * (Backspace and Delete arrive as typed characters too). Without {@code keyUp}, a held arrow
+ * key keeps repeating. On Android the soft keyboard stays closed, because only {@link UiInput}
+ * opens it.
+ *
  * <p>Input routing:
  * <ul>
  *   <li>A pointer event goes to the deepest widget under the pointer, then bubbles up through its

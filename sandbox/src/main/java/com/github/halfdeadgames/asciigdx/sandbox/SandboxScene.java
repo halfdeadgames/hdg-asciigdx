@@ -53,6 +53,16 @@ interface SandboxScene {
         return false;
     }
 
+    /** Key release forwarded by the app while this scene is open; return true if handled. */
+    default boolean keyUp(int keycode) {
+        return false;
+    }
+
+    /** Typed character forwarded by the app while this scene is open; return true if handled. */
+    default boolean keyTyped(char character) {
+        return false;
+    }
+
     /**
      * Touch forwarded by the app while this scene is open, in screen pixels; return true if
      * handled.

@@ -12,6 +12,9 @@ import java.util.Objects;
  * its outermost cell, for example {@code …ello wor…}. The caret never sits on an ellipsis cell.
  * A field narrower than 3 cells has no room for ellipses and shows none.
  *
+ * <p>Connect input with {@link UiInput#forRoot}. Input routed to the {@link UiRoot} by hand must
+ * include {@code keyTyped} and {@code keyUp}, or the field gets no typed characters.
+ *
  * <p>Keys, while the field has keyboard focus (they need a {@link UiRoot} to deliver input):
  * <ul>
  *   <li>Typed characters are inserted at the caret when they are not control characters, pass the

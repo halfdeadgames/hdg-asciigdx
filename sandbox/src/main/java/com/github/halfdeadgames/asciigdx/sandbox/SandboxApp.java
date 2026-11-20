@@ -92,6 +92,16 @@ public class SandboxApp extends ApplicationAdapter {
             }
 
             @Override
+            public boolean keyUp(int keycode) {
+                return activeScene != null && activeScene.keyUp(keycode);
+            }
+
+            @Override
+            public boolean keyTyped(char character) {
+                return activeScene != null && activeScene.keyTyped(character);
+            }
+
+            @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 if (activeScene != null) {
                     boolean handled = activeScene.touchDown(screenX, screenY);
