@@ -371,8 +371,17 @@ public abstract class Widget {
         return visible;
     }
 
-    // Reachable by a press but skipped by Tab and the arrow keys when this returns false.
-    boolean isInFocusOrder() {
+    /**
+     * Returns whether keyboard navigation (Tab, Shift+Tab, and the arrow keys) may move focus to
+     * this widget. The default returns {@link #isFocusable()}. A widget that this returns
+     * {@code false} for can still get focus from a pointer press, but navigation skips it.
+     * Override it for a widget that is focusable but should not take part in navigation, such as
+     * a container that only forwards presses. The root calls it during focus navigation, on the
+     * render thread; keep it cheap and free of side effects.
+     *
+     * @return {@code true} if navigation may focus this widget
+     */
+    protected boolean isInFocusOrder() {
         return isFocusable();
     }
 
@@ -425,8 +434,24 @@ public abstract class Widget {
         return column >= 0 && column < width && row >= 0 && row < height;
     }
 
-    /** Hook for a widget's own reaction to an event, run before its listeners. */
-    boolean handleEvent(UiEvent event) {
+    /**
+     * Reacts to an event that reaches this widget, either aimed at it or bubbling up from a
+     * descendant. It runs first, before any listener added with
+     * {@link #addListener(UiListener)}; when it returns {@code true}, the event counts as
+     * consumed and no listener of this widget runs, and it does not bubble further. The default
+     * handles nothing and returns {@code false}, so a direct subclass of {@code Widget} need not
+     * call {@code super.handleEvent(event)}. A subclass of a built-in widget, such as
+     * {@link TextButton}, must call {@code super.handleEvent(event)} to keep that widget's
+     * behavior. Runs on the render thread while the root delivers input. The event object is
+     * reused, so do not keep a reference to it. Do not call input methods of the {@link UiRoot}
+     * from here.
+     *
+     * <p>This is an input handler, so it returns whether the event was consumed.
+     *
+     * @param event event being delivered; never {@code null}
+     * @return {@code true} if the event was consumed
+     */
+    protected boolean handleEvent(UiEvent event) {
         return false;
     }
 
@@ -446,9 +471,15 @@ public abstract class Widget {
     void validateChildren() {
     }
 
-    // Set by UiRoot on the focused widget while keyboard focus is shown, so a widget can pick its
-    // focused look without a reference to the root.
-    boolean isFocusShown() {
+    /**
+     * Returns whether this widget has keyboard focus and the focus look should be drawn. Call it
+     * while drawing content to choose between the normal and the focused look. It is {@code false}
+     * when the widget has focus but the last input was a pointer press (see
+     * {@link UiRoot#isFocusVisible()}).
+     *
+     * @return {@code true} while this widget has keyboard focus and the focus look should be drawn
+     */
+    protected boolean isFocusShown() {
         return focusShown;
     }
 

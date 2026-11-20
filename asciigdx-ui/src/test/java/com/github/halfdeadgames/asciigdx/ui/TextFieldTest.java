@@ -188,23 +188,34 @@ class TextFieldTest {
 
     @Test
     void pressOnTheFocusedFieldAsksForTheKeyboardAgain() {
-        List<Boolean> wanted = new ArrayList<>();
-        ui.setTextInputWantedListener(wanted::add);
+        List<String> calls = new ArrayList<>();
+        ui.addTextInputWantedListener(new UiRoot.TextInputWantedListener() {
+            @Override
+            public void textInputWantedChanged(boolean wanted) {
+                calls.add("changed " + wanted);
+            }
+
+            @Override
+            public void textInputRequestedAgain() {
+                calls.add("again");
+            }
+        });
         TextField field = fieldAt(2, 1, 10);
 
         ui.pointerDown(3, 1, 0, 0);
         ui.pointerUp(3, 1, 0, 0);
+        assertEquals(List.of("changed true"), calls);
         ui.pointerDown(4, 1, 0, 0);
         ui.pointerUp(4, 1, 0, 0);
 
-        assertEquals(List.of(true, true), wanted);
+        assertEquals(List.of("changed true", "again"), calls);
         assertSame(field, ui.getKeyboardFocus());
     }
 
     @Test
     void disablingTheFocusedFieldClearsFocusAndStopsWantingTheKeyboard() {
         List<Boolean> wanted = new ArrayList<>();
-        ui.setTextInputWantedListener(wanted::add);
+        ui.addTextInputWantedListener(wanted::add);
         TextField field = focusedField();
 
         field.setDisabled(true);
@@ -611,7 +622,7 @@ class TextFieldTest {
     @Test
     void onscreenKeyboardIsWantedOnlyWhileATextFieldHasFocus() {
         List<Boolean> wanted = new ArrayList<>();
-        ui.setTextInputWantedListener(wanted::add);
+        ui.addTextInputWantedListener(wanted::add);
         TextField field = fieldAt(2, 1, 10);
         TextButton button = new TextButton("Go", ButtonStyle.of(
                 LabelStyle.of(UiFont.SQUARE, TEXT, NORMAL_BG)));

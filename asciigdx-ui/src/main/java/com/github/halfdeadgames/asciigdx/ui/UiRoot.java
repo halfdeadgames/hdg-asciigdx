@@ -21,9 +21,11 @@ import java.util.Objects;
  * <p>Connecting input: connect libGDX input with {@link UiInput#forRoot}. A game
  * that routes input to this root by hand must forward every event, including {@code keyUp}
  * and {@code keyTyped}. Without {@code keyTyped}, text fields get no typed characters
- * (Backspace and Delete arrive as typed characters too). Without {@code keyUp}, a held arrow
- * key keeps repeating. On Android the soft keyboard stays closed, because only {@link UiInput}
- * opens it.
+ * (Backspace and Delete arrive as typed characters too). Games must forward {@code keyUp};
+ * without it, a held arrow key keeps repeating. If the game's input path can lose key-up events
+ * (for example when the window loses focus), call {@link #releaseHeldKeys()} instead. On Android
+ * the soft keyboard stays closed unless something listens with
+ * {@link #addTextInputWantedListener}, as {@link UiInput} does.
  *
  * <p>Input routing:
  * <ul>
@@ -71,9 +73,10 @@ import java.util.Objects;
  *       all other keys never repeat. The repeat stops on the key-up of that key, on any other
  *       key-down, and when the focus owner changes for any reason other than the repeat itself
  *       (a pointer press, {@link #setKeyboardFocus}, or an owner that was hidden or disabled); a
- *       focus move that the repeated key causes keeps it going. If the same arrow key-down
- *       arrives a second time before its key-up, as when a platform repeats on its own, the
- *       root's repeat stays off until that key is released.
+ *       focus move that the repeated key causes keeps it going. The key still counts as held
+ *       after a focus change. If the same arrow key-down arrives again before its key-up, as
+ *       when a platform repeats on its own, the root's repeat stays off until that key is
+ *       released (or {@link #releaseHeldKeys()} is called).
  *   <li>Focus look: focus is shown (see {@link #isFocusVisible()}) while the last input was
  *       keyboard navigation or a key that the focused chain handled, and hidden after an
  *       accepted pointer press and before any input. Hiding a widget acts like removing it for
@@ -119,6 +122,8 @@ public final class UiRoot {
     private static final UiUpdateListener[] NO_UPDATE_LISTENERS = new UiUpdateListener[0];
     private static final PressObserver[] NO_PRESS_OBSERVERS = new PressObserver[0];
     private static final UiListener[] NO_KEY_LISTENERS = new UiListener[0];
+    private static final TextInputWantedListener[] NO_TEXT_INPUT_LISTENERS =
+            new TextInputWantedListener[0];
     static final float KEY_REPEAT_INITIAL_DELAY_SECONDS = 0.4f;
     static final float KEY_REPEAT_INTERVAL_SECONDS = 0.05f;
     private static final int NO_KEY = -1;
@@ -157,7 +162,7 @@ public final class UiRoot {
     private float secondsUntilKeyRepeat;
     private boolean autoFocusTextFields;
     private boolean textInputWanted;
-    private TextInputWantedListener textInputWantedListener;
+    private TextInputWantedListener[] textInputWantedListeners = NO_TEXT_INPUT_LISTENERS;
 
     private UiRoot(UiSurface shownSurface) {
         this.shownSurface = shownSurface;
@@ -311,7 +316,7 @@ public final class UiRoot {
         keyboardFocus = next;
         keyboardFocusWasFocusable = next != null && next.isFocusable();
         if (!firingKeyRepeat) {
-            stopKeyRepeat();
+            stopRepeatTimer();
         }
         if (previous != null) {
             previous.setKeyboardFocused(false);
@@ -325,8 +330,19 @@ public final class UiRoot {
     // A press on a text field that already has focus asks again, because the user may have hidden
     // the on-screen keyboard with the Back key.
     private void requestTextInputAgain() {
-        if (textInputWanted && textInputWantedListener != null) {
-            textInputWantedListener.textInputWantedChanged(true);
+        if (!textInputWanted) {
+            return;
+        }
+        TextInputWantedListener[] snapshot = textInputWantedListeners;
+        for (int i = 0; i < snapshot.length; i++) {
+            snapshot[i].textInputRequestedAgain();
+        }
+    }
+
+    private void notifyTextInputWanted(boolean wanted) {
+        TextInputWantedListener[] snapshot = textInputWantedListeners;
+        for (int i = 0; i < snapshot.length; i++) {
+            snapshot[i].textInputWantedChanged(wanted);
         }
     }
 
@@ -336,19 +352,89 @@ public final class UiRoot {
             return;
         }
         textInputWanted = wanted;
-        if (textInputWantedListener != null) {
-            textInputWantedListener.textInputWantedChanged(wanted);
+        notifyTextInputWanted(wanted);
+    }
+
+    /**
+     * Hears when the root starts or stops wanting text input, that is, when a {@link TextField}
+     * gains or loses keyboard focus. Use it to show or hide the Android soft keyboard.
+     */
+    @FunctionalInterface
+    public interface TextInputWantedListener {
+
+        /**
+         * Called only when {@link UiRoot#isTextInputWanted()} actually changes. Runs on the
+         * render thread, during input handling. Do not call {@link UiRoot#setKeyboardFocus} or
+         * other input methods of the root from here.
+         *
+         * @param wanted {@code true} if a text field now has keyboard focus, {@code false} if
+         *         focus left all text fields
+         */
+        void textInputWantedChanged(boolean wanted);
+
+        /**
+         * Called when the user presses a text field that already has keyboard focus, so a closed
+         * soft keyboard can be shown again. {@link UiRoot#isTextInputWanted()} stays
+         * {@code true}. The default does nothing. The same restrictions as for
+         * {@link #textInputWantedChanged} apply.
+         */
+        default void textInputRequestedAgain() {
         }
     }
 
-    /** Hears when a text field gains or loses keyboard focus, for the on-screen keyboard. */
-    interface TextInputWantedListener {
-        void textInputWantedChanged(boolean wanted);
+    /**
+     * Returns whether a {@link TextField} of this root currently has keyboard focus, so the game
+     * should offer text input (for example by showing the soft keyboard).
+     *
+     * @return {@code true} while a text field has keyboard focus
+     */
+    public boolean isTextInputWanted() {
+        return textInputWanted;
     }
 
-    // Only UiInput uses this, to keep the libGDX calls in one class.
-    void setTextInputWantedListener(TextInputWantedListener listener) {
-        textInputWantedListener = listener;
+    /**
+     * Adds a listener that hears when text input becomes wanted or unwanted (see
+     * {@link #isTextInputWanted()}). Listeners are called in the order they were added:
+     * {@link TextInputWantedListener#textInputWantedChanged} only when the state changes, and
+     * {@link TextInputWantedListener#textInputRequestedAgain} when the user presses the already
+     * focused text field. Adding the same listener twice makes it run twice. Adding or removing
+     * listeners from inside a listener is safe: a notification that is already running uses the
+     * listeners that existed when it started. A listener must not call
+     * {@link #setKeyboardFocus} or any other input method of this root while it is called.
+     * Does not call the listener at once, so read {@link #isTextInputWanted()} for the current
+     * state.
+     *
+     * @param listener listener to add; must not be {@code null}
+     * @throws NullPointerException if {@code listener} is {@code null}
+     */
+    public void addTextInputWantedListener(TextInputWantedListener listener) {
+        Objects.requireNonNull(listener, "listener");
+        TextInputWantedListener[] grown =
+                Arrays.copyOf(textInputWantedListeners, textInputWantedListeners.length + 1);
+        grown[textInputWantedListeners.length] = listener;
+        textInputWantedListeners = grown;
+    }
+
+    /**
+     * Removes the first occurrence of a text input listener. Does nothing if it was not added.
+     * Safe to call from inside a listener, including the listener itself; the same notification
+     * rules as in {@link #addTextInputWantedListener} apply.
+     *
+     * @param listener listener to remove; must not be {@code null}
+     * @throws NullPointerException if {@code listener} is {@code null}
+     */
+    public void removeTextInputWantedListener(TextInputWantedListener listener) {
+        Objects.requireNonNull(listener, "listener");
+        int index = Arrays.asList(textInputWantedListeners).indexOf(listener);
+        if (index < 0) {
+            return;
+        }
+        TextInputWantedListener[] shrunk =
+                new TextInputWantedListener[textInputWantedListeners.length - 1];
+        System.arraycopy(textInputWantedListeners, 0, shrunk, 0, index);
+        System.arraycopy(textInputWantedListeners, index + 1, shrunk, index,
+                shrunk.length - index);
+        textInputWantedListeners = shrunk.length == 0 ? NO_TEXT_INPUT_LISTENERS : shrunk;
     }
 
     /**
@@ -632,7 +718,7 @@ public final class UiRoot {
     // The repeat starts after the dispatch, so a focus change that the first press causes (Tab or
     // an arrow moving focus) does not cancel it.
     private void startOrStopKeyRepeat(int keycode, boolean shiftHeld) {
-        stopKeyRepeat();
+        stopRepeatTimer();
         if (!isArrowKey(keycode)) {
             return;
         }
@@ -646,8 +732,25 @@ public final class UiRoot {
         secondsUntilKeyRepeat = KEY_REPEAT_INITIAL_DELAY_SECONDS;
     }
 
+    // Ends the repeat and forgets the held key, so the next key-down of it starts a new repeat.
     private void stopKeyRepeat() {
+        stopRepeatTimer();
+        heldArrowKeycode = NO_KEY;
+    }
+
+    // Keeps the held key, so a platform's own repeat of that key-down does not restart the timer.
+    private void stopRepeatTimer() {
         repeatingKeycode = NO_KEY;
+    }
+
+    /**
+     * Stops any key repeat as if every held key had been released. Call it when the game's input
+     * path may lose key-up events, for example when the window loses focus. Afterwards, the next
+     * key-down of an arrow key starts a new repeat. Does nothing when no key is held. Does not
+     * send any key event to widgets.
+     */
+    public void releaseHeldKeys() {
+        stopKeyRepeat();
     }
 
     private static boolean isArrowKey(int keycode) {
@@ -680,7 +783,6 @@ public final class UiRoot {
      */
     public boolean keyUp(int keycode) {
         if (keycode == heldArrowKeycode) {
-            heldArrowKeycode = NO_KEY;
             stopKeyRepeat();
         }
         return dispatchKey(UiEventType.KEY_UP, keycode, '\0', false);

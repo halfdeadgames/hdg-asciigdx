@@ -153,6 +153,52 @@ class UiRootKeyRepeatTest {
     }
 
     @Test
+    void focusChangeStopsTheTimerButTheKeyStaysHeldSoAPlatformRepeatIsIgnored() {
+        recordUnhandledKeyDowns();
+        TextButton first = buttonAt(0);
+        TextButton second = buttonAt(6);
+        ui.setKeyboardFocus(first);
+
+        ui.keyDown(Input.Keys.DOWN);
+        ui.setKeyboardFocus(second);
+        ui.update(10f);
+        assertEquals(1, keyDowns.size());
+
+        ui.keyDown(Input.Keys.DOWN);
+        ui.update(10f);
+        assertEquals(2, keyDowns.size());
+
+        ui.keyUp(Input.Keys.DOWN);
+        ui.keyDown(Input.Keys.DOWN);
+        ui.update(INITIAL);
+        assertEquals(4, keyDowns.size());
+    }
+
+    @Test
+    void releaseHeldKeysStopsTheRepeatAndAllowsANewOne() {
+        recordUnhandledKeyDowns();
+
+        ui.keyDown(Input.Keys.LEFT);
+        ui.releaseHeldKeys();
+        ui.update(10f);
+        assertEquals(1, keyDowns.size());
+
+        ui.keyDown(Input.Keys.LEFT);
+        ui.update(INITIAL);
+        assertEquals(3, keyDowns.size());
+    }
+
+    @Test
+    void releaseHeldKeysWithNothingHeldDoesNothing() {
+        recordUnhandledKeyDowns();
+
+        ui.releaseHeldKeys();
+        ui.update(10f);
+
+        assertTrue(keyDowns.isEmpty());
+    }
+
+    @Test
     void repeatingTheKeyKeepsMovingFocusAlongTheRow() {
         TextButton first = buttonAt(0);
         TextButton second = buttonAt(6);

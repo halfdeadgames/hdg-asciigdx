@@ -34,6 +34,20 @@ class WidgetTest {
         }
     }
 
+    private static final class Consumer extends Probe {
+        boolean consume = true;
+        int handled;
+
+        @Override
+        protected boolean handleEvent(UiEvent event) {
+            if (event.getType() != UiEventType.POINTER_DOWN) {
+                return false;
+            }
+            handled++;
+            return consume;
+        }
+    }
+
     private static class ResizingGroup extends WidgetGroup {
         Widget child;
 
@@ -278,5 +292,49 @@ class WidgetTest {
         assertEquals(2, new Label("a", TALL).getRowSnap());
         assertEquals(1, new Label("a", SQUARE).getRowSnap());
         assertEquals(1, new Probe().getRowSnap());
+    }
+
+    private static UiRoot rootWith(Consumer widget) {
+        UiRoot ui = UiRoot.of(UiSurface.ofSize(10, 10));
+        widget.setSize(5, 5);
+        ui.getRoot().addChild(widget);
+        return ui;
+    }
+
+    @Test
+    void consumingHandleEventSkipsListenersAndReportsHandled() {
+        Consumer widget = new Consumer();
+        int[] listenerCalls = new int[1];
+        widget.addListener(event -> {
+            if (event.getType() == UiEventType.POINTER_DOWN) {
+                listenerCalls[0]++;
+            }
+            return true;
+        });
+        UiRoot ui = rootWith(widget);
+
+        assertTrue(ui.pointerDown(1, 1, 0, 0));
+
+        assertEquals(1, widget.handled);
+        assertEquals(0, listenerCalls[0]);
+    }
+
+    @Test
+    void nonConsumingHandleEventLetsListenersRun() {
+        Consumer widget = new Consumer();
+        widget.consume = false;
+        int[] listenerCalls = new int[1];
+        widget.addListener(event -> {
+            if (event.getType() == UiEventType.POINTER_DOWN) {
+                listenerCalls[0]++;
+            }
+            return true;
+        });
+        UiRoot ui = rootWith(widget);
+
+        assertTrue(ui.pointerDown(1, 1, 0, 0));
+
+        assertEquals(1, widget.handled);
+        assertEquals(1, listenerCalls[0]);
     }
 }

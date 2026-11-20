@@ -152,6 +152,17 @@ import java.util.Objects;
  * </ul>
  * Example: {@code "volume": { "track": { "normal": "text" }, "knob": { "normal": "accent" } }}.
  *
+ * <p>Custom sections: to read sections for your own widgets, register a
+ * {@link SkinSectionReader} on a {@link SkinLoader} and load through it. Skins made by
+ * {@link #fromJson} and {@link #fromFile} have none.
+ *
+ * <pre>{@code
+ * Skin skin = SkinLoader.create()
+ *         .withSection("starRatings", StarRatingStyle::read)
+ *         .fromFile(Gdx.files.internal("skin.json"));
+ * StarRatingStyle style = skin.getCustomStyle("starRatings", "default", StarRatingStyle.class);
+ * }</pre>
+ *
  * <p>A missing {@code triggerColor} means the menu bar style has no trigger color, so
  * {@link MenuBarStyle#hasTriggerRgba()} returns {@code false}.
  *
@@ -177,13 +188,18 @@ public final class Skin {
     private final Map<String, TextFieldStyle> textFieldStyles;
     private final Map<String, ProgressBarStyle> progressBarStyles;
     private final Map<String, SliderStyle> sliderStyles;
+    private final Map<String, Map<String, Object>> customStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
             Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
             Map<String, ToggleStyle> checkBoxStyles, Map<String, ToggleStyle> radioButtonStyles,
             Map<String, TextFieldStyle> textFieldStyles,
             Map<String, ProgressBarStyle> progressBarStyles,
-            Map<String, SliderStyle> sliderStyles) {
+            Map<String, SliderStyle> sliderStyles,
+            Map<String, Map<String, Object>> customStyles) {
+        Map<String, Map<String, Object>> customCopy = new LinkedHashMap<>();
+        customStyles.forEach((section, styles) -> customCopy.put(section, copyOf(styles)));
+        this.customStyles = Collections.unmodifiableMap(customCopy);
         this.textFieldStyles = copyOf(textFieldStyles);
         this.progressBarStyles = copyOf(progressBarStyles);
         this.sliderStyles = copyOf(sliderStyles);
@@ -206,8 +222,7 @@ public final class Skin {
      * @throws SkinFileException if the text is not valid JSON or breaks any rule of the format
      */
     public static Skin fromJson(String json) {
-        Objects.requireNonNull(json, "json");
-        return SkinFileReader.read(withoutByteOrderMark(json));
+        return SkinLoader.create().fromJson(json);
     }
 
     /**
@@ -225,13 +240,7 @@ public final class Skin {
      *         from the handle propagate unchanged
      */
     public static Skin fromFile(FileHandle file) {
-        Objects.requireNonNull(file, "file");
-        String text = file.readString("UTF-8");
-        try {
-            return fromJson(text);
-        } catch (SkinFileException problem) {
-            throw new SkinFileException(file.path() + ": " + problem.getMessage());
-        }
+        return SkinLoader.create().fromFile(file);
     }
 
     /**
@@ -451,16 +460,63 @@ public final class Skin {
         return contains(colors, name);
     }
 
+    /**
+     * Returns a style from a custom section registered with
+     * {@link SkinLoader#withSection(String, SkinSectionReader)}.
+     *
+     * @param section the custom section name; must not be {@code null}
+     * @param name the entry name in that section; must not be {@code null}
+     * @param type the runtime class of the style, or a supertype of it; generic type arguments
+     *         cannot be checked. Must not be {@code null}
+     * @param <T> the style type
+     * @return the style, never {@code null}
+     * @throws NullPointerException if an argument is {@code null}
+     * @throws IllegalArgumentException if the section was not registered on the loader that made
+     *         this skin, the section has no such name (the message lists the known names), or the
+     *         stored style is not an instance of {@code type}
+     */
+    public <T> T getCustomStyle(String section, String name, Class<T> type) {
+        Objects.requireNonNull(section, "section");
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(type, "type");
+        Map<String, Object> styles = customStyles.get(section);
+        if (styles == null) {
+            throw new IllegalArgumentException("Unknown custom section \"" + section
+                    + "\". Known custom sections: " + describeNames(customStyles));
+        }
+        Object style = styles.get(name);
+        if (style == null) {
+            throw new IllegalArgumentException("Unknown custom style \"" + name
+                    + "\" in section \"" + section + "\". Known custom styles: "
+                    + describeNames(styles));
+        }
+        if (!type.isInstance(style)) {
+            throw new IllegalArgumentException("The custom style \"" + name + "\" in section \""
+                    + section + "\" is a " + style.getClass().getName() + ", not a "
+                    + type.getName());
+        }
+        return type.cast(style);
+    }
+
+    /**
+     * Returns whether a custom section has an entry with a name.
+     *
+     * @param section the custom section name; must not be {@code null}
+     * @param name the entry name; must not be {@code null}
+     * @return {@code true} exactly when {@link #getCustomStyle} would not throw for a missing
+     *         section or name; the type check is separate
+     * @throws NullPointerException if an argument is {@code null}
+     */
+    public boolean hasCustomStyle(String section, String name) {
+        Objects.requireNonNull(section, "section");
+        Objects.requireNonNull(name, "name");
+        Map<String, Object> styles = customStyles.get(section);
+        return styles != null && styles.containsKey(name);
+    }
+
     private static boolean contains(Map<String, ?> namedValues, String name) {
         Objects.requireNonNull(name, "name");
         return namedValues.containsKey(name);
-    }
-
-    private static String withoutByteOrderMark(String text) {
-        if (!text.isEmpty() && text.charAt(0) == '﻿') {
-            return text.substring(1);
-        }
-        return text;
     }
 
     @Override
@@ -470,7 +526,8 @@ public final class Skin {
                 + menuBarStyles.size() + ", checkBoxStyles=" + checkBoxStyles.size()
                 + ", radioButtonStyles=" + radioButtonStyles.size() + ", textFieldStyles="
                 + textFieldStyles.size() + ", progressBarStyles=" + progressBarStyles.size()
-                + ", sliderStyles=" + sliderStyles.size() + "]";
+                + ", sliderStyles=" + sliderStyles.size() + ", customSections="
+                + customStyles.keySet() + "]";
     }
 
     static String describeNames(Map<String, ?> namedValues) {

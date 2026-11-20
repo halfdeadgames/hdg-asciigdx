@@ -218,7 +218,7 @@ public final class CheckBox extends Widget {
     }
 
     @Override
-    boolean handleEvent(UiEvent event) {
+    protected boolean handleEvent(UiEvent event) {
         return body.handleEvent(event);
     }
 

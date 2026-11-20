@@ -30,7 +30,8 @@ import java.util.Objects;
  *
  * <p>On-screen keyboard: while a {@link TextField} of the root has keyboard focus, this processor
  * asks libGDX to show the on-screen keyboard (it matters on Android), and asks it to hide the
- * keyboard when focus leaves all text fields. A root reports to one processor only.
+ * keyboard when focus leaves all text fields. It registers a text input listener on the root when
+ * created and never removes it.
  *
  * <p>Not thread-safe; libGDX calls it on the render thread. Does not allocate per event.
  *
@@ -67,7 +68,17 @@ public final class UiInput implements InputProcessor {
     public static UiInput forRoot(UiRoot root, CellPicker picker) {
         UiInput input = new UiInput(Objects.requireNonNull(root, "root"),
                 Objects.requireNonNull(picker, "picker"));
-        root.setTextInputWantedListener(input::setOnscreenKeyboardVisible);
+        root.addTextInputWantedListener(new UiRoot.TextInputWantedListener() {
+            @Override
+            public void textInputWantedChanged(boolean wanted) {
+                input.setOnscreenKeyboardVisible(wanted);
+            }
+
+            @Override
+            public void textInputRequestedAgain() {
+                input.setOnscreenKeyboardVisible(true);
+            }
+        });
         return input;
     }
 

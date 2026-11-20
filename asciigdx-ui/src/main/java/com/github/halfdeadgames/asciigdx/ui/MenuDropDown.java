@@ -97,7 +97,7 @@ final class MenuDropDown extends Widget {
     }
 
     @Override
-    boolean handleEvent(UiEvent event) {
+    protected boolean handleEvent(UiEvent event) {
         return switch (event.getType()) {
             case POINTER_ENTERED, POINTER_MOVED -> {
                 setHoveredItem(itemAt(event.getColumn(), event.getRow()));

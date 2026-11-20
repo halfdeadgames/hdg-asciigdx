@@ -82,7 +82,8 @@ class UiWidgetsScene implements SandboxScene {
         textFieldsPage = new TextFieldsPage(uiRoot, skin);
         barsPage = new BarsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
-                hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage);
+                hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
+                new RatingsPage(skin));
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;

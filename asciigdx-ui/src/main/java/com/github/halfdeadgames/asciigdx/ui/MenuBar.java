@@ -299,7 +299,7 @@ public final class MenuBar extends Widget {
 
     // A bar draws no focus look and has its own keys, so Tab and the arrows skip it.
     @Override
-    boolean isInFocusOrder() {
+    protected boolean isInFocusOrder() {
         return false;
     }
 
@@ -330,7 +330,7 @@ public final class MenuBar extends Widget {
     }
 
     @Override
-    boolean handleEvent(UiEvent event) {
+    protected boolean handleEvent(UiEvent event) {
         return switch (event.getType()) {
             case POINTER_ENTERED, POINTER_MOVED -> {
                 setHoveredTitle(titleIndexAt(event.getSurfaceColumn(), event.getSurfaceRow()));

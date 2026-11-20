@@ -429,7 +429,7 @@ public final class TextField extends Widget {
     }
 
     @Override
-    boolean handleEvent(UiEvent event) {
+    protected boolean handleEvent(UiEvent event) {
         if (disabled) {
             return false;
         }

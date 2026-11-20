@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.SerializationException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,13 +61,24 @@ final class SkinFileReader {
     private final Map<String, TextFieldStyle> textFieldStyles = new LinkedHashMap<>();
     private final Map<String, ProgressBarStyle> progressBarStyles = new LinkedHashMap<>();
     private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
+    private final Map<String, Map<String, Object>> customStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
     }
 
+    static boolean isBuiltInSection(String sectionName) {
+        return SECTION_NAMES.contains(sectionName);
+    }
+
     static Skin read(String json) {
+        return read(json, Map.of());
+    }
+
+    static Skin read(String json, Map<String, SkinSectionReader<?>> customReaders) {
         JsonValue root = readRoot(json);
-        checkKnownKeys(root, SECTION_NAMES, "section", "The file");
+        List<String> knownSections = new ArrayList<>(SECTION_NAMES);
+        knownSections.addAll(customReaders.keySet());
+        checkKnownKeys(root, knownSections, "section", "The file");
         var reader = new SkinFileReader();
         reader.readSection(root, COLORS, reader.colors, reader::readColorEntry);
         reader.readSection(root, LABELS, reader.labelStyles, reader::readLabelStyle);
@@ -80,9 +92,37 @@ final class SkinFileReader {
         reader.readSection(root, PROGRESS_BARS, reader.progressBarStyles,
                 reader::readProgressBarStyle);
         reader.readSection(root, SLIDERS, reader.sliderStyles, reader::readSliderStyle);
+        reader.readCustomSections(root, customReaders);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
-                reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles);
+                reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles,
+                reader.customStyles);
+    }
+
+    private void readCustomSections(JsonValue root,
+            Map<String, SkinSectionReader<?>> customReaders) {
+        for (Map.Entry<String, SkinSectionReader<?>> registered : customReaders.entrySet()) {
+            Map<String, Object> styles = new LinkedHashMap<>();
+            customStyles.put(registered.getKey(), styles);
+            SkinSectionReader<?> sectionReader = registered.getValue();
+            readSection(root, registered.getKey(), styles,
+                    (entry, path) -> readCustomEntry(sectionReader, entry, path));
+        }
+    }
+
+    private Object readCustomEntry(SkinSectionReader<?> sectionReader, JsonValue entry,
+            String path) {
+        var context = new SkinEntryContext(this, path);
+        Object style;
+        try {
+            style = sectionReader.readEntry(entry, context);
+        } finally {
+            context.invalidate();
+        }
+        if (style == null) {
+            throw new SkinFileException(path + ": the section reader returned no style");
+        }
+        return style;
     }
 
     private TextFieldStyle readTextFieldStyle(JsonValue entry, String path) {
@@ -414,7 +454,7 @@ final class SkinFileReader {
         return readLook(look, path + "." + key);
     }
 
-    private LabelStyle readLook(JsonValue value, String path) {
+    LabelStyle readLook(JsonValue value, String path) {
         if (value.isString()) {
             return lookUpReference(labelStyles, value.asString(), "label style", path);
         }
@@ -462,7 +502,7 @@ final class SkinFileReader {
                 + String.join(", ", FONT_NAMES));
     }
 
-    private int readColor(JsonValue value, String path) {
+    int readColor(JsonValue value, String path) {
         if (!value.isString()) {
             throw new SkinFileException(path
                     + ": must be text, either hex such as \"#RRGGBB\" or the name of a color");

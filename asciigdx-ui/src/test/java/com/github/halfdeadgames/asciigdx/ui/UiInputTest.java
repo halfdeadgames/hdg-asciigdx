@@ -173,6 +173,21 @@ class UiInputTest {
     }
 
     @Test
+    void theProcessorsKeyboardListenerSkipsAMissingGdxInputAndLaterListenersStillRun() {
+        List<Boolean> wanted = new ArrayList<>();
+        root.addTextInputWantedListener(wanted::add);
+        TextField field = new TextField(TextFieldStyle.of(
+                LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF)), 10);
+        root.getRoot().addChild(field);
+
+        // Gdx.input is null in plain tests; the processor must skip it and later listeners run.
+        root.setKeyboardFocus(field);
+
+        assertEquals(List.of(true), wanted);
+        assertTrue(root.isTextInputWanted());
+    }
+
+    @Test
     void nullArgumentsAreRejected() {
         assertThrows(NullPointerException.class, () -> UiInput.forRoot(null, (x, y, out) -> { }));
         assertThrows(NullPointerException.class, () -> UiInput.forRoot(root, null));
