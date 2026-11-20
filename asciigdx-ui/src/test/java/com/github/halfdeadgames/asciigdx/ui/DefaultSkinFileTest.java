@@ -88,4 +88,17 @@ class DefaultSkinFileTest {
         assertEquals(menuBar, skin.getMenuBarStyle("menuBar"));
         assertTrue(skin.getMenuBarStyle("tallMenuBar").isTriggerUnderline());
     }
+
+    @Test
+    void defaultTextFieldHasBlockCaretOfSwappedColors() {
+        TextFieldStyle style = skin.getTextFieldStyle("default");
+        CaretStyle caret = style.getCaret();
+
+        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, DEEP_BLUE), style.getNormal());
+        assertEquals(LabelStyle.of(UiFont.SQUARE, GRAY, DARK_GRAY), style.getDisabled());
+        assertEquals(DEEP_BLUE, caret.getForegroundRgba());
+        assertEquals(WHITE, caret.getBackgroundRgba());
+        assertTrue(caret.hasForeground() && caret.hasBackground());
+        assertTrue(!caret.hasGlyph());
+    }
 }

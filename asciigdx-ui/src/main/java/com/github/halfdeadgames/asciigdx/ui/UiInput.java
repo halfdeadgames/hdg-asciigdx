@@ -28,6 +28,10 @@ import java.util.Objects;
  * ({@link UiEventType#POINTER_EXITED} is sent as usual). After the first {@code mouseMoved} it
  * never does this again.
  *
+ * <p>On-screen keyboard: while a {@link TextField} of the root has keyboard focus, this processor
+ * asks libGDX to show the on-screen keyboard (it matters on Android), and asks it to hide the
+ * keyboard when focus leaves all text fields. A root reports to one processor only.
+ *
  * <p>Not thread-safe; libGDX calls it on the render thread. Does not allocate per event.
  *
  * <p>Example:
@@ -61,8 +65,17 @@ public final class UiInput implements InputProcessor {
      * @throws NullPointerException if {@code root} or {@code picker} is {@code null}
      */
     public static UiInput forRoot(UiRoot root, CellPicker picker) {
-        return new UiInput(Objects.requireNonNull(root, "root"),
+        UiInput input = new UiInput(Objects.requireNonNull(root, "root"),
                 Objects.requireNonNull(picker, "picker"));
+        root.setTextInputWantedListener(input::setOnscreenKeyboardVisible);
+        return input;
+    }
+
+    // Opens the Android soft keyboard while a text field has focus; desktop libGDX ignores it.
+    private void setOnscreenKeyboardVisible(boolean visible) {
+        if (Gdx.input != null) {
+            Gdx.input.setOnscreenKeyboardVisible(visible);
+        }
     }
 
     @Override

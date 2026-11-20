@@ -129,8 +129,10 @@ public class TextButton extends Widget {
 
     /**
      * Enables or disables the button. Disabling ends a press in progress without a click. A change
-     * requests a redraw; setting the same value changes nothing. The keyboard focus is not
-     * touched, but a disabled button ignores keys.
+     * requests a redraw; setting the same value changes nothing. A disabled button ignores keys.
+     * Disabling the button that owns keyboard focus clears the focus the next time the
+     * {@link UiRoot} reads it or runs {@code update} or {@code draw}, as for a hidden widget;
+     * enabling it again does not restore the focus.
      *
      * @param disabled {@code true} to disable the button
      */

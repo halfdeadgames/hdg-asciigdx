@@ -37,6 +37,22 @@
  * A {@link com.github.halfdeadgames.asciigdx.ui.ButtonGroup} keeps at most one of its radio
  * buttons checked. Their look comes from a {@link com.github.halfdeadgames.asciigdx.ui.ToggleStyle}.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.TextField} is a one-line text input with a caret,
+ * scrolling with ellipses, a character filter, a length limit, and placeholder text. Its look and
+ * caret come from a {@link com.github.halfdeadgames.asciigdx.ui.TextFieldStyle}. A root can focus
+ * the first text field by itself, see
+ * {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#setAutoFocusTextFields(boolean)}, and
+ * {@link com.github.halfdeadgames.asciigdx.ui.UiInput} shows the on-screen keyboard while a text
+ * field has focus.
+ *
+ * <p>Creating widgets: a widget with one form is created with a public constructor, as with
+ * {@link com.github.halfdeadgames.asciigdx.ui.TextButton},
+ * {@link com.github.halfdeadgames.asciigdx.ui.CheckBox},
+ * {@link com.github.halfdeadgames.asciigdx.ui.RadioButton}, and
+ * {@link com.github.halfdeadgames.asciigdx.ui.TextField}. Static factories are used only where one
+ * class has several distinct forms, such as a bar that is either horizontal or vertical, which is
+ * created by a factory named for each form.
+ *
  * <p>Example with a button:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);

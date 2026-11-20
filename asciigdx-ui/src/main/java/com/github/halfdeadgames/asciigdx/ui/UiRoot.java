@@ -54,6 +54,19 @@ import java.util.Objects;
  *       menu is open. Hidden widgets (see {@link Widget#setVisible(boolean)}) and menu bars are
  *       skipped. A widget that handles an arrow key itself keeps it. Games can call
  *       {@link #moveFocus(FocusDirection)} for the same effect, for example from a gamepad.
+ *   <li>Key repeat: libGDX does not repeat key-downs on desktop, so the root repeats a held
+ *       arrow key (Left, Right, Up, or Down) itself, timed by {@link #update(float)} in seconds.
+ *       After a key-down of an arrow it waits 0.4 seconds, then repeats every 0.05 seconds. Each
+ *       repeat takes the
+ *       same path as a real key-down (the focused chain, then the unhandled-key listeners, then
+ *       focus navigation), with the Shift state of the original press, so a held arrow also moves
+ *       a text field's caret, focus, or the highlight of an open menu. Enter, Space, letters, and
+ *       all other keys never repeat. The repeat stops on the key-up of that key, on any other
+ *       key-down, and when the focus owner changes for any reason other than the repeat itself
+ *       (a pointer press, {@link #setKeyboardFocus}, or an owner that was hidden or disabled); a
+ *       focus move that the repeated key causes keeps it going. If the same arrow key-down
+ *       arrives a second time before its key-up, as when a platform repeats on its own, the
+ *       root's repeat stays off until that key is released.
  *   <li>Focus look: focus is shown (see {@link #isFocusVisible()}) while the last input was
  *       keyboard navigation or a key that the focused chain handled, and hidden after an
  *       accepted pointer press and before any input. Hiding a widget acts like removing it for
@@ -99,6 +112,9 @@ public final class UiRoot {
     private static final UiUpdateListener[] NO_UPDATE_LISTENERS = new UiUpdateListener[0];
     private static final PressObserver[] NO_PRESS_OBSERVERS = new PressObserver[0];
     private static final UiListener[] NO_KEY_LISTENERS = new UiListener[0];
+    static final float KEY_REPEAT_INITIAL_DELAY_SECONDS = 0.4f;
+    static final float KEY_REPEAT_INTERVAL_SECONDS = 0.05f;
+    private static final int NO_KEY = -1;
     private static final int PRIMARY_POINTER = 0;
     private static final int NO_BUTTON = UiEvent.NOT_APPLICABLE;
 
@@ -125,6 +141,16 @@ public final class UiRoot {
     private int hoverRow;
     private boolean leftShiftDown;
     private boolean rightShiftDown;
+    private final TextFieldAutoFocus autoFocusFinder = new TextFieldAutoFocus();
+    private boolean keyboardFocusWasFocusable;
+    private int repeatingKeycode = NO_KEY;
+    private int heldArrowKeycode = NO_KEY;
+    private boolean repeatingWithShift;
+    private boolean firingKeyRepeat;
+    private float secondsUntilKeyRepeat;
+    private boolean autoFocusTextFields;
+    private boolean textInputWanted;
+    private TextInputWantedListener textInputWantedListener;
 
     private UiRoot(UiSurface shownSurface) {
         this.shownSurface = shownSurface;
@@ -202,8 +228,12 @@ public final class UiRoot {
     }
 
     /**
-     * Calls every update listener with the frame time. Call it once per frame, before
-     * {@link #draw()}.
+     * Advances time by one frame: repeats a held arrow key (see the class description), applies
+     * automatic text field focus (see {@link #setAutoFocusTextFields(boolean)}), calls every update
+     * listener with the frame time, and lets the focused widget animate, such as a blinking caret.
+     * Call it once per frame, before {@link #draw()}. Key repeats are key input, so this throws
+     * {@link IllegalStateException} like the input methods when called while an event is being
+     * delivered and a repeat is due.
      *
      * @param deltaSeconds time since the previous frame, in seconds, passed in by the game; zero
      *         or greater and finite
@@ -215,10 +245,103 @@ public final class UiRoot {
                     "deltaSeconds must be finite and not negative, was " + deltaSeconds);
         }
         sweepGoneWidgets();
+        repeatHeldKey(deltaSeconds);
+        focusFirstTextFieldIfWanted();
         UiUpdateListener[] snapshot = updateListeners;
         for (int i = 0; i < snapshot.length; i++) {
             snapshot[i].update(deltaSeconds);
         }
+        Widget focused = getKeyboardFocus();
+        if (focused != null) {
+            focused.updateWhileFocused(deltaSeconds);
+        }
+    }
+
+    /**
+     * Turns on or off the automatic focus for text fields: when on, the first text field gets
+     * focus whenever nothing has focus, including right after a click on empty space. Each
+     * {@link #update(float)} that finds nothing with keyboard focus gives focus to the first
+     * shown, enabled {@link TextField} of the main tree ({@link #getRoot()}) in reading order:
+     * rows from top to bottom, and within a row columns from left to right, comparing each
+     * field's top row and then its left column on the surface. The popup layer is not searched.
+     * This does not make the focused look show (see {@link #isFocusVisible()}). The search walks
+     * the main tree once per update while nothing has focus, without allocating. Off by default.
+     *
+     * @param autoFocusTextFields {@code true} to focus the first text field automatically
+     */
+    public void setAutoFocusTextFields(boolean autoFocusTextFields) {
+        this.autoFocusTextFields = autoFocusTextFields;
+    }
+
+    /**
+     * Returns whether text fields are focused automatically, as set by
+     * {@link #setAutoFocusTextFields(boolean)}.
+     *
+     * @return {@code true} when automatic focus is on
+     */
+    public boolean isAutoFocusTextFields() {
+        return autoFocusTextFields;
+    }
+
+    private void focusFirstTextFieldIfWanted() {
+        if (!autoFocusTextFields || delivering || root.getChildCount() == 0
+                || getKeyboardFocus() != null) {
+            return;
+        }
+        TextField first = autoFocusFinder.findFirst(root);
+        if (first != null) {
+            assignKeyboardFocus(first);
+            refreshFocusShown();
+        }
+    }
+
+    // Single place where the focus owner changes, so the owners and the on-screen keyboard follow.
+    private void assignKeyboardFocus(Widget next) {
+        Widget previous = keyboardFocus;
+        if (previous == next) {
+            return;
+        }
+        keyboardFocus = next;
+        keyboardFocusWasFocusable = next != null && next.isFocusable();
+        if (!firingKeyRepeat) {
+            stopKeyRepeat();
+        }
+        if (previous != null) {
+            previous.setKeyboardFocused(false);
+        }
+        if (next != null) {
+            next.setKeyboardFocused(true);
+        }
+        updateTextInputWanted();
+    }
+
+    // A press on a text field that already has focus asks again, because the user may have hidden
+    // the on-screen keyboard with the Back key.
+    private void requestTextInputAgain() {
+        if (textInputWanted && textInputWantedListener != null) {
+            textInputWantedListener.textInputWantedChanged(true);
+        }
+    }
+
+    private void updateTextInputWanted() {
+        boolean wanted = keyboardFocus instanceof TextField;
+        if (wanted == textInputWanted) {
+            return;
+        }
+        textInputWanted = wanted;
+        if (textInputWantedListener != null) {
+            textInputWantedListener.textInputWantedChanged(wanted);
+        }
+    }
+
+    /** Hears when a text field gains or loses keyboard focus, for the on-screen keyboard. */
+    interface TextInputWantedListener {
+        void textInputWantedChanged(boolean wanted);
+    }
+
+    // Only UiInput uses this, to keep the libGDX calls in one class.
+    void setTextInputWantedListener(TextInputWantedListener listener) {
+        textInputWantedListener = listener;
     }
 
     /**
@@ -263,8 +386,13 @@ public final class UiRoot {
      * the focusable check applies only to presses, and menu bars are accepted. A widget that is
      * hidden or not in the main tree or popup layer is accepted too, but {@link #getKeyboardFocus}
      * then treats it as no focus and clears it, so it does not get focus back by being shown or
-     * added later. No events are sent for a focus change. Unlike the input methods, this is
-     * allowed while an event is being delivered.
+     * added later. A widget that is focusable when it receives focus (see
+     * {@link Widget#isFocusable()}) keeps focus only while it stays focusable: if it becomes
+     * disabled, for example, {@link #getKeyboardFocus} clears the focus, and it does not return
+     * when the widget is enabled again. A widget that was not focusable when it received focus is
+     * not affected by this. No events are sent for a focus change. Unlike the input methods, this
+     * is allowed while an event is being delivered. Any change of the focus owner stops a key
+     * repeat in progress, except one made by the repeat itself (see the class description).
      *
      * <p>Setting focus does not change whether the focused look shows; see
      * {@link #isFocusVisible()}.
@@ -272,15 +400,16 @@ public final class UiRoot {
      * @param widgetOrNull the new focus owner, or {@code null} for no focus
      */
     public void setKeyboardFocus(Widget widgetOrNull) {
-        keyboardFocus = widgetOrNull;
+        assignKeyboardFocus(widgetOrNull);
         refreshFocusShown();
     }
 
     /**
      * Returns the widget that receives key events. If the stored focus owner is hidden (see
-     * {@link Widget#setVisible(boolean)}) or no longer in the main tree or the popup layer, this
-     * clears the focus first and returns {@code null}; the widget does not get focus back when it
-     * is shown or added again.
+     * {@link Widget#setVisible(boolean)}), no longer in the main tree or the popup layer, or was
+     * focusable when it got focus and no longer is (for example, it was disabled), this clears the
+     * focus first and returns {@code null}; the widget does not get focus back when it is shown,
+     * added, or enabled again.
      *
      * @return the focused widget, or {@code null} for no focus
      */
@@ -290,8 +419,12 @@ public final class UiRoot {
     }
 
     private void clearFocusIfOwnerGone() {
-        if (keyboardFocus != null && !isInTrees(keyboardFocus)) {
-            keyboardFocus = null;
+        if (keyboardFocus == null) {
+            return;
+        }
+        boolean lostFocusability = keyboardFocusWasFocusable && !keyboardFocus.isFocusable();
+        if (lostFocusability || !isInTrees(keyboardFocus)) {
+            assignKeyboardFocus(null);
         }
     }
 
@@ -378,7 +511,10 @@ public final class UiRoot {
         updateHoverForPointer(pointer, target, column, row);
         notifyPressObservers(pointer);
         focusBeforePress = getKeyboardFocus();
-        keyboardFocus = findFocusable(target);
+        assignKeyboardFocus(findFocusable(target));
+        if (keyboardFocus == focusBeforePress && keyboardFocus instanceof TextField) {
+            requestTextInputAgain();
+        }
         lastInputWasKeyboard = false;
         refreshFocusShown();
         if (target == null) {
@@ -469,7 +605,8 @@ public final class UiRoot {
     }
 
     /**
-     * Handles a key going down. It goes to the focused widget and bubbles.
+     * Handles a key going down. It goes to the focused widget and bubbles. A real key-down of an
+     * arrow key starts the key repeat (see the class description).
      *
      * @param keycode key code, as in {@code com.badlogic.gdx.Input.Keys}
      * @return {@code true} if a listener handled it; {@code false} also when nothing has focus
@@ -480,16 +617,65 @@ public final class UiRoot {
 
     // For UiInput, which knows the real Shift state; keyDown(int) uses the tracked state.
     boolean keyDown(int keycode, boolean shiftHeld) {
-        return dispatchKey(UiEventType.KEY_DOWN, keycode, '\0', shiftHeld);
+        boolean handled = dispatchKey(UiEventType.KEY_DOWN, keycode, '\0', shiftHeld);
+        startOrStopKeyRepeat(keycode, shiftHeld);
+        return handled;
+    }
+
+    // The repeat starts after the dispatch, so a focus change that the first press causes (Tab or
+    // an arrow moving focus) does not cancel it.
+    private void startOrStopKeyRepeat(int keycode, boolean shiftHeld) {
+        stopKeyRepeat();
+        if (!isArrowKey(keycode)) {
+            return;
+        }
+        if (heldArrowKeycode == keycode) {
+            // The platform repeats this held key by itself, so the timer stays off for the hold.
+            return;
+        }
+        heldArrowKeycode = keycode;
+        repeatingKeycode = keycode;
+        repeatingWithShift = shiftHeld;
+        secondsUntilKeyRepeat = KEY_REPEAT_INITIAL_DELAY_SECONDS;
+    }
+
+    private void stopKeyRepeat() {
+        repeatingKeycode = NO_KEY;
+    }
+
+    private static boolean isArrowKey(int keycode) {
+        return keycode == Input.Keys.LEFT || keycode == Input.Keys.RIGHT
+                || keycode == Input.Keys.UP || keycode == Input.Keys.DOWN;
+    }
+
+    private void repeatHeldKey(float deltaSeconds) {
+        if (repeatingKeycode == NO_KEY) {
+            return;
+        }
+        secondsUntilKeyRepeat -= deltaSeconds;
+        while (secondsUntilKeyRepeat <= 0f && repeatingKeycode != NO_KEY) {
+            secondsUntilKeyRepeat += KEY_REPEAT_INTERVAL_SECONDS;
+            firingKeyRepeat = true;
+            try {
+                dispatchKey(UiEventType.KEY_DOWN, repeatingKeycode, '\0', repeatingWithShift);
+            } finally {
+                firingKeyRepeat = false;
+            }
+        }
     }
 
     /**
-     * Handles a key going up. It goes to the focused widget and bubbles.
+     * Handles a key going up. It goes to the focused widget and bubbles. Releasing the key that
+     * is held down ends its key repeat.
      *
      * @param keycode key code, as in {@code com.badlogic.gdx.Input.Keys}
      * @return {@code true} if a listener handled it; {@code false} also when nothing has focus
      */
     public boolean keyUp(int keycode) {
+        if (keycode == heldArrowKeycode) {
+            heldArrowKeycode = NO_KEY;
+            stopKeyRepeat();
+        }
         return dispatchKey(UiEventType.KEY_UP, keycode, '\0', false);
     }
 
@@ -559,7 +745,7 @@ public final class UiRoot {
         if (target == null) {
             return false;
         }
-        keyboardFocus = target;
+        assignKeyboardFocus(target);
         lastInputWasKeyboard = true;
         refreshFocusShown();
         return true;

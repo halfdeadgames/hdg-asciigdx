@@ -27,6 +27,7 @@ public abstract class Widget {
     private boolean redrawNeeded = true;
     private boolean inLayout;
     private boolean focusShown;
+    private boolean keyboardFocused;
     private boolean visible = true;
 
     /** Creates a widget at position (0, 0), with size 0 x 0 and no parent. */
@@ -457,6 +458,28 @@ public abstract class Widget {
         }
         this.focusShown = focusShown;
         requestRedraw();
+    }
+
+    // Set by UiRoot on the widget that owns keyboard focus, whether or not the focus look shows.
+    boolean hasKeyboardFocus() {
+        return keyboardFocused;
+    }
+
+    final void setKeyboardFocused(boolean keyboardFocused) {
+        if (this.keyboardFocused == keyboardFocused) {
+            return;
+        }
+        this.keyboardFocused = keyboardFocused;
+        onKeyboardFocusChanged();
+        requestRedraw();
+    }
+
+    /** Hook run when this widget gains or loses keyboard focus. */
+    void onKeyboardFocusChanged() {
+    }
+
+    /** Hook run by {@link UiRoot#update(float)} on the focus owner, with the frame time. */
+    void updateWhileFocused(float deltaSeconds) {
     }
 
     void clearRedrawNeeded() {

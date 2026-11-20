@@ -12,6 +12,7 @@ import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.TextField;
 import com.github.halfdeadgames.asciigdx.ui.Tooltip;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
@@ -46,6 +47,7 @@ class UiWidgetsScene implements SandboxScene {
     private ButtonsPage buttonsPage;
     private HintsPage hintsPage;
     private MenusPage menusPage;
+    private TextFieldsPage textFieldsPage;
     private List<UiPage> pages;
     private MenuBar pageBar;
     private LayerStack layers;
@@ -73,8 +75,9 @@ class UiWidgetsScene implements SandboxScene {
         hintsPage = new HintsPage(uiRoot, skin);
         menusPage = new MenusPage(uiRoot, skin);
         buttonsPage = new ButtonsPage(uiRoot, skin);
+        textFieldsPage = new TextFieldsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
-                hintsPage, menusPage, new TogglesPage(skin));
+                hintsPage, menusPage, new TogglesPage(skin), textFieldsPage);
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
@@ -112,6 +115,9 @@ class UiWidgetsScene implements SandboxScene {
         uiRoot.getRoot().addChild(content);
         if (pages.get(pageIndex) == buttonsPage) {
             buttonsPage.focusFirstButton();
+        }
+        if (pages.get(pageIndex) == textFieldsPage) {
+            textFieldsPage.focusFirstField();
         }
         uiRoot.draw();
     }
@@ -224,7 +230,7 @@ class UiWidgetsScene implements SandboxScene {
         if (uiRoot.keyDown(keycode)) {
             return true;
         }
-        if (isAnyMenuOpen()) {
+        if (isAnyMenuOpen() || uiRoot.getKeyboardFocus() instanceof TextField) {
             return false;
         }
         int index = keycode - Input.Keys.NUM_1;
@@ -266,6 +272,10 @@ class UiWidgetsScene implements SandboxScene {
             }
             if (pages.get(index) == buttonsPage) {
                 buttonsPage.focusFirstButtonVisibly();
+                uiRoot.draw();
+            }
+            if (pages.get(index) == textFieldsPage) {
+                textFieldsPage.focusFirstFieldVisibly();
                 uiRoot.draw();
             }
         }

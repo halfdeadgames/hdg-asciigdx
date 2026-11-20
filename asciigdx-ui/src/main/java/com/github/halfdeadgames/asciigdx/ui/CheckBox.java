@@ -109,8 +109,10 @@ public final class CheckBox extends Widget {
 
     /**
      * Enables or disables the check box. Disabling ends a press in progress without a toggle. A
-     * change requests a redraw. The keyboard focus is not touched, but a disabled check box
-     * ignores keys.
+     * change requests a redraw. A disabled check box ignores keys. Disabling the check box that
+     * owns keyboard focus clears the focus the next time the {@link UiRoot} reads it or runs
+     * {@code update} or {@code draw}, as for a hidden widget; enabling it again does not restore
+     * the focus.
      *
      * @param disabled {@code true} to disable the check box
      */

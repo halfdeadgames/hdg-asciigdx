@@ -57,5 +57,14 @@
   "radioButtons": {
     "radioButton": { "button": "button", "unchecked": "( )", "checked": "(*)" },
     "tallRadioButton": { "button": "tallButton", "unchecked": "( )", "checked": "(*)" }
+  },
+  "textFields": {
+    "default": {
+      "normal": { "font": "square", "foreground": "white", "background": "deepBlue" },
+      "focused": { "font": "square", "foreground": "white", "background": "teal" },
+      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" },
+      "placeholder": { "font": "square", "foreground": "gray", "background": "deepBlue" },
+      "caret": { "foreground": "deepBlue", "background": "white", "blinkSeconds": 0.5 }
+    }
   }
 }

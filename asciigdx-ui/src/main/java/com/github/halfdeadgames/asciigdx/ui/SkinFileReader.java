@@ -21,8 +21,13 @@ final class SkinFileReader {
     private static final String MENU_BARS = "menuBars";
     private static final String CHECK_BOXES = "checkBoxes";
     private static final String RADIO_BUTTONS = "radioButtons";
+    private static final String TEXT_FIELDS = "textFields";
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS);
+            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS);
+    private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
+            "placeholder", "caret");
+    private static final List<String> CARET_KEYS = List.of("foreground", "background", "glyph",
+            "blinkSeconds");
     private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
             "gap");
     private static final List<String> LABEL_KEYS = List.of("font", "foreground", "background");
@@ -43,6 +48,7 @@ final class SkinFileReader {
     private final Map<String, MenuBarStyle> menuBarStyles = new LinkedHashMap<>();
     private final Map<String, ToggleStyle> checkBoxStyles = new LinkedHashMap<>();
     private final Map<String, ToggleStyle> radioButtonStyles = new LinkedHashMap<>();
+    private final Map<String, TextFieldStyle> textFieldStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
     }
@@ -58,8 +64,79 @@ final class SkinFileReader {
         reader.readSection(root, CHECK_BOXES, reader.checkBoxStyles, reader::readToggleStyle);
         reader.readSection(root, RADIO_BUTTONS, reader.radioButtonStyles,
                 reader::readToggleStyle);
+        reader.readSection(root, TEXT_FIELDS, reader.textFieldStyles,
+                reader::readTextFieldStyle);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
-                reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles);
+                reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
+                reader.textFieldStyles);
+    }
+
+    private TextFieldStyle readTextFieldStyle(JsonValue entry, String path) {
+        requireObject(entry, path,
+                "a text field object with the keys " + String.join(", ", TEXT_FIELD_KEYS));
+        checkKnownKeys(entry, TEXT_FIELD_KEYS, "key", path);
+        LabelStyle normal = readLook(requireKey(entry, "normal", path), path + ".normal");
+        TextFieldStyle style = TextFieldStyle.of(normal);
+        try {
+            style = style.withFocused(readOptionalLook(entry, "focused", normal, path))
+                    .withDisabled(readOptionalLook(entry, "disabled", normal, path))
+                    .withPlaceholder(readOptionalLook(entry, "placeholder", normal, path));
+        } catch (IllegalArgumentException mixedFonts) {
+            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
+        }
+        JsonValue caret = entry.get("caret");
+        if (caret == null) {
+            return style;
+        }
+        return style.withCaret(readCaret(caret, path + ".caret"));
+    }
+
+    private CaretStyle readCaret(JsonValue caret, String path) {
+        requireObject(caret, path, "a caret object with the keys " + String.join(", ", CARET_KEYS));
+        checkKnownKeys(caret, CARET_KEYS, "key", path);
+        if (caret.get("foreground") == null && caret.get("background") == null
+                && caret.get("glyph") == null) {
+            throw new SkinFileException(path
+                    + ": needs at least one of \"foreground\", \"background\", and \"glyph\"");
+        }
+        CaretStyle style = CaretStyle.none();
+        JsonValue foreground = caret.get("foreground");
+        if (foreground != null) {
+            style = style.withForegroundRgba(readColor(foreground, path + ".foreground"));
+        }
+        JsonValue background = caret.get("background");
+        if (background != null) {
+            style = style.withBackgroundRgba(readColor(background, path + ".background"));
+        }
+        JsonValue glyph = caret.get("glyph");
+        if (glyph != null) {
+            style = style.withGlyph(readGlyph(glyph, path + ".glyph"));
+        }
+        JsonValue blink = caret.get("blinkSeconds");
+        if (blink != null) {
+            style = style.withBlinkSeconds(readBlinkSeconds(blink, path + ".blinkSeconds"));
+        }
+        return style;
+    }
+
+    private static int readGlyph(JsonValue value, String path) {
+        if (!value.isString() || value.asString().isEmpty()
+                || value.asString().codePointCount(0, value.asString().length()) != 1) {
+            throw new SkinFileException(path + ": must be text of exactly one character");
+        }
+        return value.asString().codePointAt(0);
+    }
+
+    private static float readBlinkSeconds(JsonValue value, String path) {
+        if (!value.isNumber()) {
+            throw new SkinFileException(path + ": must be a number of seconds");
+        }
+        double seconds = value.asDouble();
+        if (!(seconds >= 0) || Double.isInfinite(seconds) || seconds > Float.MAX_VALUE) {
+            throw new SkinFileException(
+                    path + ": must be zero or greater and finite, was " + value.asString());
+        }
+        return (float) seconds;
     }
 
     private static JsonValue readRoot(String json) {

@@ -18,8 +18,8 @@ import java.util.Objects;
  * }</pre>
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
- * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, and
- * {@code radioButtons}; all are optional, and any other top-level key is an error. The sections
+ * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, {@code radioButtons},
+ * and {@code textFields}; all are optional, and any other top-level key is an error. The sections
  * are read in that order, and a section can only refer to names defined in an earlier one, so
  * references never form a cycle. Inside a section every name is unique. Each section is an object
  * that maps a style name to its value.
@@ -54,6 +54,12 @@ import java.util.Objects;
  *   },
  *   "radioButtons": {
  *     "choice": { "button": "action", "unchecked": "( )", "checked": "(*)" }
+ *   },
+ *   "textFields": {
+ *     "input": {
+ *       "normal": "title",
+ *       "caret": { "foreground": "deepBlue", "background": "white" }
+ *     }
  *   }
  * }
  * }</pre>
@@ -95,6 +101,26 @@ import java.util.Objects;
  * </ul>
  * Example entry: {@code "option": { "button": "action", "unchecked": "[ ]", "checked": "[x]" }}.
  *
+ * <p>A {@code textFields} entry becomes a {@link TextFieldStyle}. The keys:
+ * <ul>
+ *   <li>{@code normal}, required: the name of a label style or an inline label object.
+ *   <li>{@code focused}, {@code disabled}, and {@code placeholder}, optional looks of the same
+ *       kind; each copies {@code normal} when missing. All looks must use the same font.
+ *   <li>{@code caret}, optional: an object with the optional keys {@code foreground} and
+ *       {@code background} (colors), {@code glyph} (text of exactly one code point), and
+ *       {@code blinkSeconds} (a number, zero or greater, default 0 for a steady caret). At least
+ *       one of {@code foreground}, {@code background}, and {@code glyph} is required. A part that
+ *       is left out keeps the cell's own value. When {@code caret} is missing, the caret is a
+ *       steady block made of the normal look's colors, swapped.
+ * </ul>
+ * Block caret (the colors of the field swapped, no glyph):
+ * {@code "caret": { "foreground": "deepBlue", "background": "white" }} for a field that is white
+ * on deep blue. Underline caret (no colors, a glyph, blinking):
+ * {@code "caret": { "glyph": "_", "blinkSeconds": 0.5 }}. The caret's {@code foreground} and
+ * {@code background} color the caret cell only, not the text. The caret is an inline object
+ * today; a section of named carets may be added in a later version, and files written with inline
+ * caret objects will keep loading.
+ *
  * <p>A missing {@code triggerColor} means the menu bar style has no trigger color, so
  * {@link MenuBarStyle#hasTriggerRgba()} returns {@code false}.
  *
@@ -117,10 +143,13 @@ public final class Skin {
     private final Map<String, MenuBarStyle> menuBarStyles;
     private final Map<String, ToggleStyle> checkBoxStyles;
     private final Map<String, ToggleStyle> radioButtonStyles;
+    private final Map<String, TextFieldStyle> textFieldStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
             Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
-            Map<String, ToggleStyle> checkBoxStyles, Map<String, ToggleStyle> radioButtonStyles) {
+            Map<String, ToggleStyle> checkBoxStyles, Map<String, ToggleStyle> radioButtonStyles,
+            Map<String, TextFieldStyle> textFieldStyles) {
+        this.textFieldStyles = copyOf(textFieldStyles);
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
@@ -234,6 +263,30 @@ public final class Skin {
     }
 
     /**
+     * Returns the text field style with a name.
+     *
+     * @param name name in the {@code textFields} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasTextFieldStyle(String)} first.
+     */
+    public TextFieldStyle getTextFieldStyle(String name) {
+        return lookUp(textFieldStyles, name, "text field style");
+    }
+
+    /**
+     * Returns whether the skin defines a text field style with a name.
+     *
+     * @param name name in the {@code textFields} section; must not be {@code null}
+     * @return {@code true} if {@link #getTextFieldStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasTextFieldStyle(String name) {
+        return contains(textFieldStyles, name);
+    }
+
+    /**
      * Returns the color with a name.
      *
      * @param name name in the {@code colors} section; must not be {@code null}
@@ -330,7 +383,8 @@ public final class Skin {
         return "Skin[colors=" + colors.size() + ", labelStyles=" + labelStyles.size()
                 + ", buttonStyles=" + buttonStyles.size() + ", menuBarStyles="
                 + menuBarStyles.size() + ", checkBoxStyles=" + checkBoxStyles.size()
-                + ", radioButtonStyles=" + radioButtonStyles.size() + "]";
+                + ", radioButtonStyles=" + radioButtonStyles.size() + ", textFieldStyles="
+                + textFieldStyles.size() + "]";
     }
 
     static String describeNames(Map<String, ?> namedValues) {
