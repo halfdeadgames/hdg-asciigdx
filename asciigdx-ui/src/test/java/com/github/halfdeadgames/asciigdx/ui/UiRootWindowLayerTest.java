@@ -190,6 +190,21 @@ class UiRootWindowLayerTest {
         assertFalse(window.isShown());
     }
 
+    @Test
+    void theDragBoundsLimitsADragOfAWindowInTheWindowLayer() {
+        ui.setWindowDragBounds(new CellArea(10, 2, 20, 6));
+        Window window = windowIn(ui.getWindowLayer(), 12, 3, 6, 3);
+
+        ui.pointerDown(14, 3, 0, 0);
+        ui.pointerDragged(500, 500, 0);
+        assertEquals(24, window.getX());
+        assertEquals(7, window.getY());
+
+        ui.pointerDragged(-500, -500, 0);
+        assertEquals(10, window.getX());
+        assertEquals(2, window.getY());
+    }
+
     // Focus scope
 
     private TextButton rootFirst;

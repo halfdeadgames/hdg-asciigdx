@@ -9,6 +9,7 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
+import com.github.halfdeadgames.asciigdx.ui.CellArea;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
@@ -96,6 +97,7 @@ class UiWidgetsScene implements SandboxScene {
         uiRoot.getRoot().addChild(new Backdrop(columns, rows, skin.getRgba("black")));
         createPageBar();
         showPage(pageIndex);
+        limitWindowsBelowPageBar();
         if (oldLayers != null) {
             oldLayers.dispose();
         }
@@ -150,7 +152,13 @@ class UiWidgetsScene implements SandboxScene {
     private void moveBelowOverlay() {
         pageBar.setPosition(0, overlayRows);
         content.setPosition(0, overlayRows + RESERVED_ROWS);
+        limitWindowsBelowPageBar();
         uiRoot.draw();
+    }
+
+    private void limitWindowsBelowPageBar() {
+        int rowCount = Math.max(1, rows - contentTop());
+        uiRoot.setWindowDragBounds(new CellArea(0, contentTop(), columns, rowCount));
     }
 
     private int contentTop() {

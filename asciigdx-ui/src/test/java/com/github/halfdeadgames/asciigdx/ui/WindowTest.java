@@ -508,6 +508,130 @@ class WindowTest {
         assertEquals(11 - 1, window.getY());
     }
 
+    // Drag bounds
+
+    private Window pressTitleAndDragToBottomRight(Window window) {
+        ui.pointerDown(window.getX() + 2, window.getY(), 0, 0);
+        ui.pointerDragged(500, 500, 0);
+        return window;
+    }
+
+    private void dragWindowToTopLeft() {
+        ui.pointerDragged(-500, -500, 0);
+    }
+
+    @Test
+    void dragIsClampedInsideTheDragBoundsOnAllFourSides() {
+        ui.setWindowDragBounds(new CellArea(10, 3, 20, 6));
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+        assertEquals(20, window.getX());
+        assertEquals(8, window.getY());
+
+        dragWindowToTopLeft();
+        assertEquals(10, window.getX());
+        assertEquals(3, window.getY());
+    }
+
+    @Test
+    void aWindowWiderThanTheDragBoundsPinsItsLeftEdge() {
+        ui.setWindowDragBounds(new CellArea(10, 3, 6, 6));
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+        assertEquals(10, window.getX());
+        assertEquals(8, window.getY());
+
+        dragWindowToTopLeft();
+        assertEquals(10, window.getX());
+    }
+
+    @Test
+    void aDragBoundsPastTheSurfaceIsIntersectedWithIt() {
+        ui.setWindowDragBounds(new CellArea(25, 2, 50, 8));
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+        assertEquals(30, window.getX());
+        assertEquals(9, window.getY());
+
+        dragWindowToTopLeft();
+        assertEquals(25, window.getX());
+        assertEquals(2, window.getY());
+    }
+
+    @Test
+    void aDragBoundsFullyOutsideTheSurfaceFallsBackToTheSurface() {
+        ui.setWindowDragBounds(new CellArea(50, 0, 5, 5));
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+        assertEquals(30, window.getX());
+        assertEquals(11, window.getY());
+
+        dragWindowToTopLeft();
+        assertEquals(0, window.getX());
+        assertEquals(0, window.getY());
+    }
+
+    @Test
+    void aHugeDragBoundsDoesNotOverflowAndClampsToTheSurfaceEdges() {
+        ui.setWindowDragBounds(new CellArea(0, 1, Integer.MAX_VALUE, Integer.MAX_VALUE));
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+        assertEquals(30, window.getX());
+        assertEquals(11, window.getY());
+
+        dragWindowToTopLeft();
+        assertEquals(0, window.getX());
+        assertEquals(1, window.getY());
+    }
+
+    @Test
+    void clearingTheDragBoundsRestoresTheSurfaceClamp() {
+        ui.setWindowDragBounds(new CellArea(10, 3, 20, 6));
+        ui.clearWindowDragBounds();
+        Window window = sizedWindow(12, 4);
+
+        pressTitleAndDragToBottomRight(window);
+
+        assertEquals(30, window.getX());
+        assertEquals(11, window.getY());
+    }
+
+    @Test
+    void dragBoundsAreReadableOnlyWhileSet() {
+        assertFalse(ui.hasWindowDragBounds());
+        assertThrows(IllegalStateException.class, ui::getWindowDragBounds);
+
+        CellArea area = new CellArea(1, 2, 3, 4);
+        ui.setWindowDragBounds(area);
+        assertTrue(ui.hasWindowDragBounds());
+        assertEquals(area, ui.getWindowDragBounds());
+
+        ui.clearWindowDragBounds();
+        assertFalse(ui.hasWindowDragBounds());
+        assertThrows(IllegalStateException.class, ui::getWindowDragBounds);
+    }
+
+    @Test
+    void settingANullDragBoundsThrows() {
+        assertThrows(NullPointerException.class, () -> ui.setWindowDragBounds(null));
+    }
+
+    @Test
+    void setPositionIgnoresTheDragBounds() {
+        ui.setWindowDragBounds(new CellArea(10, 3, 20, 6));
+        Window window = sizedWindow(12, 4);
+
+        window.setPosition(0, 11);
+
+        assertEquals(0, window.getX());
+        assertEquals(11, window.getY());
+    }
+
     // Stacking and focus
 
     @Test

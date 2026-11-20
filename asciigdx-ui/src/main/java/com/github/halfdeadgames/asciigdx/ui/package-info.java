@@ -60,7 +60,9 @@
  * {@link com.github.halfdeadgames.asciigdx.ui.UiSurface#pushClip}.
  *
  * <p>{@link com.github.halfdeadgames.asciigdx.ui.Window} is a framed panel with a title in its top
- * border, one content widget, an optional close button, and dragging by the title bar. Windows live
+ * border, one content widget, an optional close button, and dragging by the title bar, which can be
+ * limited to a {@link com.github.halfdeadgames.asciigdx.ui.CellArea} with
+ * {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#setWindowDragBounds}. Windows live
  * in {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#getWindowLayer()}, which draws above the main
  * tree and below popups; Tab and the arrow keys stay inside the window that holds focus. Its look
  * comes from a {@link com.github.halfdeadgames.asciigdx.ui.WindowStyle}.

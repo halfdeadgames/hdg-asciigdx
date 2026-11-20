@@ -159,6 +159,7 @@ public final class UiRoot {
     private final WidgetGroup root = new WidgetGroup();
     private final WidgetGroup windowLayer = new WidgetGroup();
     private final WidgetGroup popupLayer = new WidgetGroup();
+    private CellArea windowDragBounds;
     private final UiEvent event = new UiEvent();
     private final ArrayList<ModalEntry> modalStack = new ArrayList<>();
     private boolean hoverRefreshPending;
@@ -246,6 +247,65 @@ public final class UiRoot {
      */
     public WidgetGroup getWindowLayer() {
         return windowLayer;
+    }
+
+    /**
+     * Limits where the user can drag windows to a part of the surface. While a window is dragged
+     * by its title row, its whole width stays inside the area horizontally (a window wider than
+     * the area sits at the area's left edge) and its title row stays inside the area vertically.
+     * Without an area, windows are kept inside the whole surface.
+     *
+     * <p>The area is intersected with the surface, so it may reach past the surface edge. If it
+     * lies completely outside the surface, the whole surface is used, as if no area were set.
+     *
+     * <p>The area affects dragging only. {@link Window#setPosition(int, int)}, the centering of a
+     * {@link Dialog}, and windows that already lie outside the area are left alone until the user
+     * drags them. It applies to every window in {@link #getWindowLayer()}, including dialogs, and
+     * takes effect from the next press on a window. Call it at setup or whenever the layout
+     * changes, for example after a resize.
+     *
+     * <p>The area is stored exactly as given and compared with the current surface size on every
+     * press. A surface resize never moves or shrinks the stored area.
+     *
+     * @param area rectangle in surface cells, y-down; must not be {@code null}
+     * @throws NullPointerException if {@code area} is {@code null}
+     */
+    public void setWindowDragBounds(CellArea area) {
+        windowDragBounds = Objects.requireNonNull(area, "area");
+    }
+
+    /**
+     * Removes the window drag bounds, so windows are kept inside the whole surface again. Does
+     * nothing when no area is set. Takes effect from the next press on a window.
+     */
+    public void clearWindowDragBounds() {
+        windowDragBounds = null;
+    }
+
+    /**
+     * Returns whether a window drag bounds is set.
+     *
+     * @return {@code true} after {@link #setWindowDragBounds(CellArea)} and before
+     *     {@link #clearWindowDragBounds()}; {@code false} for a new root
+     */
+    public boolean hasWindowDragBounds() {
+        return windowDragBounds != null;
+    }
+
+    /**
+     * Returns the window drag bounds exactly as it was set, without intersecting it with the
+     * surface. The value is unchanged by surface size, because the area is compared with the
+     * current surface size only when a window is pressed.
+     *
+     * @return the area in surface cells, y-down; never {@code null}
+     * @throws IllegalStateException if no area is set; check {@link #hasWindowDragBounds()} first.
+     *     Kotlin property access ({@code root.windowDragBounds}) throws the same way
+     */
+    public CellArea getWindowDragBounds() {
+        if (windowDragBounds == null) {
+            throw new IllegalStateException("No window drag bounds is set");
+        }
+        return windowDragBounds;
     }
 
     /**
@@ -1037,9 +1097,28 @@ public final class UiRoot {
     private void notifyWindowsPressed(Widget target) {
         for (Widget current = target; current != null; current = current.getParent()) {
             if (current instanceof Window window) {
-                window.pressed(getSurfaceColumns(), getSurfaceRows());
+                passDragBounds(window);
             }
         }
+    }
+
+    // Clamps the drag bounds to the surface; an empty intersection falls back to the whole surface.
+    private void passDragBounds(Window window) {
+        int surfaceColumns = getSurfaceColumns();
+        int surfaceRows = getSurfaceRows();
+        if (windowDragBounds == null) {
+            window.pressed(0, 0, surfaceColumns, surfaceRows);
+            return;
+        }
+        int left = windowDragBounds.column();
+        int top = windowDragBounds.row();
+        if (left >= surfaceColumns || top >= surfaceRows) {
+            window.pressed(0, 0, surfaceColumns, surfaceRows);
+            return;
+        }
+        int columns = Math.min(windowDragBounds.columnCount(), surfaceColumns - left);
+        int rows = Math.min(windowDragBounds.rowCount(), surfaceRows - top);
+        window.pressed(left, top, columns, rows);
     }
 
     private void refreshFocusShown() {

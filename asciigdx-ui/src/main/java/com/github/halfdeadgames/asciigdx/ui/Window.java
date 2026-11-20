@@ -39,10 +39,12 @@ import java.util.Objects;
  *       or an empty part of the inside, is consumed.
  *   <li>If the window is {@linkplain #isMovable() movable}, pressing the top border row with the
  *       primary button (but not the close button) and dragging moves the window. The window stays
- *       where the pointer takes it, but its top row always stays fully inside the surface, and
- *       the window never leaves it to the left or right unless it is wider than the surface.
- *       This clamping applies only to windows pressed through a {@link UiRoot}, which tells the
- *       window the surface size.
+ *       where the pointer takes it, but its top row always stays fully inside the drag bounds, and
+ *       the window never leaves it to the left or right unless it is wider than the area (it
+ *       then sits at the area's left edge). The drag bounds is the surface, or the part of the
+ *       surface chosen with {@link UiRoot#setWindowDragBounds(CellArea)}. This clamping applies
+ *       only to windows pressed through a {@link UiRoot}, which tells the window the area; it
+ *       affects dragging only, never {@link #setPosition(int, int)}.
  *   <li>The border uses the style's focused border look while keyboard focus is inside the
  *       window, whether or not the focus look is shown (see {@link UiRoot#isFocusVisible()}), so
  *       the active window stays visible after a mouse click.
@@ -100,8 +102,10 @@ public class Window extends WidgetGroup {
     private int armedPointer = NO_POINTER;
     private int grabColumn;
     private int grabRow;
-    private int surfaceColumns = UNKNOWN_SURFACE_SIZE;
-    private int surfaceRows = UNKNOWN_SURFACE_SIZE;
+    private int dragBoundsLeft;
+    private int dragBoundsTop;
+    private int dragBoundsColumns = UNKNOWN_SURFACE_SIZE;
+    private int dragBoundsRows = UNKNOWN_SURFACE_SIZE;
 
     /**
      * Creates an empty window sized to fit its title and close button, at position (0, 0), with
@@ -250,7 +254,8 @@ public class Window extends WidgetGroup {
     }
 
     /**
-     * Returns whether the user can drag the window by its top border row.
+     * Returns whether the user can drag the window by its top border row. A dragged window stays
+     * inside the root's drag bounds (see {@link UiRoot#setWindowDragBounds(CellArea)}).
      *
      * @return {@code true} when movable; {@code true} for a new window
      */
@@ -358,10 +363,12 @@ public class Window extends WidgetGroup {
     }
 
     // Called by UiRoot for a press on this window or a descendant; also tells the surface size,
-    // which drag clamping needs.
-    void pressed(int surfaceColumns, int surfaceRows) {
-        this.surfaceColumns = surfaceColumns;
-        this.surfaceRows = surfaceRows;
+    // which drag clamping needs: the effective rectangle in surface cells.
+    void pressed(int dragBoundsLeft, int dragBoundsTop, int dragBoundsColumns, int dragBoundsRows) {
+        this.dragBoundsLeft = dragBoundsLeft;
+        this.dragBoundsTop = dragBoundsTop;
+        this.dragBoundsColumns = dragBoundsColumns;
+        this.dragBoundsRows = dragBoundsRows;
         toFront();
     }
 
@@ -611,9 +618,10 @@ public class Window extends WidgetGroup {
     private void moveToSurfacePosition(int desiredLeft, int desiredTop) {
         int left = desiredLeft;
         int top = desiredTop;
-        if (surfaceColumns != UNKNOWN_SURFACE_SIZE) {
-            left = Math.max(0, Math.min(left, surfaceColumns - getWidth()));
-            top = Math.max(0, Math.min(top, surfaceRows - 1));
+        if (dragBoundsColumns != UNKNOWN_SURFACE_SIZE) {
+            int rightmostLeft = dragBoundsLeft + dragBoundsColumns - getWidth();
+            left = Math.max(dragBoundsLeft, Math.min(left, rightmostLeft));
+            top = Math.max(dragBoundsTop, Math.min(top, dragBoundsTop + dragBoundsRows - 1));
         }
         int parentLeft = 0;
         int parentTop = 0;
