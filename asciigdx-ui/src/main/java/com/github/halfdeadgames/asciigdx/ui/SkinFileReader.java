@@ -28,8 +28,12 @@ final class SkinFileReader {
     private static final String SLIDERS = "sliders";
     private static final String SCROLL_PANES = "scrollPanes";
     private static final String WINDOWS = "windows";
+    private static final String DIALOGS = "dialogs";
     private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES, WINDOWS);
+            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES, WINDOWS,
+            DIALOGS);
+    private static final List<String> DIALOG_KEYS = List.of("window", "message", "buttons",
+            "textField", "dimColor", "dimAmount");
     private static final List<String> SCROLL_PANE_KEYS = List.of("track", "thumb",
             "thumbPointerOver", "thumbPressed");
     private static final List<String> WINDOW_KEYS = List.of("box", "border", "focusedBorder",
@@ -71,6 +75,7 @@ final class SkinFileReader {
     private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
     private final Map<String, ScrollPaneStyle> scrollPaneStyles = new LinkedHashMap<>();
     private final Map<String, WindowStyle> windowStyles = new LinkedHashMap<>();
+    private final Map<String, DialogStyle> dialogStyles = new LinkedHashMap<>();
     private final Map<String, Map<String, Object>> customStyles = new LinkedHashMap<>();
 
     private SkinFileReader() {
@@ -105,11 +110,61 @@ final class SkinFileReader {
         reader.readSection(root, SCROLL_PANES, reader.scrollPaneStyles,
                 reader::readScrollPaneStyle);
         reader.readSection(root, WINDOWS, reader.windowStyles, reader::readWindowStyle);
+        reader.readSection(root, DIALOGS, reader.dialogStyles, reader::readDialogStyle);
         reader.readCustomSections(root, customReaders);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
                 reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles,
-                reader.scrollPaneStyles, reader.windowStyles, reader.customStyles);
+                reader.scrollPaneStyles, reader.windowStyles, reader.dialogStyles,
+                reader.customStyles);
+    }
+
+    private DialogStyle readDialogStyle(JsonValue entry, String path) {
+        requireObject(entry, path,
+                "a dialog object with the keys " + String.join(", ", DIALOG_KEYS));
+        checkKnownKeys(entry, DIALOG_KEYS, "key", path);
+        WindowStyle window = readNamedReference(entry, "window", windowStyles, "window style",
+                path);
+        LabelStyle message = readNamedReference(entry, "message", labelStyles, "label style",
+                path);
+        ButtonStyle buttons = readNamedReference(entry, "buttons", buttonStyles, "button style",
+                path);
+        TextFieldStyle textField = readNamedReference(entry, "textField", textFieldStyles,
+                "text field style", path);
+        DialogStyle style = DialogStyle.of(window, message, buttons, textField);
+        JsonValue dimColor = entry.get("dimColor");
+        JsonValue dimAmount = entry.get("dimAmount");
+        if ((dimColor == null) != (dimAmount == null)) {
+            throw new SkinFileException(path
+                    + ": \"dimColor\" and \"dimAmount\" must be given together");
+        }
+        if (dimColor == null) {
+            return style;
+        }
+        return style.withDim(readColor(dimColor, path + ".dimColor"),
+                readDimAmount(dimAmount, path + ".dimAmount"));
+    }
+
+    private static <T> T readNamedReference(JsonValue entry, String key, Map<String, T> known,
+            String kind, String path) {
+        JsonValue value = requireKey(entry, key, path);
+        String keyPath = path + "." + key;
+        if (!value.isString()) {
+            throw new SkinFileException(keyPath + ": must be the name of a " + kind);
+        }
+        return lookUpReference(known, value.asString(), kind, keyPath);
+    }
+
+    private static float readDimAmount(JsonValue value, String path) {
+        if (!value.isNumber()) {
+            throw new SkinFileException(path + ": must be a number from 0 to 1");
+        }
+        double amount = value.asDouble();
+        if (!(amount >= 0) || amount > 1) {
+            throw new SkinFileException(
+                    path + ": must be from 0 to 1, was " + value.asString());
+        }
+        return (float) amount;
     }
 
     private ScrollPaneStyle readScrollPaneStyle(JsonValue entry, String path) {

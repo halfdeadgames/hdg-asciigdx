@@ -453,6 +453,50 @@ public final class UiSurface {
         }
     }
 
+    // Moves every color toward dimRgba by amount (0..1), per RGB channel, keeping each color's
+    // alpha. Only the square grid has backgrounds: a fully transparent one becomes the dim color
+    // with alpha = amount. The tall and overlay grids keep their transparent backgrounds. Ignores
+    // the clip. Does not allocate.
+    void dimAll(int dimRgba, float amount) {
+        if (!(amount > 0f)) {
+            return;
+        }
+        dimGrid(squareGrid, dimRgba, amount, true);
+        dimGrid(tallGrid, dimRgba, amount, false);
+        dimGrid(overlayGrid, dimRgba, amount, false);
+    }
+
+    private static void dimGrid(TerminalGrid grid, int dimRgba, float amount,
+            boolean dimBackgrounds) {
+        for (int y = 0; y < grid.getRows(); y++) {
+            for (int x = 0; x < grid.getColumns(); x++) {
+                grid.setForeground(x, y, dimColor(grid.getForeground(x, y), dimRgba, amount));
+                if (dimBackgrounds) {
+                    grid.setBackground(x, y,
+                            dimBackground(grid.getBackground(x, y), dimRgba, amount));
+                }
+            }
+        }
+    }
+
+    private static int dimBackground(int rgba, int dimRgba, float amount) {
+        if ((rgba & 0xFF) == 0) {
+            return (dimRgba & 0xFFFFFF00) | Math.round(amount * 255f);
+        }
+        return dimColor(rgba, dimRgba, amount);
+    }
+
+    private static int dimColor(int rgba, int dimRgba, float amount) {
+        int red = blendChannel(rgba >>> 24, dimRgba >>> 24, amount);
+        int green = blendChannel((rgba >>> 16) & 0xFF, (dimRgba >>> 16) & 0xFF, amount);
+        int blue = blendChannel((rgba >>> 8) & 0xFF, (dimRgba >>> 8) & 0xFF, amount);
+        return (red << 24) | (green << 16) | (blue << 8) | (rgba & 0xFF);
+    }
+
+    private static int blendChannel(int channel, int dimChannel, float amount) {
+        return (int) (channel * (1f - amount) + dimChannel * amount + 0.5f);
+    }
+
     private static void requireNonNegativeSize(int width, int height) {
         if (width < 0 || height < 0) {
             throw new IllegalArgumentException(

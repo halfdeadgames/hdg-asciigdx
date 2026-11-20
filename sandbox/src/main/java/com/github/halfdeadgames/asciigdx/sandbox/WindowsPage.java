@@ -1,5 +1,9 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
+import com.github.halfdeadgames.asciigdx.ui.Dialog;
+import com.github.halfdeadgames.asciigdx.ui.DialogChoice;
+import com.github.halfdeadgames.asciigdx.ui.DialogStyle;
+import com.github.halfdeadgames.asciigdx.ui.Dialogs;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
@@ -18,6 +22,11 @@ import java.util.List;
  * Escape. Drag a window by its title bar, click one to raise it, press Tab to see that focus stays
  * inside the window, and close windows to bring them back with "Reopen windows". The windows are
  * removed from the layer when another page is shown.
+ *
+ * <p>A row of buttons opens modal dialogs: OK, Yes/No, Yes/No/Cancel, text input, and a nested
+ * one (its Yes opens an OK dialog on top while it stays open). Everything under a dialog is dimmed
+ * by the skin's dialog style. The last answer shows in a label. Open dialogs are dismissed when
+ * another page is shown.
  */
 class WindowsPage implements UiPage {
     private static final int HINT_X = 4;
@@ -32,10 +41,17 @@ class WindowsPage implements UiPage {
     private static final int NAME_FIELD_WIDTH = 18;
     private static final int BUTTON_GAP = 1;
     private static final int FORM_ROW_STEP = 2;
+    private static final int DIALOG_BUTTON_Y = 7;
+    private static final int RESULT_Y = 9;
+    private static final int TEXT_INPUT_WIDTH = 20;
+    private static final String DIALOG_STYLE_NAME = "dialog";
+    private static final String NO_ANSWER_TEXT = "Last dialog answer: none yet";
 
     private final UiRoot uiRoot;
     private final Skin skin;
     private final List<Window> windows = new ArrayList<>();
+    private final List<Dialog> shownDialogs = new ArrayList<>();
+    private Label resultLabel;
 
     WindowsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
@@ -65,7 +81,86 @@ class WindowsPage implements UiPage {
 
     @Override
     public void pageHidden() {
+        dismissDialogs();
         removeWindowsFromLayer();
+    }
+
+    /** Opens the dimmed OK dialog that the capture variant photographs. */
+    void showCaptureDialog() {
+        show(Dialogs.ok(dialogStyle(), "Notice", "The file was saved.\nNothing else happened.",
+                (dialog, choice) -> report("OK dialog", choice)));
+    }
+
+    private DialogStyle dialogStyle() {
+        return skin.getDialogStyle(DIALOG_STYLE_NAME);
+    }
+
+    private void show(Dialog dialog) {
+        shownDialogs.removeIf(shown -> !shown.isShowing());
+        shownDialogs.add(dialog);
+        dialog.show(uiRoot);
+    }
+
+    // The top dialog goes first, so each one hands focus back to the dialog below it.
+    void dismissDialogs() {
+        for (int i = shownDialogs.size() - 1; i >= 0; i--) {
+            shownDialogs.get(i).dismiss();
+        }
+        shownDialogs.clear();
+    }
+
+    private void report(String source, DialogChoice choice) {
+        showResult("Last dialog answer: " + source + " -> " + choice);
+    }
+
+    private void showResult(String text) {
+        resultLabel.setText(text);
+        resultLabel.pack();
+    }
+
+    private void openYesNoDialog() {
+        show(Dialogs.yesNo(dialogStyle(), "Quit", "Really quit?\nEsc answers No.",
+                (dialog, choice) -> report("Yes/No dialog", choice)));
+    }
+
+    private void openYesNoCancelDialog() {
+        show(Dialogs.yesNoCancel(dialogStyle(), "Save", "Save your changes first?",
+                (dialog, choice) -> report("Yes/No/Cancel dialog", choice)));
+    }
+
+    private void openTextInputDialog() {
+        Dialog dialog = Dialogs.textInput(dialogStyle(), "Rename", "New name:", "untitled",
+                TEXT_INPUT_WIDTH, text -> showResult(
+                        "Last dialog answer: text input -> \"" + text + "\""));
+        dialog.addChoiceListener((answered, choice) -> {
+            if (choice == DialogChoice.CANCEL) {
+                report("text input", choice);
+            }
+        });
+        show(dialog);
+    }
+
+    // The outer dialog stays open while the inner OK dialog is on top of it.
+    private void openNestedDialog() {
+        Dialog outer = Dialogs.yesNo(dialogStyle(), "Delete", "Delete the file?",
+                (dialog, choice) -> {
+                    if (choice == DialogChoice.YES) {
+                        openDeletedDialog(dialog);
+                        return;
+                    }
+                    report("nested dialog", choice);
+                    dialog.dismiss();
+                });
+        outer.setCloseOnChoice(false);
+        show(outer);
+    }
+
+    private void openDeletedDialog(Dialog outer) {
+        show(Dialogs.ok(dialogStyle(), "Deleted", "The file is gone.\nThis dialog is on top.",
+                (dialog, choice) -> {
+                    report("nested dialog", DialogChoice.YES);
+                    outer.dismiss();
+                }));
     }
 
     private Widget createPageContent() {
@@ -78,7 +173,28 @@ class WindowsPage implements UiPage {
         reopen.setPosition(HINT_X, REOPEN_BUTTON_Y);
         reopen.addClickListener(clicked -> openClosedWindows());
         content.addChild(reopen);
+        addDialogButtons(content);
+        resultLabel = new Label(NO_ANSWER_TEXT, skin.getLabelStyle("text"));
+        resultLabel.setPosition(HINT_X, RESULT_Y);
+        content.addChild(resultLabel);
         return content;
+    }
+
+    private void addDialogButtons(WidgetGroup content) {
+        int x = HINT_X;
+        x = addDialogButton(content, "OK dialog", x, this::showCaptureDialog);
+        x = addDialogButton(content, "Yes/No", x, this::openYesNoDialog);
+        x = addDialogButton(content, "Yes/No/Cancel", x, this::openYesNoCancelDialog);
+        x = addDialogButton(content, "Text input", x, this::openTextInputDialog);
+        addDialogButton(content, "Nested", x, this::openNestedDialog);
+    }
+
+    private int addDialogButton(WidgetGroup content, String text, int x, Runnable action) {
+        TextButton button = new TextButton(text, skin.getButtonStyle("button"));
+        button.setPosition(x, DIALOG_BUTTON_Y);
+        button.addClickListener(clicked -> action.run());
+        content.addChild(button);
+        return x + button.getWidth() + BUTTON_GAP;
     }
 
     private Window createSettingsWindow() {
@@ -104,7 +220,7 @@ class WindowsPage implements UiPage {
     private Window createNotesWindow() {
         Window window = new Window("Notes", withoutCloseButton(skin.getWindowStyle("window")));
         Label text = new Label("No close button here. Move me or raise me.",
-                skin.getLabelStyle("text"));
+                skin.getLabelStyle("windowText"));
         return placed(window, text, NOTES_X, NOTES_Y);
     }
 
@@ -112,7 +228,8 @@ class WindowsPage implements UiPage {
         Window window = new Window("Esc closes", skin.getWindowStyle("window"));
         window.setCloseOnEscape(true);
         WidgetGroup body = new WidgetGroup();
-        Label text = new Label("Focus the button, then press Esc.", skin.getLabelStyle("text"));
+        Label text = new Label("Focus the button, then press Esc.",
+                skin.getLabelStyle("windowText"));
         body.addChild(text);
         TextButton done = new TextButton("Done", skin.getButtonStyle("button"));
         done.setPosition(0, FORM_ROW_STEP);

@@ -36,6 +36,8 @@ class UiWidgetsScene implements SandboxScene {
     private static final String OPEN_PAGES_MENU_VARIANT = "pages-menu-open";
     private static final String OPEN_SHORT_MENU_VARIANT = "menus-open";
     private static final String MENUS_PAGE_ID = "menus";
+    private static final String WINDOWS_PAGE_ID = "windows";
+    private static final String DIALOG_VARIANT = "windows-dialog";
 
     private final Skin skin = Skin.fromFile(Gdx.files.internal(SKIN_FILE));
     private final ScalingViewport viewport;
@@ -50,6 +52,7 @@ class UiWidgetsScene implements SandboxScene {
     private HintsPage hintsPage;
     private MenusPage menusPage;
     private TextFieldsPage textFieldsPage;
+    private WindowsPage windowsPage;
     private List<UiPage> pages;
     private MenuBar pageBar;
     private LayerStack layers;
@@ -71,7 +74,10 @@ class UiWidgetsScene implements SandboxScene {
     // The glyph sources are shared and owned by the caller; LayerStack.dispose leaves them alone.
     private void buildUi() {
         LayerStack oldLayers = layers;
-        surface = UiSurface.ofSize(columns, rows);
+        if (windowsPage != null) {
+            windowsPage.dismissDialogs();
+        }
+        surface =UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
         uiInput = UiInput.forRoot(uiRoot, this::pickCell);
         hintsPage = new HintsPage(uiRoot, skin);
@@ -79,10 +85,10 @@ class UiWidgetsScene implements SandboxScene {
         buttonsPage = new ButtonsPage(uiRoot, skin);
         textFieldsPage = new TextFieldsPage(uiRoot, skin);
         barsPage = new BarsPage(uiRoot, skin);
+        windowsPage = new WindowsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
-                new RatingsPage(skin), new WindowsPage(uiRoot, skin),
-                new ScrollingPage(skin));
+                new RatingsPage(skin), windowsPage, new ScrollingPage(skin));
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
         layers = new LayerStack();
         content = null;
@@ -274,6 +280,7 @@ class UiWidgetsScene implements SandboxScene {
         }
         ids.add(OPEN_PAGES_MENU_VARIANT);
         ids.add(OPEN_SHORT_MENU_VARIANT);
+        ids.add(DIALOG_VARIANT);
         return ids;
     }
 
@@ -287,6 +294,12 @@ class UiWidgetsScene implements SandboxScene {
         if (variant.equals(OPEN_SHORT_MENU_VARIANT)) {
             showPage(pageIndexOf(MENUS_PAGE_ID));
             clickCell(MenusPage.BAR_X + 1, contentTop() + MenusPage.BAR_Y);
+            return;
+        }
+        if (variant.equals(DIALOG_VARIANT)) {
+            showPage(pageIndexOf(WINDOWS_PAGE_ID));
+            windowsPage.showCaptureDialog();
+            uiRoot.draw();
             return;
         }
         int index = pageIndexOf(variant);

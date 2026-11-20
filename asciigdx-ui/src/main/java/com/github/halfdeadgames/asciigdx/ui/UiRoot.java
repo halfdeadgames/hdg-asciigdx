@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 
 import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -91,6 +92,26 @@ import java.util.Objects;
  * Every input method returns whether the input was handled. Pointer positions outside the surface
  * hit nothing.
  *
+ * <p>Modal dialogs: while a {@link Dialog} is shown (see {@link Dialog#show(UiRoot)}), the root
+ * lets input reach only the top dialog and the popup layer.
+ * <ul>
+ *   <li>A press anywhere else, also outside the surface, is swallowed: the input method returns
+ *       {@code true}, no widget hears it, focus stays, and no drag or up follows for it.
+ *   <li>Widgets outside the dialog are never hovered, so their tooltips never show, and a hover
+ *       over them is cleared when the dialog is shown. Scroll steps over them are consumed and
+ *       ignored.
+ *   <li>Menus: an open menu is closed when the dialog is shown, and menu shortcuts (Alt plus a
+ *       letter, and the other unhandled-key listeners) are not called while a dialog is shown.
+ *       Key observers still see every key, so a menu bar keeps track of the Alt key.
+ *   <li>Keyboard navigation (Tab, the arrow keys, {@link #moveFocus}) stays inside the top
+ *       dialog.
+ *   <li>Drawing: the main tree, then the other windows, then the dim of the top dialog's style,
+ *       then the dialogs from the lowest to the top one, then the popup layer.
+ *   <li>Focus: the dialog gets focus when it is shown, and the focus from before is restored
+ *       when it closes, if that widget is still shown and, with dialogs below, inside the dialog
+ *       below. A dialog that leaves the window layer in any other way is treated as closed.
+ * </ul>
+ *
  * <p>A {@link UiSurface} never changes size. For another size, create a new surface and a new
  * root.
  *
@@ -139,6 +160,9 @@ public final class UiRoot {
     private final WidgetGroup windowLayer = new WidgetGroup();
     private final WidgetGroup popupLayer = new WidgetGroup();
     private final UiEvent event = new UiEvent();
+    private final ArrayList<ModalEntry> modalStack = new ArrayList<>();
+    private boolean hoverRefreshPending;
+    private boolean hoverPositionKnown;
     private final Widget[] capturedWidgets = new Widget[MAX_POINTERS];
     private final int[] capturingButtons = new int[MAX_POINTERS];
     private UiUpdateListener[] updateListeners = NO_UPDATE_LISTENERS;
@@ -499,12 +523,37 @@ public final class UiRoot {
         hiddenSurface.fillBackground(0, 0, columns, rows,
                 TerminalGrid.TRANSPARENT_RGBA);
         root.draw(hiddenSurface);
-        windowLayer.draw(hiddenSurface);
+        drawWindowLayer();
         popupLayer.draw(hiddenSurface);
         shownSurface.copyFrom(hiddenSurface);
         root.clearRedrawNeeded();
         windowLayer.clearRedrawNeeded();
         popupLayer.clearRedrawNeeded();
+    }
+
+    // With modals shown: the other windows, then one dim pass (top modal's settings), then the
+    // modals in stack order.
+    private void drawWindowLayer() {
+        if (modalStack.isEmpty()) {
+            windowLayer.draw(hiddenSurface);
+            return;
+        }
+        if (!windowLayer.isVisible()) {
+            return;
+        }
+        for (int i = 0; i < windowLayer.getChildCount(); i++) {
+            Widget child = windowLayer.getChild(i);
+            if (indexOfModal(child) < 0) {
+                child.draw(hiddenSurface);
+            }
+        }
+        ModalEntry top = modalStack.get(modalStack.size() - 1);
+        if (top.dimAmount() > 0f) {
+            hiddenSurface.dimAll(top.dimRgba(), top.dimAmount());
+        }
+        for (int i = 0; i < modalStack.size(); i++) {
+            modalStack.get(i).modal().draw(hiddenSurface);
+        }
     }
 
     /**
@@ -570,9 +619,14 @@ public final class UiRoot {
         if (delivering) {
             return;
         }
+        dropGoneModals();
         clearFocusIfOwnerGone();
         for (int pointer = 0; pointer < MAX_POINTERS; pointer++) {
             cancelCaptureIfWidgetRemoved(pointer);
+        }
+        if (hoverRefreshPending) {
+            hoverRefreshPending = false;
+            updateHover(hitAt(hoverColumn, hoverRow), hoverColumn, hoverRow);
         }
         if (hoveredWidget != null && !isInTrees(hoveredWidget)) {
             Widget gone = hoveredWidget;
@@ -603,6 +657,7 @@ public final class UiRoot {
      */
     public boolean pointerMoved(int column, int row) {
         requireNotDelivering();
+        dropGoneModals();
         Widget target = hitAt(column, row);
         updateHover(target, column, row);
         if (target == null) {
@@ -643,8 +698,12 @@ public final class UiRoot {
         if (capturedWidgets[pointer] != null) {
             return false;
         }
+        dropGoneModals();
         Widget target = hitAt(column, row);
         updateHoverForPointer(pointer, target, column, row);
+        if (target == null && !modalStack.isEmpty()) {
+            return true;
+        }
         notifyPressObservers(pointer);
         notifyWindowsPressed(target);
         focusBeforePress = getKeyboardFocus();
@@ -750,18 +809,22 @@ public final class UiRoot {
      * least one axis has a whole step, {@link UiEventType#SCROLLED} goes to the widget under
      * pointer 0 at its last known position (see {@link #getHoveredWidget()}) and bubbles up
      * through its parents until a {@link UiListener} returns {@code true}. Steps are lost when
-     * nothing is hovered. Non-finite amounts are ignored.
+     * nothing is hovered. Non-finite amounts are ignored. While a modal dialog is shown, whole
+     * steps over anything outside the top dialog and the popup layer are consumed and delivered
+     * to nobody.
      *
      * @param amountX horizontal amount, positive to the right (libGDX units, usually whole steps
      *         for a wheel); any finite value
      * @param amountY vertical amount, positive to scroll down (libGDX convention); any finite
      *         value
-     * @return {@code true} if a listener handled the event; {@code false} also when there was no
-     *         whole step or nothing is hovered
+     * @return {@code true} if a listener handled the event, or if a modal dialog consumed it;
+     *         {@code false} when there was no whole step, or when no modal dialog is shown and
+     *         nothing is hovered or no listener handled it
      * @throws IllegalStateException if called while an event is being delivered
      */
     public boolean scrolled(float amountX, float amountY) {
         requireNotDelivering();
+        dropGoneModals();
         if (!Float.isFinite(amountX) || !Float.isFinite(amountY)) {
             return false;
         }
@@ -772,7 +835,13 @@ public final class UiRoot {
         scrollRemainderX = sumX - stepsX;
         scrollRemainderY = sumY - stepsY;
         Widget target = getHoveredWidget();
-        if ((stepsX == 0 && stepsY == 0) || target == null) {
+        if (stepsX == 0 && stepsY == 0) {
+            return false;
+        }
+        if (!modalStack.isEmpty() && !isReachableWhileModalShown(target)) {
+            return true;
+        }
+        if (target == null) {
             return false;
         }
         event.setScroll(target, stepsX, stepsY);
@@ -914,6 +983,7 @@ public final class UiRoot {
     public boolean moveFocus(FocusDirection direction) {
         Objects.requireNonNull(direction, "direction");
         requireNotDelivering();
+        dropGoneModals();
         return navigateFocus(direction);
     }
 
@@ -938,7 +1008,9 @@ public final class UiRoot {
             return false;
         }
         Widget previous = getKeyboardFocus();
-        Widget target = FocusNavigator.findTarget(focusScopeOf(previous), previous, direction);
+        Widget scope = focusScopeOf(previous);
+        Widget from = !modalStack.isEmpty() && !isSelfOrAncestor(scope, previous) ? null : previous;
+        Widget target = FocusNavigator.findTarget(scope, from, direction);
         if (target == null) {
             return false;
         }
@@ -950,6 +1022,9 @@ public final class UiRoot {
 
     // Navigation stays in one top-level tree: the window that holds focus, or else the main tree.
     private Widget focusScopeOf(Widget focused) {
+        if (!modalStack.isEmpty()) {
+            return modalStack.get(modalStack.size() - 1).modal();
+        }
         for (Widget current = focused; current != null; current = current.getParent()) {
             if (current.getParent() == windowLayer) {
                 return current;
@@ -1012,6 +1087,7 @@ public final class UiRoot {
     private boolean dispatchKey(UiEventType type, int keycode, char character,
             boolean shiftHeld) {
         requireNotDelivering();
+        dropGoneModals();
         trackShift(type, keycode);
         Widget focused = getKeyboardFocus();
         deliverToKeyListeners(keyObservers, focused != null ? focused : root, type, keycode,
@@ -1023,7 +1099,8 @@ public final class UiRoot {
                 return true;
             }
         }
-        if (deliverToKeyListeners(unhandledKeyListeners, root, type, keycode, character)) {
+        if (modalStack.isEmpty()
+                && deliverToKeyListeners(unhandledKeyListeners, root, type, keycode, character)) {
             return true;
         }
         return navigateByKey(type, keycode, shiftHeld);
@@ -1179,6 +1256,9 @@ public final class UiRoot {
         if (popupHit != null) {
             return popupHit;
         }
+        if (!modalStack.isEmpty()) {
+            return hitTopModal(column, row);
+        }
         Widget windowHit = windowLayer.isVisible()
                 ? windowLayer.hitChildren(column - windowLayer.getX(), row - windowLayer.getY())
                 : null;
@@ -1280,6 +1360,7 @@ public final class UiRoot {
     private void updateHover(Widget newHover, int column, int row) {
         hoverColumn = column;
         hoverRow = row;
+        hoverPositionKnown = true;
         sweptHover = null;
         Widget oldHover = hoveredWidget;
         if (newHover == oldHover) {
@@ -1317,6 +1398,149 @@ public final class UiRoot {
         event.setCurrent(widget, event.getSurfaceColumn() - absoluteLeft(widget),
                 event.getSurfaceRow() - absoluteTop(widget));
         deliver(widget);
+    }
+
+    /** A shown modal with the focus to restore when it goes and its dim settings. */
+    private record ModalEntry(Window modal, Widget focusToRestore, int dimRgba,
+            float dimAmount) {
+    }
+
+    /**
+     * Shows a window as a modal: it becomes the top child of the window layer, and until it is
+     * hidden, pointer, scroll, key, and focus input reaches only it and the popup layer, and a
+     * press elsewhere is swallowed. Closes an open menu, then moves focus into the modal. The
+     * alpha of {@code dimRgba} is ignored. Allowed while an event is being delivered.
+     */
+    void showModal(Window modal, Widget initialFocusOrNull, int dimRgba, float dimAmount) {
+        Objects.requireNonNull(modal, "modal");
+        if (Float.isNaN(dimAmount) || dimAmount < 0f || dimAmount > 1f) {
+            throw new IllegalArgumentException("dimAmount must be 0 to 1, was " + dimAmount);
+        }
+        dropGoneModals();
+        if (indexOfModal(modal) >= 0) {
+            throw new IllegalArgumentException("The window is already shown as a modal");
+        }
+        if (openMenuBar != null) {
+            openMenuBar.close();
+        }
+        Widget focusToRestore = getKeyboardFocus();
+        WidgetGroup previousParent = modal.getParent();
+        if (previousParent != null) {
+            previousParent.removeChild(modal);
+        }
+        windowLayer.addChild(modal);
+        modalStack.add(new ModalEntry(modal, focusToRestore, dimRgba, dimAmount));
+        assignKeyboardFocus(chooseInitialModalFocus(modal, initialFocusOrNull));
+        refreshFocusShown();
+        refreshHover();
+    }
+
+    /** Removes a modal from the stack and the window layer, then restores focus. */
+    void hideModal(Window modal) {
+        Objects.requireNonNull(modal, "modal");
+        int index = indexOfModal(modal);
+        if (index < 0) {
+            return;
+        }
+        if (modal.getParent() == windowLayer) {
+            windowLayer.removeChild(modal);
+        }
+        removeModalEntry(index);
+    }
+
+    boolean isModalShown() {
+        return !modalStack.isEmpty();
+    }
+
+    Window getTopModal() {
+        if (modalStack.isEmpty()) {
+            throw new IllegalStateException("No modal is shown");
+        }
+        return modalStack.get(modalStack.size() - 1).modal();
+    }
+
+    private static Widget chooseInitialModalFocus(Window modal, Widget initialFocusOrNull) {
+        if (initialFocusOrNull != null && isSelfOrAncestor(modal, initialFocusOrNull)) {
+            return initialFocusOrNull;
+        }
+        return FocusNavigator.findTarget(modal, null, FocusDirection.NEXT);
+    }
+
+    private int indexOfModal(Widget widget) {
+        for (int i = 0; i < modalStack.size(); i++) {
+            if (modalStack.get(i).modal() == widget) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // A modal that left the window layer by removeChild or close() is dropped like a hidden one.
+    private void dropGoneModals() {
+        for (int i = modalStack.size() - 1; i >= 0; i--) {
+            if (modalStack.get(i).modal().getParent() != windowLayer) {
+                removeModalEntry(i);
+            }
+        }
+    }
+
+    private void removeModalEntry(int index) {
+        boolean wasTop = index == modalStack.size() - 1;
+        ModalEntry removed = modalStack.remove(index);
+        if (wasTop) {
+            restoreFocusAfterModal(removed);
+        }
+        refreshHover();
+    }
+
+    private void restoreFocusAfterModal(ModalEntry removed) {
+        Widget scope = modalStack.isEmpty() ? null : getTopModal();
+        Widget saved = removed.focusToRestore();
+        boolean savedUsable = saved != null && isInTrees(saved)
+                && (scope == null || isSelfOrAncestor(scope, saved));
+        Widget next = null;
+        if (savedUsable) {
+            next = saved;
+        } else if (scope != null) {
+            next = FocusNavigator.findTarget(scope, null, FocusDirection.NEXT);
+        }
+        assignKeyboardFocus(next);
+        refreshFocusShown();
+    }
+
+    // During event delivery the refresh waits for the next update or draw.
+    private void refreshHover() {
+        if (!hoverPositionKnown) {
+            return;
+        }
+        if (delivering) {
+            hoverRefreshPending = true;
+            return;
+        }
+        updateHover(hitAt(hoverColumn, hoverRow), hoverColumn, hoverRow);
+    }
+
+    private Widget hitTopModal(int column, int row) {
+        Window top = getTopModal();
+        if (!windowLayer.isVisible() || !top.isVisible()) {
+            return null;
+        }
+        return top.hit(column - windowLayer.getX() - top.getX(),
+                row - windowLayer.getY() - top.getY());
+    }
+
+    // A null widget (the pointer over nothing) is not reachable while a modal is shown.
+    private boolean isReachableWhileModalShown(Widget widget) {
+        if (modalStack.isEmpty()) {
+            return true;
+        }
+        Window top = getTopModal();
+        for (Widget current = widget; current != null; current = current.getParent()) {
+            if (current == top || current == popupLayer) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isSelfOrAncestor(Widget candidate, Widget widget) {

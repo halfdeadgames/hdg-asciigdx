@@ -174,6 +174,20 @@ import java.util.Objects;
  *       defaults to {@code "x"}.
  * </ul>
  *
+ * <p>A {@code dialogs} entry becomes a {@link DialogStyle}. The keys:
+ * <ul>
+ *   <li>{@code window}, required: the name of an entry in the {@code windows} section.
+ *   <li>{@code message}, required: the name of an entry in the {@code labels} section.
+ *   <li>{@code buttons}, required: the name of an entry in the {@code buttons} section.
+ *   <li>{@code textField}, required: the name of an entry in the {@code textFields} section.
+ *   <li>{@code dimColor} and {@code dimAmount}, optional but only together: a color (its alpha
+ *       is ignored) and a number from 0 to 1 that dim everything under a shown dialog. Giving
+ *       only one of them is an error. Without them, or with an amount of 0, the style does
+ *       not dim.
+ * </ul>
+ * Example: {@code "dialog": { "window": "window", "message": "text", "buttons": "button",
+ * "textField": "default", "dimColor": "black", "dimAmount": 0.5 }}.
+ *
  * <p>Custom sections: to read sections for your own widgets, register a
  * {@link SkinSectionReader} on a {@link SkinLoader} and load through it. Skins made by
  * {@link #fromJson} and {@link #fromFile} have none.
@@ -212,6 +226,7 @@ public final class Skin {
     private final Map<String, SliderStyle> sliderStyles;
     private final Map<String, ScrollPaneStyle> scrollPaneStyles;
     private final Map<String, WindowStyle> windowStyles;
+    private final Map<String, DialogStyle> dialogStyles;
     private final Map<String, Map<String, Object>> customStyles;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
@@ -222,6 +237,7 @@ public final class Skin {
             Map<String, SliderStyle> sliderStyles,
             Map<String, ScrollPaneStyle> scrollPaneStyles,
             Map<String, WindowStyle> windowStyles,
+            Map<String, DialogStyle> dialogStyles,
             Map<String, Map<String, Object>> customStyles) {
         Map<String, Map<String, Object>> customCopy = new LinkedHashMap<>();
         customStyles.forEach((section, styles) -> customCopy.put(section, copyOf(styles)));
@@ -231,6 +247,7 @@ public final class Skin {
         this.sliderStyles = copyOf(sliderStyles);
         this.scrollPaneStyles = copyOf(scrollPaneStyles);
         this.windowStyles = copyOf(windowStyles);
+        this.dialogStyles = copyOf(dialogStyles);
         this.colors = copyOf(colors);
         this.labelStyles = copyOf(labelStyles);
         this.buttonStyles = copyOf(buttonStyles);
@@ -421,6 +438,30 @@ public final class Skin {
      */
     public WindowStyle getWindowStyle(String name) {
         return lookUp(windowStyles, name, "window style");
+    }
+
+    /**
+     * Returns the dialog style with a name.
+     *
+     * @param name name in the {@code dialogs} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasDialogStyle(String)} first.
+     */
+    public DialogStyle getDialogStyle(String name) {
+        return lookUp(dialogStyles, name, "dialog style");
+    }
+
+    /**
+     * Returns whether the skin defines a dialog style with a name.
+     *
+     * @param name name in the {@code dialogs} section; must not be {@code null}
+     * @return {@code true} if {@link #getDialogStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasDialogStyle(String name) {
+        return contains(dialogStyles, name);
     }
 
     /**

@@ -15,6 +15,7 @@
   },
   "labels": {
     "text": { "font": "square", "foreground": "white", "background": "black" },
+    "windowText": { "font": "square", "foreground": "white", "background": "charcoal" },
     "tallText": { "font": "tall", "foreground": "white", "background": "black" },
     "title": { "font": "tall", "foreground": "gold", "background": "black" },
     "highlight": { "font": "square", "foreground": "black", "background": "cyan" },
@@ -120,6 +121,16 @@
       "background": "charcoal",
       "closeButton": "button",
       "closeText": "x"
+    }
+  },
+  "dialogs": {
+    "dialog": {
+      "window": "window",
+      "message": "windowText",
+      "buttons": "button",
+      "textField": "default",
+      "dimColor": "black",
+      "dimAmount": 0.5
     }
   }
 }

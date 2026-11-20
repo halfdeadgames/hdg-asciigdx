@@ -159,7 +159,9 @@ public class Window extends WidgetGroup {
     }
 
     /**
-     * Returns whether the window has a content widget.
+     * Returns whether the content area has a widget. The content area is the part of the
+     * interior that a window gives to its content; a subclass may reserve the rest of the
+     * interior for itself, as {@link Dialog} does for its buttons.
      *
      * @return {@code true} after {@link #setContent} and before {@link #clearContent()}
      */
@@ -168,10 +170,10 @@ public class Window extends WidgetGroup {
     }
 
     /**
-     * Returns the content widget.
+     * Returns the widget in the content area (see {@link #hasContent()}).
      *
      * @return the content, never {@code null}
-     * @throws IllegalStateException if the window has no content; check {@link #hasContent()}
+     * @throws IllegalStateException if the content area is empty; check {@link #hasContent()}
      */
     public Widget getContent() {
         if (content == null) {
@@ -181,9 +183,11 @@ public class Window extends WidgetGroup {
     }
 
     /**
-     * Sets the content widget, which replaces the previous one. The previous content loses its
-     * parent. The new content is placed at window cell (1, 1) by the next layout and keeps its
-     * size. Call {@link #pack()} to fit the window to it. Calls {@link #invalidate()}.
+     * Sets the widget of the content area (see {@link #hasContent()}), which replaces the
+     * previous one. The previous content loses its parent. In a plain window the content area is
+     * the whole interior: the new content is placed at window cell (1, 1) by the next layout and
+     * keeps its size. A subclass may reserve part of the interior and place the content in the
+     * rest. Call {@link #pack()} to fit the window to it. Calls {@link #invalidate()}.
      *
      * @param content widget to show inside the border; must not be {@code null}, and must have no
      *         parent
@@ -204,8 +208,8 @@ public class Window extends WidgetGroup {
     }
 
     /**
-     * Removes the content widget, if any. It loses its parent. Calls {@link #invalidate()}. Does
-     * nothing when the window has no content.
+     * Removes the widget of the content area (see {@link #hasContent()}), if any. It loses its
+     * parent. Calls {@link #invalidate()}. Does nothing when the content area is empty.
      */
     public void clearContent() {
         if (content == null) {

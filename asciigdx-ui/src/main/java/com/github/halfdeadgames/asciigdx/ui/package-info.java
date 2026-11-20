@@ -65,6 +65,13 @@
  * tree and below popups; Tab and the arrow keys stay inside the window that holds focus. Its look
  * comes from a {@link com.github.halfdeadgames.asciigdx.ui.WindowStyle}.
  *
+ * <p>{@link com.github.halfdeadgames.asciigdx.ui.Dialog} is a modal window that asks the user
+ * something and reports a {@link com.github.halfdeadgames.asciigdx.ui.DialogChoice}; while it is
+ * shown, input reaches only it, and everything under it can be dimmed. Ready-made dialogs (OK,
+ * Yes/No, Yes/No/Cancel, and text input) come from
+ * {@link com.github.halfdeadgames.asciigdx.ui.Dialogs}, and the looks from a
+ * {@link com.github.halfdeadgames.asciigdx.ui.DialogStyle}.
+ *
  * <p>Creating widgets: a widget with one form is created with a public constructor, as with
  * {@link com.github.halfdeadgames.asciigdx.ui.TextButton},
  * {@link com.github.halfdeadgames.asciigdx.ui.CheckBox},

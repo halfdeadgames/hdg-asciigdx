@@ -136,6 +136,25 @@ class DefaultSkinFileTest {
     }
 
     @Test
+    void defaultDialogStyleUsesTheDefaultPartsAndDimsHalfBlack() {
+        DialogStyle expected = DialogStyle.of(skin.getWindowStyle("window"),
+                skin.getLabelStyle("windowText"), skin.getButtonStyle("button"),
+                skin.getTextFieldStyle("default")).withDim(BLACK, 0.5f);
+
+        assertEquals(expected, skin.getDialogStyle("dialog"));
+        assertTrue(skin.hasDialogStyle("dialog"));
+    }
+
+    @Test
+    void windowTextIsTextOnTheWindowBackground() {
+        int charcoal = 0x303030FF;
+
+        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, charcoal),
+                skin.getLabelStyle("windowText"));
+        assertEquals(charcoal, skin.getWindowStyle("window").getBackgroundRgba());
+    }
+
+    @Test
     void sliderStylesUseTheDefaultGlyphsForEachOrientation() {
         SliderStyle slider = skin.getSliderStyle("slider");
         SliderStyle tallSlider = skin.getSliderStyle("tallSlider");
