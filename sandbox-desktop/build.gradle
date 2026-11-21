@@ -143,6 +143,43 @@ run {
   }
 }
 
+// Live code reload: runs the sandbox on a JetBrains Runtime with HotswapAgent. Set hotswapJdk
+// (the runtime folder, holding lib/hotswap/hotswap-agent.jar) in ~/.gradle/gradle.properties.
+// After a code change, build the classes (Android Studio Build, or :sandbox:classes) and the agent
+// reloads them; press F5 in the UI showcase to rebuild the shown example.
+def hotswapSourceProjects = [':core', ':asciigdx-ui', ':input-script', ':sandbox']
+def hotswapSettingsDirectory = layout.buildDirectory.dir('hotswap')
+tasks.register('runHotswap', JavaExec) {
+  description = 'Runs the sandbox with live class reload. Needs the hotswapJdk property.'
+  group = 'application'
+  hotswapSourceProjects.each { dependsOn "${it}:classes" }
+  mainClass = application.mainClass
+  workingDir = rootProject.file('assets').path
+  classpath = files(hotswapSettingsDirectory) +
+      files(hotswapSourceProjects.collect { project(it).sourceSets.main.output }) +
+      sourceSets.main.runtimeClasspath
+  jvmArgs += "--enable-native-access=ALL-UNNAMED"
+  jvmArgs += "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED"
+  jvmArgs += "-XX:+AllowEnhancedClassRedefinition"
+  jvmArgs += "-XX:HotswapAgent=fatjar"
+  if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  def runtimeFolder = project.findProperty('hotswapJdk')
+  def windowSize = project.findProperty('window')
+  doFirst {
+    if (runtimeFolder == null) {
+      throw new GradleException('Set hotswapJdk to a JetBrains Runtime folder in ~/.gradle/gradle.properties.')
+    }
+    def javaName = os.contains('win') ? 'java.exe' : 'java'
+    def javaFile = new File(runtimeFolder.toString(), "bin/$javaName")
+    if (!javaFile.exists()) throw new GradleException("No java at $javaFile")
+    executable = javaFile.absolutePath
+    def settingsFile = hotswapSettingsDirectory.get().file('hotswap-agent.properties').asFile
+    settingsFile.parentFile.mkdirs()
+    settingsFile.text = 'autoHotswap=true\n'
+    if (windowSize != null) systemProperty 'asciigdx.window', windowSize
+  }
+}
+
 tasks.register('exportSheet', JavaExec) {
   description = 'Bakes a TTF into a glyph sheet PNG and character list. Usage: -Pfont=<ttf path> [-PcellHeight=8] [-Pchars=cp437|<list file>] [-PsheetName=<name>] [-Pcolumns=16] [-Pscale=1]. See SheetExporter.'
   classpath = sourceSets.main.runtimeClasspath
