@@ -93,6 +93,13 @@ class DefaultSkinFileTest {
     }
 
     @Test
+    void defaultTogglesUseTheTextFontAndTheDefaultWindowUsesTheSquareCloseFont() {
+        assertEquals(MarkFont.TEXT, skin.getCheckBoxStyle("checkBox").getMarkFont());
+        assertEquals(MarkFont.TEXT, skin.getRadioButtonStyle("radioButton").getMarkFont());
+        assertEquals(MarkFont.SQUARE, skin.getWindowStyle("window").getCloseFont());
+    }
+
+    @Test
     void menuBarStyleMatchesTheSandboxValues() {
         MenuBarStyle menuBar = MenuBarStyle.of(skin.getButtonStyle("button"),
                 skin.getButtonStyle("button")).withTriggerRgba(HOT_PINK)

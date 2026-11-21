@@ -5,9 +5,11 @@ import java.util.Objects;
 /**
  * Looks of a {@link CheckBox} or {@link RadioButton}: the {@link ButtonStyle} that gives the look
  * in each state (normal, pointer over, pressed, disabled, and focused), a mark for the unchecked
- * state, a mark for the checked state, and the gap between the mark and the text. The mark is
- * drawn with the same look as the text, in the text font, one text column (half a UI cell) per
- * code point, followed by the gap and the words. Immutable, so one instance can be shared by any
+ * state, a mark for the checked state, the gap between the mark and the text, and the font of the
+ * mark. The mark is drawn with the same look as the text, followed by the gap and the words. By
+ * default the mark is in the text font, one text column (half a UI cell) per code point; with
+ * {@link MarkFont#SQUARE} it is in the square font, one UI cell (two text columns) per code
+ * point. The words are always in the text font. Immutable, so one instance can be shared by any
  * number of widgets.
  *
  * <p>Both marks have the same number of code points, so a widget keeps its width when it is
@@ -26,17 +28,20 @@ public final class ToggleStyle {
     private final String uncheckedMark;
     private final String checkedMark;
     private final int gap;
+    private final MarkFont markFont;
 
-    private ToggleStyle(ButtonStyle button, String uncheckedMark, String checkedMark, int gap) {
+    private ToggleStyle(ButtonStyle button, String uncheckedMark, String checkedMark, int gap,
+            MarkFont markFont) {
         this.button = button;
         this.uncheckedMark = uncheckedMark;
         this.checkedMark = checkedMark;
         this.gap = gap;
+        this.markFont = markFont;
     }
 
     /**
-     * Creates a style with a gap of {@link #DEFAULT_GAP}. The unchecked mark comes first and the
-     * checked mark second:
+     * Creates a style with a gap of {@link #DEFAULT_GAP} and a mark in the text font
+     * ({@link MarkFont#TEXT}). The unchecked mark comes first and the checked mark second:
      * <pre>{@code
      * ToggleStyle style = ToggleStyle.of(buttonStyle, "[ ]", "[x]");
      * // unchecked shows "[ ] Sound", checked shows "[x] Sound"
@@ -64,21 +69,37 @@ public final class ToggleStyle {
             throw new IllegalArgumentException("Both marks need the same number of code points, "
                     + "were " + uncheckedLength + " and " + checkedLength);
         }
-        return new ToggleStyle(button, uncheckedMark, checkedMark, DEFAULT_GAP);
+        return new ToggleStyle(button, uncheckedMark, checkedMark, DEFAULT_GAP, MarkFont.TEXT);
     }
 
     /**
      * Returns a copy with another gap between the mark and the text.
      *
      * @param columns gap in text columns (half a UI cell); zero or greater
-     * @return a style with the same looks and marks and that gap
+     * @return a style with the same looks, marks, and mark font and that gap
      * @throws IllegalArgumentException if {@code columns} is negative
      */
     public ToggleStyle withGap(int columns) {
         if (columns < 0) {
             throw new IllegalArgumentException("Gap must not be negative, was " + columns);
         }
-        return new ToggleStyle(button, uncheckedMark, checkedMark, columns);
+        return new ToggleStyle(button, uncheckedMark, checkedMark, columns, markFont);
+    }
+
+    /**
+     * Returns a copy with another font for the mark. The gap and the words stay in text columns
+     * and in the text font. A square mark starts at a cell boundary, because the padding is a
+     * whole number of cells. {@link CheckBox#setStyle(ToggleStyle)} and
+     * {@link RadioButton#setStyle(ToggleStyle)} apply a new mark font and invalidate the layout,
+     * because the mark width changes; the widget keeps its size until it is packed.
+     *
+     * @param markFont font of the mark; must not be {@code null}
+     * @return a style with the same looks, marks, and gap and that mark font
+     * @throws NullPointerException if {@code markFont} is {@code null}
+     */
+    public ToggleStyle withMarkFont(MarkFont markFont) {
+        Objects.requireNonNull(markFont, "markFont");
+        return new ToggleStyle(button, uncheckedMark, checkedMark, gap, markFont);
     }
 
     /**
@@ -109,14 +130,25 @@ public final class ToggleStyle {
     }
 
     /**
-     * Returns the number of code points in each mark, which is one text column (half a UI cell)
-     * per code point. A convenience for layout code; it equals the code point count of either
-     * mark.
+     * Returns the font of the mark.
+     *
+     * @return the font, never {@code null}; {@link MarkFont#TEXT} unless changed
+     */
+    public MarkFont getMarkFont() {
+        return markFont;
+    }
+
+    /**
+     * Returns the width of the mark in text columns (half a UI cell each), not in code points.
+     * With {@link MarkFont#TEXT} that is the code point count of either mark; with
+     * {@link MarkFont#SQUARE} it is twice that count, because each code point takes one UI cell.
+     * For example, the mark {@code "[ ]"} gives 3 for TEXT and 6 for SQUARE. A convenience for
+     * layout code.
      *
      * @return the mark length in text columns, 1 or greater
      */
     public int getMarkLength() {
-        return countCodePoints(uncheckedMark);
+        return markFont.getTextColumnsPerCodePoint() * countCodePoints(uncheckedMark);
     }
 
     /**
@@ -141,19 +173,20 @@ public final class ToggleStyle {
             return false;
         }
         ToggleStyle that = (ToggleStyle) other;
-        return gap == that.gap && button.equals(that.button)
+        return gap == that.gap && markFont == that.markFont && button.equals(that.button)
                 && uncheckedMark.equals(that.uncheckedMark)
                 && checkedMark.equals(that.checkedMark);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(button, uncheckedMark, checkedMark, gap);
+        return Objects.hash(button, uncheckedMark, checkedMark, gap, markFont);
     }
 
     @Override
     public String toString() {
         return "ToggleStyle[button=" + button + ", uncheckedMark=" + uncheckedMark
-                + ", checkedMark=" + checkedMark + ", gap=" + gap + "]";
+                + ", checkedMark=" + checkedMark + ", gap=" + gap + ", markFont=" + markFont
+                + "]";
     }
 }

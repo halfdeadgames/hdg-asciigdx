@@ -6,8 +6,8 @@ import java.util.Objects;
 /**
  * Looks of a {@link Window}: the line style of its border, the look of the border and of the title
  * drawn into it, the background of the area inside the border, and an optional close button.
- * The border and the close mark are drawn in the square font, and the title in the text font.
- * Immutable, so one instance can be shared by any number of windows. Colors are packed RGBA8888
+ * The border is drawn in the square font and the title in the text font. The close mark is drawn
+ * in the square font unless {@link #withCloseFont(MarkFont)} chooses the text font. Immutable, so one instance can be shared by any number of windows. Colors are packed RGBA8888
  * ints, as in {@code TerminalGrid}.
  *
  * <p>The border is drawn with {@link #getBorder()}, or with {@link #getFocusedBorder()} while
@@ -35,9 +35,11 @@ public final class WindowStyle {
     private final int backgroundRgba;
     private final ButtonStyle closeButton;
     private final String closeText;
+    private final MarkFont closeFont;
 
     private WindowStyle(BoxStyle box, LabelStyle border, LabelStyle focusedBorder,
-            LabelStyle title, int backgroundRgba, ButtonStyle closeButton, String closeText) {
+            LabelStyle title, int backgroundRgba, ButtonStyle closeButton, String closeText,
+            MarkFont closeFont) {
         this.box = box;
         this.border = border;
         this.focusedBorder = focusedBorder;
@@ -45,11 +47,13 @@ public final class WindowStyle {
         this.backgroundRgba = backgroundRgba;
         this.closeButton = closeButton;
         this.closeText = closeText;
+        this.closeFont = closeFont;
     }
 
     /**
      * Creates a style without a close button, whose focused border is a copy of the border and
-     * whose close text is {@link #DEFAULT_CLOSE_TEXT}.
+     * whose close text is {@link #DEFAULT_CLOSE_TEXT}, drawn in the square font
+     * ({@link MarkFont#SQUARE}).
      *
      * @param box line style of the border; must not be {@code null}
      * @param border look of the border glyphs; must not be {@code null}
@@ -64,7 +68,7 @@ public final class WindowStyle {
         Objects.requireNonNull(border, "border");
         Objects.requireNonNull(title, "title");
         return new WindowStyle(box, border, border, title, backgroundRgba, null,
-                DEFAULT_CLOSE_TEXT);
+                DEFAULT_CLOSE_TEXT, MarkFont.SQUARE);
     }
 
     /**
@@ -77,7 +81,7 @@ public final class WindowStyle {
     public WindowStyle withFocusedBorder(LabelStyle focusedBorder) {
         Objects.requireNonNull(focusedBorder, "focusedBorder");
         return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
-                closeText);
+                closeText, closeFont);
     }
 
     /**
@@ -90,7 +94,7 @@ public final class WindowStyle {
     public WindowStyle withCloseButton(ButtonStyle closeButton) {
         Objects.requireNonNull(closeButton, "closeButton");
         return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
-                closeText);
+                closeText, closeFont);
     }
 
     /**
@@ -108,7 +112,25 @@ public final class WindowStyle {
             throw new IllegalArgumentException("closeText must not be empty");
         }
         return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
-                closeText);
+                closeText, closeFont);
+    }
+
+    /**
+     * Returns a copy with another font for the close button text. It matters only for a style
+     * that has a close button. The button takes one UI cell per code point in
+     * {@link MarkFont#SQUARE}, and one text column (half a cell, rounded up to whole cells for the
+     * whole text) per code point in {@link MarkFont#TEXT}, so the font changes the button's width.
+     * {@link Window} has no setStyle, so a window always uses the close font of the style it was
+     * created with.
+     *
+     * @param closeFont font of the close text; must not be {@code null}
+     * @return a style with the same other parts and this close font
+     * @throws NullPointerException if {@code closeFont} is {@code null}
+     */
+    public WindowStyle withCloseFont(MarkFont closeFont) {
+        Objects.requireNonNull(closeFont, "closeFont");
+        return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
+                closeText, closeFont);
     }
 
     /**
@@ -190,6 +212,18 @@ public final class WindowStyle {
         return closeText;
     }
 
+    /**
+     * Returns the font of the close button text. It is meaningful only when
+     * {@link #hasCloseButton()} is {@code true}; a style without a close button ignores it when
+     * drawing, but {@code equals}, {@code hashCode}, and {@code toString} include the font even
+     * then.
+     *
+     * @return the font, never {@code null}; {@link MarkFont#SQUARE} unless changed
+     */
+    public MarkFont getCloseFont() {
+        return closeFont;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -203,13 +237,13 @@ public final class WindowStyle {
                 && focusedBorder.equals(that.focusedBorder) && title.equals(that.title)
                 && backgroundRgba == that.backgroundRgba
                 && Objects.equals(closeButton, that.closeButton)
-                && closeText.equals(that.closeText);
+                && closeText.equals(that.closeText) && closeFont == that.closeFont;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(box, border, focusedBorder, title, backgroundRgba, closeButton,
-                closeText);
+                closeText, closeFont);
     }
 
     @Override
@@ -217,6 +251,6 @@ public final class WindowStyle {
         return "WindowStyle[box=" + box + ", border=" + border + ", focusedBorder="
                 + focusedBorder + ", title=" + title + ", backgroundRgba="
                 + Integer.toHexString(backgroundRgba) + ", closeButton="
-                + (closeButton == null ? "none" : closeButton) + ", closeText=" + closeText + "]";
+                + (closeButton == null ? "none" : closeButton) + ", closeText=" + closeText + ", closeFont=" + closeFont + "]";
     }
 }

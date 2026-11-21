@@ -9,6 +9,8 @@ import java.util.Objects;
  * dragging by the title bar. Put windows in {@link UiRoot#getWindowLayer()}, where the last child
  * is in front. A window also works in any other group.
  *
+ * <p>A window has no setStyle, so it always uses the close font of the style it was created with.
+ *
  * <p>Layout, in window cells (column 0 and row 0 are the border):
  * <ul>
  *   <li>The border is one cell thick on all four sides, drawn with the style's
@@ -26,7 +28,7 @@ import java.util.Objects;
  *       width is rounded up to whole cells.
  *   <li>The close button, if the style has one, sits at the right end of the top row, followed by
  *       one border glyph and the corner. It is a button child that draws its mark in the square
- *       font, so it shows its normal, pointer-over, pressed, and focused looks, and it takes part
+ *       font, or in the text font if the style's close font is {@link MarkFont#TEXT}, so it shows its normal, pointer-over, pressed, and focused looks, and it takes part
  *       in keyboard navigation after the content.
  * </ul>
  *
@@ -118,13 +120,22 @@ public class Window extends WidgetGroup {
         this.title = Objects.requireNonNull(title, "title");
         this.style = Objects.requireNonNull(style, "style");
         if (style.hasCloseButton()) {
-            closeButton = new TextButton(style.getCloseText(), style.getCloseButton(), true);
+            closeButton = new TextButton(style.getCloseText(), style.getCloseButton(),
+                    isSquareFont(style.getCloseFont()));
             closeButton.addClickListener(clicked -> close());
             addChild(closeButton);
         } else {
             closeButton = null;
         }
         setSize(contentFitWidth(), contentFitHeight());
+    }
+
+    // No default branch, so a new MarkFont constant fails to compile here until it is handled.
+    private static boolean isSquareFont(MarkFont font) {
+        return switch (font) {
+            case TEXT -> false;
+            case SQUARE -> true;
+        };
     }
 
     /**

@@ -159,10 +159,13 @@ final class ToggleBody<T extends Widget> {
         String mark = checked ? style.getCheckedMark() : style.getUncheckedMark();
         int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
         int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
-        int markStart = UiSurface.TEXT_COLUMNS_PER_CELL
-                * style.getButtonStyle().getHorizontalPadding();
-        int markEnd = writeClippedTextRun(target, look, mark, leftTextColumn, top,
-                textColumnLimit, markStart);
+        int padding = style.getButtonStyle().getHorizontalPadding();
+        // No default branch, so a new MarkFont constant fails to compile here until it is handled.
+        int markEnd = switch (style.getMarkFont()) {
+            case SQUARE -> writeClippedSquareRun(target, look, mark, left, top, width, padding);
+            case TEXT -> writeClippedTextRun(target, look, mark, leftTextColumn, top,
+                    textColumnLimit, UiSurface.TEXT_COLUMNS_PER_CELL * padding);
+        };
         writeClippedTextRun(target, look, text, leftTextColumn, top, textColumnLimit,
                 markEnd + style.getGap());
     }
@@ -181,8 +184,25 @@ final class ToggleBody<T extends Widget> {
         return owner.isFocusShown() ? looks.getFocused() : looks.getNormal();
     }
 
-    // EXPERIMENT: mark and words are text-font runs, one text column per code point. Returns the
-    // first text column after the run, counted even for clipped columns.
+    // Writes the mark in the square font, one cell per code point. Returns the first text column
+    // (relative to the widget's left edge) after the run, counted even for clipped cells.
+    private static int writeClippedSquareRun(UiSurface target, LabelStyle look, String run,
+            int left, int top, int width, int startCell) {
+        int index = 0;
+        int cell = startCell;
+        while (index < run.length()) {
+            int codePoint = run.codePointAt(index);
+            if (cell < width && left + cell < target.getColumns()) {
+                target.writeSquareGlyph(left + cell, top, codePoint, look.getForegroundRgba());
+            }
+            index += Character.charCount(codePoint);
+            cell++;
+        }
+        return UiSurface.TEXT_COLUMNS_PER_CELL * cell;
+    }
+
+    // EXPERIMENT: the words, and a mark in the text font, are text-font runs, one text column per
+    // code point. Returns the first text column after the run, counted even for clipped columns.
     private static int writeClippedTextRun(UiSurface target, LabelStyle look, String run,
             int leftTextColumn, int top, int textColumnLimit, int startColumn) {
         int index = 0;

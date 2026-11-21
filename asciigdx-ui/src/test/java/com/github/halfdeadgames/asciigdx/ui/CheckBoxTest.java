@@ -82,6 +82,59 @@ class CheckBoxTest {
     }
 
     @Test
+    void squareMarkTakesTwoTextColumnsPerCodePointInThePreferredWidth() {
+        CheckBox square = new CheckBox("Go", STYLE.withMarkFont(MarkFont.SQUARE));
+
+        // padding 1 + 1 + ceil((6 mark + 1 gap + 2 words) / 2) = 2 + 5
+        assertEquals(7, square.getWidth());
+        assertEquals(5, new CheckBox("Go", STYLE).getWidth());
+    }
+
+    @Test
+    void squareMarkIsInTheSquareGridAndWordsFollowInTextColumns() {
+        CheckBox box = new CheckBox("Go", STYLE.withMarkFont(MarkFont.SQUARE));
+        box.setPosition(2, 2);
+        ui.getRoot().addChild(box);
+        ui.draw();
+
+        assertEquals('[', surface.getSquareGrid().getCodePoint(3, 2));
+        assertEquals(' ', surface.getSquareGrid().getCodePoint(4, 2));
+        assertEquals(']', surface.getSquareGrid().getCodePoint(5, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(6, 2));
+        assertEquals('G', surface.getTextGrid().getCodePoint(13, 2));
+        assertEquals('o', surface.getTextGrid().getCodePoint(14, 2));
+
+        box.setChecked(true);
+        ui.draw();
+
+        assertEquals('x', surface.getSquareGrid().getCodePoint(4, 2));
+    }
+
+    @Test
+    void squareMarkIsClippedAtTheWidgetWidth() {
+        CheckBox box = new CheckBox("Go", STYLE.withMarkFont(MarkFont.SQUARE));
+        box.setSize(3, 1);
+        box.setPosition(2, 2);
+        ui.getRoot().addChild(box);
+        ui.draw();
+
+        assertEquals('[', surface.getSquareGrid().getCodePoint(3, 2));
+        assertEquals(' ', surface.getSquareGrid().getCodePoint(4, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getSquareGrid().getCodePoint(5, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(13, 2));
+    }
+
+    @Test
+    void changingTheMarkFontChangesTheSize() {
+        CheckBox box = new CheckBox("Go", STYLE);
+        box.validate();
+
+        box.setStyle(STYLE.withMarkFont(MarkFont.SQUARE));
+
+        assertTrue(box.isLayoutNeeded());
+    }
+
+    @Test
     void startsUncheckedWithItsTextAndStyle() {
         CheckBox box = new CheckBox("Go", STYLE);
 

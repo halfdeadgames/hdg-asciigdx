@@ -65,4 +65,41 @@ class ToggleStyleTest {
         assertNotEquals(style, ToggleStyle.of(BUTTON, "a", "c"));
         assertEquals(true, style.toString().contains("gap=1"));
     }
+
+    @Test
+    void markFontDefaultsToText() {
+        assertEquals(MarkFont.TEXT, ToggleStyle.of(BUTTON, "[ ]", "[x]").getMarkFont());
+    }
+
+    @Test
+    void squareMarkFontDoublesTheMarkLengthInTextColumns() {
+        ToggleStyle square = ToggleStyle.of(BUTTON, "[ ]", "[x]").withMarkFont(MarkFont.SQUARE);
+
+        assertEquals(MarkFont.SQUARE, square.getMarkFont());
+        assertEquals(6, square.getMarkLength());
+        assertEquals(3, square.withMarkFont(MarkFont.TEXT).getMarkLength());
+    }
+
+    @Test
+    void withMarkFontRejectsNullAndKeepsTheOtherParts() {
+        ToggleStyle style = ToggleStyle.of(BUTTON, "a", "b").withGap(3);
+
+        assertThrows(NullPointerException.class, () -> style.withMarkFont(null));
+        ToggleStyle square = style.withMarkFont(MarkFont.SQUARE);
+        assertEquals(3, square.getGap());
+        assertEquals("a", square.getUncheckedMark());
+        assertEquals(MarkFont.TEXT, style.getMarkFont());
+    }
+
+    @Test
+    void markFontTakesPartInEqualsHashCodeAndToString() {
+        ToggleStyle text = ToggleStyle.of(BUTTON, "a", "b");
+        ToggleStyle square = text.withMarkFont(MarkFont.SQUARE);
+
+        assertNotEquals(text, square);
+        assertEquals(square, ToggleStyle.of(BUTTON, "a", "b").withMarkFont(MarkFont.SQUARE));
+        assertEquals(square.hashCode(),
+                ToggleStyle.of(BUTTON, "a", "b").withMarkFont(MarkFont.SQUARE).hashCode());
+        assertEquals(true, square.toString().contains("markFont=SQUARE"));
+    }
 }

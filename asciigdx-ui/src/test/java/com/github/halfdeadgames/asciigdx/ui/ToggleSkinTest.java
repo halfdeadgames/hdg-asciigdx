@@ -117,6 +117,42 @@ class ToggleSkinTest {
     }
 
     @Test
+    void markFontIsReadForCheckBoxesAndRadioButtons() {
+        Skin skin = Skin.fromJson(withBase("""
+                "checkBoxes": {
+                  "text": { "button": "flat", "unchecked": "a", "checked": "b",
+                    "markFont": "text" },
+                  "square": { "button": "flat", "unchecked": "a", "checked": "b",
+                    "markFont": "square" },
+                  "missing": { "button": "flat", "unchecked": "a", "checked": "b" } },
+                "radioButtons": {
+                  "text": { "button": "flat", "unchecked": "a", "checked": "b",
+                    "markFont": "text" },
+                  "square": { "button": "flat", "unchecked": "a", "checked": "b",
+                    "markFont": "square" },
+                  "missing": { "button": "flat", "unchecked": "a", "checked": "b" } }"""));
+
+        assertEquals(MarkFont.TEXT, skin.getCheckBoxStyle("text").getMarkFont());
+        assertEquals(MarkFont.SQUARE, skin.getCheckBoxStyle("square").getMarkFont());
+        assertEquals(MarkFont.TEXT, skin.getCheckBoxStyle("missing").getMarkFont());
+        assertEquals(MarkFont.TEXT, skin.getRadioButtonStyle("text").getMarkFont());
+        assertEquals(MarkFont.SQUARE, skin.getRadioButtonStyle("square").getMarkFont());
+        assertEquals(MarkFont.TEXT, skin.getRadioButtonStyle("missing").getMarkFont());
+    }
+
+    @Test
+    void unknownMarkFontNamesTheKeyAndListsTheAllowedValues() {
+        String head = "\"button\": \"flat\", \"unchecked\": \"a\", \"checked\": \"b\", "
+                + "\"markFont\": ";
+        assertSkinError(withBase("\"checkBoxes\": {\"o\": {" + head + "\"tall\"}}"),
+                "checkBoxes.o.markFont", "text, square");
+        assertSkinError(withBase("\"radioButtons\": {\"o\": {" + head + "\"Square\"}}"),
+                "radioButtons.o.markFont", "text, square");
+        assertSkinError(withBase("\"checkBoxes\": {\"o\": {" + head + "3}}"),
+                "checkBoxes.o.markFont", "text, square");
+    }
+
+    @Test
     void duplicateNamesAreReported() {
         assertSkinError(withBase("\"radioButtons\": {\"o\": {\"button\": \"flat\", "
                 + "\"unchecked\": \"a\", \"checked\": \"b\"}, \"o\": {\"button\": \"flat\", "

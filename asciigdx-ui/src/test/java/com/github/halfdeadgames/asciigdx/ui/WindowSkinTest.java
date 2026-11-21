@@ -141,6 +141,32 @@ class WindowSkinTest {
     }
 
     @Test
+    void closeFontIsReadAndDefaultsToSquare() {
+        String required = "\"box\": \"single\", \"border\": \"plain\", \"title\": \"plain\", "
+                + "\"background\": \"navy\", \"closeButton\": \"close\"";
+
+        assertEquals(MarkFont.TEXT, Skin.fromJson(window(required + ", \"closeFont\": \"text\""))
+                .getWindowStyle("w").getCloseFont());
+        assertEquals(MarkFont.SQUARE,
+                Skin.fromJson(window(required + ", \"closeFont\": \"square\""))
+                        .getWindowStyle("w").getCloseFont());
+        assertEquals(MarkFont.SQUARE, Skin.fromJson(window(required)).getWindowStyle("w")
+                .getCloseFont());
+    }
+
+    @Test
+    void unknownCloseFontNamesTheKeyAndListsTheAllowedValues() {
+        String required = "\"box\": \"single\", \"border\": \"plain\", \"title\": \"plain\", "
+                + "\"background\": \"navy\", ";
+        assertSkinError(window(required + "\"closeFont\": \"tall\""),
+                "windows.w.closeFont", "text, square");
+        assertSkinError(window(required + "\"closeFont\": \"TEXT\""),
+                "windows.w.closeFont", "text, square");
+        assertSkinError(window(required + "\"closeFont\": true"),
+                "windows.w.closeFont", "text, square");
+    }
+
+    @Test
     void duplicateEntryNamesAreErrors() {
         String entry = "\"box\": \"single\", \"border\": \"plain\", \"title\": \"plain\", "
                 + "\"background\": \"navy\"";

@@ -37,7 +37,7 @@ final class SkinFileReader {
     private static final List<String> SCROLL_PANE_KEYS = List.of("track", "thumb",
             "thumbPointerOver", "thumbPressed");
     private static final List<String> WINDOW_KEYS = List.of("box", "border", "focusedBorder",
-            "title", "background", "closeButton", "closeText");
+            "title", "background", "closeButton", "closeText", "closeFont");
     private static final List<String> BOX_NAMES = List.of("single", "double", "heavy", "rounded");
     private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
             "placeholder", "caret");
@@ -47,7 +47,8 @@ final class SkinFileReader {
             "knob");
     private static final List<String> SLIDER_LOOK_KEYS = List.of("normal", "focused", "disabled");
     private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
-            "gap");
+            "gap", "markFont");
+    private static final List<String> FONT_NAMES = List.of("text", "square");
     private static final String REMOVED_FONT_KEY = "font";
     private static final List<String> LABEL_KEYS = List.of("foreground", "background");
     private static final List<String> BUTTON_KEYS = List.of("normal", "pointerOver", "pressed",
@@ -208,7 +209,21 @@ final class SkinFileReader {
         if (closeText != null) {
             style = style.withCloseText(readMark(closeText, path + ".closeText"));
         }
+        JsonValue closeFont = entry.get("closeFont");
+        if (closeFont != null) {
+            style = style.withCloseFont(readMarkFont(closeFont, path + ".closeFont"));
+        }
         return style;
+    }
+
+    private static MarkFont readMarkFont(JsonValue value, String path) {
+        String name = value.isString() ? value.asString() : "";
+        return switch (name) {
+            case "text" -> MarkFont.TEXT;
+            case "square" -> MarkFont.SQUARE;
+            default -> throw new SkinFileException(path + ": must be one of "
+                    + String.join(", ", FONT_NAMES));
+        };
     }
 
     private static BoxStyle readBox(JsonValue value, String path) {
@@ -508,7 +523,12 @@ final class SkinFileReader {
         String unchecked = readMark(requireKey(entry, "unchecked", path), path + ".unchecked");
         String checked = readMark(requireKey(entry, "checked", path), path + ".checked");
         ToggleStyle style = createToggleStyle(button, unchecked, checked, path);
-        return applyGap(style, entry, path);
+        style = applyGap(style, entry, path);
+        JsonValue markFont = entry.get("markFont");
+        if (markFont == null) {
+            return style;
+        }
+        return style.withMarkFont(readMarkFont(markFont, path + ".markFont"));
     }
 
     private static String readMark(JsonValue value, String path) {

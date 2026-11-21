@@ -98,6 +98,29 @@ class WindowTest {
     }
 
     @Test
+    void textCloseFontTakesTheNarrowerPreferredWidth() {
+        WindowStyle square = CLOSABLE.withCloseText("[x]");
+        WindowStyle text = square.withCloseFont(MarkFont.TEXT);
+
+        assertEquals(5, new Window("", square).getWidth() - 3);
+        assertEquals(4, new Window("", text).getWidth() - 3);
+    }
+
+    @Test
+    void textCloseFontDrawsTheCloseMarkInTheTextGrid() {
+        open(new Window("", CLOSABLE.withCloseText("[x]").withCloseFont(MarkFont.TEXT)), 0, 0);
+
+        assertEquals("[x]", textRowText(0, 4, 7));
+    }
+
+    @Test
+    void defaultCloseFontStillDrawsTheCloseMarkInTheSquareGrid() {
+        open(new Window("", CLOSABLE.withCloseText("[x]")), 0, 0);
+
+        assertEquals("[x]", rowText(0, 2, 5));
+    }
+
+    @Test
     void contentSitsInsideTheBorderAndKeepsItsSize() {
         Window window = new Window("W", PLAIN);
         TextButton content = new TextButton("OK", BUTTON);

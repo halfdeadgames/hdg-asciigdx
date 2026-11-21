@@ -118,7 +118,8 @@ public final class MenuBarStyle {
     }
 
     /**
-     * Returns whether trigger letters are underlined.
+     * Returns whether trigger letters are underlined. The underline is always drawn in the text
+     * font; there is no font option for it.
      *
      * @return {@code true} after {@code withTriggerUnderline(true)}; {@code false} for a new style
      */

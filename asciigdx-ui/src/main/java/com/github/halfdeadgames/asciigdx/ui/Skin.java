@@ -110,8 +110,16 @@ import java.util.Objects;
  *       points as {@code unchecked}.
  *   <li>{@code gap}, optional: a whole number of text columns (half a UI cell), zero or greater,
  *       between the mark and the text; defaults to {@link ToggleStyle#DEFAULT_GAP}.
+ *   <li>{@code markFont}, optional: the font of the marks, {@code "text"} (one text column per
+ *       code point) or {@code "square"} (one UI cell per code point), in lowercase; defaults to
+ *       {@code "text"}. A value that is not exactly {@code "text"} or {@code "square"}, including
+ *       a non-string or another letter case, fails with a {@link SkinFileException} that names
+ *       the key and lists the allowed values. The gap and the words stay in text columns
+ *       whichever font the mark uses.
  * </ul>
  * Example entry: {@code "option": { "button": "action", "unchecked": "[ ]", "checked": "[x]" }}.
+ * With a square mark: {@code "option": { "button": "action", "unchecked": "[ ]",
+ * "checked": "[x]", "markFont": "square" }}.
  *
  * <p>A {@code textFields} entry becomes a {@link TextFieldStyle}. The keys:
  * <ul>
@@ -168,11 +176,18 @@ import java.util.Objects;
  *   <li>{@code title}, required: the look of the title text, drawn in the text font.
  *   <li>{@code background}, required: a color for the area inside the border.
  *   <li>{@code closeButton}, optional: the name of an entry in the {@code buttons} section (it
- *       must name one; an inline button object is an error); its mark is drawn in the square
- *       font. Without it the window has no close button.
+ *       must name one; an inline button object is an error). Without it the window has no close
+ *       button.
  *   <li>{@code closeText}, optional: the text on the close button, at least one character;
  *       defaults to {@code "x"}.
+ *   <li>{@code closeFont}, optional: the font of the close text, {@code "text"} (one text column
+ *       per code point) or {@code "square"} (one UI cell per code point), in lowercase; defaults
+ *       to {@code "square"}. A value that is not exactly {@code "text"} or {@code "square"},
+ *       including a non-string or another letter case, fails with a {@link SkinFileException}
+ *       that names the key and lists the allowed values. A {@code dialogs} entry uses the close font of the window style it names.
  * </ul>
+ * Example: {@code "window": { "box": "rounded", "border": "gray", "title": "gold",
+ * "background": "charcoal", "closeButton": "button", "closeText": "[x]", "closeFont": "text" }}.
  *
  * <p>A {@code dialogs} entry becomes a {@link DialogStyle}. The keys:
  * <ul>

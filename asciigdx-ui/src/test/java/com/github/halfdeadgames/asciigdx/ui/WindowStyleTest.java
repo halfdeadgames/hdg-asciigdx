@@ -81,6 +81,36 @@ class WindowStyleTest {
     }
 
     @Test
+    void closeFontDefaultsToSquareAndCanBeChanged() {
+        assertEquals(MarkFont.SQUARE, plain.getCloseFont());
+
+        WindowStyle text = plain.withCloseFont(MarkFont.TEXT);
+
+        assertEquals(MarkFont.TEXT, text.getCloseFont());
+        assertEquals(MarkFont.SQUARE, plain.getCloseFont());
+        assertThrows(NullPointerException.class, () -> plain.withCloseFont(null));
+    }
+
+    @Test
+    void closeFontTakesPartInEqualsHashCodeAndToString() {
+        WindowStyle text = plain.withCloseFont(MarkFont.TEXT);
+
+        assertNotEquals(plain, text);
+        assertEquals(text, plain.withCloseFont(MarkFont.TEXT));
+        assertEquals(text.hashCode(), plain.withCloseFont(MarkFont.TEXT).hashCode());
+        assertTrue(text.toString().contains("closeFont=TEXT"));
+    }
+
+    @Test
+    void otherWithersKeepTheCloseFont() {
+        WindowStyle text = plain.withCloseFont(MarkFont.TEXT);
+
+        assertEquals(MarkFont.TEXT, text.withFocusedBorder(FOCUSED).getCloseFont());
+        assertEquals(MarkFont.TEXT, text.withCloseButton(CLOSE).getCloseFont());
+        assertEquals(MarkFont.TEXT, text.withCloseText("c").getCloseFont());
+    }
+
+    @Test
     void toStringNamesTheParts() {
         String text = plain.withCloseButton(CLOSE).toString();
 
