@@ -11,8 +11,8 @@ import java.util.Objects;
  *   <li>the background of the empty look fills the whole bar area, so it is the color of the empty
  *       part and the background behind the partly filled cell.
  * </ul>
- * The foreground of the empty look and the background of the fill look are not used. Both looks
- * use the same font. Immutable, so one instance can be shared by any number of bars.
+ * The foreground of the empty look and the background of the fill look are not used. The bar is
+ * drawn in the square font. Immutable, so one instance can be shared by any number of bars.
  */
 public final class ProgressBarStyle {
 
@@ -27,21 +27,15 @@ public final class ProgressBarStyle {
     /**
      * Creates a style.
      *
-     * @param fill look whose foreground colors the filled part and whose font draws the blocks;
-     *         must not be {@code null}. The font needs the glyphs U+2581 to U+2588 and U+2589 to
-     *         U+258F
+     * @param fill look whose foreground colors the filled part; must not be {@code null}. The
+     *         square font needs the glyphs U+2581 to U+2588 and U+2589 to U+258F
      * @param empty look whose background colors the empty part; must not be {@code null}
      * @return a style with those looks
      * @throws NullPointerException if an argument is {@code null}
-     * @throws IllegalArgumentException if the looks do not use the same font
      */
     public static ProgressBarStyle of(LabelStyle fill, LabelStyle empty) {
         Objects.requireNonNull(fill, "fill");
         Objects.requireNonNull(empty, "empty");
-        if (fill.getFont() != empty.getFont()) {
-            throw new IllegalArgumentException("Both looks must use the same font, were "
-                    + fill.getFont() + " and " + empty.getFont());
-        }
         return new ProgressBarStyle(fill, empty);
     }
 
@@ -61,15 +55,6 @@ public final class ProgressBarStyle {
      */
     public LabelStyle getEmpty() {
         return empty;
-    }
-
-    /**
-     * Returns the font shared by both looks.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return fill.getFont();
     }
 
     @Override

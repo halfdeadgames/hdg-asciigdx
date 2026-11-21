@@ -23,13 +23,6 @@ import java.util.Objects;
  * it with {@link #removeChild} is unsupported. Extra children added with {@link #addChild} are
  * clipped to the view but not scrolled or laid out by the pane.
  *
- * <p>Row snap: the vertical scroll position is always a multiple of the content's
- * {@link Widget#getRowSnap()} (2 for tall-font content), so tall glyphs never land on an odd row.
- * Every way of scrolling vertically obeys it, and so does {@link #getMaxScrollRow()}, which is
- * rounded up to a multiple, so the last rows of content are always reachable. As a result the
- * view may show up to snap-1 empty rows past the content's end. Steps (wheel, arrows, pages) move at
- * least one snap unit.
- *
  * <p>There is no notification when the scroll position changes; poll the getters.
  *
  * <p>Pointer input:
@@ -37,7 +30,8 @@ import java.util.Objects;
  *   <li>The wheel ({@link UiEventType#SCROLLED}) moves the view by {@link #getWheelStepCells()}
  *       cells per step on that axis ({@value #DEFAULT_WHEEL_STEP_CELLS} by default). When the view
  *       cannot move, the event is not consumed and bubbles to an outer pane.
- *   <li>Dragging the thumb moves the view in proportion; the pane captures the pointer for the drag.
+ *   <li>Dragging the thumb moves the view in proportion; the pane captures the pointer
+ *       for the drag.
  *   <li>A press on the track outside the thumb scrolls one page (the view's size) toward the
  *       press.
  *   <li>Dragging the content scrolls it: a press that no widget inside consumes (on a label or
@@ -89,7 +83,6 @@ public final class ScrollPane extends WidgetGroup {
     private int wheelStepCells = DEFAULT_WHEEL_STEP_CELLS;
     private int scrollColumn;
     private int scrollRow;
-    private int rowSnap = 1;
     private int contentColumns;
     private int contentRows;
     private int viewColumns;
@@ -243,8 +236,7 @@ public final class ScrollPane extends WidgetGroup {
 
     /**
      * Scrolls to a position, clamped to 0 to {@link #getMaxScrollColumn()} and 0 to
-     * {@link #getMaxScrollRow()}, with the row rounded to the nearest multiple of the content's
-     * row snap (see the class description). A change moves the content and requests a redraw;
+     * {@link #getMaxScrollRow()}. A change moves the content and requests a redraw;
      * listeners are not involved.
      *
      * @param column content column at the left edge of the view, in UI cells; any value (column
@@ -254,7 +246,7 @@ public final class ScrollPane extends WidgetGroup {
     public void setScrollPosition(int column, int row) {
         refreshGeometryIfStale();
         int clampedColumn = Math.max(0, Math.min(column, maxScrollColumn));
-        int clampedRow = snapRow(row);
+        int clampedRow = clampRow(row);
         if (clampedColumn == scrollColumn && clampedRow == scrollRow) {
             return;
         }
@@ -324,7 +316,7 @@ public final class ScrollPane extends WidgetGroup {
     protected void layout() {
         refreshGeometry();
         scrollColumn = Math.max(0, Math.min(scrollColumn, maxScrollColumn));
-        scrollRow = snapRow(scrollRow);
+        scrollRow = clampRow(scrollRow);
         content.pack();
         content.setPosition(-scrollColumn, -scrollRow);
     }
@@ -348,25 +340,21 @@ public final class ScrollPane extends WidgetGroup {
         viewColumns = Math.max(0, getWidth() - (vertical ? 1 : 0));
         viewRows = Math.max(0, getHeight() - (horizontal ? 1 : 0));
         maxScrollColumn = Math.max(0, contentColumns - viewColumns);
-        rowSnap = Math.max(1, content.getRowSnap());
-        maxScrollRow = (Math.max(0, contentRows - viewRows) + rowSnap - 1) / rowSnap * rowSnap;
+        maxScrollRow = Math.max(0, contentRows - viewRows);
     }
 
-    // Clamps to the valid range, then rounds to the nearest multiple of the row snap. The maximum
-    // is itself a multiple, so the result never exceeds it.
-    private int snapRow(int row) {
-        int clamped = Math.max(0, Math.min(row, maxScrollRow));
-        return Math.min((clamped + rowSnap / 2) / rowSnap * rowSnap, maxScrollRow);
+    private int clampRow(int row) {
+        return Math.max(0, Math.min(row, maxScrollRow));
     }
 
-    // A step of at least one snap unit, rounded up so that a small step never rounds to nothing.
+    // A step of at least one row, so a small step never rounds to nothing.
     private int rowStepFor(int cells) {
-        return (Math.max(cells, 1) + rowSnap - 1) / rowSnap * rowSnap;
+        return Math.max(cells, 1);
     }
 
-    // A page is the view's height rounded down to the snap, but at least one snap unit.
+    // A page is the view's height, but at least one row.
     private int pageRows() {
-        return Math.max(rowSnap, viewRows / rowSnap * rowSnap);
+        return Math.max(1, viewRows);
     }
 
     // ---- hit testing ----
@@ -459,7 +447,7 @@ public final class ScrollPane extends WidgetGroup {
             if (trackGlyph) {
                 target.fillBackground(column, row, 1, 1, thumbRgba);
             }
-            target.writeGlyph(UiFont.SQUARE, column, row, glyph,
+            target.writeSquareGlyph(column, row, glyph,
                     trackGlyph ? style.getTrackRgba() : thumbRgba);
         }
     }
@@ -545,11 +533,7 @@ public final class ScrollPane extends WidgetGroup {
         }
         int newColumn = scrollToShow(scrollColumn, viewColumns, offsetColumn,
                 descendant.getWidth());
-        int wantedRow = scrollToShow(scrollRow, viewRows, offsetRow, descendant.getHeight());
-        // Round away from the old position, so the widget stays inside the view.
-        int newRow = wantedRow < scrollRow
-                ? wantedRow / rowSnap * rowSnap
-                : (wantedRow + rowSnap - 1) / rowSnap * rowSnap;
+        int newRow = scrollToShow(scrollRow, viewRows, offsetRow, descendant.getHeight());
         setScrollPosition(newColumn, newRow);
     }
 

@@ -16,20 +16,20 @@ import java.util.Objects;
  */
 public final class Menu {
 
-    private record Item(String text, Runnable action, char trigger, int triggerCell) {
+    private record Item(String text, Runnable action, char trigger, int triggerIndex) {
     }
 
     private final MenuBar bar;
     private final String title;
     private final char trigger;
-    private final int triggerCell;
+    private final int triggerIndex;
     private final ArrayList<Item> items = new ArrayList<>();
 
-    Menu(MenuBar bar, String title, char trigger, int triggerCell) {
+    Menu(MenuBar bar, String title, char trigger, int triggerIndex) {
         this.bar = bar;
         this.title = title;
         this.trigger = trigger;
-        this.triggerCell = triggerCell;
+        this.triggerIndex = triggerIndex;
     }
 
     /**
@@ -51,8 +51,8 @@ public final class Menu {
      * {@link IllegalStateException}; defer such work to the next frame with a
      * {@link UiUpdateListener}.
      *
-     * @param text text of the item, one UI column per code point; must not be {@code null}; may be
-     *         empty
+     * @param text text of the item, one text column per code point; must not be {@code null};
+     *         may be empty
      * @param action code to run when the item is chosen; must not be {@code null}
      * @throws NullPointerException if {@code text} or {@code action} is {@code null}
      */
@@ -77,8 +77,8 @@ public final class Menu {
      * {@link IllegalStateException}; defer such work to the next frame with a
      * {@link UiUpdateListener}.
      *
-     * @param text text of the item, one UI column per code point; must not be {@code null}; may be
-     *         empty
+     * @param text text of the item, one text column per code point; must not be {@code null};
+     *         may be empty
      * @param trigger an ASCII letter (A-Z or a-z) or digit (0-9) that appears in {@code text};
      *         matching ignores case
      * @param action code to run when the item is chosen; must not be {@code null}
@@ -111,16 +111,18 @@ public final class Menu {
         return items.get(index).action();
     }
 
-    int getItemTriggerCell(int index) {
-        return items.get(index).triggerCell();
+    // Index of the trigger letter among the code points of the item text, or MenuTrigger.NO_CELL.
+    int getItemTriggerIndex(int index) {
+        return items.get(index).triggerIndex();
     }
 
     char getTrigger() {
         return trigger;
     }
 
-    int getTriggerCell() {
-        return triggerCell;
+    // Index of the trigger letter among the code points of the title, or MenuTrigger.NO_CELL.
+    int getTriggerIndex() {
+        return triggerIndex;
     }
 
     int countItemsWithTrigger(char key) {

@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class WidgetTest {
 
-    private static final LabelStyle SQUARE = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF);
-    private static final LabelStyle TALL = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x000000FF);
+    private static final LabelStyle STYLE = LabelStyle.of(0xFFFFFFFF, 0x000000FF);
 
     private static class Probe extends Widget {
         int layoutCalls;
@@ -166,7 +165,7 @@ class WidgetTest {
     @Test
     void equalValuesLeaveMarksUnchanged() {
         WidgetGroup root = new WidgetGroup();
-        Label label = new Label("text", SQUARE);
+        Label label = new Label("text", STYLE);
         label.setPosition(2, 3);
         root.addChild(label);
         clearAll(root);
@@ -174,7 +173,7 @@ class WidgetTest {
         label.setPosition(2, 3);
         label.setSize(label.getWidth(), label.getHeight());
         label.setText("text");
-        label.setStyle(LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF));
+        label.setStyle(LabelStyle.of(0xFFFFFFFF, 0x000000FF));
 
         assertFalse(label.isLayoutNeeded() || label.isRedrawNeeded());
         assertFalse(root.isLayoutNeeded() || root.isRedrawNeeded());
@@ -183,7 +182,7 @@ class WidgetTest {
     @Test
     void changedValuesSetMarks() {
         WidgetGroup root = new WidgetGroup();
-        Label label = new Label("text", SQUARE);
+        Label label = new Label("text", STYLE);
         root.addChild(label);
         clearAll(root);
 
@@ -191,14 +190,14 @@ class WidgetTest {
         assertTrue(root.isLayoutNeeded());
 
         clearAll(root);
-        label.setStyle(TALL);
-        assertTrue(label.isLayoutNeeded());
+        label.setStyle(LabelStyle.of(0xFF0000FF, 0x000000FF));
+        assertTrue(label.isRedrawNeeded());
     }
 
     @Test
     void setPositionMarksSelfForRedrawAndAncestorsForLayout() {
         WidgetGroup root = new WidgetGroup();
-        Label label = new Label("text", SQUARE);
+        Label label = new Label("text", STYLE);
         root.addChild(label);
         clearAll(root);
 
@@ -247,11 +246,11 @@ class WidgetTest {
     }
 
     @Test
-    void setStyleWithSameFontOnlyRequestsRedraw() {
-        Label label = new Label("text", SQUARE);
+    void setStyleOnlyRequestsRedraw() {
+        Label label = new Label("text", STYLE);
         clearAll(label);
 
-        label.setStyle(LabelStyle.of(UiFont.SQUARE, 0xFF0000FF, 0x000000FF));
+        label.setStyle(LabelStyle.of(0xFF0000FF, 0x000000FF));
 
         assertTrue(label.isRedrawNeeded());
         assertFalse(label.isLayoutNeeded());
@@ -285,13 +284,6 @@ class WidgetTest {
         assertFalse(nested.isRedrawNeeded());
         assertFalse(leaf.isRedrawNeeded());
         assertTrue(leaf.isLayoutNeeded());
-    }
-
-    @Test
-    void labelRowSnapFollowsFont() {
-        assertEquals(2, new Label("a", TALL).getRowSnap());
-        assertEquals(1, new Label("a", SQUARE).getRowSnap());
-        assertEquals(1, new Probe().getRowSnap());
     }
 
     private static UiRoot rootWith(Consumer widget) {

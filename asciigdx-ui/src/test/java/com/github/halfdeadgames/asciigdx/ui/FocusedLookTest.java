@@ -9,17 +9,16 @@ import org.junit.jupiter.api.Test;
 
 /** The focused look of {@link ButtonStyle}, its skin file key, and its priority in the button. */
 class FocusedLookTest {
-    private static final LabelStyle NORMAL = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
-    private static final LabelStyle OVER = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x222222FF);
-    private static final LabelStyle PRESSED = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x333333FF);
-    private static final LabelStyle DISABLED = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x444444FF);
-    private static final LabelStyle FOCUSED = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x555555FF);
+    private static final LabelStyle NORMAL = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle OVER = LabelStyle.of(0xFFFFFFFF, 0x222222FF);
+    private static final LabelStyle PRESSED = LabelStyle.of(0xFFFFFFFF, 0x333333FF);
+    private static final LabelStyle DISABLED = LabelStyle.of(0xFFFFFFFF, 0x444444FF);
+    private static final LabelStyle FOCUSED = LabelStyle.of(0xFFFFFFFF, 0x555555FF);
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070", "teal": "#00A0A0" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" },
-              "bright": { "font": "square", "foreground": "white", "background": "teal" },
-              "tallPlain": { "font": "tall", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" },
+              "bright": { "foreground": "white", "background": "teal" }
             }""";
 
     private static Skin skinWithButtons(String buttons) {
@@ -64,12 +63,10 @@ class FocusedLookTest {
     }
 
     @Test
-    void withFocusedRejectsNullAndAnotherFont() {
+    void withFocusedRejectsNull() {
         ButtonStyle style = ButtonStyle.of(NORMAL);
 
         assertThrows(NullPointerException.class, () -> style.withFocused(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> style.withFocused(LabelStyle.of(UiFont.TALL, 0, 0)));
     }
 
     @Test
@@ -89,9 +86,9 @@ class FocusedLookTest {
         Skin skin = skinWithButtons("""
                 "byName": { "normal": "plain", "focused": "bright" },
                 "inline": { "normal": "plain",
-                  "focused": { "font": "square", "foreground": "white", "background": "teal" } }
+                  "focused": { "foreground": "white", "background": "teal" } }
                 """);
-        LabelStyle teal = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x00A0A0FF);
+        LabelStyle teal = LabelStyle.of(0xFFFFFFFF, 0x00A0A0FF);
 
         assertEquals(teal, skin.getButtonStyle("byName").getFocused());
         assertEquals(teal, skin.getButtonStyle("inline").getFocused());
@@ -126,12 +123,6 @@ class FocusedLookTest {
     void skinBadFocusedReferenceNamesThePath() {
         assertSkinError("\"x\": { \"normal\": \"plain\", \"focused\": \"missing\" }",
                 "buttons.x.focused", "missing");
-    }
-
-    @Test
-    void skinFocusedWithAnotherFontIsAnError() {
-        assertSkinError("\"x\": { \"normal\": \"plain\", \"focused\": \"tallPlain\" }",
-                "buttons.x", "same font");
     }
 
     @Test

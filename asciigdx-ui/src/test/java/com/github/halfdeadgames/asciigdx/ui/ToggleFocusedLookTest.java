@@ -19,7 +19,7 @@ class ToggleFocusedLookTest {
     private final UiRoot ui = UiRoot.of(surface);
 
     private static LabelStyle look(int background) {
-        return LabelStyle.of(UiFont.SQUARE, WHITE, background);
+        return LabelStyle.of(WHITE, background);
     }
 
     private int drawnBackground() {

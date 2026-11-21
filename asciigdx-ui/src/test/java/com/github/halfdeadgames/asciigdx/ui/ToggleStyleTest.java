@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class ToggleStyleTest {
     private static final ButtonStyle BUTTON =
-            ButtonStyle.of(LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF));
+            ButtonStyle.of(LabelStyle.of(0xFFFFFFFF, 0x000000FF));
 
     @Test
     void newStyleHasDefaultGapAndMarks() {
@@ -18,7 +18,6 @@ class ToggleStyleTest {
         assertEquals("[ ]", style.getUncheckedMark());
         assertEquals("[x]", style.getCheckedMark());
         assertEquals(3, style.getMarkLength());
-        assertEquals(UiFont.SQUARE, style.getFont());
         assertEquals(BUTTON, style.getButtonStyle());
     }
 

@@ -223,21 +223,6 @@ public abstract class Widget {
     }
 
     /**
-     * Returns the row multiple the widget's top edge should sit on, in surface rows. Tall glyphs
-     * span two square rows, so a widget that draws tall text needs 2 here.
-     *
-     * <p>This is a hint that the widget's owner, such as a table layout, honors when it
-     * positions the widget. Independently, {@link UiSurface} snaps tall text up to an even row
-     * when writing. The value may change when the widget invalidates itself, for example after a
-     * style change. Overrides must return 1 or greater.
-     *
-     * @return the row multiple, 1 or greater; 1 by default
-     */
-    public int getRowSnap() {
-        return 1;
-    }
-
-    /**
      * Returns the group this widget belongs to.
      *
      * @return the parent, or {@code null} when the widget has none

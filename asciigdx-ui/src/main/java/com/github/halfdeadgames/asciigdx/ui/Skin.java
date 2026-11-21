@@ -22,7 +22,8 @@ import java.util.Objects;
  * {@code textFields}, {@code progressBars}, {@code sliders}, {@code scrollPanes}, and
  * {@code windows}; all are optional, and any other top-level key is an error. The sections are
  * read in that order, and a section can only refer to names defined in an earlier one, so
- * references never form a cycle. Inside a section every name is unique. Each section is an object that maps a style name to its value.
+ * references never form a cycle. Inside a section every name is unique. Each section is an
+ * object that maps a style name to its value.
  *
  * <pre>{@code
  * {
@@ -32,12 +33,12 @@ import java.util.Objects;
  *     "transparent": "#00000000"
  *   },
  *   "labels": {
- *     "title": { "font": "tall", "foreground": "white", "background": "deepBlue" }
+ *     "title": { "foreground": "white", "background": "deepBlue" }
  *   },
  *   "buttons": {
  *     "action": {
  *       "normal": "title",
- *       "pointerOver": { "font": "tall", "foreground": "#000000", "background": "#00A0A0" },
+ *       "pointerOver": { "foreground": "#000000", "background": "#00A0A0" },
  *       "horizontalPadding": 2
  *     }
  *   },
@@ -58,7 +59,7 @@ import java.util.Objects;
  *   "textFields": {
  *     "input": {
  *       "normal": "title",
- *       "caret": { "foreground": "deepBlue", "background": "white" }
+ *       "caret": { "glyph": "▏", "foreground": "white", "blinkSeconds": 0.5 }
  *     }
  *   },
  *   "progressBars": {
@@ -82,20 +83,21 @@ import java.util.Objects;
  * either case, or the name of an entry in {@code colors}. A value that starts with {@code #} is
  * always hex. Entries in {@code colors} must themselves be hex.
  *
- * <p>A {@code labels} entry has the required keys {@code font} ({@code "tall"} or
- * {@code "square"}), {@code foreground}, and {@code background}.
+ * <p>A {@code labels} entry has the required keys {@code foreground} and {@code background}. A
+ * look has no font: the UI picks the font by job, so words (labels, button text, titles, menu
+ * text, text field text) use the text font and drawn parts (borders, marks, bars, arrows) use the
+ * square font. A look that still has the old {@code font} key is an error that says so.
  *
  * <p>A {@code buttons} entry has the required key {@code normal}, the optional keys
  * {@code pointerOver}, {@code pressed}, and {@code disabled}, which copy {@code normal} when
  * missing, the optional look {@code focused}, which copies {@code pointerOver} when missing, and
  * the optional whole number {@code horizontalPadding}, zero or greater, which
  * defaults to {@link ButtonStyle#DEFAULT_HORIZONTAL_PADDING}. Each look is either the name of a
- * label style or an inline label object. All five looks must use the same font.
+ * label style or an inline label object.
  *
  * <p>A {@code menuBars} entry has the required keys {@code titles} and {@code items}, each either
  * the name of a button style or an inline button object, the optional color {@code triggerColor},
- * and the optional boolean {@code triggerUnderline}, which defaults to {@code false}. Titles and
- * items must use the same font.
+ * and the optional boolean {@code triggerUnderline}, which defaults to {@code false}.
  *
  * <p>A {@code checkBoxes} entry and a {@code radioButtons} entry have the same keys and both
  * become a {@link ToggleStyle}, so the two kinds of style are interchangeable. The keys:
@@ -115,30 +117,28 @@ import java.util.Objects;
  * <ul>
  *   <li>{@code normal}, required: the name of a label style or an inline label object.
  *   <li>{@code focused}, {@code disabled}, and {@code placeholder}, optional looks of the same
- *       kind; each copies {@code normal} when missing. All looks must use the same font.
- *   <li>{@code caret}, optional: an object with the optional keys {@code foreground} and
- *       {@code background} (colors), {@code glyph} (text of exactly one code point), and
- *       {@code blinkSeconds} (a number, zero or greater, default 0 for a steady caret). At least
- *       one of {@code foreground}, {@code background}, and {@code glyph} is required. A part that
- *       is left out keeps the cell's own value. When {@code caret} is missing, the caret is a
- *       steady block made of the normal look's colors, swapped.
+ *       kind; each copies {@code normal} when missing.
+ *   <li>{@code caret}, optional: an object with the required key {@code glyph} (text of exactly
+ *       one code point, drawn in the text font), the optional {@code foreground} (a color; the
+ *       field's text color when left out), and the optional {@code blinkSeconds} (a number, zero
+ *       or greater, default 0 for a steady caret). A caret has no background; the old
+ *       {@code background} key is an error that says so. When {@code caret} is missing, the
+ *       caret is a steady {@code U+258F} bar in the normal look's foreground.
  * </ul>
- * Block caret (the colors of the field swapped, no glyph):
- * {@code "caret": { "foreground": "deepBlue", "background": "white" }} for a field that is white
- * on deep blue. Underline caret (no colors, a glyph, blinking):
- * {@code "caret": { "glyph": "_", "blinkSeconds": 0.5 }}. The caret's {@code foreground} and
- * {@code background} color the caret cell only, not the text. The caret is an inline object
+ * Bar caret: {@code "caret": { "glyph": "▏", "foreground": "white", "blinkSeconds": 0.5 }}.
+ * Underline caret: {@code "caret": { "glyph": "_", "blinkSeconds": 0.5 }}. The caret does not
+ * recolor the text. The caret is an inline object
  * today; a section of named carets may be added in a later version, and files written with inline
  * caret objects will keep loading.
  *
  * <p>A {@code progressBars} entry has the required keys {@code fill} and {@code empty}. Each is
- * either the name of a label style or an inline label object, and both must use the same font.
- * The foreground of {@code fill} colors the filled part, and the background of {@code empty}
- * colors the empty part; the other two colors are unused. Example:
+ * either the name of a label style or an inline label object. The foreground of {@code fill}
+ * colors the filled part, and the background of {@code empty} colors the empty part;
+ * the other two colors are unused. Example:
  * {@code "loading": { "fill": "accent", "empty": "text" }}.
  *
  * <p>A {@code sliders} entry has the keys below. Each look is either the name of a label style or
- * an inline label object, and all looks must use the same font.
+ * an inline label object.
  * <ul>
  *   <li>{@code track}, required: an object with the required look {@code normal} and the optional
  *       looks {@code focused} and {@code disabled} of the track cells; a missing look copies
@@ -162,14 +162,14 @@ import java.util.Objects;
  *   <li>{@code box}, required: the line style of the border, one of {@code "single"},
  *       {@code "double"}, {@code "heavy"}, and {@code "rounded"}.
  *   <li>{@code border}, required: the look of the border, a label style name or an inline label
- *       object, in the square font.
+ *       object. The border is drawn in the square font.
  *   <li>{@code focusedBorder}, optional: a look of the same kind, used while focus is inside the
  *       window; copies {@code border} when missing.
- *   <li>{@code title}, required: the look of the title text, in the square font.
+ *   <li>{@code title}, required: the look of the title text, drawn in the text font.
  *   <li>{@code background}, required: a color for the area inside the border.
  *   <li>{@code closeButton}, optional: the name of an entry in the {@code buttons} section (it
- *       must name one; an inline button object is an error), in the square font; without it the
- *       window has no close button.
+ *       must name one; an inline button object is an error); its mark is drawn in the square
+ *       font. Without it the window has no close button.
  *   <li>{@code closeText}, optional: the text on the close button, at least one character;
  *       defaults to {@code "x"}.
  * </ul>

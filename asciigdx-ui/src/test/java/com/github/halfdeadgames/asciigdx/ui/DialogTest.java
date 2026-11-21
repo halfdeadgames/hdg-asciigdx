@@ -16,8 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class DialogTest {
 
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
-    private static final LabelStyle TALL_LOOK = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle LOOK = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
     private static final ButtonStyle BUTTON = ButtonStyle.of(LOOK, LOOK, LOOK, LOOK);
     private static final WindowStyle WINDOW =
             WindowStyle.of(BoxStyle.SINGLE, LOOK, LOOK, 0x333333FF);
@@ -103,15 +102,19 @@ class DialogTest {
     }
 
     @Test
-    void tallContentStartsOnAnEvenSurfaceRow() {
-        Dialog dialog = new Dialog("T", STYLE, DialogChoice.OK);
-        dialog.setContent(new Label("Tall", TALL_LOOK));
+    void theTitleAndMessageAreDrawnInTheTextGrid() {
+        Dialog dialog = new Dialog("Title", STYLE, DialogChoice.OK);
+        dialog.setContent(new Label("Msg", LOOK));
         dialog.addButton("OK", DialogChoice.OK);
 
         show(dialog);
 
-        assertEquals(0, (dialog.getY() + Window.BORDER_THICKNESS) % 2);
-        assertEquals(0, absoluteTop(dialog.getContent()) % 2);
+        int messageTextColumn = 2 * absoluteLeft(dialog.getContent());
+        int messageRow = absoluteTop(dialog.getContent());
+        assertEquals('M', surface.getTextGrid().getCodePoint(messageTextColumn, messageRow));
+        assertEquals('s', surface.getTextGrid().getCodePoint(messageTextColumn + 1, messageRow));
+        int titleTextColumn = 2 * (dialog.getX() + 3);
+        assertEquals('T', surface.getTextGrid().getCodePoint(titleTextColumn, dialog.getY()));
     }
 
     @Test

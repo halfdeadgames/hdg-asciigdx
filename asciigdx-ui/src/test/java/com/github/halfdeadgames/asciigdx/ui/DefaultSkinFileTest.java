@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
@@ -25,6 +26,8 @@ class DefaultSkinFileTest {
     private static final int HOT_PINK = 0xFF40C0FF;
     private static final int GRAY = 0x909090FF;
     private static final int DARK_GRAY = 0x404040FF;
+    private static final int CHARCOAL = 0x303030FF;
+    private static final int BAR_CARET_GLYPH = 0x258F;
 
     private static Skin skin;
 
@@ -34,83 +37,98 @@ class DefaultSkinFileTest {
     }
 
     @Test
+    void defaultSkinLoads() {
+        assertNotNull(skin);
+        assertTrue(skin.hasButtonStyle("button"));
+    }
+
+    @Test
     void transparentColorIsFullyTransparent() {
         assertEquals(0x00000000, skin.getRgba("transparent"));
     }
 
     @Test
+    void tallStylesAreGone() {
+        assertFalse(skin.hasLabelStyle("tallText"));
+        assertFalse(skin.hasLabelStyle("tallOverlayText"));
+        assertFalse(skin.hasLabelStyle("tallTooltip"));
+        assertFalse(skin.hasButtonStyle("tallButton"));
+        assertFalse(skin.hasMenuBarStyle("tallMenuBar"));
+        assertFalse(skin.hasCheckBoxStyle("tallCheckBox"));
+        assertFalse(skin.hasRadioButtonStyle("tallRadioButton"));
+        assertFalse(skin.hasProgressBarStyle("tallProgressBar"));
+        assertFalse(skin.hasSliderStyle("tallSlider"));
+    }
+
+    @Test
+    void titleStillExistsWithGoldForeground() {
+        assertTrue(skin.hasLabelStyle("title"));
+        assertEquals(GOLD, skin.getLabelStyle("title").getForegroundRgba());
+    }
+
+    @Test
     void labelStylesMatchTheSandboxValues() {
-        assertEquals(LabelStyle.of(UiFont.TALL, GOLD, BLACK), skin.getLabelStyle("title"));
-        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, BLACK),
-                skin.getLabelStyle("text"));
-        assertEquals(LabelStyle.of(UiFont.SQUARE, GOLD, 0x00000000),
-                skin.getLabelStyle("overlayText"));
+        assertEquals(LabelStyle.of(GOLD, BLACK), skin.getLabelStyle("title"));
+        assertEquals(LabelStyle.of(WHITE, BLACK), skin.getLabelStyle("text"));
+        assertEquals(LabelStyle.of(GOLD, 0x00000000), skin.getLabelStyle("overlayText"));
     }
 
     @Test
-    void buttonStylesMatchTheSandboxValues() {
-        ButtonStyle tallButton = ButtonStyle.of(LabelStyle.of(UiFont.TALL, WHITE, DEEP_BLUE),
-                LabelStyle.of(UiFont.TALL, BLACK, TEAL),
-                LabelStyle.of(UiFont.TALL, BLACK, GOLD),
-                LabelStyle.of(UiFont.TALL, GRAY, DARK_GRAY))
-                .withFocused(LabelStyle.of(UiFont.TALL, BLACK, CYAN));
-        ButtonStyle squareButton = ButtonStyle.of(
-                LabelStyle.of(UiFont.SQUARE, WHITE, DEEP_BLUE),
-                LabelStyle.of(UiFont.SQUARE, BLACK, TEAL),
-                LabelStyle.of(UiFont.SQUARE, BLACK, GOLD),
-                LabelStyle.of(UiFont.SQUARE, GRAY, DARK_GRAY))
-                .withFocused(LabelStyle.of(UiFont.SQUARE, BLACK, CYAN));
+    void buttonStyleMatchesTheSandboxValues() {
+        ButtonStyle expected = ButtonStyle.of(LabelStyle.of(WHITE, DEEP_BLUE),
+                LabelStyle.of(BLACK, TEAL),
+                LabelStyle.of(BLACK, GOLD),
+                LabelStyle.of(GRAY, DARK_GRAY))
+                .withFocused(LabelStyle.of(BLACK, CYAN));
 
-        assertEquals(tallButton, skin.getButtonStyle("tallButton"));
-        assertEquals(squareButton, skin.getButtonStyle("button"));
+        assertEquals(expected, skin.getButtonStyle("button"));
     }
 
     @Test
-    void toggleStylesReferenceTheButtonStyles() {
+    void toggleStylesReferenceTheButtonStyle() {
         assertEquals(ToggleStyle.of(skin.getButtonStyle("button"), "[ ]", "[x]"),
                 skin.getCheckBoxStyle("checkBox"));
-        assertEquals(ToggleStyle.of(skin.getButtonStyle("tallButton"), "[ ]", "[x]"),
-                skin.getCheckBoxStyle("tallCheckBox"));
         assertEquals(ToggleStyle.of(skin.getButtonStyle("button"), "( )", "(*)"),
                 skin.getRadioButtonStyle("radioButton"));
-        assertEquals(ToggleStyle.of(skin.getButtonStyle("tallButton"), "( )", "(*)"),
-                skin.getRadioButtonStyle("tallRadioButton"));
     }
 
     @Test
-    void menuBarStylesMatchTheSandboxValues() {
-        MenuBarStyle tallMenuBar = MenuBarStyle.of(skin.getButtonStyle("tallButton"),
-                skin.getButtonStyle("tallButton")).withTriggerRgba(HOT_PINK)
-                .withTriggerUnderline(true);
+    void menuBarStyleMatchesTheSandboxValues() {
         MenuBarStyle menuBar = MenuBarStyle.of(skin.getButtonStyle("button"),
                 skin.getButtonStyle("button")).withTriggerRgba(HOT_PINK)
                 .withTriggerUnderline(true);
 
-        assertEquals(tallMenuBar, skin.getMenuBarStyle("tallMenuBar"));
         assertEquals(menuBar, skin.getMenuBarStyle("menuBar"));
-        assertTrue(skin.getMenuBarStyle("tallMenuBar").isTriggerUnderline());
+        assertTrue(skin.getMenuBarStyle("menuBar").isTriggerUnderline());
     }
 
     @Test
-    void defaultTextFieldHasBlockCaretOfSwappedColors() {
+    void defaultTextFieldColorsAreUnchanged() {
         TextFieldStyle style = skin.getTextFieldStyle("default");
-        CaretStyle caret = style.getCaret();
 
-        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, DEEP_BLUE), style.getNormal());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, GRAY, DARK_GRAY), style.getDisabled());
-        assertEquals(DEEP_BLUE, caret.getForegroundRgba());
-        assertEquals(WHITE, caret.getBackgroundRgba());
-        assertTrue(caret.hasForeground() && caret.hasBackground());
-        assertTrue(!caret.hasGlyph());
+        assertEquals(LabelStyle.of(WHITE, DEEP_BLUE), style.getNormal());
+        assertEquals(LabelStyle.of(WHITE, TEAL), style.getFocused());
+        assertEquals(LabelStyle.of(GRAY, DARK_GRAY), style.getDisabled());
+        assertEquals(LabelStyle.of(GRAY, DEEP_BLUE), style.getPlaceholder());
     }
 
     @Test
-    void progressBarStylesMatchTheSandboxValues() {
-        LabelStyle square = LabelStyle.of(UiFont.SQUARE, GOLD, DARK_GRAY);
-        LabelStyle tall = LabelStyle.of(UiFont.TALL, GOLD, DARK_GRAY);
+    void defaultTextFieldCaretIsABlinkingWhiteBarGlyph() {
+        CaretStyle caret = skin.getTextFieldStyle("default").getCaret();
 
-        assertEquals(ProgressBarStyle.of(square, square), skin.getProgressBarStyle("progressBar"));
-        assertEquals(ProgressBarStyle.of(tall, tall), skin.getProgressBarStyle("tallProgressBar"));
+        assertTrue(caret.hasGlyph());
+        assertEquals(BAR_CARET_GLYPH, caret.getGlyphCodePoint());
+        assertTrue(caret.hasForeground());
+        assertEquals(WHITE, caret.getForegroundRgba());
+        assertEquals(0.5f, caret.getBlinkSeconds());
+    }
+
+    @Test
+    void progressBarStyleMatchesTheSandboxValues() {
+        LabelStyle goldOnGray = LabelStyle.of(GOLD, DARK_GRAY);
+
+        assertEquals(ProgressBarStyle.of(goldOnGray, goldOnGray),
+                skin.getProgressBarStyle("progressBar"));
     }
 
     @Test
@@ -123,11 +141,10 @@ class DefaultSkinFileTest {
 
     @Test
     void defaultWindowStyleMatchesTheSandboxValues() {
-        int charcoal = 0x303030FF;
         WindowStyle expected = WindowStyle.of(BoxStyle.ROUNDED,
-                LabelStyle.of(UiFont.SQUARE, GRAY, charcoal),
-                LabelStyle.of(UiFont.SQUARE, GOLD, charcoal), charcoal)
-                .withFocusedBorder(LabelStyle.of(UiFont.SQUARE, CYAN, charcoal))
+                LabelStyle.of(GRAY, CHARCOAL),
+                LabelStyle.of(GOLD, CHARCOAL), CHARCOAL)
+                .withFocusedBorder(LabelStyle.of(CYAN, CHARCOAL))
                 .withCloseButton(skin.getButtonStyle("button"))
                 .withCloseText("x");
 
@@ -147,25 +164,19 @@ class DefaultSkinFileTest {
 
     @Test
     void windowTextIsTextOnTheWindowBackground() {
-        int charcoal = 0x303030FF;
-
-        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, charcoal),
-                skin.getLabelStyle("windowText"));
-        assertEquals(charcoal, skin.getWindowStyle("window").getBackgroundRgba());
+        assertEquals(LabelStyle.of(WHITE, CHARCOAL), skin.getLabelStyle("windowText"));
+        assertEquals(CHARCOAL, skin.getWindowStyle("window").getBackgroundRgba());
     }
 
     @Test
-    void sliderStylesUseTheDefaultGlyphsForEachOrientation() {
+    void sliderStyleUsesTheDefaultGlyphsForEachOrientation() {
         SliderStyle slider = skin.getSliderStyle("slider");
-        SliderStyle tallSlider = skin.getSliderStyle("tallSlider");
 
         assertFalse(slider.hasGlyphs());
         assertEquals(0x2500, slider.resolveTrackGlyph(BarOrientation.HORIZONTAL));
         assertEquals(0x2502, slider.resolveTrackGlyph(BarOrientation.VERTICAL));
         assertEquals(0x2588, slider.resolveKnobGlyph());
-        assertEquals(UiFont.SQUARE, slider.getFont());
-        assertEquals(UiFont.TALL, tallSlider.getFont());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, CYAN, BLACK), slider.getKnobFocused());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, DARK_GRAY, BLACK), slider.getTrackDisabled());
+        assertEquals(LabelStyle.of(CYAN, BLACK), slider.getKnobFocused());
+        assertEquals(LabelStyle.of(DARK_GRAY, BLACK), slider.getTrackDisabled());
     }
 }

@@ -12,7 +12,7 @@ class ToggleSkinTest {
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" }
             },
             "buttons": { "flat": { "normal": "plain" } }""";
 

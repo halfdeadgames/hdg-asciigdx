@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class RadioButtonTest {
     private static final int WHITE = 0xFFFFFFFF;
     private static final ToggleStyle STYLE = ToggleStyle.of(
-            ButtonStyle.of(LabelStyle.of(UiFont.SQUARE, WHITE, 0x111111FF)), "( )", "(*)");
+            ButtonStyle.of(LabelStyle.of(WHITE, 0x111111FF)), "( )", "(*)");
 
     private final UiRoot ui = UiRoot.of(UiSurface.ofSize(40, 10));
     private final List<Widget> changes = new ArrayList<>();

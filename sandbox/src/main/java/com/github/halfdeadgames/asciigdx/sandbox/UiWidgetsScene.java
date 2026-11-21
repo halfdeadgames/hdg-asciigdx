@@ -43,7 +43,7 @@ class UiWidgetsScene implements SandboxScene {
     private final Skin skin = Skin.fromFile(Gdx.files.internal(SKIN_FILE));
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
-    private final GlyphSource tallGlyphs;
+    private final GlyphSource textGlyphs;
     private final Vector2 worldPoint = new Vector2();
     private UiSurface surface;
     private UiRoot uiRoot;
@@ -63,9 +63,9 @@ class UiWidgetsScene implements SandboxScene {
     private int pageIndex;
     private int overlayRows = RESERVED_ROWS;
 
-    UiWidgetsScene(GlyphSource squareGlyphs, GlyphSource tallGlyphs) {
+    UiWidgetsScene(GlyphSource squareGlyphs, GlyphSource textGlyphs) {
         this.squareGlyphs = squareGlyphs;
-        this.tallGlyphs = tallGlyphs;
+        this.textGlyphs = textGlyphs;
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
                 columns * squareGlyphs.getCellWidth(), rows * squareGlyphs.getCellHeight());
         buildUi();
@@ -90,10 +90,10 @@ class UiWidgetsScene implements SandboxScene {
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
                 new RatingsPage(skin), windowsPage, new ScrollingPage(skin));
-        pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("tallMenuBar"));
+        pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("menuBar"));
         layers = new LayerStack();
         content = null;
-        surface.addTo(layers, tallGlyphs, squareGlyphs);
+        surface.addTo(layers, textGlyphs, squareGlyphs);
         uiRoot.getRoot().addChild(new Backdrop(columns, rows, skin.getRgba("black")));
         createPageBar();
         showPage(pageIndex);
@@ -182,7 +182,7 @@ class UiWidgetsScene implements SandboxScene {
     private void pickCell(int screenX, int screenY, GridPoint2 cellOut) {
         worldPoint.set(screenX, screenY);
         viewport.unproject(worldPoint);
-        cellOut.x = (int) Math.floor(worldPoint.x / squareGlyphs.getCellWidth());
+        cellOut.x = (int) Math.floor(worldPoint.x / textGlyphs.getCellWidth());
         cellOut.y = (int) Math.floor(
                 (viewport.getWorldHeight() - worldPoint.y) / squareGlyphs.getCellHeight());
     }

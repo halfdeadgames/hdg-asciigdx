@@ -9,10 +9,10 @@ import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import org.junit.jupiter.api.Test;
 
 class WidgetGroupTest {
-    private static final LabelStyle STYLE = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF);
+    private static final LabelStyle STYLE = LabelStyle.of(0xFFFFFFFF, 0x000000FF);
 
     private final UiSurface surface = UiSurface.ofSize(30, 10);
-    private final TerminalGrid grid = surface.getSquareGrid();
+    private final TerminalGrid grid = surface.getTextGrid();
 
     @Test
     void nestedGroupOffsetsAddUp() {
@@ -25,7 +25,8 @@ class WidgetGroupTest {
         outer.addChild(inner);
         inner.addChild(label);
         outer.draw(surface);
-        assertEquals('X', grid.getCodePoint(6, 4));
+        // Label text is in the text grid: text column = 2 * cell column (6).
+        assertEquals('X', grid.getCodePoint(12, 4));
     }
 
     @Test
@@ -36,7 +37,7 @@ class WidgetGroupTest {
         label.setPosition(2, 1);
         group.addChild(label);
         label.draw(surface);
-        assertEquals('Y', grid.getCodePoint(7, 6));
+        assertEquals('Y', grid.getCodePoint(14, 6));
     }
 
     @Test
@@ -55,10 +56,10 @@ class WidgetGroupTest {
         Label label = new Label("abcd", STYLE);
         label.setPosition(3, 2);
         group.addChild(label);
-        assertEquals(7, group.getPreferredWidth());
+        assertEquals(5, group.getPreferredWidth());
         assertEquals(3, group.getPreferredHeight());
         group.pack();
-        assertEquals(7, group.getWidth());
+        assertEquals(5, group.getWidth());
     }
 
     @Test
@@ -69,7 +70,7 @@ class WidgetGroupTest {
         group.draw(surface);
         group.setPosition(28, 9);
         group.draw(surface);
-        assertEquals('h', grid.getCodePoint(28, 9));
+        assertEquals('h', grid.getCodePoint(56, 9));
     }
 
     @Test

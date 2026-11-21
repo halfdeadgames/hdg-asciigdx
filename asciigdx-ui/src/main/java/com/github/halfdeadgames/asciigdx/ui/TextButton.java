@@ -6,8 +6,9 @@ import java.util.Objects;
 
 /**
  * A button with one line of text. It fills its whole area with the background of its current
- * state and writes the text on its top row, starting after the style's horizontal padding. The
- * text takes one UI column per code point and is cut off at the button's width.
+ * state and writes the text in the text font on its top row, starting after the style's
+ * horizontal padding. The text takes one text column (half a UI column) per code point and is cut
+ * off at the button's width.
  *
  * <p>State look, in priority order: disabled, pressed, pointer over, focused, normal. The focused
  * look shows only while the button has keyboard focus and the {@link UiRoot} shows focus (see
@@ -31,10 +32,10 @@ import java.util.Objects;
  *
  * <p>Example:
  * <pre>{@code
- * LabelStyle look = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x303030FF);
- * LabelStyle hover = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x505050FF);
- * LabelStyle down = LabelStyle.of(UiFont.TALL, 0x000000FF, 0xFFD700FF);
- * LabelStyle off = LabelStyle.of(UiFont.TALL, 0x808080FF, 0x202020FF);
+ * LabelStyle look = LabelStyle.of(0xFFFFFFFF, 0x303030FF);
+ * LabelStyle hover = LabelStyle.of(0xFFFFFFFF, 0x505050FF);
+ * LabelStyle down = LabelStyle.of(0x000000FF, 0xFFD700FF);
+ * LabelStyle off = LabelStyle.of(0x808080FF, 0x202020FF);
  * TextButton start = new TextButton("Start", ButtonStyle.of(look, hover, down, off));
  * start.addClickListener(button -> startGame());
  * ui.getRoot().addChild(start);
@@ -53,6 +54,8 @@ public class TextButton extends Widget {
     private boolean pointerOver;
     private boolean pressed;
     private int armedPointer = NO_POINTER;
+    // True for a button that draws UI parts (such as the window close mark) in the square font.
+    private final boolean squareGlyphs;
 
     /**
      * Creates a button sized to fit its text.
@@ -62,8 +65,13 @@ public class TextButton extends Widget {
      * @throws NullPointerException if {@code text} or {@code style} is {@code null}
      */
     public TextButton(String text, ButtonStyle style) {
+        this(text, style, false);
+    }
+
+    TextButton(String text, ButtonStyle style, boolean squareGlyphs) {
         this.text = Objects.requireNonNull(text, "text");
         this.style = Objects.requireNonNull(style, "style");
+        this.squareGlyphs = squareGlyphs;
         pack();
     }
 
@@ -104,10 +112,9 @@ public class TextButton extends Widget {
 
     /**
      * Replaces the looks and padding. The size stays as it is, so call {@link #pack()} after a
-     * change of font or padding. When the style differs from the current one, the button is
-     * marked: by {@link #invalidate()} if the font or the padding changed, because they affect the
-     * preferred size and row snap, otherwise by {@link #requestRedraw()}. An equal style changes
-     * no marks.
+     * change of padding. When the style differs from the current one, the button is marked: by
+     * {@link #invalidate()} if the padding changed, because it affects the preferred size,
+     * otherwise by {@link #requestRedraw()}. An equal style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
@@ -117,8 +124,7 @@ public class TextButton extends Widget {
         if (style.equals(this.style)) {
             return;
         }
-        boolean sizeAffected = style.getFont() != this.style.getFont()
-                || style.getHorizontalPadding() != this.style.getHorizontalPadding();
+        boolean sizeAffected = style.getHorizontalPadding() != this.style.getHorizontalPadding();
         this.style = style;
         if (sizeAffected) {
             invalidate();
@@ -220,33 +226,29 @@ public class TextButton extends Widget {
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
-    }
-
-    /**
-     * Returns the number of code points in the text plus the padding on both sides.
+     * Returns the width of the text, rounded up to whole UI cells (two code points per cell), plus
+     * the padding on both sides.
      *
      * @return the width in UI cells, zero or greater
      */
     @Override
     public int getPreferredWidth() {
-        return text.codePointCount(0, text.length()) + 2 * style.getHorizontalPadding();
+        int codePoints = text.codePointCount(0, text.length());
+        int textCells = squareGlyphs
+                ? codePoints
+                : (codePoints + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+                        / UiSurface.TEXT_COLUMNS_PER_CELL;
+        return textCells + 2 * style.getHorizontalPadding();
     }
 
     /**
-     * Returns 2 for the tall font and 1 for the square font.
+     * Returns the height of one line of text.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
+        return 1;
     }
 
     @Override
@@ -277,14 +279,33 @@ public class TextButton extends Widget {
 
     private void writeClippedText(UiSurface target, LabelStyle look, int left, int top,
             int width) {
+        if (squareGlyphs) {
+            writeClippedSquareText(target, look, left, top, width);
+            return;
+        }
         int length = text.length();
-        int start = style.getHorizontalPadding();
+        int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
+        int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
         int index = 0;
-        int cellOffset = start;
+        int textOffset = UiSurface.TEXT_COLUMNS_PER_CELL * style.getHorizontalPadding();
+        while (index < length && textOffset < textColumnLimit
+                && leftTextColumn + textOffset < target.getTextColumns()) {
+            int codePoint = text.codePointAt(index);
+            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint,
+                    look.getForegroundRgba());
+            index += Character.charCount(codePoint);
+            textOffset++;
+        }
+    }
+
+    private void writeClippedSquareText(UiSurface target, LabelStyle look, int left, int top,
+            int width) {
+        int length = text.length();
+        int index = 0;
+        int cellOffset = style.getHorizontalPadding();
         while (index < length && cellOffset < width && left + cellOffset < target.getColumns()) {
             int codePoint = text.codePointAt(index);
-            target.writeGlyph(look.getFont(), left + cellOffset, top, codePoint,
-                    look.getForegroundRgba());
+            target.writeSquareGlyph(left + cellOffset, top, codePoint, look.getForegroundRgba());
             index += Character.charCount(codePoint);
             cellOffset++;
         }

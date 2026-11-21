@@ -4,8 +4,8 @@ import java.util.Objects;
 
 /**
  * Looks of a {@link MenuBar}: one {@link ButtonStyle} for the titles in the bar and one for the
- * items in a drop-down. Immutable, so one instance can be shared by any number of menu bars. Both
- * styles use the same font, so the bar and its drop-downs have the same row height.
+ * items in a drop-down. Immutable, so one instance can be shared by any number of menu bars.
+ * Titles and items are words, so they are drawn in the text font.
  *
  * <p>Only the normal, pointer-over, and pressed looks and the horizontal padding of the two styles
  * are used; menus have no disabled state, so the disabled looks are ignored.
@@ -42,15 +42,10 @@ public final class MenuBarStyle {
      * @param items looks and padding of the items in a drop-down; must not be {@code null}
      * @return a new style
      * @throws NullPointerException if an argument is {@code null}
-     * @throws IllegalArgumentException if the two styles do not use the same font
      */
     public static MenuBarStyle of(ButtonStyle titles, ButtonStyle items) {
         Objects.requireNonNull(titles, "titles");
         Objects.requireNonNull(items, "items");
-        if (titles.getFont() != items.getFont()) {
-            throw new IllegalArgumentException("Titles and items must use the same font, were "
-                    + titles.getFont() + " and " + items.getFont());
-        }
         return new MenuBarStyle(titles, items, false, 0, false);
     }
 
@@ -70,9 +65,9 @@ public final class MenuBarStyle {
      * Returns a new style that does or does not underline trigger letters, replacing any earlier
      * setting. The underline is an underscore glyph drawn in the surface's overlay, in the trigger
      * color if the style has one and otherwise in the foreground of the look being drawn. This
-     * style is not changed. The underline is U+005F from the square font, so that font must hold
-     * it. It shows only on a surface that was added to a layer stack with
-     * {@link UiSurface#addTo}.
+     * style is not changed. The underline is U+005F from the text font, so that font must hold
+     * it. It sits on the same row as the text, under the trigger letter's text column. It shows
+     * only on a surface that was added to a layer stack with {@link UiSurface#addTo}.
      *
      * @param underline {@code true} to underline trigger letters
      * @return a style with the same looks and trigger color and that underline setting
@@ -97,15 +92,6 @@ public final class MenuBarStyle {
      */
     public ButtonStyle getItems() {
         return items;
-    }
-
-    /**
-     * Returns the font shared by the titles and the items.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return titles.getFont();
     }
 
     /**
@@ -138,10 +124,6 @@ public final class MenuBarStyle {
      */
     public boolean isTriggerUnderline() {
         return triggerUnderline;
-    }
-
-    int getRowHeight() {
-        return getFont() == UiFont.TALL ? 2 : 1;
     }
 
     @Override

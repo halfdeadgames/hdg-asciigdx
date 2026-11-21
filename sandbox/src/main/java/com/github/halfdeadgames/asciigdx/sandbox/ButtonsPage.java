@@ -11,7 +11,7 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
 /**
- * Interactive check of text buttons: tall and square styles, four clearly different state looks,
+ * Interactive check of text buttons: four clearly different state looks,
  * a disabled button, and a label that shows the last click. Click with the mouse, or focus a button
  * by pressing it and use Enter or Space.
  */
@@ -20,7 +20,6 @@ class ButtonsPage implements UiPage {
     private static final int ROOT_Y = 2;
     private static final int BUTTON_GAP = 2;
 
-    private final ButtonStyle tallStyle;
     private final ButtonStyle squareStyle;
     private final LabelStyle caption;
     private final UiRoot uiRoot;
@@ -28,7 +27,6 @@ class ButtonsPage implements UiPage {
 
     ButtonsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
-        tallStyle = skin.getButtonStyle("tallButton");
         squareStyle = skin.getButtonStyle("button");
         caption = skin.getLabelStyle("text");
     }
@@ -50,13 +48,11 @@ class ButtonsPage implements UiPage {
         WidgetGroup root = new WidgetGroup();
         root.setPosition(ROOT_X, ROOT_Y);
         Label lastClick = new Label("Last click: none", caption);
-        lastClick.setPosition(0, 14);
+        lastClick.setPosition(0, 6);
         root.addChild(lastClick);
-        addCaption(root, "Tall buttons: normal, pointer over, pressed, disabled", 0);
-        addRow(root, tallStyle, 2, lastClick);
-        addCaption(root, "Square buttons", 8);
-        addRow(root, squareStyle, 10, lastClick);
-        addCaption(root, "Press, drag out and back in, release inside to click", 12);
+        addCaption(root, "Buttons: normal, pointer over, pressed, disabled", 0);
+        addRow(root, squareStyle, 2, lastClick);
+        addCaption(root, "Press, drag out and back in, release inside to click", 4);
         content.addChild(root);
         return content;
     }

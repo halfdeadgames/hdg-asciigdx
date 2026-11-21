@@ -75,19 +75,32 @@ class UiSurfaceDimTest {
     }
 
     @Test
-    void tallAndOverlayGridsDimTheirForegroundAndKeepTransparentBackgrounds() {
-        TerminalGrid tall = surface.getTallGrid();
+    void textAndOverlayGridsDimTheirForegroundAndKeepTransparentBackgrounds() {
+        TerminalGrid text = surface.getTextGrid();
         TerminalGrid overlay = surface.getOverlayGrid();
-        tall.set(0, 0, 'T', 0xFF8040FF, TerminalGrid.TRANSPARENT_RGBA);
+        text.set(0, 0, 'T', 0xFF8040FF, TerminalGrid.TRANSPARENT_RGBA);
         overlay.set(0, 0, 'O', 0xFF8040FF, TerminalGrid.TRANSPARENT_RGBA);
 
         surface.dimAll(DIM, 0.5f);
 
-        assertEquals(0x906050FF, tall.getForeground(0, 0));
+        assertEquals(0x906050FF, text.getForeground(0, 0));
         assertEquals(0x906050FF, overlay.getForeground(0, 0));
-        assertEquals(TerminalGrid.TRANSPARENT_RGBA, tall.getBackground(0, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, text.getBackground(0, 0));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, overlay.getBackground(0, 0));
-        assertEquals('T', tall.getCodePoint(0, 0));
+        assertEquals('T', text.getCodePoint(0, 0));
         assertEquals('O', overlay.getCodePoint(0, 0));
+    }
+
+    @Test
+    void dimCoversTheWholeTextGridIncludingTheLastTextColumn() {
+        TerminalGrid text = surface.getTextGrid();
+        TerminalGrid overlay = surface.getOverlayGrid();
+        text.set(7, 3, 'T', 0xFF8040FF, TerminalGrid.TRANSPARENT_RGBA);
+        overlay.set(7, 3, 'O', 0xFF8040FF, TerminalGrid.TRANSPARENT_RGBA);
+
+        surface.dimAll(DIM, 0.5f);
+
+        assertEquals(0x906050FF, text.getForeground(7, 3));
+        assertEquals(0x906050FF, overlay.getForeground(7, 3));
     }
 }

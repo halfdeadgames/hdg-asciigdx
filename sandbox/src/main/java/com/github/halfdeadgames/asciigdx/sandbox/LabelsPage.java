@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
+import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
@@ -8,22 +9,21 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
 /**
- * Static check of text labels in two fonts: styles, text cut off at a set width, nesting, setText
- * with and without pack, square text drawn over tall text, and tall text on an odd row.
+ * Static check of text labels: styles, text cut off at a set width, nesting, setText with and
+ * without pack, and left, center, and right text alignment.
  */
 class LabelsPage implements UiPage {
     private static final int ROOT_X = 4;
     private static final int ROOT_Y = 2;
     private static final int PANEL_X = 3;
     private static final int PANEL_WIDTH = 46;
-    private static final int PANEL_HEIGHT = 2;
+    private static final int PANEL_HEIGHT = 1;
+    private static final int ALIGNED_WIDTH = 24;
     private static final int CUT_OFF_WIDTH = 8;
     private static final int CAPTION_X = 24;
 
     private final int panelRgba;
     private final LabelStyle titleStyle;
-    private final LabelStyle tallPlain;
-    private final LabelStyle tallOverlayStyle;
     private final LabelStyle plain;
     private final LabelStyle highlightStyle;
     private final LabelStyle overlayStyle;
@@ -31,8 +31,6 @@ class LabelsPage implements UiPage {
     LabelsPage(Skin skin) {
         panelRgba = skin.getRgba("deepBlue");
         titleStyle = skin.getLabelStyle("title");
-        tallPlain = skin.getLabelStyle("tallText");
-        tallOverlayStyle = skin.getLabelStyle("tallOverlayText");
         plain = skin.getLabelStyle("text");
         highlightStyle = skin.getLabelStyle("highlight");
         overlayStyle = skin.getLabelStyle("overlayText");
@@ -59,6 +57,7 @@ class LabelsPage implements UiPage {
     private Widget createPanel() {
         Widget panel = new BlueBackground(panelRgba);
         panel.setPosition(PANEL_X, ROOT_Y + 6);
+        // Aligned with the overlay label, which sits at the root's x offset.
         panel.setSize(PANEL_WIDTH, PANEL_HEIGHT);
         return panel;
     }
@@ -67,16 +66,29 @@ class LabelsPage implements UiPage {
         WidgetGroup root = new WidgetGroup();
         root.setPosition(ROOT_X, ROOT_Y);
         addLabel(root, "UI labels", titleStyle, 0, 0);
-        addLabel(root, "White on black", tallPlain, 0, 2);
+        addLabel(root, "White on black", plain, 0, 2);
         addLabel(root, "Black on cyan", highlightStyle, 0, 4);
-        addLabel(root, "Gold on transparent", tallOverlayStyle, 0, 6);
+        addLabel(root, "Gold on transparent", overlayStyle, 0, 6);
         addLabel(root, "keeps the blue panel", overlayStyle, CAPTION_X, 6);
-        addCutOffLabel(root, 9);
-        addNestedGroup(root, 11);
-        addTextChanges(root, 15);
-        addSquareOverTall(root, 20);
-        addOddRowTall(root, 23);
+        addCutOffLabel(root, 8);
+        addNestedGroup(root, 10);
+        addTextChanges(root, 13);
+        addAlignedLabels(root, 18);
         return root;
+    }
+
+    private void addAlignedLabels(WidgetGroup root, int y) {
+        addAlignedLabel(root, "Left", HorizontalAlignment.LEFT, y);
+        addAlignedLabel(root, "Center", HorizontalAlignment.CENTER, y + 1);
+        addAlignedLabel(root, "Right", HorizontalAlignment.RIGHT, y + 2);
+        addLabel(root, "Text alignment in a wider label", plain, CAPTION_X + 4, y + 1);
+    }
+
+    private void addAlignedLabel(WidgetGroup root, String text, HorizontalAlignment alignment,
+            int y) {
+        Label label = addLabel(root, text, highlightStyle, 0, y);
+        label.setSize(ALIGNED_WIDTH, 1);
+        label.setTextAlignment(alignment);
     }
 
     private void addCutOffLabel(WidgetGroup root, int y) {
@@ -103,17 +115,6 @@ class LabelsPage implements UiPage {
         packed.setText("much longer text");
         packed.pack();
         addLabel(root, "setText with pack fits the new text", plain, 20, y + 2);
-    }
-
-    private void addSquareOverTall(WidgetGroup root, int y) {
-        addLabel(root, "Tall text under square", tallPlain, 0, y);
-        addLabel(root, "Square", highlightStyle, 0, y);
-        addLabel(root, "Square drawn over tall", plain, CAPTION_X, y);
-    }
-
-    private void addOddRowTall(WidgetGroup root, int y) {
-        addLabel(root, "Tall text", tallPlain, 0, y);
-        addLabel(root, "Tall text on an odd row snaps up", plain, CAPTION_X, y);
     }
 
     private static Label addLabel(WidgetGroup parent, String text, LabelStyle style, int x,

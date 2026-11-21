@@ -11,8 +11,8 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
 
 /**
  * Static check of table layout: a centered column-spanning title, a form with right-aligned names
- * and filled values, nine alignments in expanding cells, tall and square labels in one row, and
- * cell padding.
+ * and filled values, nine alignments in expanding cells, labels of one row with a bottom-aligned
+ * label, and cell padding.
  */
 class TablePage implements UiPage {
     private static final int TABLE_PADDING = 1;
@@ -21,7 +21,6 @@ class TablePage implements UiPage {
     private final int panelBlueRgba;
     private final int panelGreenRgba;
     private final LabelStyle titleStyle;
-    private final LabelStyle tallPlain;
     private final LabelStyle plain;
     private final LabelStyle highlightStyle;
     private final LabelStyle accentStyle;
@@ -30,7 +29,6 @@ class TablePage implements UiPage {
         panelBlueRgba = skin.getRgba("deepBlue");
         panelGreenRgba = skin.getRgba("darkGreen");
         titleStyle = skin.getLabelStyle("title");
-        tallPlain = skin.getLabelStyle("tallText");
         plain = skin.getLabelStyle("text");
         highlightStyle = skin.getLabelStyle("highlight");
         accentStyle = skin.getLabelStyle("accent");
@@ -103,10 +101,9 @@ class TablePage implements UiPage {
 
     private void addMixedHeights(Table root) {
         Table mixed = new Table();
-        mixed.add(new Label("Tall", tallPlain)).padRight(LABEL_GAP);
-        mixed.add(new Label("Square top", highlightStyle)).padRight(LABEL_GAP);
-        mixed.add(new Label("Tall", tallPlain)).padRight(LABEL_GAP);
-        mixed.add(new Label("Square bottom", highlightStyle)).alignY(VerticalAlignment.BOTTOM);
+        mixed.add(new Label("Left", plain)).padRight(LABEL_GAP);
+        mixed.add(new Label("Cyan label", highlightStyle)).padRight(LABEL_GAP);
+        mixed.add(new Label("Gold label", accentStyle)).alignY(VerticalAlignment.BOTTOM);
         root.add(mixed).colspan(2).padTop(1);
         root.row();
     }

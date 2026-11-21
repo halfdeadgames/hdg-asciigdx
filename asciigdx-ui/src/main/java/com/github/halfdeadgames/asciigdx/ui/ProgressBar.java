@@ -10,21 +10,19 @@ import java.util.Objects;
  *
  * <p>A horizontal bar fills from left to right. A vertical bar fills from the bottom row up to the
  * top row (rows grow downward, so the bottom row has the highest row number). The length counts
- * glyph cells along the bar: with the square font a cell is one UI cell, and with the tall font a
- * cell is one column wide and two rows high, so a vertical tall bar of length n is 2n rows high.
- * The bar fills its whole area with the empty color and draws the glyphs in its first band of
- * cells, so any extra area across the bar stays empty. If the size is set larger than the
+ * glyph cells along the bar; a cell is one UI cell, drawn in the square font. The bar fills
+ * its whole area with the empty color and draws the glyphs in its first band of cells, so any
+ * extra area across the bar stays empty. If the size is set larger than the
  * preferred size, the bar stretches along its axis and shows more cells; if it is set too small
  * for one cell, the bar only clears its area.
  *
- * <p>A progress bar is not focusable, takes no input, and has no listener. A tall bar should sit
- * on an even row (see {@link #getRowSnap()}). The font needs the glyphs U+2581 to U+2588 and
- * U+2589 to U+258F.
+ * <p>A progress bar is not focusable, takes no input, and has no listener. The square font needs
+ * the glyphs U+2581 to U+2588 and U+2589 to U+258F.
  *
  * <p>Example:
  * <pre>{@code
- * LabelStyle fill = LabelStyle.of(UiFont.SQUARE, 0x00FF00FF, 0x000000FF);
- * LabelStyle empty = LabelStyle.of(UiFont.SQUARE, 0x000000FF, 0x202020FF);
+ * LabelStyle fill = LabelStyle.of(0x00FF00FF, 0x000000FF);
+ * LabelStyle empty = LabelStyle.of(0x000000FF, 0x202020FF);
  * ProgressBar loading = ProgressBar.horizontal(ValueRange.of(0f, 100f, 1f), 20,
  *         ProgressBarStyle.of(fill, empty));
  * loading.setValue(42f);
@@ -50,7 +48,7 @@ public final class ProgressBar extends Widget {
         this.range = Objects.requireNonNull(range, "range");
         this.preferredLengthCells = preferredLengthCells;
         this.style = Objects.requireNonNull(style, "style");
-        this.axis = new BarAxis(orientation, style.getFont());
+        this.axis = new BarAxis(orientation);
         this.value = range.getMin();
         pack();
     }
@@ -149,9 +147,8 @@ public final class ProgressBar extends Widget {
     }
 
     /**
-     * Replaces the looks. The size stays as it is, so call {@link #pack()} after a change of font.
-     * A different style is marked by {@link #invalidate()} if the font changed, otherwise by
-     * {@link #requestRedraw()}. An equal style changes no marks.
+     * Replaces the looks. The size is unaffected. A different style requests a redraw. An equal
+     * style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
@@ -161,24 +158,8 @@ public final class ProgressBar extends Widget {
         if (style.equals(this.style)) {
             return;
         }
-        boolean fontChanged = style.getFont() != this.style.getFont();
         this.style = style;
-        axis = new BarAxis(orientation, style.getFont());
-        if (fontChanged) {
-            invalidate();
-        } else {
-            requestRedraw();
-        }
-    }
-
-    /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return axis.getRowsPerCell();
+        requestRedraw();
     }
 
     /**
@@ -192,8 +173,7 @@ public final class ProgressBar extends Widget {
     }
 
     /**
-     * Returns the height of one cell (1 for the square font, 2 for the tall font) for a
-     * horizontal bar, and the length times that for a vertical bar.
+     * Returns 1 for a horizontal bar and the length for a vertical bar.
      *
      * @return the height in UI cells
      */
@@ -216,7 +196,7 @@ public final class ProgressBar extends Widget {
         for (int index = 0; index < cellCount; index++) {
             int glyph = EighthBlocks.glyphForCell(orientation, totalEighths, index);
             if (glyph != EighthBlocks.EMPTY_GLYPH) {
-                target.writeGlyph(style.getFont(), axis.columnOf(left, index),
+                target.writeSquareGlyph(axis.columnOf(left, index),
                         axis.rowOf(top, index, cellCount), glyph,
                         style.getFill().getForegroundRgba());
             }

@@ -5,8 +5,7 @@ import java.util.Objects;
 /**
  * Looks of a {@link TextButton} in its five states (normal, pointer over, pressed, disabled, and
  * focused), and the space left and right of its text. Immutable, so one instance can be shared by
- * any number of buttons. All looks use the same font, so a button never changes height when its
- * state changes.
+ * any number of buttons.
  */
 public final class ButtonStyle {
 
@@ -41,7 +40,6 @@ public final class ButtonStyle {
      * @param disabled look while the button is disabled; must not be {@code null}
      * @return a new style
      * @throws NullPointerException if an argument is {@code null}
-     * @throws IllegalArgumentException if the looks do not all use the same font
      */
     public static ButtonStyle of(LabelStyle normal, LabelStyle pointerOver, LabelStyle pressed,
             LabelStyle disabled) {
@@ -49,13 +47,6 @@ public final class ButtonStyle {
         Objects.requireNonNull(pointerOver, "pointerOver");
         Objects.requireNonNull(pressed, "pressed");
         Objects.requireNonNull(disabled, "disabled");
-        UiFont font = normal.getFont();
-        if (pointerOver.getFont() != font || pressed.getFont() != font
-                || disabled.getFont() != font) {
-            throw new IllegalArgumentException("All looks must use the same font, were " + font
-                    + ", " + pointerOver.getFont() + ", " + pressed.getFont() + ", and "
-                    + disabled.getFont());
-        }
         return new ButtonStyle(normal, pointerOver, pressed, disabled, pointerOver,
                 DEFAULT_HORIZONTAL_PADDING);
     }
@@ -93,14 +84,9 @@ public final class ButtonStyle {
      * @param focused look while the button has visible keyboard focus; must not be {@code null}
      * @return a style with the same other looks and padding, and that focused look
      * @throws NullPointerException if {@code focused} is {@code null}
-     * @throws IllegalArgumentException if {@code focused} does not use the font of the other looks
      */
     public ButtonStyle withFocused(LabelStyle focused) {
         Objects.requireNonNull(focused, "focused");
-        if (focused.getFont() != normal.getFont()) {
-            throw new IllegalArgumentException("All looks must use the same font, were "
-                    + normal.getFont() + " and " + focused.getFont());
-        }
         return new ButtonStyle(normal, pointerOver, pressed, disabled, focused,
                 horizontalPadding);
     }
@@ -158,15 +144,6 @@ public final class ButtonStyle {
      */
     public int getHorizontalPadding() {
         return horizontalPadding;
-    }
-
-    /**
-     * Returns the font shared by all five looks.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return normal.getFont();
     }
 
     @Override

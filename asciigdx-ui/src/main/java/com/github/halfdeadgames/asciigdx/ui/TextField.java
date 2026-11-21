@@ -7,10 +7,14 @@ import java.util.Objects;
 
 /**
  * A one-line text input. It fills its whole area with the background of its current look and
- * writes the text on its top row, one UI column per code point. When the text is longer than the
- * field, the field scrolls to keep the caret visible, and a cut end shows an ellipsis (U+2026) in
- * its outermost cell, for example {@code …ello wor…}. The caret never sits on an ellipsis cell.
- * A field narrower than 3 cells has no room for ellipses and shows none.
+ * writes the text on its top row in the text font, one text column (half a UI column) per code
+ * point, so a field {@code w} UI cells wide shows {@code 2 * w} characters. When the text is
+ * longer than the field, the field scrolls to keep the caret visible, and a cut end shows an
+ * ellipsis (U+2026) in its outermost text column, for example {@code …ello wor…}. The caret
+ * never sits on an ellipsis column. A field narrower than 3 text columns has no room for
+ * ellipses and
+ * shows none. Scrolling, the caret, the ellipsis, and the placeholder cut all count text
+ * columns.
  *
  * <p>Connect input with {@link UiInput#forRoot}. Input routed to the {@link UiRoot} by hand must
  * include {@code keyTyped} and {@code keyUp}, or the field gets no typed characters.
@@ -30,7 +34,8 @@ import java.util.Objects;
  *   <li>Enter and numpad Enter call the {@linkplain #addEnterListener enter listeners}. If none
  *       handles the key, it is not consumed.
  *   <li>A primary-button press focuses the field (it is focusable unless disabled) and puts the
- *       caret at the pressed cell, or at the end of the text if that cell is past it.
+ *       caret at the pressed text column (the half cell that was hit, see
+ *       {@link UiEvent#getTextColumn()}), or at the end of the text if that column is past it.
  * </ul>
  * A disabled field ignores input and is not focusable.
  *
@@ -40,7 +45,9 @@ import java.util.Objects;
  * foreground of the style's placeholder look on the background of the current look. The caret is
  * drawn whenever the field has keyboard focus, whatever the focus look; see {@link CaretStyle}. It
  * blinks with time from {@link UiRoot#update(float)} and is on again after every edit or caret
- * move.
+ * move. The caret is the glyph of its {@link CaretStyle}, drawn in the text font in the overlay at
+ * the caret's text column; a caret style without a glyph draws nothing. The letter under the
+ * caret keeps its normal color.
  *
  * <p>A {@link ChangeListener} is called only after an edit by the user (typing, Backspace,
  * Delete), never by {@link #setText(String)}.
@@ -77,7 +84,7 @@ public final class TextField extends Widget {
     private float blinkElapsedSeconds;
 
     /**
-     * Creates an empty field, sized to the given width and the height of the style's font.
+     * Creates an empty field, sized to the given width and one row high.
      *
      * @param style looks and caret; must not be {@code null}
      * @param widthCells width in UI cells; 1 or more
@@ -205,9 +212,8 @@ public final class TextField extends Widget {
     }
 
     /**
-     * Replaces the looks and caret. The width stays as it is. A different style is marked by
-     * {@link #invalidate()} if the font changed, because it affects the height, otherwise by
-     * {@link #requestRedraw()}. An equal style changes no marks.
+     * Replaces the looks and caret. The size is unaffected. A different style requests a redraw
+     * and restarts the caret blink. An equal style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
@@ -217,11 +223,7 @@ public final class TextField extends Widget {
         if (style.equals(this.style)) {
             return;
         }
-        boolean fontChanged = style.getFont() != this.style.getFont();
         this.style = style;
-        if (fontChanged) {
-            invalidate();
-        }
         restartBlink();
     }
 
@@ -327,16 +329,6 @@ public final class TextField extends Widget {
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
-    }
-
-    /**
      * Returns the width given to the constructor.
      *
      * @return the width in UI cells, 1 or more
@@ -347,13 +339,13 @@ public final class TextField extends Widget {
     }
 
     /**
-     * Returns 2 for the tall font and 1 for the square font.
+     * Returns the height of one line of text.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
+        return 1;
     }
 
     @Override
@@ -366,19 +358,21 @@ public final class TextField extends Widget {
         LabelStyle look = currentLook();
         target.eraseGlyphs(left, top, width, height);
         target.fillBackground(left, top, width, height, look.getBackgroundRgba());
-        model.scrollToCaret(width);
+        int textWidth = UiSurface.TEXT_COLUMNS_PER_CELL * width;
+        int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
+        model.scrollToCaret(textWidth);
         boolean showingPlaceholder = isShowingPlaceholder();
         int textRgba = showingPlaceholder ? style.getPlaceholder().getForegroundRgba()
                 : look.getForegroundRgba();
-        int visibleCells = Math.min(width, target.getColumns() - left);
-        for (int cell = 0; cell < visibleCells; cell++) {
-            int codePoint = codePointInCell(cell, width, showingPlaceholder);
+        int visibleTextColumns = Math.min(textWidth, target.getTextColumns() - leftTextColumn);
+        for (int textColumn = 0; textColumn < visibleTextColumns; textColumn++) {
+            int codePoint = codePointInTextColumn(textColumn, textWidth, showingPlaceholder);
             if (codePoint != TextFieldModel.NO_GLYPH) {
-                target.writeGlyph(style.getFont(), left + cell, top, codePoint, textRgba);
+                target.writeTextGlyph(leftTextColumn + textColumn, top, codePoint, textRgba);
             }
         }
         if (hasKeyboardFocus() && !disabled && caretOn) {
-            drawCaret(target, left, top, width, height, textRgba, showingPlaceholder);
+            drawCaret(target, left, top, textWidth, textRgba);
         }
     }
 
@@ -393,39 +387,28 @@ public final class TextField extends Widget {
         return model.getLength() == 0 && placeholderCodePoints.length > 0;
     }
 
-    private int codePointInCell(int cell, int width, boolean showingPlaceholder) {
+    private int codePointInTextColumn(int textColumn, int textWidth, boolean showingPlaceholder) {
         if (!showingPlaceholder) {
-            return model.getCellCodePoint(cell, width);
+            return model.getTextColumnCodePoint(textColumn, textWidth);
         }
-        boolean cutAtEnd = placeholderCodePoints.length > width
-                && width >= TextFieldModel.MIN_WIDTH_FOR_ELLIPSIS;
-        if (cutAtEnd && cell == width - 1) {
+        boolean cutAtEnd = placeholderCodePoints.length > textWidth
+                && textWidth >= TextFieldModel.MIN_WIDTH_FOR_ELLIPSIS;
+        if (cutAtEnd && textColumn == textWidth - 1) {
             return TextDrawing.DEFAULT_ELLIPSIS;
         }
-        return cell < placeholderCodePoints.length ? placeholderCodePoints[cell]
+        return textColumn < placeholderCodePoints.length ? placeholderCodePoints[textColumn]
                 : TextFieldModel.NO_GLYPH;
     }
 
-    private void drawCaret(UiSurface target, int left, int top, int width, int height,
-            int textRgba, boolean showingPlaceholder) {
-        int cell = model.getCaretCell();
-        if (cell < 0 || cell >= width) {
+    private void drawCaret(UiSurface target, int left, int top, int textWidth, int textRgba) {
+        CaretStyle caret = style.getCaret();
+        int caretTextColumn = model.getCaretTextColumn();
+        if (!caret.hasGlyph() || caretTextColumn < 0 || caretTextColumn >= textWidth) {
             return;
         }
-        CaretStyle caret = style.getCaret();
-        int column = left + cell;
-        if (caret.hasBackground()) {
-            target.fillBackground(column, top, 1, height, caret.getBackgroundRgba());
-        }
-        int codePoint = codePointInCell(cell, width, showingPlaceholder);
-        if (caret.hasForeground() && codePoint != TextFieldModel.NO_GLYPH) {
-            target.writeGlyph(style.getFont(), column, top, codePoint, caret.getForegroundRgba());
-        }
-        if (caret.hasGlyph()) {
-            int glyphRgba = caret.hasForeground() ? caret.getForegroundRgba() : textRgba;
-            target.writeOverlayGlyph(column, top + height - 1, caret.getGlyphCodePoint(),
-                    glyphRgba);
-        }
+        int glyphRgba = caret.hasForeground() ? caret.getForegroundRgba() : textRgba;
+        target.writeOverlayGlyph(UiSurface.TEXT_COLUMNS_PER_CELL * left + caretTextColumn, top,
+                caret.getGlyphCodePoint(), glyphRgba);
     }
 
     @Override
@@ -464,7 +447,7 @@ public final class TextField extends Widget {
         if (event.getButton() != PRIMARY_BUTTON) {
             return false;
         }
-        model.placeCaret(model.getWindowStart() + event.getColumn());
+        model.placeCaret(model.getWindowStart() + event.getTextColumn());
         restartBlink();
         return true;
     }

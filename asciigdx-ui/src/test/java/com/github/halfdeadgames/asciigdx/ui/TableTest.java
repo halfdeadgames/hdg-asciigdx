@@ -14,16 +14,10 @@ class TableTest {
     private static final class Box extends Widget {
         private final int preferredWidth;
         private final int preferredHeight;
-        private final int rowSnap;
 
         Box(int preferredWidth, int preferredHeight) {
-            this(preferredWidth, preferredHeight, 1);
-        }
-
-        Box(int preferredWidth, int preferredHeight, int rowSnap) {
             this.preferredWidth = preferredWidth;
             this.preferredHeight = preferredHeight;
-            this.rowSnap = rowSnap;
         }
 
         @Override
@@ -34,11 +28,6 @@ class TableTest {
         @Override
         public int getPreferredHeight() {
             return preferredHeight;
-        }
-
-        @Override
-        public int getRowSnap() {
-            return rowSnap;
         }
 
         @Override
@@ -89,12 +78,11 @@ class TableTest {
     }
 
     @Test
-    void emptyTableHasNoRowsAndSnapOne() {
+    void emptyTableHasNoRowsAndNoColumns() {
         Table table = new Table();
 
         assertEquals(0, table.getRowCount());
         assertEquals(0, table.getColumnCount());
-        assertEquals(1, table.getRowSnap());
     }
 
     @Test
@@ -319,47 +307,46 @@ class TableTest {
     }
 
     @Test
-    void fillYWithOddTopPaddingStaysInsideTallRow() {
+    void fillYWithOddTopPaddingStartsOnTheOddRow() {
         Table table = new Table();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall).padTop(1).fillY();
+        Box box = new Box(3, 2);
+        table.add(box).padTop(1).fillY();
         table.validate();
 
-        assertBounds(tall, 0, 2, 3, 2);
+        assertBounds(box, 0, 1, 3, 2);
     }
 
     @Test
     void fillYInHigherRowEndsAtRowBottom() {
         Table table = new Table();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall).padTop(1).padBottom(1).fillY();
+        Box box = new Box(3, 2);
+        table.add(box).padTop(1).padBottom(1).fillY();
         table.add(new Box(1, 7));
         table.validate();
 
-        assertBounds(tall, 0, 2, 3, 4);
+        assertBounds(box, 0, 1, 3, 5);
     }
 
     @Test
-    void bottomAlignedTallWidgetStaysOnEvenRowInsideRow() {
+    void bottomAlignedWidgetSitsOnTheRowBottom() {
         Table table = new Table();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall).alignY(VerticalAlignment.BOTTOM);
+        Box box = new Box(3, 2);
+        table.add(box).alignY(VerticalAlignment.BOTTOM);
         table.add(new Box(1, 7));
         table.validate();
 
-        assertEquals(4, tall.getY());
-        assertTrue(tall.getY() + tall.getHeight() <= 7);
+        assertEquals(5, box.getY());
     }
 
     @Test
-    void centerAlignedTallWidgetRoundsOffsetDownToEvenRow() {
+    void centerAlignedWidgetRoundsOffsetDown() {
         Table table = new Table();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall).alignY(VerticalAlignment.CENTER);
-        table.add(new Box(1, 7));
+        Box box = new Box(3, 2);
+        table.add(box).alignY(VerticalAlignment.CENTER);
+        table.add(new Box(1, 6));
         table.validate();
 
-        assertEquals(2, tall.getY());
+        assertEquals(2, box.getY());
     }
 
     @Test
@@ -455,66 +442,28 @@ class TableTest {
     }
 
     @Test
-    void tallWidgetAfterOneRowStartsOnEvenRowAndGapCounts() {
+    void rowsAreStackedWithoutGaps() {
         Table table = new Table();
         table.add(new Box(4, 1));
         table.row();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall);
+        Box second = new Box(3, 2);
+        table.add(second);
         table.validate();
 
-        assertEquals(2, tall.getY());
-        assertEquals(4, table.getPreferredHeight());
-        assertEquals(2, table.getRowSnap());
+        assertEquals(1, second.getY());
+        assertEquals(3, table.getPreferredHeight());
     }
 
     @Test
-    void tallWidgetRespectsOddTablePadding() {
+    void oddTablePaddingShiftsRowsByExactlyThePadding() {
         Table table = new Table();
         table.setPadding(1, 0, 0, 0);
-        Box tall = new Box(3, 2, 2);
-        table.add(tall);
+        Box box = new Box(3, 2);
+        table.add(box);
         table.validate();
 
-        assertEquals(2, tall.getY());
-        assertEquals(4, table.getPreferredHeight());
-    }
-
-    @Test
-    void tallWidgetWithOddTopPaddingRoundsUp() {
-        Table table = new Table();
-        Box tall = new Box(3, 2, 2);
-        table.add(tall).padTop(1);
-        table.validate();
-
-        assertEquals(2, tall.getY());
-        assertEquals(4, table.getPreferredHeight());
-    }
-
-    @Test
-    void rowWithSquareAndTallWidgetsKeepsSquareOnRowTop() {
-        Table table = new Table();
-        table.add(new Box(1, 1));
-        table.row();
-        Box square = new Box(2, 1);
-        Box tall = new Box(2, 2, 2);
-        table.add(square);
-        table.add(tall);
-        table.validate();
-
-        assertEquals(2, square.getY());
-        assertEquals(2, tall.getY());
-    }
-
-    @Test
-    void squareOnlyTableKeepsSnapOneAndNoGaps() {
-        Table table = new Table();
-        table.add(new Box(1, 1));
-        table.row();
-        table.add(new Box(1, 1));
-
-        assertEquals(1, table.getRowSnap());
-        assertEquals(2, table.getPreferredHeight());
+        assertEquals(1, box.getY());
+        assertEquals(3, table.getPreferredHeight());
     }
 
     @Test

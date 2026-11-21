@@ -19,7 +19,7 @@ class SkinLoaderTest {
     private static final String COLORS_AND_LABELS = """
             "colors": { "white": "#FFFFFF", "navy": "#203070" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" }
             }""";
 
     private record StarStyle(int color, LabelStyle look) {
@@ -63,15 +63,15 @@ class SkinLoaderTest {
         Skin skin = starLoader().fromJson(withStars("""
                 "named": { "color": "navy", "look": "plain" },
                 "hex": { "color": "#FF000080",
-                  "look": { "font": "tall", "foreground": "#FFFFFF", "background": "navy" } }"""));
+                  "look": { "foreground": "#FFFFFF", "background": "navy" } }"""));
 
         StarStyle named = skin.getCustomStyle("stars", "named", StarStyle.class);
         StarStyle hex = skin.getCustomStyle("stars", "hex", StarStyle.class);
 
         assertEquals(NAVY, named.color());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, NAVY), named.look());
+        assertEquals(LabelStyle.of(WHITE, NAVY), named.look());
         assertEquals(0xFF000080, hex.color());
-        assertEquals(LabelStyle.of(UiFont.TALL, WHITE, NAVY), hex.look());
+        assertEquals(LabelStyle.of(WHITE, NAVY), hex.look());
     }
 
     @Test
@@ -206,8 +206,6 @@ class SkinLoaderTest {
         assertEquals(viaSkin.getRgba("transparent"), viaLoader.getRgba("transparent"));
         assertEquals(viaSkin.getLabelStyle("title"), viaLoader.getLabelStyle("title"));
         assertEquals(viaSkin.getButtonStyle("button"), viaLoader.getButtonStyle("button"));
-        assertEquals(viaSkin.getButtonStyle("tallButton"),
-                viaLoader.getButtonStyle("tallButton"));
         assertEquals(viaSkin.getCheckBoxStyle("checkBox"), viaLoader.getCheckBoxStyle("checkBox"));
         assertEquals(viaSkin.getMenuBarStyle("menuBar"), viaLoader.getMenuBarStyle("menuBar"));
         assertEquals(viaSkin.getTextFieldStyle("default"), viaLoader.getTextFieldStyle("default"));

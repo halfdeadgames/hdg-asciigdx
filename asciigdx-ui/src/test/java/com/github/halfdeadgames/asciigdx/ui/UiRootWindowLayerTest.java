@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 
 class UiRootWindowLayerTest {
 
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
-    private static final LabelStyle PRESSED = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x222222FF);
+    private static final LabelStyle LOOK = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle PRESSED = LabelStyle.of(0xFFFFFFFF, 0x222222FF);
     private static final ButtonStyle BUTTON = ButtonStyle.of(LOOK, LOOK, PRESSED, LOOK);
     private static final WindowStyle WINDOW_STYLE =
             WindowStyle.of(BoxStyle.SINGLE, LOOK, LOOK, 0x333333FF);
@@ -23,6 +23,7 @@ class UiRootWindowLayerTest {
     private final UiSurface surface = UiSurface.ofSize(40, 12);
     private final UiRoot ui = UiRoot.of(surface);
     private final TerminalGrid grid = surface.getSquareGrid();
+    private final TerminalGrid textGrid = surface.getTextGrid();
 
     private TextButton buttonIn(WidgetGroup group, String text, int x, int y) {
         TextButton button = new TextButton(text, BUTTON);
@@ -50,26 +51,29 @@ class UiRootWindowLayerTest {
 
     @Test
     void layersDrawRootThenWindowsThenPopups() {
+        // Button text sits one padding cell in, which is text column 2 of the text grid.
         buttonIn(ui.getRoot(), "R", 0, 0);
         ui.draw();
-        assertEquals('R', grid.getCodePoint(1, 0));
+        assertEquals('R', textGrid.getCodePoint(2, 0));
 
         Window window = windowIn(ui.getWindowLayer(), 0, 0, 6, 3);
         ui.draw();
         assertEquals('┌', grid.getCodePoint(0, 0));
         assertEquals('─', grid.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(2, 0));
 
         buttonIn(ui.getPopupLayer(), "P", 0, 0);
         ui.draw();
-        assertEquals('P', grid.getCodePoint(1, 0));
+        assertEquals('P', textGrid.getCodePoint(2, 0));
 
         ui.getPopupLayer().removeChild(ui.getPopupLayer().getChild(0));
         ui.draw();
         assertEquals('─', grid.getCodePoint(1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(2, 0));
 
         ui.getWindowLayer().removeChild(window);
         ui.draw();
-        assertEquals('R', grid.getCodePoint(1, 0));
+        assertEquals('R', textGrid.getCodePoint(2, 0));
     }
 
     @Test
@@ -95,7 +99,7 @@ class UiRootWindowLayerTest {
         content.setText("NO");
         ui.draw();
 
-        assertEquals('N', grid.getCodePoint(2, 1));
+        assertEquals('N', textGrid.getCodePoint(4, 1));
     }
 
     @Test

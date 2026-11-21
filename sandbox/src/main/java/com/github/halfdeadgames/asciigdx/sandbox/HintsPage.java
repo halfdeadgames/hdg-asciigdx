@@ -11,8 +11,8 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
 /**
- * Interactive check of hover hints: rest the pointer on a widget to see its hint. Covers a hint
- * in the tall font, one in the square font, a label as target, a button near the right edge whose
+ * Interactive check of hover hints: rest the pointer on a widget to see its hint. Covers two
+ * hint styles, a label as target, a button near the right edge whose
  * hint flips to the left, and one on the last row whose hint flips above. Pressing a button hides
  * its hint until the pointer leaves it.
  */
@@ -23,9 +23,8 @@ class HintsPage implements UiPage {
 
     private final UiRoot uiRoot;
     private final LabelStyle caption;
-    private final LabelStyle tallTooltipStyle;
+    private final LabelStyle goldTooltipStyle;
     private final LabelStyle tooltipStyle;
-    private final ButtonStyle tallButton;
     private final ButtonStyle squareButton;
     private WidgetGroup content;
     private TextButton rightEdgeButton;
@@ -39,9 +38,8 @@ class HintsPage implements UiPage {
     HintsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
         caption = skin.getLabelStyle("text");
-        tallTooltipStyle = skin.getLabelStyle("tallTooltip");
+        goldTooltipStyle = skin.getLabelStyle("overlayText");
         tooltipStyle = skin.getLabelStyle("tooltip");
-        tallButton = skin.getButtonStyle("tallButton");
         squareButton = skin.getButtonStyle("button");
     }
 
@@ -76,15 +74,15 @@ class HintsPage implements UiPage {
     private WidgetGroup buildContent(int columns, int rows) {
         WidgetGroup group = new WidgetGroup();
         addCaption(group, "Rest the pointer on a widget; press to hide its hint", TOP_Y);
-        addButton(group, "Tall hint", tallButton, LEFT_X, TOP_Y + 2,
-                "Tall font hint, on an even row", tallTooltipStyle);
-        addButton(group, "Square hint", squareButton, LEFT_X, TOP_Y + 6,
-                "Square font hint", tooltipStyle);
+        addButton(group, "Gold hint", squareButton, LEFT_X, TOP_Y + 2,
+                "A hint with gold text", goldTooltipStyle);
+        addButton(group, "Plain hint", squareButton, LEFT_X, TOP_Y + 4,
+                "A hint with white text", tooltipStyle);
         Label labelTarget = new Label("Hover this label", caption);
-        labelTarget.setPosition(LEFT_X, TOP_Y + 9);
+        labelTarget.setPosition(LEFT_X, TOP_Y + 6);
         group.addChild(labelTarget);
         Tooltip.attachText(uiRoot, labelTarget, "Labels can have hints too", tooltipStyle);
-        rightEdgeButton = addButton(group, "Right edge", tallButton, columns - RIGHT_EDGE_MARGIN,
+        rightEdgeButton = addButton(group, "Right edge", squareButton, columns - RIGHT_EDGE_MARGIN,
                 TOP_Y + 2, "Flips to the left of the pointer", tooltipStyle);
         addButton(group, "Last row", squareButton, LEFT_X, rows - 1,
                 "Flips above the pointer", tooltipStyle);

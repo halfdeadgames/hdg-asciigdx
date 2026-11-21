@@ -11,8 +11,11 @@ package com.github.halfdeadgames.asciigdx.ui;
  * {@link UiUpdateListener}.
  *
  * <p>Fields that do not apply to the event's type hold neutral values: {@code -1} for the
- * pointer (key events only), button, and keycode, {@code 0} for the character and for all four coordinates. Coordinates are
- * UI cells, columns growing right and rows growing down. Key events and
+ * pointer (key events only), button, and keycode, {@code 0} for the character and for all
+ * coordinates. Units: every plain "column" ({@link #getColumn()}, {@link #getSurfaceColumn()}) is
+ * a whole UI cell, and every "textColumn" ({@link #getTextColumn()},
+ * {@link #getSurfaceTextColumn()}) is half a UI cell, two per cell. Columns grow right and rows
+ * (always UI cells) grow down. Do not mix the two units. Key events and
  * {@link UiEventType#POINTER_CANCELLED} and {@link UiEventType#SCROLLED} carry no position.
  * The scroll steps are 0 for all other types.
  */
@@ -24,6 +27,8 @@ public final class UiEvent {
     private Widget target;
     private Widget currentWidget;
     private int surfaceColumn;
+    private int surfaceTextColumn;
+    private int relativeTextColumn;
     private int surfaceRow;
     private int relativeColumn;
     private int relativeRow;
@@ -73,7 +78,8 @@ public final class UiEvent {
      * changes while the event bubbles, because the current widget changes. Negative or past the
      * widget's width when the pointer is outside it, for example during a drag.
      *
-     * @return the column in UI cells; 0 for key events and cancellations
+     * @return the column in whole UI cells (not text columns; see {@link #getTextColumn()} for
+     *         half cells); 0 for key events and cancellations
      */
     public int getColumn() {
         return relativeColumn;
@@ -92,7 +98,9 @@ public final class UiEvent {
     /**
      * Returns the pointer column on the surface. May lie outside the surface.
      *
-     * @return the column in UI cells; 0 for key events and cancellations
+     * @return the column in whole UI cells (not text columns; see
+     *         {@link #getSurfaceTextColumn()} for half cells); 0 for key events and
+     *         cancellations
      */
     public int getSurfaceColumn() {
         return surfaceColumn;
@@ -105,6 +113,34 @@ public final class UiEvent {
      */
     public int getSurfaceRow() {
         return surfaceRow;
+    }
+
+    /**
+     * Returns the text column of the half cell the pointer hit, relative to
+     * {@link #getCurrentWidget()}'s left edge, in the widget's local text columns. Text column
+     * {@code 2 * c} is the left half of local UI column {@code c} and {@code 2 * c + 1} the right
+     * half, so {@code floorDiv(getTextColumn(), 2) == getColumn()} for a pointer event. The value
+     * changes while the event bubbles, as {@link #getColumn()} does, and is negative or past the
+     * widget's width when the pointer is outside it. The value is exact when the root is fed by
+     * {@link UiInput}. When a game calls the public {@code UiRoot.pointer*} methods directly, they
+     * take whole cells, so it is the left half of the cell ({@code 2 * getColumn()}).
+     *
+     * @return the text column; 0 for key events and cancellations, as for {@link #getColumn()}
+     */
+    public int getTextColumn() {
+        return relativeTextColumn;
+    }
+
+    /**
+     * Returns the text column of the half cell the pointer hit on the surface. May lie outside the
+     * surface. Text column {@code 2 * c} is the left half of surface column {@code c}. Exact when
+     * fed by {@link UiInput}; the left half of the cell when the public {@code UiRoot.pointer*}
+     * methods are called directly.
+     *
+     * @return the text column; 0 for key events and cancellations
+     */
+    public int getSurfaceTextColumn() {
+        return surfaceTextColumn;
     }
 
     /**
@@ -177,9 +213,14 @@ public final class UiEvent {
             int pointer, int button) {
         reset(type, target);
         this.surfaceColumn = surfaceColumn;
+        this.surfaceTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * surfaceColumn;
         this.surfaceRow = surfaceRow;
         this.pointer = pointer;
         this.button = button;
+    }
+
+    void setSurfaceTextColumn(int surfaceTextColumn) {
+        this.surfaceTextColumn = surfaceTextColumn;
     }
 
     void setCancelled(Widget target, int pointer) {
@@ -197,6 +238,9 @@ public final class UiEvent {
         this.currentWidget = currentWidget;
         this.relativeColumn = relativeColumn;
         this.relativeRow = relativeRow;
+        int absoluteLeft = surfaceColumn - relativeColumn;
+        this.relativeTextColumn =
+                surfaceTextColumn - UiSurface.TEXT_COLUMNS_PER_CELL * absoluteLeft;
     }
 
     boolean hasPosition() {
@@ -210,6 +254,8 @@ public final class UiEvent {
         this.target = target;
         this.currentWidget = target;
         surfaceColumn = 0;
+        surfaceTextColumn = 0;
+        relativeTextColumn = 0;
         surfaceRow = 0;
         relativeColumn = 0;
         relativeRow = 0;

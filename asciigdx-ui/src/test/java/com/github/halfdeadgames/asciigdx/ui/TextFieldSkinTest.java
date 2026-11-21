@@ -15,9 +15,8 @@ class TextFieldSkinTest {
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070", "gray": "#909090" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" },
-              "dim": { "font": "square", "foreground": "gray", "background": "navy" },
-              "tallPlain": { "font": "tall", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" },
+              "dim": { "foreground": "gray", "background": "navy" }
             }""";
 
     private static Skin skinWith(String textFields) {
@@ -33,20 +32,20 @@ class TextFieldSkinTest {
     }
 
     @Test
-    void minimalEntryCopiesNormalAndGetsSwappedBlockCaret() {
+    void minimalEntryCopiesNormalAndGetsSteadyBarCaretInTheNormalForeground() {
         Skin skin = skinWith("\"input\": { \"normal\": \"plain\" }");
 
         TextFieldStyle style = skin.getTextFieldStyle("input");
 
-        LabelStyle plain = LabelStyle.of(UiFont.SQUARE, WHITE, NAVY);
+        LabelStyle plain = LabelStyle.of(WHITE, NAVY);
         assertTrue(skin.hasTextFieldStyle("input"));
         assertFalse(skin.hasTextFieldStyle("other"));
         assertEquals(plain, style.getFocused());
         assertEquals(plain, style.getDisabled());
         assertEquals(plain, style.getPlaceholder());
         assertEquals(TextFieldStyle.of(plain), style);
-        assertEquals(NAVY, style.getCaret().getForegroundRgba());
-        assertEquals(WHITE, style.getCaret().getBackgroundRgba());
+        assertEquals(TextFieldStyle.DEFAULT_CARET_GLYPH, style.getCaret().getGlyphCodePoint());
+        assertEquals(WHITE, style.getCaret().getForegroundRgba());
         assertEquals(0f, style.getCaret().getBlinkSeconds());
     }
 
@@ -55,15 +54,15 @@ class TextFieldSkinTest {
         Skin skin = skinWith("""
                 "input": {
                   "normal": "plain",
-                  "focused": { "font": "square", "foreground": "navy", "background": "white" },
+                  "focused": { "foreground": "navy", "background": "white" },
                   "placeholder": "dim"
                 }""");
 
         TextFieldStyle style = skin.getTextFieldStyle("input");
 
-        assertEquals(LabelStyle.of(UiFont.SQUARE, NAVY, WHITE), style.getFocused());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, GRAY, NAVY), style.getPlaceholder());
-        assertEquals(LabelStyle.of(UiFont.SQUARE, WHITE, NAVY), style.getDisabled());
+        assertEquals(LabelStyle.of(NAVY, WHITE), style.getFocused());
+        assertEquals(LabelStyle.of(GRAY, NAVY), style.getPlaceholder());
+        assertEquals(LabelStyle.of(WHITE, NAVY), style.getDisabled());
     }
 
     @Test
@@ -77,21 +76,19 @@ class TextFieldSkinTest {
         assertTrue(caret.hasGlyph());
         assertEquals('_', caret.getGlyphCodePoint());
         assertFalse(caret.hasForeground());
-        assertFalse(caret.hasBackground());
         assertEquals(0.5f, caret.getBlinkSeconds());
     }
 
     @Test
-    void explicitBlockCaretKeepsItsColors() {
+    void caretWithGlyphAndForegroundKeepsBoth() {
         Skin skin = skinWith("""
                 "input": { "normal": "plain",
-                  "caret": { "foreground": "gray", "background": "#102030" } }""");
+                  "caret": { "glyph": "|", "foreground": "gray" } }""");
 
         CaretStyle caret = skin.getTextFieldStyle("input").getCaret();
 
         assertEquals(GRAY, caret.getForegroundRgba());
-        assertEquals(0x102030FF, caret.getBackgroundRgba());
-        assertFalse(caret.hasGlyph());
+        assertEquals('|', caret.getGlyphCodePoint());
     }
 
     @Test
@@ -116,7 +113,7 @@ class TextFieldSkinTest {
                 "Known keys: normal, focused, disabled, placeholder, caret");
         assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"glyph\": \"_\","
                 + " \"shape\": 1 } }", "textFields.input.caret", "unknown key \"shape\"",
-                "Known keys: foreground, background, glyph, blinkSeconds");
+                "Known keys: glyph, foreground, blinkSeconds");
     }
 
     @Test
@@ -126,15 +123,23 @@ class TextFieldSkinTest {
     }
 
     @Test
-    void mixedFontsAreAnError() {
-        assertSkinError("\"input\": { \"normal\": \"plain\", \"disabled\": \"tallPlain\" }",
-                "textFields.input", "same font");
+    void lookWithAFontKeyIsAnErrorNamingThePath() {
+        assertSkinError("\"input\": { \"normal\": \"plain\", \"disabled\": { \"font\": \"tall\","
+                + " \"foreground\": \"white\", \"background\": \"navy\" } }",
+                "textFields.input.disabled.font", "\"font\" key was removed");
     }
 
     @Test
-    void emptyCaretIsAnError() {
+    void caretWithoutGlyphIsAnError() {
         assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"blinkSeconds\": 1 } }",
-                "textFields.input.caret", "at least one of");
+                "textFields.input.caret", "missing \"glyph\"");
+    }
+
+    @Test
+    void caretWithBackgroundIsAnError() {
+        assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"glyph\": \"_\","
+                + " \"background\": \"navy\" } }", "textFields.input.caret.background",
+                "has no background", "delete the \"background\" key");
     }
 
     @Test
@@ -149,8 +154,8 @@ class TextFieldSkinTest {
         assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"glyph\": \"_\","
                 + " \"blinkSeconds\": \"fast\" } }", "textFields.input.caret.blinkSeconds",
                 "number");
-        assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"foreground\": \"red\" }"
-                + " }", "textFields.input.caret.foreground", "unknown color");
+        assertSkinError("\"input\": { \"normal\": \"plain\", \"caret\": { \"glyph\": \"_\","
+                + " \"foreground\": \"red\" } }", "textFields.input.caret.foreground", "unknown color");
     }
 
     @Test

@@ -12,7 +12,7 @@ class DialogSkinTest {
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070", "black": "#000000" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" }
             },
             "buttons": { "action": { "normal": "plain" } },
             "textFields": { "field": { "normal": "plain" } },

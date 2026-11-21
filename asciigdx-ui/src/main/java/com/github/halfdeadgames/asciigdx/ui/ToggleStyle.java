@@ -3,10 +3,12 @@ package com.github.halfdeadgames.asciigdx.ui;
 import java.util.Objects;
 
 /**
- * Looks of a {@link CheckBox} or {@link RadioButton}: the {@link ButtonStyle} that gives the text
- * look in each state (normal, pointer over, pressed, disabled, and focused), a mark for the unchecked state, a mark for the checked state, and the gap
- * between the mark and the text. The mark is drawn with the same look as the text. Immutable, so
- * one instance can be shared by any number of widgets.
+ * Looks of a {@link CheckBox} or {@link RadioButton}: the {@link ButtonStyle} that gives the look
+ * in each state (normal, pointer over, pressed, disabled, and focused), a mark for the unchecked
+ * state, a mark for the checked state, and the gap between the mark and the text. The mark is
+ * drawn with the same look as the text, but in the square font, one UI cell per code point; the
+ * words after it use the text font. Immutable, so one instance can be shared by any number of
+ * widgets.
  *
  * <p>Both marks have the same number of code points, so a widget keeps its width when it is
  * toggled.
@@ -123,15 +125,6 @@ public final class ToggleStyle {
      */
     public int getGap() {
         return gap;
-    }
-
-    /**
-     * Returns the font shared by all looks. A convenience for {@code getButtonStyle().getFont()}.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return button.getFont();
     }
 
     private static int countCodePoints(String text) {

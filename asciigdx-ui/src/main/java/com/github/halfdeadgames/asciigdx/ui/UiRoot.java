@@ -173,6 +173,8 @@ public final class UiRoot {
     private MenuBar openMenuBar;
     private Widget focusBeforePress;
     private boolean delivering;
+    private boolean hasPendingTextColumn;
+    private int pendingTextColumn;
     private Widget hoveredWidget;
     private Widget keyboardFocus;
     private Widget focusShownWidget;
@@ -709,7 +711,12 @@ public final class UiRoot {
      * <p>libGDX sends mouse moves on desktop only. On touch-only devices hover changes only with
      * the down, drag, and up events of pointer 0.
      *
-     * @param column pointer column on the surface, in UI cells; any value, outside hits nothing
+     * <p>Called directly, the pointer position is a whole UI cell, so the event's text columns
+     * ({@link UiEvent#getTextColumn()}) are the left half of that cell ({@code 2 * column}).
+     * {@link UiInput} gives exact text columns.
+     *
+     * @param column pointer column on the surface, in UI cells (not text columns); any value,
+     *         outside hits nothing
      * @param row pointer row on the surface, in UI cells; any value
      * @return {@code true} if a listener handled the move; {@code false} also when the pointer is
      *         over nothing
@@ -725,7 +732,61 @@ public final class UiRoot {
         }
         event.setPointer(UiEventType.POINTER_MOVED, target, column, row, PRIMARY_POINTER,
                 NO_BUTTON);
+        applyPendingTextColumn();
         return bubble(target);
+    }
+
+    // The package-private pointer methods below are called by UiInput, which knows the exact text
+    // column. The public methods leave the text column at the left half of the cell.
+    boolean pointerMovedAtTextColumn(int textColumn, int row) {
+        beginTextColumn(textColumn);
+        try {
+            return pointerMoved(squareColumnOf(textColumn), row);
+        } finally {
+            hasPendingTextColumn = false;
+        }
+    }
+
+    boolean pointerDownAtTextColumn(int textColumn, int row, int pointer, int button) {
+        beginTextColumn(textColumn);
+        try {
+            return pointerDown(squareColumnOf(textColumn), row, pointer, button);
+        } finally {
+            hasPendingTextColumn = false;
+        }
+    }
+
+    boolean pointerDraggedAtTextColumn(int textColumn, int row, int pointer) {
+        beginTextColumn(textColumn);
+        try {
+            return pointerDragged(squareColumnOf(textColumn), row, pointer);
+        } finally {
+            hasPendingTextColumn = false;
+        }
+    }
+
+    boolean pointerUpAtTextColumn(int textColumn, int row, int pointer, int button) {
+        beginTextColumn(textColumn);
+        try {
+            return pointerUp(squareColumnOf(textColumn), row, pointer, button);
+        } finally {
+            hasPendingTextColumn = false;
+        }
+    }
+
+    private static int squareColumnOf(int textColumn) {
+        return Math.floorDiv(textColumn, UiSurface.TEXT_COLUMNS_PER_CELL);
+    }
+
+    private void beginTextColumn(int textColumn) {
+        pendingTextColumn = textColumn;
+        hasPendingTextColumn = true;
+    }
+
+    private void applyPendingTextColumn() {
+        if (hasPendingTextColumn) {
+            event.setSurfaceTextColumn(pendingTextColumn);
+        }
     }
 
     /**
@@ -742,7 +803,12 @@ public final class UiRoot {
      * <p>A press on empty space, or one that no listener handles, returns {@code false}. Games can
      * use that for outside-click handling, such as closing a popup.
      *
-     * @param column pointer column on the surface, in UI cells; any value, outside hits nothing
+     * <p>Called directly, the pointer position is a whole UI cell, so the event's text columns
+     * ({@link UiEvent#getTextColumn()}) are the left half of that cell ({@code 2 * column}).
+     * {@link UiInput} gives exact text columns.
+     *
+     * @param column pointer column on the surface, in UI cells (not text columns); any value,
+     *         outside hits nothing
      * @param row pointer row on the surface, in UI cells; any value
      * @param pointer pointer index, 0 to {@link #MAX_POINTERS} - 1
      * @param button button index, 0 for the primary button; zero or greater
@@ -780,12 +846,16 @@ public final class UiRoot {
         capturedWidgets[pointer] = target;
         capturingButtons[pointer] = button;
         event.setPointer(UiEventType.POINTER_DOWN, target, column, row, pointer, button);
+        applyPendingTextColumn();
         return bubble(target);
     }
 
     /**
      * Handles a pressed pointer moving. The event goes to the widget that captured the pointer,
      * even when the pointer is outside it. Hover still follows the widget under pointer 0.
+     *
+     * <p>Called directly, the event's text columns are the left half of the cell
+     * ({@code 2 * column}); {@link UiInput} gives exact text columns.
      *
      * @param column pointer column on the surface, in UI cells; any value
      * @param row pointer row on the surface, in UI cells; any value
@@ -805,6 +875,7 @@ public final class UiRoot {
             return false;
         }
         event.setPointer(UiEventType.POINTER_DRAGGED, captured, column, row, pointer, NO_BUTTON);
+        applyPendingTextColumn();
         return bubble(captured);
     }
 
@@ -812,6 +883,9 @@ public final class UiRoot {
      * Handles a pointer going up. The event goes to the widget that captured the pointer, and the
      * capture ends before the listeners run, but only when {@code button} is the one that started
      * the capture. An up with another button is ignored.
+     *
+     * <p>Called directly, the event's text columns are the left half of the cell
+     * ({@code 2 * column}); {@link UiInput} gives exact text columns.
      *
      * @param column pointer column on the surface, in UI cells; any value
      * @param row pointer row on the surface, in UI cells; any value
@@ -835,12 +909,15 @@ public final class UiRoot {
         }
         capturedWidgets[pointer] = null;
         event.setPointer(UiEventType.POINTER_UP, captured, column, row, pointer, button);
+        applyPendingTextColumn();
         return bubble(captured);
     }
 
     /**
      * Handles the system canceling a pointer, for example when the app loses focus. The event goes
-     * to the widget that captured the pointer, and the capture ends before the listeners run.
+     * to the widget that captured the pointer, and the capture ends before the listeners run. The
+     * event carries no position, so its text columns are 0 whether called directly or through
+     * {@link UiInput}.
      *
      * @param pointer pointer index, 0 to {@link #MAX_POINTERS} - 1
      * @return {@code true} if a listener handled it; {@code false} when the pointer has no
@@ -1018,7 +1095,8 @@ public final class UiRoot {
     /**
      * Moves keyboard focus the way the navigation keys do, for example to map a gamepad. The
      * rules are those of the keys: only the window that holds focus, or else the main tree
-     * ({@link #getRoot()}), is searched, the candidates are its visible, focusable widgets (menu bars are skipped), and nothing happens
+     * ({@link #getRoot()}), is searched, the candidates are its visible, focusable widgets
+     * (menu bars are skipped), and nothing happens
      * while a menu is open. A move that finds a target counts as keyboard input, so focus becomes
      * visible (see {@link #isFocusVisible()}).
      *

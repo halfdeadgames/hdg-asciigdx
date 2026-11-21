@@ -9,13 +9,12 @@ import java.util.Objects;
  * drop-down of the open menu lives in {@link UiRoot#getPopupLayer()}, so it appears above the main
  * tree.
  *
- * <p>Size: the bar is exactly one text row of the style's font high, 2 rows for
- * {@link UiFont#TALL} and 1 for {@link UiFont#SQUARE}. Its width is how wide the bar's background
- * is; the titles are drawn from the left edge, each with the title style's horizontal padding on
- * both sides, and the rest of the width shows the normal background. Adding a menu widens the bar
- * to fit all titles when it is narrower, and never narrows it. Titles that do not fit are cut
- * off. Like other widgets that draw tall text, the bar and its drop-downs should sit on even rows
- * for the tall font (see {@link #getRowSnap()}).
+ * <p>Size: the bar is exactly one row high. Its width is how wide the bar's background
+ * is; the titles are drawn from the left edge in the text font, each with the title style's
+ * horizontal padding on both sides, and the rest of the width shows the normal background. A
+ * title takes one text column (half a UI column) per code point, rounded up to whole UI cells, so
+ * title offsets, widths, and hit testing are in whole UI cells. Adding a menu widens the bar to
+ * fit all titles when it is narrower, and never narrows it. Titles that do not fit are cut off.
  *
  * <p>Looks: a title is drawn with the title style's normal look, its pointer-over look while
  * pointer 0 is over it, and its pressed look while its menu is open. Items use the item style's
@@ -25,8 +24,8 @@ import java.util.Objects;
  * <ul>
  *   <li>Pressing the primary button on a title opens its drop-down directly below the title, with
  *       the left edges aligned. If it would leave the surface it is moved inside, to the left or
- *       up. All items are as wide as the widest item plus the item style's padding on both sides,
- *       one text row high each.
+ *       up. All items are as wide as the widest item (rounded up to whole UI cells) plus the item
+ *       style's padding on both sides, one row high each.
  *   <li>While a menu is open, moving pointer 0 over another title switches to that menu.
  *   <li>Pressing and releasing the primary button on the same item chooses it: the menu closes,
  *       and then the item's action runs. Releasing elsewhere chooses nothing.
@@ -88,7 +87,7 @@ import java.util.Objects;
  *
  * <p>Example:
  * <pre>{@code
- * ButtonStyle look = ButtonStyle.of(LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x303030FF));
+ * ButtonStyle look = ButtonStyle.of(LabelStyle.of(0xFFFFFFFF, 0x303030FF));
  * MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(look, look));
  * bar.setSize(40, 0);
  * Menu file = bar.addMenu("File");
@@ -103,6 +102,7 @@ public final class MenuBar extends Widget {
 
     private static final int PRIMARY_BUTTON = 0;
     private static final int NO_INDEX = -1;
+    private static final int BAR_HEIGHT = 1;
 
     private final UiRoot uiRoot;
     private final MenuBarStyle style;
@@ -146,8 +146,8 @@ public final class MenuBar extends Widget {
      * Adds a menu with a title at the right end of the bar. The bar widens to fit the title if it
      * is too narrow. Add items to the returned menu.
      *
-     * @param title text of the title, one UI column per code point; must not be {@code null}; may
-     *         be empty
+     * @param title text of the title, one text column per code point; must not be {@code null};
+     *         may be empty
      * @return the new, empty menu
      * @throws NullPointerException if {@code title} is {@code null}
      */
@@ -161,8 +161,8 @@ public final class MenuBar extends Widget {
      * trigger in the title is drawn in the style's trigger color, if it has one. The bar widens to
      * fit the title if it is too narrow.
      *
-     * @param title text of the title, one UI column per code point; must not be {@code null}; may
-     *         be empty
+     * @param title text of the title, one text column per code point; must not be {@code null};
+     *         may be empty
      * @param trigger an ASCII letter (A-Z or a-z) or digit (0-9) that appears in {@code title};
      *         matching ignores case
      * @return the new, empty menu
@@ -237,8 +237,8 @@ public final class MenuBar extends Widget {
     }
 
     /**
-     * Sets the width of the bar. The height becomes one text row of the style's font, 1 or 2
-     * cells, whatever is passed, and a negative {@code height} does not throw. A width below
+     * Sets the width of the bar. The height becomes 1 whatever is passed, and a negative
+     * {@code height} does not throw. A width below
      * {@link #getPreferredWidth()} is allowed and cuts off the titles that do not fit. Later
      * {@link #addMenu(String)} calls only widen the bar and never narrow it. Like the position
      * (see {@link #setPosition(int, int)}), the size takes effect on the next draw; the position
@@ -250,17 +250,7 @@ public final class MenuBar extends Widget {
      */
     @Override
     public void setSize(int width, int height) {
-        super.setSize(width, style.getRowHeight());
-    }
-
-    /**
-     * Returns the row multiple of the style's font: 2 for {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return style.getRowHeight();
+        super.setSize(width, BAR_HEIGHT);
     }
 
     /**
@@ -278,13 +268,13 @@ public final class MenuBar extends Widget {
     }
 
     /**
-     * Returns one text row of the style's font.
+     * Returns one row.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {
-        return style.getRowHeight();
+        return BAR_HEIGHT;
     }
 
     /**
@@ -316,7 +306,7 @@ public final class MenuBar extends Widget {
                 return;
             }
             MenuRowPainter.paint(target, style, titleLook(titleStyle, i), menu.getTitle(),
-                    titleStyle.getHorizontalPadding(), menu.getTriggerCell(), left + offset,
+                    titleStyle.getHorizontalPadding(), menu.getTriggerIndex(), left + offset,
                     top, visibleWidth, getHeight());
             offset += titleWidth(menu);
         }
@@ -562,15 +552,13 @@ public final class MenuBar extends Widget {
     }
 
     private void layoutDropDown() {
-        int rowHeight = style.getRowHeight();
         int width = dropDown.getPreferredWidth();
         int height = dropDown.getPreferredHeight();
         int column = absoluteLeft() + titleOffset(openMenu);
         column = Math.max(0, Math.min(column, uiRoot.getSurfaceColumns() - width));
-        int row = absoluteTop() + rowHeight;
+        int row = absoluteTop() + BAR_HEIGHT;
         if (row + height > uiRoot.getSurfaceRows()) {
             row = Math.max(0, uiRoot.getSurfaceRows() - height);
-            row -= row % rowHeight;
         }
         WidgetGroup popupLayer = uiRoot.getPopupLayer();
         dropDown.setSize(width, height);
@@ -612,7 +600,10 @@ public final class MenuBar extends Widget {
     private int titleWidth(Menu menu) {
         String title = menu.getTitle();
         int padding = style.getTitles().getHorizontalPadding();
-        return title.codePointCount(0, title.length()) + 2 * padding;
+        int titleColumns = title.codePointCount(0, title.length());
+        int titleCells = (titleColumns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+                / UiSurface.TEXT_COLUMNS_PER_CELL;
+        return titleCells + 2 * padding;
     }
 
     private int absoluteLeft() {

@@ -16,22 +16,20 @@ import org.junit.jupiter.api.Test;
 
 class MenuBarTest {
     private static final int WHITE = 0xFFFFFFFF;
-    private static final ButtonStyle TALL = style(UiFont.TALL);
-    private static final ButtonStyle SQUARE = style(UiFont.SQUARE);
+    private static final ButtonStyle LOOK = style();
     private static final int POPUP_CATCHER_INDEX = 0;
     private static final int POPUP_DROP_DOWN_INDEX = 1;
 
     private final UiSurface surface = UiSurface.ofSize(40, 12);
     private final UiRoot ui = UiRoot.of(surface);
     private final List<String> events = new ArrayList<>();
-    private final MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(TALL, TALL));
+    private final MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
     private final Menu file = bar.addMenu("File");
     private final Menu edit = bar.addMenu("Edit");
 
-    private static ButtonStyle style(UiFont font) {
-        return ButtonStyle.of(LabelStyle.of(font, WHITE, 0x111111FF),
-                LabelStyle.of(font, WHITE, 0x222222FF), LabelStyle.of(font, WHITE, 0x333333FF),
-                LabelStyle.of(font, WHITE, 0x444444FF));
+    private static ButtonStyle style() {
+        return ButtonStyle.of(LabelStyle.of(WHITE, 0x111111FF), LabelStyle.of(WHITE, 0x222222FF),
+                LabelStyle.of(WHITE, 0x333333FF), LabelStyle.of(WHITE, 0x444444FF));
     }
 
     MenuBarTest() {
@@ -86,8 +84,8 @@ class MenuBarTest {
     void releasingOnTheSameItemRunsItsActionAfterClosing() {
         click(1, 0);
 
-        ui.pointerDown(1, 4, 0, 0);
-        ui.pointerUp(1, 5, 0, 0);
+        ui.pointerDown(1, 2, 0, 0);
+        ui.pointerUp(3, 2, 0, 0);
 
         assertEquals(List.of("open false"), events);
         assertFalse(bar.isOpen());
@@ -97,9 +95,9 @@ class MenuBarTest {
     void releasingOnAnotherItemOrOutsideRunsNothing() {
         click(1, 0);
 
-        ui.pointerDown(1, 2, 0, 0);
-        ui.pointerUp(1, 4, 0, 0);
-        ui.pointerDown(1, 2, 0, 0);
+        ui.pointerDown(1, 1, 0, 0);
+        ui.pointerUp(1, 2, 0, 0);
+        ui.pointerDown(1, 1, 0, 0);
         ui.pointerDragged(30, 8, 0);
         ui.pointerUp(30, 8, 0, 0);
 
@@ -115,8 +113,8 @@ class MenuBarTest {
         ui.pointerMoved(7, 0);
 
         assertTrue(bar.isOpen());
-        assertEquals(6, dropDown().getX());
-        assertEquals(2, dropDown().getHeight());
+        assertEquals(4, dropDown().getX());
+        assertEquals(1, dropDown().getHeight());
         assertEquals(2, ui.getPopupLayer().getChildCount());
     }
 
@@ -128,7 +126,7 @@ class MenuBarTest {
     }
 
     private TextButton focusedButton() {
-        TextButton button = new TextButton("Go", TALL);
+        TextButton button = new TextButton("Go", LOOK);
         button.setPosition(20, 6);
         ui.getRoot().addChild(button);
         click(21, 6);
@@ -154,7 +152,7 @@ class MenuBarTest {
         TextButton button = focusedButton();
         click(1, 0);
 
-        click(1, 2);
+        click(1, 1);
 
         assertSame(button, ui.getKeyboardFocus());
     }
@@ -201,7 +199,7 @@ class MenuBarTest {
 
     @Test
     void outsidePressClosesAndDoesNotClickTheWidgetUnderneath() {
-        TextButton button = new TextButton("Go", TALL);
+        TextButton button = new TextButton("Go", LOOK);
         button.setPosition(20, 6);
         button.addClickListener(clicked -> events.add("button"));
         ui.getRoot().addChild(button);
@@ -240,40 +238,50 @@ class MenuBarTest {
     }
 
     @Test
-    void dropDownSitsBelowTheTitleAndIsAsWideAsTheWidestItem() {
+    void dropDownSitsBelowTheTitleAndIsAsWideAsTheWidestItemRoundedUpToCells() {
         click(1, 0);
 
         assertEquals(0, dropDown().getX());
-        assertEquals(2, dropDown().getY());
-        assertEquals(11, dropDown().getWidth());
-        assertEquals(4, dropDown().getHeight());
+        assertEquals(1, dropDown().getY());
+        assertEquals(7, dropDown().getWidth());
+        assertEquals(2, dropDown().getHeight());
+    }
+
+    @Test
+    void titleWidthIsHalfTheLettersRoundedUpPlusPaddingOnBothSides() {
+        MenuBar fresh = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
+
+        fresh.addMenu("Four");
+        assertEquals(4, fresh.getPreferredWidth());
+        fresh.addMenu("Odd");
+        assertEquals(8, fresh.getPreferredWidth());
     }
 
     @Test
     void dropDownMovesLeftInsideTheSurface() {
-        MenuBar rightBar = MenuBar.of(ui, MenuBarStyle.of(TALL, TALL));
+        MenuBar rightBar = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
         Menu menu = rightBar.addMenu("Menu");
         menu.addItem("A very long item", () -> { });
-        rightBar.setPosition(30, 6);
+        rightBar.setPosition(36, 6);
         ui.getRoot().addChild(rightBar);
 
-        click(31, 6);
+        click(37, 6);
 
-        assertEquals(40 - 18, dropDown().getX());
+        assertEquals(40 - 10, dropDown().getX());
     }
 
     @Test
-    void dropDownMovesUpOntoAnEvenRowWhenItWouldLeaveTheSurface() {
-        MenuBar lowBar = MenuBar.of(ui, MenuBarStyle.of(TALL, TALL));
+    void dropDownMovesUpWhenItWouldLeaveTheSurface() {
+        MenuBar lowBar = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
         Menu menu = lowBar.addMenu("Menu");
         menu.addItem("One", () -> { });
         menu.addItem("Two", () -> { });
-        lowBar.setPosition(0, 8);
+        lowBar.setPosition(0, 11);
         ui.getRoot().addChild(lowBar);
 
-        click(1, 8);
+        click(1, 11);
 
-        assertEquals(8, dropDown().getY());
+        assertEquals(10, dropDown().getY());
     }
 
     @Test
@@ -282,8 +290,8 @@ class MenuBarTest {
 
         file.addItem("A much longer item", () -> { });
 
-        assertEquals(20, dropDown().getWidth());
-        assertEquals(6, dropDown().getHeight());
+        assertEquals(11, dropDown().getWidth());
+        assertEquals(3, dropDown().getHeight());
     }
 
     @Test
@@ -297,33 +305,24 @@ class MenuBarTest {
     }
 
     @Test
-    void tallBarIsTwoRowsHighAndSnapsToEvenRows() {
-        assertEquals(2, bar.getHeight());
-        assertEquals(2, bar.getRowSnap());
-        assertEquals(2, ui.getRoot().getChild(0).getRowSnap());
-    }
+    void barIsOneRowHighAndItsHeightArgumentIsIgnored() {
+        assertEquals(1, bar.getHeight());
 
-    @Test
-    void squareBarIsOneRowHighAndItsHeightArgumentIsIgnored() {
-        MenuBar squareBar = MenuBar.of(ui, MenuBarStyle.of(SQUARE, SQUARE));
-        squareBar.addMenu("File");
+        bar.setSize(20, 7);
 
-        squareBar.setSize(20, 7);
-
-        assertEquals(1, squareBar.getHeight());
-        assertEquals(1, squareBar.getRowSnap());
-        assertEquals(20, squareBar.getWidth());
+        assertEquals(1, bar.getHeight());
+        assertEquals(20, bar.getWidth());
     }
 
     @Test
     void addingMenusWidensTheBarToFitTheTitlesButNeverNarrowsIt() {
-        MenuBar fresh = MenuBar.of(ui, MenuBarStyle.of(SQUARE, SQUARE));
+        MenuBar fresh = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
         assertEquals(0, fresh.getWidth());
 
         fresh.addMenu("File");
         fresh.addMenu("Edit");
 
-        assertEquals(12, fresh.getWidth());
+        assertEquals(8, fresh.getWidth());
         fresh.setSize(30, 0);
         fresh.addMenu("View");
         assertEquals(30, fresh.getWidth());
@@ -359,7 +358,7 @@ class MenuBarTest {
 
     @Test
     void nullArgumentsAreRejected() {
-        MenuBarStyle style = MenuBarStyle.of(TALL, TALL);
+        MenuBarStyle style = MenuBarStyle.of(LOOK, LOOK);
 
         assertThrows(NullPointerException.class, () -> MenuBar.of(null, style));
         assertThrows(NullPointerException.class, () -> MenuBar.of(ui, null));
@@ -373,15 +372,17 @@ class MenuBarTest {
         file.addItem("Bad", () -> ui.pointerMoved(0, 0));
         click(1, 0);
 
-        ui.pointerDown(1, 6, 0, 0);
+        ui.pointerDown(1, 3, 0, 0);
 
-        assertThrows(IllegalStateException.class, () -> ui.pointerUp(1, 6, 0, 0));
+        assertThrows(IllegalStateException.class, () -> ui.pointerUp(1, 3, 0, 0));
     }
 
     private static final int RED = 0xFF0000FF;
     private static final int UNDERSCORE = '_';
-    private static final int TITLE_TRIGGER_COLUMN = 2;
-    private static final int ITEM_TRIGGER_COLUMN = 2;
+    // Text column of the trigger letter: padding of 1 cell is 2 text columns, then the letter's
+    // index in the text. 'i' in "File" and 'p' in "Open" are both at index 1, an odd text column.
+    private static final int TITLE_TRIGGER_TEXT_COLUMN = 3;
+    private static final int ITEM_TRIGGER_TEXT_COLUMN = 3;
 
     private MenuBar underlinedBar(ButtonStyle look, boolean underline, boolean colored) {
         MenuBarStyle style = MenuBarStyle.of(look, look).withTriggerUnderline(underline);
@@ -395,75 +396,73 @@ class MenuBarTest {
     }
 
     @Test
-    void squareTitleTriggerIsUnderlinedInTheTriggerColorOnTheSameRow() {
-        underlinedBar(SQUARE, true, true).draw(surface);
+    void titleTriggerIsUnderlinedInTheTriggerColorAtItsTextColumnOnTheSameRow() {
+        underlinedBar(LOOK, true, true).draw(surface);
 
         TerminalGrid overlay = surface.getOverlayGrid();
-        assertEquals(UNDERSCORE, overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 0));
-        assertEquals(RED, overlay.getForeground(TITLE_TRIGGER_COLUMN, 0));
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(1, 0));
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(3, 0));
+        assertEquals(UNDERSCORE, overlay.getCodePoint(TITLE_TRIGGER_TEXT_COLUMN, 0));
+        assertEquals(RED, overlay.getForeground(TITLE_TRIGGER_TEXT_COLUMN, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                overlay.getCodePoint(TITLE_TRIGGER_TEXT_COLUMN - 1, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                overlay.getCodePoint(TITLE_TRIGGER_TEXT_COLUMN + 1, 0));
     }
 
     @Test
-    void tallTitleTriggerIsUnderlinedOnTheLowerRowOfItsCell() {
-        MenuBar tallBar = underlinedBar(TALL, true, false);
-        tallBar.setPosition(0, 4);
+    void underlinedTitleLetterKeepsTheLookForegroundInTheTextGrid() {
+        underlinedBar(LOOK, true, false).draw(surface);
 
-        tallBar.draw(surface);
-
-        TerminalGrid overlay = surface.getOverlayGrid();
-        assertEquals(UNDERSCORE, overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 5));
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT,
-                overlay.getCodePoint(TITLE_TRIGGER_COLUMN, 4));
+        assertEquals('i', surface.getTextGrid().getCodePoint(TITLE_TRIGGER_TEXT_COLUMN, 0));
+        assertEquals(WHITE, surface.getTextGrid().getForeground(TITLE_TRIGGER_TEXT_COLUMN, 0));
     }
 
     @Test
     void underlineUsesTheLookForegroundWithoutATriggerColor() {
-        underlinedBar(SQUARE, true, false).draw(surface);
+        underlinedBar(LOOK, true, false).draw(surface);
 
-        assertEquals(WHITE, surface.getOverlayGrid().getForeground(TITLE_TRIGGER_COLUMN, 0));
-        assertEquals(UNDERSCORE, surface.getOverlayGrid().getCodePoint(TITLE_TRIGGER_COLUMN, 0));
+        assertEquals(WHITE, surface.getOverlayGrid().getForeground(TITLE_TRIGGER_TEXT_COLUMN, 0));
+        assertEquals(UNDERSCORE,
+                surface.getOverlayGrid().getCodePoint(TITLE_TRIGGER_TEXT_COLUMN, 0));
     }
 
     @Test
     void noUnderlineIsWrittenWhenTheStyleHasItOff() {
-        MenuBar plainBar = underlinedBar(SQUARE, false, true);
+        MenuBar plainBar = underlinedBar(LOOK, false, true);
         plainBar.draw(surface);
         click(1, 0);
         dropDown().draw(surface);
 
         for (int row = 0; row < surface.getRows(); row++) {
-            for (int column = 0; column < surface.getColumns(); column++) {
+            for (int textColumn = 0; textColumn < surface.getTextColumns(); textColumn++) {
                 assertEquals(TerminalGrid.EMPTY_CODE_POINT,
-                        surface.getOverlayGrid().getCodePoint(column, row));
+                        surface.getOverlayGrid().getCodePoint(textColumn, row));
             }
         }
     }
 
     @Test
-    void itemTriggerIsUnderlinedInSquareAndTallDropDowns() {
-        underlinedBar(SQUARE, true, true);
+    void itemTriggerIsUnderlinedAtItsTextColumnOnTheItemRow() {
+        underlinedBar(LOOK, true, true);
         click(1, 0);
-        MenuDropDown squareDropDown = (MenuDropDown) dropDown();
-        squareDropDown.draw(surface);
+        MenuDropDown openDropDown = (MenuDropDown) dropDown();
+        openDropDown.draw(surface);
 
         TerminalGrid overlay = surface.getOverlayGrid();
-        int squareRow = squareDropDown.getY();
-        assertEquals(UNDERSCORE, overlay.getCodePoint(ITEM_TRIGGER_COLUMN, squareRow));
-        assertEquals(RED, overlay.getForeground(ITEM_TRIGGER_COLUMN, squareRow));
+        int itemRow = openDropDown.getY();
+        assertEquals(UNDERSCORE, overlay.getCodePoint(ITEM_TRIGGER_TEXT_COLUMN, itemRow));
+        assertEquals(RED, overlay.getForeground(ITEM_TRIGGER_TEXT_COLUMN, itemRow));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                overlay.getCodePoint(ITEM_TRIGGER_TEXT_COLUMN - 1, itemRow));
     }
 
     @Test
-    void tallItemTriggerIsUnderlinedOnTheLowerRowOfItsCell() {
-        underlinedBar(TALL, true, false);
+    void titlesAndItemsAreWrittenInTheTextGridStartingAfterThePadding() {
         click(1, 0);
-        Widget tallDropDown = dropDown();
-        tallDropDown.draw(surface);
+        ui.draw();
 
-        int lowerRow = tallDropDown.getY() + 1;
-        TerminalGrid overlay = surface.getOverlayGrid();
-        assertEquals(UNDERSCORE, overlay.getCodePoint(ITEM_TRIGGER_COLUMN, lowerRow));
-        assertEquals(WHITE, overlay.getForeground(ITEM_TRIGGER_COLUMN, lowerRow));
+        assertEquals('F', surface.getTextGrid().getCodePoint(2, 0));
+        assertEquals('E', surface.getTextGrid().getCodePoint(10, 0));
+        assertEquals('N', surface.getTextGrid().getCodePoint(2, 1));
+        assertEquals('O', surface.getTextGrid().getCodePoint(2, 2));
     }
 }

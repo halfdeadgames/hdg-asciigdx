@@ -17,19 +17,18 @@ import java.util.Objects;
  *       content widget sits at its top-left corner, at window cell (1, 1), and keeps its own
  *       size.
  *   <li>The title sits in the top border row: the corner, one border glyph, a space, the title, a
- *       space, then border glyphs, as in {@code ┌─ Title ───[x]┐}. A title that does not fit is cut
- *       and ends with {@code U+2026} (the ellipsis); the title gets at most the cells between the
+ *       space, then border glyphs, as in {@code ┌─ Title ───[x]┐}. A title that does not
+ *       fit is cut and ends with {@code U+2026} (the ellipsis); the title gets at most the
+ *       cells between the
  *       space after the border glyph and the close button, or the right corner when there is no
- *       close button, minus the closing space. When that leaves no cell, no title is drawn.
+ *       close button, minus the closing space. When that leaves no cell, no title is drawn. The
+ *       title is drawn in the text font, so two title characters fit in one cell; the title's
+ *       width is rounded up to whole cells.
  *   <li>The close button, if the style has one, sits at the right end of the top row, followed by
- *       one border glyph and the corner. It is a {@link TextButton} child, so it shows its
- *       normal, pointer-over, pressed, and focused looks, and it takes part in keyboard
- *       navigation after the content.
+ *       one border glyph and the corner. It is a button child that draws its mark in the square
+ *       font, so it shows its normal, pointer-over, pressed, and focused looks, and it takes part
+ *       in keyboard navigation after the content.
  * </ul>
- *
- * <p>Tall-font content: the content starts on window row 1, so a window with tall-font content must
- * sit on an odd surface row for that content to start on an even row. Dragging moves the window by
- * whole cells and does not keep that alignment.
  *
  * <p>Input:
  * <ul>
@@ -119,7 +118,7 @@ public class Window extends WidgetGroup {
         this.title = Objects.requireNonNull(title, "title");
         this.style = Objects.requireNonNull(style, "style");
         if (style.hasCloseButton()) {
-            closeButton = new TextButton(style.getCloseText(), style.getCloseButton());
+            closeButton = new TextButton(style.getCloseText(), style.getCloseButton(), true);
             closeButton.addClickListener(clicked -> close());
             addChild(closeButton);
         } else {
@@ -421,7 +420,7 @@ public class Window extends WidgetGroup {
         if (title.isEmpty()) {
             return closeButton == null ? 2 : buttonWidth + 3;
         }
-        int titleCells = title.codePointCount(0, title.length());
+        int titleCells = roundUpToCells(title.codePointCount(0, title.length()));
         return closeButton == null
                 ? titleCells + TITLE_START_COLUMN + 2
                 : titleCells + buttonWidth + TITLE_START_COLUMN + 3;
@@ -522,27 +521,34 @@ public class Window extends WidgetGroup {
             return;
         }
         LabelStyle look = style.getTitle();
-        int titleCells = title.codePointCount(0, title.length());
-        int shownCells = Math.min(titleCells, maxCells);
-        boolean cut = titleCells > maxCells;
+        int titleColumns = title.codePointCount(0, title.length());
+        int maxTextColumns = UiSurface.TEXT_COLUMNS_PER_CELL * maxCells;
+        int shownTextColumns = Math.min(titleColumns, maxTextColumns);
+        boolean cut = titleColumns > maxTextColumns;
+        int shownCells = roundUpToCells(shownTextColumns);
         target.fillBackground(left + TITLE_SPACE_COLUMN, top, shownCells + 2, 1,
                 look.getBackgroundRgba());
-        target.writeGlyph(UiFont.SQUARE, left + TITLE_SPACE_COLUMN, top, SPACE,
+        target.writeSquareGlyph(left + TITLE_SPACE_COLUMN, top, SPACE, look.getForegroundRgba());
+        target.writeSquareGlyph(left + TITLE_START_COLUMN + shownCells, top, SPACE,
                 look.getForegroundRgba());
-        writeTitleText(target, look, left + TITLE_START_COLUMN, top, shownCells, cut);
-        target.writeGlyph(UiFont.SQUARE, left + TITLE_START_COLUMN + shownCells, top, SPACE,
-                look.getForegroundRgba());
+        writeTitleText(target, look, UiSurface.TEXT_COLUMNS_PER_CELL * (left + TITLE_START_COLUMN),
+                top, shownTextColumns, cut);
     }
 
-    private void writeTitleText(UiSurface target, LabelStyle look, int column, int row,
-            int shownCells, boolean cut) {
+    private static int roundUpToCells(int textColumns) {
+        return (textColumns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+                / UiSurface.TEXT_COLUMNS_PER_CELL;
+    }
+
+    private void writeTitleText(UiSurface target, LabelStyle look, int firstTextColumn, int row,
+            int shownTextColumns, boolean cut) {
         int index = 0;
-        for (int cell = 0; cell < shownCells; cell++) {
+        for (int offset = 0; offset < shownTextColumns; offset++) {
             int codePoint = title.codePointAt(index);
-            if (cut && cell == shownCells - 1) {
+            if (cut && offset == shownTextColumns - 1) {
                 codePoint = ELLIPSIS;
             }
-            target.writeGlyph(UiFont.SQUARE, column + cell, row, codePoint,
+            target.writeTextGlyph(firstTextColumn + offset, row, codePoint,
                     look.getForegroundRgba());
             index += Character.charCount(codePoint);
         }

@@ -13,9 +13,8 @@ class TooltipTest {
     private static final int ROWS = 20;
     private static final int WHITE = 0xFFFFFFFF;
     private static final int BLACK = 0x000000FF;
-    private static final LabelStyle SQUARE_HINT = LabelStyle.of(UiFont.SQUARE, WHITE, BLACK);
-    private static final LabelStyle TALL_HINT = LabelStyle.of(UiFont.TALL, WHITE, BLACK);
-    private static final ButtonStyle BUTTON_STYLE = ButtonStyle.of(SQUARE_HINT);
+    private static final LabelStyle HINT = LabelStyle.of(WHITE, BLACK);
+    private static final ButtonStyle BUTTON_STYLE = ButtonStyle.of(HINT);
 
     private final UiRoot ui = UiRoot.of(UiSurface.ofSize(COLUMNS, ROWS));
 
@@ -27,7 +26,7 @@ class TooltipTest {
     }
 
     private Tooltip hintOn(Widget target, String text) {
-        Tooltip tooltip = Tooltip.attachText(ui, target, text, SQUARE_HINT);
+        Tooltip tooltip = Tooltip.attachText(ui, target, text, HINT);
         tooltip.setDelaySeconds(1f);
         return tooltip;
     }
@@ -127,7 +126,7 @@ class TooltipTest {
 
     @Test
     void defaultDelayIsHalfASecond() {
-        Tooltip tooltip = Tooltip.attachText(ui, buttonAt(5, 5), "Hint!!", SQUARE_HINT);
+        Tooltip tooltip = Tooltip.attachText(ui, buttonAt(5, 5), "Hint!!", HINT);
         ui.pointerMoved(6, 5);
 
         assertEquals(Tooltip.DEFAULT_DELAY_SECONDS, tooltip.getDelaySeconds());
@@ -172,7 +171,7 @@ class TooltipTest {
 
         assertEquals(7, tooltip.getContent().getX());
         assertEquals(6, tooltip.getContent().getY());
-        assertEquals(6, tooltip.getContent().getWidth());
+        assertEquals(3, tooltip.getContent().getWidth());
     }
 
     @Test
@@ -203,11 +202,13 @@ class TooltipTest {
 
     @Test
     void flipsLeftOfPointerNearRightEdge() {
-        Tooltip tooltip = hintOn(buttonAt(35, 5), "Hint!!");
+        TextButton button = buttonAt(35, 5);
+        button.setSize(5, 1);
+        Tooltip tooltip = hintOn(button, "Hint!!");
 
-        showHint(tooltip, 36, 5);
+        showHint(tooltip, 38, 5);
 
-        assertEquals(30, tooltip.getContent().getX());
+        assertEquals(35, tooltip.getContent().getX());
     }
 
     @Test
@@ -221,33 +222,11 @@ class TooltipTest {
 
     @Test
     void clampsHintWiderThanSurfaceToLeftEdge() {
-        Tooltip tooltip = hintOn(buttonAt(5, 5), "x".repeat(50));
+        Tooltip tooltip = hintOn(buttonAt(5, 5), "x".repeat(100));
 
         showHint(tooltip, 6, 5);
 
         assertEquals(0, tooltip.getContent().getX());
-    }
-
-    @Test
-    void roundsTallHintRowUpToEvenRow() {
-        TextButton button = buttonAt(5, 6);
-        Tooltip tooltip = Tooltip.attachText(ui, button, "Tall", TALL_HINT);
-        tooltip.setDelaySeconds(1f);
-
-        showHint(tooltip, 6, 6);
-
-        assertEquals(8, tooltip.getContent().getY());
-    }
-
-    @Test
-    void roundsFlippedTallHintRowDownToEvenRowAbovePointer() {
-        TextButton button = buttonAt(5, 18);
-        Tooltip tooltip = Tooltip.attachText(ui, button, "Tall", TALL_HINT);
-        tooltip.setDelaySeconds(1f);
-
-        showHint(tooltip, 6, 18);
-
-        assertEquals(16, tooltip.getContent().getY());
     }
 
     @Test
@@ -373,7 +352,7 @@ class TooltipTest {
     @Test
     void exposesTargetAndContent() {
         TextButton button = buttonAt(5, 5);
-        Label content = new Label("Hint!!", SQUARE_HINT);
+        Label content = new Label("Hint!!", HINT);
 
         Tooltip tooltip = Tooltip.attach(ui, button, content);
 
@@ -384,13 +363,13 @@ class TooltipTest {
     @Test
     void rejectsNullArguments() {
         TextButton button = buttonAt(5, 5);
-        Label content = new Label("Hint!!", SQUARE_HINT);
+        Label content = new Label("Hint!!", HINT);
 
         assertThrows(NullPointerException.class, () -> Tooltip.attach(null, button, content));
         assertThrows(NullPointerException.class, () -> Tooltip.attach(ui, null, content));
         assertThrows(NullPointerException.class, () -> Tooltip.attach(ui, button, null));
         assertThrows(NullPointerException.class,
-                () -> Tooltip.attachText(ui, button, null, SQUARE_HINT));
+                () -> Tooltip.attachText(ui, button, null, HINT));
         assertThrows(NullPointerException.class,
                 () -> Tooltip.attachText(ui, button, "Hint", null));
     }

@@ -45,22 +45,20 @@ final class MenuDropDown extends Widget {
     }
 
     @Override
-    public int getRowSnap() {
-        return bar.getBarStyle().getRowHeight();
-    }
-
-    @Override
     public int getPreferredWidth() {
         if (menu == null) {
             return 0;
         }
         int padding = bar.getBarStyle().getItems().getHorizontalPadding();
-        return menu.getWidestItemLength() + 2 * padding;
+        int widestTextColumns = menu.getWidestItemLength();
+        int widestCells = (widestTextColumns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+                / UiSurface.TEXT_COLUMNS_PER_CELL;
+        return widestCells + 2 * padding;
     }
 
     @Override
     public int getPreferredHeight() {
-        return menu == null ? 0 : menu.getItemCount() * bar.getBarStyle().getRowHeight();
+        return menu == null ? 0 : menu.getItemCount();
     }
 
     @Override
@@ -70,15 +68,14 @@ final class MenuDropDown extends Widget {
         }
         MenuBarStyle barStyle = bar.getBarStyle();
         ButtonStyle itemStyle = barStyle.getItems();
-        int rowHeight = barStyle.getRowHeight();
         for (int i = 0; i < menu.getItemCount(); i++) {
-            int rowTop = top + i * rowHeight;
+            int rowTop = top + i;
             if (rowTop >= target.getRows()) {
                 return;
             }
             MenuRowPainter.paint(target, barStyle, lookOf(itemStyle, i), menu.getItemText(i),
-                    itemStyle.getHorizontalPadding(), menu.getItemTriggerCell(i), left, rowTop,
-                    getWidth(), rowHeight);
+                    itemStyle.getHorizontalPadding(), menu.getItemTriggerIndex(i), left, rowTop,
+                    getWidth(), 1);
         }
     }
 
@@ -93,7 +90,7 @@ final class MenuDropDown extends Widget {
         if (!isInsideBounds(column, row)) {
             return NO_INDEX;
         }
-        return row / bar.getBarStyle().getRowHeight();
+        return row;
     }
 
     @Override

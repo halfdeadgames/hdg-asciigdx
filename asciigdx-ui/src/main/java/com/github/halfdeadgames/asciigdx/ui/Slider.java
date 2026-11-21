@@ -17,13 +17,12 @@ import java.util.Objects;
  * <p>A horizontal slider runs from the minimum at the left to the maximum at the right. A vertical
  * slider runs from the minimum at the bottom row to the maximum at the top row (rows grow
  * downward, so the bottom row has the highest row number). The length counts glyph cells along the
- * slider: with the square font a cell is one UI cell, and with the tall font a cell is one column
- * wide and two rows high, so a vertical tall slider of length n is 2n rows high. The track fills
+ * slider; a cell is one UI cell, drawn in the square font. The track fills
  * the whole area with its background and draws the glyphs in its first band of cells. If the size
  * is set larger than the preferred size, the slider stretches along its axis and shows more
- * cells; if it is set too small for one cell, the slider only clears its area. A tall slider
- * should sit on an even row (see {@link #getRowSnap()}). The glyphs come from the
- * {@link SliderStyle}; without explicit glyphs the track glyph depends on the orientation.
+ * cells; if it is set too small for one cell, the slider only clears its area. The glyphs come
+ * from the {@link SliderStyle}; without explicit glyphs the track glyph depends on the
+ * orientation.
  *
  * <p>Keyboard, while the slider has focus (the key must go to the slider, so it must be the
  * focused widget of a {@link UiRoot}). Every key-down event moves one step, so a repeated key-down
@@ -87,7 +86,7 @@ public final class Slider extends Widget {
         this.range = Objects.requireNonNull(range, "range");
         this.preferredLengthCells = preferredLengthCells;
         this.style = Objects.requireNonNull(style, "style");
-        this.axis = new BarAxis(orientation, style.getFont());
+        this.axis = new BarAxis(orientation);
         this.value = range.getMin();
         pack();
     }
@@ -186,9 +185,8 @@ public final class Slider extends Widget {
     }
 
     /**
-     * Replaces the looks and glyphs. The size stays as it is, so call {@link #pack()} after a
-     * change of font. A different style is marked by {@link #invalidate()} if the font changed,
-     * otherwise by {@link #requestRedraw()}. An equal style changes no marks.
+     * Replaces the looks and glyphs. The size is unaffected. A different style requests a redraw.
+     * An equal style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
@@ -198,14 +196,8 @@ public final class Slider extends Widget {
         if (style.equals(this.style)) {
             return;
         }
-        boolean fontChanged = style.getFont() != this.style.getFont();
         this.style = style;
-        axis = new BarAxis(orientation, style.getFont());
-        if (fontChanged) {
-            invalidate();
-        } else {
-            requestRedraw();
-        }
+        requestRedraw();
     }
 
     /**
@@ -278,16 +270,6 @@ public final class Slider extends Widget {
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return axis.getRowsPerCell();
-    }
-
-    /**
      * Returns the length for a horizontal slider and 1 for a vertical slider.
      *
      * @return the width in UI cells
@@ -298,8 +280,7 @@ public final class Slider extends Widget {
     }
 
     /**
-     * Returns the height of one cell (1 for the square font, 2 for the tall font) for a
-     * horizontal slider, and the length times that for a vertical slider.
+     * Returns 1 for a horizontal slider and the length for a vertical slider.
      *
      * @return the height in UI cells
      */
@@ -336,7 +317,7 @@ public final class Slider extends Widget {
         int row = axis.rowOf(top, index, cellCount);
         target.fillBackground(column, row, axis.widthFor(1), axis.heightFor(1),
                 look.getBackgroundRgba());
-        target.writeGlyph(look.getFont(), column, row, glyph, look.getForegroundRgba());
+        target.writeSquareGlyph(column, row, glyph, look.getForegroundRgba());
     }
 
     int knobIndexFor(int cellCount) {

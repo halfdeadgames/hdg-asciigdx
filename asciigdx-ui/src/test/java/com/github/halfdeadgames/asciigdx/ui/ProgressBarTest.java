@@ -12,16 +12,14 @@ class ProgressBarTest {
     private static final int FILL = 0x00FF00FF;
     private static final int EMPTY = 0x202020FF;
     private static final int UNUSED = 0x123456FF;
-    private static final ProgressBarStyle SQUARE = style(UiFont.SQUARE);
-    private static final ProgressBarStyle TALL = style(UiFont.TALL);
+    private static final ProgressBarStyle STYLE = style();
     private static final ValueRange PERCENT = ValueRange.of(0f, 100f, 1f);
 
     private final UiSurface surface = UiSurface.ofSize(20, 12);
     private final UiRoot ui = UiRoot.of(surface);
 
-    private static ProgressBarStyle style(UiFont font) {
-        return ProgressBarStyle.of(LabelStyle.of(font, FILL, UNUSED),
-                LabelStyle.of(font, UNUSED, EMPTY));
+    private static ProgressBarStyle style() {
+        return ProgressBarStyle.of(LabelStyle.of(FILL, UNUSED), LabelStyle.of(UNUSED, EMPTY));
     }
 
     private ProgressBar show(ProgressBar bar, int x, int y) {
@@ -33,7 +31,7 @@ class ProgressBarTest {
 
     @Test
     void startsAtTheMinimumAndIsNotFocusable() {
-        ProgressBar bar = ProgressBar.horizontal(ValueRange.of(10f, 20f, 1f), 5, SQUARE);
+        ProgressBar bar = ProgressBar.horizontal(ValueRange.of(10f, 20f, 1f), 5, STYLE);
 
         assertEquals(10f, bar.getValue());
         assertFalse(bar.isFocusable());
@@ -45,7 +43,7 @@ class ProgressBarTest {
 
     @Test
     void horizontalBarFillsFromTheLeftWithAPartialEighth() {
-        ProgressBar bar = ProgressBar.horizontal(PERCENT, 10, SQUARE);
+        ProgressBar bar = ProgressBar.horizontal(PERCENT, 10, STYLE);
         bar.setValue(55f);
         show(bar, 2, 3);
 
@@ -61,7 +59,7 @@ class ProgressBarTest {
 
     @Test
     void verticalBarFillsFromTheBottomUp() {
-        ProgressBar bar = ProgressBar.vertical(PERCENT, 4, SQUARE);
+        ProgressBar bar = ProgressBar.vertical(PERCENT, 4, STYLE);
         bar.setValue(50f);
         show(bar, 1, 2);
 
@@ -75,7 +73,7 @@ class ProgressBarTest {
 
     @Test
     void verticalBarShowsAPartialLowerEighthAtTheBoundary() {
-        ProgressBar bar = ProgressBar.vertical(PERCENT, 2, SQUARE);
+        ProgressBar bar = ProgressBar.vertical(PERCENT, 2, STYLE);
         bar.setValue(25f);
         show(bar, 0, 0);
 
@@ -84,28 +82,29 @@ class ProgressBarTest {
     }
 
     @Test
-    void tallBarUsesTwoRowsPerCellAndTheTallGrid() {
-        ValueRange unit = ValueRange.of(0f, 1f, 0.5f);
-        ProgressBar horizontal = ProgressBar.horizontal(unit, 4, TALL);
-        horizontal.setValue(1f);
+    void barDrawsOnlyInTheSquareGrid() {
+        ProgressBar horizontal = ProgressBar.horizontal(PERCENT, 4, STYLE);
+        horizontal.setValue(100f);
         show(horizontal, 0, 2);
-        ProgressBar vertical = ProgressBar.vertical(unit, 3, TALL);
-        vertical.setValue(1f);
+        ProgressBar vertical = ProgressBar.vertical(PERCENT, 3, STYLE);
+        vertical.setValue(100f);
         show(vertical, 10, 4);
 
-        assertEquals(2, horizontal.getHeight());
-        assertEquals(2, horizontal.getRowSnap());
-        assertEquals(0x2588, surface.getTallGrid().getCodePoint(3, 1));
-        assertEquals(6, vertical.getHeight());
-        assertEquals(0x2588, surface.getTallGrid().getCodePoint(10, 2));
-        assertEquals(0x2588, surface.getTallGrid().getCodePoint(10, 3));
-        assertEquals(0x2588, surface.getTallGrid().getCodePoint(10, 4));
-        assertEquals(EMPTY, surface.getSquareGrid().getBackground(10, 9));
+        assertEquals(1, horizontal.getHeight());
+        assertEquals(3, vertical.getHeight());
+        assertEquals(0x2588, surface.getSquareGrid().getCodePoint(3, 2));
+        assertEquals(0x2588, surface.getSquareGrid().getCodePoint(10, 6));
+        for (int textColumn = 0; textColumn < surface.getTextColumns(); textColumn++) {
+            for (int row = 0; row < 12; row++) {
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                        surface.getTextGrid().getCodePoint(textColumn, row));
+            }
+        }
     }
 
     @Test
     void setValueSnapsClampsAndRejectsNan() {
-        ProgressBar bar = ProgressBar.horizontal(ValueRange.of(0f, 10f, 2f), 5, SQUARE);
+        ProgressBar bar = ProgressBar.horizontal(ValueRange.of(0f, 10f, 2f), 5, STYLE);
 
         bar.setValue(5f);
         assertEquals(6f, bar.getValue());
@@ -118,7 +117,7 @@ class ProgressBarTest {
 
     @Test
     void redrawIsRequestedOnlyWhenTheValueChanges() {
-        ProgressBar bar = show(ProgressBar.horizontal(PERCENT, 5, SQUARE), 0, 0);
+        ProgressBar bar = show(ProgressBar.horizontal(PERCENT, 5, STYLE), 0, 0);
         bar.clearRedrawNeeded();
 
         bar.setValue(0f);
@@ -128,44 +127,27 @@ class ProgressBarTest {
     }
 
     @Test
-    void squeezedBarClearsItsAreaAndDrawsNoStaleGlyphs() {
-        ProgressBar bar = ProgressBar.vertical(PERCENT, 4, TALL);
-        bar.setValue(100f);
-        show(bar, 0, 0);
-        assertEquals(0x2588, surface.getTallGrid().getCodePoint(0, 0));
-
-        bar.setSize(1, 1);
-        ui.draw();
-
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTallGrid().getCodePoint(0, 0));
-        assertEquals(EMPTY, surface.getSquareGrid().getBackground(0, 0));
-    }
-
-    @Test
     void styleUsesTheFillForegroundAndTheEmptyBackground() {
-        ProgressBarStyle style = style(UiFont.SQUARE);
+        ProgressBarStyle style = style();
 
         assertEquals(FILL, style.getFill().getForegroundRgba());
         assertEquals(EMPTY, style.getEmpty().getBackgroundRgba());
-        assertEquals(UiFont.SQUARE, style.getFont());
-        assertEquals(style(UiFont.SQUARE), style);
+        assertEquals(style(), style);
     }
 
     @Test
-    void styleRejectsMixedFontsAndNulls() {
-        LabelStyle square = LabelStyle.of(UiFont.SQUARE, FILL, EMPTY);
-        LabelStyle tall = LabelStyle.of(UiFont.TALL, FILL, EMPTY);
+    void styleRejectsNulls() {
+        LabelStyle look = LabelStyle.of(FILL, EMPTY);
 
-        assertThrows(IllegalArgumentException.class, () -> ProgressBarStyle.of(square, tall));
-        assertThrows(NullPointerException.class, () -> ProgressBarStyle.of(null, square));
-        assertThrows(NullPointerException.class, () -> ProgressBarStyle.of(square, null));
+        assertThrows(NullPointerException.class, () -> ProgressBarStyle.of(null, look));
+        assertThrows(NullPointerException.class, () -> ProgressBarStyle.of(look, null));
     }
 
     @Test
     void invalidArgumentsAreRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> ProgressBar.horizontal(PERCENT, 0, SQUARE));
-        assertThrows(NullPointerException.class, () -> ProgressBar.horizontal(null, 3, SQUARE));
+                () -> ProgressBar.horizontal(PERCENT, 0, STYLE));
+        assertThrows(NullPointerException.class, () -> ProgressBar.horizontal(null, 3, STYLE));
         assertThrows(NullPointerException.class, () -> ProgressBar.horizontal(PERCENT, 3, null));
     }
 }

@@ -11,7 +11,7 @@ class UiSurfaceBoxTest {
 
     private static final int FOREGROUND = 0x112233FF;
     private static final int BACKGROUND = 0x445566FF;
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, FOREGROUND, BACKGROUND);
+    private static final LabelStyle LOOK = LabelStyle.of(FOREGROUND, BACKGROUND);
 
     private final UiSurface surface = UiSurface.ofSize(10, 6);
     private final TerminalGrid grid = surface.getSquareGrid();
@@ -55,20 +55,14 @@ class UiSurfaceBoxTest {
     }
 
     @Test
-    void erasesATallGlyphThatCoversABorderCell() {
-        surface.writeGlyph(UiFont.TALL, 1, 2, 'T', FOREGROUND);
+    void erasesTextGlyphsOverBothHalvesOfABorderCell() {
+        surface.writeTextGlyph(2, 1, 'T', FOREGROUND);
+        surface.writeTextGlyph(3, 1, 'U', FOREGROUND);
 
         surface.drawBox(1, 1, 5, 4, BoxStyle.SINGLE, LOOK);
 
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTallGrid().getCodePoint(1, 1));
-    }
-
-    @Test
-    void rejectsALookInTheTallFont() {
-        LabelStyle tallLook = LabelStyle.of(UiFont.TALL, FOREGROUND, BACKGROUND);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> surface.drawBox(0, 0, 4, 4, BoxStyle.SINGLE, tallLook));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(3, 1));
     }
 
     @Test

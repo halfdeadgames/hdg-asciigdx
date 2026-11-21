@@ -14,7 +14,7 @@ import java.util.Objects;
  * table.add(new Label("Name", style)).alignX(HorizontalAlignment.RIGHT);
  * table.add(new Label("Ada", style)).expandX().fillX();
  * table.row();
- * table.add(new Label("Title", tallStyle)).colspan(2).alignX(HorizontalAlignment.CENTER);
+ * table.add(new Label("Title", style)).colspan(2).alignX(HorizontalAlignment.CENTER);
  * table.setSize(40, 12);
  * table.validate();
  * }</pre>
@@ -30,18 +30,11 @@ import java.util.Objects;
  *       shares, with the remainder one cell each to the leftmost columns.
  *   <li>A row is as high as its highest cell, where a cell needs its widget's preferred height
  *       plus its top and bottom padding.
- *   <li>Tall snapping: a row that holds a widget whose {@link Widget#getRowSnap()} is {@code s}
- *       greater than 1 starts on a row of the table (counted from the table's top edge) that is a
- *       multiple of {@code s}. Empty gap rows are inserted above it when needed. Gap rows count
- *       in the preferred height. Place the table itself on a multiple of its own
- *       {@link #getRowSnap()}. A widget's top is also rounded up to such a multiple inside its
- *       row, and its cell's top padding is rounded up the same way when the row is measured.
  *   <li>If the table is wider than its preferred width, the extra width is shared equally among
  *       the columns that hold at least one cell with {@link TableCell#expandX()} (a spanning cell
  *       counts for every column it covers), with the remainder one cell each to the leftmost
  *       such columns. The same applies to height and {@link TableCell#expandY()}. Without any
- *       expanding column or row, the extra stays at the right or bottom. Heights are shared
- *       before the snapping gaps are measured again, so a gap may change after growth.
+ *       expanding column or row, the extra stays at the right or bottom.
  *   <li>If the table is smaller than its preferred size, nothing shrinks and the content may
  *       extend past the table.
  *   <li>A cell's area is its covered columns by its row, minus the cell padding. On each axis a
@@ -66,7 +59,6 @@ public class Table extends WidgetGroup {
     private boolean[] columnExpands = new boolean[0];
     private int[] rowHeights = new int[0];
     private int[] rowTops = new int[0];
-    private int[] rowSnaps = new int[0];
     private boolean[] rowExpands = new boolean[0];
     private int measuredColumnCount;
     private int measuredRowCount;
@@ -287,8 +279,8 @@ public class Table extends WidgetGroup {
     }
 
     /**
-     * Returns the height the content needs: the row heights, including the gap rows that tall
-     * snapping adds, plus the table's top and bottom padding.
+     * Returns the height the content needs: the row heights plus the table's top and bottom
+     * padding.
      *
      * @return the preferred height in UI cells, zero or greater
      */
@@ -296,27 +288,6 @@ public class Table extends WidgetGroup {
     public int getPreferredHeight() {
         measureRows();
         return measuredBottom + paddingBottom;
-    }
-
-    /**
-     * Returns the largest {@link Widget#getRowSnap()} of the children, or 1 when there are none.
-     * The table's owner should place the table on a row that is a multiple of this value, so
-     * that tall children stay aligned. If the owner places the table off such a multiple, tall
-     * children land off the tall grid, and the surface snaps them up, so they overlap the row
-     * above.
-     *
-     * <p>The value is live: it is computed from the current children on every call, which is
-     * cheap, and it may be called at any time, including before {@link #validate()}.
-     *
-     * @return the row multiple, 1 or greater
-     */
-    @Override
-    public int getRowSnap() {
-        int snap = 1;
-        for (int i = 0; i < getChildCount(); i++) {
-            snap = Math.max(snap, getChild(i).getRowSnap());
-        }
-        return snap;
     }
 
     /**
@@ -343,11 +314,10 @@ public class Table extends WidgetGroup {
 
     private void placeCell(TableCell cell) {
         Widget widget = cell.getWidget();
-        int snap = widget.getRowSnap();
         int areaLeft = columnLefts[cell.getColumn()] + cell.getPaddingLeft();
         int areaWidth = Math.max(0, sum(columnWidths, cell.getColumn(), cell.getColspan())
                 - cell.getHorizontalPadding());
-        int areaTop = roundUp(rowTops[cell.getRow()] + cell.getPaddingTop(), snap);
+        int areaTop = rowTops[cell.getRow()] + cell.getPaddingTop();
         int areaBottom = rowTops[cell.getRow()] + rowHeights[cell.getRow()]
                 - cell.getPaddingBottom();
         int areaHeight = Math.max(0, areaBottom - areaTop);
@@ -355,8 +325,7 @@ public class Table extends WidgetGroup {
         int height = cell.isFillY() ? areaHeight
                 : Math.min(widget.getPreferredHeight(), areaHeight);
         int left = areaLeft + horizontalOffset(cell.getHorizontalAlignment(), areaWidth - width);
-        int top = areaTop
-                + verticalOffset(cell.getVerticalAlignment(), areaHeight - height, snap);
+        int top = areaTop + verticalOffset(cell.getVerticalAlignment(), areaHeight - height);
         widget.setSize(width, height);
         widget.setPosition(left, top);
     }
@@ -369,12 +338,11 @@ public class Table extends WidgetGroup {
         };
     }
 
-    /** Rounds down to a snap multiple so the widget's bottom stays inside its row. */
-    private static int verticalOffset(VerticalAlignment alignment, int spare, int snap) {
+    private static int verticalOffset(VerticalAlignment alignment, int spare) {
         return switch (alignment) {
             case TOP -> 0;
-            case CENTER -> spare / 2 / snap * snap;
-            case BOTTOM -> spare / snap * snap;
+            case CENTER -> spare / 2;
+            case BOTTOM -> spare;
         };
     }
 
@@ -435,11 +403,9 @@ public class Table extends WidgetGroup {
         if (rowHeights.length < measuredRowCount) {
             rowHeights = new int[measuredRowCount];
             rowTops = new int[measuredRowCount];
-            rowSnaps = new int[measuredRowCount];
             rowExpands = new boolean[measuredRowCount];
         }
         Arrays.fill(rowHeights, 0, measuredRowCount, 0);
-        Arrays.fill(rowSnaps, 0, measuredRowCount, 1);
         Arrays.fill(rowExpands, 0, measuredRowCount, false);
         for (int i = 0; i < cells.size(); i++) {
             measureCellRow(cells.get(i));
@@ -449,19 +415,15 @@ public class Table extends WidgetGroup {
 
     private void measureCellRow(TableCell cell) {
         Widget widget = cell.getWidget();
-        int snap = widget.getRowSnap();
-        int need = roundUp(cell.getPaddingTop(), snap) + widget.getPreferredHeight()
-                + cell.getPaddingBottom();
+        int need = cell.getPaddingTop() + widget.getPreferredHeight() + cell.getPaddingBottom();
         int row = cell.getRow();
         rowHeights[row] = Math.max(rowHeights[row], need);
-        rowSnaps[row] = leastCommonMultiple(rowSnaps[row], snap);
         rowExpands[row] |= cell.isExpandY();
     }
 
     private void measureRowTops() {
         int cursor = paddingTop;
         for (int row = 0; row < measuredRowCount; row++) {
-            cursor = roundUp(cursor, rowSnaps[row]);
             rowTops[row] = cursor;
             cursor += rowHeights[row];
         }
@@ -514,21 +476,6 @@ public class Table extends WidgetGroup {
             total += values[i];
         }
         return total;
-    }
-
-    private static int roundUp(int value, int multiple) {
-        return (value + multiple - 1) / multiple * multiple;
-    }
-
-    private static int leastCommonMultiple(int first, int second) {
-        int a = first;
-        int b = second;
-        while (b != 0) {
-            int rest = a % b;
-            a = b;
-            b = rest;
-        }
-        return first / a * second;
     }
 
     private static void requireNotNegative(int value, String name) {

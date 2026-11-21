@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class FocusNavigatorTest {
     private static final ButtonStyle STYLE = ButtonStyle.of(
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF));
+            LabelStyle.of(0xFFFFFFFF, 0x000000FF));
 
     private final WidgetGroup root = new WidgetGroup();
 

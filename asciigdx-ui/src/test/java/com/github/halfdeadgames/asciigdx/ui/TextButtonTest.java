@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -14,17 +15,15 @@ class TextButtonTest {
     private static final int PRESSED_BG = 0x333333FF;
     private static final int DISABLED_BG = 0x444444FF;
     private static final int WHITE = 0xFFFFFFFF;
-    private static final ButtonStyle TALL = style(UiFont.TALL);
-    private static final ButtonStyle SQUARE = style(UiFont.SQUARE);
+    private static final ButtonStyle STYLE = style();
 
     private final UiSurface surface = UiSurface.ofSize(40, 10);
     private final UiRoot ui = UiRoot.of(surface);
     private final List<String> clicks = new ArrayList<>();
 
-    private static ButtonStyle style(UiFont font) {
-        return ButtonStyle.of(LabelStyle.of(font, WHITE, NORMAL_BG),
-                LabelStyle.of(font, WHITE, OVER_BG), LabelStyle.of(font, WHITE, PRESSED_BG),
-                LabelStyle.of(font, WHITE, DISABLED_BG));
+    private static ButtonStyle style() {
+        return ButtonStyle.of(LabelStyle.of(WHITE, NORMAL_BG), LabelStyle.of(WHITE, OVER_BG),
+                LabelStyle.of(WHITE, PRESSED_BG), LabelStyle.of(WHITE, DISABLED_BG));
     }
 
     private TextButton buttonAt(int x, int y, ButtonStyle style) {
@@ -36,21 +35,30 @@ class TextButtonTest {
     }
 
     @Test
-    void preferredSizeIsTextPlusPaddingByFontHeight() {
-        TextButton tall = new TextButton("Go", TALL);
-        TextButton square = new TextButton("Go", SQUARE.withHorizontalPadding(3));
+    void preferredSizeIsTextCellsPlusPaddingByOneRow() {
+        TextButton plain = new TextButton("Go", STYLE);
+        TextButton wide = new TextButton("Go", STYLE.withHorizontalPadding(3));
 
-        assertEquals(4, tall.getWidth());
-        assertEquals(2, tall.getHeight());
-        assertEquals(2, tall.getRowSnap());
-        assertEquals(8, square.getWidth());
-        assertEquals(1, square.getHeight());
-        assertEquals(1, square.getRowSnap());
+        assertEquals(3, plain.getWidth());
+        assertEquals(1, plain.getHeight());
+        assertEquals(7, wide.getWidth());
+        assertEquals(1, wide.getHeight());
+    }
+
+    @Test
+    void evenLengthTextTakesHalfItsLettersInCells() {
+        assertEquals(4, new TextButton("abcd", STYLE).getPreferredWidth());
+    }
+
+    @Test
+    void oddLengthTextRoundsUpToWholeCells() {
+        assertEquals(4, new TextButton("abc", STYLE).getPreferredWidth());
+        assertEquals(5, new TextButton("abcde", STYLE).getPreferredWidth());
     }
 
     @Test
     void pressInsideThenReleaseInsideClicks() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
 
         assertTrue(ui.pointerDown(3, 2, 0, 0));
         assertTrue(button.isPressed());
@@ -62,21 +70,21 @@ class TextButtonTest {
 
     @Test
     void dragOutsideUnpressesAndDragBackPressesAgain() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
 
         ui.pointerDragged(20, 8, 0);
         assertFalse(button.isPressed());
-        ui.pointerDragged(4, 3, 0);
+        ui.pointerDragged(4, 2, 0);
         assertTrue(button.isPressed());
-        ui.pointerUp(4, 3, 0, 0);
+        ui.pointerUp(4, 2, 0, 0);
 
         assertEquals(1, clicks.size());
     }
 
     @Test
     void releaseOutsideDoesNotClick() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
         ui.pointerDragged(20, 8, 0);
 
@@ -88,7 +96,7 @@ class TextButtonTest {
 
     @Test
     void cancelDoesNotClick() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
 
         assertTrue(ui.pointerCancelled(0));
@@ -99,7 +107,7 @@ class TextButtonTest {
 
     @Test
     void secondaryButtonIsIgnored() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
 
         assertFalse(ui.pointerDown(3, 2, 0, 1));
         assertFalse(button.isPressed());
@@ -110,7 +118,7 @@ class TextButtonTest {
 
     @Test
     void enterNumpadEnterAndSpaceClickWhenFocused() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.setKeyboardFocus(button);
 
         assertTrue(ui.keyDown(com.badlogic.gdx.Input.Keys.ENTER));
@@ -123,7 +131,7 @@ class TextButtonTest {
 
     @Test
     void secondaryButtonDuringPrimaryPressKeepsTheClick() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
 
         assertFalse(ui.pointerDown(3, 2, 0, 1));
@@ -136,7 +144,7 @@ class TextButtonTest {
 
     @Test
     void removedPressedButtonResetsAndNeverClicks() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
         assertTrue(button.isPressed());
 
@@ -149,7 +157,7 @@ class TextButtonTest {
 
     @Test
     void pressFocusesTheButton() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
 
         ui.pointerDown(3, 2, 0, 0);
 
@@ -158,7 +166,7 @@ class TextButtonTest {
 
     @Test
     void disabledButtonIgnoresInputAndIsNotFocusable() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         button.setDisabled(true);
         ui.setKeyboardFocus(button);
 
@@ -172,7 +180,7 @@ class TextButtonTest {
 
     @Test
     void disablingDuringPressEndsThePressWithoutClick() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.pointerDown(3, 2, 0, 0);
 
         button.setDisabled(true);
@@ -184,7 +192,7 @@ class TextButtonTest {
 
     @Test
     void stateLookPriorityIsDisabledPressedOverNormal() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         assertEquals(NORMAL_BG, drawnBackground());
 
         ui.pointerMoved(3, 2);
@@ -199,19 +207,33 @@ class TextButtonTest {
     }
 
     @Test
-    void textStartsAtPaddingOnTopRow() {
-        buttonAt(2, 2, TALL);
+    void textStartsAtPaddingInTextColumnsOnTopRow() {
+        buttonAt(2, 2, STYLE);
         ui.draw();
 
-        assertEquals('G', surface.getTallGrid().getCodePoint(3, 1));
-        assertEquals('o', surface.getTallGrid().getCodePoint(4, 1));
-        assertEquals(com.github.halfdeadgames.asciigdx.grid.TerminalGrid.EMPTY_CODE_POINT,
-                surface.getTallGrid().getCodePoint(2, 1));
+        TerminalGrid textGrid = surface.getTextGrid();
+        assertEquals('G', textGrid.getCodePoint(6, 2));
+        assertEquals('o', textGrid.getCodePoint(7, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(5, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(8, 2));
+    }
+
+    @Test
+    void oddLengthTextLeavesLastHalfCellBlank() {
+        TextButton button = new TextButton("abc", STYLE);
+        button.setPosition(2, 2);
+        ui.getRoot().addChild(button);
+        ui.draw();
+
+        TerminalGrid textGrid = surface.getTextGrid();
+        assertEquals('c', textGrid.getCodePoint(8, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(9, 2));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(5, 2));
     }
 
     @Test
     void stateChangesAndStyleChangesMarkRedraw() {
-        TextButton button = buttonAt(2, 2, TALL);
+        TextButton button = buttonAt(2, 2, STYLE);
         ui.draw();
         assertFalse(ui.getRoot().isRedrawNeeded());
 
@@ -219,9 +241,9 @@ class TextButtonTest {
         assertTrue(ui.getRoot().isRedrawNeeded());
         ui.draw();
 
-        button.setStyle(TALL);
+        button.setStyle(STYLE);
         assertFalse(ui.getRoot().isRedrawNeeded());
-        button.setStyle(style(UiFont.TALL).withHorizontalPadding(2));
+        button.setStyle(style().withHorizontalPadding(2));
         assertTrue(button.isLayoutNeeded());
         ui.draw();
 
@@ -232,13 +254,13 @@ class TextButtonTest {
 
     @Test
     void setTextInvalidatesAndKeepsSizeUntilPack() {
-        TextButton button = new TextButton("Go", TALL);
+        TextButton button = new TextButton("Go", STYLE);
 
         button.setText("Go on");
 
-        assertEquals(4, button.getWidth());
+        assertEquals(3, button.getWidth());
         button.pack();
-        assertEquals(7, button.getWidth());
+        assertEquals(5, button.getWidth());
     }
 
     private int drawnBackground() {

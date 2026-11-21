@@ -579,77 +579,17 @@ class ScrollPaneTest {
         assertEquals(0x020202FF, grid.getForeground(9, 0));
     }
 
-    private ScrollPane snappedPane(int contentHeight) {
-        Block tall = new Block(0, 0, 20, contentHeight) {
-            @Override
-            public int getRowSnap() {
-                return 2;
-            }
-        };
-        return paneWith(tall, 0, 0, 10, 5);
-    }
-
     @Test
-    void verticalScrollFollowsTheContentRowSnap() {
-        ScrollPane pane = snappedPane(12);
+    void verticalScrollStopsOnEveryRow() {
+        ScrollPane pane = pane(20, 12, 10, 5);
 
         pane.setScrollRow(3);
-        assertEquals(4, pane.getScrollRow());
+        assertEquals(3, pane.getScrollRow());
         pane.setScrollRow(5);
-        assertEquals(6, pane.getScrollRow());
+        assertEquals(5, pane.getScrollRow());
         pane.setScrollPosition(1, 100);
-        assertEquals(8, pane.getScrollRow());
+        assertEquals(pane.getMaxScrollRow(), pane.getScrollRow());
         assertEquals(1, pane.getScrollColumn());
-    }
-
-    @Test
-    void maxScrollRowIsRoundedUpToTheRowSnap() {
-        ScrollPane pane = snappedPane(11);
-
-        assertEquals(8, pane.getMaxScrollRow());
-        pane.setScrollRow(7);
-        assertEquals(8, pane.getScrollRow());
-        pane.setScrollRow(100);
-        assertEquals(8, pane.getScrollRow());
-    }
-
-    @Test
-    void wheelArrowsAndPagesMoveWholeSnapUnits() {
-        ScrollPane pane = snappedPane(12);
-        ui.pointerMoved(3, 2);
-
-        assertTrue(ui.scrolled(0f, 1f));
-        assertEquals(4, pane.getScrollRow());
-        pane.setScrollRow(0);
-        ui.setKeyboardFocus(pane);
-        assertTrue(ui.keyDown(Input.Keys.DOWN));
-        assertEquals(2, pane.getScrollRow());
-        assertTrue(ui.keyDown(Input.Keys.DOWN));
-        assertEquals(4, pane.getScrollRow());
-        assertTrue(ui.keyDown(Input.Keys.UP));
-        assertEquals(2, pane.getScrollRow());
-        assertTrue(ui.keyDown(Input.Keys.PAGE_DOWN));
-        assertEquals(6, pane.getScrollRow());
-    }
-
-    @Test
-    void focusFollowRoundsAwayFromTheOldPosition() {
-        FocusBlock low = new FocusBlock(0, 7, 8, 2);
-        WidgetGroup tallContent = new WidgetGroup() {
-            @Override
-            public int getRowSnap() {
-                return 2;
-            }
-        };
-        tallContent.addChild(new Block(0, 0, 8, 12));
-        tallContent.addChild(low);
-        ScrollPane pane = paneWith(tallContent, 0, 0, 10, 5);
-
-        ui.setKeyboardFocus(low);
-
-        // The widget spans rows 7 to 8; a view of 5 rows needs row 4 at least, so 4 is used.
-        assertEquals(4, pane.getScrollRow());
-        assertTrue(pane.getScrollRow() + 5 >= 9);
     }
 
     @Test

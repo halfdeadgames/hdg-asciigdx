@@ -63,8 +63,8 @@ public final class SkinEntryContext {
 
     /**
      * Reads a look with the rules of the built-in sections: the name of an entry in the
-     * {@code labels} section, or an inline object with the keys {@code font}, {@code foreground},
-     * and {@code background}.
+     * {@code labels} section, or an inline object with the keys {@code foreground} and
+     * {@code background}.
      *
      * @param value the JSON value; must not be {@code null}
      * @return the label style, never {@code null}

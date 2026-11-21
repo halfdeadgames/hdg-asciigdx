@@ -19,8 +19,8 @@ class SkinTest {
             {
               "colors": { "white": "#FFFFFF", "navy": "#203070", "teal": "#00A0A0" },
               "labels": {
-                "plain": { "font": "square", "foreground": "white", "background": "navy" },
-                "tallTeal": { "font": "tall", "foreground": "#000000", "background": "teal" }
+                "plain": { "foreground": "white", "background": "navy" },
+                "tealLook": { "foreground": "#000000", "background": "teal" }
               }
             """;
 
@@ -78,10 +78,8 @@ class SkinTest {
     void labelUsesHexAndColorNames() {
         Skin skin = Skin.fromJson(COLORS_AND_LABELS + "}");
 
-        assertEquals(LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x203070FF),
-                skin.getLabelStyle("plain"));
-        assertEquals(LabelStyle.of(UiFont.TALL, 0x000000FF, 0x00A0A0FF),
-                skin.getLabelStyle("tallTeal"));
+        assertEquals(LabelStyle.of(0xFFFFFFFF, 0x203070FF), skin.getLabelStyle("plain"));
+        assertEquals(LabelStyle.of(0x000000FF, 0x00A0A0FF), skin.getLabelStyle("tealLook"));
     }
 
     @Test
@@ -99,17 +97,17 @@ class SkinTest {
         Skin skin = skinWithButtons("""
                 "buttons": {
                   "mixed": {
-                    "normal": "tallTeal",
-                    "pointerOver": { "font": "tall", "foreground": "white", "background": "navy" },
-                    "pressed": "tallTeal",
-                    "disabled": { "font": "tall", "foreground": "#808080", "background": "#101010" }
+                    "normal": "tealLook",
+                    "pointerOver": { "foreground": "white", "background": "navy" },
+                    "pressed": "tealLook",
+                    "disabled": { "foreground": "#808080", "background": "#101010" }
                   }
                 }""");
 
-        LabelStyle teal = skin.getLabelStyle("tallTeal");
+        LabelStyle teal = skin.getLabelStyle("tealLook");
         ButtonStyle expected = ButtonStyle.of(teal,
-                LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x203070FF), teal,
-                LabelStyle.of(UiFont.TALL, 0x808080FF, 0x101010FF));
+                LabelStyle.of(0xFFFFFFFF, 0x203070FF), teal,
+                LabelStyle.of(0x808080FF, 0x101010FF));
         assertEquals(expected, skin.getButtonStyle("mixed"));
     }
 
@@ -117,9 +115,9 @@ class SkinTest {
     void buttonInlineNormalLookWorks() {
         Skin skin = skinWithButtons("""
                 "buttons": { "inline": { "normal":
-                  { "font": "square", "foreground": "white", "background": "teal" } } }""");
+                  { "foreground": "white", "background": "teal" } } }""");
 
-        assertEquals(LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x00A0A0FF),
+        assertEquals(LabelStyle.of(0xFFFFFFFF, 0x00A0A0FF),
                 skin.getButtonStyle("inline").getNormal());
     }
 
@@ -152,7 +150,7 @@ class SkinTest {
         Skin skin = skinWithButtons("""
                 "menuBars": { "bar": {
                   "titles": { "normal": "plain", "horizontalPadding": 2 },
-                  "items": { "normal": { "font": "square", "foreground": "white",
+                  "items": { "normal": { "foreground": "white",
                     "background": "navy" } }
                 } }""");
 
@@ -196,13 +194,12 @@ class SkinTest {
     void sectionsMayAppearInAnyOrderInTheFile() {
         Skin skin = Skin.fromJson("""
                 {
-                  "labels": { "plain": { "font": "square", "foreground": "white",
+                  "labels": { "plain": { "foreground": "white",
                     "background": "white" } },
                   "colors": { "white": "#FFFFFF" }
                 }""");
 
-        assertEquals(LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0xFFFFFFFF),
-                skin.getLabelStyle("plain"));
+        assertEquals(LabelStyle.of(0xFFFFFFFF, 0xFFFFFFFF), skin.getLabelStyle("plain"));
     }
 
     @Test
@@ -212,7 +209,7 @@ class SkinTest {
                 "menuBars": { "bar": { "titles": "flat", "items": "flat" } }""");
 
         assertMissingNameMessage(() -> skin.getLabelStyle("nope"), "label style",
-                "plain, tallTeal");
+                "plain, tealLook");
         assertMissingNameMessage(() -> skin.getButtonStyle("nope"), "button style", "flat");
         assertMissingNameMessage(() -> skin.getMenuBarStyle("nope"), "menu bar style", "bar");
         assertMissingNameMessage(() -> skin.getRgba("nope"), "color", "white, navy, teal");

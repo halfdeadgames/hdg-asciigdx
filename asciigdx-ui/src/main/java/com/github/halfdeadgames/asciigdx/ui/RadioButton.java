@@ -197,18 +197,8 @@ public final class RadioButton extends Widget {
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return body.getRowSnap();
-    }
-
-    /**
-     * Returns the padding on both sides plus the mark, the gap, and the text, one cell per code
-     * point.
+     * Returns the padding on both sides plus the mark (one UI cell per code point), the gap, and
+     * the text (two code points per UI cell, rounded up).
      *
      * @return the width in UI cells, zero or greater
      */
@@ -218,9 +208,9 @@ public final class RadioButton extends Widget {
     }
 
     /**
-     * Returns 2 for the tall font and 1 for the square font.
+     * Returns the height of one line.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {

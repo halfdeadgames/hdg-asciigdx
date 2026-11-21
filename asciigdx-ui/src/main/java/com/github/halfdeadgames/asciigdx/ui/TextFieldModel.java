@@ -8,11 +8,12 @@ import java.util.Arrays;
  * points, and the visible window onto the text. Plain Java, no drawing and no input.
  *
  * <p>The caret index runs from 0 (before the first code point) to the length (after the last).
- * The window has a width in cells. When the whole text plus the caret slot at its end fits, the
- * window starts at 0. Otherwise it scrolls just far enough to keep the caret visible, and a cut
- * end shows {@link TextDrawing#DEFAULT_ELLIPSIS} in its outermost cell. The caret never sits on an
- * ellipsis cell. A window narrower than {@value #MIN_WIDTH_FOR_ELLIPSIS} cells has no room for
- * ellipses and shows none.
+ * The window has a width in text cells, which are the text columns of the field (two per UI
+ * cell). When the whole text plus the caret slot at its end fits, the window starts at 0.
+ * Otherwise it scrolls just far enough to keep the caret visible, and a cut end shows
+ * {@link TextDrawing#DEFAULT_ELLIPSIS} in its outermost text cell. The caret never sits on an
+ * ellipsis cell. A window narrower than {@value #MIN_WIDTH_FOR_ELLIPSIS} text cells has no room
+ * for ellipses and shows none.
  */
 final class TextFieldModel {
 
@@ -140,20 +141,23 @@ final class TextFieldModel {
     }
 
     /**
-     * Returns what a window cell shows, for the window as last scrolled.
+     * Returns what a text column of the window shows, for the window as last scrolled.
      *
-     * @return a code point, the ellipsis for a cut end, or {@link #NO_GLYPH} for an empty cell
+     * @param textColumn text column in the window, 0 at its left edge
+     * @param textWidth width of the window in text columns
+     * @return a code point, the ellipsis for a cut end, or {@link #NO_GLYPH} for an empty column
      */
-    int getCellCodePoint(int cell, int width) {
-        if (cell == 0 && leftMargin(width) == 1 || cell == width - 1 && isRightCut(width)) {
+    int getTextColumnCodePoint(int textColumn, int textWidth) {
+        if (textColumn == 0 && leftMargin(textWidth) == 1
+                || textColumn == textWidth - 1 && isRightCut(textWidth)) {
             return TextDrawing.DEFAULT_ELLIPSIS;
         }
-        int index = windowStart + cell;
+        int index = windowStart + textColumn;
         return index < length ? codePoints[index] : NO_GLYPH;
     }
 
-    /** Returns the caret's cell in the window, as last scrolled. */
-    int getCaretCell() {
+    /** Returns the caret's text column in the window, as last scrolled. */
+    int getCaretTextColumn() {
         return caret - windowStart;
     }
 }

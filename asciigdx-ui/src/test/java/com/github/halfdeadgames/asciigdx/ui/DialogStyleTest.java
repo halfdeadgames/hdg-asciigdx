@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class DialogStyleTest {
 
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle LOOK = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
     private static final WindowStyle WINDOW = WindowStyle.of(BoxStyle.SINGLE, LOOK, LOOK, 0);
     private static final ButtonStyle BUTTON = ButtonStyle.of(LOOK, LOOK, LOOK, LOOK);
     private static final TextFieldStyle FIELD = TextFieldStyle.of(LOOK);

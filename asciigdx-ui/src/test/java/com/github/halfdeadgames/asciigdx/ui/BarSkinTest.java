@@ -12,9 +12,8 @@ class BarSkinTest {
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070", "gray": "#909090" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" },
-              "dim": { "font": "square", "foreground": "gray", "background": "navy" },
-              "tallPlain": { "font": "tall", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" },
+              "dim": { "foreground": "gray", "background": "navy" }
             }""";
     private static final String SLIDER_START = "\"sliders\": {\"s\": {";
 
@@ -39,10 +38,10 @@ class BarSkinTest {
         Skin skin = Skin.fromJson(withBase("""
                 "progressBars": { "loading": {
                   "fill": "plain",
-                  "empty": { "font": "square", "foreground": "gray", "background": "#00000080" }
+                  "empty": { "foreground": "gray", "background": "#00000080" }
                 } }"""));
 
-        LabelStyle empty = LabelStyle.of(UiFont.SQUARE, 0x909090FF, 0x00000080);
+        LabelStyle empty = LabelStyle.of(0x909090FF, 0x00000080);
         assertEquals(ProgressBarStyle.of(skin.getLabelStyle("plain"), empty),
                 skin.getProgressBarStyle("loading"));
         assertTrue(skin.hasProgressBarStyle("loading"));
@@ -55,12 +54,12 @@ class BarSkinTest {
                 "track": { "normal": "dim" },
                 "knob": {
                   "normal": "plain",
-                  "focused": { "font": "square", "foreground": "navy", "background": "white" }
+                  "focused": { "foreground": "navy", "background": "white" }
                 }"""));
 
         LabelStyle dim = skin.getLabelStyle("dim");
         LabelStyle plain = skin.getLabelStyle("plain");
-        LabelStyle focusedKnob = LabelStyle.of(UiFont.SQUARE, 0x203070FF, 0xFFFFFFFF);
+        LabelStyle focusedKnob = LabelStyle.of(0x203070FF, 0xFFFFFFFF);
         SliderStyle expected = SliderStyle.of(dim, plain).withFocused(dim, focusedKnob);
         assertEquals(expected, skin.getSliderStyle("s"));
         assertEquals(plain, skin.getSliderStyle("s").getKnobDisabled());
@@ -112,8 +111,6 @@ class BarSkinTest {
         assertSkinError(withBase("\"progressBars\": {\"p\": {\"fill\": \"plain\", "
                 + "\"empty\": \"plain\", \"font\": \"tall\"}}"), "progressBars.p",
                 "unknown key \"font\"", "Known keys: fill, empty");
-        assertSkinError(withBase("\"progressBars\": {\"p\": {\"fill\": \"plain\", "
-                + "\"empty\": \"tallPlain\"}}"), "progressBars.p", "same font");
         assertSkinError(withBase("\"progressBars\": {\"p\": \"x\"}"), "progressBars.p",
                 "progress bar object");
     }
@@ -132,11 +129,6 @@ class BarSkinTest {
         assertSkinError(slider("\"track\": {\"normal\": \"plain\", \"hover\": \"plain\"}, "
                 + "\"knob\": {\"normal\": \"plain\"}"), "sliders.s.track",
                 "unknown key \"hover\"", "Known keys: normal, focused, disabled");
-        assertSkinError(slider("\"track\": {\"normal\": \"plain\"}, "
-                + "\"knob\": {\"normal\": \"tallPlain\"}"), "sliders.s", "same font");
-        assertSkinError(slider("\"track\": {\"normal\": \"plain\"}, "
-                + "\"knob\": {\"normal\": \"plain\", \"disabled\": \"tallPlain\"}"),
-                "sliders.s", "same font");
         assertSkinError(slider("\"track\": {\"normal\": \"plain\"}, "
                 + "\"knob\": {\"normal\": \"plain\"}, \"color\": 1"), "sliders.s",
                 "unknown key \"color\"");

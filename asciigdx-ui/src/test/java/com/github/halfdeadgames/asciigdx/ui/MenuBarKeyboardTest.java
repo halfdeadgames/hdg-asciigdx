@@ -14,20 +14,15 @@ class MenuBarKeyboardTest {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int RED = 0xFF0000FF;
     private static final int FILE_COLUMN = 0;
-    private static final int FORMAT_COLUMN = 6;
-    private static final int EDIT_COLUMN = 14;
+    private static final int FORMAT_COLUMN = 4;
+    private static final int EDIT_COLUMN = 9;
     private static final int NO_HIGHLIGHT = -1;
-    private static final ButtonStyle TALL = style(UiFont.TALL);
-    private static final ButtonStyle SQUARE = style(UiFont.SQUARE);
+    private static final ButtonStyle LOOK = ButtonStyle.of(LabelStyle.of(WHITE, 0x111111FF));
 
     private final UiSurface surface = UiSurface.ofSize(40, 12);
     private final UiRoot ui = UiRoot.of(surface);
     private final List<String> events = new ArrayList<>();
-    private final MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(TALL, TALL));
-
-    private static ButtonStyle style(UiFont font) {
-        return ButtonStyle.of(LabelStyle.of(font, WHITE, 0x111111FF));
-    }
+    private final MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
 
     MenuBarKeyboardTest() {
         Menu file = bar.addMenu("File", 'F');
@@ -110,8 +105,8 @@ class MenuBarKeyboardTest {
 
     @Test
     void altPlusTriggerWhileClosedAlwaysOpensTheFirstMatchingTitle() {
-        ui.pointerDown(15, 0, 0, 0);
-        ui.pointerUp(15, 0, 0, 0);
+        ui.pointerDown(10, 0, 0, 0);
+        ui.pointerUp(10, 0, 0, 0);
         assertEquals(EDIT_COLUMN, dropDown().getX());
         bar.close();
 
@@ -282,7 +277,7 @@ class MenuBarKeyboardTest {
         openFileMenu();
         press(Input.Keys.DOWN);
 
-        ui.pointerMoved(1, 4);
+        ui.pointerMoved(1, 2);
 
         assertEquals(1, dropDown().getHighlightedItem());
     }
@@ -298,7 +293,7 @@ class MenuBarKeyboardTest {
 
     @Test
     void focusedButtonGetsHandledKeysFirstAndOtherKeysReachTheBar() {
-        TextButton button = new TextButton("Go", TALL);
+        TextButton button = new TextButton("Go", LOOK);
         button.setPosition(20, 6);
         button.addClickListener(clicked -> events.add("button"));
         ui.getRoot().addChild(button);
@@ -362,7 +357,7 @@ class MenuBarKeyboardTest {
 
     @Test
     void altReleaseThatAFocusedWidgetConsumesStillClearsTheAltState() {
-        TextButton button = new TextButton("Go", TALL);
+        TextButton button = new TextButton("Go", LOOK);
         button.setPosition(20, 6);
         button.addListener(event -> event.getType() == UiEventType.KEY_UP
                 && event.getKeycode() == Input.Keys.ALT_LEFT);
@@ -379,7 +374,7 @@ class MenuBarKeyboardTest {
 
     @Test
     void otherBarsIgnoreKeysWhileOneBarHasAMenuOpen() {
-        MenuBar other = MenuBar.of(ui, MenuBarStyle.of(TALL, TALL));
+        MenuBar other = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
         other.addMenu("Zoom", 'Z').addItem("In", () -> events.add("in"));
         other.setPosition(30, 6);
         ui.getRoot().addChild(other);
@@ -399,40 +394,31 @@ class MenuBarKeyboardTest {
 
     @Test
     void triggerLetterIsDrawnInTheTriggerColor() {
-        MenuBarStyle colored = MenuBarStyle.of(SQUARE, SQUARE).withTriggerRgba(RED);
-        MenuBar squareBar = MenuBar.of(ui, colored);
-        squareBar.addMenu("File", 'I');
-        squareBar.addMenu("Edit");
+        MenuBarStyle colored = MenuBarStyle.of(LOOK, LOOK).withTriggerRgba(RED);
+        MenuBar titleBar = MenuBar.of(ui, colored);
+        titleBar.addMenu("File", 'I');
+        titleBar.addMenu("Edit");
 
-        squareBar.draw(surface);
+        titleBar.draw(surface);
 
-        TerminalGridReader grid = new TerminalGridReader(surface);
-        assertEquals(WHITE, grid.foreground(1, 0));
-        assertEquals(RED, grid.foreground(2, 0));
-        assertEquals(WHITE, grid.foreground(3, 0));
-        assertEquals(WHITE, grid.foreground(8, 0));
+        // "File" starts at text column 2 (one cell of padding); its 'i' is at text column 3.
+        assertEquals(WHITE, textForeground(2, 0));
+        assertEquals(RED, textForeground(3, 0));
+        assertEquals(WHITE, textForeground(4, 0));
+        assertEquals(WHITE, textForeground(10, 0));
     }
 
     @Test
     void withoutATriggerColorTheTriggerLetterLooksLikeTheOthers() {
-        MenuBar squareBar = MenuBar.of(ui, MenuBarStyle.of(SQUARE, SQUARE));
-        squareBar.addMenu("File", 'I');
+        MenuBar titleBar = MenuBar.of(ui, MenuBarStyle.of(LOOK, LOOK));
+        titleBar.addMenu("File", 'I');
 
-        squareBar.draw(surface);
+        titleBar.draw(surface);
 
-        assertEquals(WHITE, new TerminalGridReader(surface).foreground(2, 0));
+        assertEquals(WHITE, textForeground(3, 0));
     }
 
-    /** Reads cells of the square grid. */
-    private static final class TerminalGridReader {
-        private final UiSurface readSurface;
-
-        TerminalGridReader(UiSurface readSurface) {
-            this.readSurface = readSurface;
-        }
-
-        int foreground(int column, int row) {
-            return readSurface.getSquareGrid().getForeground(column, row);
-        }
+    private int textForeground(int textColumn, int row) {
+        return surface.getTextGrid().getForeground(textColumn, row);
     }
 }

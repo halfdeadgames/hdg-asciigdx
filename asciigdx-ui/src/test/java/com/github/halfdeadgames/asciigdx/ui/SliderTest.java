@@ -14,12 +14,12 @@ import org.junit.jupiter.api.Test;
 class SliderTest {
     private static final int TRACK_GLYPH = '-';
     private static final int KNOB_GLYPH = '#';
-    private static final LabelStyle TRACK = look(UiFont.SQUARE, 0x111111FF);
-    private static final LabelStyle KNOB = look(UiFont.SQUARE, 0x222222FF);
-    private static final LabelStyle TRACK_FOCUSED = look(UiFont.SQUARE, 0x333333FF);
-    private static final LabelStyle KNOB_FOCUSED = look(UiFont.SQUARE, 0x444444FF);
-    private static final LabelStyle TRACK_DISABLED = look(UiFont.SQUARE, 0x555555FF);
-    private static final LabelStyle KNOB_DISABLED = look(UiFont.SQUARE, 0x666666FF);
+    private static final LabelStyle TRACK = look(0x111111FF);
+    private static final LabelStyle KNOB = look(0x222222FF);
+    private static final LabelStyle TRACK_FOCUSED = look(0x333333FF);
+    private static final LabelStyle KNOB_FOCUSED = look(0x444444FF);
+    private static final LabelStyle TRACK_DISABLED = look(0x555555FF);
+    private static final LabelStyle KNOB_DISABLED = look(0x666666FF);
     private static final SliderStyle STYLE = SliderStyle.of(TRACK, KNOB)
             .withFocused(TRACK_FOCUSED, KNOB_FOCUSED)
             .withDisabled(TRACK_DISABLED, KNOB_DISABLED)
@@ -30,8 +30,8 @@ class SliderTest {
     private final UiRoot ui = UiRoot.of(surface);
     private final List<Slider> changes = new ArrayList<>();
 
-    private static LabelStyle look(UiFont font, int background) {
-        return LabelStyle.of(font, 0xFFFFFFFF, background);
+    private static LabelStyle look(int background) {
+        return LabelStyle.of(0xFFFFFFFF, background);
     }
 
     private Slider horizontal() {
@@ -321,44 +321,31 @@ class SliderTest {
     }
 
     @Test
-    void squeezedSliderClearsItsAreaAndDrawsNoStaleGlyphs() {
-        SliderStyle tall = SliderStyle.of(look(UiFont.TALL, 1), look(UiFont.TALL, 2));
-        Slider tallSlider = Slider.vertical(TEN, 3, tall);
-        tallSlider.setPosition(5, 0);
-        ui.getRoot().addChild(tallSlider);
-        ui.draw();
-        assertEquals(0x2502, surface.getTallGrid().getCodePoint(5, 0));
-        tallSlider.setSize(1, 1);
-        ui.draw();
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTallGrid().getCodePoint(5, 0));
-    }
+    void sliderSizeIsOneRowAndOneCellPerGlyph() {
+        Slider horizontal = Slider.horizontal(TEN, 5, STYLE);
+        Slider vertical = Slider.vertical(TEN, 3, STYLE);
 
-    @Test
-    void tallSliderUsesTwoRowsPerCell() {
-        LabelStyle tall = look(UiFont.TALL, 0x777777FF);
-        SliderStyle style = SliderStyle.of(tall, tall);
-        Slider horizontal = Slider.horizontal(ValueRange.of(0f, 1f, 0.5f), 5, style);
-        Slider vertical = Slider.vertical(ValueRange.of(0f, 1f, 0.5f), 3, style);
-
-        assertEquals(2, horizontal.getHeight());
+        assertEquals(1, horizontal.getHeight());
         assertEquals(5, horizontal.getWidth());
-        assertEquals(2, horizontal.getRowSnap());
         assertEquals(1, vertical.getWidth());
-        assertEquals(6, vertical.getHeight());
+        assertEquals(3, vertical.getHeight());
         assertEquals(3, vertical.getPreferredLengthCells());
     }
 
     @Test
-    void tallVerticalPointerMapsTwoRowsToOneCell() {
-        SliderStyle style = SliderStyle.of(look(UiFont.TALL, 1), look(UiFont.TALL, 2));
-        Slider slider = add(Slider.vertical(ValueRange.of(0f, 2f, 1f), 3, style));
+    void sliderDrawsOnlyInTheSquareGrid() {
+        Slider slider = horizontal();
+        slider.setValue(4f);
+        slider.setPosition(2, 3);
+        ui.draw();
 
-        ui.pointerDown(0, 1, 0, 0);
-        assertEquals(2f, slider.getValue());
-        ui.pointerDragged(0, 3, 0);
-        assertEquals(1f, slider.getValue());
-        ui.pointerDragged(0, 5, 0);
-        assertEquals(0f, slider.getValue());
+        for (int textColumn = 0; textColumn < surface.getTextColumns(); textColumn++) {
+            for (int row = 0; row < 16; row++) {
+                assertEquals(TerminalGrid.EMPTY_CODE_POINT,
+                        surface.getTextGrid().getCodePoint(textColumn, row));
+            }
+        }
+        assertEquals(KNOB_GLYPH, surface.getSquareGrid().getCodePoint(6, 3));
     }
 
     @Test
@@ -390,7 +377,5 @@ class SliderTest {
         assertEquals(KNOB_GLYPH, STYLE.resolveKnobGlyph());
         assertFalse(plain.equals(plain.withGlyphs(0x2500, 0x2588)));
         assertThrows(IllegalArgumentException.class, () -> plain.withGlyphs(-1, '#'));
-        assertThrows(IllegalArgumentException.class,
-                () -> SliderStyle.of(TRACK, look(UiFont.TALL, 1)));
     }
 }

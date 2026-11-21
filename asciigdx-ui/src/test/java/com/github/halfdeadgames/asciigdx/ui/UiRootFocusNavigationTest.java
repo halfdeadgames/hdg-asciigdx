@@ -12,9 +12,9 @@ import com.badlogic.gdx.Input;
 import org.junit.jupiter.api.Test;
 
 class UiRootFocusNavigationTest {
-    private static final LabelStyle NORMAL = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
-    private static final LabelStyle OVER = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x222222FF);
-    private static final LabelStyle FOCUSED = LabelStyle.of(UiFont.SQUARE, 0, 0x333333FF);
+    private static final LabelStyle NORMAL = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle OVER = LabelStyle.of(0xFFFFFFFF, 0x222222FF);
+    private static final LabelStyle FOCUSED = LabelStyle.of(0, 0x333333FF);
     private static final ButtonStyle STYLE = ButtonStyle.of(NORMAL, OVER, OVER, OVER)
             .withFocused(FOCUSED);
 

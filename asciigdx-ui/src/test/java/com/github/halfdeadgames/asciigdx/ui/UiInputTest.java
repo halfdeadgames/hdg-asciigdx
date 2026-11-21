@@ -12,13 +12,15 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class UiInputTest {
-    private static final int CELL_PIXELS = 10;
+    private static final int TEXT_COLUMN_PIXELS = 5;
+    private static final int ROW_PIXELS = 10;
 
     private final UiRoot root = UiRoot.of(UiSurface.ofSize(20, 10));
+    // The picker reports TEXT columns: a text column is half a UI cell wide.
     private final UiInput input = UiInput.forRoot(root,
             (screenX, screenY, cellOut) -> {
-                cellOut.x = screenX / CELL_PIXELS;
-                cellOut.y = screenY / CELL_PIXELS;
+                cellOut.x = screenX / TEXT_COLUMN_PIXELS;
+                cellOut.y = screenY / ROW_PIXELS;
             });
     private final List<String> log = new ArrayList<>();
 
@@ -74,6 +76,91 @@ class UiInputTest {
 
         assertEquals(List.of("POINTER_DOWN 2,3 p0 b0", "POINTER_DRAGGED 2,3 p0 b-1",
                 "POINTER_UP 2,3 p0 b0", "POINTER_MOVED 1,1 p0 b-1"), log);
+    }
+
+    private Box addTextColumnLoggingBox(List<String> columns) {
+        Box box = new Box();
+        box.addListener(event -> {
+            if (event.getType() == UiEventType.POINTER_DOWN
+                    || event.getType() == UiEventType.POINTER_UP
+                    || event.getType() == UiEventType.POINTER_DRAGGED
+                    || event.getType() == UiEventType.POINTER_MOVED) {
+                columns.add(event.getType() + " square=" + event.getSurfaceColumn()
+                        + " text=" + event.getSurfaceTextColumn()
+                        + " local=" + event.getColumn() + "/" + event.getTextColumn());
+            }
+            return true;
+        });
+        root.getRoot().addChild(box);
+        return box;
+    }
+
+    @Test
+    void anEvenTextColumnGivesTheSquareColumnAndTheExactTextColumn() {
+        List<String> columns = new ArrayList<>();
+        addTextColumnLoggingBox(columns);
+
+        // Text column 4 is the left half of square column 2.
+        input.touchDown(20, 35, 0, 0);
+
+        assertEquals(List.of("POINTER_DOWN square=2 text=4 local=2/4"), columns);
+    }
+
+    @Test
+    void anOddTextColumnGivesTheSameSquareColumnAndItsOwnTextColumn() {
+        List<String> columns = new ArrayList<>();
+        addTextColumnLoggingBox(columns);
+
+        // Text column 5 is the right half of square column 2.
+        input.touchDown(25, 35, 0, 0);
+
+        assertEquals(List.of("POINTER_DOWN square=2 text=5 local=2/5"), columns);
+    }
+
+    @Test
+    void everyPointerKindKeepsTheExactTextColumn() {
+        List<String> columns = new ArrayList<>();
+        addTextColumnLoggingBox(columns);
+
+        input.touchDown(10, 5, 0, 0);
+        input.touchDragged(15, 5, 0);
+        input.touchUp(15, 5, 0, 0);
+        input.mouseMoved(5, 5);
+
+        assertEquals(List.of(
+                "POINTER_DOWN square=1 text=2 local=1/2",
+                "POINTER_DRAGGED square=1 text=3 local=1/3",
+                "POINTER_UP square=1 text=3 local=1/3",
+                "POINTER_MOVED square=0 text=1 local=0/1"), columns);
+    }
+
+    @Test
+    void aWidgetNotAtTheLeftEdgeSeesTheTextColumnRelativeToItself() {
+        List<String> columns = new ArrayList<>();
+        Box box = addTextColumnLoggingBox(columns);
+        box.setPosition(3, 0);
+
+        // Text column 7 is the right half of square column 3, the box's first column.
+        input.touchDown(35, 5, 0, 0);
+
+        assertEquals(List.of("POINTER_DOWN square=3 text=7 local=0/1"), columns);
+    }
+
+    @Test
+    void rootPointerMethodsCalledDirectlyGiveTheLeftHalfTextColumn() {
+        List<String> columns = new ArrayList<>();
+        addTextColumnLoggingBox(columns);
+
+        root.pointerDown(3, 2, 0, 0);
+        root.pointerDragged(4, 2, 0);
+        root.pointerUp(4, 2, 0, 0);
+        root.pointerMoved(1, 1);
+
+        assertEquals(List.of(
+                "POINTER_DOWN square=3 text=6 local=3/6",
+                "POINTER_DRAGGED square=4 text=8 local=4/8",
+                "POINTER_UP square=4 text=8 local=4/8",
+                "POINTER_MOVED square=1 text=2 local=1/2"), columns);
     }
 
     @Test
@@ -182,7 +269,7 @@ class UiInputTest {
         List<Boolean> wanted = new ArrayList<>();
         root.addTextInputWantedListener(wanted::add);
         TextField field = new TextField(TextFieldStyle.of(
-                LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x000000FF)), 10);
+                LabelStyle.of(0xFFFFFFFF, 0x000000FF)), 10);
         root.getRoot().addChild(field);
 
         // Gdx.input is null in plain tests; the processor must skip it and later listeners run.

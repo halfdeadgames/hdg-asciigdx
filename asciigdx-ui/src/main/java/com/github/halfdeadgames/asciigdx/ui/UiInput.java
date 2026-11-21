@@ -7,16 +7,21 @@ import com.badlogic.gdx.math.GridPoint2;
 import java.util.Objects;
 
 /**
- * Connects libGDX input to a {@link UiRoot}: it turns screen pixels into surface cells with a
- * {@link CellPicker} and forwards each call. Each method returns what the root returned, so a
- * {@code true} tells libGDX that the UI consumed the input.
+ * Connects libGDX input to a {@link UiRoot}: it turns screen pixels into surface text columns and
+ * rows with a {@link TextCellPicker}, derives the UI cell with
+ * {@code Math.floorDiv(textColumn, UiSurface.TEXT_COLUMNS_PER_CELL)}, and forwards each call with
+ * the exact text column, so {@link UiEvent#getTextColumn()} and
+ * {@link UiEvent#getSurfaceTextColumn()} are exact. Each method returns what the root returned,
+ * so a {@code true} tells libGDX that the UI consumed the input.
  *
- * <p>Put it first in an {@code InputMultiplexer}, so the UI sees input before the game, and the game
- * receives only what the UI did not handle. Scrolling goes to the hovered widget and counts as
+ * <p>Put it first in an {@code InputMultiplexer}, so the UI sees input before the game,
+ * and the game receives only what the UI did not handle. Scrolling goes to the hovered
+ * widget and counts as
  * handled when a listener consumes it (see {@link UiRoot#scrolled}).
  *
- * <p>Build a {@link CellPicker} with {@code LayerStack.toCell} (after unprojecting with the
- * viewport) or with simple math; see {@link CellPicker}.
+ * <p>Build a {@link TextCellPicker} with {@code LayerStack.toCell} on the text layer (after
+ * unprojecting with the viewport) or with simple math; its column output is a text column, two
+ * per UI cell. See {@link TextCellPicker}.
  *
  * <p>Touch calls with a pointer outside 0 to {@link UiRoot#MAX_POINTERS} - 1 are ignored and
  * return {@code false}. A press on empty space, or one that no listener handles, also returns
@@ -40,7 +45,7 @@ import java.util.Objects;
  * <pre>{@code
  * UiRoot ui = UiRoot.of(surface);
  * UiInput input = UiInput.forRoot(ui, (screenX, screenY, cellOut) -> {
- *     cellOut.x = screenX / pixelsPerCell;
+ *     cellOut.x = screenX * UiSurface.TEXT_COLUMNS_PER_CELL / pixelsPerCell;
  *     cellOut.y = screenY / pixelsPerCell;
  * });
  * Gdx.input.setInputProcessor(new InputMultiplexer(input, gameInput));
@@ -49,11 +54,11 @@ import java.util.Objects;
 public final class UiInput implements InputProcessor {
 
     private final UiRoot root;
-    private final CellPicker picker;
+    private final TextCellPicker picker;
     private final GridPoint2 cell = new GridPoint2();
     private boolean mouseSeen;
 
-    private UiInput(UiRoot root, CellPicker picker) {
+    private UiInput(UiRoot root, TextCellPicker picker) {
         this.root = root;
         this.picker = picker;
     }
@@ -62,11 +67,13 @@ public final class UiInput implements InputProcessor {
      * Creates an input processor for a root.
      *
      * @param root root that receives the input; must not be {@code null}
-     * @param picker converts screen pixels to surface cells; must not be {@code null}
+     * @param picker converts screen pixels to TEXT columns (two per UI cell) and rows; must not be
+     *         {@code null}. Warning: its {@code x} output is a text column, not a UI column
      * @return a new input processor
      * @throws NullPointerException if {@code root} or {@code picker} is {@code null}
+     * @see TextCellPicker
      */
-    public static UiInput forRoot(UiRoot root, CellPicker picker) {
+    public static UiInput forRoot(UiRoot root, TextCellPicker picker) {
         UiInput input = new UiInput(Objects.requireNonNull(root, "root"),
                 Objects.requireNonNull(picker, "picker"));
         root.addTextInputWantedListener(new UiRoot.TextInputWantedListener() {
@@ -120,7 +127,7 @@ public final class UiInput implements InputProcessor {
             return false;
         }
         pickCell(screenX, screenY);
-        return root.pointerDown(cell.x, cell.y, pointer, button);
+        return root.pointerDownAtTextColumn(cell.x, cell.y, pointer, button);
     }
 
     /**
@@ -141,7 +148,7 @@ public final class UiInput implements InputProcessor {
             return false;
         }
         pickCell(screenX, screenY);
-        boolean handled = root.pointerUp(cell.x, cell.y, pointer, button);
+        boolean handled = root.pointerUpAtTextColumn(cell.x, cell.y, pointer, button);
         endTouchHover(pointer);
         return handled;
     }
@@ -168,14 +175,14 @@ public final class UiInput implements InputProcessor {
             return false;
         }
         pickCell(screenX, screenY);
-        return root.pointerDragged(cell.x, cell.y, pointer);
+        return root.pointerDraggedAtTextColumn(cell.x, cell.y, pointer);
     }
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
         mouseSeen = true;
         pickCell(screenX, screenY);
-        return root.pointerMoved(cell.x, cell.y);
+        return root.pointerMovedAtTextColumn(cell.x, cell.y);
     }
 
     @Override
@@ -190,6 +197,6 @@ public final class UiInput implements InputProcessor {
     }
 
     private void pickCell(int screenX, int screenY) {
-        picker.toCell(screenX, screenY, cell);
+        picker.toTextCell(screenX, screenY, cell);
     }
 }

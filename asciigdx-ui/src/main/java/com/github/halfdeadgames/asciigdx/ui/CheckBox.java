@@ -4,8 +4,9 @@ package com.github.halfdeadgames.asciigdx.ui;
  * A box that is checked or unchecked, drawn as a mark, a gap, and one line of text, such as
  * {@code [x] Sound}. It fills its whole area with the background of its current state and writes
  * the mark and the text on its top row, starting after the horizontal padding of the style's
- * {@link ButtonStyle}. The mark and the text take one UI column per code point and are cut off at
- * the widget's width.
+ * {@link ButtonStyle}. The mark is drawn in the square font, one UI column per code point. The
+ * text after it is drawn in the text font, one text column (half a UI column) per code point,
+ * starting after the mark and the gap. Both are cut off at the widget's width.
  *
  * <p>The user toggles it with a click, or with Enter, numpad Enter, or Space while it has keyboard
  * focus. The press rules are those of {@link TextButton}: the primary button presses it and
@@ -182,18 +183,8 @@ public final class CheckBox extends Widget {
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1.
-     *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return body.getRowSnap();
-    }
-
-    /**
-     * Returns the padding on both sides plus the mark, the gap, and the text, one cell per code
-     * point.
+     * Returns the padding on both sides plus the mark (one UI cell per code point), the gap, and
+     * the text (two code points per UI cell, rounded up).
      *
      * @return the width in UI cells, zero or greater
      */
@@ -203,9 +194,9 @@ public final class CheckBox extends Widget {
     }
 
     /**
-     * Returns 2 for the tall font and 1 for the square font.
+     * Returns the height of one line.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {

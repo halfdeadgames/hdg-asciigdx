@@ -21,17 +21,15 @@ class WindowTest {
     private static final int TITLE_FOREGROUND = 0x303030FF;
     private static final int TITLE_BACKGROUND = 0x404040FF;
     private static final int WINDOW_BACKGROUND = 0x505050FF;
-    private static final LabelStyle BORDER =
-            LabelStyle.of(UiFont.SQUARE, 0xAAAAAAFF, BORDER_BACKGROUND);
+    private static final LabelStyle BORDER = LabelStyle.of(0xAAAAAAFF, BORDER_BACKGROUND);
     private static final LabelStyle FOCUSED_BORDER =
-            LabelStyle.of(UiFont.SQUARE, 0xBBBBBBFF, FOCUSED_BACKGROUND);
-    private static final LabelStyle TITLE =
-            LabelStyle.of(UiFont.SQUARE, TITLE_FOREGROUND, TITLE_BACKGROUND);
+            LabelStyle.of(0xBBBBBBFF, FOCUSED_BACKGROUND);
+    private static final LabelStyle TITLE = LabelStyle.of(TITLE_FOREGROUND, TITLE_BACKGROUND);
     private static final ButtonStyle BUTTON = ButtonStyle.of(
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x600000FF),
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x700000FF),
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x800000FF),
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x900000FF));
+            LabelStyle.of(0xFFFFFFFF, 0x600000FF),
+            LabelStyle.of(0xFFFFFFFF, 0x700000FF),
+            LabelStyle.of(0xFFFFFFFF, 0x800000FF),
+            LabelStyle.of(0xFFFFFFFF, 0x900000FF));
     private static final WindowStyle PLAIN =
             WindowStyle.of(BoxStyle.SINGLE, BORDER, TITLE, WINDOW_BACKGROUND)
                     .withFocusedBorder(FOCUSED_BORDER);
@@ -40,6 +38,7 @@ class WindowTest {
     private final UiSurface surface = UiSurface.ofSize(40, 12);
     private final UiRoot ui = UiRoot.of(surface);
     private final TerminalGrid grid = surface.getSquareGrid();
+    private final TerminalGrid textGrid = surface.getTextGrid();
     private final List<Window> closed = new ArrayList<>();
 
     private Window open(Window window, int x, int y) {
@@ -57,6 +56,14 @@ class WindowTest {
         return text.toString();
     }
 
+    private String textRowText(int row, int fromTextColumn, int toTextColumn) {
+        StringBuilder text = new StringBuilder();
+        for (int column = fromTextColumn; column < toTextColumn; column++) {
+            text.appendCodePoint(textGrid.getCodePoint(column, row));
+        }
+        return text.toString();
+    }
+
     // Layout and size
 
     @Test
@@ -66,7 +73,7 @@ class WindowTest {
 
         window.pack();
 
-        assertEquals(6, window.getWidth());
+        assertEquals(5, window.getWidth());
         assertEquals(3, window.getHeight());
     }
 
@@ -74,8 +81,14 @@ class WindowTest {
     void packFitsTheWholeTitleWhenTheContentIsNarrower() {
         Window window = new Window("Hi", PLAIN);
 
-        assertEquals(7, window.getWidth());
+        assertEquals(6, window.getWidth());
         assertEquals(2, window.getHeight());
+    }
+
+    @Test
+    void packRoundsAnOddTitleLengthUpToWholeCells() {
+        assertEquals(6, new Window("H", PLAIN).getWidth());
+        assertEquals(7, new Window("Hii", PLAIN).getWidth());
     }
 
     @Test
@@ -95,7 +108,7 @@ class WindowTest {
 
         assertEquals(1, content.getX());
         assertEquals(1, content.getY());
-        assertEquals(4, content.getWidth());
+        assertEquals(3, content.getWidth());
         assertEquals(1, content.getHeight());
     }
 
@@ -175,16 +188,39 @@ class WindowTest {
     // Drawing
 
     @Test
-    void titleSitsInsideTheTopBorderRow() {
+    void titleSitsInsideTheTopBorderRowInTheTextGrid() {
         open(new Window("Hi", PLAIN), 2, 1);
 
-        assertEquals("┌─ Hi ┐", rowText(1, 2, 9));
-        assertEquals("└─────┘", rowText(2, 2, 9));
-        assertEquals(TITLE_FOREGROUND, grid.getForeground(5, 1));
+        assertEquals("Hi", textRowText(1, 10, 12));
+        assertEquals(TITLE_FOREGROUND, textGrid.getForeground(10, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(9, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(12, 1));
+    }
+
+    @Test
+    void titleBorderPartsAreInTheSquareGrid() {
+        open(new Window("Hi", PLAIN), 2, 1);
+
+        assertEquals('┌', grid.getCodePoint(2, 1));
+        assertEquals('─', grid.getCodePoint(3, 1));
+        assertEquals(' ', grid.getCodePoint(4, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(5, 1));
+        assertEquals(' ', grid.getCodePoint(6, 1));
+        assertEquals('┐', grid.getCodePoint(7, 1));
+        assertEquals("└────┘", rowText(2, 2, 8));
         assertEquals(TITLE_BACKGROUND, grid.getBackground(4, 1));
-        assertEquals(TITLE_BACKGROUND, grid.getBackground(7, 1));
+        assertEquals(TITLE_BACKGROUND, grid.getBackground(6, 1));
         assertEquals(BORDER_BACKGROUND, grid.getBackground(3, 1));
-        assertEquals(BORDER_BACKGROUND, grid.getBackground(8, 1));
+        assertEquals(BORDER_BACKGROUND, grid.getBackground(7, 1));
+    }
+
+    @Test
+    void anOddLengthTitleLeavesItsLastTextColumnEmpty() {
+        open(new Window("Hii", PLAIN), 0, 0);
+
+        assertEquals("Hii", textRowText(0, 6, 9));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(9, 0));
+        assertEquals(' ', grid.getCodePoint(5, 0));
     }
 
     @Test
@@ -194,7 +230,10 @@ class WindowTest {
 
         open(window, 0, 0);
 
-        assertEquals("┌─ Hell… ┐", rowText(0, 0, 10));
+        assertEquals("Hello Wor…", textRowText(0, 6, 16));
+        assertEquals(' ', grid.getCodePoint(2, 0));
+        assertEquals(' ', grid.getCodePoint(8, 0));
+        assertEquals('┐', grid.getCodePoint(9, 0));
     }
 
     @Test
@@ -205,6 +244,7 @@ class WindowTest {
         open(window, 0, 0);
 
         assertEquals("┌───┐", rowText(0, 0, 5));
+        assertEquals("", textRowText(0, 0, 10).replace("\0", ""));
     }
 
     @Test
@@ -212,7 +252,7 @@ class WindowTest {
         open(new Window("T", CLOSABLE), 0, 0);
 
         assertEquals('┌', grid.getCodePoint(0, 0));
-        assertEquals('T', grid.getCodePoint(3, 0));
+        assertEquals('T', textGrid.getCodePoint(6, 0));
         assertEquals(' ', grid.getCodePoint(4, 0));
         assertEquals('x', grid.getCodePoint(6, 0));
         assertEquals('─', grid.getCodePoint(8, 0));
@@ -222,16 +262,23 @@ class WindowTest {
     }
 
     @Test
+    void closeMarkIsInTheSquareGridAndNotInTheTextGrid() {
+        open(new Window("T", CLOSABLE), 0, 0);
+
+        assertEquals('x', grid.getCodePoint(6, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(12, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, textGrid.getCodePoint(13, 0));
+    }
+
+    @Test
     void titleIsCutBeforeTheCloseButton() {
         Window window = new Window("Long title", CLOSABLE);
         window.setSize(12, 3);
 
         open(window, 0, 0);
 
-        // The button starts at column 7, so the title gets 3 cells (columns 3 to 5), then a space.
-        assertEquals('L', grid.getCodePoint(3, 0));
-        assertEquals('o', grid.getCodePoint(4, 0));
-        assertEquals('…', grid.getCodePoint(5, 0));
+        // The button starts at column 7, so the title gets 3 cells (text columns 6 to 11).
+        assertEquals("Long …", textRowText(0, 6, 12));
         assertEquals(' ', grid.getCodePoint(6, 0));
         assertEquals('x', grid.getCodePoint(8, 0));
     }
@@ -255,7 +302,7 @@ class WindowTest {
         window.setTitle("Bb");
         ui.draw();
 
-        assertEquals("┌─ Bb ┐", rowText(0, 0, 7));
+        assertEquals("Bb", textRowText(0, 6, 8));
         assertEquals("Bb", window.getTitle());
         assertThrows(NullPointerException.class, () -> window.setTitle(null));
     }

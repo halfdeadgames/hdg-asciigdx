@@ -25,7 +25,7 @@ class UiSurfaceClipTest {
 
         for (int row = 0; row < 4; row++) {
             for (int column = 0; column < 6; column++) {
-                surface.writeGlyph(UiFont.SQUARE, column, row, 'A', WHITE);
+                surface.writeSquareGlyph(column, row, 'A', WHITE);
             }
         }
 
@@ -42,11 +42,11 @@ class UiSurfaceClipTest {
         surface.pushClip(1, 1, 3, 3);
         surface.pushClip(2, 0, 5, 2);
 
-        surface.writeGlyph(UiFont.SQUARE, 1, 1, 'A', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 2, 2, 'B', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 2, 1, 'C', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 3, 1, 'D', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 4, 1, 'E', WHITE);
+        surface.writeSquareGlyph(1, 1, 'A', WHITE);
+        surface.writeSquareGlyph(2, 2, 'B', WHITE);
+        surface.writeSquareGlyph(2, 1, 'C', WHITE);
+        surface.writeSquareGlyph(3, 1, 'D', WHITE);
+        surface.writeSquareGlyph(4, 1, 'E', WHITE);
 
         assertEquals(EMPTY, glyphAt(1, 1));
         assertEquals(EMPTY, glyphAt(2, 2));
@@ -61,13 +61,13 @@ class UiSurfaceClipTest {
         surface.pushClip(2, 2, 1, 1);
         surface.popClip();
 
-        surface.writeGlyph(UiFont.SQUARE, 1, 1, 'A', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 0, 0, 'B', WHITE);
+        surface.writeSquareGlyph(1, 1, 'A', WHITE);
+        surface.writeSquareGlyph(0, 0, 'B', WHITE);
         assertEquals('A', glyphAt(1, 1));
         assertEquals(EMPTY, glyphAt(0, 0));
 
         surface.popClip();
-        surface.writeGlyph(UiFont.SQUARE, 0, 0, 'C', WHITE);
+        surface.writeSquareGlyph(0, 0, 'C', WHITE);
         assertEquals('C', glyphAt(0, 0));
     }
 
@@ -76,8 +76,8 @@ class UiSurfaceClipTest {
         surface.pushClip(0, 0, 2, 2);
         surface.pushClip(4, 4, 2, 2);
 
-        surface.writeGlyph(UiFont.SQUARE, 0, 0, 'A', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 4, 4, 'B', WHITE);
+        surface.writeSquareGlyph(0, 0, 'A', WHITE);
+        surface.writeSquareGlyph(4, 4, 'B', WHITE);
         surface.fillBackground(0, 0, 6, 8, BLUE);
 
         assertEquals(EMPTY, glyphAt(0, 0));
@@ -86,7 +86,7 @@ class UiSurfaceClipTest {
         assertNotEquals(BLUE, square.getBackground(4, 4));
 
         surface.popClip();
-        surface.writeGlyph(UiFont.SQUARE, 0, 0, 'A', WHITE);
+        surface.writeSquareGlyph(0, 0, 'A', WHITE);
         assertEquals('A', glyphAt(0, 0));
     }
 
@@ -94,7 +94,7 @@ class UiSurfaceClipTest {
     void emptyRectangleClipsEverything() {
         surface.pushClip(1, 1, 0, 3);
 
-        surface.writeGlyph(UiFont.SQUARE, 1, 2, 'A', WHITE);
+        surface.writeSquareGlyph(1, 2, 'A', WHITE);
 
         assertEquals(EMPTY, glyphAt(1, 2));
     }
@@ -127,14 +127,14 @@ class UiSurfaceClipTest {
     }
 
     @Test
-    void writeOverlayGlyphRespectsTheClip() {
+    void writeOverlayGlyphRespectsTheClipByTextColumn() {
         surface.pushClip(1, 1, 2, 2);
 
-        surface.writeOverlayGlyph(0, 1, '_', WHITE);
         surface.writeOverlayGlyph(1, 1, '_', WHITE);
+        surface.writeOverlayGlyph(2, 1, '_', WHITE);
 
-        assertEquals(EMPTY, surface.getOverlayGrid().getCodePoint(0, 1));
-        assertEquals('_', surface.getOverlayGrid().getCodePoint(1, 1));
+        assertEquals(EMPTY, surface.getOverlayGrid().getCodePoint(1, 1));
+        assertEquals('_', surface.getOverlayGrid().getCodePoint(2, 1));
     }
 
     @Test
@@ -151,34 +151,42 @@ class UiSurfaceClipTest {
     }
 
     @Test
-    void eraseKeepsATallGlyphWhoseFirstRowIsAboveTheClip() {
-        surface.writeGlyph(UiFont.TALL, 0, 2, 'T', WHITE);
+    void eraseKeepsATextGlyphOutsideTheClip() {
+        surface.writeTextGlyph(0, 2, 'T', WHITE);
         surface.pushClip(0, 3, 6, 4);
 
         surface.eraseGlyphs(0, 0, 6, 8);
 
-        assertEquals('T', surface.getTallGrid().getCodePoint(0, 1));
+        assertEquals('T', surface.getTextGrid().getCodePoint(0, 2));
     }
 
     @Test
-    void eraseRemovesATallGlyphWhoseFirstRowIsInsideTheClip() {
-        surface.writeGlyph(UiFont.TALL, 0, 2, 'T', WHITE);
-        surface.writeGlyph(UiFont.TALL, 1, 4, 'U', WHITE);
+    void eraseRemovesBothTextHalvesInsideTheClip() {
+        surface.writeTextGlyph(2, 2, 'T', WHITE);
+        surface.writeTextGlyph(3, 2, 'U', WHITE);
+        surface.writeTextGlyph(2, 4, 'V', WHITE);
         surface.pushClip(0, 2, 6, 2);
 
         surface.eraseGlyphs(0, 0, 6, 8);
 
-        assertEquals(EMPTY, surface.getTallGrid().getCodePoint(0, 1));
-        assertEquals('U', surface.getTallGrid().getCodePoint(1, 2));
+        assertEquals(EMPTY, surface.getTextGrid().getCodePoint(2, 2));
+        assertEquals(EMPTY, surface.getTextGrid().getCodePoint(3, 2));
+        assertEquals('V', surface.getTextGrid().getCodePoint(2, 4));
     }
 
     @Test
-    void eraseWithoutAClipRemovesEveryOverlappingTallGlyph() {
-        surface.writeGlyph(UiFont.TALL, 0, 2, 'T', WHITE);
+    void writeTextGlyphKeepsOrSkipsATextColumnByItsSquareCell() {
+        surface.pushClip(1, 0, 1, 8);
 
-        surface.eraseGlyphs(0, 3, 1, 1);
+        surface.writeTextGlyph(1, 0, 'A', WHITE);
+        surface.writeTextGlyph(2, 0, 'B', WHITE);
+        surface.writeTextGlyph(3, 0, 'C', WHITE);
+        surface.writeTextGlyph(4, 0, 'D', WHITE);
 
-        assertEquals(EMPTY, surface.getTallGrid().getCodePoint(0, 1));
+        assertEquals(EMPTY, surface.getTextGrid().getCodePoint(1, 0));
+        assertEquals('B', surface.getTextGrid().getCodePoint(2, 0));
+        assertEquals('C', surface.getTextGrid().getCodePoint(3, 0));
+        assertEquals(EMPTY, surface.getTextGrid().getCodePoint(4, 0));
     }
 
     @Test
@@ -188,7 +196,7 @@ class UiSurfaceClipTest {
 
         surface.clearClips();
 
-        surface.writeGlyph(UiFont.SQUARE, 3, 3, 'A', WHITE);
+        surface.writeSquareGlyph(3, 3, 'A', WHITE);
         assertEquals('A', glyphAt(3, 3));
         assertThrows(IllegalStateException.class, surface::popClip);
     }
@@ -211,7 +219,7 @@ class UiSurfaceClipTest {
 
             @Override
             protected void drawContent(UiSurface surfaceToDraw, int left, int top) {
-                surfaceToDraw.writeGlyph(UiFont.SQUARE, 2, 2, 'X' + drawCount[0]++, WHITE);
+                surfaceToDraw.writeSquareGlyph(2, 2,'X' + drawCount[0]++, WHITE);
                 surfaceToDraw.pushClip(0, 0, 0, 0);
             }
         });
@@ -227,8 +235,9 @@ class UiSurfaceClipTest {
     void eraseGlyphsRespectsTheClip() {
         for (int row = 0; row < 8; row++) {
             for (int column = 0; column < 6; column++) {
-                surface.writeGlyph(UiFont.SQUARE, column, row, 'A', WHITE);
-                surface.writeOverlayGlyph(column, row, '_', WHITE);
+                surface.writeSquareGlyph(column, row, 'A', WHITE);
+                surface.writeOverlayGlyph(2 * column, row, '_', WHITE);
+                surface.writeOverlayGlyph(2 * column + 1, row, '_', WHITE);
             }
         }
         surface.pushClip(1, 1, 2, 2);
@@ -238,31 +247,26 @@ class UiSurfaceClipTest {
         assertEquals(EMPTY, glyphAt(1, 1));
         assertEquals(EMPTY, glyphAt(2, 2));
         assertEquals(EMPTY, surface.getOverlayGrid().getCodePoint(2, 1));
+        assertEquals(EMPTY, surface.getOverlayGrid().getCodePoint(3, 1));
         assertEquals('A', glyphAt(0, 1));
         assertEquals('A', glyphAt(3, 2));
         assertEquals('A', glyphAt(1, 3));
-        assertEquals('_', surface.getOverlayGrid().getCodePoint(3, 2));
+        assertEquals('_', surface.getOverlayGrid().getCodePoint(6, 2));
+        assertEquals('_', surface.getOverlayGrid().getCodePoint(1, 1));
     }
 
     @Test
-    void tallGlyphsRespectTheClipByTheRowWrittenAt() {
-        surface.pushClip(0, 0, 6, 2);
-
-        surface.writeGlyph(UiFont.TALL, 0, 2, 'T', WHITE);
-        surface.writeGlyph(UiFont.TALL, 1, 0, 'U', WHITE);
-
-        assertEquals(EMPTY, surface.getTallGrid().getCodePoint(0, 1));
-        assertEquals('U', surface.getTallGrid().getCodePoint(1, 0));
-    }
-
-    @Test
-    void copyFromIgnoresTheClip() {
+    void copyFromIgnoresTheClipForAllThreeGrids() {
         UiSurface source = UiSurface.ofSize(6, 8);
-        source.writeGlyph(UiFont.SQUARE, 5, 7, 'Z', WHITE);
+        source.writeSquareGlyph(3, 7, 'Z', WHITE);
+        source.writeTextGlyph(11, 7, 'Y', WHITE);
+        source.writeOverlayGlyph(10, 7, '_', WHITE);
         surface.pushClip(0, 0, 0, 0);
 
         surface.copyFrom(source);
 
-        assertEquals('Z', glyphAt(5, 7));
+        assertEquals('Z', glyphAt(3, 7));
+        assertEquals('Y', surface.getTextGrid().getCodePoint(11, 7));
+        assertEquals('_', surface.getOverlayGrid().getCodePoint(10, 7));
     }
 }

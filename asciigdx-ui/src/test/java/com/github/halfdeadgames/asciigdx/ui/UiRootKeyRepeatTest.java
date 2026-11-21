@@ -15,9 +15,9 @@ class UiRootKeyRepeatTest {
     private static final int WHITE = 0xFFFFFFFF;
     private static final int BLACK = 0x000000FF;
     private static final ButtonStyle BUTTON_STYLE =
-            ButtonStyle.of(LabelStyle.of(UiFont.SQUARE, WHITE, BLACK));
+            ButtonStyle.of(LabelStyle.of(WHITE, BLACK));
     private static final TextFieldStyle FIELD_STYLE =
-            TextFieldStyle.of(LabelStyle.of(UiFont.SQUARE, WHITE, BLACK));
+            TextFieldStyle.of(LabelStyle.of(WHITE, BLACK));
 
     private final UiRoot ui = UiRoot.of(UiSurface.ofSize(40, 10));
     private final List<Integer> keyDowns = new ArrayList<>();

@@ -23,13 +23,13 @@ class RatingsPage implements UiPage {
                 "deepBlue": "#203070", "gray": "#909090"
               },
               "labels": {
-                "stars": { "font": "square", "foreground": "gold", "background": "deepBlue" },
-                "focusedStars": { "font": "square", "foreground": "black", "background": "cyan" }
+                "stars": { "foreground": "gold", "background": "deepBlue" },
+                "focusedStars": { "foreground": "black", "background": "cyan" }
               },
               "starRatings": {
                 "default": { "normal": "stars", "focused": "focusedStars" },
                 "hearts": {
-                  "normal": { "font": "square", "foreground": "#FF4080", "background": "black" },
+                  "normal": { "foreground": "#FF4080", "background": "black" },
                   "focused": "focusedStars",
                   "filledGlyph": "#", "emptyGlyph": "."
                 }

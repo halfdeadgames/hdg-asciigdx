@@ -3,17 +3,16 @@ package com.github.halfdeadgames.asciigdx.ui;
 import java.util.Objects;
 
 /**
- * Font and colors of a {@link Label}. Immutable, so one instance can be shared by any number of
- * labels. Colors are packed RGBA8888 ints, as in {@code TerminalGrid}.
+ * Colors of a {@link Label}. Immutable, so one instance can be shared by any number of labels.
+ * Colors are packed RGBA8888 ints, as in {@code TerminalGrid}. The widget that uses the style
+ * picks the font by job: words use the text font, drawn UI parts use the square font.
  */
 public final class LabelStyle {
 
-    private final UiFont font;
     private final int foregroundRgba;
     private final int backgroundRgba;
 
-    private LabelStyle(UiFont font, int foregroundRgba, int backgroundRgba) {
-        this.font = font;
+    private LabelStyle(int foregroundRgba, int backgroundRgba) {
         this.foregroundRgba = foregroundRgba;
         this.backgroundRgba = backgroundRgba;
     }
@@ -21,24 +20,13 @@ public final class LabelStyle {
     /**
      * Creates a style.
      *
-     * @param font font of the text; must not be {@code null}
      * @param foregroundRgba text color as RGBA8888
-     * @param backgroundRgba background color as RGBA8888
-     * @return a style with that font and those colors
-     * @throws NullPointerException if {@code font} is {@code null}
+     * @param backgroundRgba background color as RGBA8888; an alpha of 0 keeps the cell's existing
+     *         background instead of replacing it (a {@link Label} relies on this)
+     * @return a style with those colors
      */
-    public static LabelStyle of(UiFont font, int foregroundRgba, int backgroundRgba) {
-        return new LabelStyle(Objects.requireNonNull(font, "font"), foregroundRgba,
-                backgroundRgba);
-    }
-
-    /**
-     * Returns the font of the text.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return font;
+    public static LabelStyle of(int foregroundRgba, int backgroundRgba) {
+        return new LabelStyle(foregroundRgba, backgroundRgba);
     }
 
     /**
@@ -68,18 +56,17 @@ public final class LabelStyle {
             return false;
         }
         LabelStyle that = (LabelStyle) other;
-        return font == that.font && foregroundRgba == that.foregroundRgba
-                && backgroundRgba == that.backgroundRgba;
+        return foregroundRgba == that.foregroundRgba && backgroundRgba == that.backgroundRgba;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(font, foregroundRgba, backgroundRgba);
+        return Objects.hash(foregroundRgba, backgroundRgba);
     }
 
     @Override
     public String toString() {
-        return "LabelStyle[font=" + font + ", foregroundRgba=" + Integer.toHexString(foregroundRgba)
+        return "LabelStyle[foregroundRgba=" + Integer.toHexString(foregroundRgba)
                 + ", backgroundRgba=" + Integer.toHexString(backgroundRgba) + "]";
     }
 }

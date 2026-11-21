@@ -12,19 +12,13 @@ import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 
 /**
- * Interactive check of check boxes and radio buttons in the tall and the square font: a checked
- * box, a disabled box, a group of three radio buttons, and a label that shows the last change made
- * by the user. Click with the mouse, or focus a widget by pressing it and use Enter or Space. On
- * wide screens the two fonts sit side by side; on narrow screens the square section moves below the
- * tall one.
+ * Interactive check of check boxes and radio buttons: a checked box, a disabled box, a group of
+ * three radio buttons, and a label that shows the last change made by the user. Click with the
+ * mouse, or focus a widget by pressing it and use Enter or Space.
  */
 class TogglesPage implements UiPage {
     private static final int ROOT_X = 4;
     private static final int ROOT_Y = 2;
-    private static final int WIDE_LAYOUT_MIN_COLUMNS = 70;
-    private static final int SECTION_WIDTH = 34;
-    // Tall widgets must sit on even rows, so every offset that leads to one is even.
-    private static final int SECTION_HEIGHT = 20;
     private static final int LAST_CHANGE_Y = 0;
     private static final int SECTIONS_Y = 2;
     private static final int CHECK_BOXES_Y = 2;
@@ -32,17 +26,13 @@ class TogglesPage implements UiPage {
     private static final int RADIOS_Y = 12;
     private static final int ROW_STEP = 2;
 
-    private final ToggleStyle tallCheckBox;
-    private final ToggleStyle squareCheckBox;
-    private final ToggleStyle tallRadioButton;
-    private final ToggleStyle squareRadioButton;
+    private final ToggleStyle checkBox;
+    private final ToggleStyle radioButton;
     private final LabelStyle caption;
 
     TogglesPage(Skin skin) {
-        tallCheckBox = skin.getCheckBoxStyle("tallCheckBox");
-        squareCheckBox = skin.getCheckBoxStyle("checkBox");
-        tallRadioButton = skin.getRadioButtonStyle("tallRadioButton");
-        squareRadioButton = skin.getRadioButtonStyle("radioButton");
+        checkBox = skin.getCheckBoxStyle("checkBox");
+        radioButton = skin.getRadioButtonStyle("radioButton");
         caption = skin.getLabelStyle("text");
     }
 
@@ -65,12 +55,7 @@ class TogglesPage implements UiPage {
         lastChange.setPosition(0, LAST_CHANGE_Y);
         root.addChild(lastChange);
         ChangeListener<Widget> showChange = source -> showChange(lastChange, source);
-        boolean wide = columns >= WIDE_LAYOUT_MIN_COLUMNS;
-        addSection(root, "Tall font", tallCheckBox, tallRadioButton, 0, SECTIONS_Y, showChange);
-        int squareX = wide ? SECTION_WIDTH : 0;
-        int squareY = wide ? SECTIONS_Y : SECTIONS_Y + SECTION_HEIGHT;
-        addSection(root, "Square font", squareCheckBox, squareRadioButton, squareX, squareY,
-                showChange);
+        addSection(root, "Toggles", checkBox, radioButton, 0, SECTIONS_Y, showChange);
         content.addChild(root);
         return content;
     }

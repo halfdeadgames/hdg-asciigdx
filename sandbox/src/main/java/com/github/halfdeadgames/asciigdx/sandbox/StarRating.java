@@ -4,7 +4,6 @@ import com.badlogic.gdx.Input;
 import com.github.halfdeadgames.asciigdx.ui.ChangeListener;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiEvent;
-import com.github.halfdeadgames.asciigdx.ui.UiFont;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.ArrayList;
@@ -49,18 +48,13 @@ final class StarRating extends Widget {
     }
 
     @Override
-    public int getRowSnap() {
-        return style.getNormal().getFont() == UiFont.TALL ? 2 : 1;
-    }
-
-    @Override
     public int getPreferredWidth() {
         return WIDTH;
     }
 
     @Override
     public int getPreferredHeight() {
-        return getRowSnap();
+        return 1;
     }
 
     @Override
@@ -70,7 +64,7 @@ final class StarRating extends Widget {
         target.fillBackground(left, top, getWidth(), getHeight(), look.getBackgroundRgba());
         for (int star = 0; star < STAR_COUNT; star++) {
             int glyph = star < value ? style.getFilledGlyph() : style.getEmptyGlyph();
-            target.writeGlyph(look.getFont(), left + star * CELLS_PER_STAR, top, glyph,
+            target.writeSquareGlyph(left + star * CELLS_PER_STAR, top, glyph,
                     look.getForegroundRgba());
         }
     }

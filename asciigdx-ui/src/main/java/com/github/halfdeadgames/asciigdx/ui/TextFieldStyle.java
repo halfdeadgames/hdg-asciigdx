@@ -4,26 +4,30 @@ import java.util.Objects;
 
 /**
  * Looks of a {@link TextField}: its normal, focused, disabled, and placeholder looks, and its
- * caret. Immutable, so one instance can be shared by any number of fields. All looks use the same
- * font, so a field never changes height when its state changes.
+ * caret. Immutable, so one instance can be shared by any number of fields. The field draws its
+ * text in the text font.
  *
  * <p>The focused look shows only while the field has keyboard focus and the {@link UiRoot} shows
  * focus (see {@link UiRoot#isFocusVisible()}); the caret shows whenever the field has keyboard
  * focus. The placeholder look draws the placeholder text while the field is empty.
  *
- * <p>The caret's foreground and background colors color the caret cell only, not the text.
+ * <p>The caret is a text-font glyph (see {@link CaretStyle}); it has no background and does not
+ * recolor the text.
  *
  * <p>Examples of the two common carets:
  * <pre>{@code
- * LabelStyle look = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x203070FF);
- * // block caret: the field colors swapped, steady
- * TextFieldStyle block = TextFieldStyle.of(look);
- * // underline caret: no colors, an underscore glyph, blinking
+ * LabelStyle look = LabelStyle.of(0xFFFFFFFF, 0x203070FF);
+ * // default caret: a thin bar in the field's text color, steady
+ * TextFieldStyle bar = TextFieldStyle.of(look);
+ * // underline caret: an underscore glyph, blinking
  * TextFieldStyle underline = TextFieldStyle.of(look)
  *         .withCaret(CaretStyle.none().withGlyph('_').withBlinkSeconds(0.5f));
  * }</pre>
  */
 public final class TextFieldStyle {
+
+    /** Caret glyph of a style made by {@link #of}: U+258F, a thin bar. */
+    public static final int DEFAULT_CARET_GLYPH = 0x258F;
 
     private final LabelStyle normal;
     private final LabelStyle focused;
@@ -42,8 +46,8 @@ public final class TextFieldStyle {
 
     /**
      * Creates a style whose focused, disabled, and placeholder looks are copies of the normal
-     * look. The caret is a steady block: the foreground is the normal background and the
-     * background is the normal foreground. Change the parts with the {@code with} methods.
+     * look. The caret is a steady thin bar (U+258F) in the normal
+     * foreground color. Change the parts with the {@code with} methods.
      *
      * @param normal look when nothing special happens; must not be {@code null}
      * @return a new style
@@ -51,9 +55,9 @@ public final class TextFieldStyle {
      */
     public static TextFieldStyle of(LabelStyle normal) {
         Objects.requireNonNull(normal, "normal");
-        CaretStyle block = CaretStyle.none().withForegroundRgba(normal.getBackgroundRgba())
-                .withBackgroundRgba(normal.getForegroundRgba());
-        return new TextFieldStyle(normal, normal, normal, normal, block);
+        CaretStyle bar = CaretStyle.none().withGlyph(DEFAULT_CARET_GLYPH)
+                .withForegroundRgba(normal.getForegroundRgba());
+        return new TextFieldStyle(normal, normal, normal, normal, bar);
     }
 
     /**
@@ -62,10 +66,9 @@ public final class TextFieldStyle {
      * @param focused look while the field has visible keyboard focus; must not be {@code null}
      * @return the changed copy
      * @throws NullPointerException if {@code focused} is {@code null}
-     * @throws IllegalArgumentException if {@code focused} does not use the font of the other looks
      */
     public TextFieldStyle withFocused(LabelStyle focused) {
-        requireSameFont(focused, "focused");
+        Objects.requireNonNull(focused, "focused");
         return new TextFieldStyle(normal, focused, disabled, placeholder, caret);
     }
 
@@ -75,11 +78,9 @@ public final class TextFieldStyle {
      * @param disabled look while the field is disabled; must not be {@code null}
      * @return the changed copy
      * @throws NullPointerException if {@code disabled} is {@code null}
-     * @throws IllegalArgumentException if {@code disabled} does not use the font of the other
-     *         looks
      */
     public TextFieldStyle withDisabled(LabelStyle disabled) {
-        requireSameFont(disabled, "disabled");
+        Objects.requireNonNull(disabled, "disabled");
         return new TextFieldStyle(normal, focused, disabled, placeholder, caret);
     }
 
@@ -89,11 +90,9 @@ public final class TextFieldStyle {
      * @param placeholder look of the placeholder text; must not be {@code null}
      * @return the changed copy
      * @throws NullPointerException if {@code placeholder} is {@code null}
-     * @throws IllegalArgumentException if {@code placeholder} does not use the font of the other
-     *         looks
      */
     public TextFieldStyle withPlaceholder(LabelStyle placeholder) {
-        requireSameFont(placeholder, "placeholder");
+        Objects.requireNonNull(placeholder, "placeholder");
         return new TextFieldStyle(normal, focused, disabled, placeholder, caret);
     }
 
@@ -107,14 +106,6 @@ public final class TextFieldStyle {
     public TextFieldStyle withCaret(CaretStyle caret) {
         Objects.requireNonNull(caret, "caret");
         return new TextFieldStyle(normal, focused, disabled, placeholder, caret);
-    }
-
-    private void requireSameFont(LabelStyle look, String name) {
-        Objects.requireNonNull(look, name);
-        if (look.getFont() != normal.getFont()) {
-            throw new IllegalArgumentException("All looks must use the same font, were "
-                    + normal.getFont() + " and " + look.getFont() + " (" + name + ")");
-        }
     }
 
     /**
@@ -160,15 +151,6 @@ public final class TextFieldStyle {
      */
     public CaretStyle getCaret() {
         return caret;
-    }
-
-    /**
-     * Returns the font shared by all looks.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return normal.getFont();
     }
 
     @Override

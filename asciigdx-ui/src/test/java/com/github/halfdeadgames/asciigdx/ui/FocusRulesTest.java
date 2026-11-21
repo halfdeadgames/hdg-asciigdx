@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 /** Edge rules of keyboard navigation and of when the focused look shows. */
 class FocusRulesTest {
     private static final ButtonStyle STYLE = ButtonStyle.of(
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF));
+            LabelStyle.of(0xFFFFFFFF, 0x111111FF));
 
     private final UiRoot ui = UiRoot.of(UiSurface.ofSize(40, 10));
 

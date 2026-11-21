@@ -19,18 +19,18 @@ class TextFieldTest {
     private static final int DISABLED_BG = 0x333333FF;
     private static final int PLACEHOLDER_FG = 0x777777FF;
     private static final int CARET_FG = 0x010101FF;
-    private static final int CARET_BG = 0xEEEEEEFF;
+    private static final int CARET_GLYPH = 0x258F;
     private static final float BLINK = 0.5f;
     private static final char BACKSPACE_CHARACTER = '\b';
     private static final char DELETE_CHARACTER = 127;
-    private static final CaretStyle BLOCK = CaretStyle.none().withForegroundRgba(CARET_FG)
-            .withBackgroundRgba(CARET_BG).withBlinkSeconds(BLINK);
+    private static final CaretStyle BAR = CaretStyle.none().withGlyph(CARET_GLYPH)
+            .withForegroundRgba(CARET_FG).withBlinkSeconds(BLINK);
     private static final TextFieldStyle STYLE = TextFieldStyle.of(
-            LabelStyle.of(UiFont.SQUARE, TEXT, NORMAL_BG))
-            .withFocused(LabelStyle.of(UiFont.SQUARE, TEXT, FOCUSED_BG))
-            .withDisabled(LabelStyle.of(UiFont.SQUARE, TEXT, DISABLED_BG))
-            .withPlaceholder(LabelStyle.of(UiFont.SQUARE, PLACEHOLDER_FG, NORMAL_BG))
-            .withCaret(BLOCK);
+            LabelStyle.of(TEXT, NORMAL_BG))
+            .withFocused(LabelStyle.of(TEXT, FOCUSED_BG))
+            .withDisabled(LabelStyle.of(TEXT, DISABLED_BG))
+            .withPlaceholder(LabelStyle.of(PLACEHOLDER_FG, NORMAL_BG))
+            .withCaret(BAR);
 
     private final UiSurface surface = UiSurface.ofSize(40, 10);
     private final UiRoot ui = UiRoot.of(surface);
@@ -55,13 +55,32 @@ class TextFieldTest {
         }
     }
 
-    private TerminalGrid grid() {
+    private TerminalGrid squareGrid() {
         ui.draw();
         return surface.getSquareGrid();
     }
 
+    private TerminalGrid textGrid() {
+        ui.draw();
+        return surface.getTextGrid();
+    }
+
+    private TerminalGrid overlayGrid() {
+        ui.draw();
+        return surface.getOverlayGrid();
+    }
+
+    private String textRow(int row, int fromTextColumn, int count) {
+        TerminalGrid grid = textGrid();
+        StringBuilder builder = new StringBuilder();
+        for (int column = fromTextColumn; column < fromTextColumn + count; column++) {
+            builder.appendCodePoint(grid.getCodePoint(column, row));
+        }
+        return builder.toString();
+    }
+
     @Test
-    void sizeIsGivenWidthByFontHeight() {
+    void sizeIsGivenWidthAndOneRow() {
         TextField field = new TextField(STYLE, 12);
 
         assertEquals(12, field.getWidth());
@@ -178,12 +197,11 @@ class TextFieldTest {
         TextField field = fieldAt(2, 1, 10);
         ui.setKeyboardFocus(field);
         ui.update(BLINK);
-        assertEquals(NORMAL_BG, grid().getBackground(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlayGrid().getCodePoint(4, 1));
 
-        field.setStyle(TextFieldStyle.of(LabelStyle.of(UiFont.SQUARE, TEXT, FOCUSED_BG))
-                .withCaret(BLOCK));
+        field.setStyle(TextFieldStyle.of(LabelStyle.of(TEXT, FOCUSED_BG)).withCaret(BAR));
 
-        assertEquals(CARET_BG, grid().getBackground(2, 1));
+        assertEquals(CARET_GLYPH, overlayGrid().getCodePoint(4, 1));
     }
 
     @Test
@@ -229,7 +247,7 @@ class TextFieldTest {
     @Test
     void disablingTheFocusedButtonClearsFocus() {
         TextButton button = new TextButton("Go", ButtonStyle.of(
-                LabelStyle.of(UiFont.SQUARE, TEXT, NORMAL_BG)));
+                LabelStyle.of(TEXT, NORMAL_BG)));
         ui.getRoot().addChild(button);
         ui.setKeyboardFocus(button);
         assertSame(button, ui.getKeyboardFocus());
@@ -364,7 +382,7 @@ class TextFieldTest {
     }
 
     @Test
-    void pressFocusesAndPlacesCaretAtClickedCell() {
+    void pressFocusesAndPlacesCaretAtTheLeftHalfOfTheClickedCell() {
         TextField field = fieldAt(2, 1, 10);
         field.setText("hello");
 
@@ -372,23 +390,52 @@ class TextFieldTest {
         ui.pointerUp(2 + 3, 1, 0, 0);
 
         assertSame(field, ui.getKeyboardFocus());
+        assertEquals(5, field.getCaretIndex());
+
+        ui.pointerDown(2 + 1, 1, 0, 0);
+        ui.pointerUp(2 + 1, 1, 0, 0);
+        assertEquals(2, field.getCaretIndex());
+    }
+
+    @Test
+    void pressPlacesCaretByTextColumnWhenTheEventTextColumnIsOdd() {
+        TextField field = fieldAt(2, 1, 10);
+        field.setText("hello");
+        int fieldLeftTextColumn = 2 * 2;
+
+        assertTrue(ui.pointerDownAtTextColumn(fieldLeftTextColumn + 3, 1, 0, 0));
+        ui.pointerUpAtTextColumn(fieldLeftTextColumn + 3, 1, 0, 0);
+
+        assertSame(field, ui.getKeyboardFocus());
         assertEquals(3, field.getCaretIndex());
 
-        ui.pointerDown(2 + 9, 1, 0, 0);
-        ui.pointerUp(2 + 9, 1, 0, 0);
+        ui.pointerDownAtTextColumn(fieldLeftTextColumn + 1, 1, 0, 0);
+        ui.pointerUpAtTextColumn(fieldLeftTextColumn + 1, 1, 0, 0);
+        assertEquals(1, field.getCaretIndex());
+    }
+
+    @Test
+    void pressPastTheEndOfTheTextPutsTheCaretAtTheEnd() {
+        TextField field = fieldAt(2, 1, 10);
+        field.setText("hello");
+
+        ui.pointerDownAtTextColumn(2 * 2 + 15, 1, 0, 0);
+        ui.pointerUpAtTextColumn(2 * 2 + 15, 1, 0, 0);
+
         assertEquals(5, field.getCaretIndex());
     }
 
     @Test
-    void pressOnScrolledFieldCountsFromTheWindowStart() {
+    void pressOnScrolledFieldCountsFromTheWindowStartInTextColumns() {
         TextField field = fieldAt(0, 0, 8);
         field.setText("abcdefghijklmnopqrst");
-        grid();
+        ui.draw();
 
-        ui.pointerDown(1, 0, 0, 0);
-        ui.pointerUp(1, 0, 0, 0);
+        // The caret is at the end, so the 16 text columns scroll to start at index 5.
+        ui.pointerDownAtTextColumn(3, 0, 0, 0);
+        ui.pointerUpAtTextColumn(3, 0, 0, 0);
 
-        assertEquals(14, field.getCaretIndex());
+        assertEquals(8, field.getCaretIndex());
     }
 
     @Test
@@ -403,52 +450,94 @@ class TextFieldTest {
         assertFalse(ui.keyTyped('a'));
         assertFalse(ui.keyDown(Input.Keys.BACKSPACE));
         assertEquals("", field.getText());
-        assertEquals(DISABLED_BG, grid().getBackground(3, 1));
+        assertEquals(DISABLED_BG, squareGrid().getBackground(3, 1));
     }
 
     @Test
-    void drawsTextOnFieldBackground() {
+    void drawsTextInTextColumnsOnFieldBackground() {
         TextField field = fieldAt(2, 1, 10);
         field.setText("hi");
 
-        TerminalGrid grid = grid();
+        TerminalGrid text = textGrid();
 
-        assertEquals('h', grid.getCodePoint(2, 1));
-        assertEquals('i', grid.getCodePoint(3, 1));
-        assertEquals(TEXT, grid.getForeground(2, 1));
-        assertEquals(NORMAL_BG, grid.getBackground(11, 1));
+        assertEquals('h', text.getCodePoint(4, 1));
+        assertEquals('i', text.getCodePoint(5, 1));
+        assertEquals(TEXT, text.getForeground(4, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, text.getCodePoint(6, 1));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(11, 1));
     }
 
     @Test
-    void drawsEllipsisForCutText() {
+    void fieldShowsTwoCharactersPerCellOfWidth() {
+        TextField field = fieldAt(1, 2, 5);
+        field.setText("abcdefghi");
+
+        assertEquals("abcdefghi", textRow(2, 2, 9));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(11, 2));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(5, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(12, 2));
+    }
+
+    @Test
+    void drawsLeftEllipsisAndScrollsWhenTheCaretIsAtTheEnd() {
         TextField field = fieldAt(0, 0, 8);
         field.setText("abcdefghijklmnopqrst");
-        field.setStyle(STYLE);
 
-        TerminalGrid grid = grid();
+        TerminalGrid text = textGrid();
 
-        assertEquals(0x2026, grid.getCodePoint(0, 0));
-        assertEquals('o', grid.getCodePoint(1, 0));
+        assertEquals(0x2026, text.getCodePoint(0, 0));
+        assertEquals('g', text.getCodePoint(1, 0));
+        assertEquals('t', text.getCodePoint(14, 0));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, text.getCodePoint(15, 0));
     }
 
     @Test
-    void caretShowsOnlyWhileFocusedAndSwapsCellColors() {
+    void drawsRightEllipsisWhenTheTextIsCutAtTheEnd() {
+        TextField field = fieldAt(0, 0, 8);
+        field.setText("abcdefghijklmnopqrst");
+        ui.setKeyboardFocus(field);
+        ui.keyDown(Input.Keys.HOME);
+
+        TerminalGrid text = textGrid();
+
+        assertEquals('a', text.getCodePoint(0, 0));
+        assertEquals('o', text.getCodePoint(14, 0));
+        assertEquals(0x2026, text.getCodePoint(15, 0));
+    }
+
+    @Test
+    void caretShowsOnlyWhileFocusedAndLeavesTheLetterUnderItUnrecolored() {
         TextField field = fieldAt(2, 1, 10);
         field.setText("hi");
 
-        assertEquals(NORMAL_BG, grid().getBackground(4, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlayGrid().getCodePoint(6, 1));
         ui.setKeyboardFocus(field);
-        TerminalGrid grid = grid();
-        assertEquals(CARET_BG, grid.getBackground(4, 1));
-        assertEquals(NORMAL_BG, grid.getBackground(3, 1));
+        TerminalGrid overlay = overlayGrid();
+        assertEquals(CARET_GLYPH, overlay.getCodePoint(6, 1));
+        assertEquals(CARET_FG, overlay.getForeground(6, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(5, 1));
 
         ui.keyDown(Input.Keys.HOME);
-        grid = grid();
-        assertEquals(CARET_BG, grid.getBackground(2, 1));
-        assertEquals(CARET_FG, grid.getForeground(2, 1));
-        assertEquals('h', grid.getCodePoint(2, 1));
+        overlay = overlayGrid();
+        assertEquals(CARET_GLYPH, overlay.getCodePoint(4, 1));
+        assertEquals(CARET_FG, overlay.getForeground(4, 1));
+        assertEquals('h', surface.getTextGrid().getCodePoint(4, 1));
+        assertEquals(TEXT, surface.getTextGrid().getForeground(4, 1));
+        assertEquals(FOCUSED_BG, surface.getSquareGrid().getBackground(2, 1));
         ui.setKeyboardFocus(null);
-        assertEquals(NORMAL_BG, grid().getBackground(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlayGrid().getCodePoint(4, 1));
+    }
+
+    @Test
+    void caretOnAnOddTextColumnSitsInTheRightHalfOfItsCell() {
+        TextField field = fieldAt(2, 1, 10);
+        field.setText("h");
+        ui.setKeyboardFocus(field);
+
+        TerminalGrid overlay = overlayGrid();
+
+        assertEquals(CARET_GLYPH, overlay.getCodePoint(5, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(4, 1));
     }
 
     @Test
@@ -456,11 +545,12 @@ class TextFieldTest {
         TextField field = fieldAt(2, 1, 10);
         ui.setKeyboardFocus(field);
 
-        TerminalGrid grid = grid();
+        TerminalGrid overlay = overlayGrid();
 
         assertFalse(ui.isFocusVisible());
-        assertEquals(CARET_BG, grid.getBackground(2, 1));
-        assertEquals(NORMAL_BG, grid.getBackground(3, 1));
+        assertEquals(CARET_GLYPH, overlay.getCodePoint(4, 1));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(2, 1));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(3, 1));
     }
 
     @Test
@@ -469,7 +559,7 @@ class TextFieldTest {
         ui.moveFocus(FocusDirection.NEXT);
 
         assertTrue(ui.isFocusVisible());
-        assertEquals(FOCUSED_BG, grid().getBackground(8, 1));
+        assertEquals(FOCUSED_BG, squareGrid().getBackground(8, 1));
         assertSame(field, ui.getKeyboardFocus());
     }
 
@@ -477,61 +567,60 @@ class TextFieldTest {
     void caretBlinksWithSecondsAndResetsOnEdit() {
         TextField field = fieldAt(2, 1, 10);
         ui.setKeyboardFocus(field);
-        assertEquals(CARET_BG, grid().getBackground(2, 1));
+        assertEquals(CARET_GLYPH, overlayGrid().getCodePoint(4, 1));
 
         ui.update(BLINK);
-        assertEquals(NORMAL_BG, grid().getBackground(2, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlayGrid().getCodePoint(4, 1));
         ui.keyTyped('a');
-        assertEquals(CARET_BG, grid().getBackground(3, 1));
+        assertEquals(CARET_GLYPH, overlayGrid().getCodePoint(5, 1));
         ui.update(BLINK);
         ui.update(BLINK);
-        assertEquals(CARET_BG, grid().getBackground(3, 1));
+        assertEquals(CARET_GLYPH, overlayGrid().getCodePoint(5, 1));
     }
 
     @Test
-    void underlineCaretWritesOverlayGlyphOnBottomRow() {
+    void caretWithoutForegroundUsesTheTextColor() {
         TextField field = fieldAt(2, 1, 10);
-        field.setStyle(TextFieldStyle.of(LabelStyle.of(UiFont.SQUARE, TEXT, NORMAL_BG))
+        field.setStyle(TextFieldStyle.of(LabelStyle.of(TEXT, NORMAL_BG))
                 .withCaret(CaretStyle.none().withGlyph('_')));
         field.setText("hi");
         ui.setKeyboardFocus(field);
 
-        ui.draw();
+        TerminalGrid overlay = overlayGrid();
 
-        assertEquals('_', surface.getOverlayGrid().getCodePoint(4, 1));
-        assertEquals(TEXT, surface.getOverlayGrid().getForeground(4, 1));
-        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(4, 1));
+        assertEquals('_', overlay.getCodePoint(6, 1));
+        assertEquals(TEXT, overlay.getForeground(6, 1));
+        assertEquals(NORMAL_BG, surface.getSquareGrid().getBackground(3, 1));
     }
 
     @Test
-    void tallFieldDrawsCaretGlyphOnItsLowerRow() {
-        TextFieldStyle tall = TextFieldStyle.of(LabelStyle.of(UiFont.TALL, TEXT, NORMAL_BG))
-                .withCaret(CaretStyle.none().withGlyph('_'));
-        TextField field = new TextField(tall, 6);
-        field.setPosition(0, 2);
-        ui.getRoot().addChild(field);
+    void caretWithoutAGlyphDrawsNothing() {
+        TextField field = fieldAt(2, 1, 10);
+        field.setStyle(TextFieldStyle.of(LabelStyle.of(TEXT, NORMAL_BG))
+                .withCaret(CaretStyle.none()));
         ui.setKeyboardFocus(field);
 
-        ui.draw();
+        TerminalGrid overlay = overlayGrid();
 
-        assertEquals(2, field.getHeight());
-        assertEquals('_', surface.getOverlayGrid().getCodePoint(0, 3));
+        for (int textColumn = 0; textColumn < surface.getTextColumns(); textColumn++) {
+            assertEquals(TerminalGrid.EMPTY_CODE_POINT, overlay.getCodePoint(textColumn, 1));
+        }
     }
 
     @Test
-    void placeholderShowsOnlyWhileEmpty() {
+    void placeholderShowsInTextColumnsOnlyWhileEmpty() {
         TextField field = fieldAt(2, 1, 10);
         field.setPlaceholderText("name");
 
-        TerminalGrid grid = grid();
-        assertEquals('n', grid.getCodePoint(2, 1));
-        assertEquals(PLACEHOLDER_FG, grid.getForeground(2, 1));
+        TerminalGrid text = textGrid();
+        assertEquals("name", textRow(1, 4, 4));
+        assertEquals(PLACEHOLDER_FG, text.getForeground(4, 1));
 
         field.setText("x");
-        grid = grid();
-        assertEquals('x', grid.getCodePoint(2, 1));
-        assertEquals(TEXT, grid.getForeground(2, 1));
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, grid.getCodePoint(3, 1));
+        text = textGrid();
+        assertEquals('x', text.getCodePoint(4, 1));
+        assertEquals(TEXT, text.getForeground(4, 1));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, text.getCodePoint(5, 1));
     }
 
     @Test
@@ -540,11 +629,12 @@ class TextFieldTest {
         field.setPlaceholderText("name");
         ui.setKeyboardFocus(field);
 
-        TerminalGrid grid = grid();
+        TerminalGrid overlay = overlayGrid();
 
-        assertEquals(CARET_BG, grid.getBackground(2, 1));
-        assertEquals('n', grid.getCodePoint(2, 1));
-        assertEquals(CARET_FG, grid.getForeground(2, 1));
+        assertEquals(CARET_GLYPH, overlay.getCodePoint(4, 1));
+        assertEquals(CARET_FG, overlay.getForeground(4, 1));
+        assertEquals('n', surface.getTextGrid().getCodePoint(4, 1));
+        assertEquals(PLACEHOLDER_FG, surface.getTextGrid().getForeground(4, 1));
     }
 
     @Test
@@ -625,7 +715,7 @@ class TextFieldTest {
         ui.addTextInputWantedListener(wanted::add);
         TextField field = fieldAt(2, 1, 10);
         TextButton button = new TextButton("Go", ButtonStyle.of(
-                LabelStyle.of(UiFont.SQUARE, TEXT, NORMAL_BG)));
+                LabelStyle.of(TEXT, NORMAL_BG)));
         button.setPosition(2, 4);
         ui.getRoot().addChild(button);
 

@@ -15,11 +15,8 @@ import org.junit.jupiter.api.Test;
 
 class UiRootModalTest {
 
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
-    private static final LabelStyle TALL_LOOK = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle LOOK = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
     private static final ButtonStyle BUTTON = ButtonStyle.of(LOOK, LOOK, LOOK, LOOK);
-    private static final ButtonStyle TALL_BUTTON =
-            ButtonStyle.of(TALL_LOOK, TALL_LOOK, TALL_LOOK, TALL_LOOK);
     private static final WindowStyle WINDOW_STYLE =
             WindowStyle.of(BoxStyle.SINGLE, LOOK, LOOK, 0x333333FF);
     private static final int NO_DIM = 0x000000FF;
@@ -215,7 +212,7 @@ class UiRootModalTest {
 
     @Test
     void anAltShortcutCannotOpenAMenuWhileAModalIsShown() {
-        MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(TALL_BUTTON, TALL_BUTTON));
+        MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(BUTTON, BUTTON));
         bar.addMenu("File", 'F').addItem("New", () -> { });
         bar.setSize(40, 0);
         ui.getRoot().addChild(bar);
@@ -229,7 +226,7 @@ class UiRootModalTest {
 
     @Test
     void anOpenMenuIsClosedWhenTheModalIsShown() {
-        MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(TALL_BUTTON, TALL_BUTTON));
+        MenuBar bar = MenuBar.of(ui, MenuBarStyle.of(BUTTON, BUTTON));
         bar.addMenu("File").addItem("New", () -> { });
         bar.setSize(40, 0);
         ui.getRoot().addChild(bar);

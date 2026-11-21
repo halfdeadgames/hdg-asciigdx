@@ -14,93 +14,61 @@
     "transparent": "#00000000"
   },
   "labels": {
-    "text": { "font": "square", "foreground": "white", "background": "black" },
-    "windowText": { "font": "square", "foreground": "white", "background": "charcoal" },
-    "tallText": { "font": "tall", "foreground": "white", "background": "black" },
-    "title": { "font": "tall", "foreground": "gold", "background": "black" },
-    "highlight": { "font": "square", "foreground": "black", "background": "cyan" },
-    "accent": { "font": "square", "foreground": "black", "background": "gold" },
-    "overlayText": { "font": "square", "foreground": "gold", "background": "transparent" },
-    "tallOverlayText": { "font": "tall", "foreground": "gold", "background": "transparent" },
-    "tooltip": { "font": "square", "foreground": "white", "background": "charcoal" },
-    "tallTooltip": { "font": "tall", "foreground": "gold", "background": "charcoal" }
+    "text": { "foreground": "white", "background": "black" },
+    "windowText": { "foreground": "white", "background": "charcoal" },
+    "title": { "foreground": "gold", "background": "black" },
+    "highlight": { "foreground": "black", "background": "cyan" },
+    "accent": { "foreground": "black", "background": "gold" },
+    "overlayText": { "foreground": "gold", "background": "transparent" },
+    "tooltip": { "foreground": "white", "background": "charcoal" }
   },
   "buttons": {
     "button": {
-      "normal": { "font": "square", "foreground": "white", "background": "deepBlue" },
-      "pointerOver": { "font": "square", "foreground": "black", "background": "teal" },
-      "pressed": { "font": "square", "foreground": "black", "background": "gold" },
-      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" },
-      "focused": { "font": "square", "foreground": "black", "background": "cyan" }
-    },
-    "tallButton": {
-      "normal": { "font": "tall", "foreground": "white", "background": "deepBlue" },
-      "pointerOver": { "font": "tall", "foreground": "black", "background": "teal" },
-      "pressed": { "font": "tall", "foreground": "black", "background": "gold" },
-      "disabled": { "font": "tall", "foreground": "gray", "background": "darkGray" },
-      "focused": { "font": "tall", "foreground": "black", "background": "cyan" }
+      "normal": { "foreground": "white", "background": "deepBlue" },
+      "pointerOver": { "foreground": "black", "background": "teal" },
+      "pressed": { "foreground": "black", "background": "gold" },
+      "disabled": { "foreground": "gray", "background": "darkGray" },
+      "focused": { "foreground": "black", "background": "cyan" }
     }
   },
   "menuBars": {
     "menuBar": {
       "titles": "button", "items": "button",
       "triggerColor": "hotPink", "triggerUnderline": true
-    },
-    "tallMenuBar": {
-      "titles": "tallButton", "items": "tallButton",
-      "triggerColor": "hotPink", "triggerUnderline": true
     }
   },
   "checkBoxes": {
-    "checkBox": { "button": "button", "unchecked": "[ ]", "checked": "[x]" },
-    "tallCheckBox": { "button": "tallButton", "unchecked": "[ ]", "checked": "[x]" }
+    "checkBox": { "button": "button", "unchecked": "[ ]", "checked": "[x]" }
   },
   "radioButtons": {
-    "radioButton": { "button": "button", "unchecked": "( )", "checked": "(*)" },
-    "tallRadioButton": { "button": "tallButton", "unchecked": "( )", "checked": "(*)" }
+    "radioButton": { "button": "button", "unchecked": "( )", "checked": "(*)" }
   },
   "textFields": {
     "default": {
-      "normal": { "font": "square", "foreground": "white", "background": "deepBlue" },
-      "focused": { "font": "square", "foreground": "white", "background": "teal" },
-      "disabled": { "font": "square", "foreground": "gray", "background": "darkGray" },
-      "placeholder": { "font": "square", "foreground": "gray", "background": "deepBlue" },
-      "caret": { "foreground": "deepBlue", "background": "white", "blinkSeconds": 0.5 }
+      "normal": { "foreground": "white", "background": "deepBlue" },
+      "focused": { "foreground": "white", "background": "teal" },
+      "disabled": { "foreground": "gray", "background": "darkGray" },
+      "placeholder": { "foreground": "gray", "background": "deepBlue" },
+      "caret": { "glyph": "▏", "foreground": "white", "blinkSeconds": 0.5 }
     }
   },
   "progressBars": {
     "progressBar": {
-      "fill": { "font": "square", "foreground": "gold", "background": "darkGray" },
-      "empty": { "font": "square", "foreground": "gold", "background": "darkGray" }
-    },
-    "tallProgressBar": {
-      "fill": { "font": "tall", "foreground": "gold", "background": "darkGray" },
-      "empty": { "font": "tall", "foreground": "gold", "background": "darkGray" }
+      "fill": { "foreground": "gold", "background": "darkGray" },
+      "empty": { "foreground": "gold", "background": "darkGray" }
     }
   },
   "sliders": {
     "slider": {
       "track": {
-        "normal": { "font": "square", "foreground": "gray", "background": "black" },
-        "focused": { "font": "square", "foreground": "cyan", "background": "black" },
-        "disabled": { "font": "square", "foreground": "darkGray", "background": "black" }
+        "normal": { "foreground": "gray", "background": "black" },
+        "focused": { "foreground": "cyan", "background": "black" },
+        "disabled": { "foreground": "darkGray", "background": "black" }
       },
       "knob": {
-        "normal": { "font": "square", "foreground": "white", "background": "black" },
-        "focused": { "font": "square", "foreground": "cyan", "background": "black" },
-        "disabled": { "font": "square", "foreground": "darkGray", "background": "black" }
-      }
-    },
-    "tallSlider": {
-      "track": {
-        "normal": { "font": "tall", "foreground": "gray", "background": "black" },
-        "focused": { "font": "tall", "foreground": "cyan", "background": "black" },
-        "disabled": { "font": "tall", "foreground": "darkGray", "background": "black" }
-      },
-      "knob": {
-        "normal": { "font": "tall", "foreground": "white", "background": "black" },
-        "focused": { "font": "tall", "foreground": "cyan", "background": "black" },
-        "disabled": { "font": "tall", "foreground": "darkGray", "background": "black" }
+        "normal": { "foreground": "white", "background": "black" },
+        "focused": { "foreground": "cyan", "background": "black" },
+        "disabled": { "foreground": "darkGray", "background": "black" }
       }
     }
   },
@@ -115,9 +83,9 @@
   "windows": {
     "window": {
       "box": "rounded",
-      "border": { "font": "square", "foreground": "gray", "background": "charcoal" },
-      "focusedBorder": { "font": "square", "foreground": "cyan", "background": "charcoal" },
-      "title": { "font": "square", "foreground": "gold", "background": "charcoal" },
+      "border": { "foreground": "gray", "background": "charcoal" },
+      "focusedBorder": { "foreground": "cyan", "background": "charcoal" },
+      "title": { "foreground": "gold", "background": "charcoal" },
       "background": "charcoal",
       "closeButton": "button",
       "closeText": "x"

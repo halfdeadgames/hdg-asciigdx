@@ -3,18 +3,19 @@ package com.github.halfdeadgames.asciigdx.ui;
 import java.util.Objects;
 
 /**
- * A single line of text on a solid background, in the style's font. The text takes one UI column
- * per code point, does not wrap, and is cut off at the label's width. {@code '\n'} does not
- * start a new line; it is drawn like any other code point.
+ * A single line of text on a solid background, in the text font. The text takes one text column
+ * (half a UI column) per code point, does not wrap, and is cut off at the label's width.
+ * {@code '\n'} does not start a new line; it is drawn like any other code point.
  *
- * <p>Drawing a label erases every glyph in its rectangle, including any tall glyph that overlaps
- * the rectangle's rows, so cells past the end of the text are blank. When the style's background
- * has alpha 0, the label keeps each cell's existing background, so it shows whatever was drawn
- * there before, such as a panel. Any other background, including a partly transparent
- * one, replaces the cell's background.
+ * <p>Drawing a label erases every glyph in its rectangle, so cells past the end of the text are
+ * blank. When the style's background has alpha 0, the label keeps each cell's existing
+ * background, so it shows whatever was drawn there before, such as a panel. Any other
+ * background, including a partly transparent one, replaces the cell's background.
  *
- * <p>The text is written along the label's top row. A tall label is 2 rows high, and tall text on
- * an odd row of the surface snaps up and is drawn from the even row above.
+ * <p>The text is written along the label's top row. By default it starts at the label's left
+ * edge; see {@link #setTextAlignment} for other places when the label is wider than its text. The
+ * label's width is in whole UI cells and rounds up from the text, so a text of an odd length
+ * leaves a blank half cell, and a label cannot be sized in half cells.
  *
  * <p>A new label is packed: its size fits its text. Changing the text keeps the current size, so
  * call {@link #pack()} afterward to fit the new text.
@@ -25,12 +26,42 @@ public class Label extends Widget {
 
     private String text;
     private LabelStyle style;
+    private HorizontalAlignment textAlignment = HorizontalAlignment.LEFT;
+
+    /**
+     * Returns where the text sits when the label is wider than its text.
+     *
+     * @return the alignment, never {@code null}; {@link HorizontalAlignment#LEFT} for a new label
+     */
+    public HorizontalAlignment getTextAlignment() {
+        return textAlignment;
+    }
+
+    /**
+     * Sets where the text sits when the label is wider than its text. The leftover space is
+     * counted in text columns (half UI cells): {@code LEFT} puts the text at the left edge,
+     * {@code RIGHT} ends it at the right edge, and {@code CENTER} puts half of the leftover,
+     * rounded down, before the text, so centered text can start on a half cell. Text that is
+     * longer than the label is not affected: it starts at the left edge and is cut off at the
+     * right edge. A change requests a redraw (not layout); an equal alignment changes nothing.
+     *
+     * @param alignment the new alignment; must not be {@code null}
+     * @throws NullPointerException if {@code alignment} is {@code null}
+     */
+    public void setTextAlignment(HorizontalAlignment alignment) {
+        Objects.requireNonNull(alignment, "alignment");
+        if (alignment == textAlignment) {
+            return;
+        }
+        textAlignment = alignment;
+        requestRedraw();
+    }
 
     /**
      * Creates a label sized to fit its text.
      *
      * @param text text to show; must not be {@code null}; may be empty
-     * @param style font and colors to use; must not be {@code null}
+     * @param style colors to use; must not be {@code null}
      * @throws NullPointerException if {@code text} or {@code style} is {@code null}
      */
     public Label(String text, LabelStyle style) {
@@ -67,7 +98,7 @@ public class Label extends Widget {
     }
 
     /**
-     * Returns the font and colors.
+     * Returns the colors.
      *
      * @return the style, never {@code null}
      */
@@ -76,12 +107,8 @@ public class Label extends Widget {
     }
 
     /**
-     * Replaces the font and colors. The size stays as it is, so after switching between the
-     * square and the tall font, call {@link #pack()} to fit the new height. When the style
-     * differs from the current one, the label is marked: if the font changed, by
-     * {@link #invalidate()}, because the preferred height and row snap depend on the font; if only
-     * the colors changed, by {@link #requestRedraw()}, because the size is unaffected. An equal
-     * style changes no marks.
+     * Replaces the colors. The size is unaffected. When the style differs from the current one,
+     * the label is marked by {@link #requestRedraw()}. An equal style changes no marks.
      *
      * @param style new style; must not be {@code null}
      * @throws NullPointerException if {@code style} is {@code null}
@@ -91,45 +118,34 @@ public class Label extends Widget {
         if (style.equals(this.style)) {
             return;
         }
-        boolean fontChanged = style.getFont() != this.style.getFont();
         this.style = style;
-        if (fontChanged) {
-            invalidate();
-        } else {
-            requestRedraw();
-        }
+        requestRedraw();
     }
 
     /**
-     * Returns 2 when the style's font is {@link UiFont#TALL}, otherwise 1. Tall glyphs span two
-     * square rows, and {@link UiSurface} snaps tall text to even rows, so a tall label's top must
-     * sit on an even row.
+     * Returns the width of the text, rounded up to whole UI cells. The text takes one text column
+     * per code point, so a character above U+FFFF counts once, and two code points fit in one UI
+     * cell.
+     * The width always rounds up to whole UI cells, so a text of odd length leaves a blank half
+     * cell at its end, and a label cannot be sized in half cells.
      *
-     * @return the row multiple, 1 or 2
-     */
-    @Override
-    public int getRowSnap() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
-    }
-
-    /**
-     * Returns the number of code points in the text, so a character above U+FFFF counts once.
-     *
-     * @return the width in UI cells, zero or greater
+     * @return the width in UI cells (not text columns), zero or greater
      */
     @Override
     public int getPreferredWidth() {
-        return text.codePointCount(0, text.length());
+        int codePoints = text.codePointCount(0, text.length());
+        return (codePoints + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+                / UiSurface.TEXT_COLUMNS_PER_CELL;
     }
 
     /**
-     * Returns the height of one line of text: 1 for the square font, 2 for the tall font.
+     * Returns the height of one line of text.
      *
-     * @return the height in UI cells, 1 or 2
+     * @return 1 UI cell
      */
     @Override
     public int getPreferredHeight() {
-        return style.getFont() == UiFont.TALL ? 2 : 1;
+        return 1;
     }
 
     @Override
@@ -147,17 +163,32 @@ public class Label extends Widget {
         writeClippedText(target, left, top, width);
     }
 
+    // Text that fills or overflows the label always starts at the left edge.
+    private int alignmentOffset(int textColumnLimit, int letters) {
+        int spare = textColumnLimit - letters;
+        if (spare <= 0) {
+            return 0;
+        }
+        return switch (textAlignment) {
+            case LEFT -> 0;
+            case CENTER -> spare / 2;
+            case RIGHT -> spare;
+        };
+    }
+
     private void writeClippedText(UiSurface target, int left, int top, int width) {
-        UiFont font = style.getFont();
         int foreground = style.getForegroundRgba();
         int length = text.length();
+        int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
+        int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
         int index = 0;
-        int cellOffset = 0;
-        while (index < length && cellOffset < width && left + cellOffset < target.getColumns()) {
+        int textOffset = alignmentOffset(textColumnLimit, text.codePointCount(0, length));
+        while (index < length && textOffset < textColumnLimit
+                && leftTextColumn + textOffset < target.getTextColumns()) {
             int codePoint = text.codePointAt(index);
-            target.writeGlyph(font, left + cellOffset, top, codePoint, foreground);
+            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint, foreground);
             index += Character.charCount(codePoint);
-            cellOffset++;
+            textOffset++;
         }
     }
 }

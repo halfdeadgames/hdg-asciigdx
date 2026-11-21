@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import org.junit.jupiter.api.Test;
 
 class HitTest {
-    private static final LabelStyle STYLE = LabelStyle.of(UiFont.SQUARE, 1, 2);
+    private static final LabelStyle STYLE = LabelStyle.of(1, 2);
 
     private static Label label(String text, int x, int y) {
         Label label = new Label(text, STYLE);
@@ -17,7 +17,7 @@ class HitTest {
 
     @Test
     void plainWidgetHitsInsideItsBoundsOnly() {
-        Label label = label("abc", 4, 4);
+        Label label = label("abcde", 4, 4);
 
         assertSame(label, label.hit(0, 0));
         assertSame(label, label.hit(2, 0));
@@ -29,7 +29,7 @@ class HitTest {
     @Test
     void groupChecksChildrenTopmostFirst() {
         WidgetGroup group = new WidgetGroup();
-        Label below = label("abcd", 0, 0);
+        Label below = label("abcdefgh", 0, 0);
         Label above = label("ab", 1, 0);
         group.addChild(below);
         group.addChild(above);
@@ -43,7 +43,7 @@ class HitTest {
     void groupHitsChildrenOutsideItsOwnBounds() {
         WidgetGroup group = new WidgetGroup();
         group.setSize(2, 2);
-        Label outside = label("abc", 10, 10);
+        Label outside = label("abcd", 10, 10);
         group.addChild(outside);
 
         assertSame(outside, group.hit(11, 10));

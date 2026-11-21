@@ -15,7 +15,7 @@ class TextFieldModelTest {
         model.scrollToCaret(width);
         StringBuilder cells = new StringBuilder();
         for (int cell = 0; cell < width; cell++) {
-            int codePoint = model.getCellCodePoint(cell, width);
+            int codePoint = model.getTextColumnCodePoint(cell, width);
             cells.appendCodePoint(codePoint == TextFieldModel.NO_GLYPH ? ' ' : codePoint);
         }
         return cells.toString();
@@ -90,7 +90,7 @@ class TextFieldModelTest {
         model.setText("abcd");
 
         assertEquals("abcd      ", render(10));
-        assertEquals(4, model.getCaretCell());
+        assertEquals(4, model.getCaretTextColumn());
     }
 
     @Test
@@ -98,7 +98,7 @@ class TextFieldModelTest {
         model.setText("abcdefgh");
 
         assertEquals("…cdefgh ", render(8));
-        assertEquals(7, model.getCaretCell());
+        assertEquals(7, model.getCaretTextColumn());
     }
 
     @Test
@@ -107,7 +107,7 @@ class TextFieldModelTest {
         model.moveCaretToStart();
 
         assertEquals("abcdefg…", render(8));
-        assertEquals(0, model.getCaretCell());
+        assertEquals(0, model.getCaretTextColumn());
     }
 
     @Test
@@ -115,7 +115,7 @@ class TextFieldModelTest {
         model.setText(LONG_TEXT);
 
         assertEquals("…opqrst ", render(8));
-        assertEquals(7, model.getCaretCell());
+        assertEquals(7, model.getCaretTextColumn());
     }
 
     @Test
@@ -125,7 +125,7 @@ class TextFieldModelTest {
         model.placeCaret(10);
 
         assertEquals("…klmnop…", render(8));
-        assertEquals(1, model.getCaretCell());
+        assertEquals(1, model.getCaretTextColumn());
     }
 
     @Test
@@ -134,14 +134,14 @@ class TextFieldModelTest {
         model.moveCaretToStart();
         for (int step = 0; step <= LONG_TEXT.length(); step++) {
             String cells = render(8);
-            int caretCell = model.getCaretCell();
+            int caretCell = model.getCaretTextColumn();
             assertTrue(caretCell >= 0 && caretCell < 8, "caret off screen at " + step);
             assertTrue(cells.charAt(caretCell) != '…', "caret on ellipsis at " + step);
             model.moveCaretRight();
         }
         for (int step = 0; step <= LONG_TEXT.length(); step++) {
             String cells = render(8);
-            int caretCell = model.getCaretCell();
+            int caretCell = model.getCaretTextColumn();
             assertTrue(cells.charAt(caretCell) != '…', "caret on ellipsis going left at " + step);
             model.moveCaretLeft();
         }
@@ -178,7 +178,7 @@ class TextFieldModelTest {
         model.setText("abcdef");
 
         assertEquals(" ", render(1));
-        assertEquals(0, model.getCaretCell());
+        assertEquals(0, model.getCaretTextColumn());
         assertEquals("f ", render(2));
         model.moveCaretToStart();
         assertEquals("ab", render(2));
@@ -192,6 +192,6 @@ class TextFieldModelTest {
         String cells = render(3);
 
         assertEquals("…e…", cells.substring(0, 1) + cells.charAt(1) + cells.charAt(2));
-        assertEquals(1, model.getCaretCell());
+        assertEquals(1, model.getCaretTextColumn());
     }
 }

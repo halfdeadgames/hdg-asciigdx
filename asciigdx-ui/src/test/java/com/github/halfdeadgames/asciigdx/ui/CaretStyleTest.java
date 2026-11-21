@@ -14,23 +14,30 @@ class CaretStyleTest {
         CaretStyle none = CaretStyle.none();
 
         assertFalse(none.hasForeground());
-        assertFalse(none.hasBackground());
         assertFalse(none.hasGlyph());
         assertThrows(IllegalStateException.class, none::getForegroundRgba);
-        assertThrows(IllegalStateException.class, none::getBackgroundRgba);
         assertThrows(IllegalStateException.class, none::getGlyphCodePoint);
     }
 
     @Test
     void setPartsAreReadable() {
-        CaretStyle caret = CaretStyle.none().withForegroundRgba(0x11223344)
-                .withBackgroundRgba(0x55667788).withGlyph('_').withBlinkSeconds(0.25f);
+        CaretStyle caret = CaretStyle.none().withForegroundRgba(0x11223344).withGlyph('_')
+                .withBlinkSeconds(0.25f);
 
-        assertTrue(caret.hasForeground() && caret.hasBackground() && caret.hasGlyph());
+        assertTrue(caret.hasForeground() && caret.hasGlyph());
         assertEquals(0x11223344, caret.getForegroundRgba());
-        assertEquals(0x55667788, caret.getBackgroundRgba());
         assertEquals('_', caret.getGlyphCodePoint());
         assertEquals(0.25f, caret.getBlinkSeconds());
+    }
+
+    @Test
+    void equalPartsGiveEqualStylesAndToStringWithoutBackground() {
+        CaretStyle first = CaretStyle.none().withGlyph('_').withForegroundRgba(1);
+        CaretStyle second = CaretStyle.none().withGlyph('_').withForegroundRgba(1);
+
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertFalse(first.toString().contains("background"));
     }
 
     @Test

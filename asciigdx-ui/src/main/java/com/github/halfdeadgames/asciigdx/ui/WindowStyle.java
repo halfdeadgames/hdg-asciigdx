@@ -6,9 +6,9 @@ import java.util.Objects;
 /**
  * Looks of a {@link Window}: the line style of its border, the look of the border and of the title
  * drawn into it, the background of the area inside the border, and an optional close button.
- * Everything that sits on the border uses the square font, because the border is one cell thick
- * and a tall glyph would cover the row below it. Immutable, so one instance can be shared by any
- * number of windows. Colors are packed RGBA8888 ints, as in {@code TerminalGrid}.
+ * The border and the close mark are drawn in the square font, and the title in the text font.
+ * Immutable, so one instance can be shared by any number of windows. Colors are packed RGBA8888
+ * ints, as in {@code TerminalGrid}.
  *
  * <p>The border is drawn with {@link #getBorder()}, or with {@link #getFocusedBorder()} while
  * keyboard focus is inside the window. A style made by {@link #of} uses the same look for both;
@@ -52,20 +52,17 @@ public final class WindowStyle {
      * whose close text is {@link #DEFAULT_CLOSE_TEXT}.
      *
      * @param box line style of the border; must not be {@code null}
-     * @param border look of the border glyphs; must not be {@code null}, and must use
-     *         {@link UiFont#SQUARE}
-     * @param title look of the title text; must not be {@code null}, and must use
-     *         {@link UiFont#SQUARE}
+     * @param border look of the border glyphs; must not be {@code null}
+     * @param title look of the title text; must not be {@code null}
      * @param backgroundRgba background of the area inside the border, as RGBA8888
      * @return a new style
      * @throws NullPointerException if an object argument is {@code null}
-     * @throws IllegalArgumentException if {@code border} or {@code title} uses the tall font
      */
     public static WindowStyle of(BoxStyle box, LabelStyle border, LabelStyle title,
             int backgroundRgba) {
         Objects.requireNonNull(box, "box");
-        requireSquare(border, "border");
-        requireSquare(title, "title");
+        Objects.requireNonNull(border, "border");
+        Objects.requireNonNull(title, "title");
         return new WindowStyle(box, border, border, title, backgroundRgba, null,
                 DEFAULT_CLOSE_TEXT);
     }
@@ -73,14 +70,12 @@ public final class WindowStyle {
     /**
      * Returns a copy with another look for the border while keyboard focus is inside the window.
      *
-     * @param focusedBorder look of the border glyphs while focused; must not be {@code null}, and
-     *         must use {@link UiFont#SQUARE}
+     * @param focusedBorder look of the border glyphs while focused; must not be {@code null}
      * @return a style with the same other parts and this focused border
      * @throws NullPointerException if {@code focusedBorder} is {@code null}
-     * @throws IllegalArgumentException if {@code focusedBorder} uses the tall font
      */
     public WindowStyle withFocusedBorder(LabelStyle focusedBorder) {
-        requireSquare(focusedBorder, "focusedBorder");
+        Objects.requireNonNull(focusedBorder, "focusedBorder");
         return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
                 closeText);
     }
@@ -88,18 +83,12 @@ public final class WindowStyle {
     /**
      * Returns a copy with a close button in the top border row.
      *
-     * @param closeButton looks and padding of the button; must not be {@code null}, and must use
-     *         {@link UiFont#SQUARE}
+     * @param closeButton looks and padding of the button; must not be {@code null}
      * @return a style with the same other parts and this close button
      * @throws NullPointerException if {@code closeButton} is {@code null}
-     * @throws IllegalArgumentException if {@code closeButton} uses the tall font
      */
     public WindowStyle withCloseButton(ButtonStyle closeButton) {
         Objects.requireNonNull(closeButton, "closeButton");
-        if (closeButton.getFont() != UiFont.SQUARE) {
-            throw new IllegalArgumentException(
-                    "closeButton must use the square font, was " + closeButton.getFont());
-        }
         return new WindowStyle(box, border, focusedBorder, title, backgroundRgba, closeButton,
                 closeText);
     }
@@ -122,14 +111,6 @@ public final class WindowStyle {
                 closeText);
     }
 
-    private static void requireSquare(LabelStyle look, String name) {
-        Objects.requireNonNull(look, name);
-        if (look.getFont() != UiFont.SQUARE) {
-            throw new IllegalArgumentException(
-                    name + " must use the square font, was " + look.getFont());
-        }
-    }
-
     /**
      * Returns the line style of the border.
      *
@@ -142,7 +123,7 @@ public final class WindowStyle {
     /**
      * Returns the look of the border glyphs.
      *
-     * @return the look, square font, never {@code null}
+     * @return the look, never {@code null}
      */
     public LabelStyle getBorder() {
         return border;
@@ -151,7 +132,7 @@ public final class WindowStyle {
     /**
      * Returns the look of the border glyphs while keyboard focus is inside the window.
      *
-     * @return the look, square font, never {@code null}; equal to {@link #getBorder()} unless
+     * @return the look, never {@code null}; equal to {@link #getBorder()} unless
      *         {@link #withFocusedBorder} was called
      */
     public LabelStyle getFocusedBorder() {
@@ -161,7 +142,7 @@ public final class WindowStyle {
     /**
      * Returns the look of the title text.
      *
-     * @return the look, square font, never {@code null}
+     * @return the look, never {@code null}
      */
     public LabelStyle getTitle() {
         return title;
@@ -188,7 +169,7 @@ public final class WindowStyle {
     /**
      * Returns the looks and padding of the close button.
      *
-     * @return the button style, square font, never {@code null}
+     * @return the button style, never {@code null}
      * @throws IllegalStateException if the style has no close button; check
      *         {@link #hasCloseButton()} first
      */

@@ -13,13 +13,11 @@ class WindowSkinTest {
     private static final String BASE = """
             "colors": { "white": "#FFFFFF", "navy": "#203070", "gray": "#909090" },
             "labels": {
-              "plain": { "font": "square", "foreground": "white", "background": "navy" },
-              "dim": { "font": "square", "foreground": "gray", "background": "navy" },
-              "tallPlain": { "font": "tall", "foreground": "white", "background": "navy" }
+              "plain": { "foreground": "white", "background": "navy" },
+              "dim": { "foreground": "gray", "background": "navy" }
             },
             "buttons": {
-              "close": { "normal": "plain", "pointerOver": "dim" },
-              "tallClose": { "normal": "tallPlain" }
+              "close": { "normal": "plain", "pointerOver": "dim" }
             }""";
     private static final String WINDOW_START = "\"windows\": {\"w\": {";
 
@@ -68,12 +66,11 @@ class WindowSkinTest {
     void optionalPartsAreRead() {
         Skin skin = Skin.fromJson(window("""
                 "box": "heavy", "border": "plain", "title": "plain", "background": "#00000080",
-                "focusedBorder": { "font": "square", "foreground": "navy", "background": "white" },
+                "focusedBorder": { "foreground": "navy", "background": "white" },
                 "closeButton": "close", "closeText": "[x]\""""));
 
         WindowStyle style = skin.getWindowStyle("w");
-        assertEquals(LabelStyle.of(UiFont.SQUARE, 0x203070FF, 0xFFFFFFFF),
-                style.getFocusedBorder());
+        assertEquals(LabelStyle.of(0x203070FF, 0xFFFFFFFF), style.getFocusedBorder());
         assertTrue(style.hasCloseButton());
         assertEquals(skin.getButtonStyle("close"), style.getCloseButton());
         assertEquals("[x]", style.getCloseText());
@@ -110,26 +107,27 @@ class WindowSkinTest {
     }
 
     @Test
-    void tallLooksAreErrorsThatNameThePath() {
+    void looksWithAFontKeyAreErrorsThatNameThePath() {
         assertSkinError(window("""
-                "box": "single", "border": "plain", "title": "tallPlain", "background": "navy\""""),
-                "windows.w.title", "square");
+                "box": "single", "border": "plain", "background": "navy",
+                "title": {"font": "square", "foreground": "white", "background": "navy"}"""),
+                "windows.w.title.font", "\"font\" key was removed");
         assertSkinError(window("""
-                "box": "single", "border": "tallPlain", "title": "plain", "background": "navy\""""),
-                "windows.w.border", "square");
+                "box": "single", "title": "plain", "background": "navy",
+                "border": {"font": "square", "foreground": "white", "background": "navy"}"""),
+                "windows.w.border.font", "\"font\" key was removed");
         assertSkinError(window("""
                 "box": "single", "border": "plain", "title": "plain", "background": "navy",
-                "focusedBorder": "tallPlain\""""), "windows.w.focusedBorder", "square");
+                "focusedBorder": {"font": "tall", "foreground": "white", "background": "navy"}"""),
+                "windows.w.focusedBorder.font", "\"font\" key was removed");
     }
 
     @Test
-    void closeButtonMustBeAKnownSquareButtonName() {
+    void closeButtonMustBeAKnownButtonName() {
         String required = "\"box\": \"single\", \"border\": \"plain\", \"title\": \"plain\", "
                 + "\"background\": \"navy\", ";
         assertSkinError(window(required + "\"closeButton\": \"nope\""),
                 "windows.w.closeButton", "unknown button style \"nope\"");
-        assertSkinError(window(required + "\"closeButton\": \"tallClose\""),
-                "windows.w.closeButton", "square");
         assertSkinError(window(required + "\"closeButton\": { \"normal\": \"plain\" }"),
                 "windows.w.closeButton", "name of a button style");
     }

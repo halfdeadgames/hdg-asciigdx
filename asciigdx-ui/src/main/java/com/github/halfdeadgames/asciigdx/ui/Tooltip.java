@@ -15,10 +15,9 @@ import java.util.Objects;
  *       input event.
  *   <li>After the delay the content is packed and placed one cell right of and one cell below the
  *       last pointer cell. When it would reach past the right or bottom edge of the surface it is
- *       placed left of or above the pointer instead, then moved inside the surface. The row is
- *       rounded to a multiple of the content's {@link Widget#getRowSnap()}, so tall text sits on
- *       an even row. Placement happens once, when the hint shows; later size changes of the
- *       content are not corrected.
+ *       placed left of or above the pointer instead, then moved inside the surface. Placement
+ *       happens once, when the hint shows; later size changes of the content are not
+ *       corrected.
  *   <li>The hint stays where it appeared; it does not follow the pointer.
  *   <li>The hint hides when the pointer leaves the target, when the target is not in the tree of
  *       the root, and on {@link #detach()}. If the target returns to the tree while the pointer
@@ -57,7 +56,7 @@ import java.util.Objects;
  *
  * <p>Example:
  * <pre>{@code
- * LabelStyle hintStyle = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x303030FF);
+ * LabelStyle hintStyle = LabelStyle.of(0xFFFFFFFF, 0x303030FF);
  * Tooltip hint = Tooltip.attachText(ui, startButton, "Begins a new game", hintStyle);
  * hint.setDelaySeconds(0.8f);
  * // ui.update(deltaSeconds) each frame drives the delay
@@ -139,7 +138,7 @@ public final class Tooltip {
      * @param target widget that triggers the hint; must not be {@code null}; it may be added to
      *         the tree of {@code root} later
      * @param text hint text; must not be {@code null}; may be empty
-     * @param style font and colors of the hint; must not be {@code null}
+     * @param style colors of the hint, drawn in the text font; must not be {@code null}
      * @return the new tooltip, attached
      * @throws NullPointerException if an argument is {@code null}
      */
@@ -320,7 +319,6 @@ public final class Tooltip {
         int surfaceRows = root.getSurfaceRows();
         int width = content.getWidth();
         int height = content.getHeight();
-        int snap = content.getRowSnap();
 
         int column = pointerColumn + 1;
         if (column + width > surfaceColumns) {
@@ -328,21 +326,12 @@ public final class Tooltip {
         }
         column = Math.max(0, Math.min(column, surfaceColumns - width));
 
-        int row = roundUpToMultiple(pointerRow + 1, snap);
+        int row = pointerRow + 1;
         if (row + height > surfaceRows) {
-            row = roundDownToMultiple(pointerRow - height, snap);
+            row = pointerRow - height;
         }
-        row = roundDownToMultiple(Math.min(row, surfaceRows - height), snap);
-        row = Math.max(0, row);
+        row = Math.max(0, Math.min(row, surfaceRows - height));
 
         content.setPosition(column, row);
-    }
-
-    private static int roundUpToMultiple(int value, int multiple) {
-        return -Math.floorDiv(-value, multiple) * multiple;
-    }
-
-    private static int roundDownToMultiple(int value, int multiple) {
-        return Math.floorDiv(value, multiple) * multiple;
     }
 }

@@ -12,10 +12,9 @@ import org.junit.jupiter.api.Test;
 
 class WindowStyleTest {
 
-    private static final LabelStyle BORDER = LabelStyle.of(UiFont.SQUARE, 0x111111FF, 0x010101FF);
-    private static final LabelStyle FOCUSED = LabelStyle.of(UiFont.SQUARE, 0x222222FF, 0x020202FF);
-    private static final LabelStyle TITLE = LabelStyle.of(UiFont.SQUARE, 0x333333FF, 0x030303FF);
-    private static final LabelStyle TALL = LabelStyle.of(UiFont.TALL, 0x444444FF, 0x040404FF);
+    private static final LabelStyle BORDER = LabelStyle.of(0x111111FF, 0x010101FF);
+    private static final LabelStyle FOCUSED = LabelStyle.of(0x222222FF, 0x020202FF);
+    private static final LabelStyle TITLE = LabelStyle.of(0x333333FF, 0x030303FF);
     private static final int BACKGROUND = 0x555555FF;
     private static final ButtonStyle CLOSE = ButtonStyle.of(BORDER);
 
@@ -48,17 +47,6 @@ class WindowStyleTest {
     @Test
     void closeButtonGetterThrowsWhenAbsent() {
         assertThrows(IllegalStateException.class, plain::getCloseButton);
-    }
-
-    @Test
-    void tallLooksAreRejected() {
-        assertThrows(IllegalArgumentException.class,
-                () -> WindowStyle.of(BoxStyle.SINGLE, TALL, TITLE, BACKGROUND));
-        assertThrows(IllegalArgumentException.class,
-                () -> WindowStyle.of(BoxStyle.SINGLE, BORDER, TALL, BACKGROUND));
-        assertThrows(IllegalArgumentException.class, () -> plain.withFocusedBorder(TALL));
-        assertThrows(IllegalArgumentException.class,
-                () -> plain.withCloseButton(ButtonStyle.of(TALL)));
     }
 
     @Test

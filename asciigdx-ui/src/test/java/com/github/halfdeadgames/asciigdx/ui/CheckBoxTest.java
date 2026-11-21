@@ -6,28 +6,28 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.badlogic.gdx.Input;
+import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CheckBoxTest {
     private static final int WHITE = 0xFFFFFFFF;
-    private static final ToggleStyle TALL = style(UiFont.TALL);
-    private static final ToggleStyle SQUARE = style(UiFont.SQUARE);
+    private static final ToggleStyle STYLE = style();
 
     private final UiSurface surface = UiSurface.ofSize(40, 10);
     private final UiRoot ui = UiRoot.of(surface);
     private final List<Widget> changes = new ArrayList<>();
 
-    private static ToggleStyle style(UiFont font) {
-        ButtonStyle button = ButtonStyle.of(LabelStyle.of(font, WHITE, 0x111111FF),
-                LabelStyle.of(font, WHITE, 0x222222FF), LabelStyle.of(font, WHITE, 0x333333FF),
-                LabelStyle.of(font, WHITE, 0x444444FF));
+    private static ToggleStyle style() {
+        ButtonStyle button = ButtonStyle.of(LabelStyle.of(WHITE, 0x111111FF),
+                LabelStyle.of(WHITE, 0x222222FF), LabelStyle.of(WHITE, 0x333333FF),
+                LabelStyle.of(WHITE, 0x444444FF));
         return ToggleStyle.of(button, "[ ]", "[x]");
     }
 
     private CheckBox boxAt(int x, int y) {
-        CheckBox box = new CheckBox("Go", TALL);
+        CheckBox box = new CheckBox("Go", STYLE);
         box.setPosition(x, y);
         box.addChangeListener(changes::add);
         ui.getRoot().addChild(box);
@@ -35,63 +35,58 @@ class CheckBoxTest {
     }
 
     @Test
-    void preferredSizeIsPaddingMarkGapAndTextByFontHeight() {
-        CheckBox tall = new CheckBox("Go", TALL);
-        CheckBox square = new CheckBox("Go", SQUARE.withGap(3));
+    void preferredSizeIsPaddingMarkGapAndTextCellsByOneRow() {
+        CheckBox plain = new CheckBox("Go", STYLE);
+        CheckBox wide = new CheckBox("Go", STYLE.withGap(3));
 
-        assertEquals(8, tall.getWidth());
-        assertEquals(2, tall.getHeight());
-        assertEquals(2, tall.getRowSnap());
-        assertEquals(10, square.getWidth());
-        assertEquals(1, square.getHeight());
-        assertEquals(1, square.getRowSnap());
+        assertEquals(7, plain.getWidth());
+        assertEquals(1, plain.getHeight());
+        assertEquals(9, wide.getWidth());
+        assertEquals(1, wide.getHeight());
     }
 
     @Test
-    void drawsMarkThenGapThenText() {
+    void oddLengthTextRoundsUpToWholeCellsInThePreferredWidth() {
+        int threeLetters = new CheckBox("abc", STYLE).getPreferredWidth();
+
+        assertEquals(threeLetters, new CheckBox("abcd", STYLE).getPreferredWidth());
+        assertEquals(threeLetters + 1, new CheckBox("abcde", STYLE).getPreferredWidth());
+    }
+
+    @Test
+    void markIsInTheSquareGridAndWordsAreInTheTextGrid() {
         CheckBox box = boxAt(2, 2);
         ui.draw();
 
-        assertEquals('[', surface.getTallGrid().getCodePoint(3, 1));
-        assertEquals(']', surface.getTallGrid().getCodePoint(5, 1));
-        assertEquals('G', surface.getTallGrid().getCodePoint(7, 1));
-        assertEquals('o', surface.getTallGrid().getCodePoint(8, 1));
+        assertEquals('[', surface.getSquareGrid().getCodePoint(3, 2));
+        assertEquals(']', surface.getSquareGrid().getCodePoint(5, 2));
+        assertEquals('G', surface.getTextGrid().getCodePoint(14, 2));
+        assertEquals('o', surface.getTextGrid().getCodePoint(15, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(6, 2));
 
         box.setChecked(true);
         ui.draw();
 
-        assertEquals('x', surface.getTallGrid().getCodePoint(4, 1));
+        assertEquals('x', surface.getSquareGrid().getCodePoint(4, 2));
     }
 
     @Test
-    void tallBoxOnEvenRowDrawsBackgroundAndGlyphsInTheSameRows() {
-        boxAt(2, 4);
+    void wordsStartAfterTheGapAtAWholeCell() {
+        CheckBox box = new CheckBox("Go", STYLE.withGap(3));
+        box.setPosition(2, 2);
+        ui.getRoot().addChild(box);
         ui.draw();
 
-        assertEquals(0x111111FF, surface.getSquareGrid().getBackground(3, 4));
-        assertEquals(0x111111FF, surface.getSquareGrid().getBackground(3, 5));
-        assertEquals('[', surface.getTallGrid().getCodePoint(3, 2));
-    }
-
-    // The surface snaps tall glyphs up to the even row, so an owner has to honor getRowSnap().
-    // On an odd row the background starts one row below the glyphs.
-    @Test
-    void tallBoxOnOddRowShowsWhyOwnersMustHonorTheRowSnap() {
-        CheckBox box = boxAt(2, 5);
-        ui.draw();
-
-        assertEquals(2, box.getRowSnap());
-        assertEquals('[', surface.getTallGrid().getCodePoint(3, 2));
-        assertEquals(0x111111FF, surface.getSquareGrid().getBackground(3, 6));
+        assertEquals('G', surface.getTextGrid().getCodePoint(2 * (2 + 1 + 3 + 3), 2));
     }
 
     @Test
     void startsUncheckedWithItsTextAndStyle() {
-        CheckBox box = new CheckBox("Go", TALL);
+        CheckBox box = new CheckBox("Go", STYLE);
 
         assertFalse(box.isChecked());
         assertEquals("Go", box.getText());
-        assertSame(TALL, box.getStyle());
+        assertSame(STYLE, box.getStyle());
     }
 
     @Test
@@ -197,7 +192,7 @@ class CheckBoxTest {
 
     @Test
     void textAndStyleChangesMarkTheBox() {
-        CheckBox box = new CheckBox("Go", TALL);
+        CheckBox box = new CheckBox("Go", STYLE);
         box.validate();
         box.setText("Go");
         assertFalse(box.isLayoutNeeded());
@@ -205,7 +200,7 @@ class CheckBoxTest {
         box.setText("Longer");
         assertTrue(box.isLayoutNeeded());
         box.validate();
-        box.setStyle(TALL.withGap(4));
+        box.setStyle(STYLE.withGap(4));
         assertTrue(box.isLayoutNeeded());
     }
 }

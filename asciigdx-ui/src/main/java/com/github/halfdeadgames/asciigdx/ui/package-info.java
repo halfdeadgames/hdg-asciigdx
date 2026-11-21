@@ -1,10 +1,13 @@
 /**
  * Text widgets drawn into a {@link com.github.halfdeadgames.asciigdx.ui.UiSurface}, which mixes a
- * square font and a tall font.
+ * square font and a text font. Words that people read (labels, button text, titles, menu items,
+ * text field text) use the text font; drawn parts of the UI (borders, check marks, bars,
+ * scrollbars) use the square font.
  *
  * <p>A {@link com.github.halfdeadgames.asciigdx.ui.Widget} has a position and a size in UI cells.
- * One UI column is one square cell wide, and one UI row is one square cell high. A tall glyph
- * covers 1 column and 2 rows. Columns grow to the right and rows grow downward (y-down). A widget's
+ * One UI column is one square cell wide, and one UI row is one square cell high. A text glyph is
+ * half a UI column wide and one row high, so two text glyphs fit in one UI column; a text column is
+ * half a UI column. Columns grow to the right and rows grow downward (y-down). A widget's
  * position is relative to the top-left corner of its parent
  * {@link com.github.halfdeadgames.asciigdx.ui.WidgetGroup}; a widget with no parent is placed
  * relative to the top-left corner of the target surface. Widgets draw only when {@code draw} is
@@ -35,7 +38,8 @@
  * {@link com.github.halfdeadgames.asciigdx.ui.RadioButton} are widgets with a checked state that
  * report changes made by the user to a {@link com.github.halfdeadgames.asciigdx.ui.ChangeListener}.
  * A {@link com.github.halfdeadgames.asciigdx.ui.ButtonGroup} keeps at most one of its radio
- * buttons checked. Their look comes from a {@link com.github.halfdeadgames.asciigdx.ui.ToggleStyle}.
+ * buttons checked. Their look comes from a
+ * {@link com.github.halfdeadgames.asciigdx.ui.ToggleStyle}.
  *
  * <p>{@link com.github.halfdeadgames.asciigdx.ui.TextField} is a one-line text input with a caret,
  * scrolling with ellipses, a character filter, a length limit, and placeholder text. Its look and
@@ -63,9 +67,9 @@
  * border, one content widget, an optional close button, and dragging by the title bar, which can be
  * limited to a {@link com.github.halfdeadgames.asciigdx.ui.CellArea} with
  * {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#setWindowDragBounds}. Windows live
- * in {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#getWindowLayer()}, which draws above the main
- * tree and below popups; Tab and the arrow keys stay inside the window that holds focus. Its look
- * comes from a {@link com.github.halfdeadgames.asciigdx.ui.WindowStyle}.
+ * in {@link com.github.halfdeadgames.asciigdx.ui.UiRoot#getWindowLayer()}, which draws above
+ * the main tree and below popups; Tab and the arrow keys stay inside the window that holds
+ * focus. Its look comes from a {@link com.github.halfdeadgames.asciigdx.ui.WindowStyle}.
  *
  * <p>{@link com.github.halfdeadgames.asciigdx.ui.Dialog} is a modal window that asks the user
  * something and reports a {@link com.github.halfdeadgames.asciigdx.ui.DialogChoice}; while it is
@@ -86,14 +90,15 @@
  * <p>Example with a button:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);
- * surface.addTo(layers, tallGlyphs, squareGlyphs);
+ * surface.addTo(layers, textGlyphs, squareGlyphs);
  * UiRoot ui = UiRoot.of(surface);
- * LabelStyle look = LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x303030FF);
+ * LabelStyle look = LabelStyle.of(0xFFFFFFFF, 0x303030FF);
  * TextButton start = new TextButton("Start", ButtonStyle.of(look));
  * start.setPosition(2, 2);
  * start.addClickListener(button -> startGame());
  * ui.getRoot().addChild(start);
- * // a CellPicker turns screen pixels into cells; the UI goes first in the multiplexer
+ * // a TextCellPicker turns screen pixels into text columns and rows; the UI goes first
+ * // in the multiplexer
  * Gdx.input.setInputProcessor(
  *         new InputMultiplexer(UiInput.forRoot(ui, picker), gameInput));
  * // every frame, before drawing the layers:
@@ -104,13 +109,15 @@
  * <p>Example without input:
  * <pre>{@code
  * UiSurface surface = UiSurface.ofSize(40, 12);
- * surface.addTo(layers, tallGlyphs, squareGlyphs);
+ * surface.addTo(layers, textGlyphs, squareGlyphs);
  * WidgetGroup root = new WidgetGroup();
  * root.setPosition(2, 2);
- * Label title = new Label("Hello", LabelStyle.of(UiFont.TALL, 0xFFFFFFFF, 0x000000FF));
+ * Label title = new Label("Hello", LabelStyle.of(0xFFFFFFFF, 0x000000FF));
  * title.setPosition(1, 0);
  * root.addChild(title);
  * root.draw(surface);
+ * // direct writes: a text glyph takes a text column (half a UI column)
+ * surface.writeTextGlyph(6, 4, 'A', 0xFFFFFFFF);
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.ui;

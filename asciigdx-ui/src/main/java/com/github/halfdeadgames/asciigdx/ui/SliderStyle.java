@@ -6,7 +6,7 @@ import java.util.Objects;
  * Looks of a {@link Slider}: a track glyph drawn in every cell, a knob glyph drawn in the knob
  * cell, and a {@link LabelStyle} for the track and one for the knob in three states (normal,
  * focused, and disabled). In a look, the foreground is the glyph color and the background fills
- * the cell. All looks use the same font, so a slider never changes size when its state changes.
+ * the cell. A slider is drawn in the square font.
  * Immutable, so one instance can be shared by any number of sliders.
  *
  * <p>Glyphs: a style made by {@link #of} has no glyphs of its own, and the slider uses defaults
@@ -56,16 +56,13 @@ public final class SliderStyle {
      * {@link #withGlyphs}.
      *
      * @param track normal look of the track cells; must not be {@code null}
-     * @param knob normal look of the knob cell; must not be {@code null}, and must use the font
-     *         of {@code track}
+     * @param knob normal look of the knob cell; must not be {@code null}
      * @return a new style
      * @throws NullPointerException if a look is {@code null}
-     * @throws IllegalArgumentException if the looks use different fonts
      */
     public static SliderStyle of(LabelStyle track, LabelStyle knob) {
         Objects.requireNonNull(track, "track");
         Objects.requireNonNull(knob, "knob");
-        requireFont(track.getFont(), knob);
         return new SliderStyle(false, 0, 0, track, knob, track, knob, track, knob);
     }
 
@@ -91,13 +88,10 @@ public final class SliderStyle {
      * @param knob look of the knob cell while focused; must not be {@code null}
      * @return a style with the same other looks and glyphs, and these focused looks
      * @throws NullPointerException if a look is {@code null}
-     * @throws IllegalArgumentException if a look does not use the font of the other looks
      */
     public SliderStyle withFocused(LabelStyle track, LabelStyle knob) {
         Objects.requireNonNull(track, "track");
         Objects.requireNonNull(knob, "knob");
-        requireFont(trackNormal.getFont(), track);
-        requireFont(trackNormal.getFont(), knob);
         return new SliderStyle(glyphsSet, trackGlyph, knobGlyph, trackNormal, knobNormal, track,
                 knob, trackDisabled, knobDisabled);
     }
@@ -109,13 +103,10 @@ public final class SliderStyle {
      * @param knob look of the knob cell while disabled; must not be {@code null}
      * @return a style with the same other looks and glyphs, and these disabled looks
      * @throws NullPointerException if a look is {@code null}
-     * @throws IllegalArgumentException if a look does not use the font of the other looks
      */
     public SliderStyle withDisabled(LabelStyle track, LabelStyle knob) {
         Objects.requireNonNull(track, "track");
         Objects.requireNonNull(knob, "knob");
-        requireFont(trackNormal.getFont(), track);
-        requireFont(trackNormal.getFont(), knob);
         return new SliderStyle(glyphsSet, trackGlyph, knobGlyph, trackNormal, knobNormal,
                 trackFocused, knobFocused, track, knob);
     }
@@ -124,13 +115,6 @@ public final class SliderStyle {
         if (!Character.isValidCodePoint(codePoint)) {
             throw new IllegalArgumentException(
                     name + " must be a valid code point, was " + codePoint);
-        }
-    }
-
-    private static void requireFont(UiFont font, LabelStyle look) {
-        if (look.getFont() != font) {
-            throw new IllegalArgumentException("All looks must use the same font, were " + font
-                    + " and " + look.getFont());
         }
     }
 
@@ -225,15 +209,6 @@ public final class SliderStyle {
      */
     public LabelStyle getKnobDisabled() {
         return knobDisabled;
-    }
-
-    /**
-     * Returns the font shared by all looks.
-     *
-     * @return the font, never {@code null}
-     */
-    public UiFont getFont() {
-        return trackNormal.getFont();
     }
 
     @Override

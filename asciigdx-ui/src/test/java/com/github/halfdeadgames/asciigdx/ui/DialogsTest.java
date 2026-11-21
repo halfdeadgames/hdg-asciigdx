@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class DialogsTest {
 
-    private static final LabelStyle LOOK = LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, 0x111111FF);
+    private static final LabelStyle LOOK = LabelStyle.of(0xFFFFFFFF, 0x111111FF);
     private static final ButtonStyle BUTTON = ButtonStyle.of(LOOK, LOOK, LOOK, LOOK);
     private static final WindowStyle WINDOW =
             WindowStyle.of(BoxStyle.SINGLE, LOOK, LOOK, 0x333333FF);
@@ -168,7 +168,10 @@ class DialogsTest {
         show(longLine);
 
         assertTrue(longLine.getWidth() > shortLines.getWidth());
-        assertTrue(longLine.getWidth() >= "this line is clearly longer than a button".length());
+        String longestLine = "this line is clearly longer than a button";
+        int textCells = (longestLine.length() + 1) / 2;
+        assertTrue(longLine.getWidth() >= textCells);
+        assertTrue(longLine.getWidth() < longestLine.length());
     }
 
     // Text input

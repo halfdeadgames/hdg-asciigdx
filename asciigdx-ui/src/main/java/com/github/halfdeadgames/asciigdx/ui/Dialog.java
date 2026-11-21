@@ -308,9 +308,8 @@ public class Dialog extends Window {
 
     /**
      * Shows the dialog as a modal on a root. The dialog is sized to fit its content, buttons, and
-     * title, and centered on the surface, but not above the top or past the bottom: when the
-     * dialog has tall-font content, its row is chosen so that content starts on an even surface
-     * row, which can be one row off center. The user can still drag it afterwards. Then the root
+     * title, and centered on the surface, but not above the top or past the bottom. The user can
+     * still drag it afterwards. Then the root
      * makes it modal (see "Modal dialogs" in the {@link UiRoot} description), dims what is under
      * it if the style has a dim, and moves keyboard focus to the widget from
      * {@link #setInitialFocus(Widget)}, or to the first button when there is none or it is not
@@ -358,20 +357,10 @@ public class Dialog extends Window {
         return false;
     }
 
-    // Window cell row BORDER_THICKNESS holds the content, so the window row is chosen to put that
-    // row on a multiple of the content's row snap.
     private void placeCentered(UiRoot root) {
-        int snap = layoutTable.getRowSnap();
         WidgetGroup layer = root.getWindowLayer();
         int column = Math.max(0, (root.getSurfaceColumns() - getWidth()) / 2);
         int row = Math.max(0, (root.getSurfaceRows() - getHeight()) / 2);
-        row -= (row + BORDER_THICKNESS) % snap;
-        if (row < 0) {
-            row += snap;
-        }
-        if (row + getHeight() > root.getSurfaceRows() && row - snap >= 0) {
-            row -= snap;
-        }
         setPosition(column - layer.getX(), row - layer.getY());
     }
 

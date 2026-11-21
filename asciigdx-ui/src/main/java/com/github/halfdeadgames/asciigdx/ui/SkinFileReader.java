@@ -41,20 +41,19 @@ final class SkinFileReader {
     private static final List<String> BOX_NAMES = List.of("single", "double", "heavy", "rounded");
     private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
             "placeholder", "caret");
-    private static final List<String> CARET_KEYS = List.of("foreground", "background", "glyph",
-            "blinkSeconds");
+    private static final List<String> CARET_KEYS = List.of("glyph", "foreground", "blinkSeconds");
     private static final List<String> PROGRESS_BAR_KEYS = List.of("fill", "empty");
     private static final List<String> SLIDER_KEYS = List.of("trackGlyph", "knobGlyph", "track",
             "knob");
     private static final List<String> SLIDER_LOOK_KEYS = List.of("normal", "focused", "disabled");
     private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
             "gap");
-    private static final List<String> LABEL_KEYS = List.of("font", "foreground", "background");
+    private static final String REMOVED_FONT_KEY = "font";
+    private static final List<String> LABEL_KEYS = List.of("foreground", "background");
     private static final List<String> BUTTON_KEYS = List.of("normal", "pointerOver", "pressed",
             "disabled", "focused", "horizontalPadding");
     private static final List<String> MENU_BAR_KEYS = List.of("titles", "items", "triggerColor",
             "triggerUnderline");
-    private static final List<String> FONT_NAMES = List.of("tall", "square");
     private static final int NORMAL = 0;
     private static final int FOCUSED = 1;
     private static final int DISABLED = 2;
@@ -191,14 +190,14 @@ final class SkinFileReader {
                 "a window object with the keys " + String.join(", ", WINDOW_KEYS));
         checkKnownKeys(entry, WINDOW_KEYS, "key", path);
         BoxStyle box = readBox(requireKey(entry, "box", path), path + ".box");
-        LabelStyle border = readSquareLook(requireKey(entry, "border", path), path + ".border");
-        LabelStyle title = readSquareLook(requireKey(entry, "title", path), path + ".title");
+        LabelStyle border = readLook(requireKey(entry, "border", path), path + ".border");
+        LabelStyle title = readLook(requireKey(entry, "title", path), path + ".title");
         int background = readColor(requireKey(entry, "background", path), path + ".background");
         WindowStyle style = WindowStyle.of(box, border, title, background);
         JsonValue focusedBorder = entry.get("focusedBorder");
         if (focusedBorder != null) {
             style = style.withFocusedBorder(
-                    readSquareLook(focusedBorder, path + ".focusedBorder"));
+                    readLook(focusedBorder, path + ".focusedBorder"));
         }
         JsonValue closeButton = entry.get("closeButton");
         if (closeButton != null) {
@@ -224,25 +223,11 @@ final class SkinFileReader {
         };
     }
 
-    private LabelStyle readSquareLook(JsonValue value, String path) {
-        LabelStyle look = readLook(value, path);
-        if (look.getFont() != UiFont.SQUARE) {
-            throw new SkinFileException(path + ": must use the square font, because a window "
-                    + "border is one cell thick");
-        }
-        return look;
-    }
-
     private ButtonStyle readCloseButton(JsonValue value, String path) {
         if (!value.isString()) {
             throw new SkinFileException(path + ": must be the name of a button style");
         }
-        ButtonStyle button = lookUpReference(buttonStyles, value.asString(), "button style", path);
-        if (button.getFont() != UiFont.SQUARE) {
-            throw new SkinFileException(path + ": must use the square font, because the close "
-                    + "button sits in the one-cell border row");
-        }
-        return button;
+        return lookUpReference(buttonStyles, value.asString(), "button style", path);
     }
 
     private void readCustomSections(JsonValue root,
@@ -276,14 +261,10 @@ final class SkinFileReader {
                 "a text field object with the keys " + String.join(", ", TEXT_FIELD_KEYS));
         checkKnownKeys(entry, TEXT_FIELD_KEYS, "key", path);
         LabelStyle normal = readLook(requireKey(entry, "normal", path), path + ".normal");
-        TextFieldStyle style = TextFieldStyle.of(normal);
-        try {
-            style = style.withFocused(readOptionalLook(entry, "focused", normal, path))
-                    .withDisabled(readOptionalLook(entry, "disabled", normal, path))
-                    .withPlaceholder(readOptionalLook(entry, "placeholder", normal, path));
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
+        TextFieldStyle style = TextFieldStyle.of(normal)
+                .withFocused(readOptionalLook(entry, "focused", normal, path))
+                .withDisabled(readOptionalLook(entry, "disabled", normal, path))
+                .withPlaceholder(readOptionalLook(entry, "placeholder", normal, path));
         JsonValue caret = entry.get("caret");
         if (caret == null) {
             return style;
@@ -293,24 +274,16 @@ final class SkinFileReader {
 
     private CaretStyle readCaret(JsonValue caret, String path) {
         requireObject(caret, path, "a caret object with the keys " + String.join(", ", CARET_KEYS));
-        checkKnownKeys(caret, CARET_KEYS, "key", path);
-        if (caret.get("foreground") == null && caret.get("background") == null
-                && caret.get("glyph") == null) {
-            throw new SkinFileException(path
-                    + ": needs at least one of \"foreground\", \"background\", and \"glyph\"");
+        if (caret.get("background") != null) {
+            throw new SkinFileException(path + ".background: the caret is now a glyph in the "
+                    + "text font and has no background; delete the \"background\" key");
         }
-        CaretStyle style = CaretStyle.none();
+        checkKnownKeys(caret, CARET_KEYS, "key", path);
+        CaretStyle style = CaretStyle.none().withGlyph(
+                readGlyph(requireKey(caret, "glyph", path), path + ".glyph"));
         JsonValue foreground = caret.get("foreground");
         if (foreground != null) {
             style = style.withForegroundRgba(readColor(foreground, path + ".foreground"));
-        }
-        JsonValue background = caret.get("background");
-        if (background != null) {
-            style = style.withBackgroundRgba(readColor(background, path + ".background"));
-        }
-        JsonValue glyph = caret.get("glyph");
-        if (glyph != null) {
-            style = style.withGlyph(readGlyph(glyph, path + ".glyph"));
         }
         JsonValue blink = caret.get("blinkSeconds");
         if (blink != null) {
@@ -337,11 +310,7 @@ final class SkinFileReader {
         checkKnownKeys(entry, PROGRESS_BAR_KEYS, "key", path);
         LabelStyle fill = readLook(requireKey(entry, "fill", path), path + ".fill");
         LabelStyle empty = readLook(requireKey(entry, "empty", path), path + ".empty");
-        try {
-            return ProgressBarStyle.of(fill, empty);
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
+        return ProgressBarStyle.of(fill, empty);
     }
 
     private SliderStyle readSliderStyle(JsonValue entry, String path) {
@@ -350,14 +319,10 @@ final class SkinFileReader {
         checkKnownKeys(entry, SLIDER_KEYS, "key", path);
         LabelStyle[] track = readSliderLooks(requireKey(entry, "track", path), path + ".track");
         LabelStyle[] knob = readSliderLooks(requireKey(entry, "knob", path), path + ".knob");
-        try {
-            SliderStyle style = SliderStyle.of(track[NORMAL], knob[NORMAL])
-                    .withFocused(track[FOCUSED], knob[FOCUSED])
-                    .withDisabled(track[DISABLED], knob[DISABLED]);
-            return applyGlyphs(style, entry, path);
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
+        SliderStyle style = SliderStyle.of(track[NORMAL], knob[NORMAL])
+                .withFocused(track[FOCUSED], knob[FOCUSED])
+                .withDisabled(track[DISABLED], knob[DISABLED]);
+        return applyGlyphs(style, entry, path);
     }
 
     // Returns the normal, focused, and disabled looks in that order.
@@ -448,11 +413,20 @@ final class SkinFileReader {
     private LabelStyle readLabelStyle(JsonValue entry, String path) {
         requireObject(entry, path,
                 "a label object with the keys " + String.join(", ", LABEL_KEYS));
+        rejectRemovedFontKey(entry, path);
         checkKnownKeys(entry, LABEL_KEYS, "key", path);
-        UiFont font = readFont(requireKey(entry, "font", path), path + ".font");
         int foreground = readColor(requireKey(entry, "foreground", path), path + ".foreground");
         int background = readColor(requireKey(entry, "background", path), path + ".background");
-        return LabelStyle.of(font, foreground, background);
+        return LabelStyle.of(foreground, background);
+    }
+
+    private static void rejectRemovedFontKey(JsonValue label, String path) {
+        if (label.get(REMOVED_FONT_KEY) != null) {
+            throw new SkinFileException(path + "." + REMOVED_FONT_KEY + ": the \""
+                    + REMOVED_FONT_KEY + "\" key was removed, because the UI now picks the font "
+                    + "by job (words use the text font, drawn parts use the square font); delete "
+                    + "the key");
+        }
     }
 
     private ButtonStyle readButtonStyle(JsonValue entry, String path) {
@@ -463,7 +437,7 @@ final class SkinFileReader {
         LabelStyle pointerOver = readOptionalLook(entry, "pointerOver", normal, path);
         LabelStyle pressed = readOptionalLook(entry, "pressed", normal, path);
         LabelStyle disabled = readOptionalLook(entry, "disabled", normal, path);
-        ButtonStyle style = createButtonStyle(normal, pointerOver, pressed, disabled, path);
+        ButtonStyle style = ButtonStyle.of(normal, pointerOver, pressed, disabled);
         style = applyFocusedLook(style, entry, path);
         return applyHorizontalPadding(style, entry, path);
     }
@@ -473,21 +447,7 @@ final class SkinFileReader {
         if (focused == null) {
             return style;
         }
-        LabelStyle look = readLook(focused, path + ".focused");
-        try {
-            return style.withFocused(look);
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
-    }
-
-    private static ButtonStyle createButtonStyle(LabelStyle normal, LabelStyle pointerOver,
-            LabelStyle pressed, LabelStyle disabled, String path) {
-        try {
-            return ButtonStyle.of(normal, pointerOver, pressed, disabled);
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
+        return style.withFocused(readLook(focused, path + ".focused"));
     }
 
     private static ButtonStyle applyHorizontalPadding(ButtonStyle style, JsonValue button,
@@ -514,18 +474,9 @@ final class SkinFileReader {
         ButtonStyle titles = readButtonReference(requireKey(entry, "titles", path),
                 path + ".titles");
         ButtonStyle items = readButtonReference(requireKey(entry, "items", path), path + ".items");
-        MenuBarStyle style = createMenuBarStyle(titles, items, path);
+        MenuBarStyle style = MenuBarStyle.of(titles, items);
         style = applyTriggerColor(style, entry, path);
         return applyTriggerUnderline(style, entry, path);
-    }
-
-    private static MenuBarStyle createMenuBarStyle(ButtonStyle titles, ButtonStyle items,
-            String path) {
-        try {
-            return MenuBarStyle.of(titles, items);
-        } catch (IllegalArgumentException mixedFonts) {
-            throw new SkinFileException(path + ": " + mixedFonts.getMessage());
-        }
     }
 
     private MenuBarStyle applyTriggerColor(MenuBarStyle style, JsonValue menuBar, String path) {
@@ -630,22 +581,6 @@ final class SkinFileReader {
                     + kind + "s: " + Skin.describeNames(known));
         }
         return found;
-    }
-
-    private static UiFont readFont(JsonValue value, String path) {
-        if (!value.isString()) {
-            throw new SkinFileException(path + ": must be text, one of "
-                    + String.join(", ", FONT_NAMES));
-        }
-        String name = value.asString();
-        if (name.equals("tall")) {
-            return UiFont.TALL;
-        }
-        if (name.equals("square")) {
-            return UiFont.SQUARE;
-        }
-        throw new SkinFileException(path + ": unknown font \"" + name + "\". Known fonts: "
-                + String.join(", ", FONT_NAMES));
     }
 
     int readColor(JsonValue value, String path) {

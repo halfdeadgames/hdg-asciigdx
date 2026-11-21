@@ -3,47 +3,51 @@ package com.github.halfdeadgames.asciigdx.ui;
 import java.util.Objects;
 
 /**
- * How the caret of a {@link TextField} looks: building blocks that are combined freely. Immutable.
+ * How the caret of a {@link TextField} looks: a glyph of the text font that is drawn in the
+ * overlay at the caret's text column. Immutable. The caret has no background and does not recolor
+ * the letter under it.
  *
- * <p>The parts, all optional. The colors apply to the caret cell only, never to the rest of the
- * text:
+ * <p>The parts, all optional:
  * <ul>
- *   <li>A foreground color: the glyph under the caret is drawn in this color.
- *   <li>A background color: the cell under the caret is filled with this color.
- *   <li>A glyph: any code point, drawn in the square font over the cell, in the foreground color
- *       if there is one and otherwise in the text color of the field's current look.
+ *   <li>A glyph: any code point, drawn in the text font in the overlay at the caret's text
+ *       column. Without a glyph the caret draws nothing.
+ *   <li>A foreground color: the color of the glyph. Without it the glyph uses the text color of
+ *       the field's current look.
  *   <li>A blink period: the caret is on for this many seconds, then off for as long, and so on.
  *       Zero means steady, always on.
  * </ul>
- * A part that is omitted keeps the cell's own value.
  *
- * <p>Recipes:
+ * <p>Recipe:
  * <pre>{@code
- * // block caret: the colors of the field swapped, no glyph
- * CaretStyle block = CaretStyle.none().withForegroundRgba(fieldBackground)
- *         .withBackgroundRgba(fieldForeground);
- * // underline caret: no colors, an underscore glyph, blinking twice a second
- * CaretStyle underline = CaretStyle.none().withGlyph('_').withBlinkSeconds(0.25f);
+ * // thin bar caret in white, blinking twice a second
+ * CaretStyle bar = CaretStyle.none().withGlyph(0x258F).withForegroundRgba(0xFFFFFFFF)
+ *         .withBlinkSeconds(0.25f);
+ * }</pre>
+ *
+ * <p>Reading a style: the getters for the glyph and the foreground throw
+ * {@link IllegalStateException} when the part is not set, so check first (this also suits Kotlin
+ * code, which has no checked-exception hint):
+ * <pre>{@code
+ * if (caret.hasGlyph()) {
+ *     int glyph = caret.getGlyphCodePoint();
+ *     int color = caret.hasForeground() ? caret.getForegroundRgba() : fieldTextRgba;
+ * }
  * }</pre>
  */
 public final class CaretStyle {
 
-    private static final CaretStyle NONE = new CaretStyle(false, 0, false, 0, false, 0, 0f);
+    private static final CaretStyle NONE = new CaretStyle(false, 0, false, 0, 0f);
 
     private final boolean foregroundSet;
     private final int foregroundRgba;
-    private final boolean backgroundSet;
-    private final int backgroundRgba;
     private final boolean glyphSet;
     private final int glyphCodePoint;
     private final float blinkSeconds;
 
-    private CaretStyle(boolean foregroundSet, int foregroundRgba, boolean backgroundSet,
-            int backgroundRgba, boolean glyphSet, int glyphCodePoint, float blinkSeconds) {
+    private CaretStyle(boolean foregroundSet, int foregroundRgba, boolean glyphSet,
+            int glyphCodePoint, float blinkSeconds) {
         this.foregroundSet = foregroundSet;
         this.foregroundRgba = foregroundRgba;
-        this.backgroundSet = backgroundSet;
-        this.backgroundRgba = backgroundRgba;
         this.glyphSet = glyphSet;
         this.glyphCodePoint = glyphCodePoint;
         this.blinkSeconds = blinkSeconds;
@@ -51,9 +55,9 @@ public final class CaretStyle {
 
     /**
      * Returns a style with no parts and a steady caret. It draws nothing, so the caret is
-     * invisible until you add parts with the {@code with} methods.
+     * invisible until you add a glyph with {@link #withGlyph}.
      *
-     * @return a style with no foreground, no background, no glyph, and no blinking
+     * @return a style with no foreground, no glyph, and no blinking
      */
     public static CaretStyle none() {
         return NONE;
@@ -62,28 +66,16 @@ public final class CaretStyle {
     /**
      * Returns a copy with a caret foreground color.
      *
-     * @param foregroundRgba color of the glyph under the caret, as RGBA8888
+     * @param foregroundRgba color of the caret glyph, as RGBA8888
      * @return the changed copy
      */
     public CaretStyle withForegroundRgba(int foregroundRgba) {
-        return new CaretStyle(true, foregroundRgba, backgroundSet, backgroundRgba, glyphSet,
-                glyphCodePoint, blinkSeconds);
+        return new CaretStyle(true, foregroundRgba, glyphSet, glyphCodePoint, blinkSeconds);
     }
 
     /**
-     * Returns a copy with a caret background color.
-     *
-     * @param backgroundRgba color of the cell under the caret, as RGBA8888
-     * @return the changed copy
-     */
-    public CaretStyle withBackgroundRgba(int backgroundRgba) {
-        return new CaretStyle(foregroundSet, foregroundRgba, true, backgroundRgba, glyphSet,
-                glyphCodePoint, blinkSeconds);
-    }
-
-    /**
-     * Returns a copy with a caret glyph. The glyph is drawn in the square font on the bottom row
-     * of the field, above the text.
+     * Returns a copy with a caret glyph. The glyph is drawn in the text font, in the overlay
+     * above the text, on the text row at the caret's text column.
      *
      * @param codePoint Unicode code point of the glyph; 0 through 0x10FFFF
      * @return the changed copy
@@ -93,8 +85,7 @@ public final class CaretStyle {
         if (!Character.isValidCodePoint(codePoint)) {
             throw new IllegalArgumentException("Not a code point: " + codePoint);
         }
-        return new CaretStyle(foregroundSet, foregroundRgba, backgroundSet, backgroundRgba, true,
-                codePoint, blinkSeconds);
+        return new CaretStyle(foregroundSet, foregroundRgba, true, codePoint, blinkSeconds);
     }
 
     /**
@@ -109,8 +100,7 @@ public final class CaretStyle {
             throw new IllegalArgumentException(
                     "Blink seconds must be finite and not negative, was " + seconds);
         }
-        return new CaretStyle(foregroundSet, foregroundRgba, backgroundSet, backgroundRgba,
-                glyphSet, glyphCodePoint, seconds);
+        return new CaretStyle(foregroundSet, foregroundRgba, glyphSet, glyphCodePoint, seconds);
     }
 
     /**
@@ -134,29 +124,6 @@ public final class CaretStyle {
             throw new IllegalStateException("The caret has no foreground; check hasForeground()");
         }
         return foregroundRgba;
-    }
-
-    /**
-     * Returns whether the caret has a background color.
-     *
-     * @return {@code true} when {@link #getBackgroundRgba()} applies
-     */
-    public boolean hasBackground() {
-        return backgroundSet;
-    }
-
-    /**
-     * Returns the caret background color.
-     *
-     * @return the color as RGBA8888
-     * @throws IllegalStateException if the caret has no background; check
-     *         {@link #hasBackground()} first
-     */
-    public int getBackgroundRgba() {
-        if (!backgroundSet) {
-            throw new IllegalStateException("The caret has no background; check hasBackground()");
-        }
-        return backgroundRgba;
     }
 
     /**
@@ -200,21 +167,19 @@ public final class CaretStyle {
         }
         CaretStyle that = (CaretStyle) other;
         return foregroundSet == that.foregroundSet && foregroundRgba == that.foregroundRgba
-                && backgroundSet == that.backgroundSet && backgroundRgba == that.backgroundRgba
                 && glyphSet == that.glyphSet && glyphCodePoint == that.glyphCodePoint
                 && Float.compare(blinkSeconds, that.blinkSeconds) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(foregroundSet, foregroundRgba, backgroundSet, backgroundRgba, glyphSet,
-                glyphCodePoint, blinkSeconds);
+        return Objects.hash(foregroundSet, foregroundRgba, glyphSet, glyphCodePoint, blinkSeconds);
     }
 
     @Override
     public String toString() {
-        return "CaretStyle[foreground=" + (foregroundSet ? Integer.toHexString(foregroundRgba) : "-")
-                + ", background=" + (backgroundSet ? Integer.toHexString(backgroundRgba) : "-")
+        return "CaretStyle[foreground=" + (foregroundSet ? Integer.toHexString(foregroundRgba)
+                : "-")
                 + ", glyph=" + (glyphSet ? glyphCodePoint : "-") + ", blinkSeconds="
                 + blinkSeconds + "]";
     }

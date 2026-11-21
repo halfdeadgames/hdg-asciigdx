@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class WidgetVisibilityTest {
     private static final int NORMAL_BG = 0x111111FF;
     private static final ButtonStyle STYLE = ButtonStyle.of(
-            LabelStyle.of(UiFont.SQUARE, 0xFFFFFFFF, NORMAL_BG));
+            LabelStyle.of(0xFFFFFFFF, NORMAL_BG));
 
     private final UiSurface surface = UiSurface.ofSize(40, 10);
     private final UiRoot ui = UiRoot.of(surface);
@@ -80,7 +80,7 @@ class WidgetVisibilityTest {
 
         assertEquals(widthBefore, ui.getRoot().getPreferredWidth());
         assertEquals(heightBefore, ui.getRoot().getPreferredHeight());
-        assertEquals(4, button.getWidth());
+        assertEquals(3, button.getWidth());
     }
 
     @Test

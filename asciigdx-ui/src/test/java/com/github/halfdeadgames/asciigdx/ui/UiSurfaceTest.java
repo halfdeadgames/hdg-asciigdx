@@ -17,7 +17,8 @@ class UiSurfaceTest {
 
     private final UiSurface surface = UiSurface.ofSize(6, 8);
     private final TerminalGrid square = surface.getSquareGrid();
-    private final TerminalGrid tall = surface.getTallGrid();
+    private final TerminalGrid text = surface.getTextGrid();
+    private final TerminalGrid overlay = surface.getOverlayGrid();
 
     /** Source that only reports a cell size; the glyph methods are never used by these tests. */
     private static final class SizedSource implements GlyphSource {
@@ -55,23 +56,31 @@ class UiSurfaceTest {
     }
 
     @Test
-    void ofSizeCreatesGridsWithTallRowsRoundedUp() {
+    void ofSizeCreatesSquareGridAndDoubleWidthTextGrid() {
         assertEquals(6, square.getColumns());
         assertEquals(8, square.getRows());
-        assertEquals(6, tall.getColumns());
-        assertEquals(4, tall.getRows());
-        UiSurface odd = UiSurface.ofSize(3, 5);
-        assertEquals(3, odd.getTallGrid().getRows());
-        assertEquals(5, odd.getSquareGrid().getRows());
-        assertEquals(3, odd.getColumns());
-        assertEquals(5, odd.getRows());
+        assertEquals(12, text.getColumns());
+        assertEquals(8, text.getRows());
+        assertEquals(12, overlay.getColumns());
+        assertEquals(8, overlay.getRows());
+        assertEquals(12, surface.getTextColumns());
+        assertEquals(6, surface.getColumns());
+        assertEquals(8, surface.getRows());
     }
 
     @Test
-    void tallBackgroundsAreTransparent() {
-        for (int row = 0; row < tall.getRows(); row++) {
-            for (int column = 0; column < tall.getColumns(); column++) {
-                assertEquals(TerminalGrid.TRANSPARENT_RGBA, tall.getBackground(column, row));
+    void oddSizedSurfaceHasTextGridOfTwiceTheColumns() {
+        UiSurface odd = UiSurface.ofSize(3, 5);
+        assertEquals(6, odd.getTextGrid().getColumns());
+        assertEquals(5, odd.getTextGrid().getRows());
+        assertEquals(6, odd.getTextColumns());
+    }
+
+    @Test
+    void textBackgroundsAreTransparent() {
+        for (int row = 0; row < text.getRows(); row++) {
+            for (int column = 0; column < text.getColumns(); column++) {
+                assertEquals(TerminalGrid.TRANSPARENT_RGBA, text.getBackground(column, row));
             }
         }
     }
@@ -83,78 +92,120 @@ class UiSurfaceTest {
     }
 
     @Test
-    void squareGlyphErasesTallGlyphCoveringIt() {
-        surface.writeGlyph(UiFont.TALL, 1, 2, 'T', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 1, 3, 'S', WHITE);
-        assertEquals(EMPTY, tall.getCodePoint(1, 1));
-        assertEquals('S', square.getCodePoint(1, 3));
-        assertEquals(WHITE, square.getForeground(1, 3));
+    void writeTextGlyphClearsSquareGlyphUnderLeftHalf() {
+        surface.writeSquareGlyph(2, 3, 'S', WHITE);
+        surface.writeTextGlyph(4, 3, 'T', WHITE);
+        assertEquals(EMPTY, square.getCodePoint(2, 3));
+        assertEquals('T', text.getCodePoint(4, 3));
+        assertEquals(WHITE, text.getForeground(4, 3));
+    }
+
+    @Test
+    void writeTextGlyphClearsSquareGlyphUnderRightHalf() {
+        surface.writeSquareGlyph(2, 3, 'S', WHITE);
+        surface.writeTextGlyph(5, 3, 'T', WHITE);
+        assertEquals(EMPTY, square.getCodePoint(2, 3));
+        assertEquals('T', text.getCodePoint(5, 3));
+    }
+
+    @Test
+    void writeTextGlyphKeepsNeighborSquareGlyphs() {
+        surface.writeSquareGlyph(1, 3, 'A', WHITE);
+        surface.writeSquareGlyph(3, 3, 'B', WHITE);
+        surface.writeTextGlyph(4, 3, 'T', WHITE);
+        assertEquals('A', square.getCodePoint(1, 3));
+        assertEquals('B', square.getCodePoint(3, 3));
+    }
+
+    @Test
+    void writeTextGlyphClearsOverlayGlyphAtSameTextColumnOnly() {
+        surface.writeOverlayGlyph(4, 3, '_', WHITE);
+        surface.writeOverlayGlyph(5, 3, '_', WHITE);
+        surface.writeTextGlyph(4, 3, 'T', WHITE);
+        assertEquals(EMPTY, overlay.getCodePoint(4, 3));
+        assertEquals('_', overlay.getCodePoint(5, 3));
+    }
+
+    @Test
+    void writeSquareGlyphClearsBothTextHalvesAndOverlay() {
+        surface.writeTextGlyph(4, 3, 'a', WHITE);
+        surface.writeTextGlyph(5, 3, 'b', WHITE);
+        surface.writeOverlayGlyph(4, 3, '_', WHITE);
+        surface.writeOverlayGlyph(5, 3, '_', WHITE);
+        surface.writeSquareGlyph(2, 3, 'S', WHITE);
+        assertEquals(EMPTY, text.getCodePoint(4, 3));
+        assertEquals(EMPTY, text.getCodePoint(5, 3));
+        assertEquals(EMPTY, overlay.getCodePoint(4, 3));
+        assertEquals(EMPTY, overlay.getCodePoint(5, 3));
+        assertEquals('S', square.getCodePoint(2, 3));
+        assertEquals(WHITE, square.getForeground(2, 3));
+    }
+
+    @Test
+    void writeSquareGlyphKeepsNeighborTextGlyphs() {
+        surface.writeTextGlyph(3, 3, 'a', WHITE);
+        surface.writeTextGlyph(6, 3, 'b', WHITE);
+        surface.writeSquareGlyph(2, 3, 'S', WHITE);
+        assertEquals('a', text.getCodePoint(3, 3));
+        assertEquals('b', text.getCodePoint(6, 3));
     }
 
     @Test
     void squareGlyphKeepsBackground() {
         surface.fillBackground(0, 0, 6, 8, BLUE);
-        surface.writeGlyph(UiFont.SQUARE, 2, 2, 'S', WHITE);
+        surface.writeSquareGlyph(2, 2, 'S', WHITE);
         assertEquals(BLUE, square.getBackground(2, 2));
     }
 
     @Test
-    void tallGlyphErasesBothSquareGlyphs() {
-        surface.writeGlyph(UiFont.SQUARE, 2, 4, 'a', WHITE);
-        surface.writeGlyph(UiFont.SQUARE, 2, 5, 'b', WHITE);
-        surface.writeGlyph(UiFont.TALL, 2, 4, 'T', WHITE);
-        assertEquals(EMPTY, square.getCodePoint(2, 4));
-        assertEquals(EMPTY, square.getCodePoint(2, 5));
-        assertEquals('T', tall.getCodePoint(2, 2));
-        assertEquals(WHITE, tall.getForeground(2, 2));
+    void overlayGlyphIsWrittenAtTextResolutionWithoutErasing() {
+        surface.writeSquareGlyph(2, 1, 'S', WHITE);
+        surface.writeTextGlyph(4, 1, 'a', WHITE);
+        surface.writeOverlayGlyph(5, 1, '_', BLUE);
+        assertEquals('_', overlay.getCodePoint(5, 1));
+        assertEquals(BLUE, overlay.getForeground(5, 1));
+        assertEquals(EMPTY, overlay.getCodePoint(4, 1));
+        assertEquals('a', text.getCodePoint(4, 1));
     }
 
     @Test
-    void tallGlyphOnOddRowSnapsToEvenRow() {
-        surface.writeGlyph(UiFont.SQUARE, 0, 2, 'a', WHITE);
-        surface.writeGlyph(UiFont.TALL, 0, 3, 'T', WHITE);
-        assertEquals('T', tall.getCodePoint(0, 1));
-        assertEquals(EMPTY, square.getCodePoint(0, 2));
+    void writesOutsideAreSkippedForAllWriters() {
+        assertDoesNotThrow(() -> {
+            surface.writeSquareGlyph(-1, 0, 'x', WHITE);
+            surface.writeSquareGlyph(0, -1, 'x', WHITE);
+            surface.writeSquareGlyph(6, 0, 'x', WHITE);
+            surface.writeSquareGlyph(0, 8, 'x', WHITE);
+            surface.writeSquareGlyph(Integer.MIN_VALUE, Integer.MAX_VALUE, 'x', WHITE);
+            surface.writeTextGlyph(-1, 0, 'x', WHITE);
+            surface.writeTextGlyph(0, -1, 'x', WHITE);
+            surface.writeTextGlyph(12, 0, 'x', WHITE);
+            surface.writeTextGlyph(0, 8, 'x', WHITE);
+            surface.writeTextGlyph(Integer.MIN_VALUE, Integer.MAX_VALUE, 'x', WHITE);
+            surface.writeOverlayGlyph(-1, 0, 'x', WHITE);
+            surface.writeOverlayGlyph(12, 0, 'x', WHITE);
+            surface.writeOverlayGlyph(Integer.MAX_VALUE, 0, 'x', WHITE);
+        });
+        assertGridEmpty(square);
+        assertGridEmpty(text);
+        assertGridEmpty(overlay);
     }
 
-    @Test
-    void writesOutsideAreSkippedForBothFonts() {
-        for (UiFont font : UiFont.values()) {
-            assertDoesNotThrow(() -> {
-                surface.writeGlyph(font, -1, 0, 'x', WHITE);
-                surface.writeGlyph(font, 0, -1, 'x', WHITE);
-                surface.writeGlyph(font, 6, 0, 'x', WHITE);
-                surface.writeGlyph(font, 0, 8, 'x', WHITE);
-                surface.writeGlyph(font, Integer.MIN_VALUE, Integer.MAX_VALUE, 'x', WHITE);
-            });
-        }
-        for (int row = 0; row < square.getRows(); row++) {
-            for (int column = 0; column < square.getColumns(); column++) {
-                assertEquals(EMPTY, square.getCodePoint(column, row));
+    private static void assertGridEmpty(TerminalGrid grid) {
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int column = 0; column < grid.getColumns(); column++) {
+                assertEquals(EMPTY, grid.getCodePoint(column, row));
             }
         }
-        for (int row = 0; row < tall.getRows(); row++) {
-            for (int column = 0; column < tall.getColumns(); column++) {
-                assertEquals(EMPTY, tall.getCodePoint(column, row));
-            }
-        }
-    }
-
-    @Test
-    void tallWriteOnOddSurfaceLastRowStaysInside() {
-        UiSurface odd = UiSurface.ofSize(2, 5);
-        odd.writeGlyph(UiFont.TALL, 0, 4, 'T', WHITE);
-        assertEquals('T', odd.getTallGrid().getCodePoint(0, 2));
     }
 
     @Test
     void fillBackgroundTouchesOnlySquareGrid() {
-        surface.writeGlyph(UiFont.TALL, 1, 0, 'T', WHITE);
+        surface.writeTextGlyph(2, 0, 'T', WHITE);
         surface.fillBackground(0, 0, 3, 2, BLUE);
         assertEquals(BLUE, square.getBackground(2, 1));
         assertEquals(TerminalGrid.TRANSPARENT_RGBA, square.getBackground(3, 1));
-        assertEquals('T', tall.getCodePoint(1, 0));
-        assertEquals(TerminalGrid.TRANSPARENT_RGBA, tall.getBackground(1, 0));
+        assertEquals('T', text.getCodePoint(2, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, text.getBackground(2, 0));
     }
 
     @Test
@@ -167,24 +218,24 @@ class UiSurfaceTest {
     }
 
     @Test
-    void eraseGlyphsCoversOverlappingTallCells() {
-        for (int tallRow = 0; tallRow < 4; tallRow++) {
-            surface.writeGlyph(UiFont.TALL, 1, 2 * tallRow, 'T', WHITE);
-        }
-        surface.writeGlyph(UiFont.SQUARE, 1, 3, 'S', WHITE);
-        // Rows 3 to 5 (odd start row, odd height) overlap tall rows 1, 2, and 2 again.
-        surface.eraseGlyphs(1, 3, 1, 3);
-        assertEquals('T', tall.getCodePoint(1, 0));
-        assertEquals(EMPTY, tall.getCodePoint(1, 1));
-        assertEquals(EMPTY, tall.getCodePoint(1, 2));
-        assertEquals('T', tall.getCodePoint(1, 3));
+    void eraseGlyphsClearsAllThreeGridsInTheRectangle() {
+        surface.writeSquareGlyph(1, 3, 'S', WHITE);
+        surface.writeTextGlyph(2, 4, 'a', WHITE);
+        surface.writeTextGlyph(3, 4, 'b', WHITE);
+        surface.writeOverlayGlyph(2, 4, '_', WHITE);
+        surface.writeTextGlyph(4, 4, 'c', WHITE);
+        surface.eraseGlyphs(1, 3, 1, 2);
         assertEquals(EMPTY, square.getCodePoint(1, 3));
+        assertEquals(EMPTY, text.getCodePoint(2, 4));
+        assertEquals(EMPTY, text.getCodePoint(3, 4));
+        assertEquals(EMPTY, overlay.getCodePoint(2, 4));
+        assertEquals('c', text.getCodePoint(4, 4));
     }
 
     @Test
     void eraseGlyphsKeepsBackgroundsAndClips() {
         surface.fillBackground(0, 0, 6, 8, BLUE);
-        surface.writeGlyph(UiFont.SQUARE, 0, 0, 'S', WHITE);
+        surface.writeSquareGlyph(0, 0, 'S', WHITE);
         assertDoesNotThrow(() -> surface.eraseGlyphs(-3, -3, 100, 100));
         assertEquals(EMPTY, square.getCodePoint(0, 0));
         assertEquals(BLUE, square.getBackground(0, 0));
@@ -192,10 +243,10 @@ class UiSurfaceTest {
 
     @Test
     void zeroSizedEraseDoesNothing() {
-        surface.writeGlyph(UiFont.TALL, 0, 0, 'T', WHITE);
+        surface.writeTextGlyph(0, 0, 'T', WHITE);
         surface.eraseGlyphs(0, 0, 0, 5);
         surface.eraseGlyphs(0, 0, 5, 0);
-        assertEquals('T', tall.getCodePoint(0, 0));
+        assertEquals('T', text.getCodePoint(0, 0));
     }
 
     @Test
@@ -207,58 +258,65 @@ class UiSurfaceTest {
     }
 
     @Test
-    void nullFontThrows() {
-        assertThrows(NullPointerException.class, () -> surface.writeGlyph(null, 0, 0, 'a', WHITE));
-    }
-
-    @Test
-    void fontPairCheckAcceptsSquareAndTallPair() {
+    void fontPairCheckAcceptsHalfWidthTextFont() {
         assertDoesNotThrow(
-                () -> UiSurface.requireFontPair(new SizedSource(16, 32), new SizedSource(16, 16)));
+                () -> UiSurface.requireFontPair(new SizedSource(8, 16), new SizedSource(16, 16)));
     }
 
     @Test
-    void fontPairCheckRejectsMismatchedSizes() {
-        GlyphSource square16 = new SizedSource(16, 16);
+    void fontPairCheckRejectsSameWidthTextFont() {
         assertThrows(IllegalArgumentException.class,
-                () -> UiSurface.requireFontPair(new SizedSource(16, 32), new SizedSource(16, 8)));
+                () -> UiSurface.requireFontPair(new SizedSource(16, 16), new SizedSource(16, 16)));
+    }
+
+    @Test
+    void fontPairCheckRejectsWrongTextHeight() {
+        GlyphSource square16 = new SizedSource(16, 16);
         assertThrows(IllegalArgumentException.class,
                 () -> UiSurface.requireFontPair(new SizedSource(8, 32), square16));
         assertThrows(IllegalArgumentException.class,
-                () -> UiSurface.requireFontPair(new SizedSource(16, 16), square16));
+                () -> UiSurface.requireFontPair(new SizedSource(8, 8), square16));
+    }
+
+    @Test
+    void fontPairCheckRejectsNonSquareSquareFont() {
         assertThrows(IllegalArgumentException.class,
-                () -> UiSurface.requireFontPair(new SizedSource(16, 48), square16));
+                () -> UiSurface.requireFontPair(new SizedSource(8, 32), new SizedSource(16, 32)));
     }
 
     @Test
     void fontPairCheckRejectsNulls() {
         GlyphSource square16 = new SizedSource(16, 16);
+        GlyphSource text8 = new SizedSource(8, 16);
         assertThrows(NullPointerException.class, () -> UiSurface.requireFontPair(null, square16));
-        assertThrows(NullPointerException.class, () -> UiSurface.requireFontPair(square16, null));
+        assertThrows(NullPointerException.class, () -> UiSurface.requireFontPair(text8, null));
     }
 
     @Test
-    void addToRejectsNullsAndBadSizesBeforeAddingAnything() {
-        GlyphSource square16 = new SizedSource(16, 16);
+    void addToRejectsNullStackBeforeAddingAnything() {
+        // A real stack needs GL, so size validation is covered through requireFontPair, which
+        // addTo calls before it adds a layer.
         assertThrows(NullPointerException.class,
-                () -> surface.addTo(null, new SizedSource(16, 32), square16));
-        // A null stack is rejected first; a real stack needs GL, so size validation is covered
-        // through requireFontPair, which addTo calls before it adds a layer.
+                () -> surface.addTo(null, new SizedSource(8, 16), new SizedSource(16, 16)));
     }
 
     @Test
-    void copyFromCopiesBothGridsCellForCell() {
+    void copyFromCopiesAllThreeGridsCellForCell() {
         UiSurface source = UiSurface.ofSize(6, 8);
         source.fillBackground(0, 0, 6, 8, BLUE);
-        source.writeGlyph(UiFont.SQUARE, 1, 1, 'a', WHITE);
-        source.writeGlyph(UiFont.TALL, 2, 2, 'T', WHITE);
+        source.writeSquareGlyph(1, 1, 'a', WHITE);
+        source.writeTextGlyph(5, 2, 'T', WHITE);
+        source.writeOverlayGlyph(11, 7, '_', BLUE);
 
         surface.copyFrom(source);
 
         assertEquals(BLUE, square.getBackground(5, 7));
         assertEquals('a', square.getCodePoint(1, 1));
         assertEquals(WHITE, square.getForeground(1, 1));
-        assertEquals('T', tall.getCodePoint(2, 1));
+        assertEquals('T', text.getCodePoint(5, 2));
+        assertEquals(WHITE, text.getForeground(5, 2));
+        assertEquals('_', overlay.getCodePoint(11, 7));
+        assertEquals(BLUE, overlay.getForeground(11, 7));
     }
 
     @Test
@@ -266,11 +324,14 @@ class UiSurfaceTest {
         UiSurface source = UiSurface.ofSize(6, 8);
         surface.copyFrom(source);
         var tracker = square.createDirtyTracker();
+        var textTracker = text.createDirtyTracker();
         tracker.markAllClean();
+        textTracker.markAllClean();
 
         surface.copyFrom(source);
 
         assertFalse(tracker.hasDirtyCells());
+        assertFalse(textTracker.hasDirtyCells());
     }
 
     @Test

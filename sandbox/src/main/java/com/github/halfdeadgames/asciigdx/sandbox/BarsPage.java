@@ -16,15 +16,13 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Interactive check of progress bars and sliders, horizontal and vertical, in the square and the
- * tall font. The progress bars show several fill levels, including partial eighths. The sliders
+ * Interactive check of progress bars and sliders, horizontal and vertical. The progress bars show several fill levels, including partial eighths. The sliders
  * react to the arrow keys along their axis, Home, End, and the pointer (press to jump, drag to
  * move); one slider is disabled. A label shows the last change made by the user.
  */
 class BarsPage implements UiPage {
     private static final int ROOT_X = 4;
     private static final int ROOT_Y = 2;
-    // Tall widgets must sit on even rows, so every offset that leads to one is even.
     private static final int LAST_CHANGE_Y = 0;
     private static final int BARS_CAPTION_Y = 2;
     private static final int BARS_Y = 4;
@@ -32,31 +30,23 @@ class BarsPage implements UiPage {
     private static final int SLIDERS_Y = 18;
     // One empty row between stacked widgets, so neighbors do not merge into one shape.
     private static final int ROW_STEP = 2;
-    private static final int DISABLED_ROW_OFFSET = 5;
     private static final int HORIZONTAL_LENGTH = 20;
     private static final int SLIDER_LENGTH = 21;
     private static final int VERTICAL_SQUARE_LENGTH = 8;
-    private static final int VERTICAL_TALL_LENGTH = 4;
     private static final int VERTICALS_X = 24;
-    private static final int TALL_VERTICALS_X = 33;
-    private static final int VERTICAL_SLIDER_GAP = 3;
     private static final List<Float> LEVELS = List.of(0f, 33f, 57f, 100f);
     private static final ValueRange PERCENT = ValueRange.of(0f, 100f, 1f);
     private static final ValueRange SLIDER_RANGE = ValueRange.of(0f, 10f, 1f);
 
     private final ProgressBarStyle squareBar;
-    private final ProgressBarStyle tallBar;
     private final SliderStyle squareSlider;
-    private final SliderStyle tallSlider;
     private final LabelStyle caption;
     private final UiRoot uiRoot;
 
     BarsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
         squareBar = skin.getProgressBarStyle("progressBar");
-        tallBar = skin.getProgressBarStyle("tallProgressBar");
         squareSlider = skin.getSliderStyle("slider");
-        tallSlider = skin.getSliderStyle("tallSlider");
         caption = skin.getLabelStyle("text");
     }
 
@@ -94,7 +84,7 @@ class BarsPage implements UiPage {
     }
 
     private void addProgressBars(WidgetGroup root) {
-        addCaption(root, "Progress bars: 0, 33, 57, and 100 percent, in both fonts",
+        addCaption(root, "Progress bars: 0, 33, 57, and 100 percent",
                 BARS_CAPTION_Y);
         for (int i = 0; i < LEVELS.size(); i++) {
             float level = LEVELS.get(i);
@@ -102,27 +92,18 @@ class BarsPage implements UiPage {
                     BARS_Y + i * ROW_STEP, level);
             addBar(root, ProgressBar.vertical(PERCENT, VERTICAL_SQUARE_LENGTH, squareBar),
                     VERTICALS_X + i * ROW_STEP, BARS_Y, level);
-            addBar(root, ProgressBar.vertical(PERCENT, VERTICAL_TALL_LENGTH, tallBar),
-                    TALL_VERTICALS_X + i * ROW_STEP, BARS_Y, level);
         }
-        int tallRowsY = BARS_Y + LEVELS.size() * ROW_STEP;
-        addBar(root, ProgressBar.horizontal(PERCENT, HORIZONTAL_LENGTH, tallBar), 0, tallRowsY,
-                LEVELS.get(2));
     }
 
     private void addSliders(WidgetGroup root, Label lastChange) {
         addCaption(root, "Sliders: arrows, Home, End, or press and drag", SLIDERS_CAPTION_Y);
         addSlider(root, lastChange, Slider.horizontal(SLIDER_RANGE, SLIDER_LENGTH, squareSlider),
                 0, SLIDERS_Y, 5f);
-        addSlider(root, lastChange, Slider.horizontal(SLIDER_RANGE, SLIDER_LENGTH, tallSlider),
-                0, SLIDERS_Y + ROW_STEP, 2f);
         Slider disabled = Slider.horizontal(SLIDER_RANGE, SLIDER_LENGTH, squareSlider);
         disabled.setDisabled(true);
-        addSlider(root, lastChange, disabled, 0, SLIDERS_Y + DISABLED_ROW_OFFSET, 3f);
+        addSlider(root, lastChange, disabled, 0, SLIDERS_Y + ROW_STEP, 3f);
         addSlider(root, lastChange, Slider.vertical(SLIDER_RANGE, VERTICAL_SQUARE_LENGTH,
                 squareSlider), VERTICALS_X, SLIDERS_Y, 7f);
-        addSlider(root, lastChange, Slider.vertical(SLIDER_RANGE, VERTICAL_TALL_LENGTH,
-                tallSlider), VERTICALS_X + VERTICAL_SLIDER_GAP, SLIDERS_Y, 4f);
     }
 
     private static void addBar(WidgetGroup root, ProgressBar bar, int x, int y, float value) {
