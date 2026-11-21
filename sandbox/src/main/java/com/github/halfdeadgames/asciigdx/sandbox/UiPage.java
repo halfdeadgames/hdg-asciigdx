@@ -23,4 +23,14 @@ interface UiPage {
      */
     default void pageHidden() {
     }
+
+    /**
+     * Called after the content is placed in the root, with the row where the content starts. A
+     * page that puts widgets outside its content (such as in a layer of the root) can use it to
+     * place them below its own rows. Does nothing by default.
+     *
+     * @param contentTop the root row of the content's top edge
+     */
+    default void contentPlaced(int contentTop) {
+    }
 }

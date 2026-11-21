@@ -33,11 +33,8 @@ class WindowsPage implements UiPage {
     private static final int HINT_Y = 1;
     private static final int REOPEN_BUTTON_Y = 4;
     private static final int SETTINGS_X = 6;
-    private static final int SETTINGS_Y = 14;
-    private static final int NOTES_X = 50;
-    private static final int NOTES_Y = 16;
-    private static final int ESCAPE_X = 30;
-    private static final int ESCAPE_Y = 32;
+    private static final int WINDOW_GAP_COLUMNS = 2;
+    private static final int WINDOW_GAP_ROWS = 1;
     private static final int NAME_FIELD_WIDTH = 18;
     private static final int BUTTON_GAP = 1;
     private static final int FORM_ROW_STEP = 2;
@@ -52,6 +49,8 @@ class WindowsPage implements UiPage {
     private final List<Window> windows = new ArrayList<>();
     private final List<Dialog> shownDialogs = new ArrayList<>();
     private Label resultLabel;
+    private int contentColumns;
+    private int contentTop;
 
     WindowsPage(UiRoot uiRoot, Skin skin) {
         this.uiRoot = uiRoot;
@@ -75,8 +74,15 @@ class WindowsPage implements UiPage {
         windows.add(createSettingsWindow());
         windows.add(createNotesWindow());
         windows.add(createEscapeWindow());
+        contentColumns = columns;
         openClosedWindows();
         return createPageContent();
+    }
+
+    @Override
+    public void contentPlaced(int contentTopRow) {
+        contentTop = contentTopRow;
+        placeWindows();
     }
 
     @Override
@@ -171,7 +177,7 @@ class WindowsPage implements UiPage {
         content.addChild(hint);
         TextButton reopen = new TextButton("Reopen windows", skin.getButtonStyle("button"));
         reopen.setPosition(HINT_X, REOPEN_BUTTON_Y);
-        reopen.addClickListener(clicked -> openClosedWindows());
+        reopen.addClickListener(clicked -> reopenWindows());
         content.addChild(reopen);
         addDialogButtons(content);
         resultLabel = new Label(NO_ANSWER_TEXT, skin.getLabelStyle("text"));
@@ -214,14 +220,14 @@ class WindowsPage implements UiPage {
         cancel.setPosition(0, 2 * FORM_ROW_STEP);
         cancel.addClickListener(clicked -> window.close());
         form.addChild(cancel);
-        return placed(window, form, SETTINGS_X, SETTINGS_Y);
+        return withContent(window, form);
     }
 
     private Window createNotesWindow() {
         Window window = new Window("Notes", withoutCloseButton(skin.getWindowStyle("window")));
         Label text = new Label("No close button here. Move me or raise me.",
                 skin.getLabelStyle("windowText"));
-        return placed(window, text, NOTES_X, NOTES_Y);
+        return withContent(window, text);
     }
 
     private Window createEscapeWindow() {
@@ -235,14 +241,36 @@ class WindowsPage implements UiPage {
         done.setPosition(0, FORM_ROW_STEP);
         done.addClickListener(clicked -> window.close());
         body.addChild(done);
-        return placed(window, body, ESCAPE_X, ESCAPE_Y);
+        return withContent(window, body);
     }
 
-    private static Window placed(Window window, Widget content, int x, int y) {
+    private static Window withContent(Window window, Widget content) {
         window.setContent(content);
         window.pack();
-        window.setPosition(x, y);
         return window;
+    }
+
+    // Windows go left to right in list order. A window that would pass the right edge starts a new
+    // row below every window placed so far, so the rows never overlap.
+    private void placeWindows() {
+        int firstRowTop = contentTop + RESULT_Y + resultLabel.getHeight() + WINDOW_GAP_ROWS;
+        int x = SETTINGS_X;
+        int y = firstRowTop;
+        int bottom = firstRowTop;
+        for (Window window : windows) {
+            if (x > SETTINGS_X && x + window.getWidth() > contentColumns) {
+                x = SETTINGS_X;
+                y = bottom + WINDOW_GAP_ROWS;
+            }
+            window.setPosition(x, y);
+            bottom = Math.max(bottom, y + window.getHeight());
+            x += window.getWidth() + WINDOW_GAP_COLUMNS;
+        }
+    }
+
+    private void reopenWindows() {
+        placeWindows();
+        openClosedWindows();
     }
 
     private static WindowStyle withoutCloseButton(WindowStyle style) {

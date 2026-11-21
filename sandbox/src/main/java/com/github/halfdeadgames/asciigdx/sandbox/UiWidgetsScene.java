@@ -127,6 +127,7 @@ class UiWidgetsScene implements SandboxScene {
         int contentTop = overlayRows + RESERVED_ROWS;
         content = pages.get(pageIndex).createContent(columns, rows - contentTop);
         content.setPosition(0, contentTop);
+        pages.get(pageIndex).contentPlaced(contentTop);
         uiRoot.getRoot().addChild(content);
         if (pages.get(pageIndex) == buttonsPage) {
             buttonsPage.focusFirstButton();
