@@ -27,9 +27,12 @@ import java.util.Objects;
  * the tags. Tags take no width: the preferred width, the alignment, and the cut-off count visible
  * letters only. {@link #getText()} still returns the text with its tags. Color names come from
  * {@link #setColorNames}, for example {@code label.setColorNames(skin.getColorNames())}. Per-letter
- * foreground colors are drawn. Per-letter background ({@code [bg:...]}) is not yet supported: the
- * tags are read and take no width, but their colors are ignored, and the style's background is
- * used everywhere. Use {@link StyledText#escape} on text you do not trust.
+ * foreground colors are drawn. Per-letter background ({@code [bg:...]}) is drawn too, with the
+ * granularity of one text column, which is half a UI cell: the highlight covers exactly the
+ * tagged letters, so it can start or end in the middle of a UI cell. A letter with a background
+ * tag is drawn with {@link UiSurface#writeTextGlyphWithBackground}, so its background sits above
+ * the label's own background; a letter without one keeps the cell's background. Use
+ * {@link StyledText#escape} on text you do not trust.
  */
 public class Label extends Widget {
 
@@ -260,6 +263,17 @@ public class Label extends Widget {
         };
     }
 
+    private void writeLetter(UiSurface target, int textColumn, int top, int codePoint,
+            int letterIndex) {
+        int foreground = getForegroundRgbaAt(letterIndex);
+        if (styledText == null || !styledText.hasBackgroundAt(letterIndex)) {
+            target.writeTextGlyph(textColumn, top, codePoint, foreground);
+            return;
+        }
+        target.writeTextGlyphWithBackground(textColumn, top, codePoint, foreground,
+                styledText.getBackgroundRgbaAt(letterIndex));
+    }
+
     private void writeClippedText(UiSurface target, int left, int top, int width) {
         String displayedText = getDisplayedText();
         int length = displayedText.length();
@@ -272,8 +286,7 @@ public class Label extends Widget {
         while (index < length && textOffset < textColumnLimit
                 && leftTextColumn + textOffset < target.getTextColumns()) {
             int codePoint = displayedText.codePointAt(index);
-            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint,
-                    getForegroundRgbaAt(letterIndex));
+            writeLetter(target, leftTextColumn + textOffset, top, codePoint, letterIndex);
             index += Character.charCount(codePoint);
             letterIndex++;
             textOffset++;

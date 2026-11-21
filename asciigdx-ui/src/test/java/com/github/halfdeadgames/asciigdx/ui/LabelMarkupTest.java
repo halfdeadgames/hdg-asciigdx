@@ -185,13 +185,61 @@ class LabelMarkupTest {
     }
 
     @Test
-    void backgroundTagsTakeNoWidthButTheirColorIsNotYetDrawn() {
+    void backgroundTagsTakeNoWidthAndColorTheTextGridNotTheSquareGrid() {
         Label label = taggedLabel("[bg:red]ab[/bg]");
         label.draw(surface);
 
         assertEquals("ab", textRow(0, 2));
         assertEquals(1, label.getPreferredWidth());
+        assertEquals(RED, textGrid.getBackground(0, 0));
+        assertEquals(RED, textGrid.getBackground(1, 0));
         assertEquals(BLUE, surface.getSquareGrid().getBackground(0, 0));
+    }
+
+    @Test
+    void backgroundCoversExactlyTheTaggedLettersEvenOnHalfCells() {
+        Label label = taggedLabel("a[bg:red]bc[/bg]d");
+        label.draw(surface);
+
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(0, 0));
+        assertEquals(RED, textGrid.getBackground(1, 0));
+        assertEquals(RED, textGrid.getBackground(2, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(3, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(4, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(1, 1));
+    }
+
+    @Test
+    void lettersWithoutBackgroundTagHaveTransparentTextBackground() {
+        Label label = taggedLabel("abcd");
+        label.draw(surface);
+
+        for (int column = 0; column < 4; column++) {
+            assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(column, 0));
+        }
+    }
+
+    @Test
+    void defaultBackgroundTagLeavesTheLetterWithoutHighlight() {
+        Label label = taggedLabel("[bg:red]a[bg:default]b");
+        label.draw(surface);
+
+        assertEquals(RED, textGrid.getBackground(0, 0));
+        assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(1, 0));
+    }
+
+    @Test
+    void rewritingTheLabelWithOtherTextRemovesOldHighlights() {
+        Label label = taggedLabel("[bg:red]abc");
+        label.draw(surface);
+        assertEquals(RED, textGrid.getBackground(2, 0));
+
+        label.setText("xyz");
+        label.draw(surface);
+
+        for (int column = 0; column < 3; column++) {
+            assertEquals(TerminalGrid.TRANSPARENT_RGBA, textGrid.getBackground(column, 0));
+        }
     }
 
     @Test

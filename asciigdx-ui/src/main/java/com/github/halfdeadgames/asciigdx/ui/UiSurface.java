@@ -21,16 +21,22 @@ import java.util.Objects;
  *
  * <p>The surface owns three grids. The square grid is columns x rows and holds every background
  * and all square glyphs. The text grid is (2 x columns) x rows and holds text glyphs only; its
- * backgrounds are always {@link TerminalGrid#TRANSPARENT_RGBA}. The overlay grid is also
- * (2 x columns) x rows, holds text-font glyphs only (such as underlines and carets), and its
- * backgrounds are always {@link TerminalGrid#TRANSPARENT_RGBA}. {@link #addTo} puts the square
- * grid in a layer first, the text grid above it, and the overlay grid on top, so text glyphs
- * draw over square glyphs and overlay glyphs draw over both.
+ * backgrounds are {@link TerminalGrid#TRANSPARENT_RGBA} unless
+ * {@link #writeTextGlyphWithBackground} set one, which gives a highlight one text column wide.
+ * The overlay grid is also (2 x columns) x rows, holds text-font glyphs only (such as underlines
+ * and carets), and its backgrounds are always {@link TerminalGrid#TRANSPARENT_RGBA}.
+ * {@link #addTo} puts the square grid in a layer first, the text grid above it, and the overlay
+ * grid on top, so text glyphs and text backgrounds draw over square glyphs and overlay glyphs
+ * draw over both.
  *
- * <p>Erase rules: {@link #writeSquareGlyph} clears both text cells and both overlay cells over
- * its square cell. {@link #writeTextGlyph} clears the square glyph of the cell under it and the
- * overlay glyph at its own text column. {@link #eraseGlyphs} clears all three grids in the
- * rectangle. {@link #fillBackground} leaves the text and overlay grids alone, and
+ * <p>Erase rules: {@link #writeSquareGlyph} clears both text cells (glyph and background) and both
+ * overlay cells over its square cell. {@link #writeTextGlyph} clears the square glyph of the cell
+ * under it and the overlay glyph at its own text column, and resets its own text background to
+ * transparent. {@link #writeTextGlyphWithBackground} does the same but sets the text background.
+ * {@link #eraseGlyphs} clears all three grids in the rectangle, text backgrounds included, and
+ * keeps square backgrounds. {@link #fillBackground} changes only the square grid: text-grid
+ * backgrounds stay in place and draw above the new square color, so a caller repainting a region
+ * must call {@link #eraseGlyphs} first and then {@link #fillBackground}, as widgets do.
  * {@link #copyFrom} copies all three. A widget drawn later over a cell therefore hides a mark
  * written there earlier.
  *
@@ -138,10 +144,11 @@ public final class UiSurface {
 
     /**
      * Returns the grid that holds the text glyphs. It is (2 x columns) x rows, one grid column
-     * per text column; this size and layout are part of the contract. Every background is
-     * {@link TerminalGrid#TRANSPARENT_RGBA}. The surface owns it. It is returned for
-     * reading and layer setup; write through {@link #writeTextGlyph}, because direct writes skip
-     * the erase rule.
+     * per text column; this size and layout are part of the contract. A background is
+     * {@link TerminalGrid#TRANSPARENT_RGBA} unless {@link #writeTextGlyphWithBackground} set one;
+     * it draws above the square grid. The surface owns it. It is returned for reading and layer
+     * setup; write through {@link #writeTextGlyph} or {@link #writeTextGlyphWithBackground},
+     * because direct writes skip the erase rule.
      *
      * @return the text grid, never {@code null}
      */
@@ -213,8 +220,9 @@ public final class UiSurface {
 
     /**
      * Writes one square-font glyph with its color. Cells outside the surface or the clip are
-     * skipped silently. The glyph keeps the cell's background. It erases the text glyphs and the
-     * overlay glyphs in both text columns over the cell.
+     * skipped silently. The glyph keeps the cell's square background. It erases the text glyphs and
+     * the overlay glyphs in both text columns over the cell, and resets the text backgrounds of
+     * both text columns to {@link TerminalGrid#TRANSPARENT_RGBA}.
      *
      * <p>Unit warning: the column is a UI (square) column. Do not pass a text column here; the
      * glyph would land at twice the intended horizontal position. Use {@link #writeTextGlyph} for
@@ -239,7 +247,11 @@ public final class UiSurface {
      * text column {@code 2 * c} is the left half of UI column {@code c} and {@code 2 * c + 1} the
      * right half. Cells outside the surface or the clip are skipped silently; a text column is
      * inside the clip when its UI cell is. The glyph erases the square glyph of the UI cell under
-     * it, and the overlay glyph at the same text column.
+     * it, and the overlay glyph at the same text column. It also resets any text background in
+     * this text column to {@link TerminalGrid#TRANSPARENT_RGBA}, however that background was set,
+     * including by direct writes through {@link #getTextGrid()}; the square background shows
+     * through. A caller who wants a lasting highlight must use
+     * {@link #writeTextGlyphWithBackground} for every redraw of that letter.
      *
      * <p>Unit warning: passing a UI (square) column draws at the wrong place, at half the intended
      * horizontal position. Use {@link #writeSquareGlyph} for UI columns.
@@ -250,12 +262,43 @@ public final class UiSurface {
      * @param foregroundRgba glyph color as RGBA8888
      */
     public void writeTextGlyph(int textColumn, int row, int codePoint, int foregroundRgba) {
+        writeTextGlyphWithBackground(textColumn, row, codePoint, foregroundRgba,
+                TerminalGrid.TRANSPARENT_RGBA);
+    }
+
+    /**
+     * Writes one text-font glyph with its color and a background behind it that is one text column
+     * wide, so a highlight can start and end on a half UI cell. The column is a TEXT column, in
+     * half UI cells. Cells outside the surface or the clip are skipped silently; a text column is
+     * inside the clip when its UI cell is. Erases like {@link #writeTextGlyph}: the square glyph of
+     * the UI cell under it and the overlay glyph at the same text column are removed. The square
+     * background is not changed; the text background draws above it.
+     *
+     * <p>The background stays until a later {@link #writeTextGlyph}, {@link #writeSquareGlyph}, or
+     * {@link #eraseGlyphs} covers the text column. {@link #fillBackground} does not remove it.
+     * A dim pass dims a visible text background and leaves a transparent one transparent.
+     *
+     * <p>Unit warning: passing a UI (square) column draws at the wrong place, at half the intended
+     * horizontal position. Use {@link #writeSquareGlyph} for UI columns.
+     *
+     * @param textColumn TEXT column, in half UI cells, from 0 to {@link #getTextColumns()} - 1
+     * @param row row in UI cells
+     * @param codePoint Unicode code point of the glyph, in the text font
+     * @param foregroundRgba glyph color as RGBA8888; this int comes right before
+     *         {@code backgroundRgba}, so take care not to swap the two
+     * @param backgroundRgba background of this text column as RGBA8888; a background with alpha 0
+     *         is transparent and shows the square grid below; other alpha values are passed to the
+     *         layer as given, and this method makes no claim about blending
+     */
+    public void writeTextGlyphWithBackground(int textColumn, int row, int codePoint,
+            int foregroundRgba, int backgroundRgba) {
         int column = Math.floorDiv(textColumn, TEXT_COLUMNS_PER_CELL);
         if (isClipped(column, row)) {
             return;
         }
         textGrid.setCodePoint(textColumn, row, codePoint);
         textGrid.setForeground(textColumn, row, foregroundRgba);
+        textGrid.setBackground(textColumn, row, backgroundRgba);
         squareGrid.setCodePoint(column, row, TerminalGrid.EMPTY_CODE_POINT);
         overlayGrid.setCodePoint(textColumn, row, TerminalGrid.EMPTY_CODE_POINT);
     }
@@ -288,13 +331,19 @@ public final class UiSurface {
         int firstTextColumn = TEXT_COLUMNS_PER_CELL * column;
         for (int i = 0; i < TEXT_COLUMNS_PER_CELL; i++) {
             textGrid.setCodePoint(firstTextColumn + i, row, TerminalGrid.EMPTY_CODE_POINT);
+            textGrid.setBackground(firstTextColumn + i, row, TerminalGrid.TRANSPARENT_RGBA);
             overlayGrid.setCodePoint(firstTextColumn + i, row, TerminalGrid.EMPTY_CODE_POINT);
         }
     }
 
     /**
-     * Sets the background color of every square grid cell in a rectangle. Glyphs, the text grid,
-     * and the overlay grid are not touched. The rectangle is clipped to the surface.
+     * Sets the background color of every square grid cell in a rectangle. Glyphs, the text grid
+     * (including its backgrounds), and the overlay grid are not touched. The rectangle is clipped
+     * to the surface.
+     *
+     * <p>Text-grid backgrounds are NOT touched: they stay in place and draw above the new square
+     * color. A caller that repaints a region must call {@link #eraseGlyphs} first and then this
+     * method, as widgets do.
      *
      * @param column left edge in UI cells; may be negative
      * @param row top edge in UI cells; may be negative
@@ -316,8 +365,10 @@ public final class UiSurface {
 
     /**
      * Removes the glyphs in a rectangle of UI cells from the square grid, the text grid (both text
-     * columns of every cell), and the overlay grid. Backgrounds are kept. The rectangle is clipped
-     * to the surface and the clip.
+     * columns of every cell), and the overlay grid. Square-grid backgrounds are kept. Text-grid
+     * backgrounds in the rectangle are reset to {@link TerminalGrid#TRANSPARENT_RGBA}, because the
+     * text grid draws above the square grid and a stale text background would cover it. The
+     * rectangle is clipped to the surface and the clip.
      *
      * @param column left edge in UI cells; may be negative
      * @param row top edge in UI cells; may be negative
@@ -349,11 +400,11 @@ public final class UiSurface {
      * Restricts all writes to a rectangle of cells until the matching {@link #popClip()}. The new
      * clip is the intersection of the rectangle and the current clip, so clips nest. An empty
      * intersection clips everything. While a clip is active, {@link #writeSquareGlyph},
-     * {@link #writeTextGlyph}, {@link #writeOverlayGlyph}, {@link #fillBackground}, and
-     * {@link #eraseGlyphs} skip cells outside it, the same way they skip cells outside the
-     * surface. The clip is in UI cells: a text column is kept or skipped by its UI cell.
-     * {@link #copyFrom} ignores the clip. Does not allocate, except that the internal stack grows
-     * when more than 8 clips are pushed at once.
+     * {@link #writeTextGlyph}, {@link #writeTextGlyphWithBackground}, {@link #writeOverlayGlyph},
+     * {@link #fillBackground}, and {@link #eraseGlyphs} skip cells outside it, the same way they
+     * skip cells outside the surface. The clip is in UI cells: a text column is kept or skipped by
+     * its UI cell. {@link #copyFrom} ignores the clip. Does not allocate, except that the internal
+     * stack grows when more than 8 clips are pushed at once.
      *
      * <p>The rectangle is in surface cells, not widget-local cells. Every {@code pushClip} needs
      * its {@link #popClip()}, in a {@code finally} block. {@link UiRoot#draw()} clears any clips
@@ -491,30 +542,47 @@ public final class UiSurface {
         }
     }
 
+    private enum BackgroundDimming {
+        EVERY_BACKGROUND,
+        VISIBLE_BACKGROUNDS_ONLY,
+        NO_BACKGROUND
+    }
+
     // Moves every color toward dimRgba by amount (0..1), per RGB channel, keeping each color's
-    // alpha. Only the square grid has backgrounds: a fully transparent one becomes the dim color
-    // with alpha = amount. The text and overlay grids keep their transparent backgrounds. Ignores
-    // the clip. Does not allocate.
+    // alpha. In the square grid a fully transparent background becomes the dim color with
+    // alpha = amount. In the text grid only a visible background is dimmed and a transparent one
+    // stays transparent, because the square grid under it already carries the dim color. The
+    // overlay grid keeps its transparent backgrounds. Ignores the clip. Does not allocate.
     void dimAll(int dimRgba, float amount) {
         if (!(amount > 0f)) {
             return;
         }
-        dimGrid(squareGrid, dimRgba, amount, true);
-        dimGrid(textGrid, dimRgba, amount, false);
-        dimGrid(overlayGrid, dimRgba, amount, false);
+        dimGrid(squareGrid, dimRgba, amount, BackgroundDimming.EVERY_BACKGROUND);
+        dimGrid(textGrid, dimRgba, amount, BackgroundDimming.VISIBLE_BACKGROUNDS_ONLY);
+        dimGrid(overlayGrid, dimRgba, amount, BackgroundDimming.NO_BACKGROUND);
     }
 
     private static void dimGrid(TerminalGrid grid, int dimRgba, float amount,
-            boolean dimBackgrounds) {
+            BackgroundDimming backgroundDimming) {
         for (int y = 0; y < grid.getRows(); y++) {
             for (int x = 0; x < grid.getColumns(); x++) {
                 grid.setForeground(x, y, dimColor(grid.getForeground(x, y), dimRgba, amount));
-                if (dimBackgrounds) {
-                    grid.setBackground(x, y,
-                            dimBackground(grid.getBackground(x, y), dimRgba, amount));
-                }
+                dimBackgroundAt(grid, x, y, dimRgba, amount, backgroundDimming);
             }
         }
+    }
+
+    private static void dimBackgroundAt(TerminalGrid grid, int x, int y, int dimRgba,
+            float amount, BackgroundDimming backgroundDimming) {
+        if (backgroundDimming == BackgroundDimming.NO_BACKGROUND) {
+            return;
+        }
+        int background = grid.getBackground(x, y);
+        boolean transparent = (background & 0xFF) == 0;
+        if (transparent && backgroundDimming == BackgroundDimming.VISIBLE_BACKGROUNDS_ONLY) {
+            return;
+        }
+        grid.setBackground(x, y, dimBackground(background, dimRgba, amount));
     }
 
     private static int dimBackground(int rgba, int dimRgba, float amount) {

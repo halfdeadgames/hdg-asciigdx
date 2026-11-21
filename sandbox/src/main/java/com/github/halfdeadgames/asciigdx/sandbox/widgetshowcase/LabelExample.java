@@ -16,6 +16,10 @@ final class LabelExample implements WidgetExample {
     };
     private static final int ALIGNED_LABEL_COLUMNS = 30;
     private static final String SAMPLE_TEXT = "The quick brown fox";
+    private static final String COLORED_WORD_TEXT =
+            "The [color:hotPink]quick[color:default] brown fox";
+    private static final String HIGHLIGHTED_WORD_TEXT =
+            "Highlight [bg:deepBlue]this word[bg:default] in a phrase";
     private static final String TEXT_FIELD_STYLE = "default";
     private static final int TEXT_FIELD_COLUMNS = 24;
 
@@ -51,6 +55,20 @@ final class LabelExample implements WidgetExample {
             sheet.addDemo(styleName, label);
         }
         addAlignmentDemos(sheet, skin);
+        addMarkupDemos(sheet, skin);
+    }
+
+    private void addMarkupDemos(DemoSheet sheet, Skin skin) {
+        sheet.addHeading("Markup tags");
+        sheet.addDemo("colored word", createMarkupLabel(skin, COLORED_WORD_TEXT));
+        sheet.addDemo("highlighted word", createMarkupLabel(skin, HIGHLIGHTED_WORD_TEXT));
+    }
+
+    private Label createMarkupLabel(Skin skin, String markupText) {
+        Label label = new Label(markupText, skin.getLabelStyle("text"));
+        label.setColorNames(skin.getColorNames());
+        label.pack();
+        return label;
     }
 
     private void addAlignmentDemos(DemoSheet sheet, Skin skin) {
