@@ -55,16 +55,17 @@ public final class DemoSheet {
     /** Adds a row with a caption on the left and the widget on the right. */
     public void addDemo(String caption, Widget widget) {
         Label captionLabel = new Label(caption, captionStyle);
-        captionLabel.setPosition(MARGIN, nextRow);
+        captionLabel.setPosition(MARGIN, nextRow + BoundaryFrame.RING_CELLS);
         content.addChild(captionLabel);
         addDemo(widget);
     }
 
     /** Adds a row with only the widget, for the follow-up rows of a group. */
     public void addDemo(Widget widget) {
-        widget.setPosition(MARGIN + CAPTION_COLUMNS, nextRow);
-        content.addChild(widget);
-        nextRow += stepFor(widget);
+        BoundaryFrame frame = new BoundaryFrame(widget);
+        frame.setPosition(MARGIN + CAPTION_COLUMNS - BoundaryFrame.RING_CELLS, nextRow);
+        content.addChild(frame);
+        nextRow += stepFor(frame);
     }
 
     /** Remembers a setter that the "Disabled" check box calls with its checked state. */

@@ -39,9 +39,9 @@ class CheckBoxTest {
         CheckBox plain = new CheckBox("Go", STYLE);
         CheckBox wide = new CheckBox("Go", STYLE.withGap(3));
 
-        assertEquals(7, plain.getWidth());
+        assertEquals(5, plain.getWidth());
         assertEquals(1, plain.getHeight());
-        assertEquals(9, wide.getWidth());
+        assertEquals(6, wide.getWidth());
         assertEquals(1, wide.getHeight());
     }
 
@@ -54,30 +54,31 @@ class CheckBoxTest {
     }
 
     @Test
-    void markIsInTheSquareGridAndWordsAreInTheTextGrid() {
+    void markAndWordsAreBothInTheTextGrid() {
         CheckBox box = boxAt(2, 2);
         ui.draw();
 
-        assertEquals('[', surface.getSquareGrid().getCodePoint(3, 2));
-        assertEquals(']', surface.getSquareGrid().getCodePoint(5, 2));
-        assertEquals('G', surface.getTextGrid().getCodePoint(14, 2));
-        assertEquals('o', surface.getTextGrid().getCodePoint(15, 2));
-        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getTextGrid().getCodePoint(6, 2));
+        assertEquals('[', surface.getTextGrid().getCodePoint(6, 2));
+        assertEquals(' ', surface.getTextGrid().getCodePoint(7, 2));
+        assertEquals(']', surface.getTextGrid().getCodePoint(8, 2));
+        assertEquals('G', surface.getTextGrid().getCodePoint(10, 2));
+        assertEquals('o', surface.getTextGrid().getCodePoint(11, 2));
+        assertEquals(TerminalGrid.EMPTY_CODE_POINT, surface.getSquareGrid().getCodePoint(3, 2));
 
         box.setChecked(true);
         ui.draw();
 
-        assertEquals('x', surface.getSquareGrid().getCodePoint(4, 2));
+        assertEquals('x', surface.getTextGrid().getCodePoint(7, 2));
     }
 
     @Test
-    void wordsStartAfterTheGapAtAWholeCell() {
+    void wordsStartAfterTheGapCountedInTextColumns() {
         CheckBox box = new CheckBox("Go", STYLE.withGap(3));
         box.setPosition(2, 2);
         ui.getRoot().addChild(box);
         ui.draw();
 
-        assertEquals('G', surface.getTextGrid().getCodePoint(2 * (2 + 1 + 3 + 3), 2));
+        assertEquals('G', surface.getTextGrid().getCodePoint(2 * 2 + 2 * 1 + 3 + 3, 2));
     }
 
     @Test

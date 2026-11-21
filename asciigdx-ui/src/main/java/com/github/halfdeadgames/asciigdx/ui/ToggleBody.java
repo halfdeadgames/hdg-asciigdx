@@ -137,10 +137,10 @@ final class ToggleBody<T extends Widget> {
 
     int getPreferredWidth() {
         int textColumns = text.codePointCount(0, text.length());
-        int textCells = (textColumns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
+        int columns = style.getMarkLength() + style.getGap() + textColumns;
+        int contentCells = (columns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
                 / UiSurface.TEXT_COLUMNS_PER_CELL;
-        return 2 * style.getButtonStyle().getHorizontalPadding() + style.getMarkLength()
-                + style.getGap() + textCells;
+        return 2 * style.getButtonStyle().getHorizontalPadding() + contentCells;
     }
 
     int getPreferredHeight() {
@@ -157,9 +157,14 @@ final class ToggleBody<T extends Widget> {
         target.eraseGlyphs(left, top, width, height);
         target.fillBackground(left, top, width, height, look.getBackgroundRgba());
         String mark = checked ? style.getCheckedMark() : style.getUncheckedMark();
-        int markEnd = writeClippedMark(target, look, mark, left, top, width,
-                style.getButtonStyle().getHorizontalPadding());
-        writeClippedText(target, look, left, top, width, markEnd + style.getGap());
+        int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
+        int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
+        int markStart = UiSurface.TEXT_COLUMNS_PER_CELL
+                * style.getButtonStyle().getHorizontalPadding();
+        int markEnd = writeClippedTextRun(target, look, mark, leftTextColumn, top,
+                textColumnLimit, markStart);
+        writeClippedTextRun(target, look, text, leftTextColumn, top, textColumnLimit,
+                markEnd + style.getGap());
     }
 
     private LabelStyle currentLook() {
@@ -176,39 +181,22 @@ final class ToggleBody<T extends Widget> {
         return owner.isFocusShown() ? looks.getFocused() : looks.getNormal();
     }
 
-    // The mark is a run of square-font glyphs, one UI cell each. Returns the first cell offset
-    // after the run, counted even for cells that were clipped.
-    private static int writeClippedMark(UiSurface target, LabelStyle look, String mark, int left,
-            int top, int width, int startOffset) {
+    // EXPERIMENT: mark and words are text-font runs, one text column per code point. Returns the
+    // first text column after the run, counted even for clipped columns.
+    private static int writeClippedTextRun(UiSurface target, LabelStyle look, String run,
+            int leftTextColumn, int top, int textColumnLimit, int startColumn) {
         int index = 0;
-        int cellOffset = startOffset;
-        while (index < mark.length()) {
-            int codePoint = mark.codePointAt(index);
-            if (cellOffset < width && left + cellOffset < target.getColumns()) {
-                target.writeSquareGlyph(left + cellOffset, top, codePoint,
+        int column = startColumn;
+        while (index < run.length()) {
+            int codePoint = run.codePointAt(index);
+            if (column < textColumnLimit && leftTextColumn + column < target.getTextColumns()) {
+                target.writeTextGlyph(leftTextColumn + column, top, codePoint,
                         look.getForegroundRgba());
             }
             index += Character.charCount(codePoint);
-            cellOffset++;
+            column++;
         }
-        return cellOffset;
-    }
-
-    // The words are a run of text-font glyphs, one text column each, starting at a UI cell.
-    private void writeClippedText(UiSurface target, LabelStyle look, int left, int top,
-            int width, int startCellOffset) {
-        int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
-        int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
-        int textOffset = UiSurface.TEXT_COLUMNS_PER_CELL * startCellOffset;
-        int index = 0;
-        while (index < text.length() && textOffset < textColumnLimit
-                && leftTextColumn + textOffset < target.getTextColumns()) {
-            int codePoint = text.codePointAt(index);
-            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint,
-                    look.getForegroundRgba());
-            index += Character.charCount(codePoint);
-            textOffset++;
-        }
+        return column;
     }
 
     boolean handleEvent(UiEvent event) {

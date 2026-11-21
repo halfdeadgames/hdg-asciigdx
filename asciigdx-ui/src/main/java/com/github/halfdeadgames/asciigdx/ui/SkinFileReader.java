@@ -534,7 +534,7 @@ final class SkinFileReader {
         }
         String gapPath = path + ".gap";
         if (!gap.isLong() || gap.asLong() > Integer.MAX_VALUE) {
-            throw new SkinFileException(gapPath + ": must be a whole number of cells");
+            throw new SkinFileException(gapPath + ": must be a whole number of text columns");
         }
         if (gap.asLong() < 0) {
             throw new SkinFileException(gapPath + ": must not be negative, was " + gap.asLong());

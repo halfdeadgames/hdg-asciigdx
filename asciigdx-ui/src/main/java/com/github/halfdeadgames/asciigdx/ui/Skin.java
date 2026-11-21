@@ -108,8 +108,8 @@ import java.util.Objects;
  *       point.
  *   <li>{@code checked}, required: the mark shown while checked, with the same number of code
  *       points as {@code unchecked}.
- *   <li>{@code gap}, optional: a whole number of cells, zero or greater, between the mark and the
- *       text; defaults to {@link ToggleStyle#DEFAULT_GAP}.
+ *   <li>{@code gap}, optional: a whole number of text columns (half a UI cell), zero or greater,
+ *       between the mark and the text; defaults to {@link ToggleStyle#DEFAULT_GAP}.
  * </ul>
  * Example entry: {@code "option": { "button": "action", "unchecked": "[ ]", "checked": "[x]" }}.
  *

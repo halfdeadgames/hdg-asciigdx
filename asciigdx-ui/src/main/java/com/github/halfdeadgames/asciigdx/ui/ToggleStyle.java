@@ -6,9 +6,9 @@ import java.util.Objects;
  * Looks of a {@link CheckBox} or {@link RadioButton}: the {@link ButtonStyle} that gives the look
  * in each state (normal, pointer over, pressed, disabled, and focused), a mark for the unchecked
  * state, a mark for the checked state, and the gap between the mark and the text. The mark is
- * drawn with the same look as the text, but in the square font, one UI cell per code point; the
- * words after it use the text font. Immutable, so one instance can be shared by any number of
- * widgets.
+ * drawn with the same look as the text, in the text font, one text column (half a UI cell) per
+ * code point, followed by the gap and the words. Immutable, so one instance can be shared by any
+ * number of widgets.
  *
  * <p>Both marks have the same number of code points, so a widget keeps its width when it is
  * toggled.
@@ -19,7 +19,7 @@ import java.util.Objects;
  */
 public final class ToggleStyle {
 
-    /** Gap between the mark and the text of a new style, in UI cells. */
+    /** Gap between the mark and the text of a new style, in text columns (half a UI cell). */
     public static final int DEFAULT_GAP = 1;
 
     private final ButtonStyle button;
@@ -70,15 +70,15 @@ public final class ToggleStyle {
     /**
      * Returns a copy with another gap between the mark and the text.
      *
-     * @param cells gap in UI cells; zero or greater
+     * @param columns gap in text columns (half a UI cell); zero or greater
      * @return a style with the same looks and marks and that gap
-     * @throws IllegalArgumentException if {@code cells} is negative
+     * @throws IllegalArgumentException if {@code columns} is negative
      */
-    public ToggleStyle withGap(int cells) {
-        if (cells < 0) {
-            throw new IllegalArgumentException("Gap must not be negative, was " + cells);
+    public ToggleStyle withGap(int columns) {
+        if (columns < 0) {
+            throw new IllegalArgumentException("Gap must not be negative, was " + columns);
         }
-        return new ToggleStyle(button, uncheckedMark, checkedMark, cells);
+        return new ToggleStyle(button, uncheckedMark, checkedMark, columns);
     }
 
     /**
@@ -109,10 +109,11 @@ public final class ToggleStyle {
     }
 
     /**
-     * Returns the number of code points in each mark, which is one UI column per code point. A
-     * convenience for layout code; it equals the code point count of either mark.
+     * Returns the number of code points in each mark, which is one text column (half a UI cell)
+     * per code point. A convenience for layout code; it equals the code point count of either
+     * mark.
      *
-     * @return the mark length in UI cells, 1 or greater
+     * @return the mark length in text columns, 1 or greater
      */
     public int getMarkLength() {
         return countCodePoints(uncheckedMark);
@@ -121,7 +122,7 @@ public final class ToggleStyle {
     /**
      * Returns the space between the mark and the text.
      *
-     * @return the gap in UI cells, zero or greater
+     * @return the gap in text columns (half a UI cell), zero or greater
      */
     public int getGap() {
         return gap;

@@ -197,8 +197,9 @@ public final class RadioButton extends Widget {
     }
 
     /**
-     * Returns the padding on both sides plus the mark (one UI cell per code point), the gap, and
-     * the text (two code points per UI cell, rounded up).
+     * Returns the padding on both sides plus the mark, the gap, and the text, where the mark, the
+     * gap, and the text are counted in text columns (two per UI cell) and their total is rounded
+     * up to whole UI cells.
      *
      * @return the width in UI cells, zero or greater
      */

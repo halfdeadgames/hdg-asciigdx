@@ -15,6 +15,7 @@ import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.ShowcaseBackdrop
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetExample;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetExamples;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.SkinFileWatcher;
+import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetBoundary;
 import com.github.halfdeadgames.asciigdx.ui.CellArea;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
@@ -64,6 +65,7 @@ class UiShowcaseScene implements SandboxScene {
     private MenuBar menuBar;
     private ExamplePicker picker;
     private Label statusLine;
+    private Label borderNote;
     private LayerStack layers;
     private Widget content;
     private int columns = INITIAL_COLUMNS;
@@ -87,6 +89,7 @@ class UiShowcaseScene implements SandboxScene {
         if (content != null) {
             examples.get(exampleIndex).exampleHidden();
         }
+        WidgetBoundary.forgetFrames();
         surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
         uiInput = UiInput.forRoot(uiRoot, this::pickCell);
@@ -97,6 +100,7 @@ class UiShowcaseScene implements SandboxScene {
         uiRoot.getRoot().addChild(new ShowcaseBackdrop(columns, rows, skin.getRgba("black")));
         createMenuBar();
         createStatusLine();
+        createBorderNote();
         showExample(exampleIndex);
         limitWindowsToExampleArea();
         if (oldLayers != null) {
@@ -112,6 +116,7 @@ class UiShowcaseScene implements SandboxScene {
         widgetsMenu.addItem("Choose widget…", 'C', this::openPicker);
         widgetsMenu.addItem("Rebuild example (F5)", 'R', this::rebuildExample);
         widgetsMenu.addItem("Reload skin", 'k', this::reloadSkin);
+        widgetsMenu.addItem("Show or hide widget border (F6)", 'B', this::toggleBorder);
         uiRoot.getRoot().addChild(menuBar);
     }
 
@@ -119,6 +124,27 @@ class UiShowcaseScene implements SandboxScene {
         statusLine = new Label("", skin.getLabelStyle(LABEL_STYLE));
         statusLine.setPosition(1, overlayRows + MENU_BAR_ROWS);
         uiRoot.getRoot().addChild(statusLine);
+    }
+
+    private void createBorderNote() {
+        borderNote = new Label("", skin.getLabelStyle(LABEL_STYLE));
+        borderNote.setPosition(1, overlayRows + MENU_BAR_ROWS + 1);
+        uiRoot.getRoot().addChild(borderNote);
+        refreshBorderNote();
+    }
+
+    private void refreshBorderNote() {
+        borderNote.setText(WidgetBoundary.isShown()
+                ? "The red border is NOT part of the widget. Everything drawn"
+                        + " inside the border is the widget. F6 hides the border."
+                : "Widget border hidden. F6 shows it again.");
+        borderNote.pack();
+    }
+
+    private void toggleBorder() {
+        WidgetBoundary.toggleShown();
+        refreshBorderNote();
+        uiRoot.draw();
     }
 
     private void refreshStatusLine() {
@@ -195,6 +221,7 @@ class UiShowcaseScene implements SandboxScene {
     private void moveBelowOverlay() {
         menuBar.setPosition(0, overlayRows);
         statusLine.setPosition(1, overlayRows + MENU_BAR_ROWS);
+        borderNote.setPosition(1, overlayRows + MENU_BAR_ROWS + 1);
         content.setPosition(0, contentTop());
         limitWindowsToExampleArea();
         uiRoot.draw();
@@ -240,6 +267,10 @@ class UiShowcaseScene implements SandboxScene {
         }
         if (keycode == Input.Keys.F5) {
             rebuildExample();
+            return true;
+        }
+        if (keycode == Input.Keys.F6) {
+            toggleBorder();
             return true;
         }
         if (keycode == Input.Keys.ESCAPE && picker.isOpen()) {
