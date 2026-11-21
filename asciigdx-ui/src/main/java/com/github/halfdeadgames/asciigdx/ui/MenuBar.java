@@ -14,7 +14,8 @@ import java.util.Objects;
  * horizontal padding on both sides, and the rest of the width shows the normal background. A
  * title takes one text column (half a UI column) per code point, rounded up to whole UI cells, so
  * title offsets, widths, and hit testing are in whole UI cells. Adding a menu widens the bar to
- * fit all titles when it is narrower, and never narrows it. Titles that do not fit are cut off.
+ * fit all titles when it is narrower, and never narrows it; so does {@link Menu#setTitle(String)}.
+ * Titles that do not fit are cut off.
  *
  * <p>Looks: a title is drawn with the title style's normal look, its pointer-over look while
  * pointer 0 is over it, and its pressed look while its menu is open. Items use the item style's
@@ -510,6 +511,17 @@ public final class MenuBar extends Widget {
             return;
         }
         layoutDropDown();
+        dropDown.requestRedraw();
+    }
+
+    // The drop-down is laid out again because a wider title moves the titles to its right.
+    void refreshTitles() {
+        setSize(Math.max(getWidth(), getPreferredWidth()), 0);
+        invalidate();
+        if (openMenu != null) {
+            layoutDropDown();
+            dropDown.requestRedraw();
+        }
     }
 
     // Opens the menu, or switches to it when another of this bar is open. The focus to restore is

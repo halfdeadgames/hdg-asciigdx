@@ -8,6 +8,9 @@ import java.util.Objects;
  * {@link MenuBar#addMenu(String)} or {@link MenuBar#addMenu(String, char)}. Items are shown in the
  * order they were added, one text row each.
  *
+ * <p>The title and the text of each item can be changed later with {@link #setTitle(String)} and
+ * {@link #setItemText(int, String)}; their trigger letters stay.
+ *
  * <p>A menu can be opened while it has no items; its drop-down is then empty. Items cannot be
  * removed. Several items may have the same trigger; typing the trigger then cycles through them
  * (see {@link MenuBar}).
@@ -20,9 +23,9 @@ public final class Menu {
     }
 
     private final MenuBar bar;
-    private final String title;
     private final char trigger;
-    private final int triggerIndex;
+    private String title;
+    private int triggerIndex;
     private final ArrayList<Item> items = new ArrayList<>();
 
     Menu(MenuBar bar, String title, char trigger, int triggerIndex) {
@@ -39,6 +42,33 @@ public final class Menu {
      */
     public String getTitle() {
         return title;
+    }
+
+    /**
+     * Replaces the text shown in the bar. The trigger letter of this menu, if it has one, stays;
+     * the first case-insensitive match of it in the new title is the one drawn in the trigger
+     * color. The bar lays out again, so the titles to the right move and
+     * the bar widens if the titles no longer fit; it never narrows. If this menu is open, its
+     * drop-down is moved to line up with the title again. Setting the same text changes nothing.
+     *
+     * <p>Call it on the render thread only. It is safe to call while this menu is open and from
+     * inside an item action.
+     *
+     * @param title new text of the title, one text column per code point; must not be
+     *         {@code null}; may be empty
+     * @throws NullPointerException if {@code title} is {@code null}
+     * @throws IllegalArgumentException if this menu has a trigger letter that does not appear in
+     *         {@code title} when compared without regard to case; the title is then unchanged
+     */
+    public void setTitle(String title) {
+        Objects.requireNonNull(title, "title");
+        if (title.equals(this.title)) {
+            return;
+        }
+        int newTriggerIndex = MenuTrigger.requireCellOf(title, trigger);
+        this.title = title;
+        this.triggerIndex = newTriggerIndex;
+        bar.refreshTitles();
     }
 
     /**
@@ -103,7 +133,46 @@ public final class Menu {
         return items.size();
     }
 
-    String getItemText(int index) {
+    /**
+     * Replaces the text of one item. The item keeps its position, its action, and its trigger
+     * letter, if it has one. The first case-insensitive match of the trigger letter in the new
+     * text is the one drawn in the trigger color. If this menu is open, its drop-down width
+     * follows the widest item right away, so it can grow or shrink, and a highlighted item stays
+     * highlighted. Setting the same text changes nothing.
+     *
+     * <p>Call it on the render thread only. It is safe to call while this menu is open and from
+     * inside an item action.
+     *
+     * @param index position of the item, from 0 to {@code getItemCount() - 1}
+     * @param text new text of the item, one text column per code point; must not be {@code null};
+     *         may be empty
+     * @throws NullPointerException if {@code text} is {@code null}; this is checked before
+     *         {@code index}, so a {@code null} text with a bad index throws this exception
+     * @throws IndexOutOfBoundsException if {@code index} is outside that range
+     * @throws IllegalArgumentException if the item has a trigger letter that does not appear in
+     *         {@code text} when compared without regard to case; the item is then unchanged
+     */
+    public void setItemText(int index, String text) {
+        Objects.requireNonNull(text, "text");
+        Objects.checkIndex(index, items.size());
+        Item item = items.get(index);
+        if (text.equals(item.text())) {
+            return;
+        }
+        int newTriggerIndex = MenuTrigger.requireCellOf(text, item.trigger());
+        items.set(index, new Item(text, item.action(), item.trigger(), newTriggerIndex));
+        bar.refreshDropDown(this);
+    }
+
+    /**
+     * Returns the current text of one item, as set by {@code addItem} or
+     * {@link #setItemText(int, String)}.
+     *
+     * @param index position of the item, from 0 to {@code getItemCount() - 1}
+     * @return the item text, never {@code null}; may be empty
+     * @throws IndexOutOfBoundsException if {@code index} is outside that range
+     */
+    public String getItemText(int index) {
         return items.get(index).text();
     }
 
