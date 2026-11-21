@@ -1,10 +1,12 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
 import com.badlogic.gdx.files.FileHandle;
+import com.github.halfdeadgames.asciigdx.text.ColorNames;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 
 /**
  * Named colors and widget styles read from a JSON skin file. Immutable, so one skin can be shared
@@ -243,6 +245,7 @@ public final class Skin {
     private final Map<String, WindowStyle> windowStyles;
     private final Map<String, DialogStyle> dialogStyles;
     private final Map<String, Map<String, Object>> customStyles;
+    private final ColorNames colorNames;
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
             Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
@@ -269,6 +272,12 @@ public final class Skin {
         this.menuBarStyles = copyOf(menuBarStyles);
         this.checkBoxStyles = copyOf(checkBoxStyles);
         this.radioButtonStyles = copyOf(radioButtonStyles);
+        this.colorNames = this::findColor;
+    }
+
+    private OptionalInt findColor(String name) {
+        Integer rgba = colors.get(name);
+        return rgba == null ? OptionalInt.empty() : OptionalInt.of(rgba);
     }
 
     /**
@@ -491,6 +500,20 @@ public final class Skin {
      */
     public int getRgba(String name) {
         return lookUp(colors, name, "color");
+    }
+
+    /**
+     * Returns the colors of the {@code colors} section as a lookup for inline color tags, so
+     * {@code [color:deepBlue]} in a {@link Label} text finds the skin's color named
+     * {@code deepBlue}. Names are compared exactly, as in {@link #getRgba(String)}. The lookup is
+     * a view of this skin: it copies nothing per call, never changes, and is the same object on
+     * every call. Use it with {@link Label#setColorNames}.
+     *
+     * @return the lookup, never {@code null}; it returns each color as 0xRRGGBBAA, and an empty
+     *         value for a name that is not in the {@code colors} section
+     */
+    public ColorNames getColorNames() {
+        return colorNames;
     }
 
     /**

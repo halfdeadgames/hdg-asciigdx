@@ -17,7 +17,13 @@
  * The game owns one paint per text and passes it to the {@code TextDrawing} methods that take a
  * paint. {@link com.github.halfdeadgames.asciigdx.text.GradientSpan} picks the gradient range.
  *
- * <p>Hyphenation: {@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
+ * <p>Inline color tags: {@link com.github.halfdeadgames.asciigdx.text.StyledText} parses
+ * {@code [color:red]...[/color]} and {@code [bg:#203070]...[/bg]} tags once into visible text with
+ * a color per letter, and the {@code TextDrawing} methods that take a {@code StyledText} draw it.
+ * {@link com.github.halfdeadgames.asciigdx.text.ColorNames} supplies the color names; the game
+ * owns them. Tags take no width, so layout runs on the visible text.
+ *
+ * <p>Hyphenation:{@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
  * where a word may be split, using the bundled English (US) patterns or patterns the game
  * supplies.
  *
@@ -52,6 +58,10 @@
  * paint.setGradient(fadeColor, GradientSpan.WHOLE_TEXT);
  * paint.setVisibleLetterCount((int) (secondsSinceStart * 20f));
  * TextDrawing.drawText(grid, 2, 8, message, paint);
+ *
+ * // Inline colors, parsed once and drawn every frame.
+ * StyledText tagged = StyledText.parse("The [color:red]quick[/color] fox", names);
+ * TextDrawing.drawText(grid, 2, 9, tagged, TextPaint.of(fg, bg));
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.text;

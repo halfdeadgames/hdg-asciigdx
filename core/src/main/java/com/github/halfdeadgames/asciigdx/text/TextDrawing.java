@@ -385,6 +385,115 @@ public final class TextDrawing {
         PaintedText.drawWrapped(grid, topRow, layout, paint);
     }
 
+    /**
+     * Same as {@link #drawText(TerminalGrid, int, int, CharSequence, TextPaint)} for a text with
+     * inline color tags. The visible text is drawn, one cell per letter; tags take no cell. A
+     * letter with a color of its own from the tags uses it instead of the paint's foreground (and
+     * gradient) or background; other letters use the paint. With
+     * {@link TextPaint#setKeepBackground} on, backgrounds are left as they are, tags included.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first letter, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param text text with parsed tags; must not be {@code null}
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, or {@code paint} is {@code null}
+     * @see StyledText
+     */
+    public static void drawText(TerminalGrid grid, int column, int row, StyledText text,
+            TextPaint paint) {
+        Objects.requireNonNull(text, "text");
+        PaintedText.drawText(grid, column, row, text.getVisibleText(), paint, text);
+    }
+
+    /**
+     * Same as
+     * {@link #drawTruncated(TerminalGrid, int, int, int, CharSequence, int, TextPaint)} for a text
+     * with inline color tags. Width and ellipsis count visible letters only, so the ellipsis lands
+     * where it would for the same text without tags. The ellipsis takes the colors of the letter
+     * before it, or of the first letter when it is the only cell.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first cell, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param widthCells width of the area in cells; at least 0
+     * @param text text with parsed tags; must not be {@code null}
+     * @param ellipsisCodePoint single valid Unicode code point drawn as the ellipsis
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, or {@code paint} is {@code null}
+     * @throws IllegalArgumentException if {@code widthCells} is negative or
+     *         {@code ellipsisCodePoint} is not a valid code point
+     * @see StyledText
+     */
+    public static void drawTruncated(TerminalGrid grid, int column, int row, int widthCells,
+            StyledText text, int ellipsisCodePoint, TextPaint paint) {
+        Objects.requireNonNull(text, "text");
+        PaintedText.drawTruncated(grid, column, row, widthCells, text.getVisibleText(),
+                ellipsisCodePoint, paint, text);
+    }
+
+    /**
+     * Same as
+     * {@link #drawScrolling(TerminalGrid, int, int, int, CharSequence, TextScroll, float, int,
+     * TextPaint)} for a text with inline color tags. Scrolling counts visible letters only, and
+     * every letter keeps its colors while it moves. An ellipsis takes the colors of the letter
+     * before it in the text, or of the first letter when none is before it.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param column column of the first cell, in cells; any value is accepted
+     * @param row row of the text, in cells; any value is accepted
+     * @param widthCells width of the area in cells; at least 0
+     * @param text text with parsed tags; must not be {@code null}
+     * @param scroll motion of the text; must not be {@code null}
+     * @param secondsSinceStart seconds since this text was first shown in this area; NaN,
+     *         infinite, and negative values show the start position
+     * @param ellipsisCodePoint single valid Unicode code point drawn as the ellipsis
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code text}, {@code scroll}, or
+     *         {@code paint} is {@code null}
+     * @throws IllegalArgumentException if {@code widthCells} is negative or
+     *         {@code ellipsisCodePoint} is not a valid code point
+     * @see StyledText
+     */
+    public static void drawScrolling(TerminalGrid grid, int column, int row, int widthCells,
+            StyledText text, TextScroll scroll, float secondsSinceStart, int ellipsisCodePoint,
+            TextPaint paint) {
+        Objects.requireNonNull(text, "text");
+        PaintedText.drawScrolling(grid, column, row, widthCells, text.getVisibleText(), scroll,
+                secondsSinceStart, ellipsisCodePoint, paint, text);
+    }
+
+    /**
+     * Same as {@link #drawWrapped(TerminalGrid, int, WrapLayout, TextPaint)} for a text with
+     * inline color tags. The layout must have been laid out on {@code text.getVisibleText()}, so
+     * tags take no width in wrapping, ellipsis, or hyphenation. A hyphen or ellipsis takes the
+     * colors of the last letter before it. The layout's text is compared with the visible text
+     * on every call, without allocating; a layout that was never laid out has no lines and draws
+     * nothing.
+     *
+     * @param grid grid to write to; must not be {@code null}
+     * @param topRow row of the first line, in cells; any value is accepted
+     * @param layout lines laid out on the visible text; must not be {@code null}
+     * @param text the text whose visible text the layout holds; must not be {@code null}
+     * @param paint colors and effects; must not be {@code null}; read during the call only
+     * @throws NullPointerException if {@code grid}, {@code layout}, {@code text}, or
+     *         {@code paint} is {@code null}
+     * @throws IllegalArgumentException if the text of the layout is not equal to
+     *         {@code text.getVisibleText()}
+     * @see StyledText
+     */
+    public static void drawWrapped(TerminalGrid grid, int topRow, WrapLayout layout,
+            StyledText text, TextPaint paint) {
+        Objects.requireNonNull(layout, "layout");
+        Objects.requireNonNull(text, "text");
+        CharSequence layoutText = layout.getText();
+        if (layoutText != null && !text.getVisibleText().contentEquals(layoutText)) {
+            throw new IllegalArgumentException(
+                    "The layout was not laid out on text.getVisibleText()");
+        }
+        PaintedText.drawWrapped(grid, topRow, layout, paint, text);
+    }
+
     static boolean hasTextBefore(TextScroll scroll, int offset, int textCells,
             long stripCells) {
         if (!scroll.isLooping()) {

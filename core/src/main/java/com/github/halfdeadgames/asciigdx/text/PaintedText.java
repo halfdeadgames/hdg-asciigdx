@@ -8,6 +8,11 @@ import java.util.Objects;
  * Implements the {@link TextPaint} variants of the {@link TextDrawing} methods. Letter indexes
  * are code point indexes in the text; the gradient index and count are given separately because
  * a gradient may cover a different range than the typewriter.
+ *
+ * <p>Every method also takes the {@link StyledText} that supplies per-letter colors; plain text
+ * passes {@link StyledText#UNSTYLED_EMPTY}, which styles no letter. A letter's own color replaces
+ * the paint's color (and the gradient). A marker (ellipsis or hyphen) takes the style of the
+ * letter before it, or of the first letter when it has none before it.
  */
 final class PaintedText {
 
@@ -18,9 +23,15 @@ final class PaintedText {
 
     static void drawText(TerminalGrid grid, int column, int row, CharSequence text,
             TextPaint paint) {
+        drawText(grid, column, row, text, paint, StyledText.UNSTYLED_EMPTY);
+    }
+
+    static void drawText(TerminalGrid grid, int column, int row, CharSequence text,
+            TextPaint paint, StyledText styles) {
         Objects.requireNonNull(grid, "grid");
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(paint, "paint");
+        Objects.requireNonNull(styles, "styles");
         if (isRowOutside(grid, row) || column >= grid.getColumns()) {
             return;
         }
@@ -32,7 +43,7 @@ final class PaintedText {
         while (index < text.length() && cell < grid.getColumns()) {
             int codePoint = Character.codePointAt(text, index);
             putTextLetter(grid, cell, row, codePoint, letterIndex, letterIndex, letterCount,
-                    paint);
+                    paint, styles);
             index += Character.charCount(codePoint);
             cell++;
             letterIndex++;
@@ -41,9 +52,16 @@ final class PaintedText {
 
     static void drawTruncated(TerminalGrid grid, int column, int row, int widthCells,
             CharSequence text, int ellipsisCodePoint, TextPaint paint) {
+        drawTruncated(grid, column, row, widthCells, text, ellipsisCodePoint, paint,
+                StyledText.UNSTYLED_EMPTY);
+    }
+
+    static void drawTruncated(TerminalGrid grid, int column, int row, int widthCells,
+            CharSequence text, int ellipsisCodePoint, TextPaint paint, StyledText styles) {
         Objects.requireNonNull(grid, "grid");
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(paint, "paint");
+        Objects.requireNonNull(styles, "styles");
         TextDrawing.requireNonNegativeWidth(widthCells);
         TextDrawing.requireValidEllipsis(ellipsisCodePoint);
         if (widthCells == 0 || isRowOutside(grid, row)) {
@@ -61,11 +79,12 @@ final class PaintedText {
             long cell = (long) column + offset;
             if (truncated && offset == widthCells - 1) {
                 putMarker(grid, cell, row, ellipsisCodePoint, offset, offset - 1, textCells,
-                        paint);
+                        paint, styles);
             } else if (offset < textCells) {
                 int codePoint = Character.codePointAt(text, index);
                 index += Character.charCount(codePoint);
-                putTextLetter(grid, cell, row, codePoint, offset, offset, textCells, paint);
+                putTextLetter(grid, cell, row, codePoint, offset, offset, textCells, paint,
+                        styles);
             } else {
                 putBlank(grid, cell, row, paint);
             }
@@ -75,10 +94,18 @@ final class PaintedText {
     static void drawScrolling(TerminalGrid grid, int column, int row, int widthCells,
             CharSequence text, TextScroll scroll, float secondsSinceStart, int ellipsisCodePoint,
             TextPaint paint) {
+        drawScrolling(grid, column, row, widthCells, text, scroll, secondsSinceStart,
+                ellipsisCodePoint, paint, StyledText.UNSTYLED_EMPTY);
+    }
+
+    static void drawScrolling(TerminalGrid grid, int column, int row, int widthCells,
+            CharSequence text, TextScroll scroll, float secondsSinceStart, int ellipsisCodePoint,
+            TextPaint paint, StyledText styles) {
         Objects.requireNonNull(grid, "grid");
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(scroll, "scroll");
         Objects.requireNonNull(paint, "paint");
+        Objects.requireNonNull(styles, "styles");
         TextDrawing.requireNonNegativeWidth(widthCells);
         TextDrawing.requireValidEllipsis(ellipsisCodePoint);
         if (widthCells == 0 || isRowOutside(grid, row)) {
@@ -86,7 +113,7 @@ final class PaintedText {
         }
         int textCells = Character.codePointCount(text, 0, text.length());
         if (textCells <= widthCells) {
-            drawTruncated(grid, column, row, widthCells, text, ellipsisCodePoint, paint);
+            drawTruncated(grid, column, row, widthCells, text, ellipsisCodePoint, paint, styles);
             return;
         }
         long firstCell = Math.max(0L, -(long) column);
@@ -115,10 +142,10 @@ final class PaintedText {
             int lettersBefore = (int) Math.min(stripCell, textCells);
             if (ellipsisHere) {
                 putMarker(grid, cell, row, ellipsisCodePoint, lettersBefore, lettersBefore - 1,
-                        textCells, paint);
+                        textCells, paint, styles);
             } else if (isText) {
                 putTextLetter(grid, cell, row, codePoint, lettersBefore, lettersBefore,
-                        textCells, paint);
+                        textCells, paint, styles);
             } else {
                 putBlank(grid, cell, row, paint);
             }
@@ -131,9 +158,15 @@ final class PaintedText {
     }
 
     static void drawWrapped(TerminalGrid grid, int topRow, WrapLayout layout, TextPaint paint) {
+        drawWrapped(grid, topRow, layout, paint, StyledText.UNSTYLED_EMPTY);
+    }
+
+    static void drawWrapped(TerminalGrid grid, int topRow, WrapLayout layout, TextPaint paint,
+            StyledText styles) {
         Objects.requireNonNull(grid, "grid");
         Objects.requireNonNull(layout, "layout");
         Objects.requireNonNull(paint, "paint");
+        Objects.requireNonNull(styles, "styles");
         int lastLine = layout.getLineCount() - 1;
         if (lastLine < 0) {
             return;
@@ -158,13 +191,13 @@ final class PaintedText {
             int gradientCount = restartPerLine ? lineLetters : totalLetters;
             boolean endsWithEllipsis = layout.isTruncated() && line == lastLine;
             drawWrappedLine(grid, (int) row, layout, line, endsWithEllipsis, paint,
-                    lettersBefore, gradientBase, gradientCount);
+                    lettersBefore, gradientBase, gradientCount, styles);
         }
     }
 
     private static void drawWrappedLine(TerminalGrid grid, int row, WrapLayout layout, int line,
             boolean endsWithEllipsis, TextPaint paint, int lettersBefore, int gradientBase,
-            int gradientCount) {
+            int gradientCount, StyledText styles) {
         CharSequence text = layout.getText();
         long column = layout.getLineStartColumn(line);
         int index = layout.getLineStart(line);
@@ -173,7 +206,7 @@ final class PaintedText {
         while (index < end) {
             int codePoint = Character.codePointAt(text, index);
             putTextLetter(grid, column, row, codePoint, lettersBefore + lineLetterIndex,
-                    gradientBase + lineLetterIndex, gradientCount, paint);
+                    gradientBase + lineLetterIndex, gradientCount, paint, styles);
             index += Character.charCount(codePoint);
             column++;
             lineLetterIndex++;
@@ -182,12 +215,12 @@ final class PaintedText {
         int lastLetterGradientIndex = gradientBase + lineLetterIndex - 1;
         if (layout.isLineHyphenated(line)) {
             putMarker(grid, column, row, layout.getRules().getHyphenCodePoint(),
-                    lettersThroughLine, lastLetterGradientIndex, gradientCount, paint);
+                    lettersThroughLine, lastLetterGradientIndex, gradientCount, paint, styles);
             column++;
         }
         if (endsWithEllipsis) {
             putMarker(grid, column, row, layout.getRules().getEllipsisCodePoint(),
-                    lettersThroughLine, lastLetterGradientIndex, gradientCount, paint);
+                    lettersThroughLine, lastLetterGradientIndex, gradientCount, paint, styles);
             column++;
         }
         long lastColumn = Math.min(layout.getLineEndColumn(line), grid.getColumns() - 1);
@@ -201,13 +234,14 @@ final class PaintedText {
     }
 
     private static void putTextLetter(TerminalGrid grid, long column, int row, int codePoint,
-            int letterIndex, int gradientIndex, int gradientCount, TextPaint paint) {
+            int letterIndex, int gradientIndex, int gradientCount, TextPaint paint,
+            StyledText styles) {
         if (letterIndex >= paint.getVisibleLetterCount()) {
             putBlank(grid, column, row, paint);
             return;
         }
-        putCell(grid, column, row, codePoint, gradientColor(paint, gradientIndex, gradientCount),
-                paint);
+        putStyledCell(grid, column, row, codePoint, letterIndex, gradientIndex, gradientCount,
+                paint, styles);
     }
 
     /**
@@ -219,22 +253,33 @@ final class PaintedText {
      */
     private static void putMarker(TerminalGrid grid, long column, int row, int codePoint,
             int lettersBefore, int followedLetterGradientIndex, int gradientCount,
-            TextPaint paint) {
+            TextPaint paint, StyledText styles) {
         if (paint.getVisibleLetterCount() < lettersBefore) {
             putBlank(grid, column, row, paint);
             return;
         }
         int gradientIndex = Math.max(0, followedLetterGradientIndex);
-        putCell(grid, column, row, codePoint, gradientColor(paint, gradientIndex, gradientCount),
-                paint);
+        int followedLetterIndex = Math.max(0, lettersBefore - 1);
+        putStyledCell(grid, column, row, codePoint, followedLetterIndex, gradientIndex,
+                gradientCount, paint, styles);
+    }
+
+    private static void putStyledCell(TerminalGrid grid, long column, int row, int codePoint,
+            int styleLetterIndex, int gradientIndex, int gradientCount, TextPaint paint,
+            StyledText styles) {
+        int foreground = styles.foregroundOr(styleLetterIndex,
+                gradientColor(paint, gradientIndex, gradientCount));
+        int background = styles.backgroundOr(styleLetterIndex, paint.getBackground());
+        putCell(grid, column, row, codePoint, foreground, background, paint);
     }
 
     private static void putBlank(TerminalGrid grid, long column, int row, TextPaint paint) {
-        putCell(grid, column, row, BLANK_CODE_POINT, paint.getForeground(), paint);
+        putCell(grid, column, row, BLANK_CODE_POINT, paint.getForeground(), paint.getBackground(),
+                paint);
     }
 
     private static void putCell(TerminalGrid grid, long column, int row, int codePoint,
-            int foreground, TextPaint paint) {
+            int foreground, int background, TextPaint paint) {
         if (column < 0 || column >= grid.getColumns()) {
             return;
         }
@@ -244,7 +289,7 @@ final class PaintedText {
             grid.setForeground(cellColumn, row, foreground);
             return;
         }
-        grid.set(cellColumn, row, codePoint, foreground, paint.getBackground());
+        grid.set(cellColumn, row, codePoint, foreground, background);
     }
 
     private static int gradientColor(TextPaint paint, int gradientIndex, int gradientCount) {

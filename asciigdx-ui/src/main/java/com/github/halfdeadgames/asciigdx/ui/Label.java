@@ -1,5 +1,7 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
+import com.github.halfdeadgames.asciigdx.text.ColorNames;
+import com.github.halfdeadgames.asciigdx.text.StyledText;
 import java.util.Objects;
 
 /**
@@ -19,6 +21,15 @@ import java.util.Objects;
  *
  * <p>A new label is packed: its size fits its text. Changing the text keeps the current size, so
  * call {@link #pack()} afterward to fit the new text.
+ *
+ * <p>Markup: while {@link #isMarkupEnabled()} is {@code true} (the default), the text may hold
+ * inline color tags such as {@code The [color:red]quick[/color] fox}; see {@link StyledText} for
+ * the tags. Tags take no width: the preferred width, the alignment, and the cut-off count visible
+ * letters only. {@link #getText()} still returns the text with its tags. Color names come from
+ * {@link #setColorNames}, for example {@code label.setColorNames(skin.getColorNames())}. Per-letter
+ * foreground colors are drawn. Per-letter background ({@code [bg:...]}) is not yet supported: the
+ * tags are read and take no width, but their colors are ignored, and the style's background is
+ * used everywhere. Use {@link StyledText#escape} on text you do not trust.
  */
 public class Label extends Widget {
 
@@ -27,6 +38,9 @@ public class Label extends Widget {
     private String text;
     private LabelStyle style;
     private HorizontalAlignment textAlignment = HorizontalAlignment.LEFT;
+    private ColorNames colorNames = ColorNames.NONE;
+    private boolean markupEnabled = true;
+    private StyledText styledText;
 
     /**
      * Returns where the text sits when the label is wider than its text.
@@ -67,11 +81,79 @@ public class Label extends Widget {
     public Label(String text, LabelStyle style) {
         this.text = Objects.requireNonNull(text, "text");
         this.style = Objects.requireNonNull(style, "style");
+        parseMarkup();
         setSize(getPreferredWidth(), getPreferredHeight());
     }
 
     /**
-     * Returns the text.
+     * Returns the color name lookup used for {@code [color:NAME]} and {@code [bg:NAME]} tags.
+     *
+     * @return the lookup, never {@code null}; {@link ColorNames#NONE} for a new label
+     */
+    public ColorNames getColorNames() {
+        return colorNames;
+    }
+
+    /**
+     * Sets the color name lookup for tags. The text is parsed again once, now, not on every draw,
+     * so later changes inside the lookup are not noticed until the next call to this method or to
+     * {@link #setText}. Every call re-reads the lookup, even with the same instance, so a game
+     * whose lookup changes (for example after a theme change) calls this again to refresh the
+     * label. Calls {@link #invalidate()}, because unknown names stay visible and change the width.
+     * Has no effect on drawing while {@link #isMarkupEnabled()} is {@code false}.
+     *
+     * @param names the lookup; must not be {@code null}; use {@link ColorNames#NONE} for none
+     * @throws NullPointerException if {@code names} is {@code null}
+     */
+    public void setColorNames(ColorNames names) {
+        Objects.requireNonNull(names, "names");
+        colorNames = names;
+        parseMarkup();
+        invalidate();
+    }
+
+    /**
+     * Returns whether tags in the text are read.
+     *
+     * @return {@code true} if tags are read; {@code true} for a new label
+     */
+    public boolean isMarkupEnabled() {
+        return markupEnabled;
+    }
+
+    /**
+     * Sets whether tags in the text are read. When {@code false} the text is drawn literally,
+     * tags included, and its full length counts. A change parses or drops the parsed text once and
+     * calls {@link #invalidate()}; an equal value changes nothing.
+     *
+     * @param markupEnabled {@code true} to read tags, {@code false} to draw the text as it is
+     */
+    public void setMarkupEnabled(boolean markupEnabled) {
+        if (markupEnabled == this.markupEnabled) {
+            return;
+        }
+        this.markupEnabled = markupEnabled;
+        parseMarkup();
+        invalidate();
+    }
+
+    private void parseMarkup() {
+        styledText = markupEnabled ? StyledText.parse(text, colorNames) : null;
+    }
+
+    private String getDisplayedText() {
+        return styledText == null ? text : styledText.getVisibleText();
+    }
+
+    private int getForegroundRgbaAt(int letterIndex) {
+        if (styledText == null || !styledText.hasForegroundAt(letterIndex)) {
+            return style.getForegroundRgba();
+        }
+        return styledText.getForegroundRgbaAt(letterIndex);
+    }
+
+    /**
+     * Returns the text, exactly as it was given, including any tags.
      *
      * @return the text, never {@code null}
      */
@@ -94,6 +176,7 @@ public class Label extends Widget {
             return;
         }
         this.text = text;
+        parseMarkup();
         invalidate();
     }
 
@@ -125,7 +208,7 @@ public class Label extends Widget {
     /**
      * Returns the width of the text, rounded up to whole UI cells. The text takes one text column
      * per code point, so a character above U+FFFF counts once, and two code points fit in one UI
-     * cell.
+     * cell. With markup on, only visible letters count; tags take no width.
      * The width always rounds up to whole UI cells, so a text of odd length leaves a blank half
      * cell at its end, and a label cannot be sized in half cells.
      *
@@ -133,7 +216,8 @@ public class Label extends Widget {
      */
     @Override
     public int getPreferredWidth() {
-        int codePoints = text.codePointCount(0, text.length());
+        String displayedText = getDisplayedText();
+        int codePoints = displayedText.codePointCount(0, displayedText.length());
         return (codePoints + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
                 / UiSurface.TEXT_COLUMNS_PER_CELL;
     }
@@ -177,17 +261,21 @@ public class Label extends Widget {
     }
 
     private void writeClippedText(UiSurface target, int left, int top, int width) {
-        int foreground = style.getForegroundRgba();
-        int length = text.length();
+        String displayedText = getDisplayedText();
+        int length = displayedText.length();
         int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * width;
         int leftTextColumn = UiSurface.TEXT_COLUMNS_PER_CELL * left;
         int index = 0;
-        int textOffset = alignmentOffset(textColumnLimit, text.codePointCount(0, length));
+        int letterIndex = 0;
+        int textOffset = alignmentOffset(textColumnLimit,
+                displayedText.codePointCount(0, length));
         while (index < length && textOffset < textColumnLimit
                 && leftTextColumn + textOffset < target.getTextColumns()) {
-            int codePoint = text.codePointAt(index);
-            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint, foreground);
+            int codePoint = displayedText.codePointAt(index);
+            target.writeTextGlyph(leftTextColumn + textOffset, top, codePoint,
+                    getForegroundRgbaAt(letterIndex));
             index += Character.charCount(codePoint);
+            letterIndex++;
             textOffset++;
         }
     }
