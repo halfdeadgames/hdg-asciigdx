@@ -9,13 +9,14 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
+import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.BoundaryState;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.ExampleFrame;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.ExamplePicker;
+import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.PopupBoundaryOverlay;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.ShowcaseBackdrop;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetExample;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetExamples;
 import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.SkinFileWatcher;
-import com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase.WidgetBoundary;
 import com.github.halfdeadgames.asciigdx.ui.CellArea;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
@@ -59,6 +60,7 @@ class UiShowcaseScene implements SandboxScene {
     private final GlyphSource textGlyphs;
     private Skin skin = skinWatcher.load();
     private final Vector2 worldPoint = new Vector2();
+    private final BoundaryState boundaryState = new BoundaryState();
     private UiSurface surface;
     private UiRoot uiRoot;
     private UiInput uiInput;
@@ -89,7 +91,6 @@ class UiShowcaseScene implements SandboxScene {
         if (content != null) {
             examples.get(exampleIndex).exampleHidden();
         }
-        WidgetBoundary.forgetFrames();
         surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
         uiInput = UiInput.forRoot(uiRoot, this::pickCell);
@@ -102,6 +103,7 @@ class UiShowcaseScene implements SandboxScene {
         createStatusLine();
         createBorderNote();
         showExample(exampleIndex);
+        PopupBoundaryOverlay.installOn(uiRoot, boundaryState, columns, rows);
         limitWindowsToExampleArea();
         if (oldLayers != null) {
             oldLayers.dispose();
@@ -134,15 +136,16 @@ class UiShowcaseScene implements SandboxScene {
     }
 
     private void refreshBorderNote() {
-        borderNote.setText(WidgetBoundary.isShown()
-                ? "The red border is NOT part of the widget. Everything drawn"
-                        + " inside the border is the widget. F6 hides the border."
+        borderNote.setText(boundaryState.isShown()
+                ? "The red border is NOT part of the widget. Everything drawn inside the"
+                        + " border is the widget, also for menus, tooltips, windows, and"
+                        + " dialogs. F6 hides the border."
                 : "Widget border hidden. F6 shows it again.");
         borderNote.pack();
     }
 
     private void toggleBorder() {
-        WidgetBoundary.toggleShown();
+        boundaryState.toggleShown();
         refreshBorderNote();
         uiRoot.draw();
     }
@@ -159,9 +162,10 @@ class UiShowcaseScene implements SandboxScene {
             uiRoot.getRoot().removeChild(content);
         }
         exampleIndex = index;
+        boundaryState.forgetFrames();
         int areaTop = contentTop();
         int areaRows = rows - areaTop;
-        Widget tree = examples.get(index).create(skin, uiRoot, columns, areaRows);
+        Widget tree = examples.get(index).create(skin, uiRoot, boundaryState, columns, areaRows);
         content = ExampleFrame.fit(tree, columns, areaRows,
                 skin.getScrollPaneStyle(SCROLL_PANE_STYLE));
         content.setPosition(0, areaTop);

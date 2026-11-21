@@ -17,11 +17,12 @@ public interface WidgetExample {
      *
      * @param skin the skin to take every style from
      * @param uiRoot the root the tree will live in; needed by widgets that register with it
+     * @param boundaryState the state the demo frames register with and follow
      * @param columns width of the example area in square cells
      * @param rows height of the example area in square cells; the scene wraps a bigger tree in a
      *         scroll pane
      */
-    Widget create(Skin skin, UiRoot uiRoot, int columns, int rows);
+    Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns, int rows);
 
     /**
      * Called before the tree is replaced or the whole UI is rebuilt, so an example that put

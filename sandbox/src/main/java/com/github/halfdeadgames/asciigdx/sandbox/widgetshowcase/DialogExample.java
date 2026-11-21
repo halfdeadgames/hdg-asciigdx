@@ -31,10 +31,11 @@ final class DialogExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
         this.uiRoot = uiRoot;
         shownDialogs.clear();
-        DemoSheet sheet = new DemoSheet(skin);
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         Label answer = new Label(NO_ANSWER, skin.getLabelStyle("text"));
         sheet.addHeading("Live controls");
         sheet.addDemo("live: last answer", answer);

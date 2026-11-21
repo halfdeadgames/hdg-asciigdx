@@ -32,11 +32,12 @@ final class WindowExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
         this.uiRoot = uiRoot;
         openedWindows.clear();
         openedCount = 0;
-        DemoSheet sheet = new DemoSheet(skin);
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         Label lastEvent = new Label("Last window event: none", skin.getLabelStyle("text"));
         sheet.addHeading("Live controls");
         sheet.addDemo("live: last window event", lastEvent);

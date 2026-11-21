@@ -23,8 +23,9 @@ final class CheckBoxExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
-        DemoSheet sheet = new DemoSheet(skin);
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         Label lastChange = new Label("Last change: none", skin.getLabelStyle(LABEL_STYLE));
         sheet.addHeading("Live controls");
         sheet.addDisabledToggle();

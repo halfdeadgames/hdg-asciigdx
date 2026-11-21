@@ -27,11 +27,16 @@ public final class DemoSheet {
     private final LabelStyle captionStyle;
     private final LabelStyle headingStyle;
     private final List<Consumer<Boolean>> disabledSetters = new ArrayList<>();
+    private final BoundaryState boundaryState;
     private int nextRow = MARGIN;
 
-    /** Creates an empty sheet that takes its caption and heading looks from the skin. */
-    public DemoSheet(Skin skin) {
+    /**
+     * Creates an empty sheet that takes its caption and heading looks from the skin and wraps its
+     * demos in frames that follow the boundary state.
+     */
+    public DemoSheet(Skin skin, BoundaryState boundaryState) {
         this.skin = skin;
+        this.boundaryState = boundaryState;
         captionStyle = skin.getLabelStyle(CAPTION_STYLE);
         headingStyle = skin.getLabelStyle(HEADING_STYLE);
     }
@@ -62,10 +67,17 @@ public final class DemoSheet {
 
     /** Adds a row with only the widget, for the follow-up rows of a group. */
     public void addDemo(Widget widget) {
-        BoundaryFrame frame = new BoundaryFrame(widget);
+        BoundaryFrame frame = new BoundaryFrame(widget, boundaryState);
         frame.setPosition(MARGIN + CAPTION_COLUMNS - BoundaryFrame.RING_CELLS, nextRow);
         content.addChild(frame);
         nextRow += stepFor(frame);
+    }
+
+    /**
+     * Leaves empty rows, without a boundary frame, as many as a framed demo of that height takes.
+     */
+    public void addEmptyRows(int rows) {
+        nextRow += rows + 2 * BoundaryFrame.RING_CELLS + GAP_ROWS;
     }
 
     /** Remembers a setter that the "Disabled" check box calls with its checked state. */

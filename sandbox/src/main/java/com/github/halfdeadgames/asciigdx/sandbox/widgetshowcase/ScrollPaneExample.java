@@ -31,8 +31,9 @@ final class ScrollPaneExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
-        DemoSheet sheet = new DemoSheet(skin);
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         ScrollPaneStyle style = skin.getScrollPaneStyle(STYLE_NAME);
         ScrollPane tablePane = createPane(createLabelTable(skin), style);
         Label position = new Label("Scroll: 0, 0", skin.getLabelStyle("text"));

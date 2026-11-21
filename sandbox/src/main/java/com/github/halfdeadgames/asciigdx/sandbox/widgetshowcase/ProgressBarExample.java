@@ -31,8 +31,9 @@ final class ProgressBarExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
-        DemoSheet sheet = new DemoSheet(skin);
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         List<ProgressBar> liveBars = new ArrayList<>();
         addLiveControls(sheet, skin, liveBars);
         for (String styleName : STYLE_NAMES) {

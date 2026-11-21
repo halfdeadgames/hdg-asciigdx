@@ -6,7 +6,6 @@ import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
-import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,12 +31,13 @@ final class MenuBarExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
         if (uiRoot != barsRoot) {
             barsOfCurrentRoot.clear();
             barsRoot = uiRoot;
         }
-        DemoSheet sheet = new DemoSheet(skin);
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         chosenLabel = new Label("Last item: none", skin.getLabelStyle("text"));
         sheet.addHeading("Live controls");
         sheet.addDemo("live: last menu item", chosenLabel);
@@ -46,7 +46,7 @@ final class MenuBarExample implements WidgetExample {
             MenuBar bar = barOf(skin, uiRoot, styleName);
             detach(bar);
             sheet.addDemo(styleName + " (open a menu)", bar);
-            sheet.addDemo(spacer());
+            sheet.addEmptyRows(DROP_DOWN_SPACE_ROWS);
         }
         return sheet.build();
     }
@@ -91,12 +91,5 @@ final class MenuBarExample implements WidgetExample {
         if (bar.getParent() != null) {
             bar.getParent().removeChild(bar);
         }
-    }
-
-    // Leaves room under the bar so the drop-down does not cover the next row.
-    private static Widget spacer() {
-        WidgetGroup spacer = new WidgetGroup();
-        spacer.setSize(1, DROP_DOWN_SPACE_ROWS);
-        return spacer;
     }
 }

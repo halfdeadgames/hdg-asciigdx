@@ -30,8 +30,9 @@ final class LabelExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
-        DemoSheet sheet = new DemoSheet(skin);
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         addLiveField(sheet, skin, new ArrayList<>());
         return sheet.build();
     }

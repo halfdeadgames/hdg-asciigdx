@@ -25,8 +25,9 @@ final class TextFieldExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
-        DemoSheet sheet = new DemoSheet(skin);
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         TextFieldStyle style = skin.getTextFieldStyle(STYLE_NAME);
         Label typed = new Label("Typed: ", skin.getLabelStyle("text"));
         Label entered = new Label("Entered: nothing yet", skin.getLabelStyle("text"));

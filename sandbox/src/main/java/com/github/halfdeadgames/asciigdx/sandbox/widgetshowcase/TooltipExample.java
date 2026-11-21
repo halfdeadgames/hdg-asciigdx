@@ -32,9 +32,10 @@ final class TooltipExample implements WidgetExample {
     }
 
     @Override
-    public Widget create(Skin skin, UiRoot uiRoot, int columns, int rows) {
+    public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
+            int rows) {
         attachedTooltips.clear();
-        DemoSheet sheet = new DemoSheet(skin);
+        DemoSheet sheet = new DemoSheet(skin, boundaryState);
         addLiveControls(sheet, skin);
         for (String styleName : STYLE_NAMES) {
             addStyleDemos(sheet, skin, uiRoot, styleName, skin.getLabelStyle(styleName));
