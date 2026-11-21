@@ -158,8 +158,7 @@ public final class GlyphOrderText {
                 throw malformedEscape(lineNumber, index);
             }
             String hex = line.substring(index + 3, close);
-            if (hex.isEmpty() || hex.length() > 6 || !hex.chars()
-                    .allMatch(GlyphOrderText::isHexDigit)) {
+            if (hex.isEmpty() || hex.length() > 6 || !containsOnlyHexDigits(hex)) {
                 throw malformedEscape(lineNumber, index);
             }
             int escaped = Integer.parseInt(hex, 16);
@@ -195,6 +194,15 @@ public final class GlyphOrderText {
 
     private static String stripByteOrderMark(String text) {
         return !text.isEmpty() && text.charAt(0) == BYTE_ORDER_MARK ? text.substring(1) : text;
+    }
+
+    private static boolean containsOnlyHexDigits(String hex) {
+        for (int charIndex = 0; charIndex < hex.length(); charIndex++) {
+            if (!isHexDigit(hex.charAt(charIndex))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean isHexDigit(int c) {

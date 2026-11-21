@@ -57,7 +57,7 @@ final class TextFieldModel {
 
     /** Replaces the text and puts the caret at its end. Max length is not applied. */
     void setText(String text) {
-        codePoints = text.codePoints().toArray();
+        codePoints = toCodePoints(text);
         length = codePoints.length;
         caret = length;
         windowStart = 0;
@@ -159,5 +159,16 @@ final class TextFieldModel {
     /** Returns the caret's text column in the window, as last scrolled. */
     int getCaretTextColumn() {
         return caret - windowStart;
+    }
+
+    private static int[] toCodePoints(String text) {
+        int[] result = new int[text.codePointCount(0, text.length())];
+        int codePointIndex = 0;
+        for (int charIndex = 0; charIndex < text.length(); codePointIndex++) {
+            int codePoint = text.codePointAt(charIndex);
+            result[codePointIndex] = codePoint;
+            charIndex += Character.charCount(codePoint);
+        }
+        return result;
     }
 }

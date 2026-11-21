@@ -89,6 +89,16 @@ class TextFieldTest {
     }
 
     @Test
+    void placeholderKeepsSurrogatePairAsOneCodePoint() {
+        TextField field = fieldAt(2, 1, 10);
+
+        field.setPlaceholderText("a😀");
+
+        assertEquals("a😀", field.getPlaceholderText());
+        assertEquals("a😀", textRow(1, 4, 2));
+    }
+
+    @Test
     void typingInsertsAndReportsChanges() {
         TextField field = focusedField();
         field.addChangeListener(source -> log.add(source.getText()));

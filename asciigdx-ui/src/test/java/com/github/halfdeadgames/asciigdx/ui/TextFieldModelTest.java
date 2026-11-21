@@ -194,4 +194,31 @@ class TextFieldModelTest {
         assertEquals("…e…", cells.substring(0, 1) + cells.charAt(1) + cells.charAt(2));
         assertEquals(1, model.getCaretTextColumn());
     }
+
+    @Test
+    void setTextCountsSurrogatePairAsOneCodePoint() {
+        model.setText("😀");
+
+        assertEquals(1, model.getLength());
+        assertEquals(1, model.getCaret());
+        assertEquals("😀", model.getText());
+    }
+
+    @Test
+    void setTextAcceptsEmptyString() {
+        model.setText("ab");
+        model.setText("");
+
+        assertEquals(0, model.getLength());
+        assertEquals(0, model.getCaret());
+        assertEquals("", model.getText());
+    }
+
+    @Test
+    void loneSurrogateIsKeptAsItsOwnCodePoint() {
+        model.setText("a\uD800b");
+
+        assertEquals(3, model.getLength());
+        assertEquals("a\uD800b", model.getText());
+    }
 }

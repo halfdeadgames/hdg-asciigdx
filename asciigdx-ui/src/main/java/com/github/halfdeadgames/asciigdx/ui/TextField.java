@@ -153,7 +153,7 @@ public final class TextField extends Widget {
      */
     public void setPlaceholderText(String placeholderText) {
         Objects.requireNonNull(placeholderText, "placeholderText");
-        placeholderCodePoints = placeholderText.codePoints().toArray();
+        placeholderCodePoints = toCodePoints(placeholderText);
         requestRedraw();
     }
 
@@ -546,5 +546,16 @@ public final class TextField extends Widget {
         blinkElapsedSeconds = 0f;
         caretOn = true;
         requestRedraw();
+    }
+
+    private static int[] toCodePoints(String text) {
+        int[] codePoints = new int[text.codePointCount(0, text.length())];
+        int codePointIndex = 0;
+        for (int charIndex = 0; charIndex < text.length(); codePointIndex++) {
+            int codePoint = text.codePointAt(charIndex);
+            codePoints[codePointIndex] = codePoint;
+            charIndex += Character.charCount(codePoint);
+        }
+        return codePoints;
     }
 }

@@ -96,6 +96,13 @@ class GlyphOrderTextTest {
     }
 
     @Test
+    void escapesWithNonAsciiOrSurrogateHexCharactersAreRejected() {
+        for (String bad : new String[]{"\\u{\uFF11}", "\\u{\u0663}", "\\u{1\uD83D\uDE00}"}) {
+            assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read(bad, 4), bad);
+        }
+    }
+
+    @Test
     void emptyTextIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> GlyphOrderText.read("\n\n", 4));
     }

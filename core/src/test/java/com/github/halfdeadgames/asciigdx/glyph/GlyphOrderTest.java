@@ -91,6 +91,21 @@ class GlyphOrderTest {
     }
 
     @Test
+    void ofStringSkipsSupplementaryVariationSelectorAfterSupplementaryCharacter() {
+        var order = GlyphOrder.ofString("x🭋󠄀A");
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(1, order.findSlot(0x1FB4B));
+        assertEquals(2, order.findSlot('A'));
+    }
+
+    @Test
+    void ofStringKeepsLoneSurrogateAsOneSlot() {
+        var order = GlyphOrder.ofString("a\uD800b");
+        assertEquals(3, order.getGlyphCount());
+        assertEquals(0xD800, order.getCodePoint(1));
+    }
+
+    @Test
     void ofStringKeepsSpaceAsSlot() {
         var order = GlyphOrder.ofString("a b");
         assertEquals(3, order.getGlyphCount());

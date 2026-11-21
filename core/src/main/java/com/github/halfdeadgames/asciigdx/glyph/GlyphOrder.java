@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.glyph;
 
 import com.badlogic.gdx.utils.IntIntMap;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -101,11 +102,24 @@ public final class GlyphOrder {
      */
     public static GlyphOrder ofString(String glyphs) {
         Objects.requireNonNull(glyphs, "glyphs");
-        int[] kept = glyphs.codePoints().filter(cp -> !isSkipped(cp)).toArray();
+        int[] kept = keptCodePoints(glyphs);
         if (kept.length == 0) {
             throw new IllegalArgumentException("glyphs must contain at least one glyph");
         }
         return new GlyphOrder(kept);
+    }
+
+    private static int[] keptCodePoints(String glyphs) {
+        int[] kept = new int[glyphs.length()];
+        int keptCount = 0;
+        for (int charIndex = 0; charIndex < glyphs.length(); ) {
+            int codePoint = glyphs.codePointAt(charIndex);
+            charIndex += Character.charCount(codePoint);
+            if (!isSkipped(codePoint)) {
+                kept[keptCount++] = codePoint;
+            }
+        }
+        return Arrays.copyOf(kept, keptCount);
     }
 
     private static boolean isSkipped(int codePoint) {
