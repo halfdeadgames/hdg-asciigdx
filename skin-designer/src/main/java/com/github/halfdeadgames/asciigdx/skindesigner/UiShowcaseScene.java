@@ -31,6 +31,7 @@ import com.github.halfdeadgames.asciigdx.ui.UiInput;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +69,7 @@ class UiShowcaseScene {
     private SkinEditorPanel panel;
     private boolean panelShown = true;
     private boolean rebuildPending;
+    private final ArrayDeque<Runnable> commandsAfterRebuild = new ArrayDeque<>();
     private UiSurface surface;
     private UiRoot uiRoot;
     private UiInput uiInput;
@@ -89,13 +91,22 @@ class UiShowcaseScene {
     UiShowcaseScene(GlyphSource squareGlyphs, GlyphSource textGlyphs) {
         this.squareGlyphs = squareGlyphs;
         this.textGlyphs = textGlyphs;
-        document = SkinDocument.open(Gdx.files.internal(SKIN_FILE), true);
-        document.setChangeListener(this::requestRebuild);
+        bindDocument(SkinDocument.open(Gdx.files.internal(SKIN_FILE), true));
         fileMenu = new SkinFileMenu(SkinSession.createForRunningApp(document), this::reportResult,
-                this::adoptLoadedDocument, () -> uiRoot, this::exampleArea);
+                this::adoptLoadedDocument, () -> uiRoot, this::exampleArea,
+                this::runAfterPendingEdits, this::flushPanelEdits);
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
                 columns * squareGlyphs.getCellWidth(), rows * squareGlyphs.getCellHeight());
         buildUi();
+    }
+
+    // The replaced document stops reporting changes, so nothing can reach the screen through it.
+    private void bindDocument(SkinDocument newDocument) {
+        if (document != null) {
+            document.setChangeListener(null);
+        }
+        document = newDocument;
+        document.setChangeListener(this::requestRebuild);
     }
 
     // The rebuild waits for the next frame, so it never runs inside the event that caused the
@@ -201,8 +212,10 @@ class UiShowcaseScene {
     }
 
     private void adoptLoadedDocument() {
-        document = fileMenu.getDocument();
-        document.setChangeListener(this::requestRebuild);
+        // The old panel goes first and is not flushed: the File commands already flushed it, and a
+        // late edit must not land in the document that was just replaced.
+        removePanel();
+        bindDocument(fileMenu.getDocument());
         buildUi();
     }
 
@@ -221,6 +234,11 @@ class UiShowcaseScene {
 
     private CellArea exampleArea() {
         return new CellArea(0, contentTop(), exampleColumns(), Math.max(1, rows - contentTop()));
+    }
+
+    /** Commits text typed in the panel, so it counts as an unsaved change. */
+    void commitPanelEdits() {
+        flushPanelEdits();
     }
 
     boolean hasUnsavedChanges() {
@@ -276,6 +294,25 @@ class UiShowcaseScene {
         panel.getView().setPosition(columns - SkinEditorPanel.COLUMNS, contentTop());
         uiRoot.getRoot().addChild(panel.getView());
         panel.restoreFocus();
+    }
+
+    // A File command waits when committing typed text asked for a rebuild, because the rebuild
+    // would destroy the dialog or window the command opens. Waiting commands keep their order,
+    // so a quit is never dropped by a later click.
+    private void runAfterPendingEdits(Runnable command) {
+        flushPanelEdits();
+        if (rebuildPending || !commandsAfterRebuild.isEmpty()) {
+            commandsAfterRebuild.addLast(command);
+            return;
+        }
+        command.run();
+    }
+
+    // A command that asks for another rebuild makes the rest wait for that rebuild.
+    private void runCommandsAfterRebuild() {
+        while (!rebuildPending && !commandsAfterRebuild.isEmpty()) {
+            commandsAfterRebuild.removeFirst().run();
+        }
     }
 
     // Typed but uncommitted text counts as an edit before any rebuild throws the field away.
@@ -555,6 +592,7 @@ class UiShowcaseScene {
         if (rebuildPending) {
             buildUi();
         }
+        runCommandsAfterRebuild();
         fileMenu.update(delta);
         refreshUnsavedMarker(delta);
         uiRoot.update(delta);

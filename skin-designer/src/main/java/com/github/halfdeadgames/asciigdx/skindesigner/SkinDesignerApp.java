@@ -112,7 +112,11 @@ public class SkinDesignerApp extends ApplicationAdapter {
      * @return {@code true} when the window may close at once
      */
     public boolean isWindowCloseAllowed() {
-        if (showcase == null || !showcase.hasUnsavedChanges()) {
+        if (showcase == null) {
+            return true;
+        }
+        showcase.commitPanelEdits();
+        if (!showcase.hasUnsavedChanges()) {
             return true;
         }
         showcase.requestQuit(Gdx.app::exit);

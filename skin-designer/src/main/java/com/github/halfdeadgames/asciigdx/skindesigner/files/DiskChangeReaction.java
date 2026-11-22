@@ -22,19 +22,22 @@ public final class DiskChangeReaction {
     private final FileCommands commands;
     private final Supplier<UiRoot> uiRoot;
     private final Supplier<Skin> skin;
+    private final Runnable beforeUnsavedCheck;
     private Dialog shownDialog;
     private UiRoot askedRoot;
 
     /**
      * Creates the reaction. The suppliers are asked again for every dialog, because the screen is
-     * rebuilt now and then.
+     * rebuilt now and then. {@code beforeUnsavedCheck} runs before the unsaved check, so pending
+     * edits count as unsaved changes.
      */
     public DiskChangeReaction(SkinSession session, FileCommands commands,
-            Supplier<UiRoot> uiRoot, Supplier<Skin> skin) {
+            Supplier<UiRoot> uiRoot, Supplier<Skin> skin, Runnable beforeUnsavedCheck) {
         this.session = session;
         this.commands = commands;
         this.uiRoot = uiRoot;
         this.skin = skin;
+        this.beforeUnsavedCheck = beforeUnsavedCheck;
     }
 
     /** Call once per frame: watches the file and reacts to a change. */
@@ -43,6 +46,7 @@ public final class DiskChangeReaction {
         if (!session.hasFileChangedOnDisk() || isAsking()) {
             return;
         }
+        beforeUnsavedCheck.run();
         if (!session.getDocument().hasUnsavedChanges()) {
             commands.reloadFromDisk();
             return;
