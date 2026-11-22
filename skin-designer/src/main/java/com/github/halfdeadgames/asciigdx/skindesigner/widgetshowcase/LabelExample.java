@@ -1,6 +1,7 @@
 package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 
 import com.github.halfdeadgames.asciigdx.layer.Layer;
+import com.github.halfdeadgames.asciigdx.text.TextReveal;
 import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
@@ -28,8 +29,16 @@ final class LabelExample implements WidgetExample {
             "[color:hotPink]Pink [effect:wave phase=columns:6]and waving[/effect][/color] text";
     private static final String TEXT_FIELD_STYLE = "default";
     private static final int TEXT_FIELD_COLUMNS = 24;
+    private static final String REVEAL_TEXT =
+            "Hello...[wait:0.6] the [color:hotPink]door[/color] creaks open.";
+    private static final float REVEAL_LETTERS_PER_SECOND = 20f;
+    private static final float REVEAL_HOLD_SECONDS = 2f;
+    private static final float REVEAL_NOT_STARTED = -1f;
 
     private final List<LabelEffectZones> effectZones = new ArrayList<>();
+    private Label revealLabel;
+    private TextReveal reveal;
+    private float revealStartSeconds = REVEAL_NOT_STARTED;
 
     @Override
     public String id() {
@@ -46,6 +55,9 @@ final class LabelExample implements WidgetExample {
             int rows) {
         DemoSheet sheet = new DemoSheet(skin, boundaryState);
         effectZones.clear();
+        revealLabel = null;
+        reveal = null;
+        revealStartSeconds = REVEAL_NOT_STARTED;
         addLiveField(sheet, skin, new ArrayList<>());
         return sheet.build();
     }
@@ -60,6 +72,19 @@ final class LabelExample implements WidgetExample {
         for (int i = 0; i < effectZones.size(); i++) {
             effectZones.get(i).apply(textLayer, seconds);
         }
+        applyTypingReveal(seconds);
+    }
+
+    private void applyTypingReveal(float seconds) {
+        if (reveal == null) {
+            return;
+        }
+        if (revealStartSeconds == REVEAL_NOT_STARTED) {
+            revealStartSeconds = seconds;
+        }
+        float cycleSeconds = reveal.getTotalSeconds() + REVEAL_HOLD_SECONDS;
+        float elapsedSeconds = (seconds - revealStartSeconds) % cycleSeconds;
+        revealLabel.setShownLetterCount(reveal.getShownLetterCount(elapsedSeconds));
     }
 
     private void addLiveField(DemoSheet sheet, Skin skin, List<Label> demoLabels) {
@@ -78,6 +103,17 @@ final class LabelExample implements WidgetExample {
         addAlignmentDemos(sheet, skin);
         addMarkupDemos(sheet, skin);
         addEffectDemos(sheet, skin);
+        addRevealDemo(sheet, skin);
+    }
+
+    private void addRevealDemo(DemoSheet sheet, Skin skin) {
+        sheet.addHeading("Typing reveal");
+        Label label = new Label(REVEAL_TEXT, skin.getLabelStyle("text"));
+        label.setColorNames(skin.getColorNames());
+        label.pack();
+        reveal = label.createReveal(REVEAL_LETTERS_PER_SECOND);
+        revealLabel = label;
+        sheet.addDemo("typing", label);
     }
 
     private void addEffectDemos(DemoSheet sheet, Skin skin) {
