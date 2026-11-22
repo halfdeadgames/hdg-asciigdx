@@ -77,7 +77,17 @@
       "track": "darkGray",
       "thumb": "gray",
       "thumbPointerOver": "white",
-      "thumbPressed": "gold"
+      "thumbPressed": "gold",
+      "stepButtons": true
+    }
+  },
+  "selectBoxes": {
+    "selectBox": {
+      "button": "button",
+      "list": "button",
+      "scrollPane": "scrollPane",
+      "arrow": "▼",
+      "arrowFont": "square"
     }
   },
   "windows": {

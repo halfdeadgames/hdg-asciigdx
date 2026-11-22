@@ -4,7 +4,7 @@ import com.github.halfdeadgames.asciigdx.ui.SkinKeyType;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.List;
 
-/** Edits a key that takes one of a fixed list of words, with a button that cycles through them. */
+/** Edits a key that takes one of a fixed list of words, with a drop-down of them. */
 final class ChoiceEditor implements KeyEditor {
     private final EditorContext context;
 
@@ -17,7 +17,7 @@ final class ChoiceEditor implements KeyEditor {
         KeyLocation location = row.location();
         List<String> options = ((SkinKeyType.Choice) row.definition().type()).options();
         String current = row.value().asString();
-        return ControlRow.of(context.widgets().createCycleButton(options, current, current,
+        return ControlRow.of(context.widgets().createChoiceBox(options, current,
                 chosen -> context.applyClickEdit(location, SkinEdits.setText(location, chosen))));
     }
 }

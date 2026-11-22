@@ -373,6 +373,26 @@ public final class UiRoot {
         if (focused != null) {
             focused.updateWhileFocused(deltaSeconds);
         }
+        updateCapturedWidgets(deltaSeconds);
+    }
+
+    // A widget captured by several pointers is updated once.
+    private void updateCapturedWidgets(float deltaSeconds) {
+        for (int pointer = 0; pointer < capturedWidgets.length; pointer++) {
+            Widget captured = capturedWidgets[pointer];
+            if (captured != null && !isCapturedByEarlierPointer(captured, pointer)) {
+                captured.updateWhilePointerCaptured(deltaSeconds);
+            }
+        }
+    }
+
+    private boolean isCapturedByEarlierPointer(Widget widget, int pointer) {
+        for (int earlier = 0; earlier < pointer; earlier++) {
+            if (capturedWidgets[earlier] == widget) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

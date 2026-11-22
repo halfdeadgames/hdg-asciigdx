@@ -47,6 +47,8 @@ public final class SkinSchema {
     public static final String SLIDERS = "sliders";
     /** Section name of the scroll pane styles. */
     public static final String SCROLL_PANES = "scrollPanes";
+    /** Section name of the select box styles. */
+    public static final String SELECT_BOXES = "selectBoxes";
     /** Section name of the window styles. */
     public static final String WINDOWS = "windows";
     /** Section name of the dialog styles. */
@@ -54,7 +56,7 @@ public final class SkinSchema {
 
     private static final List<String> SECTION_NAMES = Collections.unmodifiableList(Arrays.asList(
             COLORS, LABELS, BUTTONS, MENU_BARS, CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS,
-            PROGRESS_BARS, SLIDERS, SCROLL_PANES, WINDOWS, DIALOGS));
+            PROGRESS_BARS, SLIDERS, SCROLL_PANES, SELECT_BOXES, WINDOWS, DIALOGS));
 
     private static final String SAME_AS_NORMAL = "same as normal";
     private static final String REMOVED_FONT_EXPLANATION = "the \"font\" key was removed, because "
@@ -150,7 +152,35 @@ public final class SkinSchema {
             optionalKey("thumbPointerOver", COLOR, "same as thumb",
                     "Thumb color while the pointer is over it."),
             optionalKey("thumbPressed", COLOR, "same as thumb",
-                    "Thumb color while it is dragged."));
+                    "Thumb color while it is dragged."),
+            optionalKey("stepButtons", new SkinKeyType.Flag(), "false",
+                    "Whether each scroll bar shows an arrow at both ends."),
+            optionalKey("stepArrow", COLOR, "same as thumb", "Arrow color."),
+            optionalKey("stepArrowPointerOver", COLOR, "same as thumbPointerOver",
+                    "Arrow color while the pointer is over it."),
+            optionalKey("stepArrowPressed", COLOR, "same as thumbPressed",
+                    "Arrow color while it is held."),
+            optionalKey("upArrow", new SkinKeyType.Glyph(), "U+25B2",
+                    "Character of the arrow at the top of a vertical bar."),
+            optionalKey("downArrow", new SkinKeyType.Glyph(), "U+25BC",
+                    "Character of the arrow at the bottom of a vertical bar."),
+            optionalKey("leftArrow", new SkinKeyType.Glyph(), "U+25C4",
+                    "Character of the arrow at the left of a horizontal bar."),
+            optionalKey("rightArrow", new SkinKeyType.Glyph(), "U+25BA",
+                    "Character of the arrow at the right of a horizontal bar."),
+            optionalKey("arrowFont", MARK_FONT, "square", "Font of the arrows."));
+
+    private static final SkinObjectSchema SELECT_BOX = SkinObjectSchema.of(
+            "a select box object",
+            requiredKey("button", BUTTON_REFERENCE,
+                    "Button style of the closed box."),
+            requiredKey("list", BUTTON_REFERENCE,
+                    "Button style of the rows in the open list."),
+            requiredKey("scrollPane", SkinKeyType.StyleReference.nameOnly(
+                    SkinStyleKind.SCROLL_PANE), "Scroll pane style of the open list."),
+            optionalKey("arrow", new SkinKeyType.Glyph(), "▼",
+                    "The character drawn in the far-right cell of the closed box."),
+            optionalKey("arrowFont", MARK_FONT, "square", "Font of the arrow."));
 
     private static final SkinObjectSchema WINDOW = SkinObjectSchema.of("a window object",
             requiredKey("box", new SkinKeyType.Choice("text, one of",
@@ -198,6 +228,7 @@ public final class SkinSchema {
         schemas.put(PROGRESS_BARS, PROGRESS_BAR);
         schemas.put(SLIDERS, SLIDER);
         schemas.put(SCROLL_PANES, SCROLL_PANE);
+        schemas.put(SELECT_BOXES, SELECT_BOX);
         schemas.put(WINDOWS, WINDOW);
         schemas.put(DIALOGS, DIALOG);
         return schemas;

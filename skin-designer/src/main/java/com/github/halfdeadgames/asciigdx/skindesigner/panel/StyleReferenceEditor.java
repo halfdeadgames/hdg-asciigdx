@@ -6,7 +6,7 @@ import com.github.halfdeadgames.asciigdx.ui.SkinStyleKind;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 
 /**
- * Edits a reference to a style by name, with a button that cycles through the styles of that
+ * Edits a reference to a style by name, with a drop-down of the styles of that
  * kind. A style written in place (an inline object) has no editor here; the style table lays its
  * keys out as nested rows.
  */
@@ -23,8 +23,8 @@ final class StyleReferenceEditor implements KeyEditor {
         KeyLocation location = row.location();
         SkinKeyType.StyleReference type = (SkinKeyType.StyleReference) row.definition().type();
         String current = row.value().asString();
-        return ControlRow.of(context.widgets().createCycleButton(
-                SeedValues.namesIn(context.tree(), sectionOf(type.kind())), current, current,
+        return ControlRow.of(context.widgets().createChoiceBox(
+                SeedValues.namesIn(context.tree(), sectionOf(type.kind())), current,
                 chosen -> context.applyClickEdit(location,
                         SkinEdits.setText(location, chosen))));
     }
@@ -35,6 +35,7 @@ final class StyleReferenceEditor implements KeyEditor {
             case BUTTON -> SkinSchema.BUTTONS;
             case WINDOW -> SkinSchema.WINDOWS;
             case TEXT_FIELD -> SkinSchema.TEXT_FIELDS;
+            case SCROLL_PANE -> SkinSchema.SCROLL_PANES;
         };
     }
 }

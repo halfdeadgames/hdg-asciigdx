@@ -141,7 +141,8 @@ class DefaultSkinFileTest {
     @Test
     void scrollPaneStyleUsesTheGrayTrackAndAGoldPressedThumb() {
         ScrollPaneStyle expected = ScrollPaneStyle.of(DARK_GRAY, GRAY)
-                .withThumbPointerOver(WHITE).withThumbPressed(GOLD);
+                .withThumbPointerOver(WHITE).withThumbPressed(GOLD)
+                .withStepButtonsShown(true);
 
         assertEquals(expected, skin.getScrollPaneStyle("scrollPane"));
     }

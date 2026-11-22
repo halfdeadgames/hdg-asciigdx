@@ -17,6 +17,7 @@ public final class WidgetExamples {
                 new ProgressBarExample(),
                 new SliderExample(),
                 new TextFieldExample(),
+                new SelectBoxExample(),
                 new TableExample(),
                 new ScrollPaneExample(),
                 new WindowExample(),

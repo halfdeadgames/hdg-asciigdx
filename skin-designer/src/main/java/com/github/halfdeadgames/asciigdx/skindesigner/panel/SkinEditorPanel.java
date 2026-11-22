@@ -1,9 +1,9 @@
 package com.github.halfdeadgames.asciigdx.skindesigner.panel;
 
 import com.github.halfdeadgames.asciigdx.ui.ScrollPane;
+import com.github.halfdeadgames.asciigdx.ui.SelectBox;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.Table;
-import com.github.halfdeadgames.asciigdx.ui.TextButton;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.List;
 
@@ -17,7 +17,7 @@ public final class SkinEditorPanel {
     public static final int COLUMNS = 40;
 
     private static final String SCROLL_PANE_STYLE = "scrollPane";
-    private static final String CHOOSER_HEADING = "Style (click for the next):";
+    private static final String CHOOSER_HEADING = "Style:";
     private static final String NO_STYLES_TEXT = "This example uses no styles you can edit.";
     private static final int WHEEL_STEP_CELLS = 3;
     private static final int PADDING_CELLS = 1;
@@ -44,7 +44,7 @@ public final class SkinEditorPanel {
             SkinEditorMemory memory, int rows) {
         Skin skin = host.document().getSkin();
         FocusLossCommits focusCommits = new FocusLossCommits(host.uiRoot());
-        PanelWidgets widgets = new PanelWidgets(skin, focusCommits);
+        PanelWidgets widgets = new PanelWidgets(skin, host.uiRoot(), focusCommits);
         Widget content = createContent(host, widgets, sections, memory);
         ScrollPane view = new ScrollPane(content, skin.getScrollPaneStyle(SCROLL_PANE_STYLE));
         view.setSize(COLUMNS, rows);
@@ -77,11 +77,11 @@ public final class SkinEditorPanel {
         return content;
     }
 
-    private static TextButton createChooser(PanelHost host, PanelWidgets widgets,
+    private static SelectBox<String> createChooser(PanelHost host, PanelWidgets widgets,
             List<StyleChoice> choices, StyleChoice selected, SkinEditorMemory memory) {
-        StyleChoice next = choices.get((choices.indexOf(selected) + 1) % choices.size());
-        return widgets.createButton(selected.displayName(), () -> {
-            memory.rememberSelection(next);
+        List<String> names = choices.stream().map(StyleChoice::displayName).toList();
+        return widgets.createChoiceBox(names, selected.displayName(), chosenName -> {
+            memory.rememberSelection(choices.get(names.indexOf(chosenName)));
             memory.requestScrollReset();
             host.styleChosen().run();
         });

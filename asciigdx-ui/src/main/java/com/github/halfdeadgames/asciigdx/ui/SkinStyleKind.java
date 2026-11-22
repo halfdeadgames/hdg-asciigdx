@@ -9,7 +9,9 @@ public enum SkinStyleKind {
     /** A window style, from the {@code windows} section. */
     WINDOW("window"),
     /** A text field style, from the {@code textFields} section. */
-    TEXT_FIELD("text field");
+    TEXT_FIELD("text field"),
+    /** A scroll pane style, from the {@code scrollPanes} section. */
+    SCROLL_PANE("scroll pane");
 
     private final String displayName;
 

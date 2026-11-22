@@ -45,6 +45,7 @@ final class SkinFileReader {
     private final Map<String, ProgressBarStyle> progressBarStyles = new LinkedHashMap<>();
     private final Map<String, SliderStyle> sliderStyles = new LinkedHashMap<>();
     private final Map<String, ScrollPaneStyle> scrollPaneStyles = new LinkedHashMap<>();
+    private final Map<String, SelectBoxStyle> selectBoxStyles = new LinkedHashMap<>();
     private final Map<String, WindowStyle> windowStyles = new LinkedHashMap<>();
     private final Map<String, DialogStyle> dialogStyles = new LinkedHashMap<>();
     private final Map<String, Map<String, Object>> customStyles = new LinkedHashMap<>();
@@ -84,6 +85,8 @@ final class SkinFileReader {
                 reader::readSliderStyle);
         reader.readSection(root, SkinSchema.SCROLL_PANES, reader.scrollPaneStyles,
                 reader::readScrollPaneStyle);
+        reader.readSection(root, SkinSchema.SELECT_BOXES, reader.selectBoxStyles,
+                reader::readSelectBoxStyle);
         reader.readSection(root, SkinSchema.WINDOWS, reader.windowStyles,
                 reader::readWindowStyle);
         reader.readSection(root, SkinSchema.DIALOGS, reader.dialogStyles,
@@ -92,7 +95,8 @@ final class SkinFileReader {
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
                 reader.textFieldStyles, reader.progressBarStyles, reader.sliderStyles,
-                reader.scrollPaneStyles, reader.windowStyles, reader.dialogStyles,
+                reader.scrollPaneStyles, reader.selectBoxStyles, reader.windowStyles,
+                reader.dialogStyles,
                 reader.customStyles);
     }
 
@@ -269,6 +273,7 @@ final class SkinFileReader {
             case BUTTON -> buttonStyles;
             case WINDOW -> windowStyles;
             case TEXT_FIELD -> textFieldStyles;
+            case SCROLL_PANE -> scrollPaneStyles;
         };
     }
 
@@ -324,6 +329,54 @@ final class SkinFileReader {
         }
         if (parsed.has("thumbPressed")) {
             style = style.withThumbPressed(parsed.getInt("thumbPressed"));
+        }
+        return readStepButtons(parsed, style);
+    }
+
+    private static ScrollPaneStyle readStepButtons(SkinParsedObject parsed,
+            ScrollPaneStyle thumbStyle) {
+        ScrollPaneStyle style = thumbStyle;
+        if (parsed.has("stepButtons")) {
+            style = style.withStepButtonsShown(parsed.get("stepButtons", Boolean.class));
+        }
+        if (parsed.has("stepArrow")) {
+            style = style.withStepArrow(parsed.getInt("stepArrow"));
+        }
+        if (parsed.has("stepArrowPointerOver")) {
+            style = style.withStepArrowPointerOver(parsed.getInt("stepArrowPointerOver"));
+        }
+        if (parsed.has("stepArrowPressed")) {
+            style = style.withStepArrowPressed(parsed.getInt("stepArrowPressed"));
+        }
+        if (parsed.has("upArrow")) {
+            style = style.withUpArrowGlyph(parsed.getInt("upArrow"));
+        }
+        if (parsed.has("downArrow")) {
+            style = style.withDownArrowGlyph(parsed.getInt("downArrow"));
+        }
+        if (parsed.has("leftArrow")) {
+            style = style.withLeftArrowGlyph(parsed.getInt("leftArrow"));
+        }
+        if (parsed.has("rightArrow")) {
+            style = style.withRightArrowGlyph(parsed.getInt("rightArrow"));
+        }
+        if (parsed.has("arrowFont")) {
+            style = style.withArrowFont(readEnum(parsed, "arrowFont", MarkFont.class));
+        }
+        return style;
+    }
+
+    private SelectBoxStyle readSelectBoxStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.SELECT_BOXES), path);
+        SelectBoxStyle style = SelectBoxStyle.of(parsed.get("button", ButtonStyle.class),
+                parsed.get("list", ButtonStyle.class),
+                parsed.get("scrollPane", ScrollPaneStyle.class));
+        if (parsed.has("arrow")) {
+            style = style.withArrowGlyph(parsed.getInt("arrow"));
+        }
+        if (parsed.has("arrowFont")) {
+            style = style.withArrowFont(readEnum(parsed, "arrowFont", MarkFont.class));
         }
         return style;
     }

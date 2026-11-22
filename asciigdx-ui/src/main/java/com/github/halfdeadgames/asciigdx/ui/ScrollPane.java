@@ -18,6 +18,13 @@ import java.util.Objects;
  * glyphs U+2581 to U+258F paint its partly covered end cells. The thumb uses the pointer-over color
  * while the pointer is over it and the pressed color while it is dragged.
  *
+ * <p>When {@link ScrollPaneStyle#isStepButtonsShown()} is {@code true}, the first cell of a bar
+ * holds one arrow (up on a vertical bar, left on a horizontal bar) and the last cell holds the
+ * other (down, right), on the track color. The track and the thumb then use only the cells
+ * between them. A bar shorter than 3 cells shows no arrows and
+ * its whole length is track. An arrow uses the pointer-over color while the pointer is over it
+ * and the pressed color while it is held with the pointer on it.
+ *
  * <p>The preferred size is the content's preferred size, so a packed pane shows no bars. Set a
  * smaller size to make the content scroll. The content is fixed for the pane's lifetime: removing
  * it with {@link #removeChild} is unsupported. Extra children added with {@link #addChild} are
@@ -34,6 +41,15 @@ import java.util.Objects;
  *       for the drag.
  *   <li>A press on the track outside the thumb scrolls one page (the view's size) toward the
  *       press.
+ *   <li>Pressing an arrow moves the view one cell on that axis, and holding it repeats the move:
+ *       first after {@code 0.4} seconds, then every {@code 0.05} seconds, the timing of the key
+ *       repeat of {@link UiRoot}. The pane captures the pointer while the arrow is held. While
+ *       the pointer is off the pressed arrow cell the repeat pauses and the arrow looks
+ *       unpressed; moving back onto it resumes the repeat. Releasing or canceling the pointer
+ *       ends it, and so does the bar losing its arrows or the pane being hidden. The repeat counts
+ *       the seconds of {@link UiRoot#update(float)} while the pane holds the pointer capture, so
+ *       it does not depend on keyboard focus. One update makes at most 8 steps; time beyond
+ *       that is dropped.
  *   <li>Dragging the content scrolls it: a press that no widget inside consumes (on a label or
  *       empty space) starts a drag that moves the content with the pointer in whole cells. A press
  *       on a button or another widget that consumes it never scrolls.
@@ -71,11 +87,17 @@ public final class ScrollPane extends WidgetGroup {
     private static final int PRIMARY_BUTTON = 0;
     private static final int NO_POINTER = -1;
     private static final int EIGHTHS = EighthBlocks.EIGHTHS_PER_CELL;
+    private static final int MIN_BAR_CELLS_FOR_ARROWS = 3;
+    private static final int TOWARD_START = -1;
+    private static final int TOWARD_END = 1;
+    private static final int NO_ARROW = 0;
+    private static final int MAX_REPEAT_STEPS_PER_UPDATE = 8;
 
     private enum DragKind {
         NONE,
         THUMB,
-        CONTENT
+        CONTENT,
+        ARROW
     }
 
     private final Widget content;
@@ -95,6 +117,12 @@ public final class ScrollPane extends WidgetGroup {
     private int dragPointer = NO_POINTER;
     private BarOrientation dragBar;
     private BarOrientation hoveredBar;
+    private BarOrientation hoveredArrowBar;
+    private int hoveredArrowDirection = NO_ARROW;
+    // The held arrow is (dragBar, heldArrowDirection) while dragKind is ARROW.
+    private int heldArrowDirection = NO_ARROW;
+    private boolean pointerOnHeldArrow;
+    private float secondsUntilStepRepeat;
     private int thumbGrabEighths;
     private int dragStartSurfaceColumn;
     private int dragStartSurfaceRow;
@@ -443,16 +471,28 @@ public final class ScrollPane extends WidgetGroup {
         target.eraseGlyphs(barLeft, barTop, vertical ? 1 : cells, vertical ? cells : 1);
         target.fillBackground(barLeft, barTop, vertical ? 1 : cells, vertical ? cells : 1,
                 style.getTrackRgba());
+        drawThumb(target, bar, barLeft, barTop);
+        if (areArrowsShown(bar)) {
+            drawArrow(target, bar, TOWARD_START, barLeft, barTop);
+            drawArrow(target, bar, TOWARD_END, barLeft, barTop);
+        }
+    }
+
+    private void drawThumb(UiSurface target, BarOrientation bar, int barLeft, int barTop) {
+        boolean vertical = bar == BarOrientation.VERTICAL;
+        int firstTrackCell = arrowCellsAlong(bar);
         int thumbStart = thumbStartEighths(bar);
         int thumbEnd = thumbStart + thumbLengthEighths(bar);
         int thumbRgba = thumbRgbaOf(bar);
-        for (int index = 0; index < cells; index++) {
+        int trackCells = trackCellsAlong(bar);
+        for (int index = 0; index < trackCells; index++) {
             int glyph = EighthBlocks.thumbGlyphForCell(bar, thumbStart, thumbEnd, index);
             if (glyph == EighthBlocks.EMPTY_GLYPH) {
                 continue;
             }
-            int column = vertical ? barLeft : barLeft + index;
-            int row = vertical ? barTop + index : barTop;
+            int cell = firstTrackCell + index;
+            int column = vertical ? barLeft : barLeft + cell;
+            int row = vertical ? barTop + cell : barTop;
             boolean trackGlyph = EighthBlocks.isTrackForeground(bar, thumbStart, thumbEnd, index);
             if (trackGlyph) {
                 target.fillBackground(column, row, 1, 1, thumbRgba);
@@ -460,6 +500,43 @@ public final class ScrollPane extends WidgetGroup {
             target.writeSquareGlyph(column, row, glyph,
                     trackGlyph ? style.getTrackRgba() : thumbRgba);
         }
+    }
+
+    private void drawArrow(UiSurface target, BarOrientation bar, int direction, int barLeft,
+            int barTop) {
+        boolean vertical = bar == BarOrientation.VERTICAL;
+        int cell = direction == TOWARD_START ? 0 : cellsAlong(bar) - 1;
+        int column = vertical ? barLeft : barLeft + cell;
+        int row = vertical ? barTop + cell : barTop;
+        int glyph = arrowGlyphOf(bar, direction);
+        int rgba = arrowRgbaOf(bar, direction);
+        if (style.getArrowFont() == MarkFont.TEXT) {
+            target.writeTextGlyph(UiSurface.TEXT_COLUMNS_PER_CELL * column, row, glyph, rgba);
+        } else {
+            target.writeSquareGlyph(column, row, glyph, rgba);
+        }
+    }
+
+    private int arrowGlyphOf(BarOrientation bar, int direction) {
+        if (bar == BarOrientation.VERTICAL) {
+            return direction == TOWARD_START ? style.getUpArrowGlyph() : style.getDownArrowGlyph();
+        }
+        return direction == TOWARD_START ? style.getLeftArrowGlyph()
+                : style.getRightArrowGlyph();
+    }
+
+    // A held arrow shows pressed only while the pointer is on it; the hover look never applies to
+    // the held arrow, so a stale hover cannot show after the pointer left it.
+    private int arrowRgbaOf(BarOrientation bar, int direction) {
+        if (isHeldArrow(bar, direction)) {
+            return pointerOnHeldArrow ? style.getStepArrowPressedRgba() : style.getStepArrowRgba();
+        }
+        boolean hovered = hoveredArrowBar == bar && hoveredArrowDirection == direction;
+        return hovered ? style.getStepArrowPointerOverRgba() : style.getStepArrowRgba();
+    }
+
+    private boolean isHeldArrow(BarOrientation bar, int direction) {
+        return dragKind == DragKind.ARROW && dragBar == bar && heldArrowDirection == direction;
     }
 
     private int thumbRgbaOf(BarOrientation bar) {
@@ -499,19 +576,45 @@ public final class ScrollPane extends WidgetGroup {
         }
     }
 
+    // The bar's arrows, when it shows them, take its first and last cell.
+    private boolean areArrowsShown(BarOrientation bar) {
+        return style.isStepButtonsShown() && cellsAlong(bar) >= MIN_BAR_CELLS_FOR_ARROWS;
+    }
+
+    // Arrow cells at the start of the bar: 1 or 0, and the same count at the end.
+    private int arrowCellsAlong(BarOrientation bar) {
+        return areArrowsShown(bar) ? 1 : 0;
+    }
+
+    // The cells that the track and thumb use, between the arrows.
+    private int trackCellsAlong(BarOrientation bar) {
+        return cellsAlong(bar) - 2 * arrowCellsAlong(bar);
+    }
+
+    // The arrow at a position along the bar: TOWARD_START, TOWARD_END, or NO_ARROW.
+    private int arrowDirectionAt(BarOrientation bar, int along) {
+        if (!areArrowsShown(bar)) {
+            return NO_ARROW;
+        }
+        if (along == 0) {
+            return TOWARD_START;
+        }
+        return along == cellsAlong(bar) - 1 ? TOWARD_END : NO_ARROW;
+    }
+
     int thumbLengthEighths(BarOrientation bar) {
-        int cells = cellsAlong(bar);
+        int trackCells = trackCellsAlong(bar);
         int total = contentAlong(bar);
-        if (cells == 0 || total <= 0) {
+        if (trackCells <= 0 || total <= 0) {
             return 0;
         }
-        int trackEighths = cells * EIGHTHS;
-        long proportional = Math.round((double) trackEighths * cells / total);
+        int trackEighths = trackCells * EIGHTHS;
+        long proportional = Math.round((double) trackEighths * cellsAlong(bar) / total);
         return (int) Math.min(trackEighths, Math.max(EIGHTHS, proportional));
     }
 
     int thumbStartEighths(BarOrientation bar) {
-        int room = cellsAlong(bar) * EIGHTHS - thumbLengthEighths(bar);
+        int room = trackCellsAlong(bar) * EIGHTHS - thumbLengthEighths(bar);
         int maxScroll = maxScrollAlong(bar);
         if (room <= 0 || maxScroll == 0) {
             return 0;
@@ -576,20 +679,30 @@ public final class ScrollPane extends WidgetGroup {
     }
 
     private boolean handlePointerMoved(UiEvent event) {
-        BarOrientation bar = null;
-        if (event.getTarget() == this) {
-            bar = barAt(event.getColumn(), event.getRow());
-            if (bar != null && !overlapsThumb(bar, alongBar(bar, event))) {
-                bar = null;
-            }
-        }
-        setHoveredBar(bar);
+        BarOrientation bar = event.getTarget() == this
+                ? barAt(event.getColumn(), event.getRow()) : null;
+        int along = bar == null ? 0 : alongBar(bar, event);
+        int arrow = bar == null ? NO_ARROW : arrowDirectionAt(bar, along);
+        setHoveredArrow(arrow == NO_ARROW ? null : bar, arrow);
+        boolean overThumb = bar != null && arrow == NO_ARROW
+                && overlapsThumb(bar, along - arrowCellsAlong(bar));
+        setHoveredBar(overThumb ? bar : null);
         return false;
     }
 
     private boolean handlePointerExited() {
         setHoveredBar(null);
+        setHoveredArrow(null, NO_ARROW);
         return false;
+    }
+
+    private void setHoveredArrow(BarOrientation bar, int direction) {
+        if (hoveredArrowBar == bar && hoveredArrowDirection == direction) {
+            return;
+        }
+        hoveredArrowBar = bar;
+        hoveredArrowDirection = direction;
+        requestRedraw();
     }
 
     private void setHoveredBar(BarOrientation bar) {
@@ -625,7 +738,13 @@ public final class ScrollPane extends WidgetGroup {
     }
 
     private void pressBar(BarOrientation bar, UiEvent event) {
-        int index = alongBar(bar, event);
+        int along = alongBar(bar, event);
+        int arrow = arrowDirectionAt(bar, along);
+        if (arrow != NO_ARROW) {
+            pressArrow(bar, arrow, event.getPointer());
+            return;
+        }
+        int index = along - arrowCellsAlong(bar);
         if (overlapsThumb(bar, index)) {
             int thumbStart = thumbStartEighths(bar);
             int grab = index * EIGHTHS + EIGHTHS / 2 - thumbStart;
@@ -636,6 +755,61 @@ public final class ScrollPane extends WidgetGroup {
         }
         int direction = index * EIGHTHS < thumbStartEighths(bar) ? -1 : 1;
         setScrollAlong(bar, scrollAlong(bar) + direction * pageAlong(bar));
+    }
+
+    private void pressArrow(BarOrientation bar, int direction, int pointer) {
+        beginDrag(DragKind.ARROW, pointer);
+        dragBar = bar;
+        heldArrowDirection = direction;
+        pointerOnHeldArrow = true;
+        secondsUntilStepRepeat = UiRoot.KEY_REPEAT_INITIAL_DELAY_SECONDS;
+        stepTowardHeldArrow();
+    }
+
+    private void stepTowardHeldArrow() {
+        setScrollAlong(dragBar, scrollAlong(dragBar) + heldArrowDirection);
+    }
+
+    @Override
+    void updateWhilePointerCaptured(float deltaSeconds) {
+        if (dragKind != DragKind.ARROW) {
+            return;
+        }
+        if (!isHeldArrowStillShown()) {
+            endDrag(dragPointer);
+            return;
+        }
+        if (!pointerOnHeldArrow) {
+            return;
+        }
+        secondsUntilStepRepeat -= deltaSeconds;
+        int steps = 0;
+        while (secondsUntilStepRepeat <= 0f && steps < MAX_REPEAT_STEPS_PER_UPDATE) {
+            secondsUntilStepRepeat += UiRoot.KEY_REPEAT_INTERVAL_SECONDS;
+            stepTowardHeldArrow();
+            steps++;
+        }
+        // Drops the time debt that the cap left over, so it does not carry into later frames.
+        if (secondsUntilStepRepeat <= 0f) {
+            secondsUntilStepRepeat = UiRoot.KEY_REPEAT_INTERVAL_SECONDS;
+        }
+    }
+
+    private boolean isHeldArrowStillShown() {
+        refreshGeometryIfStale();
+        return isVisible() && (dragBar == BarOrientation.VERTICAL
+                ? verticalBarShown : horizontalBarShown) && areArrowsShown(dragBar);
+    }
+
+    private void followPointerOverHeldArrow(UiEvent event) {
+        BarOrientation bar = barAt(event.getColumn(), event.getRow());
+        boolean onArrow = bar == dragBar
+                && arrowDirectionAt(bar, alongBar(bar, event)) == heldArrowDirection;
+        if (onArrow == pointerOnHeldArrow) {
+            return;
+        }
+        pointerOnHeldArrow = onArrow;
+        requestRedraw();
     }
 
     private void beginContentDrag(UiEvent event) {
@@ -663,12 +837,16 @@ public final class ScrollPane extends WidgetGroup {
                     dragStartScrollRow - (event.getSurfaceRow() - dragStartSurfaceRow));
             return true;
         }
-        dragThumbTo(alongBar(dragBar, event));
+        if (dragKind == DragKind.ARROW) {
+            followPointerOverHeldArrow(event);
+            return true;
+        }
+        dragThumbTo(alongBar(dragBar, event) - arrowCellsAlong(dragBar));
         return true;
     }
 
     private void dragThumbTo(int index) {
-        int room = cellsAlong(dragBar) * EIGHTHS - thumbLengthEighths(dragBar);
+        int room = trackCellsAlong(dragBar) * EIGHTHS - thumbLengthEighths(dragBar);
         if (room <= 0) {
             return;
         }
@@ -689,9 +867,15 @@ public final class ScrollPane extends WidgetGroup {
         if (dragKind == DragKind.NONE || pointer != dragPointer) {
             return false;
         }
+        if (dragKind == DragKind.ARROW && pointerOnHeldArrow) {
+            hoveredArrowBar = dragBar;
+            hoveredArrowDirection = heldArrowDirection;
+        }
         dragKind = DragKind.NONE;
         dragPointer = NO_POINTER;
         dragBar = null;
+        heldArrowDirection = NO_ARROW;
+        pointerOnHeldArrow = false;
         requestRedraw();
         return true;
     }

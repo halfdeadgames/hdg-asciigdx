@@ -50,8 +50,8 @@ class MenuBarKeyboardTest {
         ui.keyUp(Input.Keys.ALT_LEFT);
     }
 
-    private MenuDropDown dropDown() {
-        return (MenuDropDown) ui.getPopupLayer().getChild(1);
+    private MenuItemList dropDown() {
+        return (MenuItemList) ui.getPopupLayer().getChild(1);
     }
 
     private void openFileMenu() {

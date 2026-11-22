@@ -22,8 +22,8 @@ import java.util.OptionalInt;
  *
  * <p>The file format: the file is one JSON object. It may have the sections {@code colors},
  * {@code labels}, {@code buttons}, {@code menuBars}, {@code checkBoxes}, {@code radioButtons},
- * {@code textFields}, {@code progressBars}, {@code sliders}, {@code scrollPanes}, and
- * {@code windows}; all are optional, and any other top-level key is an error. The sections are
+ * {@code textFields}, {@code progressBars}, {@code sliders}, {@code scrollPanes},
+ * {@code selectBoxes}, {@code windows}, and {@code dialogs}; all are optional, and any other top-level key is an error. The sections are
  * read in that order, and a section can only refer to names defined in an earlier one, so
  * references never form a cycle. Inside a section every name is unique. Each section is an
  * object that maps a style name to its value.
@@ -165,8 +165,32 @@ import java.util.OptionalInt;
  *
  * <p>A {@code scrollPanes} entry becomes a {@link ScrollPaneStyle}. The keys are colors:
  * {@code track} and {@code thumb}, required, and the optional {@code thumbPointerOver} and
- * {@code thumbPressed}, which copy {@code thumb} when missing. Example:
- * {@code "scrollPane": { "track": "darkGray", "thumb": "gray", "thumbPressed": "gold" }}.
+ * {@code thumbPressed}, which copy {@code thumb} when missing. The optional {@code stepButtons}
+ * ({@code true} shows an arrow in the first and last cell of each bar; {@code false} when
+ * missing), {@code stepArrow}, {@code stepArrowPointerOver}, and {@code stepArrowPressed} (colors
+ * that follow the matching thumb color when missing), {@code upArrow}, {@code downArrow},
+ * {@code leftArrow}, and {@code rightArrow} (one glyph each; U+25B2, U+25BC, U+25C4, and U+25BA when missing), and
+ * {@code arrowFont} ({@code "square"} or {@code "text"}; square when missing) shape the step
+ * buttons. Example:
+ * {@code "scrollPane": { "track": "darkGray", "thumb": "gray", "thumbPressed": "gold",
+ * "stepButtons": true }}.
+ *
+ * <p>A {@code selectBoxes} entry becomes a {@link SelectBoxStyle}. The section comes after
+ * {@code scrollPanes}, so an entry can name a scroll pane style. The keys:
+ * <ul>
+ *   <li>{@code button}, required: a button style name or an inline button object; the looks and
+ *       padding of the closed box.
+ *   <li>{@code list}, required: a button style name or an inline button object; the looks and
+ *       padding of the rows of the open list.
+ *   <li>{@code scrollPane}, required: the name of an entry in the {@code scrollPanes} section (it
+ *       must name one; an inline object is an error); the scroll bar of the open list.
+ *   <li>{@code arrow}, optional: text of exactly one code point drawn in the far-right cell of the
+ *       closed box; defaults to {@code "▼"}.
+ *   <li>{@code arrowFont}, optional: {@code "text"} or {@code "square"}, in lowercase; defaults to
+ *       {@code "square"}.
+ * </ul>
+ * Example: {@code "selectBox": { "button": "button", "list": "button",
+ * "scrollPane": "scrollPane", "arrow": "▼", "arrowFont": "square" }}.
  *
  * <p>A {@code windows} entry becomes a {@link WindowStyle}. The keys:
  * <ul>
@@ -243,6 +267,7 @@ public final class Skin {
     private final Map<String, ProgressBarStyle> progressBarStyles;
     private final Map<String, SliderStyle> sliderStyles;
     private final Map<String, ScrollPaneStyle> scrollPaneStyles;
+    private final Map<String, SelectBoxStyle> selectBoxStyles;
     private final Map<String, WindowStyle> windowStyles;
     private final Map<String, DialogStyle> dialogStyles;
     private final Map<String, Map<String, Object>> customStyles;
@@ -256,6 +281,7 @@ public final class Skin {
             Map<String, ProgressBarStyle> progressBarStyles,
             Map<String, SliderStyle> sliderStyles,
             Map<String, ScrollPaneStyle> scrollPaneStyles,
+            Map<String, SelectBoxStyle> selectBoxStyles,
             Map<String, WindowStyle> windowStyles,
             Map<String, DialogStyle> dialogStyles,
             Map<String, Map<String, Object>> customStyles) {
@@ -266,6 +292,7 @@ public final class Skin {
         this.progressBarStyles = copyOf(progressBarStyles);
         this.sliderStyles = copyOf(sliderStyles);
         this.scrollPaneStyles = copyOf(scrollPaneStyles);
+        this.selectBoxStyles = copyOf(selectBoxStyles);
         this.windowStyles = copyOf(windowStyles);
         this.dialogStyles = copyOf(dialogStyles);
         this.colors = copyOf(colors);
@@ -451,6 +478,30 @@ public final class Skin {
      */
     public boolean hasScrollPaneStyle(String name) {
         return contains(scrollPaneStyles, name);
+    }
+
+    /**
+     * Returns the select box style with a name.
+     *
+     * @param name name in the {@code selectBoxes} section; must not be {@code null}
+     * @return the style, never {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if there is no such style; the message lists the known
+     *         names. Check with {@link #hasSelectBoxStyle(String)} first.
+     */
+    public SelectBoxStyle getSelectBoxStyle(String name) {
+        return lookUp(selectBoxStyles, name, "select box style");
+    }
+
+    /**
+     * Returns whether the skin defines a select box style with a name.
+     *
+     * @param name name in the {@code selectBoxes} section; must not be {@code null}
+     * @return {@code true} if {@link #getSelectBoxStyle(String)} would succeed for that name
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
+    public boolean hasSelectBoxStyle(String name) {
+        return contains(selectBoxStyles, name);
     }
 
     /**

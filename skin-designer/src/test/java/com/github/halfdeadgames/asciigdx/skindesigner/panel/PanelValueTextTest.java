@@ -54,16 +54,6 @@ class PanelValueTextTest {
     }
 
     @Test
-    void optionCycleWrapsAndStartsOverForUnknownValues() {
-        List<String> options = List.of("single", "double", "heavy");
-
-        assertEquals("double", OptionCycle.next(options, "single"));
-        assertEquals("single", OptionCycle.next(options, "heavy"));
-        assertEquals("single", OptionCycle.next(options, "custom"));
-        assertThrows(IllegalArgumentException.class, () -> OptionCycle.next(List.of(), "a"));
-    }
-
-    @Test
     void styleChoicesListTheStylesOfTheGivenSectionsInOrder() {
         List<StyleChoice> choices = StyleChoice.listIn(TREE,
                 List.of("buttons", "missing", "labels"));

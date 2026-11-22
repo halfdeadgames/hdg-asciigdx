@@ -1,7 +1,7 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
 /** The list of items of the open menu of a {@link MenuBar}, drawn in the popup layer. */
-final class MenuDropDown extends Widget {
+final class MenuItemList extends Widget {
 
     private static final int NO_INDEX = -1;
     private static final int NO_POINTER = -1;
@@ -14,7 +14,7 @@ final class MenuDropDown extends Widget {
     private int armedItem = NO_INDEX;
     private int armedPointer = NO_POINTER;
 
-    MenuDropDown(MenuBar bar) {
+    MenuItemList(MenuBar bar) {
         this.bar = bar;
     }
 

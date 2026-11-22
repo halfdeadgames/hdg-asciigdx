@@ -532,6 +532,10 @@ public abstract class Widget {
     void updateWhileFocused(float deltaSeconds) {
     }
 
+    /** Hook run by {@link UiRoot#update(float)} on a widget that holds pointer capture. */
+    void updateWhilePointerCaptured(float deltaSeconds) {
+    }
+
     void clearRedrawNeeded() {
         redrawNeeded = false;
     }

@@ -26,7 +26,7 @@ class SkinSchemaTest {
     private static final String UNKNOWN_KEY = "zzzUnknown";
     private static final List<String> FILE_ORDER = List.of("colors", "labels", "buttons",
             "menuBars", "checkBoxes", "radioButtons", "textFields", "progressBars", "sliders",
-            "scrollPanes", "windows", "dialogs");
+            "scrollPanes", "selectBoxes", "windows", "dialogs");
 
     @Test
     void sectionNamesAreInFileOrder() {
@@ -277,6 +277,7 @@ class SkinSchemaTest {
             case BUTTON -> "b";
             case WINDOW -> "w";
             case TEXT_FIELD -> "t";
+            case SCROLL_PANE -> "s";
         };
     }
 
@@ -287,6 +288,8 @@ class SkinSchemaTest {
                 "\"l\": {\"foreground\": \"c\", \"background\": \"c\"}")));
         entries.put("buttons", new ArrayList<>(List.of("\"b\": {\"normal\": \"l\"}")));
         entries.put("textFields", new ArrayList<>(List.of("\"t\": {\"normal\": \"l\"}")));
+        entries.put("scrollPanes", new ArrayList<>(List.of(
+                "\"s\": {\"track\": \"c\", \"thumb\": \"c\"}")));
         entries.put("windows", new ArrayList<>(List.of("\"w\": {\"box\": \"single\", "
                 + "\"border\": \"l\", \"title\": \"l\", \"background\": \"c\"}")));
         entries.computeIfAbsent(section, name -> new ArrayList<>())

@@ -444,7 +444,7 @@ class MenuBarTest {
     void itemTriggerIsUnderlinedAtItsTextColumnOnTheItemRow() {
         underlinedBar(LOOK, true, true);
         click(1, 0);
-        MenuDropDown openDropDown = (MenuDropDown) dropDown();
+        MenuItemList openDropDown = (MenuItemList) dropDown();
         openDropDown.draw(surface);
 
         TerminalGrid overlay = surface.getOverlayGrid();

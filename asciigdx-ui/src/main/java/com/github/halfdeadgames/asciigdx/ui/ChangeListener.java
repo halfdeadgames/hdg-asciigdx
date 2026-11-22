@@ -2,7 +2,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 
 /**
  * Receives the changes a user makes to a widget that holds a value, such as a {@link CheckBox} or
- * a {@link RadioButton}, added with their {@code addChangeListener} methods. A listener is called
+ * a {@link RadioButton}, or a {@link SelectBox}, added with their {@code addChangeListener} methods. A listener is called
  * only for changes made through input (pointer or keyboard), never for changes made by calling a
  * setter from code.
  *

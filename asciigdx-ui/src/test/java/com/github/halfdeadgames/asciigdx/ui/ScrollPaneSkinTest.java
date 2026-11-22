@@ -57,7 +57,68 @@ class ScrollPaneSkinTest {
     void unknownKeysAreRejectedWithTheKnownOnes() {
         assertSkinError(withSection("\"track\": \"dark\", \"thumb\": \"light\", \"size\": 1"),
                 "scrollPanes.p", "unknown key \"size\"",
-                "Known keys: track, thumb, thumbPointerOver, thumbPressed");
+                "Known keys: track, thumb, thumbPointerOver, thumbPressed, stepButtons, "
+                        + "stepArrow, stepArrowPointerOver, stepArrowPressed, upArrow, "
+                        + "downArrow, leftArrow, rightArrow, arrowFont");
+    }
+
+    @Test
+    void stepButtonKeysAreOffAndFollowTheThumbWhenMissing() {
+        ScrollPaneStyle style = Skin.fromJson(withSection(
+                "\"track\": \"dark\", \"thumb\": \"light\", \"thumbPressed\": \"white\""))
+                .getScrollPaneStyle("p");
+
+        assertFalse(style.isStepButtonsShown());
+        assertEquals(0x909090FF, style.getStepArrowRgba());
+        assertEquals(0x909090FF, style.getStepArrowPointerOverRgba());
+        assertEquals(0xFFFFFFFF, style.getStepArrowPressedRgba());
+        assertEquals(0x25B2, style.getUpArrowGlyph());
+        assertEquals(0x25BC, style.getDownArrowGlyph());
+        assertEquals(0x25C4, style.getLeftArrowGlyph());
+        assertEquals(0x25BA, style.getRightArrowGlyph());
+        assertEquals(MarkFont.SQUARE, style.getArrowFont());
+    }
+
+    @Test
+    void stepButtonKeysAreRead() {
+        ScrollPaneStyle style = Skin.fromJson(withSection("""
+                "track": "dark", "thumb": "light", "stepButtons": true,
+                "stepArrow": "white", "stepArrowPointerOver": "#FF0000", "stepArrowPressed": "dark",
+                "upArrow": "^", "downArrow": "v", "leftArrow": "<", "rightArrow": ">",
+                "arrowFont": "text" """)).getScrollPaneStyle("p");
+
+        assertTrue(style.isStepButtonsShown());
+        assertEquals(0xFFFFFFFF, style.getStepArrowRgba());
+        assertEquals(0xFF0000FF, style.getStepArrowPointerOverRgba());
+        assertEquals(0x404040FF, style.getStepArrowPressedRgba());
+        assertEquals('^', style.getUpArrowGlyph());
+        assertEquals('v', style.getDownArrowGlyph());
+        assertEquals('<', style.getLeftArrowGlyph());
+        assertEquals('>', style.getRightArrowGlyph());
+        assertEquals(MarkFont.TEXT, style.getArrowFont());
+    }
+
+    @Test
+    void badStepButtonValuesNameThePath() {
+        String base = "\"track\": \"dark\", \"thumb\": \"light\", ";
+        assertSkinError(withSection(base + "\"stepButtons\": \"yes\""),
+                "scrollPanes.p.stepButtons");
+        assertSkinError(withSection(base + "\"stepArrow\": \"nope\""),
+                "scrollPanes.p.stepArrow", "unknown color \"nope\"");
+        assertSkinError(withSection(base + "\"upArrow\": \"ab\""), "scrollPanes.p.upArrow");
+        assertSkinError(withSection(base + "\"arrowFont\": \"huge\""),
+                "scrollPanes.p.arrowFont");
+    }
+
+    @Test
+    void unsetArrowColorsFollowALaterThumbChange() {
+        ScrollPaneStyle style = ScrollPaneStyle.of(1, 2).withThumbPressed(3);
+
+        assertEquals(3, style.getStepArrowPressedRgba());
+        assertEquals(ScrollPaneStyle.of(1, 2).withThumbPressed(3).withStepArrowPressed(3), style);
+        assertNotEquals(style, style.withStepArrowPressed(4));
+        assertFalse(style.isStepButtonsShown());
+        assertNotEquals(style, style.withStepButtonsShown(true));
     }
 
     @Test

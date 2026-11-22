@@ -182,7 +182,7 @@ class MenuTextTest {
     @Test
     void highlightedItemStaysHighlightedAfterSetItemText() {
         click(1, 0);
-        MenuDropDown openDropDown = (MenuDropDown) dropDown();
+        MenuItemList openDropDown = (MenuItemList) dropDown();
         openDropDown.highlightItem(1);
 
         file.setItemText(1, "Save everything");

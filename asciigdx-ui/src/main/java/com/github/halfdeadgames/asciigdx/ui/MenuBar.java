@@ -109,7 +109,7 @@ public final class MenuBar extends Widget {
     private final MenuBarStyle style;
     private final ArrayList<Menu> menus = new ArrayList<>();
     private final MenuPressCatcher pressCatcher;
-    private final MenuDropDown dropDown;
+    private final MenuItemList dropDown;
     private Menu openMenu;
     private int hoveredTitleIndex = NO_INDEX;
     private Widget focusBeforeOpen;
@@ -120,7 +120,7 @@ public final class MenuBar extends Widget {
         this.style = style;
         this.pressCatcher = new MenuPressCatcher(this, uiRoot.getSurfaceColumns(),
                 uiRoot.getSurfaceRows());
-        this.dropDown = new MenuDropDown(this);
+        this.dropDown = new MenuItemList(this);
         setSize(0, 0);
     }
 
