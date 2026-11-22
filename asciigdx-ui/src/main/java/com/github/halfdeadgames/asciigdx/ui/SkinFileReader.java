@@ -5,64 +5,35 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.SerializationException;
 import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Turns skin file text into a {@link Skin}, checking every key, type, and reference. */
+/**
+ * Turns skin file text into a {@link Skin}, checking every key, type, and reference. Each object
+ * is parsed by its {@link SkinSchema} entry; the section methods then only assemble styles from
+ * the parsed values.
+ */
 final class SkinFileReader {
 
-    private static final String COLORS = "colors";
-    private static final String LABELS = "labels";
-    private static final String BUTTONS = "buttons";
-    private static final String MENU_BARS = "menuBars";
-    private static final String CHECK_BOXES = "checkBoxes";
-    private static final String RADIO_BUTTONS = "radioButtons";
-    private static final String TEXT_FIELDS = "textFields";
-    private static final String PROGRESS_BARS = "progressBars";
-    private static final String SLIDERS = "sliders";
-    private static final String SCROLL_PANES = "scrollPanes";
-    private static final String WINDOWS = "windows";
-    private static final String DIALOGS = "dialogs";
-    private static final List<String> SECTION_NAMES = List.of(COLORS, LABELS, BUTTONS, MENU_BARS,
-            CHECK_BOXES, RADIO_BUTTONS, TEXT_FIELDS, PROGRESS_BARS, SLIDERS, SCROLL_PANES, WINDOWS,
-            DIALOGS);
-    private static final List<String> DIALOG_KEYS = List.of("window", "message", "buttons",
-            "textField", "dimColor", "dimAmount");
-    private static final List<String> SCROLL_PANE_KEYS = List.of("track", "thumb",
-            "thumbPointerOver", "thumbPressed");
-    private static final List<String> WINDOW_KEYS = List.of("box", "border", "focusedBorder",
-            "title", "background", "closeButton", "closeText", "closeFont");
-    private static final List<String> BOX_NAMES = List.of("single", "double", "heavy", "rounded");
-    private static final List<String> TEXT_FIELD_KEYS = List.of("normal", "focused", "disabled",
-            "placeholder", "caret");
-    private static final List<String> CARET_KEYS = List.of("glyph", "foreground", "blinkSeconds");
-    private static final List<String> PROGRESS_BAR_KEYS = List.of("fill", "empty");
-    private static final List<String> SLIDER_KEYS = List.of("trackGlyph", "knobGlyph", "track",
-            "knob");
-    private static final List<String> SLIDER_LOOK_KEYS = List.of("normal", "focused", "disabled");
-    private static final List<String> TOGGLE_KEYS = List.of("button", "unchecked", "checked",
-            "gap", "markFont");
-    private static final List<String> FONT_NAMES = List.of("text", "square");
-    private static final String REMOVED_FONT_KEY = "font";
-    private static final List<String> LABEL_KEYS = List.of("foreground", "background");
-    private static final List<String> BUTTON_KEYS = List.of("normal", "pointerOver", "pressed",
-            "disabled", "focused", "horizontalPadding");
-    private static final List<String> MENU_BAR_KEYS = List.of("titles", "items", "triggerColor",
-            "triggerUnderline");
-    private static final int NORMAL = 0;
-    private static final int FOCUSED = 1;
-    private static final int DISABLED = 2;
+    private static final String NORMAL = "normal";
+    private static final String FOCUSED = "focused";
+    private static final String DISABLED = "disabled";
     private static final int OPAQUE_ALPHA = 0xFF;
     private static final int HEX_RADIX = 16;
     private static final int RGB_DIGIT_COUNT = 6;
     private static final int RGBA_DIGIT_COUNT = 8;
     private static final Pattern LINE_IN_MESSAGE = Pattern.compile("line (\\d+)");
+    private static final SkinKeyType.StyleReference LOOK_REFERENCE =
+            SkinKeyType.StyleReference.nameOrObject(SkinStyleKind.LABEL);
 
     private final Map<String, Integer> colors = new LinkedHashMap<>();
     private final Map<String, LabelStyle> labelStyles = new LinkedHashMap<>();
@@ -82,7 +53,7 @@ final class SkinFileReader {
     }
 
     static boolean isBuiltInSection(String sectionName) {
-        return SECTION_NAMES.contains(sectionName);
+        return SkinSchema.getSectionNames().contains(sectionName);
     }
 
     static Skin read(String json) {
@@ -91,26 +62,32 @@ final class SkinFileReader {
 
     static Skin read(String json, Map<String, SkinSectionReader<?>> customReaders) {
         JsonValue root = readRoot(json);
-        List<String> knownSections = new ArrayList<>(SECTION_NAMES);
+        List<String> knownSections = new ArrayList<>(SkinSchema.getSectionNames());
         knownSections.addAll(customReaders.keySet());
         checkKnownKeys(root, knownSections, "section", "The file");
         var reader = new SkinFileReader();
-        reader.readSection(root, COLORS, reader.colors, reader::readColorEntry);
-        reader.readSection(root, LABELS, reader.labelStyles, reader::readLabelStyle);
-        reader.readSection(root, BUTTONS, reader.buttonStyles, reader::readButtonStyle);
-        reader.readSection(root, MENU_BARS, reader.menuBarStyles, reader::readMenuBarStyle);
-        reader.readSection(root, CHECK_BOXES, reader.checkBoxStyles, reader::readToggleStyle);
-        reader.readSection(root, RADIO_BUTTONS, reader.radioButtonStyles,
+        reader.readSection(root, SkinSchema.COLORS, reader.colors, reader::readColorEntry);
+        reader.readSection(root, SkinSchema.LABELS, reader.labelStyles, reader::readLabelStyle);
+        reader.readSection(root, SkinSchema.BUTTONS, reader.buttonStyles,
+                reader::readButtonStyle);
+        reader.readSection(root, SkinSchema.MENU_BARS, reader.menuBarStyles,
+                reader::readMenuBarStyle);
+        reader.readSection(root, SkinSchema.CHECK_BOXES, reader.checkBoxStyles,
                 reader::readToggleStyle);
-        reader.readSection(root, TEXT_FIELDS, reader.textFieldStyles,
+        reader.readSection(root, SkinSchema.RADIO_BUTTONS, reader.radioButtonStyles,
+                reader::readToggleStyle);
+        reader.readSection(root, SkinSchema.TEXT_FIELDS, reader.textFieldStyles,
                 reader::readTextFieldStyle);
-        reader.readSection(root, PROGRESS_BARS, reader.progressBarStyles,
+        reader.readSection(root, SkinSchema.PROGRESS_BARS, reader.progressBarStyles,
                 reader::readProgressBarStyle);
-        reader.readSection(root, SLIDERS, reader.sliderStyles, reader::readSliderStyle);
-        reader.readSection(root, SCROLL_PANES, reader.scrollPaneStyles,
+        reader.readSection(root, SkinSchema.SLIDERS, reader.sliderStyles,
+                reader::readSliderStyle);
+        reader.readSection(root, SkinSchema.SCROLL_PANES, reader.scrollPaneStyles,
                 reader::readScrollPaneStyle);
-        reader.readSection(root, WINDOWS, reader.windowStyles, reader::readWindowStyle);
-        reader.readSection(root, DIALOGS, reader.dialogStyles, reader::readDialogStyle);
+        reader.readSection(root, SkinSchema.WINDOWS, reader.windowStyles,
+                reader::readWindowStyle);
+        reader.readSection(root, SkinSchema.DIALOGS, reader.dialogStyles,
+                reader::readDialogStyle);
         reader.readCustomSections(root, customReaders);
         return new Skin(reader.colors, reader.labelStyles, reader.buttonStyles,
                 reader.menuBarStyles, reader.checkBoxStyles, reader.radioButtonStyles,
@@ -119,131 +96,367 @@ final class SkinFileReader {
                 reader.customStyles);
     }
 
-    private DialogStyle readDialogStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a dialog object with the keys " + String.join(", ", DIALOG_KEYS));
-        checkKnownKeys(entry, DIALOG_KEYS, "key", path);
-        WindowStyle window = readNamedReference(entry, "window", windowStyles, "window style",
-                path);
-        LabelStyle message = readNamedReference(entry, "message", labelStyles, "label style",
-                path);
-        ButtonStyle buttons = readNamedReference(entry, "buttons", buttonStyles, "button style",
-                path);
-        TextFieldStyle textField = readNamedReference(entry, "textField", textFieldStyles,
-                "text field style", path);
-        DialogStyle style = DialogStyle.of(window, message, buttons, textField);
-        JsonValue dimColor = entry.get("dimColor");
-        JsonValue dimAmount = entry.get("dimAmount");
-        if ((dimColor == null) != (dimAmount == null)) {
-            throw new SkinFileException(path
-                    + ": \"dimColor\" and \"dimAmount\" must be given together");
+    // ---- Parsing by schema ----
+
+    private SkinParsedObject readObject(JsonValue object, SkinObjectSchema schema, String path) {
+        return readObject(object, schema, path, requiredKeys -> { });
+    }
+
+    // Reads the required keys first, then runs the cross-key checks, then reads the optional keys.
+    // An object with several problems therefore reports them in this fixed order, which is not
+    // always the order in which the keys are listed.
+    private SkinParsedObject readObject(JsonValue object, SkinObjectSchema schema, String path,
+            Consumer<SkinParsedObject> afterRequiredKeys) {
+        requireObject(object, path,
+                schema.objectDescription() + " with the keys "
+                        + String.join(", ", schema.getKeyNames()));
+        rejectRemovedKeys(object, schema, path);
+        checkKnownKeys(object, schema.getKeyNames(), "key", path);
+        Map<String, Object> values = new HashMap<>();
+        readKeys(object, schema, path, true, values);
+        requireKeysTogether(object, schema, path);
+        afterRequiredKeys.accept(new SkinParsedObject(values));
+        readKeys(object, schema, path, false, values);
+        return new SkinParsedObject(values);
+    }
+
+    private void readKeys(JsonValue object, SkinObjectSchema schema, String path,
+            boolean required, Map<String, Object> values) {
+        for (SkinKeyDefinition key : schema.keys()) {
+            if (key.required() != required) {
+                continue;
+            }
+            JsonValue value = object.get(key.name());
+            if (value != null) {
+                values.put(key.name(), readValue(value, key.type(), path + "." + key.name()));
+            } else if (required) {
+                throw new SkinFileException(path + ": missing \"" + key.name() + "\"");
+            }
         }
-        if (dimColor == null) {
+    }
+
+    private static void rejectRemovedKeys(JsonValue object, SkinObjectSchema schema,
+            String path) {
+        for (SkinObjectSchema.RemovedKey removed : schema.removedKeys()) {
+            if (object.get(removed.name()) != null) {
+                throw new SkinFileException(
+                        path + "." + removed.name() + ": " + removed.explanation());
+            }
+        }
+    }
+
+    private static void requireKeysTogether(JsonValue object, SkinObjectSchema schema,
+            String path) {
+        for (SkinObjectSchema.KeyPair pair : schema.togetherPairs()) {
+            if ((object.get(pair.first()) == null) != (object.get(pair.second()) == null)) {
+                throw new SkinFileException(path + ": \"" + pair.first() + "\" and \""
+                        + pair.second() + "\" must be given together");
+            }
+        }
+    }
+
+    private Object readValue(JsonValue value, SkinKeyType type, String path) {
+        if (type instanceof SkinKeyType.Color) {
+            return readColor(value, path);
+        }
+        if (type instanceof SkinKeyType.Glyph) {
+            return readGlyph(value, path);
+        }
+        if (type instanceof SkinKeyType.Mark) {
+            return readMark(value, path);
+        }
+        if (type instanceof SkinKeyType.WholeNumber wholeNumber) {
+            return readWholeNumber(value, wholeNumber, path);
+        }
+        if (type instanceof SkinKeyType.DecimalNumber decimalNumber) {
+            return readDecimalNumber(value, decimalNumber, path);
+        }
+        if (type instanceof SkinKeyType.Flag) {
+            return readFlag(value, path);
+        }
+        if (type instanceof SkinKeyType.Choice choice) {
+            return readChoice(value, choice, path);
+        }
+        if (type instanceof SkinKeyType.StyleReference reference) {
+            return readStyleReference(value, reference, path);
+        }
+        if (type instanceof SkinKeyType.Group group) {
+            return readObject(value, group.schema(), path);
+        }
+        throw new IllegalStateException("Unhandled key type " + type);
+    }
+
+    private static int readGlyph(JsonValue value, String path) {
+        boolean isSingleCodePoint = value.isString() && value.asString().codePointCount(0,
+                value.asString().length()) == 1;
+        if (!isSingleCodePoint) {
+            throw new SkinFileException(
+                    path + ": must be exactly one character, as text of exactly one code point");
+        }
+        return value.asString().codePointAt(0);
+    }
+
+    private static String readMark(JsonValue value, String path) {
+        if (!value.isString() || value.asString().isEmpty()) {
+            throw new SkinFileException(path + ": must be text of at least one character");
+        }
+        return value.asString();
+    }
+
+    private static int readWholeNumber(JsonValue value, SkinKeyType.WholeNumber type,
+            String path) {
+        if (!value.isLong() || value.asLong() > Integer.MAX_VALUE) {
+            throw new SkinFileException(
+                    path + ": must be a whole number of " + type.unit());
+        }
+        if (value.asLong() < type.minimum()) {
+            String limit = type.minimum() == 0 ? "must not be negative"
+                    : "must be at least " + type.minimum();
+            throw new SkinFileException(path + ": " + limit + ", was " + value.asLong());
+        }
+        return (int) value.asLong();
+    }
+
+    private static float readDecimalNumber(JsonValue value, SkinKeyType.DecimalNumber type,
+            String path) {
+        if (!value.isNumber()) {
+            throw new SkinFileException(path + ": must be " + type.expectation());
+        }
+        double number = value.asDouble();
+        if (!(number >= type.minimum()) || number > type.maximum()) {
+            throw new SkinFileException(
+                    path + ": must be " + type.rangeDescription() + ", was " + value.asString());
+        }
+        return (float) number;
+    }
+
+    private static boolean readFlag(JsonValue value, String path) {
+        if (!value.isBoolean()) {
+            throw new SkinFileException(path + ": must be true or false");
+        }
+        return value.asBoolean();
+    }
+
+    private static String readChoice(JsonValue value, SkinKeyType.Choice choice, String path) {
+        String name = value.isString() ? value.asString() : "";
+        if (!choice.options().contains(name)) {
+            throw new SkinFileException(path + ": must be " + choice.introduction() + " "
+                    + String.join(", ", choice.options()));
+        }
+        return name;
+    }
+
+    private Object readStyleReference(JsonValue value, SkinKeyType.StyleReference reference,
+            String path) {
+        SkinStyleKind kind = reference.kind();
+        if (value.isString()) {
+            return lookUpReference(getStylesOfKind(kind), value.asString(),
+                    kind.getStyleName(), path);
+        }
+        if (reference.inlineAllowed() && value.isObject()) {
+            return readInlineStyle(kind, value, path);
+        }
+        String expectation = "the name of a " + kind.getStyleName();
+        if (reference.inlineAllowed()) {
+            expectation += " or a " + kind.getObjectName();
+        }
+        throw new SkinFileException(path + ": must be " + expectation);
+    }
+
+    private Map<String, ?> getStylesOfKind(SkinStyleKind kind) {
+        return switch (kind) {
+            case LABEL -> labelStyles;
+            case BUTTON -> buttonStyles;
+            case WINDOW -> windowStyles;
+            case TEXT_FIELD -> textFieldStyles;
+        };
+    }
+
+    private Object readInlineStyle(SkinStyleKind kind, JsonValue value, String path) {
+        return switch (kind) {
+            case LABEL -> readLabelStyle(value, path);
+            case BUTTON -> readButtonStyle(value, path);
+            default -> throw new IllegalStateException("No inline form for " + kind);
+        };
+    }
+
+    private static Object lookUpReference(Map<String, ?> known, String name, String kind,
+            String path) {
+        Object found = known.get(name);
+        if (found == null) {
+            throw new SkinFileException(path + ": unknown " + kind + " \"" + name + "\". Known "
+                    + kind + "s: " + Skin.describeNames(known));
+        }
+        return found;
+    }
+
+    private static <E extends Enum<E>> E readEnum(SkinParsedObject parsed, String key,
+            Class<E> enumType) {
+        return Enum.valueOf(enumType, parsed.getText(key).toUpperCase(Locale.ROOT));
+    }
+
+    private static LabelStyle getLook(SkinParsedObject parsed, String key, LabelStyle fallback) {
+        return parsed.getOrElse(key, LabelStyle.class, fallback);
+    }
+
+    // ---- Assembling styles ----
+
+    private DialogStyle readDialogStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry, SkinSchema.getEntrySchema(SkinSchema.DIALOGS),
+                path);
+        DialogStyle style = DialogStyle.of(parsed.get("window", WindowStyle.class),
+                parsed.get("message", LabelStyle.class),
+                parsed.get("buttons", ButtonStyle.class),
+                parsed.get("textField", TextFieldStyle.class));
+        if (!parsed.has("dimColor")) {
             return style;
         }
-        return style.withDim(readColor(dimColor, path + ".dimColor"),
-                readDimAmount(dimAmount, path + ".dimAmount"));
-    }
-
-    private static <T> T readNamedReference(JsonValue entry, String key, Map<String, T> known,
-            String kind, String path) {
-        JsonValue value = requireKey(entry, key, path);
-        String keyPath = path + "." + key;
-        if (!value.isString()) {
-            throw new SkinFileException(keyPath + ": must be the name of a " + kind);
-        }
-        return lookUpReference(known, value.asString(), kind, keyPath);
-    }
-
-    private static float readDimAmount(JsonValue value, String path) {
-        if (!value.isNumber()) {
-            throw new SkinFileException(path + ": must be a number from 0 to 1");
-        }
-        double amount = value.asDouble();
-        if (!(amount >= 0) || amount > 1) {
-            throw new SkinFileException(
-                    path + ": must be from 0 to 1, was " + value.asString());
-        }
-        return (float) amount;
+        return style.withDim(parsed.getInt("dimColor"), parsed.getFloat("dimAmount"));
     }
 
     private ScrollPaneStyle readScrollPaneStyle(JsonValue entry, String path) {
-        requireObject(entry, path, "a scroll pane object with the keys "
-                + String.join(", ", SCROLL_PANE_KEYS));
-        checkKnownKeys(entry, SCROLL_PANE_KEYS, "key", path);
-        int track = readColor(requireKey(entry, "track", path), path + ".track");
-        int thumb = readColor(requireKey(entry, "thumb", path), path + ".thumb");
-        ScrollPaneStyle style = ScrollPaneStyle.of(track, thumb);
-        JsonValue pointerOver = entry.get("thumbPointerOver");
-        if (pointerOver != null) {
-            style = style.withThumbPointerOver(
-                    readColor(pointerOver, path + ".thumbPointerOver"));
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.SCROLL_PANES), path);
+        ScrollPaneStyle style = ScrollPaneStyle.of(parsed.getInt("track"),
+                parsed.getInt("thumb"));
+        if (parsed.has("thumbPointerOver")) {
+            style = style.withThumbPointerOver(parsed.getInt("thumbPointerOver"));
         }
-        JsonValue pressed = entry.get("thumbPressed");
-        if (pressed != null) {
-            style = style.withThumbPressed(readColor(pressed, path + ".thumbPressed"));
+        if (parsed.has("thumbPressed")) {
+            style = style.withThumbPressed(parsed.getInt("thumbPressed"));
         }
         return style;
     }
 
     private WindowStyle readWindowStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a window object with the keys " + String.join(", ", WINDOW_KEYS));
-        checkKnownKeys(entry, WINDOW_KEYS, "key", path);
-        BoxStyle box = readBox(requireKey(entry, "box", path), path + ".box");
-        LabelStyle border = readLook(requireKey(entry, "border", path), path + ".border");
-        LabelStyle title = readLook(requireKey(entry, "title", path), path + ".title");
-        int background = readColor(requireKey(entry, "background", path), path + ".background");
-        WindowStyle style = WindowStyle.of(box, border, title, background);
-        JsonValue focusedBorder = entry.get("focusedBorder");
-        if (focusedBorder != null) {
-            style = style.withFocusedBorder(
-                    readLook(focusedBorder, path + ".focusedBorder"));
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.WINDOWS), path);
+        WindowStyle style = WindowStyle.of(readEnum(parsed, "box", BoxStyle.class),
+                parsed.get("border", LabelStyle.class), parsed.get("title", LabelStyle.class),
+                parsed.getInt("background"));
+        if (parsed.has("focusedBorder")) {
+            style = style.withFocusedBorder(parsed.get("focusedBorder", LabelStyle.class));
         }
-        JsonValue closeButton = entry.get("closeButton");
-        if (closeButton != null) {
-            style = style.withCloseButton(
-                    readCloseButton(closeButton, path + ".closeButton"));
+        if (parsed.has("closeButton")) {
+            style = style.withCloseButton(parsed.get("closeButton", ButtonStyle.class));
         }
-        JsonValue closeText = entry.get("closeText");
-        if (closeText != null) {
-            style = style.withCloseText(readMark(closeText, path + ".closeText"));
+        if (parsed.has("closeText")) {
+            style = style.withCloseText(parsed.getText("closeText"));
         }
-        JsonValue closeFont = entry.get("closeFont");
-        if (closeFont != null) {
-            style = style.withCloseFont(readMarkFont(closeFont, path + ".closeFont"));
+        if (parsed.has("closeFont")) {
+            style = style.withCloseFont(readEnum(parsed, "closeFont", MarkFont.class));
         }
         return style;
     }
 
-    private static MarkFont readMarkFont(JsonValue value, String path) {
-        String name = value.isString() ? value.asString() : "";
-        return switch (name) {
-            case "text" -> MarkFont.TEXT;
-            case "square" -> MarkFont.SQUARE;
-            default -> throw new SkinFileException(path + ": must be one of "
-                    + String.join(", ", FONT_NAMES));
-        };
-    }
-
-    private static BoxStyle readBox(JsonValue value, String path) {
-        String name = value.isString() ? value.asString() : "";
-        return switch (name) {
-            case "single" -> BoxStyle.SINGLE;
-            case "double" -> BoxStyle.DOUBLE;
-            case "heavy" -> BoxStyle.HEAVY;
-            case "rounded" -> BoxStyle.ROUNDED;
-            default -> throw new SkinFileException(path + ": must be text, one of "
-                    + String.join(", ", BOX_NAMES));
-        };
-    }
-
-    private ButtonStyle readCloseButton(JsonValue value, String path) {
-        if (!value.isString()) {
-            throw new SkinFileException(path + ": must be the name of a button style");
+    private TextFieldStyle readTextFieldStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.TEXT_FIELDS), path);
+        LabelStyle normal = parsed.get(NORMAL, LabelStyle.class);
+        TextFieldStyle style = TextFieldStyle.of(normal)
+                .withFocused(getLook(parsed, FOCUSED, normal))
+                .withDisabled(getLook(parsed, DISABLED, normal))
+                .withPlaceholder(getLook(parsed, "placeholder", normal));
+        if (!parsed.has("caret")) {
+            return style;
         }
-        return lookUpReference(buttonStyles, value.asString(), "button style", path);
+        return style.withCaret(createCaret(parsed.get("caret", SkinParsedObject.class)));
     }
+
+    private static CaretStyle createCaret(SkinParsedObject parsed) {
+        CaretStyle style = CaretStyle.none().withGlyph(parsed.getInt("glyph"));
+        if (parsed.has("foreground")) {
+            style = style.withForegroundRgba(parsed.getInt("foreground"));
+        }
+        if (parsed.has("blinkSeconds")) {
+            style = style.withBlinkSeconds(parsed.getFloat("blinkSeconds"));
+        }
+        return style;
+    }
+
+    private ProgressBarStyle readProgressBarStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.PROGRESS_BARS), path);
+        return ProgressBarStyle.of(parsed.get("fill", LabelStyle.class),
+                parsed.get("empty", LabelStyle.class));
+    }
+
+    private SliderStyle readSliderStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.SLIDERS), path);
+        SkinParsedObject track = parsed.get("track", SkinParsedObject.class);
+        SkinParsedObject knob = parsed.get("knob", SkinParsedObject.class);
+        LabelStyle trackNormal = track.get(NORMAL, LabelStyle.class);
+        LabelStyle knobNormal = knob.get(NORMAL, LabelStyle.class);
+        SliderStyle style = SliderStyle.of(trackNormal, knobNormal)
+                .withFocused(getLook(track, FOCUSED, trackNormal),
+                        getLook(knob, FOCUSED, knobNormal))
+                .withDisabled(getLook(track, DISABLED, trackNormal),
+                        getLook(knob, DISABLED, knobNormal));
+        if (!parsed.has("trackGlyph")) {
+            return style;
+        }
+        return style.withGlyphs(parsed.getInt("trackGlyph"), parsed.getInt("knobGlyph"));
+    }
+
+    private LabelStyle readLabelStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry, SkinSchema.LABEL, path);
+        return LabelStyle.of(parsed.getInt("foreground"), parsed.getInt("background"));
+    }
+
+    private ButtonStyle readButtonStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry, SkinSchema.BUTTON, path);
+        LabelStyle normal = parsed.get(NORMAL, LabelStyle.class);
+        ButtonStyle style = ButtonStyle.of(normal, getLook(parsed, "pointerOver", normal),
+                getLook(parsed, "pressed", normal), getLook(parsed, DISABLED, normal));
+        if (parsed.has(FOCUSED)) {
+            style = style.withFocused(parsed.get(FOCUSED, LabelStyle.class));
+        }
+        if (parsed.has("horizontalPadding")) {
+            style = style.withHorizontalPadding(parsed.getInt("horizontalPadding"));
+        }
+        return style;
+    }
+
+    private MenuBarStyle readMenuBarStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.MENU_BARS), path);
+        MenuBarStyle style = MenuBarStyle.of(parsed.get("titles", ButtonStyle.class),
+                parsed.get("items", ButtonStyle.class));
+        if (parsed.has("triggerColor")) {
+            style = style.withTriggerRgba(parsed.getInt("triggerColor"));
+        }
+        if (parsed.has("triggerUnderline")) {
+            style = style.withTriggerUnderline(
+                    parsed.get("triggerUnderline", Boolean.class));
+        }
+        return style;
+    }
+
+    private ToggleStyle readToggleStyle(JsonValue entry, String path) {
+        SkinParsedObject parsed = readObject(entry,
+                SkinSchema.getEntrySchema(SkinSchema.CHECK_BOXES), path,
+                requiredKeys -> createToggleStyle(requiredKeys, path));
+        ToggleStyle style = createToggleStyle(parsed, path);
+        if (parsed.has("gap")) {
+            style = style.withGap(parsed.getInt("gap"));
+        }
+        if (parsed.has("markFont")) {
+            style = style.withMarkFont(readEnum(parsed, "markFont", MarkFont.class));
+        }
+        return style;
+    }
+
+    private static ToggleStyle createToggleStyle(SkinParsedObject parsed, String path) {
+        try {
+            return ToggleStyle.of(parsed.get("button", ButtonStyle.class),
+                    parsed.getText("unchecked"), parsed.getText("checked"));
+        } catch (IllegalArgumentException unequalMarks) {
+            throw new SkinFileException(path + ".checked: " + unequalMarks.getMessage());
+        }
+    }
+
+    // ---- File structure ----
 
     private void readCustomSections(JsonValue root,
             Map<String, SkinSectionReader<?>> customReaders) {
@@ -271,110 +484,6 @@ final class SkinFileReader {
         return style;
     }
 
-    private TextFieldStyle readTextFieldStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a text field object with the keys " + String.join(", ", TEXT_FIELD_KEYS));
-        checkKnownKeys(entry, TEXT_FIELD_KEYS, "key", path);
-        LabelStyle normal = readLook(requireKey(entry, "normal", path), path + ".normal");
-        TextFieldStyle style = TextFieldStyle.of(normal)
-                .withFocused(readOptionalLook(entry, "focused", normal, path))
-                .withDisabled(readOptionalLook(entry, "disabled", normal, path))
-                .withPlaceholder(readOptionalLook(entry, "placeholder", normal, path));
-        JsonValue caret = entry.get("caret");
-        if (caret == null) {
-            return style;
-        }
-        return style.withCaret(readCaret(caret, path + ".caret"));
-    }
-
-    private CaretStyle readCaret(JsonValue caret, String path) {
-        requireObject(caret, path, "a caret object with the keys " + String.join(", ", CARET_KEYS));
-        if (caret.get("background") != null) {
-            throw new SkinFileException(path + ".background: the caret is now a glyph in the "
-                    + "text font and has no background; delete the \"background\" key");
-        }
-        checkKnownKeys(caret, CARET_KEYS, "key", path);
-        CaretStyle style = CaretStyle.none().withGlyph(
-                readGlyph(requireKey(caret, "glyph", path), path + ".glyph"));
-        JsonValue foreground = caret.get("foreground");
-        if (foreground != null) {
-            style = style.withForegroundRgba(readColor(foreground, path + ".foreground"));
-        }
-        JsonValue blink = caret.get("blinkSeconds");
-        if (blink != null) {
-            style = style.withBlinkSeconds(readBlinkSeconds(blink, path + ".blinkSeconds"));
-        }
-        return style;
-    }
-
-    private static float readBlinkSeconds(JsonValue value, String path) {
-        if (!value.isNumber()) {
-            throw new SkinFileException(path + ": must be a number of seconds");
-        }
-        double seconds = value.asDouble();
-        if (!(seconds >= 0) || Double.isInfinite(seconds) || seconds > Float.MAX_VALUE) {
-            throw new SkinFileException(
-                    path + ": must be zero or greater and finite, was " + value.asString());
-        }
-        return (float) seconds;
-    }
-
-    private ProgressBarStyle readProgressBarStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a progress bar object with the keys " + String.join(", ", PROGRESS_BAR_KEYS));
-        checkKnownKeys(entry, PROGRESS_BAR_KEYS, "key", path);
-        LabelStyle fill = readLook(requireKey(entry, "fill", path), path + ".fill");
-        LabelStyle empty = readLook(requireKey(entry, "empty", path), path + ".empty");
-        return ProgressBarStyle.of(fill, empty);
-    }
-
-    private SliderStyle readSliderStyle(JsonValue entry, String path) {
-        requireObject(entry, path, "a slider object with the keys "
-                + String.join(", ", SLIDER_KEYS));
-        checkKnownKeys(entry, SLIDER_KEYS, "key", path);
-        LabelStyle[] track = readSliderLooks(requireKey(entry, "track", path), path + ".track");
-        LabelStyle[] knob = readSliderLooks(requireKey(entry, "knob", path), path + ".knob");
-        SliderStyle style = SliderStyle.of(track[NORMAL], knob[NORMAL])
-                .withFocused(track[FOCUSED], knob[FOCUSED])
-                .withDisabled(track[DISABLED], knob[DISABLED]);
-        return applyGlyphs(style, entry, path);
-    }
-
-    // Returns the normal, focused, and disabled looks in that order.
-    private LabelStyle[] readSliderLooks(JsonValue group, String path) {
-        requireObject(group, path,
-                "an object with the keys " + String.join(", ", SLIDER_LOOK_KEYS));
-        checkKnownKeys(group, SLIDER_LOOK_KEYS, "key", path);
-        LabelStyle normal = readLook(requireKey(group, "normal", path), path + ".normal");
-        LabelStyle focused = readOptionalLook(group, "focused", normal, path);
-        LabelStyle disabled = readOptionalLook(group, "disabled", normal, path);
-        return new LabelStyle[] {normal, focused, disabled};
-    }
-
-    private static SliderStyle applyGlyphs(SliderStyle style, JsonValue slider, String path) {
-        JsonValue trackGlyph = slider.get("trackGlyph");
-        JsonValue knobGlyph = slider.get("knobGlyph");
-        if (trackGlyph == null && knobGlyph == null) {
-            return style;
-        }
-        if (trackGlyph == null || knobGlyph == null) {
-            throw new SkinFileException(
-                    path + ": \"trackGlyph\" and \"knobGlyph\" must be given together");
-        }
-        return style.withGlyphs(readGlyph(trackGlyph, path + ".trackGlyph"),
-                readGlyph(knobGlyph, path + ".knobGlyph"));
-    }
-
-    private static int readGlyph(JsonValue value, String path) {
-        boolean isSingleCodePoint = value.isString() && value.asString().codePointCount(0,
-                value.asString().length()) == 1;
-        if (!isSingleCodePoint) {
-            throw new SkinFileException(
-                    path + ": must be exactly one character, as text of exactly one code point");
-        }
-        return value.asString().codePointAt(0);
-    }
-
     private static JsonValue readRoot(String json) {
         JsonValue root;
         try {
@@ -384,7 +493,7 @@ final class SkinFileReader {
         }
         if (root == null || !root.isObject()) {
             throw new SkinFileException("The file must hold one object with the sections "
-                    + String.join(", ", SECTION_NAMES));
+                    + String.join(", ", SkinSchema.getSectionNames()));
         }
         return root;
     }
@@ -425,182 +534,8 @@ final class SkinFileReader {
         return parseHex(entry.asString(), path);
     }
 
-    private LabelStyle readLabelStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a label object with the keys " + String.join(", ", LABEL_KEYS));
-        rejectRemovedFontKey(entry, path);
-        checkKnownKeys(entry, LABEL_KEYS, "key", path);
-        int foreground = readColor(requireKey(entry, "foreground", path), path + ".foreground");
-        int background = readColor(requireKey(entry, "background", path), path + ".background");
-        return LabelStyle.of(foreground, background);
-    }
-
-    private static void rejectRemovedFontKey(JsonValue label, String path) {
-        if (label.get(REMOVED_FONT_KEY) != null) {
-            throw new SkinFileException(path + "." + REMOVED_FONT_KEY + ": the \""
-                    + REMOVED_FONT_KEY + "\" key was removed, because the UI now picks the font "
-                    + "by job (words use the text font, drawn parts use the square font); delete "
-                    + "the key");
-        }
-    }
-
-    private ButtonStyle readButtonStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a button object with the keys " + String.join(", ", BUTTON_KEYS));
-        checkKnownKeys(entry, BUTTON_KEYS, "key", path);
-        LabelStyle normal = readLook(requireKey(entry, "normal", path), path + ".normal");
-        LabelStyle pointerOver = readOptionalLook(entry, "pointerOver", normal, path);
-        LabelStyle pressed = readOptionalLook(entry, "pressed", normal, path);
-        LabelStyle disabled = readOptionalLook(entry, "disabled", normal, path);
-        ButtonStyle style = ButtonStyle.of(normal, pointerOver, pressed, disabled);
-        style = applyFocusedLook(style, entry, path);
-        return applyHorizontalPadding(style, entry, path);
-    }
-
-    private ButtonStyle applyFocusedLook(ButtonStyle style, JsonValue button, String path) {
-        JsonValue focused = button.get("focused");
-        if (focused == null) {
-            return style;
-        }
-        return style.withFocused(readLook(focused, path + ".focused"));
-    }
-
-    private static ButtonStyle applyHorizontalPadding(ButtonStyle style, JsonValue button,
-            String path) {
-        JsonValue padding = button.get("horizontalPadding");
-        if (padding == null) {
-            return style;
-        }
-        String paddingPath = path + ".horizontalPadding";
-        if (!padding.isLong() || padding.asLong() > Integer.MAX_VALUE) {
-            throw new SkinFileException(paddingPath + ": must be a whole number of cells");
-        }
-        if (padding.asLong() < 0) {
-            throw new SkinFileException(
-                    paddingPath + ": must not be negative, was " + padding.asLong());
-        }
-        return style.withHorizontalPadding((int) padding.asLong());
-    }
-
-    private MenuBarStyle readMenuBarStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a menu bar object with the keys " + String.join(", ", MENU_BAR_KEYS));
-        checkKnownKeys(entry, MENU_BAR_KEYS, "key", path);
-        ButtonStyle titles = readButtonReference(requireKey(entry, "titles", path),
-                path + ".titles");
-        ButtonStyle items = readButtonReference(requireKey(entry, "items", path), path + ".items");
-        MenuBarStyle style = MenuBarStyle.of(titles, items);
-        style = applyTriggerColor(style, entry, path);
-        return applyTriggerUnderline(style, entry, path);
-    }
-
-    private MenuBarStyle applyTriggerColor(MenuBarStyle style, JsonValue menuBar, String path) {
-        JsonValue triggerColor = menuBar.get("triggerColor");
-        if (triggerColor == null) {
-            return style;
-        }
-        return style.withTriggerRgba(readColor(triggerColor, path + ".triggerColor"));
-    }
-
-    private static MenuBarStyle applyTriggerUnderline(MenuBarStyle style, JsonValue menuBar,
-            String path) {
-        JsonValue underline = menuBar.get("triggerUnderline");
-        if (underline == null) {
-            return style;
-        }
-        if (!underline.isBoolean()) {
-            throw new SkinFileException(path + ".triggerUnderline: must be true or false");
-        }
-        return style.withTriggerUnderline(underline.asBoolean());
-    }
-
-    private ToggleStyle readToggleStyle(JsonValue entry, String path) {
-        requireObject(entry, path,
-                "a toggle object with the keys " + String.join(", ", TOGGLE_KEYS));
-        checkKnownKeys(entry, TOGGLE_KEYS, "key", path);
-        ButtonStyle button = readButtonReference(requireKey(entry, "button", path),
-                path + ".button");
-        String unchecked = readMark(requireKey(entry, "unchecked", path), path + ".unchecked");
-        String checked = readMark(requireKey(entry, "checked", path), path + ".checked");
-        ToggleStyle style = createToggleStyle(button, unchecked, checked, path);
-        style = applyGap(style, entry, path);
-        JsonValue markFont = entry.get("markFont");
-        if (markFont == null) {
-            return style;
-        }
-        return style.withMarkFont(readMarkFont(markFont, path + ".markFont"));
-    }
-
-    private static String readMark(JsonValue value, String path) {
-        if (!value.isString() || value.asString().isEmpty()) {
-            throw new SkinFileException(path + ": must be text of at least one character");
-        }
-        return value.asString();
-    }
-
-    private static ToggleStyle createToggleStyle(ButtonStyle button, String unchecked,
-            String checked, String path) {
-        try {
-            return ToggleStyle.of(button, unchecked, checked);
-        } catch (IllegalArgumentException unequalMarks) {
-            throw new SkinFileException(path + ".checked: " + unequalMarks.getMessage());
-        }
-    }
-
-    private static ToggleStyle applyGap(ToggleStyle style, JsonValue toggle, String path) {
-        JsonValue gap = toggle.get("gap");
-        if (gap == null) {
-            return style;
-        }
-        String gapPath = path + ".gap";
-        if (!gap.isLong() || gap.asLong() > Integer.MAX_VALUE) {
-            throw new SkinFileException(gapPath + ": must be a whole number of text columns");
-        }
-        if (gap.asLong() < 0) {
-            throw new SkinFileException(gapPath + ": must not be negative, was " + gap.asLong());
-        }
-        return style.withGap((int) gap.asLong());
-    }
-
-    private LabelStyle readOptionalLook(JsonValue button, String key, LabelStyle fallback,
-            String path) {
-        JsonValue look = button.get(key);
-        if (look == null) {
-            return fallback;
-        }
-        return readLook(look, path + "." + key);
-    }
-
     LabelStyle readLook(JsonValue value, String path) {
-        if (value.isString()) {
-            return lookUpReference(labelStyles, value.asString(), "label style", path);
-        }
-        if (value.isObject()) {
-            return readLabelStyle(value, path);
-        }
-        throw new SkinFileException(
-                path + ": must be the name of a label style or a label object");
-    }
-
-    private ButtonStyle readButtonReference(JsonValue value, String path) {
-        if (value.isString()) {
-            return lookUpReference(buttonStyles, value.asString(), "button style", path);
-        }
-        if (value.isObject()) {
-            return readButtonStyle(value, path);
-        }
-        throw new SkinFileException(
-                path + ": must be the name of a button style or a button object");
-    }
-
-    private static <T> T lookUpReference(Map<String, T> known, String name, String kind,
-            String path) {
-        T found = known.get(name);
-        if (found == null) {
-            throw new SkinFileException(path + ": unknown " + kind + " \"" + name + "\". Known "
-                    + kind + "s: " + Skin.describeNames(known));
-        }
-        return found;
+        return (LabelStyle) readStyleReference(value, LOOK_REFERENCE, path);
     }
 
     int readColor(JsonValue value, String path) {
@@ -651,14 +586,6 @@ final class SkinFileReader {
         if (!value.isObject()) {
             throw new SkinFileException(path + ": must be " + expectation);
         }
-    }
-
-    private static JsonValue requireKey(JsonValue object, String key, String path) {
-        JsonValue value = object.get(key);
-        if (value == null) {
-            throw new SkinFileException(path + ": missing \"" + key + "\"");
-        }
-        return value;
     }
 
     private static void checkKnownKeys(JsonValue object, List<String> knownKeys, String noun,
