@@ -37,9 +37,15 @@ Runtime dependencies of `core`. They are not bundled; Gradle downloads them.
 |---|---|---|---|
 | [Oklab](https://bottosson.github.io/posts/oklab/) | Björn Ottosson | Public domain, or [MIT](https://opensource.org/licenses/MIT) | Color mixing in `CellColor.mixOklab` (conversion matrices from the 2021-01-25 update) |
 
+## Source files
+
+| File | Author | License | Used for |
+|---|---|---|---|
+| `StartupHelper.java`, based on a [java-gaming.org post](https://jvm-gaming.org/t/starting-jvm-on-mac-with-xstartonfirstthread-programmatically/57547) by kappa | damios (copyright 2020) | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Starting a new JVM when the desktop window needs one (macOS first thread, Windows user paths with non-ASCII characters, Linux with NVIDIA GPUs). Copies in `sandbox-desktop` and `skin-designer`; each file keeps its license notice |
+
 ## Development tools
 
-Used only by the `sandbox` demo modules, the glyph workbench (the native folder dialog), the build (Checkstyle), the CPU benchmarks in `core/src/jmh` (JMH), and live code reload in the desktop sandbox (`:sandbox-desktop:runHotswap`). Not part of any release artifact.
+Used only by the `sandbox` demo modules, the glyph workbench (the native folder dialog), the build (Checkstyle), the CPU benchmarks in `core/src/jmh` (JMH), and live code reload in the desktop sandbox and the skin designer (`:sandbox-desktop:runHotswap`, `:skin-designer:runHotswap`). Not part of any release artifact.
 
 | Library | Author | License | Used for |
 |---|---|---|---|
@@ -49,5 +55,5 @@ Used only by the `sandbox` demo modules, the glyph workbench (the native folder 
 | [JMH](https://github.com/openjdk/jmh) (Java Microbenchmark Harness) | Oracle and OpenJDK contributors | [GPL 2.0 with the Classpath Exception](https://openjdk.org/legal/gplv2+ce.html) | Timing CPU-side code (grid writes, dirty tracking, cell vertex building) in `core/src/jmh`; never on core's runtime classpath |
 | [JMH Gradle plugin](https://github.com/melix/jmh-gradle-plugin) (`me.champeau.jmh`) | Cédric Champeau and contributors | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | Building and running the JMH benchmarks (`:core:jmh`) |
 | [LWJGL NFD bindings](https://www.lwjgl.org/) (`org.lwjgl:lwjgl-nfd`) | Ioannis Tsakpinis and LWJGL contributors; bundled native library [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended) by Bernard Teo | [BSD 3-Clause](https://www.lwjgl.org/license); bundled native library under the [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE) | Folder dialog behind the glyph workbench's File > Export command |
-| [JetBrains Runtime](https://github.com/JetBrains/JetBrainsRuntime) | JetBrains and OpenJDK contributors | [GPL 2.0 with the Classpath Exception](https://openjdk.org/legal/gplv2+ce.html) | The JVM for `:sandbox-desktop:runHotswap`; its enhanced class redefinition swaps in changed classes while the sandbox runs. Installed by each developer and set with the `hotswapJdk` Gradle property |
-| [HotswapAgent](https://github.com/HotswapProjects/HotswapAgent) | HotswapProjects contributors | [GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) | Watches the compiled class folders and reloads changed classes in `:sandbox-desktop:runHotswap`; copied by each developer into the runtime's `lib/hotswap` folder |
+| [JetBrains Runtime](https://github.com/JetBrains/JetBrainsRuntime) | JetBrains and OpenJDK contributors | [GPL 2.0 with the Classpath Exception](https://openjdk.org/legal/gplv2+ce.html) | The JVM for `:sandbox-desktop:runHotswap` and `:skin-designer:runHotswap`; its enhanced class redefinition swaps in changed classes while the sandbox or the skin designer runs. Installed by each developer and set with the `hotswapJdk` Gradle property |
+| [HotswapAgent](https://github.com/HotswapProjects/HotswapAgent) | HotswapProjects contributors | [GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) | Watches the compiled class folders and reloads changed classes in `:sandbox-desktop:runHotswap` and `:skin-designer:runHotswap`; copied by each developer into the runtime's `lib/hotswap` folder |
