@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class SkinFileWriterTest {
+class SkinFileFormatterTest {
 
     private static final Path DEFAULT_SKIN_PATH = Path.of("..", "assets", "default-skin.json");
     private static final long LARGE_WHOLE_NUMBER = 9_007_199_254_740_993L;
@@ -68,21 +68,21 @@ class SkinFileWriterTest {
         return root;
     }
 
-    private static JsonValue writeAndParseBack(JsonValue tree) {
-        return parse(SkinFileWriter.write(tree));
+    private static JsonValue formatAndParseBack(JsonValue tree) {
+        return parse(SkinFileFormatter.format(tree));
     }
 
     @Test
     void defaultSkinRoundTripsToAnEqualTree() {
         JsonValue original = parse(defaultSkinText);
 
-        assertSameTree(original, writeAndParseBack(original));
+        assertSameTree(original, formatAndParseBack(original));
     }
 
     @Test
     void defaultSkinLoadsToTheSameLookups() {
         Skin original = Skin.fromJson(defaultSkinText);
-        Skin rewritten = Skin.fromJson(SkinFileWriter.write(parse(defaultSkinText)));
+        Skin rewritten = Skin.fromJson(SkinFileFormatter.format(parse(defaultSkinText)));
 
         for (String color : new String[] {"black", "gold", "transparent", "hotPink"}) {
             assertEquals(original.getRgba(color), rewritten.getRgba(color));
@@ -98,9 +98,9 @@ class SkinFileWriterTest {
     }
 
     @Test
-    void writingTwiceGivesTheSameText() {
-        String once = SkinFileWriter.write(parse(defaultSkinText));
-        String twice = SkinFileWriter.write(parse(once));
+    void formattingTwiceGivesTheSameText() {
+        String once = SkinFileFormatter.format(parse(defaultSkinText));
+        String twice = SkinFileFormatter.format(parse(once));
 
         assertEquals(once, twice);
         assertTrue(once.endsWith("}\n"));
@@ -116,7 +116,7 @@ class SkinFileWriterTest {
                   "moons": {}
                 }""";
 
-        String written = SkinFileWriter.write(parse(shuffled));
+        String written = SkinFileFormatter.format(parse(shuffled));
 
         int colors = written.indexOf("\"colors\"");
         int labels = written.indexOf("\"labels\"");
@@ -135,7 +135,7 @@ class SkinFileWriterTest {
                 + " \"foreground\": \"#FFFFFF\"}, \"a\": {\"foreground\": \"#FFFFFF\","
                 + " \"background\": \"#000000\"}}}";
 
-        String written = SkinFileWriter.write(parse(text));
+        String written = SkinFileFormatter.format(parse(text));
 
         assertTrue(written.indexOf("\"b\"") < written.indexOf("\"a\""), written);
         assertTrue(written.indexOf("\"background\"") < written.indexOf("\"foreground\""),
@@ -149,13 +149,13 @@ class SkinFileWriterTest {
         for (String sample : samples) {
             JsonValue tree = singleValueTree(new JsonValue(sample));
 
-            assertSameTree(tree, writeAndParseBack(tree));
+            assertSameTree(tree, formatAndParseBack(tree));
         }
     }
 
     @Test
     void nonAsciiCharactersAreWrittenAsIs() {
-        String written = SkinFileWriter.write(singleValueTree(new JsonValue("▏😀")));
+        String written = SkinFileFormatter.format(singleValueTree(new JsonValue("▏😀")));
 
         assertTrue(written.contains("▏😀"), written);
         assertTrue(!written.contains("\\u258f"), written);
@@ -176,7 +176,7 @@ class SkinFileWriterTest {
         JsonValue tree = new JsonValue(JsonValue.ValueType.object);
         tree.addChild("custom", numbers);
 
-        JsonValue back = writeAndParseBack(tree).get("custom");
+        JsonValue back = formatAndParseBack(tree).get("custom");
 
         assertSameTree(numbers, back);
         assertTrue(back.get("one").isLong());
@@ -186,7 +186,8 @@ class SkinFileWriterTest {
 
     @Test
     void wholeNumberAndDecimalTextStayDistinct() {
-        String written = SkinFileWriter.write(parse("{\"custom\": {\"a\": 1, \"b\": 1.0}}"));
+        String written = SkinFileFormatter.format(
+                parse("{\"custom\": {\"a\": 1, \"b\": 1.0}}"));
 
         assertTrue(written.contains("\"a\": 1,") || written.contains("\"a\": 1 "), written);
         assertTrue(written.contains("\"b\": 1.0"), written);
@@ -197,16 +198,20 @@ class SkinFileWriterTest {
         JsonValue tree = parse("{\"custom\": {\"yes\": true, \"no\": false, \"nothing\": null,"
                 + " \"list\": [1, \"two\", [3.5], {\"k\": true}], \"empty\": {}, \"none\": []}}");
 
-        assertSameTree(tree, writeAndParseBack(tree));
+        assertSameTree(tree, formatAndParseBack(tree));
     }
 
     @Test
     void nonObjectRootThrows() {
         assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(new JsonValue("text")));
+                () -> SkinFileFormatter.format(new JsonValue("text")));
         assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(new JsonValue(JsonValue.ValueType.array)));
-        assertThrows(IllegalArgumentException.class, () -> SkinFileWriter.write(null));
+                () -> SkinFileFormatter.format(new JsonValue(JsonValue.ValueType.array)));
+    }
+
+    @Test
+    void nullRootThrowsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> SkinFileFormatter.format(null));
     }
 
     private static JsonValue twoEntryTree(int valueLength) {
@@ -230,9 +235,9 @@ class SkinFileWriterTest {
     @Test
     void lineWidthLimitCountsTheTrailingCommaOfANonLastMember() {
         // The last entry line is 20 + n columns; a non-last one adds a comma.
-        String at99 = SkinFileWriter.write(twoEntryTree(79));
-        String at100 = SkinFileWriter.write(twoEntryTree(80));
-        String at101 = SkinFileWriter.write(twoEntryTree(81));
+        String at99 = SkinFileFormatter.format(twoEntryTree(79));
+        String at100 = SkinFileFormatter.format(twoEntryTree(80));
+        String at101 = SkinFileFormatter.format(twoEntryTree(81));
 
         assertTrue(at99.contains("\"p\": { \"v\"") && at99.contains("\"q\": { \"v\""), at99);
         assertTrue(!at100.contains("\"p\": { \"v\"") && at100.contains("\"q\": { \"v\""), at100);
@@ -249,7 +254,7 @@ class SkinFileWriterTest {
         String pair = "😀";
         JsonValue tree = singleValueTree(new JsonValue(lone + pair));
 
-        String written = SkinFileWriter.write(tree);
+        String written = SkinFileFormatter.format(tree);
         String throughBytes = new String(written.getBytes(StandardCharsets.UTF_8),
                 StandardCharsets.UTF_8);
 
@@ -261,9 +266,9 @@ class SkinFileWriterTest {
     @Test
     void duplicateSectionNamesThrowWithTheName() {
         var builtInTwice = assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(parse("{\"labels\": {}, \"labels\": {}}")));
+                () -> SkinFileFormatter.format(parse("{\"labels\": {}, \"labels\": {}}")));
         var customTwice = assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(parse("{\"stars\": {}, \"stars\": {}}")));
+                () -> SkinFileFormatter.format(parse("{\"stars\": {}, \"stars\": {}}")));
 
         assertTrue(builtInTwice.getMessage().contains("labels"), builtInTwice.getMessage());
         assertTrue(customTwice.getMessage().contains("stars"), customTwice.getMessage());
@@ -272,11 +277,11 @@ class SkinFileWriterTest {
     @Test
     void sectionNamesDifferingOnlyByCaseThrow() {
         var againstBuiltIn = assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(parse("{\"Labels\": {}}")));
+                () -> SkinFileFormatter.format(parse("{\"Labels\": {}}")));
         var builtInPair = assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(parse("{\"labels\": {}, \"LABELS\": {}}")));
+                () -> SkinFileFormatter.format(parse("{\"labels\": {}, \"LABELS\": {}}")));
         var customPair = assertThrows(IllegalArgumentException.class,
-                () -> SkinFileWriter.write(parse("{\"stars\": {}, \"Stars\": {}}")));
+                () -> SkinFileFormatter.format(parse("{\"stars\": {}, \"Stars\": {}}")));
 
         assertTrue(againstBuiltIn.getMessage().contains("Labels"), againstBuiltIn.getMessage());
         assertTrue(builtInPair.getMessage().contains("LABELS"), builtInPair.getMessage());
@@ -295,14 +300,14 @@ class SkinFileWriterTest {
         entry.child.parent = null;
         JsonValue expected = parse("{\"custom\": {\"entry\": {\"a\": {\"b\": 1, \"c\": [1, 2]}}}}");
 
-        assertSameTree(expected, writeAndParseBack(tree));
+        assertSameTree(expected, formatAndParseBack(tree));
     }
 
     @Test
     void numbersJsonCannotHoldThrow() {
-        assertThrows(IllegalArgumentException.class, () -> SkinFileWriter.write(
+        assertThrows(IllegalArgumentException.class, () -> SkinFileFormatter.format(
                 singleValueTree(new JsonValue(Double.NaN))));
-        assertThrows(IllegalArgumentException.class, () -> SkinFileWriter.write(
+        assertThrows(IllegalArgumentException.class, () -> SkinFileFormatter.format(
                 singleValueTree(new JsonValue(Double.POSITIVE_INFINITY))));
     }
 }

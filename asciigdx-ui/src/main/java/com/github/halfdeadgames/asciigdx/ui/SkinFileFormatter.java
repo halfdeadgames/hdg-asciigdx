@@ -7,37 +7,52 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * Turns a skin file tree into strict JSON text that {@link SkinFileReader} reads back to an
+ * Turns a skin file tree into strict JSON text that {@link Skin#fromJson(String)} reads back to an
  * identical skin. Built-in sections come first, in {@link SkinSchema} order, then custom sections
  * in the order they have in the tree. Keys inside an entry keep their tree order.
  *
  * <p>The layout follows {@code assets/default-skin.json}: two spaces per level, sections always
  * spread over several lines, and entries made only of plain values on one line when that line
- * fits in 100 columns.
+ * fits in 100 columns. The exact layout may change in later releases. Only this is guaranteed:
+ * reading the text back gives the same skin.
+ *
+ * <p>Example, formatting a parsed tree:
+ * <pre>{@code
+ * JsonValue tree = new JsonReader().parse(text);
+ * String normalized = SkinFileFormatter.format(tree);
+ * }</pre>
+ *
+ * <p>This class is static-only and cannot be instantiated.
  */
-final class SkinFileWriter {
+public final class SkinFileFormatter {
 
     private static final String INDENT = "  ";
     private static final int MAX_LINE_WIDTH = 100;
     private static final int FIRST_INLINE_DEPTH = 2;
     private static final int FIRST_PRINTABLE_CHARACTER = 0x20;
 
-    private SkinFileWriter() {
+    private SkinFileFormatter() {
     }
 
     /**
      * Returns the JSON text for a skin file tree, ending with one newline.
      *
-     * @param root the root object; its children are the sections
-     * @throws IllegalArgumentException if the root is not an object, or the tree holds something
-     *     JSON cannot hold (an unnamed object member, or a number that is not finite)
+     * @param root the root object; its children are the sections; the tree is only read, never
+     *        changed; must not be {@code null}
+     * @return the text, never {@code null}; the same tree always gives the same text
+     * @throws NullPointerException if {@code root} is {@code null}
+     * @throws IllegalArgumentException if the root is not an object, if two sections have the
+     *         same name or names that differ only by case, or the tree holds something JSON
+     *         cannot hold (an unnamed object member, or a number that is not finite)
      */
-    static String write(JsonValue root) {
-        if (root == null || !root.isObject()) {
+    public static String format(JsonValue root) {
+        Objects.requireNonNull(root, "root");
+        if (!root.isObject()) {
             throw new IllegalArgumentException("The skin file root must be an object, was "
-                    + (root == null ? "null" : root.type()));
+                    + root.type());
         }
         return formatContainer(root, orderSections(root), 0, 0) + "\n";
     }

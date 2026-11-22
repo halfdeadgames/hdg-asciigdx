@@ -251,14 +251,14 @@ final class SkinFileReader {
         SkinStyleKind kind = reference.kind();
         if (value.isString()) {
             return lookUpReference(getStylesOfKind(kind), value.asString(),
-                    kind.getStyleName(), path);
+                    kind.getStylePhrase(), path);
         }
         if (reference.inlineAllowed() && value.isObject()) {
             return readInlineStyle(kind, value, path);
         }
-        String expectation = "the name of a " + kind.getStyleName();
+        String expectation = "the name of a " + kind.getStylePhrase();
         if (reference.inlineAllowed()) {
-            expectation += " or a " + kind.getObjectName();
+            expectation += " or a " + kind.getObjectPhrase();
         }
         throw new SkinFileException(path + ": must be " + expectation);
     }
