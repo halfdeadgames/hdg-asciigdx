@@ -2,7 +2,9 @@ package com.github.halfdeadgames.asciigdx.text;
 
 import com.badlogic.gdx.utils.BooleanArray;
 import com.badlogic.gdx.utils.IntArray;
+import com.github.halfdeadgames.asciigdx.zone.CellEffect;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
@@ -18,6 +20,8 @@ final class StyledTextParser {
     private static final String BACKGROUND_OPENER = "bg:";
     private static final String FOREGROUND_CLOSER = "/color";
     private static final String BACKGROUND_CLOSER = "/bg";
+    private static final String EFFECT_OPENER = "effect:";
+    private static final String EFFECT_CLOSER = "/effect";
     private static final String DEFAULT_VALUE = "default";
     private static final int REPLACEMENT_CODE_POINT = 0xFFFD;
     private static final int HEX_RADIX = 16;
@@ -29,6 +33,8 @@ final class StyledTextParser {
 
     private final CharSequence source;
     private final ColorNames names;
+    private final EffectNames effectNames;
+    private final EffectRunBuilder effectRuns = new EffectRunBuilder();
     private final StringBuilder visibleText = new StringBuilder();
     private final ColorStack foregroundStack = new ColorStack();
     private final ColorStack backgroundStack = new ColorStack();
@@ -37,9 +43,10 @@ final class StyledTextParser {
     private final BooleanArray hasBackground = new BooleanArray();
     private final IntArray backgroundRgba = new IntArray();
 
-    StyledTextParser(CharSequence source, ColorNames names) {
+    StyledTextParser(CharSequence source, ColorNames names, EffectNames effectNames) {
         this.source = Objects.requireNonNull(source, "source");
         this.names = Objects.requireNonNull(names, "names");
+        this.effectNames = Objects.requireNonNull(effectNames, "effectNames");
     }
 
     StyledText parse() {
@@ -47,8 +54,10 @@ final class StyledTextParser {
         while (index < source.length()) {
             index = readFrom(index);
         }
+        effectRuns.closeOpenRun(foregroundRgba.size);
         return new StyledText(visibleText.toString(), hasForeground.toArray(),
-                foregroundRgba.toArray(), hasBackground.toArray(), backgroundRgba.toArray());
+                foregroundRgba.toArray(), hasBackground.toArray(), backgroundRgba.toArray(),
+                effectRuns.getRuns());
     }
 
     private int readFrom(int index) {
@@ -92,6 +101,12 @@ final class StyledTextParser {
     }
 
     private boolean applyTag(String content) {
+        if (content.equals(EFFECT_CLOSER)) {
+            return closeEffectIfOpen();
+        }
+        if (content.startsWith(EFFECT_OPENER)) {
+            return openEffect(content.substring(EFFECT_OPENER.length()));
+        }
         if (content.equals(FOREGROUND_CLOSER)) {
             return popIfOpen(foregroundStack);
         }
@@ -105,6 +120,36 @@ final class StyledTextParser {
             return pushValue(backgroundStack, content.substring(BACKGROUND_OPENER.length()));
         }
         return false;
+    }
+
+    private boolean closeEffectIfOpen() {
+        if (!effectRuns.hasOpenEffect()) {
+            return false;
+        }
+        effectRuns.closeLast(foregroundRgba.size);
+        return true;
+    }
+
+    private boolean openEffect(String body) {
+        Optional<EffectTag> tag = EffectTag.read(body);
+        if (tag.isEmpty()) {
+            return false;
+        }
+        Optional<CellEffect> effect = resolveEffect(tag.get());
+        if (effect.isEmpty()) {
+            return false;
+        }
+        effectRuns.open(effect.get(), foregroundRgba.size);
+        return true;
+    }
+
+    private Optional<CellEffect> resolveEffect(EffectTag tag) {
+        try {
+            return Objects.requireNonNull(
+                    effectNames.findEffect(tag.name(), tag.settings()), "EffectNames result");
+        } catch (IllegalArgumentException badSetting) {
+            return Optional.empty();
+        }
     }
 
     private static boolean popIfOpen(ColorStack stack) {

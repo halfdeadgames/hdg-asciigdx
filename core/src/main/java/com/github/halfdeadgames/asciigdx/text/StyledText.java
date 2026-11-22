@@ -1,12 +1,15 @@
 package com.github.halfdeadgames.asciigdx.text;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * A text with inline color tags, parsed once into plain visible text plus a foreground and
- * background color per letter. Immutable and thread-safe. Parse when the text changes, then draw
- * it every frame with the {@link TextDrawing} methods that take a {@code StyledText}; drawing
- * allocates nothing.
+ * A text with inline color and effect tags, parsed once into plain visible text plus a foreground
+ * and background color per letter and a list of effect runs. Immutable and thread-safe. Parse
+ * when the text changes, then draw it every frame with the {@link TextDrawing} methods that take a
+ * {@code StyledText}; drawing allocates nothing.
  *
  * <p>Tags:
  * <ul>
@@ -23,14 +26,21 @@ import java.util.Objects;
  *       {@code [/color]} and {@code [/bg]} pop it and restore the outer value, so tags nest and
  *       you can switch back either by name or with a closer. A closer with nothing to pop is
  *       plain visible text; it is never hidden silently.</li>
+ *   <li>{@code [effect:NAME]} and {@code [effect:NAME key=value key=value]} start an effect for
+ *       the letters that follow; {@code [/effect]} ends the most recently opened one. Settings
+ *       are separated by single spaces, values hold no spaces, and nothing is quoted. Names and
+ *       keys are case-sensitive. They are resolved by the {@link EffectNames} given to
+ *       {@link #parse(CharSequence, ColorNames, EffectNames)}; the result is read with
+ *       {@link #getEffectRuns()}. Effect tags are only read by that overload. An effect still
+ *       open at the end of the text applies to the end, like an open color.</li>
  *   <li>{@code [[} writes one literal {@code [}. Use {@link #escape} for text you do not
  *       trust.</li>
  * </ul>
  *
  * <p>Anything that is not a complete, valid tag stays in the visible text exactly as written: a
- * lone {@code [}, an unknown keyword, an unknown color name, bad hex, or a missing {@code ]}.
- * Tags for effects ({@code [effect:...]} and {@code [/effect]}) are reserved for a later version
- * and stay visible for now. Parsing never throws on bad text. Tags take no width and no letter
+ * lone {@code [}, an unknown keyword, an unknown color name, bad hex, an unknown effect, an
+ * unknown or bad effect setting, a malformed effect tag, {@code [/effect]} with no open effect,
+ * or a missing {@code ]}. Parsing never throws on bad text. Tags take no width and no letter
  * index, so wrapping, ellipsis, and hyphenation count visible letters only.
  *
  * <p>A letter is one code point, which takes one cell. Letter indexes in this class are code
@@ -42,9 +52,8 @@ import java.util.Objects;
  * <p>The class is final and immutable. Each style channel is a pair of methods: {@code hasXAt}
  * says whether a letter has that style, and {@code getXAt} reads it and throws when it has none,
  * so ask first. The overloads that take a default value ({@link #getForegroundRgbaAt(int, int)},
- * {@link #getBackgroundRgbaAt(int, int)}) do both steps in one call. Further per-letter channels,
- * such as effects, will be added later as new pairs of the same shape; existing methods will not
- * change.
+ * {@link #getBackgroundRgbaAt(int, int)}) do both steps in one call. Effects are a list of ranges,
+ * {@link #getEffectRuns()}.
  *
  * <p>Colors are RGBA8888 ints packed as {@code 0xRRGGBBAA}.
  *
@@ -52,12 +61,15 @@ import java.util.Objects;
  * <pre>{@code
  * StyledText text = StyledText.parse("The [color:red]quick[color:default] brown fox", names);
  * TextDrawing.drawText(grid, 2, 1, text, TextPaint.of(0xFFFFFFFF, 0x000000FF));
+ *
+ * StyledText wavy = StyledText.parse("A [effect:wave amplitude=0.5]wavy[/effect] word", names,
+ *         EffectRegistry.withBuiltIns());
  * }</pre>
  */
 public final class StyledText {
 
-    static final StyledText UNSTYLED_EMPTY =
-            new StyledText("", new boolean[0], new int[0], new boolean[0], new int[0]);
+    static final StyledText UNSTYLED_EMPTY = new StyledText("", new boolean[0], new int[0],
+            new boolean[0], new int[0], Collections.emptyList());
 
     private static final char TAG_OPEN = '[';
     private static final String ESCAPED_TAG_OPEN = "[[";
@@ -67,18 +79,22 @@ public final class StyledText {
     private final int[] foregroundRgba;
     private final boolean[] hasBackground;
     private final int[] backgroundRgba;
+    private final List<EffectRun> effectRuns;
 
     StyledText(String visibleText, boolean[] hasForeground, int[] foregroundRgba,
-            boolean[] hasBackground, int[] backgroundRgba) {
+            boolean[] hasBackground, int[] backgroundRgba, List<EffectRun> effectRuns) {
         this.visibleText = visibleText;
         this.hasForeground = hasForeground;
         this.foregroundRgba = foregroundRgba;
         this.hasBackground = hasBackground;
         this.backgroundRgba = backgroundRgba;
+        this.effectRuns = Collections.unmodifiableList(new ArrayList<>(effectRuns));
     }
 
     /**
      * Reads the tags of a text. Call it when the text or the names change, not every frame.
+     * Effect tags are not read: they stay visible as written. Use
+     * {@link #parse(CharSequence, ColorNames, EffectNames)} to read them.
      *
      * @param source text with tags; must not be {@code null}; may be empty
      * @param names colors for {@code [color:NAME]} and {@code [bg:NAME]}; must not be
@@ -89,7 +105,30 @@ public final class StyledText {
      *         {@code names} returns {@code null}
      */
     public static StyledText parse(CharSequence source, ColorNames names) {
-        return new StyledTextParser(source, names).parse();
+        return parse(source, names, EffectNames.NONE);
+    }
+
+    /**
+     * Reads the color tags and the effect tags of a text. Call it when the text or the names
+     * change, not every frame. Effects are built during this call, so the result holds them and
+     * {@code effectNames} is not kept.
+     *
+     * @param source text with tags; must not be {@code null}; may be empty
+     * @param names colors for {@code [color:NAME]} and {@code [bg:NAME]}; must not be
+     *         {@code null}; use {@link ColorNames#NONE} for hex colors only
+     * @param effectNames effects for {@code [effect:NAME ...]}; must not be {@code null}; use
+     *         {@link EffectNames#NONE} to leave effect tags visible
+     * @return the parsed text, never {@code null}
+     * @throws NullPointerException if an argument is {@code null}, or if {@code names} or
+     *         {@code effectNames} returns {@code null}, or if an effect factory behind
+     *         {@code effectNames} returns {@code null}. Only an
+     *         {@link IllegalArgumentException} from {@code effectNames} counts as bad text and
+     *         leaves the tag visible. Any other exception from it, and a {@code null} result, is
+     *         a bug in the game and propagates out of this method
+     */
+    public static StyledText parse(CharSequence source, ColorNames names,
+            EffectNames effectNames) {
+        return new StyledTextParser(source, names, effectNames).parse();
     }
 
     /**
@@ -133,6 +172,20 @@ public final class StyledText {
      */
     public int getVisibleLength() {
         return foregroundRgba.length;
+    }
+
+    /**
+     * Returns the effects of the text as ranges of letters. The runs are ordered, do not overlap,
+     * and are never empty; letters outside every run have no effect. Where effect tags nest, a run
+     * holds the combination of all open effects, outermost first, and a new run starts whenever
+     * the set of open effects changes. An effect still open at the end of the text runs to the
+     * last letter. The list is empty when the text has no effects, including when it was parsed
+     * without an {@link EffectNames}.
+     *
+     * @return an unmodifiable list, never {@code null}
+     */
+    public List<EffectRun> getEffectRuns() {
+        return effectRuns;
     }
 
     /**

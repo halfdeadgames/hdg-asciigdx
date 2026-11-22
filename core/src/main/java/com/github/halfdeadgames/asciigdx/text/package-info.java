@@ -23,6 +23,14 @@
  * {@link com.github.halfdeadgames.asciigdx.text.ColorNames} supplies the color names; the game
  * owns them. Tags take no width, so layout runs on the visible text.
  *
+ * <p>Inline effect tags: {@code [effect:wave amplitude=0.5]...[/effect]} tags are read by
+ * {@link com.github.halfdeadgames.asciigdx.text.StyledText#parse(CharSequence,
+ * com.github.halfdeadgames.asciigdx.text.ColorNames,
+ * com.github.halfdeadgames.asciigdx.text.EffectNames)} when the game passes an
+ * {@link com.github.halfdeadgames.asciigdx.text.EffectNames}, such as the registry in the zone
+ * package. The result is a list of {@link com.github.halfdeadgames.asciigdx.text.EffectRun}s
+ * over the visible letters. Without an {@code EffectNames}, effect tags stay visible.
+ *
  * <p>Hyphenation:{@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
  * where a word may be split, using the bundled English (US) patterns or patterns the game
  * supplies.
@@ -62,6 +70,10 @@
  * // Inline colors, parsed once and drawn every frame.
  * StyledText tagged = StyledText.parse("The [color:red]quick[/color] fox", names);
  * TextDrawing.drawText(grid, 2, 9, tagged, TextPaint.of(fg, bg));
+ *
+ * // Inline effects, resolved at parse time into runs of letters.
+ * StyledText wavy = StyledText.parse("A [effect:wave]wavy[/effect] word", names,
+ *         EffectRegistry.withBuiltIns());
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.text;
