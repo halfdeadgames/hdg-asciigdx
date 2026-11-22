@@ -2,10 +2,12 @@ package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.TextField;
 import com.github.halfdeadgames.asciigdx.ui.TextFieldStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** The text field style of the skin: empty, filled, short, and disabled, with echo labels. */
 final class TextFieldExample implements WidgetExample {
@@ -22,6 +24,11 @@ final class TextFieldExample implements WidgetExample {
     @Override
     public String title() {
         return "TextField";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.TEXT_FIELDS);
     }
 
     @Override

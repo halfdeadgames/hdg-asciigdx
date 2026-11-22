@@ -5,6 +5,7 @@ import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.ProgressBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.Slider;
 import com.github.halfdeadgames.asciigdx.ui.Table;
 import com.github.halfdeadgames.asciigdx.ui.TableCell;
@@ -12,6 +13,7 @@ import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.ValueRange;
 import com.github.halfdeadgames.asciigdx.ui.VerticalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** Table layout: column alignment, row alignment, column spans, and cell padding. */
 final class TableExample implements WidgetExample {
@@ -31,6 +33,11 @@ final class TableExample implements WidgetExample {
     @Override
     public String title() {
         return "Table";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.LABELS, SkinSchema.PROGRESS_BARS, SkinSchema.SLIDERS);
     }
 
     @Override

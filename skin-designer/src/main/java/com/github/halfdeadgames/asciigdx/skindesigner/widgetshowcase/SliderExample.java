@@ -2,11 +2,13 @@ package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.Slider;
 import com.github.halfdeadgames.asciigdx.ui.SliderStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.ValueRange;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** Every slider style of the skin, horizontal and vertical, normal and disabled. */
 final class SliderExample implements WidgetExample {
@@ -24,6 +26,11 @@ final class SliderExample implements WidgetExample {
     @Override
     public String title() {
         return "Slider";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.SLIDERS);
     }
 
     @Override

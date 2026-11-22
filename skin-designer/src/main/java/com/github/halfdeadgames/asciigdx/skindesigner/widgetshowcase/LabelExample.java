@@ -6,6 +6,7 @@ import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelEffectZones;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.TextField;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
@@ -49,6 +50,11 @@ final class LabelExample implements WidgetExample {
     @Override
     public String title() {
         return "Label";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.LABELS);
     }
 
     @Override

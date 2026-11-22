@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** One widget class shown in every style and form of the skin, in the "UI: showcase" scene. */
 public interface WidgetExample {
@@ -12,6 +13,12 @@ public interface WidgetExample {
 
     /** Name shown in the picker and the status line. */
     String title();
+
+    /**
+     * Names the skin file sections whose styles the example draws, using the constants of
+     * {@code SkinSchema}. The side panel offers the styles of these sections for editing.
+     */
+    List<String> skinSections();
 
     /**
      * Builds the example's widget tree at position (0, 0), without a parent.

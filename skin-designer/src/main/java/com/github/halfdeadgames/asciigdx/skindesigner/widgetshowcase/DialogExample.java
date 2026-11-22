@@ -6,6 +6,7 @@ import com.github.halfdeadgames.asciigdx.ui.DialogStyle;
 import com.github.halfdeadgames.asciigdx.ui.Dialogs;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.ArrayList;
@@ -28,6 +29,11 @@ final class DialogExample implements WidgetExample {
     @Override
     public String title() {
         return "Dialog";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.DIALOGS, SkinSchema.WINDOWS);
     }
 
     @Override

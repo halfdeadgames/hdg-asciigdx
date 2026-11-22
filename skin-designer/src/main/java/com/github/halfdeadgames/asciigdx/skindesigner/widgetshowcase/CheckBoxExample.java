@@ -3,9 +3,11 @@ package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 import com.github.halfdeadgames.asciigdx.ui.CheckBox;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.ToggleStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** Every check box style of the skin: unchecked, checked, and both disabled. */
 final class CheckBoxExample implements WidgetExample {
@@ -20,6 +22,11 @@ final class CheckBoxExample implements WidgetExample {
     @Override
     public String title() {
         return "CheckBox";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.CHECK_BOXES, SkinSchema.BUTTONS);
     }
 
     @Override

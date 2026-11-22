@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.ui.CheckBox;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.Slider;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
 import com.github.halfdeadgames.asciigdx.ui.Tooltip;
@@ -29,6 +30,12 @@ final class TooltipExample implements WidgetExample {
     @Override
     public String title() {
         return "Tooltip";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.LABELS, SkinSchema.BUTTONS, SkinSchema.SLIDERS,
+                SkinSchema.CHECK_BOXES);
     }
 
     @Override

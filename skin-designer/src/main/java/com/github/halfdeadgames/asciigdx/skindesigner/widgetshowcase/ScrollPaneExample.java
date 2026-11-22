@@ -5,11 +5,13 @@ import com.github.halfdeadgames.asciigdx.ui.LabelStyle;
 import com.github.halfdeadgames.asciigdx.ui.ScrollPane;
 import com.github.halfdeadgames.asciigdx.ui.ScrollPaneStyle;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.Table;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import com.github.halfdeadgames.asciigdx.ui.WidgetGroup;
+import java.util.List;
 
 /** The scroll pane style of the skin over content that scrolls in both directions. */
 final class ScrollPaneExample implements WidgetExample {
@@ -28,6 +30,11 @@ final class ScrollPaneExample implements WidgetExample {
     @Override
     public String title() {
         return "ScrollPane";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.SCROLL_PANES, SkinSchema.BUTTONS, SkinSchema.LABELS);
     }
 
     @Override

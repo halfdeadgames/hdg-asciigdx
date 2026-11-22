@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.ProgressBar;
 import com.github.halfdeadgames.asciigdx.ui.ProgressBarStyle;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.Slider;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.ValueRange;
@@ -28,6 +29,11 @@ final class ProgressBarExample implements WidgetExample {
     @Override
     public String title() {
         return "ProgressBar";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.PROGRESS_BARS);
     }
 
     @Override

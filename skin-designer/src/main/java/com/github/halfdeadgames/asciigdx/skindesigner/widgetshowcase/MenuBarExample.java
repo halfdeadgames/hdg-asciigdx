@@ -4,9 +4,11 @@ import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Every menu bar style of the skin, with menus whose items report to a label. */
@@ -28,6 +30,11 @@ final class MenuBarExample implements WidgetExample {
     @Override
     public String title() {
         return "MenuBar";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.MENU_BARS, SkinSchema.BUTTONS);
     }
 
     @Override

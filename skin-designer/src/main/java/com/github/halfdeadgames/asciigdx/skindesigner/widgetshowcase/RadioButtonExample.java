@@ -4,9 +4,11 @@ import com.github.halfdeadgames.asciigdx.ui.ButtonGroup;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.RadioButton;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.ToggleStyle;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** Every radio button style of the skin: a live group of three and a disabled pair. */
 final class RadioButtonExample implements WidgetExample {
@@ -22,6 +24,11 @@ final class RadioButtonExample implements WidgetExample {
     @Override
     public String title() {
         return "RadioButton";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.RADIO_BUTTONS, SkinSchema.BUTTONS);
     }
 
     @Override

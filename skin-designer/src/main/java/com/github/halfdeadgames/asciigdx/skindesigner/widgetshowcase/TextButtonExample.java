@@ -3,9 +3,11 @@ package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 import com.github.halfdeadgames.asciigdx.ui.ButtonStyle;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
+import com.github.halfdeadgames.asciigdx.ui.SkinSchema;
 import com.github.halfdeadgames.asciigdx.ui.TextButton;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
+import java.util.List;
 
 /** Every button style of the skin, normal and disabled, with a click counter. */
 final class TextButtonExample implements WidgetExample {
@@ -20,6 +22,11 @@ final class TextButtonExample implements WidgetExample {
     @Override
     public String title() {
         return "TextButton";
+    }
+
+    @Override
+    public List<String> skinSections() {
+        return List.of(SkinSchema.BUTTONS, SkinSchema.LABELS);
     }
 
     @Override
