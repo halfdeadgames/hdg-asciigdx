@@ -74,6 +74,7 @@ class UiShowcaseScene implements SandboxScene {
     private int rows = INITIAL_ROWS;
     private int exampleIndex;
     private int overlayRows = MENU_BAR_ROWS;
+    private float sceneSeconds;
     private String lastResult = INITIAL_RESULT;
 
     UiShowcaseScene(GlyphSource squareGlyphs, GlyphSource textGlyphs) {
@@ -404,12 +405,19 @@ class UiShowcaseScene implements SandboxScene {
         }
         uiRoot.update(delta);
         uiRoot.draw();
+        applyExampleEffects(delta);
         SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         layers.draw(batch, 0, viewport.getWorldHeight());
         batch.end();
+    }
+
+    private void applyExampleEffects(float delta) {
+        sceneSeconds += delta;
+        layers.beginCellEffects(delta);
+        examples.get(exampleIndex).applyEffects(surface.getTextLayer(), sceneSeconds);
     }
 
     // A key-up that arrives after the scene is hidden never reaches the root, so a held arrow

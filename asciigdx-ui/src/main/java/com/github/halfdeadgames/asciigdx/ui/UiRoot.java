@@ -1480,8 +1480,8 @@ public final class UiRoot {
             int relativeColumn = 0;
             int relativeRow = 0;
             if (hasPosition) {
-                relativeColumn = event.getSurfaceColumn() - absoluteLeft(current);
-                relativeRow = event.getSurfaceRow() - absoluteTop(current);
+                relativeColumn = event.getSurfaceColumn() - current.getAbsoluteX();
+                relativeRow = event.getSurfaceRow() - current.getAbsoluteY();
             }
             event.setCurrent(current, relativeColumn, relativeRow);
             if (deliver(current)) {
@@ -1490,22 +1490,6 @@ public final class UiRoot {
             current = parent;
         }
         return false;
-    }
-
-    private static int absoluteLeft(Widget widget) {
-        int left = 0;
-        for (Widget current = widget; current != null; current = current.getParent()) {
-            left += current.getX();
-        }
-        return left;
-    }
-
-    private static int absoluteTop(Widget widget) {
-        int top = 0;
-        for (Widget current = widget; current != null; current = current.getParent()) {
-            top += current.getY();
-        }
-        return top;
     }
 
     private void updateHoverForPointer(int pointer, Widget newHover, int column, int row) {
@@ -1552,8 +1536,8 @@ public final class UiRoot {
     }
 
     private void deliverWithoutBubbling(Widget widget) {
-        event.setCurrent(widget, event.getSurfaceColumn() - absoluteLeft(widget),
-                event.getSurfaceRow() - absoluteTop(widget));
+        event.setCurrent(widget, event.getSurfaceColumn() - widget.getAbsoluteX(),
+                event.getSurfaceRow() - widget.getAbsoluteY());
         deliver(widget);
     }
 

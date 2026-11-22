@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase;
 
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
@@ -20,8 +21,15 @@ final class LabelExample implements WidgetExample {
             "The [color:hotPink]quick[color:default] brown fox";
     private static final String HIGHLIGHTED_WORD_TEXT =
             "Highlight [bg:deepBlue]this word[bg:default] in a phrase";
+    private static final String WAVE_TEXT =
+            "A [effect:wave phase=columns:6]wavy line of text[/effect] moves";
+    private static final String BOUNCE_TEXT = "Some letters [effect:bounce]bounce[/effect] up";
+    private static final String NESTED_TEXT =
+            "[color:hotPink]Pink [effect:wave phase=columns:6]and waving[/effect][/color] text";
     private static final String TEXT_FIELD_STYLE = "default";
     private static final int TEXT_FIELD_COLUMNS = 24;
+
+    private final List<LabelEffectZones> effectZones = new ArrayList<>();
 
     @Override
     public String id() {
@@ -37,8 +45,21 @@ final class LabelExample implements WidgetExample {
     public Widget create(Skin skin, UiRoot uiRoot, BoundaryState boundaryState, int columns,
             int rows) {
         DemoSheet sheet = new DemoSheet(skin, boundaryState);
+        effectZones.clear();
         addLiveField(sheet, skin, new ArrayList<>());
         return sheet.build();
+    }
+
+    @Override
+    public void exampleHidden() {
+        effectZones.clear();
+    }
+
+    @Override
+    public void applyEffects(Layer textLayer, float seconds) {
+        for (int i = 0; i < effectZones.size(); i++) {
+            effectZones.get(i).apply(textLayer, seconds);
+        }
     }
 
     private void addLiveField(DemoSheet sheet, Skin skin, List<Label> demoLabels) {
@@ -56,6 +77,23 @@ final class LabelExample implements WidgetExample {
         }
         addAlignmentDemos(sheet, skin);
         addMarkupDemos(sheet, skin);
+        addEffectDemos(sheet, skin);
+    }
+
+    private void addEffectDemos(DemoSheet sheet, Skin skin) {
+        sheet.addHeading("Effect tags");
+        sheet.addDemo("wave", createEffectLabel(skin, WAVE_TEXT));
+        sheet.addDemo("bounce", createEffectLabel(skin, BOUNCE_TEXT));
+        sheet.addDemo("color and effect", createEffectLabel(skin, NESTED_TEXT));
+    }
+
+    private Label createEffectLabel(Skin skin, String markupText) {
+        Label label = new Label(markupText, skin.getLabelStyle("text"));
+        label.setColorNames(skin.getColorNames());
+        label.setEffectNames(skin.getEffectRegistry());
+        label.pack();
+        effectZones.add(new LabelEffectZones(label));
+        return label;
     }
 
     private void addMarkupDemos(DemoSheet sheet, Skin skin) {

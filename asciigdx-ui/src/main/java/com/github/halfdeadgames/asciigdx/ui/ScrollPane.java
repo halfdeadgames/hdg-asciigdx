@@ -397,6 +397,16 @@ public final class ScrollPane extends WidgetGroup {
         return null;
     }
 
+    // Width of the clipped view, without the bar; valid after layout.
+    int getViewColumns() {
+        return viewColumns;
+    }
+
+    // Height of the clipped view, without the bar; valid after layout.
+    int getViewRows() {
+        return viewRows;
+    }
+
     // ---- drawing ----
 
     @Override

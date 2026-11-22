@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox.widgetshowcase;
 
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
@@ -30,5 +31,16 @@ public interface WidgetExample {
      * default.
      */
     default void exampleHidden() {
+    }
+
+    /**
+     * Called every frame while the example is shown, after the widgets are drawn and before the
+     * layers are drawn, so an example can apply cell effects to the text layer. Does nothing by
+     * default.
+     *
+     * @param textLayer the layer that draws the text grid of the surface
+     * @param seconds time since the scene started, in seconds
+     */
+    default void applyEffects(Layer textLayer, float seconds) {
     }
 }

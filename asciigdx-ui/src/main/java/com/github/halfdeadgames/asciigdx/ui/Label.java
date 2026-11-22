@@ -1,7 +1,10 @@
 package com.github.halfdeadgames.asciigdx.ui;
 
 import com.github.halfdeadgames.asciigdx.text.ColorNames;
+import com.github.halfdeadgames.asciigdx.text.EffectNames;
+import com.github.halfdeadgames.asciigdx.text.EffectRun;
 import com.github.halfdeadgames.asciigdx.text.StyledText;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -33,8 +36,24 @@ import java.util.Objects;
  * tag is drawn with {@link UiSurface#writeTextGlyphWithBackground}, so its background sits above
  * the label's own background; a letter without one keeps the cell's background. Use
  * {@link StyledText#escape} on text you do not trust.
+ *
+ * <p>Effect tags ({@code [effect:wave phase=columns:6]}) are read only after
+ * {@link #setEffectNames}; until then they stay visible as text. A label draws no effects itself.
+ * The game reads {@link #getEffectRuns()} and {@link #getAbsoluteTextColumnOfLetter(int)}, builds
+ * one {@code EffectZone} per run on {@link UiSurface#getTextLayer()}, and applies it each frame
+ * with its own time. Letters that are not shown return {@link #NOT_SHOWN}; the game skips them.
+ *
+ * <p>Like every widget, a label is for the game (GL) thread only.
  */
 public class Label extends Widget {
+
+    /**
+     * The value that {@link #getTextColumnOfLetter(int)} and
+     * {@link #getAbsoluteTextColumnOfLetter(int)} return for a letter that is not shown. It is
+     * {@link Integer#MIN_VALUE}, not -1, because a shown letter can have the real column -1 when
+     * its label sits partly left of the surface. Compare with this constant, never with -1.
+     */
+    public static final int NOT_SHOWN = Integer.MIN_VALUE;
 
     private static final int ALPHA_MASK = 0xFF;
 
@@ -42,6 +61,7 @@ public class Label extends Widget {
     private LabelStyle style;
     private HorizontalAlignment textAlignment = HorizontalAlignment.LEFT;
     private ColorNames colorNames = ColorNames.NONE;
+    private EffectNames effects = EffectNames.NONE;
     private boolean markupEnabled = true;
     private StyledText styledText;
 
@@ -140,8 +160,140 @@ public class Label extends Widget {
         invalidate();
     }
 
+    /**
+     * Returns the lookup used for {@code [effect:NAME ...]} tags.
+     *
+     * @return the lookup, never {@code null}; {@link EffectNames#NONE} for a new label, which
+     *         leaves effect tags visible as text
+     */
+    public EffectNames getEffectNames() {
+        return effects;
+    }
+
+    /**
+     * Sets the lookup for effect tags, for example
+     * {@code label.setEffectNames(skin.getEffectRegistry())}.
+     * With a lookup that knows a tag, the tag is removed from the visible text and its letters
+     * become an effect run, see {@link #getEffectRuns()}. The label does not run effects: the
+     * game builds an {@code EffectZone} for each run and applies it with its own time. The text is
+     * parsed again once, now, not on every draw. Every call re-reads the lookup, even with the same
+     * instance. Calls {@link #invalidate()}, because a removed tag changes the width. Has no effect
+     * on drawing while {@link #isMarkupEnabled()} is {@code false}.
+     *
+     * <p>An effect registered in the lookup after this call is not seen by the label until this
+     * method is called again. Call it from the game (GL) thread only, like every widget method.
+     *
+     * @param effects the lookup; must not be {@code null}; use {@link EffectNames#NONE} for none
+     * @throws NullPointerException if {@code effects} is {@code null}
+     */
+    public void setEffectNames(EffectNames effects) {
+        Objects.requireNonNull(effects, "effects");
+        this.effects = effects;
+        parseMarkup();
+        invalidate();
+    }
+
+    /**
+     * Returns the effects of the current text as ranges of letters. Letter indexes count the
+     * visible letters (code points without tags), from 0, the same numbers that
+     * {@link #getTextColumnOfLetter(int)} takes. Runs are ordered, do not overlap, and are never
+     * empty; see {@link StyledText#getEffectRuns()}. Valid at any time and cheap: it returns the
+     * result of the last parse, which is made when the text, the color names, the effects, or the
+     * markup flag change.
+     *
+     * @return an unmodifiable list, never {@code null}; empty while {@link #isMarkupEnabled()} is
+     *         {@code false} or when the text has no effects
+     */
+    public List<EffectRun> getEffectRuns() {
+        return styledText == null ? List.of() : styledText.getEffectRuns();
+    }
+
+    /**
+     * Returns where a visible letter is drawn, relative to the label's left edge, in text columns
+     * (half a UI cell each). Column 0 is the left half of the label's first UI cell. Games
+     * normally call {@link #getAbsoluteTextColumnOfLetter(int)} instead, which adds the label's
+     * position and also checks visibility and scroll panes. The row is the label's top row,
+     * because a label has one line. Alignment and the cut-off at the label's width are applied.
+     * Valid after the label has its final size, so after {@link #validate()} or {@link #pack()};
+     * it reads the current size, alignment, and text, and needs no draw. It does not know the
+     * surface the label is drawn into.
+     *
+     * @param letterIndex index of a visible letter, as used by {@link EffectRun}
+     * @return the text column of the letter, 0 or greater; {@link #NOT_SHOWN} when the index is
+     *         negative or not below the number of visible letters, or when the letter is cut off
+     *         by the label's width
+     */
+    public int getTextColumnOfLetter(int letterIndex) {
+        String displayedText = getDisplayedText();
+        int letters = displayedText.codePointCount(0, displayedText.length());
+        if (letterIndex < 0 || letterIndex >= letters) {
+            return NOT_SHOWN;
+        }
+        int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * getWidth();
+        int textColumn = alignmentOffset(textColumnLimit, letters) + letterIndex;
+        return textColumn < textColumnLimit ? textColumn : NOT_SHOWN;
+    }
+
+    /**
+     * Returns the column in the text grid of {@link UiSurface#getTextGrid()} where a visible
+     * letter is shown: {@code 2 * getAbsoluteX() + getTextColumnOfLetter(letterIndex)}. The row of
+     * every letter is {@link #getAbsoluteY()}. Use it to place an effect zone on the letters of an
+     * {@link EffectRun}.
+     *
+     * <p>Returns {@link #NOT_SHOWN} for each letter that is not shown: an index out of range, a
+     * letter cut off by the label's width (see {@link #getTextColumnOfLetter(int)}), a letter of
+     * a label that is hidden or inside a hidden ancestor ({@link #isVisible()} is {@code false}
+     * anywhere up the chain), and a letter whose UI cell lies outside the view of a
+     * {@link ScrollPane} ancestor.
+     * A UI cell is two text columns, so each half of a cell at the edge of the view counts as
+     * inside or outside together.
+     *
+     * <p>Windows, popups, and other widgets drawn over the label are not detected. The result is
+     * valid only when the label has its final size and position, so after layout; call it again
+     * after anything moves, scrolls, or hides the label.
+     *
+     * @param letterIndex index of a visible letter, as used by {@link EffectRun}
+     * @return the absolute text column, which is -1 or less for a shown letter left of the surface;
+     *         {@link #NOT_SHOWN} when the letter is not shown
+     */
+    public int getAbsoluteTextColumnOfLetter(int letterIndex) {
+        int relativeColumn = getTextColumnOfLetter(letterIndex);
+        if (relativeColumn == NOT_SHOWN || isHiddenInChain()) {
+            return NOT_SHOWN;
+        }
+        int absoluteColumn = UiSurface.TEXT_COLUMNS_PER_CELL * getAbsoluteX() + relativeColumn;
+        return isOutsideScrollPaneViews(absoluteColumn) ? NOT_SHOWN : absoluteColumn;
+    }
+
+    private boolean isHiddenInChain() {
+        for (Widget current = this; current != null; current = current.getParent()) {
+            if (!current.isVisible()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isOutsideScrollPaneViews(int absoluteTextColumn) {
+        int cell = Math.floorDiv(absoluteTextColumn, UiSurface.TEXT_COLUMNS_PER_CELL);
+        int row = getAbsoluteY();
+        for (Widget current = getParent(); current != null; current = current.getParent()) {
+            if (current instanceof ScrollPane pane && !isInsideView(pane, cell, row)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInsideView(ScrollPane pane, int cell, int row) {
+        int left = pane.getAbsoluteX();
+        int top = pane.getAbsoluteY();
+        return cell >= left && cell < left + pane.getViewColumns()
+                && row >= top && row < top + pane.getViewRows();
+    }
+
     private void parseMarkup() {
-        styledText = markupEnabled ? StyledText.parse(text, colorNames) : null;
+        styledText = markupEnabled ? StyledText.parse(text, colorNames, effects) : null;
     }
 
     private String getDisplayedText() {

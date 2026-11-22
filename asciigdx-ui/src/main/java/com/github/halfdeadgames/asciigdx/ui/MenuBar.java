@@ -566,9 +566,9 @@ public final class MenuBar extends Widget {
     private void layoutDropDown() {
         int width = dropDown.getPreferredWidth();
         int height = dropDown.getPreferredHeight();
-        int column = absoluteLeft() + titleOffset(openMenu);
+        int column = getAbsoluteX() + titleOffset(openMenu);
         column = Math.max(0, Math.min(column, uiRoot.getSurfaceColumns() - width));
-        int row = absoluteTop() + BAR_HEIGHT;
+        int row = getAbsoluteY() + BAR_HEIGHT;
         if (row + height > uiRoot.getSurfaceRows()) {
             row = Math.max(0, uiRoot.getSurfaceRows() - height);
         }
@@ -586,8 +586,8 @@ public final class MenuBar extends Widget {
     }
 
     private int titleIndexAt(int surfaceColumn, int surfaceRow) {
-        int localColumn = surfaceColumn - absoluteLeft();
-        int localRow = surfaceRow - absoluteTop();
+        int localColumn = surfaceColumn - getAbsoluteX();
+        int localRow = surfaceRow - getAbsoluteY();
         if (!isInsideBounds(localColumn, localRow)) {
             return NO_INDEX;
         }
@@ -616,22 +616,6 @@ public final class MenuBar extends Widget {
         int titleCells = (titleColumns + UiSurface.TEXT_COLUMNS_PER_CELL - 1)
                 / UiSurface.TEXT_COLUMNS_PER_CELL;
         return titleCells + 2 * padding;
-    }
-
-    private int absoluteLeft() {
-        int left = 0;
-        for (Widget current = this; current != null; current = current.getParent()) {
-            left += current.getX();
-        }
-        return left;
-    }
-
-    private int absoluteTop() {
-        int top = 0;
-        for (Widget current = this; current != null; current = current.getParent()) {
-            top += current.getY();
-        }
-        return top;
     }
 
     private boolean isInMainTree() {

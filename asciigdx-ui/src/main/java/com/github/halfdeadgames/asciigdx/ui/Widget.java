@@ -53,6 +53,40 @@ public abstract class Widget {
     }
 
     /**
+     * Returns the column of the left edge on the surface, in UI cells: the sum of {@link #getX()}
+     * up the parent chain. Column 0 is the surface's left-most UI cell, the same numbering as
+     * {@link UiEvent#getSurfaceColumn()}. Scroll offsets are included, because a
+     * {@link ScrollPane} moves its content by its scroll position. Valid after layout, like the
+     * positions it adds up; a widget with no parent returns its own {@code getX()}. Call it from
+     * the game (GL) thread only.
+     *
+     * @return the column on the surface, which may be negative
+     */
+    public int getAbsoluteX() {
+        int column = 0;
+        for (Widget current = this; current != null; current = current.getParent()) {
+            column += current.getX();
+        }
+        return column;
+    }
+
+    /**
+     * Returns the row of the top edge on the surface, in UI cells: the sum of {@link #getY()} up
+     * the parent chain. Row 0 is the surface's top UI row and rows grow downward (y-down), the
+     * same numbering as {@link UiEvent#getSurfaceRow()}. Scroll offsets are included, as in
+     * {@link #getAbsoluteX()}.
+     *
+     * @return the row on the surface, which may be negative
+     */
+    public int getAbsoluteY() {
+        int row = 0;
+        for (Widget current = this; current != null; current = current.getParent()) {
+            row += current.getY();
+        }
+        return row;
+    }
+
+    /**
      * Returns the width in UI cells.
      *
      * @return the width, zero or greater

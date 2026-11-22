@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 import com.github.halfdeadgames.asciigdx.draw.BoxStyle;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.grid.TerminalGrid;
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
 import java.util.Arrays;
 import java.util.Objects;
@@ -69,6 +70,7 @@ public final class UiSurface {
     private final TerminalGrid squareGrid;
     private final TerminalGrid textGrid;
     private final TerminalGrid overlayGrid;
+    private Layer textLayer;
     private int clipLeft;
     private int clipTop;
     private int clipRight;
@@ -174,8 +176,8 @@ public final class UiSurface {
      * Adds the surface's grids to a layer stack, bottom to top: the square grid (square font), the
      * text grid (text font), and the overlay grid (text font). The text glyph source backs two
      * layers. Later versions may add more layers, so callers must not find the layers by position
-     * or count. Nothing is added when validation fails. Call it on the GL thread. The glyph
-     * sources are not owned.
+     * or count; get the text layer with {@link #getTextLayer()}. Nothing is added when validation
+     * fails. Call it on the GL thread. The glyph sources are not owned.
      *
      * <p>Warning: swapping {@code textGlyphs} and {@code squareGlyphs} is caught only when the
      * cell sizes do not fit the pair; two fonts that happen to fit in either order are not
@@ -194,8 +196,29 @@ public final class UiSurface {
         Objects.requireNonNull(layers, "layers");
         requireFontPair(textGlyphs, squareGlyphs);
         layers.add(squareGrid, squareGlyphs);
-        layers.add(textGrid, textGlyphs);
+        textLayer = layers.add(textGrid, textGlyphs);
         layers.add(overlayGrid, textGlyphs);
+    }
+
+    /**
+     * Returns the layer that draws the text grid, to apply effect zones to it, for example
+     * {@code zone.apply(surface.getTextLayer(), seconds)} with the cells of a label's letters. The
+     * layer belongs to the {@link LayerStack} of the last successful {@link #addTo} call, and the
+     * stack owns it: do not remove or dispose it, and do not use it after that stack is disposed.
+     * It is valid only until the next successful {@code addTo} call, which replaces it, so call
+     * this method again after each {@code addTo} instead of keeping the layer. Effects change how
+     * cells are drawn, not what the grid holds.
+     *
+     * @return the text layer of the last successful {@link #addTo} call, never {@code null}
+     * @throws IllegalStateException if {@link #addTo} has not completed successfully yet
+     */
+    public Layer getTextLayer() {
+        if (textLayer == null) {
+            throw new IllegalStateException(
+                    "The surface has no text layer yet: addTo(layers, textGlyphs, squareGlyphs)"
+                            + " has not completed successfully");
+        }
+        return textLayer;
     }
 
     static void requireFontPair(GlyphSource textGlyphs, GlyphSource squareGlyphs) {

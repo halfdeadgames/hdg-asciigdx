@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.ui;
 
 import com.badlogic.gdx.files.FileHandle;
 import com.github.halfdeadgames.asciigdx.text.ColorNames;
+import com.github.halfdeadgames.asciigdx.zone.EffectRegistry;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -246,6 +247,7 @@ public final class Skin {
     private final Map<String, DialogStyle> dialogStyles;
     private final Map<String, Map<String, Object>> customStyles;
     private final ColorNames colorNames;
+    private final EffectRegistry effects = EffectRegistry.withBuiltIns();
 
     Skin(Map<String, Integer> colors, Map<String, LabelStyle> labelStyles,
             Map<String, ButtonStyle> buttonStyles, Map<String, MenuBarStyle> menuBarStyles,
@@ -514,6 +516,23 @@ public final class Skin {
      */
     public ColorNames getColorNames() {
         return colorNames;
+    }
+
+    /**
+     * Returns the effects that {@code [effect:NAME ...]} tags can name, for use with
+     * {@link Label#setEffectNames}. It starts with the built-in effects of
+     * {@link EffectRegistry}. The skin file has no effect section: a game adds its own effects in
+     * code, with {@link EffectRegistry#register}, before it parses the labels that use them. A
+     * label sees an effect registered after the label was parsed only once
+     * {@link Label#setEffectNames} is called again. The registry is the one thing about a skin
+     * that can change; it belongs to this skin object only (nothing is shared between skins), so
+     * a reloaded skin starts again with the built-ins. Call this, and register, from the game
+     * (GL) thread only, like every skin, widget, and label call.
+     *
+     * @return the registry, never {@code null}; the same object on every call
+     */
+    public EffectRegistry getEffectRegistry() {
+        return effects;
     }
 
     /**
