@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.text.TextReveal;
 import com.github.halfdeadgames.asciigdx.ui.HorizontalAlignment;
 import com.github.halfdeadgames.asciigdx.ui.Label;
+import com.github.halfdeadgames.asciigdx.ui.LabelEffectZones;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
 import com.github.halfdeadgames.asciigdx.ui.TextField;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
@@ -128,7 +129,7 @@ final class LabelExample implements WidgetExample {
         label.setColorNames(skin.getColorNames());
         label.setEffectNames(skin.getEffectRegistry());
         label.pack();
-        effectZones.add(new LabelEffectZones(label));
+        effectZones.add(LabelEffectZones.of(label));
         return label;
     }
 

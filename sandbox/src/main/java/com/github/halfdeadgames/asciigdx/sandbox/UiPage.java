@@ -1,5 +1,6 @@
 package com.github.halfdeadgames.asciigdx.sandbox;
 
+import com.github.halfdeadgames.asciigdx.layer.Layer;
 import com.github.halfdeadgames.asciigdx.ui.Widget;
 
 /** One page of the "UI: widgets" scene: a widget tree shown below the menu strip. */
@@ -32,5 +33,15 @@ interface UiPage {
      * @param contentTop the root row of the content's top edge
      */
     default void contentPlaced(int contentTop) {
+    }
+
+    /**
+     * Called every frame for the shown page, after the cell effects of the layers have begun, so
+     * the page can apply effect zones to the text layer. Does nothing by default.
+     *
+     * @param textLayer the layer that draws the text grid of the surface
+     * @param seconds time since the scene started, in seconds
+     */
+    default void applyEffects(Layer textLayer, float seconds) {
     }
 }

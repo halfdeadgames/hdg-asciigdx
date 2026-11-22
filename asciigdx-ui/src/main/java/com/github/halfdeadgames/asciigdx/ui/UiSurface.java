@@ -207,7 +207,8 @@ public final class UiSurface {
      * stack owns it: do not remove or dispose it, and do not use it after that stack is disposed.
      * It is valid only until the next successful {@code addTo} call, which replaces it, so call
      * this method again after each {@code addTo} instead of keeping the layer. Effects change how
-     * cells are drawn, not what the grid holds.
+     * cells are drawn, not what the grid holds. To apply the effect tags of a {@link Label}, use
+     * {@link LabelEffectZones} instead of building the zones by hand.
      *
      * @return the text layer of the last successful {@link #addTo} call, never {@code null}
      * @throws IllegalStateException if {@link #addTo} has not completed successfully yet

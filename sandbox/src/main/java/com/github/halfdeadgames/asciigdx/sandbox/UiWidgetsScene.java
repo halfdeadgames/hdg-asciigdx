@@ -62,6 +62,7 @@ class UiWidgetsScene implements SandboxScene {
     private int rows = INITIAL_ROWS;
     private int pageIndex;
     private int overlayRows = RESERVED_ROWS;
+    private float sceneSeconds;
 
     UiWidgetsScene(GlyphSource squareGlyphs, GlyphSource textGlyphs) {
         this.squareGlyphs = squareGlyphs;
@@ -78,7 +79,7 @@ class UiWidgetsScene implements SandboxScene {
         if (windowsPage != null) {
             windowsPage.dismissDialogs();
         }
-        surface =UiSurface.ofSize(columns, rows);
+        surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
         uiInput = UiInput.forRoot(uiRoot, this::pickCell);
         hintsPage = new HintsPage(uiRoot, skin);
@@ -89,7 +90,8 @@ class UiWidgetsScene implements SandboxScene {
         windowsPage = new WindowsPage(uiRoot, skin);
         pages = List.of(new LabelsPage(skin), new TablePage(skin), buttonsPage,
                 hintsPage, menusPage, new TogglesPage(skin), textFieldsPage, barsPage,
-                new RatingsPage(skin), windowsPage, new ScrollingPage(skin));
+                new RatingsPage(skin), windowsPage, new ScrollingPage(skin),
+                new EffectsPage(skin));
         pageBar = MenuBar.of(uiRoot, skin.getMenuBarStyle("menuBar"));
         layers = new LayerStack();
         content = null;
@@ -372,11 +374,13 @@ class UiWidgetsScene implements SandboxScene {
         }
     }
 
-    // Grows the cells once the short side holds several 67-row screens, so 1080p stays at 1x.
+    // Grows the cells once the short side holds several 67-row screens, so 1080p stays at 1x, and
+    // at least to the screen density, so a dense phone screen does not get tiny cells.
     private int integerScaleFor(int width, int height) {
         int shortSide = Math.min(width, height);
-        return Math.max(1,
-                shortSide / (MIN_ROWS_PER_SHORT_SIDE * squareGlyphs.getCellHeight()));
+        int fittedScale = shortSide / (MIN_ROWS_PER_SHORT_SIDE * squareGlyphs.getCellHeight());
+        int densityScale = (int) Math.floor(Gdx.graphics.getDensity());
+        return Math.max(1, Math.max(fittedScale, densityScale));
     }
 
     private int rowsCoveredByPerfOverlay(int integerScale) {
@@ -421,12 +425,19 @@ class UiWidgetsScene implements SandboxScene {
     public void render(SpriteBatch batch, float delta) {
         uiRoot.update(delta);
         uiRoot.draw();
+        applyPageEffects(delta);
         SceneDrawing.clearViewportArea(viewport);
         viewport.apply();
         batch.setProjectionMatrix(viewport.getCamera().combined);
         batch.begin();
         layers.draw(batch, 0, viewport.getWorldHeight());
         batch.end();
+    }
+
+    private void applyPageEffects(float delta) {
+        sceneSeconds += delta;
+        layers.beginCellEffects(delta);
+        pages.get(pageIndex).applyEffects(surface.getTextLayer(), sceneSeconds);
     }
 
     // A key-up that arrives after the scene is hidden never reaches the root, so a held arrow
