@@ -9,6 +9,9 @@ import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.github.halfdeadgames.asciigdx.fit.IntegerScaling;
 import com.github.halfdeadgames.asciigdx.glyph.GlyphSource;
 import com.github.halfdeadgames.asciigdx.layer.LayerStack;
+import com.github.halfdeadgames.asciigdx.skindesigner.document.SkinDocument;
+import com.github.halfdeadgames.asciigdx.skindesigner.files.SkinFileMenu;
+import com.github.halfdeadgames.asciigdx.skindesigner.files.SkinSession;
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.BoundaryState;
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.ExampleFrame;
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.ExamplePicker;
@@ -16,13 +19,11 @@ import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.PopupBounda
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.ShowcaseBackdrop;
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.WidgetExample;
 import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.WidgetExamples;
-import com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase.SkinFileWatcher;
 import com.github.halfdeadgames.asciigdx.ui.CellArea;
 import com.github.halfdeadgames.asciigdx.ui.Label;
 import com.github.halfdeadgames.asciigdx.ui.Menu;
 import com.github.halfdeadgames.asciigdx.ui.MenuBar;
 import com.github.halfdeadgames.asciigdx.ui.Skin;
-import com.github.halfdeadgames.asciigdx.ui.SkinFileException;
 import com.github.halfdeadgames.asciigdx.ui.UiInput;
 import com.github.halfdeadgames.asciigdx.ui.UiRoot;
 import com.github.halfdeadgames.asciigdx.ui.UiSurface;
@@ -48,16 +49,14 @@ class UiShowcaseScene {
     private static final String BAR_STYLE = "menuBar";
     private static final String INITIAL_RESULT = "Loaded";
     private static final String REBUILD_RESULT = "Rebuilt the example";
-    private static final String RELOADED_RESULT = "Skin reloaded";
-    private static final String ERROR_PREFIX = "Skin error: ";
+    private static final float UNSAVED_CHECK_SECONDS = 0.25f;
 
-    private final SkinFileWatcher skinWatcher =
-            new SkinFileWatcher(Gdx.files.internal(SKIN_FILE));
     private final List<WidgetExample> examples = WidgetExamples.createAll();
     private final ScalingViewport viewport;
     private final GlyphSource squareGlyphs;
     private final GlyphSource textGlyphs;
-    private Skin skin = skinWatcher.load();
+    private SkinDocument document;
+    private final SkinFileMenu fileMenu;
     private final Vector2 worldPoint = new Vector2();
     private final BoundaryState boundaryState = new BoundaryState();
     private UiSurface surface;
@@ -75,10 +74,15 @@ class UiShowcaseScene {
     private int overlayRows = MENU_BAR_ROWS;
     private float sceneSeconds;
     private String lastResult = INITIAL_RESULT;
+    private float secondsSinceUnsavedCheck;
+    private boolean shownUnsaved;
 
     UiShowcaseScene(GlyphSource squareGlyphs, GlyphSource textGlyphs) {
         this.squareGlyphs = squareGlyphs;
         this.textGlyphs = textGlyphs;
+        document = SkinDocument.open(Gdx.files.internal(SKIN_FILE), true);
+        fileMenu = new SkinFileMenu(SkinSession.createForRunningApp(document), this::reportResult,
+                this::adoptLoadedDocument, () -> uiRoot, this::exampleArea);
         viewport = new ScalingViewport(IntegerScaling.INSTANCE,
                 columns * squareGlyphs.getCellWidth(), rows * squareGlyphs.getCellHeight());
         buildUi();
@@ -94,11 +98,12 @@ class UiShowcaseScene {
         surface = UiSurface.ofSize(columns, rows);
         uiRoot = UiRoot.of(surface);
         uiInput = UiInput.forRoot(uiRoot, this::pickCell);
-        picker = new ExamplePicker(uiRoot, skin, examples, this::loadExample);
+        picker = new ExamplePicker(uiRoot, document.getSkin(), examples, this::loadExample);
         layers = new LayerStack();
         content = null;
         surface.addTo(layers, textGlyphs, squareGlyphs);
-        uiRoot.getRoot().addChild(new ShowcaseBackdrop(columns, rows, skin.getRgba("black")));
+        uiRoot.getRoot().addChild(
+                new ShowcaseBackdrop(columns, rows, document.getSkin().getRgba("black")));
         createMenuBar();
         createStatusLine();
         createBorderNote();
@@ -111,9 +116,10 @@ class UiShowcaseScene {
     }
 
     private void createMenuBar() {
-        menuBar = MenuBar.of(uiRoot, skin.getMenuBarStyle(BAR_STYLE));
+        menuBar = MenuBar.of(uiRoot, document.getSkin().getMenuBarStyle(BAR_STYLE));
         menuBar.setSize(columns, 0);
         menuBar.setPosition(0, overlayRows);
+        createFileMenu();
         Menu widgetsMenu = menuBar.addMenu("Widgets", 'W');
         widgetsMenu.addItem("Choose widget…", 'C', this::openPicker);
         widgetsMenu.addItem("Rebuild example (F5)", 'R', this::rebuildExample);
@@ -122,14 +128,18 @@ class UiShowcaseScene {
         uiRoot.getRoot().addChild(menuBar);
     }
 
+    private void createFileMenu() {
+        fileMenu.addTo(menuBar);
+    }
+
     private void createStatusLine() {
-        statusLine = new Label("", skin.getLabelStyle(LABEL_STYLE));
+        statusLine = new Label("", document.getSkin().getLabelStyle(LABEL_STYLE));
         statusLine.setPosition(1, overlayRows + MENU_BAR_ROWS);
         uiRoot.getRoot().addChild(statusLine);
     }
 
     private void createBorderNote() {
-        borderNote = new Label("", skin.getLabelStyle(LABEL_STYLE));
+        borderNote = new Label("", document.getSkin().getLabelStyle(LABEL_STYLE));
         borderNote.setPosition(1, overlayRows + MENU_BAR_ROWS + 1);
         uiRoot.getRoot().addChild(borderNote);
         refreshBorderNote();
@@ -151,9 +161,47 @@ class UiShowcaseScene {
     }
 
     private void refreshStatusLine() {
-        statusLine.setText("Example: " + examples.get(exampleIndex).title() + "  |  Last: "
-                + lastResult);
+        shownUnsaved = document.hasUnsavedChanges();
+        statusLine.setText("Example: " + examples.get(exampleIndex).title() + "  |  File: "
+                + fileMenu.describeFile() + "  |  Last: " + lastResult);
         statusLine.pack();
+    }
+
+    private void reportResult(String message) {
+        lastResult = message;
+        refreshStatusLine();
+        uiRoot.draw();
+    }
+
+    private void adoptLoadedDocument() {
+        document = fileMenu.getDocument();
+        buildUi();
+    }
+
+    // Edits and undo change the document without going through the File menu, so the "unsaved"
+    // marker is checked a few times a second; formatting the tree every frame would be wasteful.
+    private void refreshUnsavedMarker(float delta) {
+        secondsSinceUnsavedCheck += delta;
+        if (secondsSinceUnsavedCheck < UNSAVED_CHECK_SECONDS) {
+            return;
+        }
+        secondsSinceUnsavedCheck = 0f;
+        if (document.hasUnsavedChanges() != shownUnsaved) {
+            refreshStatusLine();
+        }
+    }
+
+    private CellArea exampleArea() {
+        return new CellArea(0, contentTop(), columns, Math.max(1, rows - contentTop()));
+    }
+
+    boolean hasUnsavedChanges() {
+        return document.hasUnsavedChanges();
+    }
+
+    /** Runs the quit action now, or after Save or Discard when changes are unsaved. */
+    void requestQuit(Runnable quitAction) {
+        fileMenu.requestQuit(quitAction);
     }
 
     private void showExample(int index) {
@@ -165,6 +213,7 @@ class UiShowcaseScene {
         boundaryState.forgetFrames();
         int areaTop = contentTop();
         int areaRows = rows - areaTop;
+        Skin skin = document.getSkin();
         Widget tree = examples.get(index).create(skin, uiRoot, boundaryState, columns, areaRows);
         content = ExampleFrame.fit(tree, columns, areaRows,
                 skin.getScrollPaneStyle(SCROLL_PANE_STYLE));
@@ -192,16 +241,7 @@ class UiShowcaseScene {
 
     // A broken skin file keeps the old skin and the current screen; only the status line changes.
     private void reloadSkin() {
-        try {
-            skin = skinWatcher.load();
-        } catch (SkinFileException exception) {
-            lastResult = ERROR_PREFIX + exception.getMessage();
-            refreshStatusLine();
-            uiRoot.draw();
-            return;
-        }
-        lastResult = RELOADED_RESULT;
-        buildUi();
+        fileMenu.reloadFromDisk();
     }
 
     private void limitWindowsToExampleArea() {
@@ -359,10 +399,8 @@ class UiShowcaseScene {
     }
 
     void render(SpriteBatch batch, float delta) {
-        skinWatcher.update(delta);
-        if (skinWatcher.hasChangeBeenDetected()) {
-            reloadSkin();
-        }
+        fileMenu.update(delta);
+        refreshUnsavedMarker(delta);
         uiRoot.update(delta);
         uiRoot.draw();
         applyExampleEffects(delta);

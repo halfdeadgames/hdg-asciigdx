@@ -105,6 +105,20 @@ public class SkinDesignerApp extends ApplicationAdapter {
         }
     }
 
+    /**
+     * Decides whether the window may close now. With unsaved changes it asks the user instead,
+     * and quits only after Save or Discard.
+     *
+     * @return {@code true} when the window may close at once
+     */
+    public boolean isWindowCloseAllowed() {
+        if (showcase == null || !showcase.hasUnsavedChanges()) {
+            return true;
+        }
+        showcase.requestQuit(Gdx.app::exit);
+        return false;
+    }
+
     @Override
     public void dispose() {
         showcase.dispose();
@@ -124,7 +138,7 @@ public class SkinDesignerApp extends ApplicationAdapter {
                 return true;
             }
             if (keycode == Input.Keys.ESCAPE) {
-                Gdx.app.exit();
+                showcase.requestQuit(Gdx.app::exit);
                 return true;
             }
             if (keycode == Input.Keys.F12) {

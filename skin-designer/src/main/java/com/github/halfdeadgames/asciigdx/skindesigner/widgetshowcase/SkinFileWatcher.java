@@ -1,44 +1,49 @@
 package com.github.halfdeadgames.asciigdx.skindesigner.widgetshowcase;
 
-import com.badlogic.gdx.Application;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.github.halfdeadgames.asciigdx.ui.Skin;
 
 /**
- * Loads the skin file and, on desktop, notices when the file on disk changes. Only a real file
- * is watched, so on Android the skin is only reloaded on request.
+ * Notices when a skin file on disk changes. Only a real file is watched, so on Android nothing is
+ * detected and the skin is only reloaded on request. The watcher follows whichever file it was
+ * last pointed at.
  */
 public final class SkinFileWatcher {
     private static final float CHECK_INTERVAL_SECONDS = 0.5f;
 
-    private final FileHandle skinFile;
-    private final boolean watching;
+    private final boolean enabled;
+    private FileHandle skinFile;
+    private boolean watching;
     private long lastSeenModified;
     private float secondsSinceCheck;
     private boolean changeDetected;
 
-    /** Creates a watcher for the given skin file; it remembers the file's current timestamp. */
-    public SkinFileWatcher(FileHandle skinFile) {
-        this.skinFile = skinFile;
-        watching = Gdx.app.getType() == Application.ApplicationType.Desktop
-                && skinFile.file().isFile();
-        lastSeenModified = watching ? skinFile.lastModified() : 0L;
+    /**
+     * Creates a watcher that already follows the given file.
+     *
+     * @param enabled whether files can be watched at all; false on platforms without real files
+     */
+    public SkinFileWatcher(FileHandle skinFile, boolean enabled) {
+        this.enabled = enabled;
+        follow(skinFile);
     }
 
     /**
-     * Loads the skin from the file. The current timestamp counts as seen even when loading fails,
-     * so a broken file is reported once rather than every check.
-     *
-     * @throws com.github.halfdeadgames.asciigdx.ui.SkinFileException if the file is not a valid
-     *         skin
+     * Starts watching another file, or the same file again. The file's current timestamp counts as
+     * seen, and a detected change is forgotten. Call it after loading or saving the file, so the
+     * app's own writes are not reported.
      */
-    public Skin load() {
+    public void follow(FileHandle file) {
+        skinFile = file;
+        // A missing file (an editor's atomic rename) reads as timestamp 0, so it is still watched.
+        watching = enabled;
+        lastSeenModified = watching ? file.lastModified() : 0L;
+        secondsSinceCheck = 0f;
         changeDetected = false;
-        if (watching) {
-            lastSeenModified = skinFile.lastModified();
-        }
-        return Skin.fromFile(skinFile);
+    }
+
+    /** Counts the file's current timestamp as seen and forgets a detected change. */
+    public void acknowledgeChange() {
+        follow(skinFile);
     }
 
     /** Adds frame time, and checks the file's timestamp once every half second. */
@@ -56,7 +61,7 @@ public final class SkinFileWatcher {
         }
     }
 
-    /** Returns whether {@link #update} saw a newer file since the last {@link #load()}. */
+    /** Returns whether {@link #update} saw a newer file since the last follow or acknowledge. */
     public boolean hasChangeBeenDetected() {
         return changeDetected;
     }

@@ -3,6 +3,7 @@ package com.github.halfdeadgames.asciigdx.skindesigner;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter;
 import com.github.halfdeadgames.asciigdx.inputscript.ScriptedApplication;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -22,7 +23,14 @@ public final class SkinDesignerLauncher {
             return;
         }
         SkinDesignerApp app = new SkinDesignerApp(SkinDesignerLauncher::readSetting);
-        new Lwjgl3Application(withOptionalScript(app), createConfiguration());
+        Lwjgl3ApplicationConfiguration configuration = createConfiguration();
+        configuration.setWindowListener(new Lwjgl3WindowAdapter() {
+            @Override
+            public boolean closeRequested() {
+                return app.isWindowCloseAllowed();
+            }
+        });
+        new Lwjgl3Application(withOptionalScript(app), configuration);
     }
 
     private static String readSetting(String key) {

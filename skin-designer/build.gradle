@@ -18,6 +18,10 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  implementation "org.lwjgl:lwjgl-tinyfd:$lwjgl3Version"
+  ['natives-windows', 'natives-linux', 'natives-macos', 'natives-macos-arm64'].each { platform ->
+    runtimeOnly "org.lwjgl:lwjgl-tinyfd:$lwjgl3Version:$platform"
+  }
 
   testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
   testRuntimeOnly "org.junit.platform:junit-platform-launcher"
