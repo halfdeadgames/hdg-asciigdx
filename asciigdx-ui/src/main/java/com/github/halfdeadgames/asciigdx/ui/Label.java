@@ -4,6 +4,7 @@ import com.github.halfdeadgames.asciigdx.text.ColorNames;
 import com.github.halfdeadgames.asciigdx.text.EffectNames;
 import com.github.halfdeadgames.asciigdx.text.EffectRun;
 import com.github.halfdeadgames.asciigdx.text.StyledText;
+import com.github.halfdeadgames.asciigdx.text.TextReveal;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,6 +44,17 @@ import java.util.Objects;
  * one {@code EffectZone} per run on {@link UiSurface#getTextLayer()}, and applies it each frame
  * with its own time. Letters that are not shown return {@link #NOT_SHOWN}; the game skips them.
  *
+ * <p>Typing reveal: {@link #setShownLetterCount(int)} limits drawing to the first letters while
+ * the layout stays computed from the full text. {@code [wait:SECONDS]} tags are read by the parser
+ * and draw nothing; the game applies them with the {@code TextReveal} from
+ * {@link #createReveal(float)}:
+ * <pre>{@code
+ * label.setText("Well.[wait:0.5] Here we go.");
+ * TextReveal reveal = label.createReveal(20f); // again after every setText
+ * // every frame:
+ * label.setShownLetterCount(reveal.getShownLetterCount(secondsSinceStart));
+ * }</pre>
+ *
  * <p>Like every widget, a label is for the game (GL) thread only.
  */
 public class Label extends Widget {
@@ -64,6 +76,7 @@ public class Label extends Widget {
     private EffectNames effects = EffectNames.NONE;
     private boolean markupEnabled = true;
     private StyledText styledText;
+    private int shownLetterLimit = Integer.MAX_VALUE;
 
     /**
      * Returns where the text sits when the label is wider than its text.
@@ -226,7 +239,7 @@ public class Label extends Widget {
     public int getTextColumnOfLetter(int letterIndex) {
         String displayedText = getDisplayedText();
         int letters = displayedText.codePointCount(0, displayedText.length());
-        if (letterIndex < 0 || letterIndex >= letters) {
+        if (letterIndex < 0 || letterIndex >= letters || letterIndex >= shownLetterLimit) {
             return NOT_SHOWN;
         }
         int textColumnLimit = UiSurface.TEXT_COLUMNS_PER_CELL * getWidth();
@@ -308,6 +321,76 @@ public class Label extends Widget {
     }
 
     /**
+     * Limits drawing to the first letters of the text, for a typing reveal. Layout, width,
+     * alignment, and the cut-off at the label's width are still computed from the full text, so
+     * the text does not move while it grows. Letters at or after the limit are not drawn and
+     * return {@link #NOT_SHOWN} from {@link #getTextColumnOfLetter(int)} and
+     * {@link #getAbsoluteTextColumnOfLetter(int)}, so effect zones skip them. A new label shows
+     * all letters, and {@link #setText} with different text shows all letters again, so set the
+     * count after {@code setText}. A change requests a redraw; an equal limit changes nothing.
+     * Call it every frame with {@code getShownLetterCount(seconds)} of the reveal from
+     * {@link #createReveal(float)}.
+     *
+     * @param count number of leading visible letters to draw; 0 or more. A value above the number
+     *         of visible letters shows everything, as does {@link Integer#MAX_VALUE}; see
+     *         {@link #showAllLetters()}
+     * @throws IllegalArgumentException if {@code count} is negative
+     */
+    public void setShownLetterCount(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must not be negative: " + count);
+        }
+        if (count == shownLetterLimit) {
+            return;
+        }
+        shownLetterLimit = count;
+        requestRedraw();
+    }
+
+    /**
+     * Shows every letter again. Same as {@code setShownLetterCount(Integer.MAX_VALUE)}.
+     */
+    public void showAllLetters() {
+        setShownLetterCount(Integer.MAX_VALUE);
+    }
+
+    /**
+     * Returns how many letters are actually drawn: the smaller of the limit set with
+     * {@link #setShownLetterCount(int)} and the number of visible letters. It can differ from the
+     * value that was set, for example after {@code setShownLetterCount(99)} on a 5 letter text it
+     * returns 5. Letters cut off by the label's width still count.
+     *
+     * @return a number from 0 to the number of visible letters
+     */
+    public int getShownLetterCount() {
+        String displayedText = getDisplayedText();
+        return Math.min(shownLetterLimit, displayedText.codePointCount(0, displayedText.length()));
+    }
+
+    /**
+     * Creates the typing reveal timing for the current text. It is built from the label's own
+     * parse, so it uses the label's color names, effect names, and markup setting: with markup on,
+     * tags take no time and each valid {@code [wait:SECONDS]} adds a pause; with markup off, every
+     * character of the text is a letter and there are no pauses. Its letter counts match
+     * {@link #getShownLetterCount()}. Pass them to {@link #setShownLetterCount(int)} each frame.
+     *
+     * <p>The result is a snapshot of the current text: call this method again after
+     * {@link #setText}, {@link #setColorNames}, {@link #setEffectNames}, or
+     * {@link #setMarkupEnabled}. Create it once per text, not every frame.
+     *
+     * @param lettersPerSecond reveal speed in letters per second; finite and greater than 0
+     * @return the reveal, never {@code null}
+     * @throws IllegalArgumentException if {@code lettersPerSecond} is NaN, infinite, 0, or negative
+     */
+    public TextReveal createReveal(float lettersPerSecond) {
+        if (styledText != null) {
+            return TextReveal.of(styledText, lettersPerSecond);
+        }
+        return TextReveal.of(
+                StyledText.parse(StyledText.escape(text), ColorNames.NONE), lettersPerSecond);
+    }
+
+    /**
      * Returns the text, exactly as it was given, including any tags.
      *
      * @return the text, never {@code null}
@@ -322,6 +405,10 @@ public class Label extends Widget {
      * marks. Layout is marked even though the size is kept, because the preferred size changes
      * and {@link #pack()} and parent layouts rely on that mark.
      *
+     * <p>When the text differs, the typing reveal also resets to show all letters, see
+     * {@link #showAllLetters()}: setting new text shows all letters again, so set the count after
+     * {@code setText}. Equal text keeps the current limit.
+     *
      * @param text new text; must not be {@code null}; may be empty
      * @throws NullPointerException if {@code text} is {@code null}
      */
@@ -330,6 +417,7 @@ public class Label extends Widget {
         if (text.equals(this.text)) {
             return;
         }
+        showAllLetters();
         this.text = text;
         parseMarkup();
         invalidate();
@@ -435,7 +523,7 @@ public class Label extends Widget {
         int letterIndex = 0;
         int textOffset = alignmentOffset(textColumnLimit,
                 displayedText.codePointCount(0, length));
-        while (index < length && textOffset < textColumnLimit
+        while (index < length && letterIndex < shownLetterLimit && textOffset < textColumnLimit
                 && leftTextColumn + textOffset < target.getTextColumns()) {
             int codePoint = displayedText.codePointAt(index);
             writeLetter(target, leftTextColumn + textOffset, top, codePoint, letterIndex);

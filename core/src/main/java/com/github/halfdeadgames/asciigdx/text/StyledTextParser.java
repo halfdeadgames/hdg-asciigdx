@@ -3,6 +3,8 @@ package com.github.halfdeadgames.asciigdx.text;
 import com.badlogic.gdx.utils.BooleanArray;
 import com.badlogic.gdx.utils.IntArray;
 import com.github.halfdeadgames.asciigdx.zone.CellEffect;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -22,6 +24,7 @@ final class StyledTextParser {
     private static final String BACKGROUND_CLOSER = "/bg";
     private static final String EFFECT_OPENER = "effect:";
     private static final String EFFECT_CLOSER = "/effect";
+    private static final String WAIT_OPENER = "wait:";
     private static final String DEFAULT_VALUE = "default";
     private static final int REPLACEMENT_CODE_POINT = 0xFFFD;
     private static final int HEX_RADIX = 16;
@@ -35,6 +38,7 @@ final class StyledTextParser {
     private final ColorNames names;
     private final EffectNames effectNames;
     private final EffectRunBuilder effectRuns = new EffectRunBuilder();
+    private final List<RevealPause> pauses = new ArrayList<>();
     private final StringBuilder visibleText = new StringBuilder();
     private final ColorStack foregroundStack = new ColorStack();
     private final ColorStack backgroundStack = new ColorStack();
@@ -57,7 +61,7 @@ final class StyledTextParser {
         effectRuns.closeOpenRun(foregroundRgba.size);
         return new StyledText(visibleText.toString(), hasForeground.toArray(),
                 foregroundRgba.toArray(), hasBackground.toArray(), backgroundRgba.toArray(),
-                effectRuns.getRuns());
+                effectRuns.getRuns(), pauses);
     }
 
     private int readFrom(int index) {
@@ -104,6 +108,9 @@ final class StyledTextParser {
         if (content.equals(EFFECT_CLOSER)) {
             return closeEffectIfOpen();
         }
+        if (content.startsWith(WAIT_OPENER)) {
+            return addPause(content.substring(WAIT_OPENER.length()));
+        }
         if (content.startsWith(EFFECT_OPENER)) {
             return openEffect(content.substring(EFFECT_OPENER.length()));
         }
@@ -120,6 +127,42 @@ final class StyledTextParser {
             return pushValue(backgroundStack, content.substring(BACKGROUND_OPENER.length()));
         }
         return false;
+    }
+
+    private boolean addPause(String secondsText) {
+        if (!isPlainDecimal(secondsText)) {
+            return false;
+        }
+        float seconds = Float.parseFloat(secondsText);
+        if (!Float.isFinite(seconds)) {
+            return false;
+        }
+        pauses.add(RevealPause.of(foregroundRgba.size, seconds));
+        return true;
+    }
+
+    // Digits with an optional fraction; Float.parseFloat alone would also accept signs, exponents,
+    // NaN, and type suffixes.
+    private static boolean isPlainDecimal(String value) {
+        int dotIndex = value.indexOf('.');
+        if (dotIndex < 0) {
+            return isAsciiDigits(value);
+        }
+        return isAsciiDigits(value.substring(0, dotIndex))
+                && isAsciiDigits(value.substring(dotIndex + 1));
+    }
+
+    private static boolean isAsciiDigits(String value) {
+        if (value.isEmpty()) {
+            return false;
+        }
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (character < '0' || character > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean closeEffectIfOpen() {

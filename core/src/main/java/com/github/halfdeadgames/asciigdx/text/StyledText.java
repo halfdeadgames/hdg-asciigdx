@@ -33,6 +33,11 @@ import java.util.Objects;
  *       {@link #parse(CharSequence, ColorNames, EffectNames)}; the result is read with
  *       {@link #getEffectRuns()}. Effect tags are only read by that overload. An effect still
  *       open at the end of the text applies to the end, like an open color.</li>
+ *   <li>{@code [wait:SECONDS]} pauses the typing reveal before the letter that follows, for
+ *       example {@code [wait:0.5]}. SECONDS is a plain decimal: digits with an optional fraction
+ *       ({@code 2}, {@code 0.5}, {@code 1.25}), finite. A sign, an exponent, letters, or an empty
+ *       value leave the tag visible. The tag draws nothing; read it with {@link #getPauses()}.
+ *       Every parse overload reads it.</li>
  *   <li>{@code [[} writes one literal {@code [}. Use {@link #escape} for text you do not
  *       trust.</li>
  * </ul>
@@ -69,7 +74,7 @@ import java.util.Objects;
 public final class StyledText {
 
     static final StyledText UNSTYLED_EMPTY = new StyledText("", new boolean[0], new int[0],
-            new boolean[0], new int[0], Collections.emptyList());
+            new boolean[0], new int[0], Collections.emptyList(), Collections.emptyList());
 
     private static final char TAG_OPEN = '[';
     private static final String ESCAPED_TAG_OPEN = "[[";
@@ -80,9 +85,12 @@ public final class StyledText {
     private final boolean[] hasBackground;
     private final int[] backgroundRgba;
     private final List<EffectRun> effectRuns;
+    private final List<RevealPause> pauses;
 
     StyledText(String visibleText, boolean[] hasForeground, int[] foregroundRgba,
-            boolean[] hasBackground, int[] backgroundRgba, List<EffectRun> effectRuns) {
+            boolean[] hasBackground, int[] backgroundRgba, List<EffectRun> effectRuns,
+            List<RevealPause> pauses) {
+        this.pauses = Collections.unmodifiableList(new ArrayList<>(pauses));
         this.visibleText = visibleText;
         this.hasForeground = hasForeground;
         this.foregroundRgba = foregroundRgba;
@@ -186,6 +194,18 @@ public final class StyledText {
      */
     public List<EffectRun> getEffectRuns() {
         return effectRuns;
+    }
+
+    /**
+     * Returns the pauses of the typing reveal, one for each valid {@code [wait:SECONDS]} tag, in
+     * the order of the tags. A pause belongs to the index of the letter that follows its tag, so
+     * several tags at one index are separate entries, and a tag at the end of the text has the
+     * visible length as its index. See {@link TextReveal}, which applies them.
+     *
+     * @return an unmodifiable list, never {@code null}; empty when the text has no wait tags
+     */
+    public List<RevealPause> getPauses() {
+        return pauses;
     }
 
     /**

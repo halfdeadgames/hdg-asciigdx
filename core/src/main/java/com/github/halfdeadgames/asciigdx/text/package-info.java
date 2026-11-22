@@ -31,6 +31,14 @@
  * package. The result is a list of {@link com.github.halfdeadgames.asciigdx.text.EffectRun}s
  * over the visible letters. Without an {@code EffectNames}, effect tags stay visible.
  *
+ * <p>Typing reveal: {@code [wait:0.5]} tags in a {@code StyledText} are read as
+ * {@link com.github.halfdeadgames.asciigdx.text.RevealPause}s, see
+ * {@link com.github.halfdeadgames.asciigdx.text.StyledText#getPauses()}.
+ * {@link com.github.halfdeadgames.asciigdx.text.TextReveal} turns the seconds since the reveal
+ * started into a count of shown letters, which the game passes to the drawing, for example
+ * {@code Label.setShownLetterCount} in the UI module. For a label, build the reveal with
+ * {@code Label.createReveal(lettersPerSecond)} instead of {@code TextReveal.of}.
+ *
  * <p>Hyphenation:{@link com.github.halfdeadgames.asciigdx.text.Hyphenator} finds the points
  * where a word may be split, using the bundled English (US) patterns or patterns the game
  * supplies.
@@ -74,6 +82,12 @@
  * // Inline effects, resolved at parse time into runs of letters.
  * StyledText wavy = StyledText.parse("A [effect:wave]wavy[/effect] word", names,
  *         EffectRegistry.withBuiltIns());
+ *
+ * // Typing reveal of grid text at 20 letters per second with a half second pause.
+ * StyledText speech = StyledText.parse("Well.[wait:0.5] Here we go.", names);
+ * TextReveal reveal = TextReveal.of(speech, 20f);
+ * paint.setVisibleLetterCount(reveal.getShownLetterCount(secondsSinceStart)); // each frame
+ * TextDrawing.drawText(grid, 2, 10, speech, paint);
  * }</pre>
  */
 package com.github.halfdeadgames.asciigdx.text;
