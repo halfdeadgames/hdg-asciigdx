@@ -45,6 +45,9 @@ class ParallaxScene extends GridScene {
     private static final float MANUAL_SPEED_CELLS_PER_SECOND = 8f;
     private static final String HELP_TEXT = "<- -> pan A auto";
     private static final int HIGHLIGHT = 0x3060C0FF;
+    private static final float ZOOM_STEP = 1.25f;
+    private static final float MIN_ZOOM = 0.8f;
+    private static final float MAX_ZOOM = 4f;
 
     private final GlyphSource glyphs;
     private final TerminalGrid statusGrid = new TerminalGrid(COLUMNS, 1);
@@ -113,6 +116,7 @@ class ParallaxScene extends GridScene {
         auto = true;
         headingRight = true;
         hasPointer = false;
+        layers.setCameraZoom(1f);
         clearHighlight();
         super.show();
         applyAutoCamera();
@@ -127,7 +131,12 @@ class ParallaxScene extends GridScene {
 
     @Override
     public String statusText() {
-        return auto ? "auto pan" : "manual pan";
+        String panText = auto ? "auto pan" : "manual pan";
+        float cameraZoom = layers.getCameraZoom();
+        if (cameraZoom == 1f) {
+            return panText;
+        }
+        return panText + ", zoom x" + Math.round(cameraZoom * 100f) / 100f + " (Q/E, Z reset)";
     }
 
     @Override
@@ -155,11 +164,25 @@ class ParallaxScene extends GridScene {
 
     @Override
     public boolean keyDown(int keycode) {
-        if (keycode != Input.Keys.A) {
-            return false;
+        if (keycode == Input.Keys.A) {
+            toggleAuto();
+            return true;
         }
-        toggleAuto();
-        return true;
+        if (keycode == Input.Keys.E) {
+            layers.setCameraZoom(
+                    MathUtils.clamp(layers.getCameraZoom() * ZOOM_STEP, MIN_ZOOM, MAX_ZOOM));
+            return true;
+        }
+        if (keycode == Input.Keys.Q) {
+            layers.setCameraZoom(
+                    MathUtils.clamp(layers.getCameraZoom() / ZOOM_STEP, MIN_ZOOM, MAX_ZOOM));
+            return true;
+        }
+        if (keycode == Input.Keys.Z) {
+            layers.setCameraZoom(1f);
+            return true;
+        }
+        return false;
     }
 
     @Override

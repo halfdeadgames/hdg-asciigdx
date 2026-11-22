@@ -17,6 +17,10 @@ import java.util.Objects;
  * methods run on the thread that owns the stack; none needs a GL context except drawing, which the
  * stack does.
  *
+ * <p>Besides its own zoom, a layer follows the stack's camera zoom (see
+ * {@link LayerStack#setCameraZoom}) by its zoom rate, which defaults to its horizontal parallax
+ * factor only (parallax (1, 0.2) zooms at rate 1); see {@link #setZoomRate}.
+ *
  * <p>Example:
  * <pre>{@code
  * Layer layer = stack.add(grid, glyphSource);
@@ -61,6 +65,8 @@ public final class Layer {
     private ZoomMode zoomMode = ZoomMode.SMOOTH;
     private float parallaxX = 1f;
     private float parallaxY = 1f;
+    private float zoomRate;
+    private boolean zoomRateFollowsParallax = true;
     private boolean visible = true;
     private boolean pickable = true;
     private final ColorEffects effects = new ColorEffects();
@@ -263,6 +269,64 @@ public final class Layer {
         parallaxX = factorX;
         parallaxY = factorY;
         followCamera();
+    }
+
+    /**
+     * Returns how strongly this layer follows the stack's camera zoom. Until
+     * {@link #setZoomRate} is called (or after {@link #followParallaxZoomRate}), this is the
+     * horizontal parallax factor {@link #getParallaxX()}, and it changes when the parallax does. A
+     * negative parallax factor gives a rate of 0, because a rate is never negative. Only the
+     * horizontal factor counts: with parallax (1, 0.2) the rate is 1. Works after removal.
+     *
+     * @return the zoom rate; 0 or more
+     */
+    public float getZoomRate() {
+        return zoomRateFollowsParallax ? Math.max(0f, parallaxX) : zoomRate;
+    }
+
+    /**
+     * Sets how strongly this layer follows the stack's camera zoom; see
+     * {@link LayerStack#setCameraZoom}. The layer is scaled by {@code cameraZoom ^ rate}, on top
+     * of its own {@link #setZoom zoom}. 1 zooms fully with the camera, 0 never zooms (a HUD), and
+     * values between suit distant layers, which grow more slowly than near ones. Once set, the rate
+     * no longer follows the parallax factor; call {@link #followParallaxZoomRate} to go back.
+     * {@code setZoomRate(getZoomRate())} freezes the current value.
+     *
+     * <p>The camera zoom does not reach layers placed in a {@link Panel}.
+     *
+     * @param rate the exponent applied to the camera zoom; finite and 0 or more
+     * @throws IllegalArgumentException if the rate is negative or not finite
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void setZoomRate(float rate) {
+        requireAttached();
+        if (!Float.isFinite(rate) || rate < 0f) {
+            throw new IllegalArgumentException("zoom rate must be finite and 0 or more: " + rate);
+        }
+        zoomRate = rate;
+        zoomRateFollowsParallax = false;
+    }
+
+    /**
+     * Makes the zoom rate follow the horizontal parallax factor again, which is the default. See
+     * {@link #getZoomRate()}.
+     *
+     * @throws IllegalStateException if the layer was removed
+     */
+    public void followParallaxZoomRate() {
+        requireAttached();
+        zoomRateFollowsParallax = true;
+    }
+
+    /**
+     * Returns whether the zoom rate follows the horizontal parallax factor: true by default and
+     * after {@link #followParallaxZoomRate()}, false after {@link #setZoomRate}. Works after
+     * removal.
+     *
+     * @return true if the rate follows {@link #getParallaxX()}
+     */
+    public boolean isZoomRateFollowingParallax() {
+        return zoomRateFollowsParallax;
     }
 
     /**

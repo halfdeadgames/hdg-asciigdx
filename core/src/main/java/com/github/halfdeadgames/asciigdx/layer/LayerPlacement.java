@@ -46,9 +46,33 @@ final class LayerPlacement {
                 - getActiveCameraY(layer) * layer.getParallaxY() + mapOriginY;
         float screenX = stackX + effectiveOffsetX;
         float screenY = stackY - effectiveOffsetY;
+        boolean snapCorner = isCornerSnapped(layer, pixelSnapping);
+        float cameraZoomScale = getCameraZoomScale(layer);
+        if (cameraZoomScale == 1f) {
+            LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX,
+                    layer.getPivotY() - mapOriginY, layer.getEffectiveZoom(), layer.getRotation(),
+                    snapCorner, out);
+            return;
+        }
         LayerTransform.compose(screenX, screenY, layer.getPivotX() - mapOriginX,
-                layer.getPivotY() - mapOriginY,
-                layer.getEffectiveZoom(), layer.getRotation(),
-                isCornerSnapped(layer, pixelSnapping), out);
+                layer.getPivotY() - mapOriginY, layer.getEffectiveZoom(), layer.getRotation(),
+                false, out);
+        LayerStack stack = layer.getOwner();
+        LayerTransform.scaleAboutPoint(out, cameraZoomScale,
+                stackX + stack.getCameraZoomFocusX(), stackY - stack.getCameraZoomFocusY());
+        if (snapCorner) {
+            LayerTransform.snapTranslation(out);
+        }
+    }
+
+    /**
+     * Returns the scale the stack's camera zoom gives a layer: {@code cameraZoom ^ zoomRate}, or 1
+     * for a layer in a panel, which the stack's camera zoom does not reach.
+     */
+    static float getCameraZoomScale(Layer layer) {
+        if (layer.getPanel() != null) {
+            return 1f;
+        }
+        return (float) Math.pow(layer.getOwner().getCameraZoom(), layer.getZoomRate());
     }
 }

@@ -63,6 +63,10 @@ public final class LayerStack implements Disposable {
     private float height;
     private float cameraX;
     private float cameraY;
+    private float cameraZoom = 1f;
+    private float cameraZoomFocusX;
+    private float cameraZoomFocusY;
+    private boolean cameraZoomFocusCentered = true;
     private boolean pixelSnapping = true;
     private boolean disposed;
     private GridRenderResources sharedResources;
@@ -377,7 +381,8 @@ public final class LayerStack implements Disposable {
      * <p>Layers in a {@link Panel} ignore this camera and follow the panel's own camera instead;
      * see {@link Panel#setCamera}.
      *
-     * <p>The clip does not move with the camera: it stays in stack space.
+     * <p>The clip does not move with the camera: it stays in stack space. For zooming the camera,
+     * see {@link #setCameraZoom}.
      *
      * <p>Pixel snapping rounds each layer's corner on its own, so layers with different parallax
      * factors can be 1 pixel apart during slow pans. Turn snapping off for smooth motion.
@@ -423,6 +428,116 @@ public final class LayerStack implements Disposable {
      */
     public float getCameraY() {
         return cameraY;
+    }
+
+    /**
+     * Sets the camera zoom: the factor that magnifies the scene, default 1. Each layer follows it
+     * by its own zoom rate (see {@link Layer#setZoomRate}): a layer is scaled by
+     * {@code zoom ^ rate} about the zoom focus (see {@link #setCameraZoomFocus}), on top of its own
+     * {@link Layer#setZoom zoom}, so near layers grow faster than far ones. It scales the layer's
+     * whole placement, including the offset and the pan parallax shift. Call it as often as
+     * needed, for example every frame.
+     *
+     * <p>Layers in a {@link Panel} are not zoomed by it. The camera zoom is never rounded, not even
+     * for a layer in {@link ZoomMode#WHOLE}, which rounds only the layer's own zoom; the layer's
+     * corner still snaps to a whole pixel as usual. The clip stays in stack space. Drawing and
+     * the picking methods ({@link #toCell}, {@link #toMapCell}, {@link #toLayerPoint},
+     * {@link #toWorldPoint}) all include the camera zoom. At 1 the result is the same as without
+     * it.
+     *
+     * <p>The scale {@code zoom ^ rate} is not clamped. A safe range is a zoom from 0.01 to 100
+     * with layer rates up to about 1. An extreme product can round to 0 or infinity, which makes
+     * the layer invisible.
+     *
+     * <p>Like {@link #setCamera}, this does not check whether the stack was disposed: it keeps
+     * working and changes nothing that is drawn.
+     *
+     * <p>Example:
+     * <pre>{@code
+     * stack.setCameraZoom(2f);              // far layers (rate 0.25) grow by about 1.19
+     * stack.setCameraZoomFocus(160f, 100f);  // stack pixels from the top-left, y down
+     * }</pre>
+     *
+     * @param zoom the camera zoom; finite and above 0
+     * @throws IllegalArgumentException if the zoom is not finite or not above 0
+     */
+    public void setCameraZoom(float zoom) {
+        if (!Float.isFinite(zoom) || !(zoom > 0f)) {
+            throw new IllegalArgumentException("camera zoom must be finite and above 0: " + zoom);
+        }
+        cameraZoom = zoom;
+    }
+
+    /**
+     * Returns the camera zoom, 1 by default.
+     *
+     * @return the camera zoom; above 0
+     */
+    public float getCameraZoom() {
+        return cameraZoom;
+    }
+
+    /**
+     * Sets the point the camera zoom keeps fixed, in virtual pixels from the stack's top-left
+     * corner with x to the right and y downward, like layer offsets and {@link #setSize}. Until
+     * this is called, or after {@link #centerCameraZoomFocus()}, the focus is the stack's center,
+     * {@code (getWidth() / 2, getHeight() / 2)}, and follows {@link #setSize}.
+     *
+     * <p>The focus is fixed on screen, in stack pixels, and {@link #setCamera} does not move it.
+     * The values are not cell, map, or world coordinates. Like {@link #setCamera}, this keeps
+     * working after the stack is disposed.
+     *
+     * @param x focus x in virtual pixels; finite
+     * @param y focus y in virtual pixels, growing downward; finite
+     * @throws IllegalArgumentException if x or y is not finite
+     */
+    public void setCameraZoomFocus(float x, float y) {
+        if (!Float.isFinite(x) || !Float.isFinite(y)) {
+            throw new IllegalArgumentException("zoom focus must be finite: " + x + ", " + y);
+        }
+        cameraZoomFocusX = x;
+        cameraZoomFocusY = y;
+        cameraZoomFocusCentered = false;
+    }
+
+    /**
+     * Puts the camera zoom focus back at the stack's center, which is the default. See
+     * {@link #setCameraZoomFocus}. Like {@link #setCamera}, this keeps working after the stack is
+     * disposed.
+     */
+    public void centerCameraZoomFocus() {
+        cameraZoomFocusCentered = true;
+    }
+
+    /**
+     * Returns whether the zoom focus is the stack's center: true by default and after
+     * {@link #centerCameraZoomFocus()}, false after {@link #setCameraZoomFocus}. While it is true,
+     * {@link #getCameraZoomFocusX()} and {@link #getCameraZoomFocusY()} return the live center.
+     *
+     * @return true if the focus follows the stack's center
+     */
+    public boolean isCameraZoomFocusCentered() {
+        return cameraZoomFocusCentered;
+    }
+
+    /**
+     * Returns the zoom focus x in virtual pixels from the stack's left edge: the value last given
+     * to {@link #setCameraZoomFocus}, or half the stack's width while centered.
+     *
+     * @return the focus x in virtual pixels
+     */
+    public float getCameraZoomFocusX() {
+        return cameraZoomFocusCentered ? width / 2f : cameraZoomFocusX;
+    }
+
+    /**
+     * Returns the zoom focus y in virtual pixels from the stack's top edge, growing downward: the
+     * value last given to {@link #setCameraZoomFocus}, or half the stack's height while centered.
+     *
+     * @return the focus y in virtual pixels
+     */
+    public float getCameraZoomFocusY() {
+        return cameraZoomFocusCentered ? height / 2f : cameraZoomFocusY;
     }
 
     /**

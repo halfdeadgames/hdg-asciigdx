@@ -38,6 +38,13 @@
  * positive clockwise. Map coordinates (used by a map window) and grid coordinates (cells of the
  * layer's grid) differ by the window's origin.
  *
+ * <p>Camera zoom: {@code LayerStack.setCameraZoom} magnifies the scene about a focus point, and
+ * each layer follows it by its zoom rate ({@code Layer.setZoomRate}, which by default is the
+ * layer's horizontal parallax factor): the layer is scaled by {@code cameraZoom ^ rate}. Near
+ * layers grow faster than far ones, together with the pan parallax. Layers in a {@code Panel} are
+ * not zoomed. For example, {@code stack.setCameraZoom(2f)} then
+ * {@code stack.setCameraZoomFocus(160f, 100f)} (stack pixels, y down).
+ *
  * <p>Time: nothing here reads a clock. Durations and deltas are in seconds, passed in by the game.
  *
  * <p>Ownership: the stack disposes the renderers it creates. Grids and glyph sources belong to the

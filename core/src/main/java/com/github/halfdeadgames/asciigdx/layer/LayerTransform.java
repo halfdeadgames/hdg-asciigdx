@@ -134,7 +134,26 @@ final class LayerTransform {
         out.m12 = screenY + (localPivotY - movedPivotY);
     }
 
-    private static void snapTranslation(Affine2 transform) {
+    /**
+     * Scales a composed transform about a fixed screen point: the image of every point p becomes
+     * {@code focus + scale * (p - focus)}.
+     *
+     * @param transform a transform written by {@link #compose}; changed in place
+     * @param scale the factor; above 0
+     * @param focusScreenX the fixed point's x in batch world space
+     * @param focusScreenY the fixed point's y in batch world space (y up)
+     */
+    static void scaleAboutPoint(Affine2 transform, float scale, float focusScreenX,
+            float focusScreenY) {
+        transform.m00 *= scale;
+        transform.m01 *= scale;
+        transform.m10 *= scale;
+        transform.m11 *= scale;
+        transform.m02 = focusScreenX + scale * (transform.m02 - focusScreenX);
+        transform.m12 = focusScreenY + scale * (transform.m12 - focusScreenY);
+    }
+
+    static void snapTranslation(Affine2 transform) {
         transform.m02 = ClipMath.snap(transform.m02);
         transform.m12 = ClipMath.snap(transform.m12);
     }
