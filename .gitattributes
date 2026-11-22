@@ -1,2 +1,4 @@
 * text=auto eol=lf
 *.bat text=auto eol=crlf
+# Moby Hyphenation List: Mac Roman bytes, kept exact for its SHA-256 check.
+core/src/test/resources/**/mhyph.txt binary

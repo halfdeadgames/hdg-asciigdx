@@ -1,53 +1,75 @@
 package com.github.halfdeadgames.asciigdx.text;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.io.File;
-import java.io.FileInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Compares the bundled patterns with the Moby Hyphenation List. Moby marks dictionary syllables,
- * not typesetting breaks, so the test measures how often the patterns break where Moby does not
- * ("bad breaks") and ratchets that rate. Never touches the network.
+ * Compares the bundled patterns with the committed full Moby Hyphenation List. Moby marks
+ * dictionary syllables, not typesetting breaks, so the test measures how often the patterns break
+ * where Moby does not ("bad breaks") and ratchets that rate. Never touches the network.
  */
 class MobyHyphenationTest {
 
-    /** Maximum bad break rate on the committed sample; NaN means measure and report only. */
-    private static final double MAX_SAMPLE_BAD_BREAK_RATE = Double.NaN;
+    /**
+     * Maximum bad break rate on the full committed list. Measured 0.05333 (13,359 of 250,496
+     * breaks) on 2026-11-22; lower it when the patterns improve.
+     */
+    private static final double MAX_BAD_BREAK_RATE = 0.0534;
 
-    /** Maximum bad break rate on the full cached list; NaN means measure and report only. */
-    private static final double MAX_FULL_BAD_BREAK_RATE = Double.NaN;
-
-    private static final String SAMPLE_RESOURCE = "moby-hyphenation-sample.txt";
-    private static final String FULL_FILE_PROPERTY = "mobyHyphenationFile";
+    private static final String MOBY_RESOURCE = "mhyph.txt";
+    private static final String EXPECTED_SHA_256 =
+            "5cf3ce87be48ae0c2f4f0a574998d6e75086591b7f0ca6367f71746eb6e25aa3";
     private static final char MAC_ROMAN_BULLET = '•';
     private static final String REPORT_DIRECTORY = "build/reports/moby-hyphenation";
 
     @Test
-    void sampleBadBreakRateStaysWithinRatchet() throws IOException {
-        var words = readSample();
-        assumeTrue(words != null, "Moby sample not present");
+    void committedListMatchesExpectedChecksum() throws IOException, NoSuchAlgorithmException {
+        var bytes = readMobyBytes();
 
-        checkDataSet("sample", words, MAX_SAMPLE_BAD_BREAK_RATE);
+        var actualSha256 = toLowerHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        assertEquals(EXPECTED_SHA_256, actualSha256,
+                "The Moby list must be committed byte for byte; check line endings and encoding");
     }
 
     @Test
     void fullListBadBreakRateStaysWithinRatchet() throws IOException {
-        var path = System.getProperty(FULL_FILE_PROPERTY);
-        assumeTrue(path != null && new File(path).isFile(), "Full Moby list not cached");
+        checkDataSet("full", readFullList(openMobyStream()), MAX_BAD_BREAK_RATE);
+    }
 
-        checkDataSet("full", readFullList(new File(path)), MAX_FULL_BAD_BREAK_RATE);
+    private static InputStream openMobyStream() throws IOException {
+        var stream = MobyHyphenationTest.class.getResourceAsStream(MOBY_RESOURCE);
+        if (stream == null) {
+            throw new IOException("Moby list resource " + MOBY_RESOURCE + " is missing");
+        }
+        return stream;
+    }
+
+    private static byte[] readMobyBytes() throws IOException {
+        try (InputStream stream = openMobyStream()) {
+            return stream.readAllBytes();
+        }
+    }
+
+    private static String toLowerHex(byte[] bytes) {
+        var hex = new StringBuilder(bytes.length * 2);
+        for (byte value : bytes) {
+            hex.append(Character.forDigit((value >> 4) & 0xF, 16));
+            hex.append(Character.forDigit(value & 0xF, 16));
+        }
+        return hex.toString();
     }
 
     private static void checkDataSet(String name, List<String> mobyWords, double maxRate)
@@ -115,28 +137,11 @@ class MobyHyphenationTest {
         }
     }
 
-    private static List<String> readSample() throws IOException {
-        try (InputStream stream = MobyHyphenationTest.class.getResourceAsStream(SAMPLE_RESOURCE)) {
-            if (stream == null) {
-                return null;
-            }
-            var words = new ArrayList<String>();
-            var reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.isEmpty() && line.charAt(0) != '#') {
-                    words.add(line.trim());
-                }
-            }
-            return words;
-        }
-    }
-
-    /** Reads the Mac Roman list with the same filtering as the sample build task. */
-    private static List<String> readFullList(File file) throws IOException {
+    /** Reads the Mac Roman list, keeping only entries made of plain letters. */
+    private static List<String> readFullList(InputStream stream) throws IOException {
         var words = new ArrayList<String>();
         try (var reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream(file), Charset.forName("x-MacRoman")))) {
+                stream, Charset.forName("x-MacRoman")))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 var word = toHyphenatedWord(line);
