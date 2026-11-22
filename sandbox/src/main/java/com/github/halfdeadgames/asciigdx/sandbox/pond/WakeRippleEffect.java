@@ -2,6 +2,7 @@ package com.github.halfdeadgames.asciigdx.sandbox.pond;
 
 import com.github.halfdeadgames.asciigdx.layer.CellHandle;
 import com.github.halfdeadgames.asciigdx.zone.CellEffect;
+import com.github.halfdeadgames.asciigdx.zone.Ripples;
 import com.github.halfdeadgames.asciigdx.zone.ZoneCell;
 
 /**
@@ -20,9 +21,9 @@ public final class WakeRippleEffect implements CellEffect {
     private static final float MAX_CREST_BACKGROUND_AMOUNT = 0.4f;
 
     private final PondMap map;
-    private final WakeRipples wake;
+    private final Ripples wake;
 
-    public WakeRippleEffect(PondMap map, WakeRipples wake) {
+    public WakeRippleEffect(PondMap map, Ripples wake) {
         this.map = map;
         this.wake = wake;
     }
@@ -37,7 +38,7 @@ public final class WakeRippleEffect implements CellEffect {
         if (map.cell(column, row).getTerrain() != Terrain.WATER) {
             return;
         }
-        float lift = wake.liftAt(column, row, timeSeconds);
+        float lift = wake.getStrengthAt(column, row, timeSeconds);
         if (lift <= 0f) {
             return;
         }

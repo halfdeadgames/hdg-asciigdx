@@ -30,11 +30,11 @@ import com.github.halfdeadgames.asciigdx.sandbox.pond.PondGenerator;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondMap;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.PondPlayer;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.WakeRippleEffect;
-import com.github.halfdeadgames.asciigdx.sandbox.pond.WakeRipples;
 import com.github.halfdeadgames.asciigdx.sandbox.pond.WaterLayerFiller;
 import com.github.halfdeadgames.asciigdx.shape.RectangleShape;
 import com.github.halfdeadgames.asciigdx.shape.ShapeFill;
 import com.github.halfdeadgames.asciigdx.zone.EffectZone;
+import com.github.halfdeadgames.asciigdx.zone.Ripples;
 
 /**
  * A small roguelike over map-window layers: a player crosses an 80x44 pond while the camera
@@ -62,6 +62,11 @@ class PondScene implements SandboxScene {
         PlayerMotion create(PondMap map, PointerAim pointerAim);
     }
 
+    private static final int WAKE_MAX_RINGS = 4;
+    private static final float WAKE_SPEED_CELLS_PER_SECOND = 3f;
+    private static final float WAKE_LIFE_SECONDS = 1f;
+    private static final float WAKE_HALF_WIDTH_CELLS = 0.8f;
+
     private final String id;
     private final String title;
     private final PlayerMotion motion;
@@ -83,7 +88,9 @@ class PondScene implements SandboxScene {
     private final LilyFlashes lilyFlashes;
     private final int cellCount;
     private final boolean clockPinned;
-    private final WakeRipples wakeRipples = new WakeRipples();
+    private final Ripples wakeRipples = Ripples.of(
+            WAKE_MAX_RINGS, WAKE_SPEED_CELLS_PER_SECOND, WAKE_LIFE_SECONDS,
+            WAKE_HALF_WIDTH_CELLS);
     private final RectangleShape wakeArea =
             RectangleShape.forSquareCells(0, 0, 1, 1, ShapeFill.FILLED);
     private final EffectZone wakeZone;
@@ -374,11 +381,11 @@ class PondScene implements SandboxScene {
         if (!wakeRipples.isActiveAt(elapsed)) {
             return;
         }
-        int left = wakeRipples.activeLeft(elapsed);
-        int top = wakeRipples.activeTop(elapsed);
+        int left = wakeRipples.getActiveLeftColumn(elapsed);
+        int top = wakeRipples.getActiveTopRow(elapsed);
         wakeArea.setPosition(left, top);
-        wakeArea.setSize(wakeRipples.activeRight(elapsed) - left + 1,
-                wakeRipples.activeBottom(elapsed) - top + 1);
+        wakeArea.setSize(wakeRipples.getActiveRightColumn(elapsed) - left + 1,
+                wakeRipples.getActiveBottomRow(elapsed) - top + 1);
         wakeZone.apply(waterLayer, elapsed);
     }
 
